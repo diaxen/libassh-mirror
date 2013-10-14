@@ -1,0 +1,245 @@
+/*
+
+  libassh - asynchronous ssh2 client/server library.
+
+  Copyright (C) 2013 Alexandre Becoulet <alexandre.becoulet@free.fr>
+
+  This library is free software; you can redistribute it and/or modify
+  it under the terms of the GNU Lesser General Public License as
+  published by the Free Software Foundation; either version 2.1 of the
+  License, or (at your option) any later version.
+
+  This library is distributed in the hope that it will be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+  02110-1301 USA
+
+*/
+
+
+#ifndef ASSH_PACKET_H_
+#define ASSH_PACKET_H_
+
+#include "assh.h"
+
+struct assh_packet_s
+{
+  union {
+    struct assh_queue_entry_s entry;
+    struct assh_packet_s *pool_next;
+  };
+
+  struct assh_session_s *session;
+  uint_fast32_t alloc_size;
+  uint_fast32_t data_size;
+  uint_fast16_t ref_count;
+
+  uint8_t data[0];
+};
+
+static const size_t ASSH_MAX_PCK_POOL_SIZE = 8;
+static const size_t ASSH_MAX_PCK_LEN  = 35000;
+static const size_t ASSH_MAX_PAYLOAD_LEN  = 32768;
+static const size_t ASSH_MAX_PAD_LEN  = 255;
+static const size_t ASSH_MAX_MAC_LEN = 32;
+
+typedef enum assh_ssh_msg_e
+{
+  /* SSH-TRANS */
+  SSH_MSG_DISCONNECT                =   1,
+  SSH_MSG_IGNORE                    =   2,
+  SSH_MSG_UNIMPLEMENTED             =   3,
+  SSH_MSG_DEBUG                     =   4,
+  SSH_MSG_SERVICE_REQUEST           =   5,
+  SSH_MSG_SERVICE_ACCEPT            =   6,
+  SSH_MSG_KEXINIT                   =  20,
+  SSH_MSG_NEWKEYS                   =  21,
+
+  /* SSH-KEX */
+  SSH_MSG_KEX_DH_REQUEST            =  30,
+  SSH_MSG_KEX_DH_REPLY              =  31,
+
+  /* SSH-USERAUTH */
+  SSH_MSG_USERAUTH_REQUEST          =  50,
+  SSH_MSG_USERAUTH_FAILURE          =  51,
+  SSH_MSG_USERAUTH_SUCCESS          =  52,
+  SSH_MSG_USERAUTH_BANNER           =  53,
+  SSH_MSG_GLOBAL_REQUEST            =  80,
+
+  /* SSH-CONNECT */
+  SSH_MSG_REQUEST_SUCCESS           =  81,
+  SSH_MSG_REQUEST_FAILURE           =  82,
+  SSH_MSG_CHANNEL_OPEN              =  90,
+  SSH_MSG_CHANNEL_OPEN_CONFIRMATION =  91,
+  SSH_MSG_CHANNEL_OPEN_FAILURE      =  92,
+  SSH_MSG_CHANNEL_WINDOW_ADJUST     =  93,
+  SSH_MSG_CHANNEL_DATA              =  94,
+  SSH_MSG_CHANNEL_EXTENDED_DATA     =  95,
+  SSH_MSG_CHANNEL_EOF               =  96,
+  SSH_MSG_CHANNEL_CLOSE             =  97,
+  SSH_MSG_CHANNEL_REQUEST           =  98,
+  SSH_MSG_CHANNEL_SUCCESS           =  99,
+  SSH_MSG_CHANNEL_FAILURE           = 100,
+} assh_ssh_msg_t;
+
+/** This function allocates a new packet. If the pool parameter is not
+    NULL and the queue is not empty, the packet is taken from the
+    queue instead of being allocated. */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_packet_alloc(struct assh_session_s *s,
+                  uint8_t msg, size_t payload_size,
+                  struct assh_packet_s **p);
+
+/** This function decreases the reference counter of the packet and
+    frees the associated memory if the new counter value is zero. If
+    the pool parameter is not NULL and the pool has not too many
+    entries, the packet is pushed on the pool instead of being freed. */
+void assh_packet_release(struct assh_packet_s *p);
+
+/** This function increase the reference counter of the packet. */
+static inline void assh_packet_refinc(struct assh_packet_s *p)
+{
+  p->ref_count++;
+}
+
+/** This function puts a packet in the output queue. The packet
+    will be released once it has been enciphered and sent. */
+void assh_packet_push(struct assh_session_s *s,
+                      struct assh_packet_s *p);
+
+/** This function creates a copy of a packet. */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_packet_dup(struct assh_packet_s *p,
+                struct assh_packet_s **copy);
+
+static inline void assh_store_u32(uint8_t *s, uint32_t x)
+{
+  s[0] = x >> 24;
+  s[1] = x >> 16;
+  s[2] = x >> 8;
+  s[3] = x;
+}
+
+static inline uint32_t assh_load_u32(const uint8_t *s)
+{
+  return s[3] + (s[2] << 8) + (s[1] << 16) + (s[0] << 24);
+}
+
+/** This function allocates an array of bytes in a packet and returns
+    a pointer to the array. If there is not enough space left in the
+    packet, an error is returned. */
+static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_packet_add_bytes(struct assh_packet_s *p, size_t len, uint8_t **result)
+{
+  if (p->data_size + len > p->alloc_size)
+    return ASSH_ERR_MEM;
+  uint8_t *d = p->data + p->data_size;
+  p->data_size += len;
+  *result = d;
+  return ASSH_OK;
+}
+
+/** This function allocates a string in a packet and returns a pointer
+    to the first char of the string. If there is not enough space left
+    in the packet, and error is returned. */
+static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_packet_add_string(struct assh_packet_s *p, size_t len, uint8_t **result)
+{
+  uint8_t *d;
+  assh_error_t err;
+  if ((err = assh_packet_add_bytes(p, len + 4, &d)))
+    return err;
+  assh_store_u32(d, len);
+  *result = d + 4;
+  return ASSH_OK;
+}
+
+/** This function enlarges a string previously allocated in a packet
+    and returns a pointer to the first additional char of the
+    string. If there is not enough space left in the packet, an error
+    is returned. The string must be the last allocated thing in the
+    packet when this function is called. */
+static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_packet_enlarge_string(struct assh_packet_s *p, uint8_t *str,
+                           size_t len, uint8_t **result)
+{
+  size_t olen = assh_load_u32(str - 4);
+  assert(str + olen == p->data + p->data_size);
+  assh_error_t err;
+  if ((err = assh_packet_add_bytes(p, len, result)))
+    return err;
+  assh_store_u32(str - 4, olen + len);
+  return ASSH_OK;
+}
+
+/** This function allocates a string in a packet and writes the given
+    big number in mpint representation as string content. */
+assh_error_t ASSH_WARN_UNUSED_RESULT
+assh_packet_add_mpint(struct assh_packet_s *p,
+                      const struct assh_bignum_s *bn);
+
+/** This function checks that a string is well inside a buffer. If no
+    error is returned, the @tt next parameter is set to point to the
+    first byte in buffer following the string. */
+static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_check_string(const uint8_t *buffer, size_t buffer_len, const uint8_t *str, uint8_t **next)
+{
+  const uint8_t *e = buffer + buffer_len;
+  if (str < buffer || str > e - 4)
+    return ASSH_ERR_OVERFLOW;
+  uint32_t s = assh_load_u32(str);
+  if (e - 4 - str < s)
+    return ASSH_ERR_OVERFLOW;
+  if (next != NULL)
+    *next = (uint8_t*)str + 4 + s;
+  return ASSH_OK;
+}
+
+/** This function checks that an asn1 value is well inside a
+    buffer. If no error is returned, the @tt value parameter is set to
+    point to the first byte of the value and the @tt next parameter is
+    set to point to the first byte in the buffer following the
+    value. Any of these two parameters may be @tt NULL. */
+static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_check_asn1(const uint8_t *buffer, size_t buffer_len, const uint8_t *str,
+                uint8_t **value, uint8_t **next)
+{
+  const uint8_t *e = buffer + buffer_len;
+  if (str < buffer || str > e - 2)
+    return ASSH_ERR_OVERFLOW;
+
+  str++; /* discard type identifer */
+  unsigned int l = *str++;
+  if (l & 0x80)  /* long length form ? */
+    {
+      unsigned int ll = l & 0x7f;
+      if (e - str < ll)
+        return ASSH_ERR_OVERFLOW;
+      for (l = 0; ll > 0; ll--)
+        l = (l << 8) | *str++;
+    }
+  if (e - str < l)
+    return ASSH_ERR_OVERFLOW;
+  if (value != NULL)
+    *value = (uint8_t*)str;
+  if (next != NULL)
+    *next = (uint8_t*)str + l;
+  return ASSH_OK;
+}
+
+/** This function checks that a string is well inside packet
+    bounds. If no error is returned, the @tt next parameter is set to
+    point to the first packet byte following the string. */
+static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_packet_check_string(struct assh_packet_s *p, const uint8_t *str, uint8_t **next)
+{
+  return assh_check_string(p->data, p->data_size, str, next);
+}
+
+#endif
+

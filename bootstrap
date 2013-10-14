@@ -1,0 +1,8 @@
+
+libtoolize --copy --force
+aclocal
+autoconf
+autoheader
+automake --foreign --add-missing --copy
+rm -Rf autom4te.cache
+

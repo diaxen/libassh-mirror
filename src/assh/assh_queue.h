@@ -1,0 +1,78 @@
+/*
+
+  libassh - asynchronous ssh2 client/server library.
+
+  Copyright (C) 2013 Alexandre Becoulet <alexandre.becoulet@free.fr>
+
+  This library is free software; you can redistribute it and/or modify
+  it under the terms of the GNU Lesser General Public License as
+  published by the Free Software Foundation; either version 2.1 of the
+  License, or (at your option) any later version.
+
+  This library is distributed in the hope that it will be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+  02110-1301 USA
+
+*/
+
+#ifndef ASSH_QUEUE_H_
+#define ASSH_QUEUE_H_
+
+#include "assh.h"
+
+static inline void assh_queue_init(struct assh_queue_s *q)
+{
+  q->head.next = q->head.prev = &q->head;
+  q->count = 0;
+}
+
+static inline struct assh_queue_entry_s *
+assh_queue_front(struct assh_queue_s *q)
+{
+  return q->head.next == &q->head ? NULL : q->head.next;
+}
+
+static inline struct assh_queue_entry_s *
+assh_queue_back(struct assh_queue_s *q)
+{
+  return q->head.prev == &q->head ? NULL : q->head.prev;
+}
+
+static inline void assh_queue_remove(struct assh_queue_s *q,
+                                     struct assh_queue_entry_s *e)
+{
+  e->prev->next = e->next;
+  e->next->prev = e->prev;
+  q->count--;
+}
+
+static inline void assh_queue_push_front(struct assh_queue_s *q,
+					 struct assh_queue_entry_s *b)
+{
+  struct assh_queue_entry_s *a = &q->head;
+  b->prev = a;
+  a->next->prev = b;
+  b->next = a->next;
+  a->next = b;
+  q->count++;
+}
+
+static inline void assh_queue_push_back(struct assh_queue_s *q,
+					struct assh_queue_entry_s *b)
+{
+  struct assh_queue_entry_s *a = &q->head;
+  b->next = a;
+  a->prev->next = b;
+  b->prev = a->prev;
+  a->prev = b;
+  q->count++;
+}
+
+#endif
+

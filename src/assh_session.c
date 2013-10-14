@@ -1,0 +1,128 @@
+/*
+
+  libassh - asynchronous ssh2 client/server library.
+
+  Copyright (C) 2013 Alexandre Becoulet <alexandre.becoulet@free.fr>
+
+  This library is free software; you can redistribute it and/or modify
+  it under the terms of the GNU Lesser General Public License as
+  published by the Free Software Foundation; either version 2.1 of the
+  License, or (at your option) any later version.
+
+  This library is distributed in the hope that it will be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+  02110-1301 USA
+
+*/
+
+
+#include <assh/assh_session.h>
+#include <assh/assh_context.h>
+#include <assh/assh_packet.h>
+#include <assh/assh_kex.h>
+#include <assh/assh_queue.h>
+
+assh_error_t assh_session_init(struct assh_context_s *c,
+			       struct assh_session_s *s,
+			       enum assh_session_type_e type)
+{
+  assh_error_t err;
+
+  ASSH_ERR_RET(c->prng == NULL ? ASSH_ERR_IO : 0);
+
+  s->ctx = c;
+
+  switch (s->type = type)
+    {
+    case ASSH_SERVER:
+#ifdef CONFIG_ASSH_SERVER
+      ASSH_ERR_RET(c->host_keys == NULL ? ASSH_ERR_MISSING_KEY : 0);
+      s->kex_st = ASSH_KEX_INIT;      
+#else
+      ASSH_ERR_RET(ASSH_ERR_NOTSUP);
+#endif
+      break;
+
+    case ASSH_CLIENT:
+#ifdef CONFIG_ASSH_CLIENT
+      s->kex_st = ASSH_KEX_WAIT_REPLY;
+#else
+      ASSH_ERR_RET(ASSH_ERR_NOTSUP);
+#endif
+      break;
+    }
+
+  s->chans_size = 0;
+  s->chans = NULL;
+
+  assh_queue_init(&s->out_queue);
+  s->in_packet = NULL;
+
+  s->hello_len = 0;
+  s->session_id_len = 0;
+
+  s->kex_init_local = NULL;
+  s->kex_init_remote = NULL;
+  s->kex_pv = NULL;
+
+  s->in_seq = 0;
+  s->out_seq = 0;
+
+  s->cur_keys_in = NULL;
+  s->new_keys_in = NULL;
+  s->cur_keys_out = NULL;
+  s->new_keys_out = NULL;
+
+  s->stream_in_pck = NULL;
+
+  s->stream_out_st = ASSH_TR_OUT_HELLO;
+  s->stream_in_st = ASSH_TR_IN_HELLO;
+
+  s->f_srv_process = NULL;
+  c->session_count++;
+
+  return ASSH_OK;
+}
+
+static void assh_pck_queue_cleanup(struct assh_queue_s *q)
+{
+  while (q->count > 0)
+    {
+      struct assh_queue_entry_s *e = assh_queue_front(q);
+      assh_queue_remove(q, e);
+
+      struct assh_packet_s *p = (struct assh_packet_s*)e;
+      assh_free(p->session->ctx, p, ASSH_ALLOC_PACKET);
+    }
+}
+
+void assh_session_cleanup(struct assh_session_s *s)
+{
+  if (s->kex_pv != NULL)
+    s->kex->f_cleanup(s);
+  assert(s->kex_pv == NULL);
+
+  assh_packet_release(s->kex_init_local);
+  assh_packet_release(s->kex_init_remote);
+
+  assh_pck_queue_cleanup(&s->out_queue);
+
+  assh_kex_keys_cleanup(s, s->cur_keys_in);
+  assh_kex_keys_cleanup(s, s->cur_keys_out);
+  assh_kex_keys_cleanup(s, s->new_keys_in);
+  assh_kex_keys_cleanup(s, s->new_keys_out);
+
+  assh_packet_release(s->in_packet);
+  assh_packet_release(s->stream_in_pck);
+
+  assh_free(s->ctx, s->chans, ASSH_ALLOC_INTERNAL);
+
+  s->ctx->session_count--;
+}
+
