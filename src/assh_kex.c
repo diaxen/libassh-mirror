@@ -84,13 +84,13 @@ assh_error_t assh_algo_kex_send_init(struct assh_session_s *s)
 
       for (; i < ac; i++)
         {
-          struct assh_algo_s *a = s->ctx->algos[i];
+          const struct assh_algo_s *a = s->ctx->algos[i];
           if (a->class_ != j)
             break;
 
 #ifdef CONFIG_ASSH_SERVER
           /* check host key availability for this algorithm */
-          if (s->type == ASSH_SERVER && a->need_host_key)
+          if (s->ctx->type == ASSH_SERVER && a->need_host_key)
             {
               struct assh_key_s *k = s->ctx->host_keys;
               while (k != NULL && k->algo != a)
@@ -216,7 +216,7 @@ assh_kex_client_algos(struct assh_context_s *c, uint8_t *lists[9],
         {
           ASSH_ERR_RET(j == c->algos_count ? ASSH_ERR_MISSING_ALGO : 0);
 
-          struct assh_algo_s *a = c->algos[j];
+          const struct assh_algo_s *a = c->algos[j];
           if (a->class_ < assh_kex_algos_classes[i])
             continue;
           ASSH_ERR_RET(a->class_ > assh_kex_algos_classes[i]
@@ -269,7 +269,7 @@ assh_error_t assh_kex_got_init(struct assh_packet_s *p)
   assh_bool_t guessed;
 
   /* select proper algorithms based on registered algorithms and name-lists */
-  switch (s->type)
+  switch (s->ctx->type)
     {
     case ASSH_SERVER:
 #ifdef CONFIG_ASSH_SERVER
@@ -390,7 +390,7 @@ assh_error_t assh_kex_new_keys(struct assh_session_s *s,
 {
   assh_error_t err;
 #if defined(CONFIG_ASSH_SERVER) && defined(CONFIG_ASSH_CLIENT)
-  const char *c = s->type == ASSH_SERVER ? "ABCDEF" : "BADCFE";
+  const char *c = s->ctx->type == ASSH_SERVER ? "ABCDEF" : "BADCFE";
 #elif defined(CONFIG_ASSH_CLIENT)
   const char *c = "BADCFE";
 #elif defined(CONFIG_ASSH_SERVER)

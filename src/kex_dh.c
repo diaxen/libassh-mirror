@@ -45,8 +45,6 @@ enum assh_kex_dh_state_e
 #ifdef CONFIG_ASSH_CLIENT
   ASSH_KEX_DH_CLIENT_SENT_E,
   ASSH_KEX_DH_CLIENT_LOOKUP_HK_WAIT,
-  ASSH_KEX_DH_CLIENT_LOOKUP_HK_DONE,
-  ASSH_KEX_DH_CLIENT_LOOKUP_HK_REJECT,
 #endif
 #ifdef CONFIG_ASSH_SERVER
   ASSH_KEX_DH_SERVER_WAIT_E,
@@ -285,13 +283,7 @@ static assh_error_t assh_kex_dh_server_wait_e(struct assh_session_s *s,
 #ifdef CONFIG_ASSH_CLIENT
 static ASSH_EVENT_DONE_FCN(assh_kex_dh_hk_lookup_done)
 {
-  struct assh_kex_dh_private_s *pv = e->done_pv;
-
-  pv->state = e->hostkey_lookup.accept
-    ? ASSH_KEX_DH_CLIENT_LOOKUP_HK_DONE
-    : ASSH_KEX_DH_CLIENT_LOOKUP_HK_REJECT;
-
-  return ASSH_OK;
+  return assh_kex_end(s, e->hostkey_lookup.accept);
 }
 #endif
 
@@ -318,12 +310,6 @@ static ASSH_PROCESS_FCN(assh_kex_dh_process)
 
     case ASSH_KEX_DH_CLIENT_LOOKUP_HK_WAIT:
       ASSH_ERR_RET(ASSH_ERR_STATE);
-
-    case ASSH_KEX_DH_CLIENT_LOOKUP_HK_REJECT:
-      return assh_kex_end(s, 0);
-
-    case ASSH_KEX_DH_CLIENT_LOOKUP_HK_DONE:
-      return assh_kex_end(s, 1);
 #endif
 
 #ifdef CONFIG_ASSH_SERVER
@@ -355,7 +341,7 @@ static assh_error_t assh_kex_dh_init(struct assh_session_s *s, const struct assh
   pv->hk = NULL;
 #endif
 
-  switch (s->type)
+  switch (s->ctx->type)
     {
     case ASSH_CLIENT:
 #ifdef CONFIG_ASSH_CLIENT
@@ -374,7 +360,7 @@ static assh_error_t assh_kex_dh_init(struct assh_session_s *s, const struct assh
   ASSH_ERR_GTO(assh_bignum_init(s->ctx, pv->kn, group->size), err_pv);
 
 #ifdef CONFIG_ASSH_CLIENT
-  if (s->type == ASSH_CLIENT)
+  if (s->ctx->type == ASSH_CLIENT)
     ASSH_ERR_GTO(assh_kex_dh_send_expmod(s), err_pv);
 #endif
 

@@ -145,9 +145,9 @@ ASSH_WARN_UNUSED_RESULT
 ASSH_EVENT_DONE_FCN(assh_event_random_done);
 
 /** @internal */
-assh_error_t assh_event_process_packet(struct assh_session_s *s,
-				       struct assh_packet_s *p,
-				       struct assh_event_s *e);
+assh_error_t assh_process_packet(struct assh_session_s *s,
+                                 struct assh_packet_s *p,
+                                 struct assh_event_s *e);
 
 /** @internal This function returns the address and size of the buffer
     which contains the next ssh binary output stream. This function

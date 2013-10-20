@@ -37,9 +37,11 @@ static ASSH_ALLOCATOR(assh_default_allocator)
   return (size == 0 || *ptr != NULL) ? ASSH_OK : ASSH_ERR_MEM;
 }
 
-void assh_context_init(struct assh_context_s *c)
+void assh_context_init(struct assh_context_s *c,
+                       enum assh_context_type_e type)
 {
   c->session_count = 0;
+  c->type = type;
 
   c->f_alloc = assh_default_allocator;
 
@@ -53,6 +55,10 @@ void assh_context_init(struct assh_context_s *c)
   int i;
   for (i = 0; i < ASSH_PCK_POOL_SIZE; i++)
     c->pck_pool[i] = NULL;
+
+#ifdef CONFIG_ASSH_SERVER
+  c->srvs_count = 0;
+#endif
 }
 
 static void assh_pck_pool_cleanup(struct assh_context_s *c)

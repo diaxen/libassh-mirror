@@ -44,6 +44,18 @@ assh_queue_back(struct assh_queue_s *q)
   return q->head.prev == &q->head ? NULL : q->head.prev;
 }
 
+static inline struct assh_queue_entry_s *
+assh_queue_next(struct assh_queue_s *q, struct assh_queue_entry_s *e)
+{
+  return e->next == &q->head ? NULL : e->next;
+}
+
+static inline struct assh_queue_entry_s *
+assh_queue_prev(struct assh_queue_s *q, struct assh_queue_entry_s *e)
+{
+  return e->prev == &q->head ? NULL : e->prev;
+}
+
 static inline void assh_queue_remove(struct assh_queue_s *q,
                                      struct assh_queue_entry_s *e)
 {

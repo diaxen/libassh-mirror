@@ -174,7 +174,7 @@ assh_error_t assh_algo_by_name(struct assh_context_s *c,
 			       size_t name_len, const struct assh_algo_s **algo)
 {
   unsigned int i;
-  struct assh_algo_s *a;
+  const struct assh_algo_s *a;
 
   for (i = 0; i < c->algos_count; i++)
     {

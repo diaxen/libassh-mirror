@@ -23,6 +23,7 @@
 
 #include <assh/assh_session.h>
 #include <assh/assh_context.h>
+#include <assh/assh_service.h>
 #include <assh/assh_prng.h>
 #include <assh/helper_fd.h>
 #include <assh/assh_event.h>
@@ -66,7 +67,11 @@ int main(int argc, char **argv)
   assert(r == 0);
 
   struct assh_context_s context;
-  assh_context_init(&context);
+  assh_context_init(&context, ASSH_CLIENT);
+
+  assh_service_register_va(&context,
+                           &assh_service_ssh_userauth,
+                           &assh_service_ssh_connection, NULL);
 
   if (assh_algo_register_default(&context) != ASSH_OK)
     return -1;
@@ -75,7 +80,7 @@ int main(int argc, char **argv)
     return -1;
 
   struct assh_session_s session;
-  if (assh_session_init(&context, &session, ASSH_CLIENT) != ASSH_OK)
+  if (assh_session_init(&context, &session) != ASSH_OK)
     return -1;
 
   int rnd_fd = open("/dev/urandom", O_RDONLY);

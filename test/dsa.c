@@ -40,7 +40,7 @@ int main()
     return -1;
 #endif
 
-  assh_context_init(&context);
+  assh_context_init(&context, ASSH_SERVER);
   ASSH_ERR_RET(assh_context_prng(&context, &assh_prng_xswap));
 
   unsigned int n = 160, l = 512;

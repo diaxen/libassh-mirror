@@ -27,6 +27,7 @@
 #include <assh/assh_session.h>
 #include <assh/assh_kex.h>
 #include <assh/assh_prng.h>
+#include <assh/assh_service.h>
 
 #include <assert.h>
 
@@ -50,25 +51,47 @@ assh_error_t assh_event_get(struct assh_session_s *s,
       return ASSH_OK;
     }
 
-  /* initiate key exchange */
+#ifdef CONFIG_ASSH_SERVER
+  /* server initiates key exchange */
   if (s->kex_st == ASSH_KEX_INIT)
     {
       s->kex_st = ASSH_KEX_WAIT;
       ASSH_ERR_RET(assh_algo_kex_send_init(s));
     }
+#endif
+
+  event->id = ASSH_EVENT_INVALID;
 
   /* process the next incoming deciphered packet */
   if (s->in_packet != NULL)
     {
-      event->id = ASSH_EVENT_INVALID;
-      err = assh_event_process_packet(s, s->in_packet, event);
+      err = assh_process_packet(s, s->in_packet, event);
       assh_packet_release(s->in_packet);
       s->in_packet = NULL;
       ASSH_ERR_RET(err);
-
-      if (event->id != ASSH_EVENT_INVALID)
-	return ASSH_OK;
     }
+
+  /* get event from running service */
+  else if (s->srv != NULL && s->kex_st == ASSH_KEX_DONE)
+    {
+      ASSH_ERR_RET(s->srv->f_process(s, NULL, event));
+    }
+
+#ifdef CONFIG_ASSH_CLIENT
+  printf("%i %i %p %p\n", s->kex_st, s->ctx->type, s->srv, s->srv_rq);
+  if (s->kex_st == ASSH_KEX_DONE)
+    {
+      /* client requests next service */
+      if (s->ctx->type == ASSH_CLIENT &&
+          s->srv == NULL && s->srv_rq == NULL)
+        ASSH_ERR_RET(assh_service_send_request(s));
+    }
+#endif
+
+  if (event->id != ASSH_EVENT_INVALID)
+    return ASSH_OK;
+
+  ASSH_ERR_RET(s->kex_st == ASSH_KEX_DISCONNECTED ? ASSH_ERR_DISCONNECTED : 0);
 
   /* run the state machine which converts output packets to enciphered
      ssh stream */

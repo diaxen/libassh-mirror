@@ -51,12 +51,13 @@ struct assh_algo_cipher_s;
 struct assh_algo_mac_s;
 struct assh_algo_sign_s;
 struct assh_event_s;
+struct assh_service_s;
 
 typedef char assh_bool_t;
 
 enum assh_key_format_e;
 
-typedef enum assh_error_e
+enum assh_error_e
 {
   ASSH_OK,
   ASSH_NO_DATA,
@@ -76,7 +77,11 @@ typedef enum assh_error_e
   ASSH_ERR_MISSING_ALGO,
   ASSH_ERR_MISSMATCH_KEY,
   ASSH_ERR_HOSTKEY_SIGNATURE,
-} assh_error_t;
+  ASSH_ERR_SERVICE_NA,
+  ASSH_ERR_DISCONNECTED,
+};
+
+typedef enum assh_error_e assh_error_t;
 
 /** Maximum size of hash algorithms output in bytes. */
 #define ASSH_MAX_HASH_SIZE 64

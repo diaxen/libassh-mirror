@@ -32,10 +32,21 @@
 #define ASSH_PCK_POOL_SIZE (ASSH_PCK_POOL_MAX - ASSH_PCK_POOL_MIN)
 
 #define ASSH_MAX_ALGORITHMS 40
+#define ASSH_MAX_SERVICES 4
+
+/** This specifies the type of ssh session. */
+enum assh_context_type_e
+{
+  ASSH_SERVER,
+  ASSH_CLIENT,
+};
 
 struct assh_context_s
 {
   unsigned int session_count;
+
+  /** Client/server context type. */
+  enum assh_context_type_e type;
 
   /** Memory allocator */
   assh_allocator_t *f_alloc;
@@ -62,8 +73,14 @@ struct assh_context_s
   struct assh_packet_s *pck_pool[ASSH_PCK_POOL_SIZE];
 
   /** Registered algorithms */
-  struct assh_algo_s *algos[ASSH_MAX_ALGORITHMS];
+  const struct assh_algo_s *algos[ASSH_MAX_ALGORITHMS];
+  /** Number of registered algorithms */
   unsigned int algos_count;
+
+  /** Registered services supported by the server. */
+  const struct assh_service_s *srvs[ASSH_MAX_SERVICES];
+  /** Number of registered services */
+  unsigned int srvs_count;
 };
 
 /** This specifies the type of data to be stored in the allocated memory. */
@@ -99,7 +116,8 @@ static inline void assh_free(struct assh_context_s *c, void *ptr,
     (void)c->f_alloc(c, &ptr, 0, type);
 }
 
-void assh_context_init(struct assh_context_s *ctx);
+void assh_context_init(struct assh_context_s *ctx,
+                       enum assh_context_type_e type);
 
 void assh_context_cleanup(struct assh_context_s *ctx);
 

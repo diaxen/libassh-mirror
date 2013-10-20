@@ -21,24 +21,13 @@
 
 */
 
-
 #ifndef ASSH_SESSION_H_
 #define ASSH_SESSION_H_
 
 #include "assh.h"
 
 /** This specifies the current status of an ssh session. */
-typedef enum assh_session_status_e
-{
-  ASSH_STATE_HELLO,
-  ASSH_STATE_KEX,
-  ASSH_STATE_AUTH,
-  ASSH_STATE_OPENED,
-  ASSH_STATE_CLOSED,
-} assh_session_status_t;
-
-/** This specifies the current status of an ssh session. */
-typedef enum assh_algo_kex_status_e
+enum assh_algo_kex_status_e
 {
   ASSH_KEX_INIT,       //< will send a KEX_INIT packet
   ASSH_KEX_WAIT,       //< wait for a KEX_INIT packet
@@ -46,14 +35,8 @@ typedef enum assh_algo_kex_status_e
   ASSH_KEX_EXCHANGE,   //< both KEX_INIT packet were sent
   ASSH_KEX_NEWKEY,     //< 
   ASSH_KEX_DONE,       //< key exchange is over
-} assh_algo_kex_status_t;
-
-/** This specifies the type of ssh session. */
-typedef enum assh_session_type_e
-{
-  ASSH_SERVER,
-  ASSH_CLIENT,
-} assh_session_type_t;
+  ASSH_KEX_DISCONNECTED, //< disconnected
+};
 
 enum assh_stream_in_state_e
 {
@@ -74,13 +57,10 @@ enum assh_stream_out_state_e
 
 struct assh_session_s
 {
-  /** Client/server session type. */
-  assh_session_type_t type;
-
   struct assh_context_s *ctx;
 
   /** Key exchange current state. */
-  assh_algo_kex_status_t kex_st;
+  enum assh_algo_kex_status_e kex_st;
 
   /** Key exchange algorithm. This pointer is setup when the @ref
       assh_kex_got_init select a new key exchange algorithm. */
@@ -115,6 +95,20 @@ struct assh_session_s
   /** host keys signature algorithm */
   const struct assh_algo_sign_s *host_sign_algo;
 
+#ifdef CONFIG_ASSH_CLIENT
+  /** Index of the next service to request in the context services array. */
+  unsigned int srv_index;
+  /** Requested service. */
+  const struct assh_service_s *srv_rq;
+#endif
+  /** Current service. */
+  const struct assh_service_s *srv;
+  /** Current service private data. */
+  void *srv_pv;
+
+  /** Set by the ssh-userauth service when the user has been authenticated. */
+  assh_bool_t auth_ok;
+
   /** Service processing function, may be NULL. */
   assh_process_t *f_srv_process;
 
@@ -123,9 +117,9 @@ struct assh_session_s
   /** Array of channels indexed by channel local id. */
   struct assh_channel_s *chans;
 
-  /** Queue of ssh packets */
+  /** Current ssh input packet */
   struct assh_packet_s *in_packet;
-  /** Queue of ssh packets */
+  /** Queue of ssh output packets */
   struct assh_queue_s out_queue;
 
   /** Copy of the hello string sent by the remote host. */
@@ -146,8 +140,7 @@ struct assh_session_s
 /** This function initialize a new ssh session object. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_session_init(struct assh_context_s *c,
-		  struct assh_session_s *s,
-		  enum assh_session_type_e type);
+		  struct assh_session_s *s);
 
 /** This function cleanup a ssh session object. */
 void assh_session_cleanup(struct assh_session_s *s);

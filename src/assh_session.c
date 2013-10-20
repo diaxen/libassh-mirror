@@ -27,10 +27,10 @@
 #include <assh/assh_packet.h>
 #include <assh/assh_kex.h>
 #include <assh/assh_queue.h>
+#include <assh/assh_service.h>
 
 assh_error_t assh_session_init(struct assh_context_s *c,
-			       struct assh_session_s *s,
-			       enum assh_session_type_e type)
+			       struct assh_session_s *s)
 {
   assh_error_t err;
 
@@ -38,7 +38,7 @@ assh_error_t assh_session_init(struct assh_context_s *c,
 
   s->ctx = c;
 
-  switch (s->type = type)
+  switch (c->type)
     {
     case ASSH_SERVER:
 #ifdef CONFIG_ASSH_SERVER
@@ -79,6 +79,13 @@ assh_error_t assh_session_init(struct assh_context_s *c,
   s->cur_keys_out = NULL;
   s->new_keys_out = NULL;
 
+#ifdef CONFIG_ASSH_CLIENT
+  s->srv_rq = NULL;
+  s->srv_index = 0;
+#endif
+  s->srv = NULL;
+  s->auth_ok = 0;
+
   s->stream_in_pck = NULL;
 
   s->stream_out_st = ASSH_TR_OUT_HELLO;
@@ -107,6 +114,9 @@ void assh_session_cleanup(struct assh_session_s *s)
   if (s->kex_pv != NULL)
     s->kex->f_cleanup(s);
   assert(s->kex_pv == NULL);
+
+  if (s->srv != NULL)
+    s->srv->f_cleanup(s);
 
   assh_packet_release(s->kex_init_local);
   assh_packet_release(s->kex_init_remote);
