@@ -174,7 +174,7 @@ ASSH_EVENT_DONE_FCN(assh_event_read_done)
 					 p->data_size - mac_len, mac));
 
 	  ASSH_ERR_RET(memcmp(mac, p->data + p->data_size - mac_len, mac_len)
-		       ? ASSH_ERR_MAC : 0);
+		       ? ASSH_ERR_CODE(ASSH_ERR_MAC, SSH_DISCONNECT_MAC_ERROR) : 0);
 	}
 
       assert(s->in_pck == NULL);
@@ -260,9 +260,6 @@ assh_error_t assh_event_write(struct assh_session_s *s,
 	  s->cur_keys_out = s->new_keys_out;
 	  s->new_keys_out = NULL;
 	  break;
-	case SSH_MSG_DISCONNECT:
-	  s->tr_st = ASSH_TR_DISCONNECTED;
-	  break;
 	}
 
       s->out_seq++;
@@ -312,10 +309,13 @@ assh_error_t assh_transport_disconnect(struct assh_session_s *s, uint32_t code)
 
   ASSH_ERR_RET(assh_packet_alloc(s, SSH_MSG_DISCONNECT, 12, &pout));
 
-  assh_store_u32(pout->head.end, code);
+  uint8_t *reason;
+  ASSH_ASSERT(assh_packet_add_bytes(pout, 4, &reason)); /* reason code */
+  assh_store_u32(reason, code);
+
   uint8_t *unused;
-  ASSH_ERR_RET(assh_packet_add_string(pout, 0, &unused)); /* description */
-  ASSH_ERR_RET(assh_packet_add_string(pout, 0, &unused)); /* language */
+  ASSH_ASSERT(assh_packet_add_string(pout, 0, &unused)); /* description */
+  ASSH_ASSERT(assh_packet_add_string(pout, 0, &unused)); /* language */
 
   assh_transport_push(s, pout);
 
@@ -338,7 +338,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
   switch (msg)
     {
     case SSH_MSG_DISCONNECT:
-      s->tr_st = ASSH_TR_DISCONNECTED;
+      s->tr_st = ASSH_TR_FLUSHING;
     case SSH_MSG_DEBUG:
     case SSH_MSG_IGNORE:
       return ASSH_OK;
@@ -376,7 +376,9 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
     case ASSH_TR_SERVICE:
       break;
 
-    case ASSH_TR_ERROR:
+    case ASSH_TR_FLUSHING:
+    case ASSH_TR_ENDING:
+    case ASSH_TR_DISCONNECTED:
       assert(!"possible");
     }
 
@@ -398,7 +400,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 	  return ASSH_OK;
 	}
 #endif
-      ASSH_ERR_RET(ASSH_ERR_UNEXPECTED_MSG);
+      ASSH_ERR_RET(ASSH_ERR_PROTOCOL);
 
     case SSH_MSG_SERVICE_ACCEPT:
 #ifdef CONFIG_ASSH_CLIENT
@@ -408,10 +410,10 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 	  return ASSH_OK;
 	}
 #endif
-      ASSH_ERR_RET(ASSH_ERR_UNEXPECTED_MSG);
+      ASSH_ERR_RET(ASSH_ERR_PROTOCOL);
 
     default:
-      ASSH_ERR_RET(s->srv == NULL ? ASSH_ERR_UNEXPECTED_MSG : 0);
+      ASSH_ERR_RET(s->srv == NULL ? ASSH_ERR_PROTOCOL : 0);
       ASSH_ERR_RET(s->srv->f_process(s, p, e));
       return ASSH_OK;
     }

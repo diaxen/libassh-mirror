@@ -22,14 +22,18 @@
 */
 
 #include <assh/assh_service.h>
+#include <assh/assh_session.h>
 
 static ASSH_SERVICE_INIT_FCN(assh_connection_client_init)
 {
+  s->srv = &assh_service_connection_client;
+
   return ASSH_OK;
 }
 
 static ASSH_SERVICE_CLEANUP_FCN(assh_connection_client_cleanup)
 {
+  s->srv = NULL;
 }
 
 static ASSH_PROCESS_FCN(assh_connection_client_process)

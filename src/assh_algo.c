@@ -187,7 +187,7 @@ assh_error_t assh_algo_by_name(struct assh_context_s *c,
     }
 
   if (i == c->algos_count)
-    return ASSH_ERR_MISSING_ALGO;
+    return ASSH_NOT_FOUND;
 
   *algo = a;
   return ASSH_OK;

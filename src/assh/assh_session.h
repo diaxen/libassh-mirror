@@ -32,11 +32,12 @@ enum assh_transport_state_e
   ASSH_TR_KEX_INIT,         //< We will send a KEX_INIT packet.
   ASSH_TR_KEX_WAIT,         //< We wait for a KEX_INIT packet.
   ASSH_TR_KEX_WAIT_REPLY,   //< We wait for a KEX_INIT packet and send a KEX_INIT packet.
-  ASSH_TR_KEX_RUNNING,     //< Both KEX_INIT packet were sent, the key exchange is taking place.
-  ASSH_TR_NEWKEY,       //< The key exchange is over and a @ref SSH_MSG_NEWKEYS packet is expected.
-  ASSH_TR_SERVICE,      //< No key exchange is running, service packets are allowed.
-  ASSH_TR_DISCONNECTED, //< Disconnected.
-  ASSH_TR_ERROR,        //< Session in error state. Can not be used anymore.
+  ASSH_TR_KEX_RUNNING,      //< Both KEX_INIT packet were sent, the key exchange is taking place.
+  ASSH_TR_NEWKEY,           //< The key exchange is over and a @ref SSH_MSG_NEWKEYS packet is expected.
+  ASSH_TR_SERVICE,          //< No key exchange is running, service packets are allowed.
+  ASSH_TR_ENDING,           //< Process service events and send output packets then move to disconnected state.
+  ASSH_TR_FLUSHING,         //< Process service events then move to disconnected data.
+  ASSH_TR_DISCONNECTED,     //< Disconnected.
 };
 
 enum assh_stream_in_state_e
@@ -137,6 +138,13 @@ struct assh_session_s
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_session_init(struct assh_context_s *c,
 		  struct assh_session_s *s);
+
+/** This function marks the session as invalid so that the @ref
+    assh_event_get function always returns @ref ASSH_ERR_DISCONNECTED. */
+static inline void assh_session_invalidate(struct assh_session_s *s)
+{
+  s->tr_st = ASSH_TR_DISCONNECTED;
+}
 
 /** This function cleanup a ssh session object. */
 void assh_session_cleanup(struct assh_session_s *s);

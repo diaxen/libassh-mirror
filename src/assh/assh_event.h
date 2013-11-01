@@ -189,21 +189,21 @@ struct assh_event_s
 };
 
 /** This function runs the various state machines which implement the
-    ssh protocol and returns the next event in queue. */
+    ssh protocol and returns the next event in queue.
+
+    This function can be called in a loop until the @ref
+    ASSH_ERR_DISCONNECTED error code is returned. Other error codes
+    can be returned but calling this function again may allows
+    flushing more data from the internal queues after some error. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_event_get(struct assh_session_s *s,
                struct assh_event_s *e);
 
 /** This function acknowledge the last event returned by the @ref
     assh_event_get function. */
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_event_done(struct assh_session_s *s,
-                struct assh_event_s *e)
-{
-  if (e->f_done != NULL)
-    return e->f_done(s, e);
-  return ASSH_OK;
-}
+                struct assh_event_s *e);
 
 /** @internal This function must be called to indicate that a @ref
     ASSH_EVENT_RANDOM event has been processed. */

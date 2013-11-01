@@ -25,6 +25,7 @@
 #include <errno.h>
 
 #include <assh/helper_fd.h>
+#include <assh/assh_session.h>
 
 assh_error_t assh_fd_read(int fd, void *data, size_t size)
 {
@@ -90,12 +91,12 @@ assh_error_t assh_fd_event_get(struct assh_session_s *s,
         {
         case ASSH_EVENT_IDLE:
         case ASSH_EVENT_READ:
-          ASSH_ERR_RET(assh_fd_read(ssh_fd, e->read.data, e->read.size));
+          ASSH_ERR_GTO(assh_fd_read(ssh_fd, e->read.data, e->read.size), err_io);
           ASSH_ERR_RET(assh_event_done(s, e));
           break;
 
         case ASSH_EVENT_WRITE:
-          ASSH_ERR_RET(assh_fd_write(ssh_fd, e->write.data, e->write.size));
+          ASSH_ERR_GTO(assh_fd_write(ssh_fd, e->write.data, e->write.size), err_io);
           ASSH_ERR_RET(assh_event_done(s, e));
           break;
 
@@ -104,14 +105,18 @@ assh_error_t assh_fd_event_get(struct assh_session_s *s,
             return ASSH_OK;
 	  uint8_t data[e->random.size];
 	  e->random.data = data;
-	  ASSH_ERR_RET(assh_fd_read(rand_fd, data, e->random.size));
+	  ASSH_ERR_GTO(assh_fd_read(rand_fd, data, e->random.size), err_io);
           ASSH_ERR_RET(assh_event_done(s, e));
-	  break;
+          break;
 	}
 
 	default:
-	  return ASSH_OK;
+          return ASSH_OK;
         }
     }  
+
+ err_io:
+  assh_session_invalidate(s);
+  return err;
 }
 

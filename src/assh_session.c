@@ -34,7 +34,7 @@ assh_error_t assh_session_init(struct assh_context_s *c,
 {
   assh_error_t err;
 
-  ASSH_ERR_RET(c->prng == NULL ? ASSH_ERR_IO : 0);
+  ASSH_ERR_RET(c->prng == NULL ? ASSH_ERR_MISSING_ALGO : 0);
 
   s->ctx = c;
 

@@ -28,18 +28,19 @@
 
 /** @internal @This defines the prototype of the initialization
     function of an ssh service. This function is called when a service
-    requested is successful. This function may initialize the @ref
+    requested is successful. This function must set the @ref
+    assh_session_s::srv field and may set the @ref
     assh_session_s::srv_pv field. */
 #define ASSH_SERVICE_INIT_FCN(n) \
   ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_session_s *s)
 typedef ASSH_SERVICE_INIT_FCN(assh_service_init_t);
 
 /** @internal @This defines the prototype of the cleanup function of
-    an ssh service. This function is called when the service ends or
+    the ssh service. This function is called when the service ends or
     when the session cleanup occurs if a service has been initialized
     previously. It must free the resources allocated by the associated
-    initialization function and clear the @ref assh_session_s::srv and
-    assh_session_s::srv_pv fields. */
+    initialization function and set the @ref assh_session_s::srv and
+    assh_session_s::srv_pv fields to @tt {NULL}. */
 #define ASSH_SERVICE_CLEANUP_FCN(n) \
   void (n)(struct assh_session_s *s)
 typedef ASSH_SERVICE_CLEANUP_FCN(assh_service_cleanup_t);

@@ -42,7 +42,7 @@ assh_error_t assh_event_get(struct assh_session_s *s,
 {
   assh_error_t err;
 
-  ASSH_ERR_RET(s->tr_st == ASSH_TR_ERROR ? ASSH_ERR_DISCONNECTED : 0);
+  ASSH_ERR_RET(s->tr_st == ASSH_TR_DISCONNECTED ? ASSH_ERR_DISCONNECTED : 0);
 
   /* need to get some entropy for the prng */
   if (s->ctx->prng_entropy < 0)
@@ -66,7 +66,7 @@ assh_error_t assh_event_get(struct assh_session_s *s,
   event->id = ASSH_EVENT_INVALID;
 
   /* process the next incoming deciphered packet */
-  if (s->in_pck != NULL)
+  if (s->tr_st < ASSH_TR_ENDING && s->in_pck != NULL)
     {
       err = assh_transport_dispatch(s, s->in_pck, event);
       assh_packet_release(s->in_pck);
@@ -75,7 +75,7 @@ assh_error_t assh_event_get(struct assh_session_s *s,
     }
 
   /* get event from running service */
-  else if (s->srv != NULL && s->tr_st == ASSH_TR_SERVICE)
+  if (event->id == ASSH_EVENT_INVALID && s->srv != NULL)
     {
       ASSH_ERR_GTO(s->srv->f_process(s, NULL, event), err);
     }
@@ -93,7 +93,12 @@ assh_error_t assh_event_get(struct assh_session_s *s,
   if (event->id != ASSH_EVENT_INVALID)
     goto done;
 
-  ASSH_ERR_RET(s->tr_st == ASSH_TR_DISCONNECTED ? ASSH_ERR_DISCONNECTED : 0);
+  /* all service events have been processed, flusing done */
+  if (s->tr_st == ASSH_TR_FLUSHING)
+    {
+      s->tr_st = ASSH_TR_DISCONNECTED;
+      ASSH_ERR_RET(ASSH_ERR_DISCONNECTED);
+    }
 
   /* run the state machine which converts output packets to enciphered
      ssh stream */
@@ -110,6 +115,13 @@ assh_error_t assh_event_get(struct assh_session_s *s,
 
     default:
       ASSH_ERR_RET(ASSH_ERR_STATE);
+    }
+
+  /* all data has been sent, ending done */
+  if (s->tr_st == ASSH_TR_ENDING)
+    {
+      s->tr_st = ASSH_TR_DISCONNECTED;
+      ASSH_ERR_RET(ASSH_ERR_DISCONNECTED);
     }
 
   /* run the state machine which extracts a deciphered packet from the
@@ -141,7 +153,41 @@ assh_error_t assh_event_get(struct assh_session_s *s,
   return ASSH_OK;
 
  err:
-  s->tr_st = ASSH_TR_ERROR;
+  if (ASSH_ERR_DISCONNECT(err))
+    {
+      ASSH_ERR_RET(assh_transport_disconnect(s, ASSH_ERR_DISCONNECT(err)));
+      s->tr_st = ASSH_TR_ENDING;
+    }
+  else
+    {
+      s->tr_st = ASSH_TR_DISCONNECTED;
+    }
+
+  return err;
+}
+
+assh_error_t
+assh_event_done(struct assh_session_s *s,
+                struct assh_event_s *e)
+{
+  assh_error_t err;
+  ASSH_ERR_RET(s->tr_st == ASSH_TR_DISCONNECTED ? ASSH_ERR_DISCONNECTED : 0);
+
+  if (e->f_done == NULL)
+    return ASSH_OK;
+
+  if ((err = e->f_done(s, e)))
+    {
+      if (ASSH_ERR_DISCONNECT(err))
+        {
+          ASSH_ERR_RET(assh_transport_disconnect(s, ASSH_ERR_DISCONNECT(err)));
+          s->tr_st = ASSH_TR_ENDING;
+        }
+      else
+        {
+          s->tr_st = ASSH_TR_DISCONNECTED;
+        }
+    }
   return err;
 }
 

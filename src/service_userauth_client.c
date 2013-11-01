@@ -22,16 +22,22 @@
 */
 
 #include <assh/assh_service.h>
+#include <assh/assh_session.h>
 
 #include <stdlib.h>
 
 static ASSH_SERVICE_INIT_FCN(assh_userauth_client_init)
 {
+  s->srv = &assh_service_userauth_client;
+
+  ASSH_DEBUG("client user auth!\n");
+
   return ASSH_OK;
 }
 
 static ASSH_SERVICE_CLEANUP_FCN(assh_userauth_client_cleanup)
 {
+  s->srv = NULL;
 }
 
 static ASSH_PROCESS_FCN(assh_userauth_client_process)

@@ -86,7 +86,6 @@ assh_error_t assh_service_by_name(struct assh_context_s *c,
                                   size_t name_len, const char *name,
                                   const struct assh_service_s **srv_)
 {
-  assh_error_t err;
   unsigned int i;
 
   /* lookup service name */
@@ -102,7 +101,7 @@ assh_error_t assh_service_by_name(struct assh_context_s *c,
         }
     }
 
-  ASSH_ERR_RET(ASSH_ERR_SERVICE_NA);
+  return ASSH_NOT_FOUND;
 }
 
 #ifdef CONFIG_ASSH_SERVER
@@ -119,28 +118,20 @@ assh_error_t assh_service_got_request(struct assh_session_s *s,
 
   /* lookup service */
   const struct assh_service_s *srv;
-  ASSH_ERR_GTO(assh_service_by_name(s->ctx, name_len, (const char *)name + 4, &srv), err_lookup);
+  ASSH_ERR_RET(assh_service_by_name(s->ctx, name_len, (const char *)name + 4, &srv) != ASSH_OK
+               ? ASSH_ERR_CODE(ASSH_ERR_SERVICE_NA, SSH_DISCONNECT_SERVICE_NOT_AVAILABLE) : 0);
 
   /* init service */
-  s->srv = srv;
-  ASSH_ERR_GTO(srv->f_init(s), err_srv);
+  ASSH_ERR_RET(srv->f_init(s));
 
   /* send accept packet */
   struct assh_packet_s *pout;
   ASSH_ERR_RET(assh_packet_alloc(s, SSH_MSG_SERVICE_ACCEPT, name_len + 4, &pout));
-  ASSH_ERR_RET(assh_packet_add_string(pout, name_len, &name));
+  ASSH_ASSERT(assh_packet_add_string(pout, name_len, &name));
   memcpy(name, srv->name, name_len);
   assh_transport_push(s, pout);
 
   return ASSH_OK;
-
- err_lookup:
-  ASSH_ERR_RET(assh_transport_disconnect(s, SSH_DISCONNECT_SERVICE_NOT_AVAILABLE));
-  return err;
-
- err_srv:
-  s->srv = NULL;
-  return err;
 }
 #endif
 
@@ -155,20 +146,14 @@ assh_error_t assh_service_got_accept(struct assh_session_s *s,
   /* check accepted service name */
   uint8_t *name = p->head.end, *name_end;
   ASSH_ERR_RET(assh_packet_check_string(p, name, &name_end));
-  size_t name_len = name_end - name - 4;
-
-  ASSH_ERR_RET(strncmp(s->srv_rq->name, (const char*)name + 4, name_len) ||
-	       s->srv_rq->name[name_len] != '\0' ? ASSH_ERR_PROTOCOL : 0);
+  ASSH_ERR_RET(assh_string_compare(name, s->srv_rq->name) ? ASSH_ERR_PROTOCOL : 0);
 
   /* init service */
-  s->srv = s->srv_rq;
+  const struct assh_service_s *srv = s->srv_rq;
   s->srv_rq = NULL;
-  ASSH_ERR_GTO(s->srv->f_init(s), err_srv);
+  ASSH_ERR_RET(srv->f_init(s));
 
   return ASSH_OK;
- err_srv:
-  s->srv = NULL;
-  return err;
 }
 
 assh_error_t assh_service_send_request(struct assh_session_s *s)
@@ -186,7 +171,7 @@ assh_error_t assh_service_send_request(struct assh_session_s *s)
   size_t name_len = strlen(srv->name);
   uint8_t *name;
   ASSH_ERR_RET(assh_packet_alloc(s, SSH_MSG_SERVICE_REQUEST, name_len + 4, &pout));
-  ASSH_ERR_RET(assh_packet_add_string(pout, name_len, &name));
+  ASSH_ASSERT(assh_packet_add_string(pout, name_len, &name));
   memcpy(name, srv->name, name_len);
   assh_transport_push(s, pout);
 

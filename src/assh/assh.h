@@ -38,6 +38,8 @@
 # error CONFIG_ASSH_SERVER and CONFIG_ASSH_CLIENT are both undefined
 #endif
 
+#warning check packet alloc errors
+
 struct assh_context_s;
 struct assh_session_s;
 struct assh_packet_s;
@@ -59,20 +61,36 @@ enum assh_key_format_e;
 
 enum assh_error_e
 {
-  ASSH_OK,
-  ASSH_NO_DATA,
-  ASSH_ERR_IO,
+  /** Success error code. */
+  ASSH_OK = 0,
+  /** No data were available, this is not fatal. */
+  ASSH_NO_DATA = 1,
+  /** The requested entry was not found, this is not fatal. */
+  ASSH_NOT_FOUND = 2,
+
+  /** IO error. */
+  ASSH_ERR_IO = 101,
+  /** Memory allocation error. */
   ASSH_ERR_MEM,
+  /** Buffer overflow or arithmetic overflow. */
   ASSH_ERR_OVERFLOW,
+  /** Bad packet size. */
   ASSH_ERR_PACKET_SIZE,
+  /** Bad version of the ssh protocol. */
   ASSH_ERR_BAD_VERSION,
+  /** Packet contains bad corrupt data. */
   ASSH_ERR_BAD_DATA,
-  ASSH_ERR_PROTOCOL,
+  /** Message authentication code error. */
   ASSH_ERR_MAC,
-  ASSH_ERR_UNEXPECTED_MSG,
+  /** Packet content doesn't match current state of the protocol. */
+  ASSH_ERR_PROTOCOL,
+  /** The function can not be called in the current state of the protocol. */
   ASSH_ERR_STATE,
+  /** Crypto initialization or pressing error. */
   ASSH_ERR_CRYPTO,
+  /** Unsupported parameter value. */
   ASSH_ERR_NOTSUP,
+  /**  */
   ASSH_ERR_MISSING_KEY,
   ASSH_ERR_MISSING_ALGO,
   ASSH_ERR_MISSMATCH_KEY,
@@ -81,7 +99,21 @@ enum assh_error_e
   ASSH_ERR_DISCONNECTED,
 };
 
-typedef enum assh_error_e assh_error_t;
+/** @This associates an @ref assh_ssh_disconnect_e standard disconnect
+    reason code to the @ref assh_error_e error code.
+    @see #ASSH_ERR_ERROR @see #ASSH_ERR_DISCONNECT */
+#define ASSH_ERR_CODE(err, disconnect) ((err) | ((disconnect) << 16))
+
+/** @This extracts the @ref assh_error_e part of an error code
+    returned by a function. @see #ASSH_ERR_CODE */
+#define ASSH_ERR_ERROR(code) ((err) & 0xffff)
+/** @This extracts the @ref assh_ssh_disconnect_e part of an error
+    code returned by a function. @see #ASSH_ERR_CODE */
+#define ASSH_ERR_DISCONNECT(code) ((err) >> 16)
+
+#define ASSH_ASSERT(expr) do { assh_error_t _e_ = (expr); assert(_e_ == ASSH_OK); } while(0)
+
+typedef int assh_error_t;
 
 /** Maximum size of hash algorithms output in bytes. */
 #define ASSH_MAX_HASH_SIZE 64
@@ -177,6 +209,7 @@ enum assh_alloc_type_e;
 /** @see #ASSH_ALLOCATOR */
 typedef ASSH_ALLOCATOR(assh_allocator_t);
 
+#warning process function doc
 #define ASSH_PROCESS_FCN(n) assh_error_t (n)(struct assh_session_s *s, \
                                              struct assh_packet_s *p, \
                                              struct assh_event_s *e)

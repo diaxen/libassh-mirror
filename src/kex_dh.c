@@ -169,7 +169,8 @@ static assh_error_t assh_kex_dh_client_sent_e(struct assh_session_s *s,
   ASSH_ERR_GTO(sa->f_verify(s->ctx, hk, 1, sign_ptrs, sign_sizes,
                             h_str, &sign_ok), err_kn);
 
-  ASSH_ERR_GTO(!sign_ok ? ASSH_ERR_HOSTKEY_SIGNATURE : 0, err_kn);
+  ASSH_ERR_GTO(!sign_ok ? ASSH_ERR_CODE(ASSH_ERR_HOSTKEY_SIGNATURE, 
+                 SSH_DISCONNECT_HOST_KEY_NOT_VERIFIABLE) : 0, err_kn);
 
   /* setup new keys */
   ASSH_ERR_GTO(assh_kex_new_keys(s, &assh_hash_sha1, ex_hash, kn), err_kn);
@@ -206,7 +207,8 @@ static assh_error_t assh_kex_dh_server_wait_e(struct assh_session_s *s,
   const struct assh_algo_sign_s *sa = s->host_sign_algo;
   while (hk != NULL && hk->algo != (struct assh_algo_s*)sa)
     hk = hk->next;
-  ASSH_ERR_GTO(hk == NULL ? ASSH_ERR_MISSING_KEY : 0, err_);
+  ASSH_ERR_GTO(hk == NULL ? ASSH_ERR_CODE(ASSH_ERR_MISSING_KEY,
+                 SSH_DISCONNECT_HOST_KEY_NOT_VERIFIABLE) : 0, err_);
 
   /* compute DH */
   uint8_t *e_str = p->head.end;

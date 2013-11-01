@@ -113,11 +113,17 @@ int main()
 	  struct assh_event_s event;
 
 	  assh_error_t err = assh_fd_event_get(&session, conn, rnd_fd, &event);
-	  if (err != ASSH_OK)
+	  if (ASSH_ERR_ERROR(err) != ASSH_OK)
 	    {
 	      fprintf(stderr, "assh error %i in main loop (errno=%i)\n", err, errno);
-	      close(conn);
-	      break;
+
+	      if (ASSH_ERR_ERROR(err) == ASSH_ERR_DISCONNECTED)
+		{
+		  close(conn);
+		  break;
+		}
+
+	      continue;
 	    }
 
 	  switch (event.id)
@@ -138,12 +144,8 @@ int main()
 	    }
 
 	  err = assh_event_done(&session, &event);
-	  if (err != ASSH_OK)
-	    {
-	      fprintf(stderr, "assh error %i in main loop (errno=%i)\n", err, errno);
-	      close(conn);
-	      break;
-	    }
+	  if (ASSH_ERR_ERROR(err) != ASSH_OK)
+	    fprintf(stderr, "assh error %i in main loop (errno=%i)\n", err, errno);
 	}
 
       assh_session_cleanup(&session);
