@@ -29,7 +29,7 @@
 
 /** @internal @This loads a key from a file handler and inserts
     the key in a linked list. Both binary and text key formats are
-    supported. This function relies on @ref assh_key_add to load the
+    supported. This function relies on @ref assh_key_load to load the
     binary key blob. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_load_key_file(struct assh_context_s *c,
@@ -38,7 +38,7 @@ assh_load_key_file(struct assh_context_s *c,
 
 /** @internal @This loads a key from a file name and inserts
     the key in a linked list. This function relies on @ref
-    assh_load_keys_file. */
+    assh_key_loads_file. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_load_key_filename(struct assh_context_s *c,
 		       struct assh_key_s **head,

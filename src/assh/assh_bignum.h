@@ -254,8 +254,8 @@ assh_bignum_to_mpint(const struct assh_bignum_s *bn,
                      uint8_t * __restrict__ mpint);
 
 /** @This returns the maximum number of bytes needed to store a big
-    number in ssh mpint representation. The returned size doesn't
-    include the 4 bytes header and may be slightly larger than actually
+    number in ssh mpint representation. The returned size includes the
+    4 bytes header and may be slightly larger than actually
     needed. This value can be used to call the @ref the
     assh_packet_add_string function. @see assh_packet_add_mpint */
 size_t assh_bignum_mpint_size(const struct assh_bignum_s *bn);

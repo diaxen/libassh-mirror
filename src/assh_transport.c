@@ -22,7 +22,7 @@
 */
 
 #include <assh/assh_context.h>
-#include <assh/assh_event.h>
+#include <assh/assh_transport.h>
 #include <assh/assh_packet.h>
 #include <assh/assh_queue.h>
 #include <assh/assh_session.h>
@@ -34,6 +34,15 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+
+void assh_transport_push(struct assh_session_s *s,
+			 struct assh_packet_s *p)
+{
+  struct assh_queue_s *q = 
+    (p->head.msg >= 50 && s->tr_st != ASSH_TR_SERVICE)
+      ? &s->alt_queue : &s->out_queue;
+  assh_queue_push_front(q, &p->entry);
+}
 
 assh_error_t assh_event_read(struct assh_session_s *s,
 			     void **data, size_t *size)
@@ -54,7 +63,7 @@ assh_error_t assh_event_read(struct assh_session_s *s,
       return ASSH_OK;
 
     case ASSH_TR_IN_PAYLOAD: {
-      assert(s->in_packet == NULL);
+      assert(s->in_pck == NULL);
 
       struct assh_packet_s *p;
       struct assh_kex_keys_s *k = s->cur_keys_in;
@@ -168,8 +177,8 @@ ASSH_EVENT_DONE_FCN(assh_event_read_done)
 		       ? ASSH_ERR_MAC : 0);
 	}
 
-      assert(s->in_packet == NULL);
-      s->in_packet = p;
+      assert(s->in_pck == NULL);
+      s->in_pck = p;
 
       s->in_seq++;
       s->stream_in_pck = NULL;
@@ -204,9 +213,10 @@ assh_error_t assh_event_write(struct assh_session_s *s,
       struct assh_queue_entry_s *q = assh_queue_back(&s->out_queue);
       struct assh_packet_s *p = (struct assh_packet_s*)q;
 
-      ASSH_DEBUG("outgoing packet: %i size=%zu msg=%u\n", s->kex_st, p->data_size, p->data[5]);
-
-#warning ignore service packets during key exchange
+#ifdef CONFIG_ASSH_DEBUG_PROTOCOL
+      ASSH_DEBUG("outgoing packet: tr_st=%i, size=%zu, msg=%u\n",
+		 s->tr_st, p->data_size, p->head.msg);
+#endif
 
       struct assh_kex_keys_s *k = s->cur_keys_out;
       unsigned int align = 8;
@@ -226,7 +236,7 @@ assh_error_t assh_event_write(struct assh_session_s *s,
       ASSH_ERR_RET(p->data_size > p->alloc_size ? ASSH_ERR_PACKET_SIZE : 0);
 
       assh_store_u32(p->data, p->data_size - 4 - mac_len);
-      p->data[4] = pad_len;
+      p->head.pad_len = pad_len;
       uint8_t *mac_ptr = p->data + p->data_size - mac_len;
       uint8_t *pad = mac_ptr - pad_len;
 
@@ -243,7 +253,7 @@ assh_error_t assh_event_write(struct assh_session_s *s,
 					    p->data_size - mac_len));
 	}
 
-      switch (p->data[5])
+      switch (p->head.msg)
 	{
 	case SSH_MSG_NEWKEYS:
 	  assh_kex_keys_cleanup(s, s->cur_keys_out);
@@ -251,7 +261,7 @@ assh_error_t assh_event_write(struct assh_session_s *s,
 	  s->new_keys_out = NULL;
 	  break;
 	case SSH_MSG_DISCONNECT:
-	  s->kex_st = ASSH_KEX_DISCONNECTED;
+	  s->tr_st = ASSH_TR_DISCONNECTED;
 	  break;
 	}
 
@@ -295,74 +305,79 @@ ASSH_EVENT_DONE_FCN(assh_event_write_done)
     }
 }
 
-assh_error_t assh_send_disconnect(struct assh_session_s *s, uint32_t code)
+assh_error_t assh_transport_disconnect(struct assh_session_s *s, uint32_t code)
 {
   assh_error_t err;
   struct assh_packet_s *pout;
 
   ASSH_ERR_RET(assh_packet_alloc(s, SSH_MSG_DISCONNECT, 12, &pout));
 
-  assh_store_u32(pout->data + 6, code);
+  assh_store_u32(pout->head.end, code);
   uint8_t *unused;
   ASSH_ERR_RET(assh_packet_add_string(pout, 0, &unused)); /* description */
   ASSH_ERR_RET(assh_packet_add_string(pout, 0, &unused)); /* language */
 
-  assh_packet_push(s, pout);
+  assh_transport_push(s, pout);
 
   return ASSH_OK;
 }
 
-assh_error_t assh_process_packet(struct assh_session_s *s,
-				 struct assh_packet_s *p,
-				 struct assh_event_s *e)
+assh_error_t assh_transport_dispatch(struct assh_session_s *s,
+				     struct assh_packet_s *p,
+				     struct assh_event_s *e)
 {
   assh_error_t err;
-  uint8_t msg = p->data[5];
+  uint8_t msg = p->head.msg;
 
-  //#ifdef CONFIG_ASSH_DEBUG_EVENT
-    ASSH_DEBUG("incoming packet: %i size=%zu msg=%u\n", s->kex_st, p->data_size, msg);
-  //#endif
+#ifdef CONFIG_ASSH_DEBUG_PROTOCOL
+  ASSH_DEBUG("incoming packet: tr_st=%i, size=%zu, msg=%u\n",
+	     s->tr_st, p->data_size, msg);
+#endif
 
   /* process always acceptable packets */
   switch (msg)
     {
     case SSH_MSG_DISCONNECT:
-      s->kex_st = ASSH_KEX_DISCONNECTED;
+      s->tr_st = ASSH_TR_DISCONNECTED;
     case SSH_MSG_DEBUG:
     case SSH_MSG_IGNORE:
       return ASSH_OK;
     }
 
-  /* key exchange state machine */
-  switch (s->kex_st)
+  /* transport state machine */
+  switch (s->tr_st)
     {
-    case ASSH_KEX_INIT:
+    case ASSH_TR_KEX_INIT:
       abort();
 
-    case ASSH_KEX_WAIT_REPLY:
+    case ASSH_TR_KEX_WAIT_REPLY:
       ASSH_ERR_RET(assh_algo_kex_send_init(s));
-    case ASSH_KEX_WAIT:
+    case ASSH_TR_KEX_WAIT:
       ASSH_ERR_RET(msg != SSH_MSG_KEXINIT ? ASSH_ERR_PROTOCOL : 0);
-      s->kex_st = ASSH_KEX_EXCHANGE;
+      s->tr_st = ASSH_TR_KEX_RUNNING;
       ASSH_ERR_RET(assh_kex_got_init(p));
       return ASSH_OK;
 
-    case ASSH_KEX_EXCHANGE:
+    case ASSH_TR_KEX_RUNNING:
       /* only allowed msgs are 1-4, 7-19, 20-29, 30-49 */
       ASSH_ERR_RET(s->kex->f_process(s, p, e));
       return ASSH_OK;
 
-    case ASSH_KEX_NEWKEY:
+    case ASSH_TR_NEWKEY:
       ASSH_ERR_RET(msg != SSH_MSG_NEWKEYS ? ASSH_ERR_PROTOCOL : 0);
       assert(s->new_keys_in != NULL);
       assh_kex_keys_cleanup(s, s->cur_keys_in);
       s->cur_keys_in = s->new_keys_in;
       s->new_keys_in = NULL;
-      s->kex_st = ASSH_KEX_DONE;
+      s->tr_st = ASSH_TR_SERVICE;
+      assh_queue_concat(&s->out_queue, &s->alt_queue);
       return ASSH_OK;
 
-    case ASSH_KEX_DONE:
+    case ASSH_TR_SERVICE:
       break;
+
+    case ASSH_TR_ERROR:
+      assert(!"possible");
     }
 
   /* not in KEX state, process other incoming packets */
@@ -372,26 +387,28 @@ assh_error_t assh_process_packet(struct assh_session_s *s,
       ASSH_ERR_RET(s->new_keys_out != NULL ? ASSH_ERR_PROTOCOL : 0);
       ASSH_ERR_RET(assh_algo_kex_send_init(s));
       ASSH_ERR_RET(assh_kex_got_init(p));
-      s->kex_st = ASSH_KEX_EXCHANGE;
+      s->tr_st = ASSH_TR_KEX_RUNNING;
       return ASSH_OK;
 
     case SSH_MSG_SERVICE_REQUEST:
 #ifdef CONFIG_ASSH_SERVER
       if (s->ctx->type == ASSH_SERVER)
-	ASSH_ERR_RET(assh_service_got_request(s, p));
-      else
+	{
+	  ASSH_ERR_RET(assh_service_got_request(s, p));
+	  return ASSH_OK;
+	}
 #endif
-	ASSH_ERR_RET(ASSH_ERR_UNEXPECTED_MSG);
-      break;
+      ASSH_ERR_RET(ASSH_ERR_UNEXPECTED_MSG);
 
     case SSH_MSG_SERVICE_ACCEPT:
 #ifdef CONFIG_ASSH_CLIENT
       if (s->ctx->type == ASSH_CLIENT)
-	ASSH_ERR_RET(assh_service_got_accept(s, p));
-      else
+	{
+	  ASSH_ERR_RET(assh_service_got_accept(s, p));
+	  return ASSH_OK;
+	}
 #endif
-	ASSH_ERR_RET(ASSH_ERR_UNEXPECTED_MSG);
-      break;
+      ASSH_ERR_RET(ASSH_ERR_UNEXPECTED_MSG);
 
     default:
       ASSH_ERR_RET(s->srv == NULL ? ASSH_ERR_UNEXPECTED_MSG : 0);

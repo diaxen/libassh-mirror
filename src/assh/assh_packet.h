@@ -27,6 +27,8 @@
 
 #include "assh.h"
 
+#include <string.h>
+
 struct assh_packet_s
 {
   union {
@@ -39,7 +41,15 @@ struct assh_packet_s
   uint_fast32_t data_size;
   uint_fast16_t ref_count;
 
-  uint8_t data[0];
+  union {
+    uint8_t     data[0];
+    struct {
+      uint32_t  pck_len;
+      uint8_t   pad_len;
+      uint8_t   msg;
+      uint8_t   end[0];
+    }           head;
+  };
 };
 
 static const size_t ASSH_MAX_PCK_POOL_SIZE = 8;
@@ -69,6 +79,8 @@ enum assh_ssh_msg_e
   SSH_MSG_USERAUTH_FAILURE          =  51,
   SSH_MSG_USERAUTH_SUCCESS          =  52,
   SSH_MSG_USERAUTH_BANNER           =  53,
+  SSH_MSG_USERAUTH_PK_OK            =  60,
+  SSH_MSG_USERAUTH_PASSWD_CHANGEREQ =  60,
   SSH_MSG_GLOBAL_REQUEST            =  80,
 
   /* SSH-CONNECT */
@@ -125,11 +137,6 @@ static inline void assh_packet_refinc(struct assh_packet_s *p)
 {
   p->ref_count++;
 }
-
-/** This function puts a packet in the output queue. The packet
-    will be released once it has been enciphered and sent. */
-void assh_packet_push(struct assh_session_s *s,
-                      struct assh_packet_s *p);
 
 /** This function creates a copy of a packet. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
@@ -196,11 +203,42 @@ assh_packet_enlarge_string(struct assh_packet_s *p, uint8_t *str,
   return ASSH_OK;
 }
 
+/** This function reduces the size of a string previously allocated in
+    a packet. The string must be the last allocated thing in the
+    packet when this function is called. */
+static inline void
+assh_packet_shrink_string(struct assh_packet_s *p, uint8_t *str,
+                          size_t len)
+{
+  size_t olen = assh_load_u32(str - 4);
+  assert(str + olen == p->data + p->data_size);
+  assert(olen >= len);
+  assh_store_u32(str - 4, len);
+  p->data_size -= olen - len;
+}
+
 /** This function allocates a string in a packet and writes the given
     big number in mpint representation as string content. */
 assh_error_t ASSH_WARN_UNUSED_RESULT
 assh_packet_add_mpint(struct assh_packet_s *p,
                       const struct assh_bignum_s *bn);
+
+/** This function checks that an array is well inside a buffer. If no
+    error is returned, the @tt next parameter is set to point to the
+    first byte in buffer following the array. */
+static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_check_array(const uint8_t *buffer, size_t buffer_len,
+                 const uint8_t *array, size_t array_len, uint8_t **next)
+{
+  const uint8_t *e = buffer + buffer_len;
+  if (array < buffer || array > e)
+    return ASSH_ERR_OVERFLOW;
+  if (e - array < array_len)
+    return ASSH_ERR_OVERFLOW;
+  if (next != NULL)
+    *next = (uint8_t*)array + array_len;
+  return ASSH_OK;
+}
 
 /** This function checks that a string is well inside a buffer. If no
     error is returned, the @tt next parameter is set to point to the
@@ -258,6 +296,25 @@ static inline ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_packet_check_string(struct assh_packet_s *p, const uint8_t *str, uint8_t **next)
 {
   return assh_check_string(p->data, p->data_size, str, next);
+}
+
+/** This function checks that an array is well inside packet
+    bounds. If no error is returned, the @tt next parameter is set to
+    point to the first packet byte following the array. */
+static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_packet_check_array(struct assh_packet_s *p, const uint8_t *array,
+                        size_t array_len, uint8_t **next)
+{
+  return assh_check_array(p->data, p->data_size, array, array_len, next);
+}
+
+/** @This function compares a ssh string with a size header to a @tt
+    NUL terminated string. No bound checking is performed. */
+static inline ASSH_WARN_UNUSED_RESULT int
+assh_string_compare(const uint8_t *ssh_str, const char *nul_str)
+{
+  size_t l = assh_load_u32(ssh_str);
+  return strncmp((const char*)ssh_str + 4, nul_str, l) || nul_str[l] != '\0';
 }
 
 #endif

@@ -53,7 +53,7 @@ assh_error_t assh_hash_bignum(void *ctx_, assh_hash_update_t *update, const stru
 
 void assh_hash_payload_as_string(void *ctx_, assh_hash_update_t *update, const struct assh_packet_s *p)
 { 
-  uint32_t len = assh_load_u32(p->data) /* pad_len */ - 1 /* padding */ - p->data[4];
+  uint32_t len = assh_load_u32(p->data) /* pad_len */ - 1 /* padding */ - p->head.pad_len;
   uint8_t s[4];
   assert(len < p->data_size);
   assh_store_u32(s, len);

@@ -71,7 +71,7 @@ assh_packet_alloc(struct assh_session_s *s,
   /* init */
   p->session = s;
   p->data_size = /* pck_len */ 4 + /* pad_len */ 1 + /* msg */ 1;
-  p->data[5] = msg;
+  p->head.msg = msg;
 
   *result = p;
   return ASSH_OK;
@@ -94,12 +94,6 @@ void assh_packet_release(struct assh_packet_s *p)
 #if 0
   assh_free(s->ctx, p, ASSH_ALLOC_PACKET);
 #endif
-}
-
-void assh_packet_push(struct assh_session_s *s,
-		      struct assh_packet_s *p)
-{
-  assh_queue_push_front(&s->out_queue, &p->entry);
 }
 
 ASSH_WARN_UNUSED_RESULT assh_error_t

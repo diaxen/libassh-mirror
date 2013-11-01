@@ -86,5 +86,24 @@ static inline void assh_queue_push_back(struct assh_queue_s *q,
   q->count++;
 }
 
+static inline void assh_queue_concat(struct assh_queue_s *q,
+                                        struct assh_queue_s *r)
+{
+  struct assh_queue_entry_s *a = &q->head;
+  struct assh_queue_entry_s *b = &r->head;
+
+  if (r->count == 0)
+    return;
+
+  b->prev->next = a;
+  b->next->prev = a->prev;
+  a->prev->next = b->next;
+  a->prev = b->prev;
+  q->count += r->count;
+
+  b->next = b->prev = b;
+  r->count = 0;
+}
+
 #endif
 

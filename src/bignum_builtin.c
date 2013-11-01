@@ -129,8 +129,8 @@ assh_error_t assh_bignum_to_mpint(const struct assh_bignum_s *bn,
 
 size_t assh_bignum_mpint_size(const struct assh_bignum_s *bn)
 {
-  int l = bn->l - 1;
-  while (l > 0 && !bn->n[l])
+  int l = bn->l;
+  while (l > 1 && !bn->n[l - 1])
     l--;
   return 4 + l * sizeof(assh_bnword_t) /* extra zero byte */ + 1;
 }

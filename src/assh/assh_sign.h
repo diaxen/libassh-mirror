@@ -31,15 +31,15 @@
 /** This function must compute the signature of the passed data using
     provided keys and append it to the given packet payload. */
 #define ASSH_SIGN_ADD_SIGN_FCN(n) assh_error_t (n)(struct assh_context_s *c, \
-                                                  const struct assh_key_s *key, \
-                                                  const uint8_t *data, size_t data_len, \
-                                                  struct assh_packet_s *pout)
+                                                   const struct assh_key_s *key, size_t data_count, \
+                                                   const uint8_t * const data[], size_t const data_len[], \
+                                                   struct assh_packet_s *pout)
 typedef ASSH_SIGN_ADD_SIGN_FCN(assh_sign_add_sign_t);
 
 
 #define ASSH_SIGN_CHECK_FCN(n) assh_error_t (n)(struct assh_context_s *c, \
-                                                const struct assh_key_s *key, \
-                                                const uint8_t *data, size_t data_len, \
+                                                const struct assh_key_s *key, size_t data_count, \
+                                                const uint8_t * const data[], size_t const data_len[], \
                                                 const uint8_t *sign_str, assh_bool_t *ok)
 typedef ASSH_SIGN_CHECK_FCN(assh_sign_check_t);
 

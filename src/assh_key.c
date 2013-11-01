@@ -27,30 +27,41 @@
 
 #include <string.h>
 
-assh_error_t assh_key_add(struct assh_context_s *c, struct assh_key_s **head,
-                          const char *algo, const uint8_t *blob, size_t blob_len,
-                          enum assh_key_format_e format)
+assh_error_t assh_key_load3(struct assh_context_s *c, struct assh_key_s **key,
+                            const struct assh_algo_s *algo,
+                            const uint8_t *blob, size_t blob_len,
+                            enum assh_key_format_e format)
 {
   assh_error_t err;
-  const struct assh_algo_s *a;
-
-  ASSH_ERR_RET(assh_algo_by_name(c, ASSH_ALGO_SIGN, algo, strlen(algo), &a));
-
   struct assh_key_s *k;
 
-  switch (a->class_)
+  switch (algo->class_)
     {
     case ASSH_ALGO_SIGN:
-      ASSH_ERR_RET(((struct assh_algo_sign_s*)a)->f_key_load(c, blob, blob_len, &k, format));
+      ASSH_ERR_RET(((struct assh_algo_sign_s*)algo)->f_key_load(c, blob, blob_len, &k, format));
       break;
 
     default:
       ASSH_ERR_RET(ASSH_ERR_NOTSUP);
     }
 
-  k->algo = a;
-  k->next = *head;
-  *head = k;
+  k->algo = algo;
+  k->next = *key;
+  *key = k;
+
+  return ASSH_OK;
+}
+
+assh_error_t assh_key_load2(struct assh_context_s *c, struct assh_key_s **key,
+                            const char *algo_name, size_t algo_name_len,
+                            const uint8_t *blob, size_t blob_len,
+                            enum assh_key_format_e format)
+{
+  assh_error_t err;
+  const struct assh_algo_s *algo;
+
+  ASSH_ERR_RET(assh_algo_by_name(c, ASSH_ALGO_SIGN, algo_name, algo_name_len, &algo));
+  ASSH_ERR_RET(assh_key_load3(c, key, algo, blob, blob_len, format));
 
   return ASSH_OK;
 }

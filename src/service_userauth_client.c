@@ -23,25 +23,28 @@
 
 #include <assh/assh_service.h>
 
-static ASSH_SERVICE_INIT_FCN(assh_service_ssh_connection_init)
+#include <stdlib.h>
+
+static ASSH_SERVICE_INIT_FCN(assh_userauth_client_init)
 {
   return ASSH_OK;
 }
 
-static ASSH_SERVICE_CLEANUP_FCN(assh_service_ssh_connection_cleanup)
+static ASSH_SERVICE_CLEANUP_FCN(assh_userauth_client_cleanup)
 {
 }
 
-static ASSH_PROCESS_FCN(assh_service_ssh_connection_process)
+static ASSH_PROCESS_FCN(assh_userauth_client_process)
 {
   return ASSH_OK;
 }
 
-const struct assh_service_s assh_service_ssh_connection =
+const struct assh_service_s assh_service_userauth_client =
 {
-  .name = "ssh-connection",
-  .f_init = assh_service_ssh_connection_init,
-  .f_cleanup = assh_service_ssh_connection_cleanup,
-  .f_process = assh_service_ssh_connection_process,  
+  .name = "ssh-userauth",
+  .side = ASSH_CLIENT,
+  .f_init = assh_userauth_client_init,
+  .f_cleanup = assh_userauth_client_cleanup,
+  .f_process = assh_userauth_client_process,
 };
 

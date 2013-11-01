@@ -26,6 +26,8 @@
 
 #include "assh.h"
 
+#include <string.h>
+
 /** @This specifies the storage formats of SSH keys. */
 enum assh_key_format_e
 {
@@ -45,7 +47,7 @@ struct assh_key_s;
 /** @internal This function allocates and intiailizes the key
     structure from the passed key blob data.
 
-    This function must only support binary key formats; ascii formats
+    This function may only support binary key formats; ascii formats
     are handled by helper functions.
 */
 #define ASSH_KEY_LOAD_FCN(n) assh_error_t (n)(struct assh_context_s *c, \
@@ -53,6 +55,23 @@ struct assh_key_s;
                                               struct assh_key_s **key, \
                                               enum assh_key_format_e format)
 typedef ASSH_KEY_LOAD_FCN(assh_key_load_t);
+
+/** @internal This function write the key in blob representation to
+    the @tt blob buffer. The @tt blob_len parameter indicates the size
+    of the buffer and is updated with the actual size of the blob.
+
+    If the @tt blob parameter is @tt NULL, the function updates the
+    @tt blob_len parmeter with a size value which is greater or equal
+    to what is needed to hold the blob.
+
+    This function may only support the @ref
+    ASSH_KEY_FMT_PUB_RFC4253_6_6 format.
+*/
+#define ASSH_KEY_OUTPUT_FCN(n) assh_error_t (n)(struct assh_context_s *c, \
+                                                struct assh_key_s *key, \
+                                                uint8_t *blob, size_t *blob_len, \
+                                                enum assh_key_format_e format)
+typedef ASSH_KEY_OUTPUT_FCN(assh_key_output_t);
 
 /** @internal This function must release the resources used by the key. */
 #define ASSH_KEY_CLEANUP_FCN(n) void (n)(struct assh_context_s *c, \
@@ -65,14 +84,31 @@ struct assh_key_s
   const struct assh_algo_s *algo;
   struct assh_key_s *next;
   assh_key_cleanup_t *f_cleanup;
+  assh_key_output_t *f_output;
 };
 
-/** @internal This function loads a key and inserts the key in a
-    linked list. */
+/** @internal This function loads a key using the specified algorithm. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_key_add(struct assh_context_s *c, struct assh_key_s **head,
-             const char *algo, const uint8_t *blob, size_t blob_len,
-             enum assh_key_format_e format);
+assh_key_load3(struct assh_context_s *c, struct assh_key_s **key,
+               const struct assh_algo_s *algo,
+               const uint8_t *blob, size_t blob_len,
+               enum assh_key_format_e format);
+
+/** @internal This function loads a key using the specified algorithm name. */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_key_load2(struct assh_context_s *c, struct assh_key_s **key,
+               const char *algo_name, size_t algo_name_len,
+               const uint8_t *blob, size_t blob_len,
+               enum assh_key_format_e format);
+
+/** This function loads a key. */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+static inline assh_key_load(struct assh_context_s *c, struct assh_key_s **key,
+                            const char *algo_name, const uint8_t *blob, size_t blob_len,
+                            enum assh_key_format_e format)
+{
+  return assh_key_load2(c, key, algo_name, strlen(algo_name), blob, blob_len, format);
+}
 
 /** @internal This function releases all the keys on the linked list
     and clears the list. */

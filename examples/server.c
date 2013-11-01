@@ -75,9 +75,8 @@ int main()
   struct assh_context_s context;
   assh_context_init(&context, ASSH_SERVER);
 
-  assh_service_register_va(&context,
-                           &assh_service_ssh_userauth,
-                           &assh_service_ssh_connection, NULL);
+  if (assh_service_register_default(&context))
+    return -1;
 
   if (assh_algo_register_default(&context) != ASSH_OK)
     return -1;
@@ -123,6 +122,17 @@ int main()
 
 	  switch (event.id)
 	    {
+	    case ASSH_EVENT_USERAUTH_SERVER_USERKEY:
+	      /* FIXME check that event public key is in the list of
+		 user authorized keys. */
+	      event.userauth_server_userkey.found = 1;
+	      break;
+
+	    case ASSH_EVENT_USERAUTH_SERVER_PASSWORD:
+	      /* FIXME check that event user/password pair matches. */
+	      event.userauth_server_password.success = 1;
+	      break;
+
 	    default:
 	      assert(!"Don't know how to handle this event");
 	    }

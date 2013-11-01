@@ -21,9 +21,10 @@ lib_LTLIBRARIES = libassh.la
 
 libassh_la_SOURCES = assh_context.c assh_session.c assh_packet.c	\
 	assh_event.c assh_transport.c assh_kex.c assh_hash.c		\
-	assh_algo.c assh_key.c assh_service.c \
-	service_ssh_userauth.c service_ssh_connection.c \
-	kex_dh.c mac_sha1.c sign_dss.c		\
+	assh_algo.c assh_key.c assh_service.c				\
+	service_userauth_client.c service_userauth_server.c		\
+	service_connection_client.c service_connection_server.c		\
+	kex_dh.c mac_sha1.c sign_dss.c					\
 	compress_none.c helper_key.c helper_fd.c bignum_common.c
 
 libassh_la_SOURCES +=   hash_sha1_builtin.c prng_xswap_builtin.c cipher_arc4_builtin.c

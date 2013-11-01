@@ -24,6 +24,7 @@
 #include <assh/assh_context.h>
 #include <assh/assh_kex.h>
 #include <assh/assh_packet.h>
+#include <assh/assh_transport.h>
 #include <assh/assh_session.h>
 #include <assh/assh_cipher.h>
 #include <assh/assh_mac.h>
@@ -136,9 +137,9 @@ assh_error_t assh_algo_kex_send_init(struct assh_session_s *s)
 
   /* setup fake packet len and padding fields for the copy */
   assh_store_u32(c->data, c->data_size - 4);
-  c->data[4] = 0;
+  c->head.pad_len = 0;
 
-  assh_packet_push(s, p);
+  assh_transport_push(s, p);
   return ASSH_OK;
 
  err_pck:
@@ -261,7 +262,7 @@ assh_error_t assh_kex_got_init(struct assh_packet_s *p)
   unsigned int i;
 
   /* get pointers to the 8 name-lists and check bounds */
-  lists[0] = p->data + 6 /* cookie */ + 16;
+  lists[0] = p->head.end /* cookie */ + 16;
   for (i = 0; i < 8; i++)
     ASSH_ERR_RET(assh_packet_check_string(p, lists[i], lists + i + 1));
 
@@ -351,6 +352,7 @@ static void assh_kex_new_key(struct assh_session_s *s,
                              uint8_t *key, size_t key_size)
 {
   uint8_t buf[ASSH_MAX_SYMKEY_SIZE];
+#warning allocate secur key memory
   void *hash_ctx = alloca(hash_algo->ctx_size);
 
   assert(key_size <= sizeof(buf));
@@ -519,13 +521,13 @@ assh_error_t assh_kex_end(struct assh_session_s *s, assh_bool_t accept)
     ASSH_ERR_RET(ASSH_ERR_PROTOCOL);
 
   /* next state is wait for NEWKEY packet */
-  s->kex_st = ASSH_KEX_NEWKEY;
+  s->tr_st = ASSH_TR_NEWKEY;
 
   /* send a NEWKEY packet */
   struct assh_packet_s *p;
   ASSH_ERR_RET(assh_packet_alloc(s, SSH_MSG_NEWKEYS, 0, &p));
 
-  assh_packet_push(s, p);
+  assh_transport_push(s, p);
   return ASSH_OK;
 }
 

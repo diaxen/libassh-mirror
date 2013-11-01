@@ -138,12 +138,22 @@ do {                                            \
 #include <stdio.h>
 static inline void assh_hexdump(const char *name, const void *data, unsigned int len)
 {
-  int i;
+  int i, j;
   const uint8_t *data_ = data;
-  fprintf(stderr, "%s (%u bytes): ", name, len);
-  for (i = 0; i < len; i++)
-    fprintf(stderr, "%02x", data_[i]);
-  fprintf(stderr, "\n");
+  const int width = 32;
+
+  fprintf(stderr, "--- %s (%u bytes) ---\n", name, len);
+  for (i = 0; i < len; i += width)
+    {
+      for (j = 0; j < width && i + j < len; j++)
+        fprintf(stderr, "%02x ", data_[i + j]);
+      for (; j < width; j++)
+        fputs("   ", stderr);
+      for (j = 0; j < width && i + j < len; j++)
+        fprintf(stderr, "%c", (unsigned)data_[i + j] - 32 < 96 ? data_[i + j] : '.');
+      fputc('\n', stderr);
+    }
+  fputc('\n', stderr);
 }
 
 struct assh_queue_entry_s

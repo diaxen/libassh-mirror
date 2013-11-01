@@ -27,15 +27,16 @@
 #include "assh.h"
 
 /** This specifies the current status of an ssh session. */
-enum assh_algo_kex_status_e
+enum assh_transport_state_e
 {
-  ASSH_KEX_INIT,       //< will send a KEX_INIT packet
-  ASSH_KEX_WAIT,       //< wait for a KEX_INIT packet
-  ASSH_KEX_WAIT_REPLY, //< wait for a KEX_INIT packet and send a KEX_INIT packet
-  ASSH_KEX_EXCHANGE,   //< both KEX_INIT packet were sent
-  ASSH_KEX_NEWKEY,     //< 
-  ASSH_KEX_DONE,       //< key exchange is over
-  ASSH_KEX_DISCONNECTED, //< disconnected
+  ASSH_TR_KEX_INIT,         //< We will send a KEX_INIT packet.
+  ASSH_TR_KEX_WAIT,         //< We wait for a KEX_INIT packet.
+  ASSH_TR_KEX_WAIT_REPLY,   //< We wait for a KEX_INIT packet and send a KEX_INIT packet.
+  ASSH_TR_KEX_RUNNING,     //< Both KEX_INIT packet were sent, the key exchange is taking place.
+  ASSH_TR_NEWKEY,       //< The key exchange is over and a @ref SSH_MSG_NEWKEYS packet is expected.
+  ASSH_TR_SERVICE,      //< No key exchange is running, service packets are allowed.
+  ASSH_TR_DISCONNECTED, //< Disconnected.
+  ASSH_TR_ERROR,        //< Session in error state. Can not be used anymore.
 };
 
 enum assh_stream_in_state_e
@@ -60,7 +61,7 @@ struct assh_session_s
   struct assh_context_s *ctx;
 
   /** Key exchange current state. */
-  enum assh_algo_kex_status_e kex_st;
+  enum assh_transport_state_e tr_st;
 
   /** Key exchange algorithm. This pointer is setup when the @ref
       assh_kex_got_init select a new key exchange algorithm. */
@@ -106,21 +107,15 @@ struct assh_session_s
   /** Current service private data. */
   void *srv_pv;
 
-  /** Set by the ssh-userauth service when the user has been authenticated. */
-  assh_bool_t auth_ok;
-
-  /** Service processing function, may be NULL. */
-  assh_process_t *f_srv_process;
-
-  /** Number of channels in the chans array. */
-  size_t chans_size;
-  /** Array of channels indexed by channel local id. */
-  struct assh_channel_s *chans;
-
-  /** Current ssh input packet */
-  struct assh_packet_s *in_packet;
-  /** Queue of ssh output packets */
+  /** Current ssh input packet. This packet is the last deciphered
+      packets and is waiting for dispatch and processing. */
+  struct assh_packet_s *in_pck;
+  /** Queue of ssh output packets. Packets in this queue will be
+      enciphered and sent. */
   struct assh_queue_s out_queue;
+  /** Alternate queue of ssh output packets, used to store services
+      packets during a key exechange. */
+  struct assh_queue_s alt_queue;
 
   /** Copy of the hello string sent by the remote host. */
   uint8_t hello_str[255];
@@ -128,12 +123,13 @@ struct assh_session_s
   int hello_len;
 
   /** Currrent output ssh stream generator state. */
-  int stream_out_st;
+  enum assh_stream_out_state_e stream_out_st;
   /** Current input ssh stream parser state. */
-  int stream_in_st;
-  /** Current input ssh stream buffer. */
+  enum assh_stream_in_state_e stream_in_st;
+  /** Current input ssh stream header buffer. */
   uint8_t stream_in_pck_head[16];
-  /** Current input ssh stream packet. */
+  /** Current input ssh stream packet. This packet is currently being
+      read from the input ssh stream and has not yet been deciphered. */
   struct assh_packet_s *stream_in_pck;
 };
 

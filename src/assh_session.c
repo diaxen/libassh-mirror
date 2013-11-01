@@ -43,7 +43,7 @@ assh_error_t assh_session_init(struct assh_context_s *c,
     case ASSH_SERVER:
 #ifdef CONFIG_ASSH_SERVER
       ASSH_ERR_RET(c->host_keys == NULL ? ASSH_ERR_MISSING_KEY : 0);
-      s->kex_st = ASSH_KEX_INIT;      
+      s->tr_st = ASSH_TR_KEX_INIT;      
 #else
       ASSH_ERR_RET(ASSH_ERR_NOTSUP);
 #endif
@@ -51,18 +51,16 @@ assh_error_t assh_session_init(struct assh_context_s *c,
 
     case ASSH_CLIENT:
 #ifdef CONFIG_ASSH_CLIENT
-      s->kex_st = ASSH_KEX_WAIT_REPLY;
+      s->tr_st = ASSH_TR_KEX_WAIT_REPLY;
 #else
       ASSH_ERR_RET(ASSH_ERR_NOTSUP);
 #endif
       break;
     }
 
-  s->chans_size = 0;
-  s->chans = NULL;
-
   assh_queue_init(&s->out_queue);
-  s->in_packet = NULL;
+  assh_queue_init(&s->alt_queue);
+  s->in_pck = NULL;
 
   s->hello_len = 0;
   s->session_id_len = 0;
@@ -84,14 +82,12 @@ assh_error_t assh_session_init(struct assh_context_s *c,
   s->srv_index = 0;
 #endif
   s->srv = NULL;
-  s->auth_ok = 0;
 
   s->stream_in_pck = NULL;
 
   s->stream_out_st = ASSH_TR_OUT_HELLO;
   s->stream_in_st = ASSH_TR_IN_HELLO;
 
-  s->f_srv_process = NULL;
   c->session_count++;
 
   return ASSH_OK;
@@ -105,7 +101,7 @@ static void assh_pck_queue_cleanup(struct assh_queue_s *q)
       assh_queue_remove(q, e);
 
       struct assh_packet_s *p = (struct assh_packet_s*)e;
-      assh_free(p->session->ctx, p, ASSH_ALLOC_PACKET);
+      assh_packet_release(p);
     }
 }
 
@@ -122,16 +118,15 @@ void assh_session_cleanup(struct assh_session_s *s)
   assh_packet_release(s->kex_init_remote);
 
   assh_pck_queue_cleanup(&s->out_queue);
+  assh_pck_queue_cleanup(&s->alt_queue);
 
   assh_kex_keys_cleanup(s, s->cur_keys_in);
   assh_kex_keys_cleanup(s, s->cur_keys_out);
   assh_kex_keys_cleanup(s, s->new_keys_in);
   assh_kex_keys_cleanup(s, s->new_keys_out);
 
-  assh_packet_release(s->in_packet);
+  assh_packet_release(s->in_pck);
   assh_packet_release(s->stream_in_pck);
-
-  assh_free(s->ctx, s->chans, ASSH_ALLOC_INTERNAL);
 
   s->ctx->session_count--;
 }

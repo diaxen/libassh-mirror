@@ -113,7 +113,7 @@ assh_error_t assh_context_hostkeys(struct assh_context_s *c, const char *algo,
 {
   assh_error_t err;
 #ifdef CONFIG_ASSH_SERVER
-  ASSH_ERR_RET(assh_key_add(c, &c->host_keys, algo, blob, blob_len, format));
+  ASSH_ERR_RET(assh_key_load(c, &c->host_keys, algo, blob, blob_len, format));
   return ASSH_OK;
 #else
   ASSH_ERR_RET(ASSH_ERR_NOTSUP);

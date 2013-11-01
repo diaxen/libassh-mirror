@@ -28,34 +28,7 @@
 
 #include <string.h>
 
-/*
-
-  p is a prime
-  q is a prime divisor of p-1 (160 bits)
-  g = h^((p-1)/q) mod p, where 1 < h < p-1 and h^((p-1)/q) mod p > 1
-  p, q, g are known
-  x is private key (random)
-  y = g^x mod p
-  y is the public key
-  k is a secret single use random value
-
-  sign:
-
-  r = (g^k mod p) mod q
-  s = (k^-1 * (sha(m) + x * r)) mod q
-
-  k^-1 is multiplication inverse of k mod q
-
-  verify:
-
-  assert(r < q && s < q)
-  w = s^-1 mod q
-  u1 = (sha(m) * w) mod q
-  u2 = r * w mod q
-  v = (g^u1 * y^u2) mod p mod q
-  return (v == r)
-
- */
+/************************************************************ dss key */
 
 struct assh_sign_dss_key_s
 {
@@ -87,6 +60,58 @@ static ASSH_KEY_CLEANUP_FCN(assh_sign_dss_key_cleanup)
   assh_bignum_cleanup(c, k->qn);
   assh_bignum_cleanup(c, k->pn);
   assh_free(c, k, ASSH_ALLOC_KEY);
+}
+
+static ASSH_KEY_OUTPUT_FCN(assh_sign_dss_key_output)
+{
+  struct assh_sign_dss_key_s *k = (void*)key;
+  assh_error_t err;
+
+  struct assh_bignum_s *bn_[6] = { k->pn, k->qn, k->gn, k->yn, NULL, NULL };
+
+  switch (format)
+    {
+    case ASSH_KEY_FMT_PUB_RFC4253_6_6: {
+      /* add algo identifier */
+      size_t l = assh_dss_id_len;
+      if (blob != NULL)
+        {
+          ASSH_ERR_RET(assh_dss_id_len > *blob_len ? ASSH_ERR_OVERFLOW : 0);
+          memcpy(blob, assh_dss_id, assh_dss_id_len);
+          *blob_len -= assh_dss_id_len;
+          blob += assh_dss_id_len;
+        }
+
+      /* add key integers */
+      struct assh_bignum_s **bn = bn_;
+      for (bn = bn_; *bn != NULL; bn++)
+        {
+          size_t s = assh_bignum_mpint_size(*bn);
+          if (blob != NULL)
+            {
+              ASSH_ERR_RET(s > *blob_len ? ASSH_ERR_OVERFLOW : 0);
+              ASSH_ERR_RET(assh_bignum_to_mpint(*bn, blob));
+              s = assh_load_u32(blob) + 4;
+              *blob_len -= s;
+              blob += s;
+            }
+          l += s;
+        }
+      *blob_len = l;
+      return ASSH_OK;
+    }
+
+#if 0
+    case ASSH_KEY_FMT_PV_PEM_ASN1: {
+      ASSH_ERR_RET(k->xn == NULL ? ASSH_ERR_NOTSUP : 0);
+      bn_[4] = k->xn;
+      return ASSH_OK;
+    }
+#endif
+
+    default:
+      ASSH_ERR_RET(ASSH_ERR_NOTSUP);
+    }
 }
 
 static ASSH_KEY_LOAD_FCN(assh_sign_dss_key_load)
@@ -157,6 +182,7 @@ static ASSH_KEY_LOAD_FCN(assh_sign_dss_key_load)
   struct assh_sign_dss_key_s *k = (void*)*key;
 
   k->key.f_cleanup = assh_sign_dss_key_cleanup;
+  k->key.f_output = assh_sign_dss_key_output;
 
   /* init key structure */
   k->pn = (struct assh_bignum_s*)(k + 1);
@@ -223,18 +249,51 @@ static ASSH_KEY_LOAD_FCN(assh_sign_dss_key_load)
   return err;
 }
 
-static assh_error_t assh_sign_dss_hash(const uint8_t *data, size_t data_len,
+/************************************************************ dss sign algo */
+
+/*
+
+  p is a prime
+  q is a prime divisor of p-1 (160 bits)
+  g = h^((p-1)/q) mod p, where 1 < h < p-1 and h^((p-1)/q) mod p > 1
+  p, q, g are known
+  x is private key (random)
+  y = g^x mod p
+  y is the public key
+  k is a secret single use random value
+
+  sign:
+
+  r = (g^k mod p) mod q
+  s = (k^-1 * (sha(m) + x * r)) mod q
+
+  k^-1 is multiplication inverse of k mod q
+
+  verify:
+
+  assert(r < q && s < q)
+  w = s^-1 mod q
+  u1 = (sha(m) * w) mod q
+  u2 = r * w mod q
+  v = (g^u1 * y^u2) mod p mod q
+  return (v == r)
+
+ */
+
+static assh_error_t assh_sign_dss_hash(size_t data_count, const uint8_t * const data[], const size_t data_len[],
 				       unsigned int n, struct assh_bignum_s *bn)
 {
   assh_error_t err;
   uint8_t hash[n / 8];
+  unsigned int i;
 
   switch (n)
     {
     case 160: {
       struct assh_hash_sha1_context_s sha1;
       assh_sha1_init(&sha1);
-      assh_sha1_update(&sha1, data, data_len);
+      for (i = 0; i < data_count; i++)
+        assh_sha1_update(&sha1, data[i], data_len[i]);
       assh_sha1_final(&sha1, hash);
       break;
     }
@@ -263,7 +322,7 @@ static ASSH_SIGN_ADD_SIGN_FCN(assh_sign_dss_add_sign)
 
   /* message hash */
   ASSH_BIGNUM_ALLOC(c, mn, n, err_);
-  ASSH_ERR_GTO(assh_sign_dss_hash(data, data_len, n, mn), err_mn);
+  ASSH_ERR_GTO(assh_sign_dss_hash(data_count, data, data_len, n, mn), err_mn);
 
   /* add signature string to packet */
   uint8_t *out_str;
@@ -377,7 +436,8 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_dss_check)
   ASSH_ERR_GTO(assh_bignum_cmpz(sn) ? ASSH_ERR_BAD_DATA : 0, err_sn);
 
   ASSH_BIGNUM_ALLOC(c, mn, n, err_sn);
-  ASSH_ERR_GTO(assh_sign_dss_hash(data, data_len, n, mn), err_mn);
+  
+  ASSH_ERR_GTO(assh_sign_dss_hash(data_count, data, data_len, n, mn), err_mn);
 
   /* copute w */
   ASSH_BIGNUM_ALLOC(c, wn, n, err_mn);

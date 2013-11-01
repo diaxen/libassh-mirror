@@ -86,8 +86,6 @@ assh_error_t assh_fd_event_get(struct assh_session_s *s,
     {
       ASSH_ERR_RET(assh_event_get(s, e));
 
-      ASSH_DEBUG("event %u\n", e->id);
-
       switch (e->id)
         {
         case ASSH_EVENT_IDLE:

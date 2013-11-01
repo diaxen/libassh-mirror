@@ -24,44 +24,90 @@
 #ifndef ASSH_SERVICE_H_
 #define ASSH_SERVICE_H_
 
-#include "assh.h"
+#include "assh_context.h"
 
+/** @internal @This defines the prototype of the initialization
+    function of an ssh service. This function is called when a service
+    requested is successful. This function may initialize the @ref
+    assh_session_s::srv_pv field. */
 #define ASSH_SERVICE_INIT_FCN(n) \
   ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_session_s *s)
 typedef ASSH_SERVICE_INIT_FCN(assh_service_init_t);
 
+/** @internal @This defines the prototype of the cleanup function of
+    an ssh service. This function is called when the service ends or
+    when the session cleanup occurs if a service has been initialized
+    previously. It must free the resources allocated by the associated
+    initialization function and clear the @ref assh_session_s::srv and
+    assh_session_s::srv_pv fields. */
 #define ASSH_SERVICE_CLEANUP_FCN(n) \
   void (n)(struct assh_session_s *s)
 typedef ASSH_SERVICE_CLEANUP_FCN(assh_service_cleanup_t);
 
+/** @This describes the implementation of an ssh service. */
 struct assh_service_s
 {
   const char *name;
+  enum assh_context_type_e side;
   assh_service_init_t *f_init;
   assh_service_cleanup_t *f_cleanup;
   assh_process_t *f_process;
 };
 
+/** @This function registers a single @ref assh_service_s for use by
+    the given context. @see assh_service_register_va */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_service_register(struct assh_context_s *c,
 		      struct assh_service_s *srv);
 
+/** @This function registers one or more @ref assh_service_s for use
+    by the given context.
+
+    When registering services onto a client context, the registration
+    order determines the order in which the services will be
+    requested. @see assh_service_register */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_service_register_va(struct assh_context_s *c, ...);
 
+/** @This function registers the standard @tt ssh-userauth and @tt
+    ssh-connection services. The appropriate client or server services
+    are used depending on the context type. */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_service_register_default(struct assh_context_s *c);
+
+/** @internal */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_service_got_request(struct assh_session_s *s,
                          struct assh_packet_s *p);
 
+/** @internal */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_service_got_accept(struct assh_session_s *s,
                         struct assh_packet_s *p);
 
+/** @internal */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_service_send_request(struct assh_session_s *s);
 
-extern const struct assh_service_s assh_service_ssh_userauth;
-extern const struct assh_service_s assh_service_ssh_connection;
+/** @This lookup a registered service. */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_service_by_name(struct assh_context_s *c,
+                     size_t name_len, const char *name,
+                     const struct assh_service_s **srv_);
+
+#ifdef CONFIG_ASSH_SERVER
+/** @This provides the standard server side @tt ssh-userauth service. */
+extern const struct assh_service_s assh_service_userauth_server;
+/** @This provides the standard server side @tt ssh-connection service. */
+extern const struct assh_service_s assh_service_connection_server;
+#endif
+
+#ifdef CONFIG_ASSH_CLIENT
+/** @This provides the standard client side @tt ssh-userauth service. */
+extern const struct assh_service_s assh_service_userauth_client;
+/** @This provides the standard client side @tt ssh-connection service. */
+extern const struct assh_service_s assh_service_connection_client;
+#endif
 
 #endif
 

@@ -24,6 +24,7 @@
 #include <assh/assh_kex.h>
 #include <assh/assh_session.h>
 #include <assh/assh_packet.h>
+#include <assh/assh_transport.h>
 #include <assh/assh_bignum.h>
 #include <assh/assh_sign.h>
 #include <assh/assh_event.h>
@@ -83,7 +84,7 @@ static assh_error_t assh_kex_dh_send_expmod(struct assh_session_s *s)
 
   ASSH_ERR_GTO(assh_packet_add_mpint(p, pv->en), err_p);
 
-  assh_packet_push(s, p);
+  assh_transport_push(s, p);
   err = ASSH_OK;
   goto err_pn;
 
@@ -104,11 +105,11 @@ static assh_error_t assh_kex_dh_client_sent_e(struct assh_session_s *s,
   const struct assh_kex_dh_group_s *gr = pv->group;
   assh_error_t err;
 
-  uint8_t msg = p->data[5];
+  uint8_t msg = p->head.msg;
 
   ASSH_ERR_RET(msg != SSH_MSG_KEX_DH_REPLY ? ASSH_ERR_PROTOCOL : 0);
 
-  uint8_t *ks_str = p->data + 6;
+  uint8_t *ks_str = p->head.end;
   uint8_t *f_str;
   uint8_t *h_str;
 
@@ -163,7 +164,9 @@ static assh_error_t assh_kex_dh_client_sent_e(struct assh_session_s *s,
                               &hk, ASSH_KEY_FMT_PUB_RFC4253_6_6), err_kn);
   pv->hk = hk;
 
-  ASSH_ERR_GTO(sa->f_verify(s->ctx, hk, ex_hash, sizeof(ex_hash),
+  const uint8_t *sign_ptrs[1] = { ex_hash };
+  size_t sign_sizes[1] = { sizeof(ex_hash) };
+  ASSH_ERR_GTO(sa->f_verify(s->ctx, hk, 1, sign_ptrs, sign_sizes,
                             h_str, &sign_ok), err_kn);
 
   ASSH_ERR_GTO(!sign_ok ? ASSH_ERR_HOSTKEY_SIGNATURE : 0, err_kn);
@@ -194,7 +197,7 @@ static assh_error_t assh_kex_dh_server_wait_e(struct assh_session_s *s,
   const struct assh_kex_dh_group_s *gr = pv->group;
   assh_error_t err;
 
-  uint8_t msg = p->data[5];
+  uint8_t msg = p->head.msg;
 
   ASSH_ERR_RET(msg != SSH_MSG_KEX_DH_REQUEST ? ASSH_ERR_PROTOCOL : 0);
 
@@ -206,7 +209,7 @@ static assh_error_t assh_kex_dh_server_wait_e(struct assh_session_s *s,
   ASSH_ERR_GTO(hk == NULL ? ASSH_ERR_MISSING_KEY : 0, err_);
 
   /* compute DH */
-  uint8_t *e_str = p->data + 6;
+  uint8_t *e_str = p->head.end;
  
   ASSH_ERR_GTO(assh_packet_check_string(p, e_str, NULL), err_);
 
@@ -255,11 +258,13 @@ static assh_error_t assh_kex_dh_server_wait_e(struct assh_session_s *s,
   uint8_t ex_hash[20];
   assh_sha1_final(&sha1, ex_hash);
 
-  ASSH_ERR_GTO(sa->f_add_sign(s->ctx, hk, ex_hash, sizeof(ex_hash), pout), err_p);
+  const uint8_t *sign_ptrs[1] = { ex_hash };
+  size_t sign_sizes[1] = { sizeof(ex_hash) };
+  ASSH_ERR_GTO(sa->f_add_sign(s->ctx, hk, 1, sign_ptrs, sign_sizes, pout), err_p);
 
   ASSH_ERR_GTO(assh_kex_new_keys(s, &assh_hash_sha1, ex_hash, pv->kn), err_p);
 
-  assh_packet_push(s, pout);
+  assh_transport_push(s, pout);
   err = ASSH_OK;
   goto err_pn;
 

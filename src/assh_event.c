@@ -23,6 +23,7 @@
 
 #include <assh/assh_context.h>
 #include <assh/assh_event.h>
+#include <assh/assh_transport.h>
 #include <assh/assh_packet.h>
 #include <assh/assh_session.h>
 #include <assh/assh_kex.h>
@@ -41,6 +42,8 @@ assh_error_t assh_event_get(struct assh_session_s *s,
 {
   assh_error_t err;
 
+  ASSH_ERR_RET(s->tr_st == ASSH_TR_ERROR ? ASSH_ERR_DISCONNECTED : 0);
+
   /* need to get some entropy for the prng */
   if (s->ctx->prng_entropy < 0)
     {
@@ -48,50 +51,49 @@ assh_error_t assh_event_get(struct assh_session_s *s,
       event->f_done = &assh_event_random_done;
       event->random.data = NULL;
       event->random.size = -s->ctx->prng_entropy;
-      return ASSH_OK;
+      goto done;
     }
 
 #ifdef CONFIG_ASSH_SERVER
   /* server initiates key exchange */
-  if (s->kex_st == ASSH_KEX_INIT)
+  if (s->tr_st == ASSH_TR_KEX_INIT)
     {
-      s->kex_st = ASSH_KEX_WAIT;
-      ASSH_ERR_RET(assh_algo_kex_send_init(s));
+      s->tr_st = ASSH_TR_KEX_WAIT;
+      ASSH_ERR_GTO(assh_algo_kex_send_init(s), err);
     }
 #endif
 
   event->id = ASSH_EVENT_INVALID;
 
   /* process the next incoming deciphered packet */
-  if (s->in_packet != NULL)
+  if (s->in_pck != NULL)
     {
-      err = assh_process_packet(s, s->in_packet, event);
-      assh_packet_release(s->in_packet);
-      s->in_packet = NULL;
-      ASSH_ERR_RET(err);
+      err = assh_transport_dispatch(s, s->in_pck, event);
+      assh_packet_release(s->in_pck);
+      s->in_pck = NULL;
+      ASSH_ERR_GTO(err, err);
     }
 
   /* get event from running service */
-  else if (s->srv != NULL && s->kex_st == ASSH_KEX_DONE)
+  else if (s->srv != NULL && s->tr_st == ASSH_TR_SERVICE)
     {
-      ASSH_ERR_RET(s->srv->f_process(s, NULL, event));
+      ASSH_ERR_GTO(s->srv->f_process(s, NULL, event), err);
     }
 
 #ifdef CONFIG_ASSH_CLIENT
-  printf("%i %i %p %p\n", s->kex_st, s->ctx->type, s->srv, s->srv_rq);
-  if (s->kex_st == ASSH_KEX_DONE)
+  if (s->tr_st == ASSH_TR_SERVICE)
     {
       /* client requests next service */
       if (s->ctx->type == ASSH_CLIENT &&
           s->srv == NULL && s->srv_rq == NULL)
-        ASSH_ERR_RET(assh_service_send_request(s));
+        ASSH_ERR_GTO(assh_service_send_request(s), err);
     }
 #endif
 
   if (event->id != ASSH_EVENT_INVALID)
-    return ASSH_OK;
+    goto done;
 
-  ASSH_ERR_RET(s->kex_st == ASSH_KEX_DISCONNECTED ? ASSH_ERR_DISCONNECTED : 0);
+  ASSH_ERR_RET(s->tr_st == ASSH_TR_DISCONNECTED ? ASSH_ERR_DISCONNECTED : 0);
 
   /* run the state machine which converts output packets to enciphered
      ssh stream */
@@ -103,8 +105,8 @@ assh_error_t assh_event_get(struct assh_session_s *s,
     case ASSH_TR_OUT_HELLO:
       event->id = ASSH_EVENT_WRITE;
       event->f_done = &assh_event_write_done;
-      ASSH_ERR_RET(assh_event_write(s, &event->write.data, &event->write.size));
-      return ASSH_OK;
+      ASSH_ERR_GTO(assh_event_write(s, &event->write.data, &event->write.size), err);
+      goto done;
 
     default:
       ASSH_ERR_RET(ASSH_ERR_STATE);
@@ -115,23 +117,31 @@ assh_error_t assh_event_get(struct assh_session_s *s,
   switch (s->stream_in_st)
     {
     case ASSH_TR_IN_HEAD:
-      assert(s->in_packet == NULL);
+      assert(s->in_pck == NULL);
       event->id = ASSH_EVENT_IDLE;
       event->f_done = &assh_event_read_done;
-      ASSH_ERR_RET(assh_event_read(s, &event->read.data, &event->read.size));
-      return ASSH_OK;
+      ASSH_ERR_GTO(assh_event_read(s, &event->read.data, &event->read.size), err);
+      goto done;
 
     case ASSH_TR_IN_HELLO:
     case ASSH_TR_IN_PAYLOAD:
       event->id = ASSH_EVENT_READ;
       event->f_done = &assh_event_read_done;
-      ASSH_ERR_RET(assh_event_read(s, &event->read.data, &event->read.size));
-      return ASSH_OK;
+      ASSH_ERR_GTO(assh_event_read(s, &event->read.data, &event->read.size), err);
+      goto done;
 
     default:
-      ASSH_ERR_RET(ASSH_ERR_STATE);
+      ASSH_ERR_GTO(ASSH_ERR_STATE, err);
     }
 
+ done:
+#ifdef CONFIG_ASSH_DEBUG_EVENT
+  ASSH_DEBUG("event id=%u\n", event->id);
+#endif
   return ASSH_OK;
+
+ err:
+  s->tr_st = ASSH_TR_ERROR;
+  return err;
 }
 

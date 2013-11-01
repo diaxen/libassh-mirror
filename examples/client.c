@@ -69,9 +69,8 @@ int main(int argc, char **argv)
   struct assh_context_s context;
   assh_context_init(&context, ASSH_CLIENT);
 
-  assh_service_register_va(&context,
-                           &assh_service_ssh_userauth,
-                           &assh_service_ssh_connection, NULL);
+  if (assh_service_register_default(&context))
+    return -1;
 
   if (assh_algo_register_default(&context) != ASSH_OK)
     return -1;
@@ -99,10 +98,29 @@ int main(int argc, char **argv)
 
       switch (event.id)
         {
+#if 0
         case ASSH_EVENT_HOSTKEY_LOOKUP:
           event.hostkey_lookup.accept = 1;
           break;
 
+        case ASSH_EVENT_USER_NAME: {
+          event.user_name.username = "guest";
+          break;
+        }
+
+        case ASSH_EVENT_USER_PRIVKEY_LOOKUP: {
+          if (assh_load_key_filename(&context, &event.user_privkey_lookup.key,
+                                     event.user_privkey_lookup.key.algo, "user_key",
+                                     ASSH_KEY_FMT_PV_RFC2440_PEM_ASN1))
+            event.user_privkey_lookup.key = NULL;
+          break;
+        }
+
+        case ASSH_EVENT_USER_PASSWORD_INPUT: {
+          event.user_password_input.password = "anonymous";
+          break;          
+        }
+#endif
         default:
           assert(!"Don't know how to handle this event");
         }

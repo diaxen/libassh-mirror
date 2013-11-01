@@ -198,7 +198,7 @@ assh_error_t assh_load_key_file(struct assh_context_s *c,
       ASSH_ERR_RET(ASSH_ERR_NOTSUP);
     }
 
-  ASSH_ERR_RET(assh_key_add(c, head, algo, blob, blob_len, format));
+  ASSH_ERR_RET(assh_key_load(c, head, algo, blob, blob_len, format));
 
   return ASSH_OK;
 }
