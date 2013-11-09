@@ -26,6 +26,7 @@
 #include <assh/assh_service.h>
 #include <assh/assh_prng.h>
 #include <assh/helper_fd.h>
+#include <assh/helper_key.h>
 #include <assh/assh_event.h>
 #include <assh/assh_algo.h>
 
@@ -108,25 +109,23 @@ int main(int argc, char **argv)
           event.hostkey_lookup.accept = 1;
           break;
 
+        case ASSH_EVENT_USERAUTH_CLIENT_USERNAME: {
+          event.userauth_client_username.username = "test";
+          break;
+        }
+
+        case ASSH_EVENT_USERAUTH_CLIENT_METHODS: {
+          if (event.userauth_client_methods.method_user_key)
+            assh_load_key_filename(&context, &event.userauth_client_methods.user_keys,
+                                   "ssh-dss", "/home/test/.ssh/id_dsa", ASSH_KEY_FMT_PV_RFC2440_PEM_ASN1);
+
 #if 0
-        case ASSH_EVENT_USER_NAME: {
-          event.user_name.username = "guest";
-          break;
-        }
-
-        case ASSH_EVENT_USER_PRIVKEY_LOOKUP: {
-          if (assh_load_key_filename(&context, &event.user_privkey_lookup.key,
-                                     event.user_privkey_lookup.key.algo, "user_key",
-                                     ASSH_KEY_FMT_PV_RFC2440_PEM_ASN1))
-            event.user_privkey_lookup.key = NULL;
-          break;
-        }
-
-        case ASSH_EVENT_USER_PASSWORD_INPUT: {
-          event.user_password_input.password = "anonymous";
-          break;          
-        }
+          if (event.userauth_client_methods.method_password)
+            event.userauth_client_methods.password = "test";
 #endif
+          break;
+        }
+
         default:
           assert(!"Don't know how to handle this event");
         }

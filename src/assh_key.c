@@ -66,13 +66,16 @@ assh_error_t assh_key_load2(struct assh_context_s *c, struct assh_key_s **key,
   return ASSH_OK;
 }
 
+void assh_key_drop(struct assh_context_s *c, struct assh_key_s **head)
+{
+  struct assh_key_s *k = *head;
+  *head = k->next;
+  k->f_cleanup(c, k);
+}
+
 void assh_key_flush(struct assh_context_s *c, struct assh_key_s **head)
 {
   while (*head != NULL)
-    {
-      struct assh_key_s *k = *head;
-      *head = k->next;
-      k->f_cleanup(c, k);
-    }
+    assh_key_drop(c, head);
 }
 

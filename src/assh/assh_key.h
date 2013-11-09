@@ -115,5 +115,9 @@ static inline assh_key_load(struct assh_context_s *c, struct assh_key_s **key,
 void
 assh_key_flush(struct assh_context_s *c, struct assh_key_s **head);
 
+/** @internal This function releases a single key on the linked list. */
+void
+assh_key_drop(struct assh_context_s *c, struct assh_key_s **head);
+
 #endif
 

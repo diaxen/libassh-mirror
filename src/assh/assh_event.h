@@ -69,31 +69,33 @@ enum assh_event_id_e
   ASSH_EVENT_HOSTKEY_LOOKUP,
 
   /** This event is returned when the client-side user authentication
-      service is running. The @ref
-      assh_event_s::userauth_client::method_pwd, @ref
-      assh_event_s::userauth_client::method_pk and @ref
-      assh_event_s::userauth_client::method_host fields indicates the
-      authentication methods that are accepted by the server.
+      service is running and the service needs to provide a user name
+      to the server. */
+  ASSH_EVENT_USERAUTH_CLIENT_USERNAME,
 
-      The assh_event_s::userauth_client::username field must be
-      updated to point to a NUL terminated string before calling the
-      @ref assh_event_done function. Other fields are initially set to
-      @tt NULL and can be modified to enable one or more
-      authentication methods among those supported.
+  /** This event is returned when the client-side user authentication
+      service is running. The @ref
+      assh_event_s::userauth_client::method_password and @ref
+      assh_event_s::userauth_client::method_user_key fields indicate
+      the authentication methods that are accepted by the server.
+
+      Other fields are initially set to @tt NULL and can be modified
+      to enable one or more authentication methods among those
+      supported.
 
       The assh_event_s::userauth_client::password string must be NUL
       terminated when present. The @ref
-      assh_event_s::userauth_client::user_key @ref and
-      assh_event_s::userauth_client::host_key fields can be setup by
+      assh_event_s::userauth_client::user_key field can be setup by
       calling either the @ref assh_key_load, @ref assh_load_key_file
-      or @ref assh_load_key_filename functions. The assh library will
-      take care of releasing the provided keys.
+      or @ref assh_load_key_filename functions. Multiple keys can be
+      loaded. The assh library will take care of releasing the
+      provided keys.
 
       This event may be returned multiple times until the
-      authentication is successful. The authentication fails is no
-      methods are enabled by providing a value.
+      authentication is successful. The authentication fails if no
+      password or key is provided.
   */
-  ASSH_EVENT_USERAUTH_CLIENT,
+  ASSH_EVENT_USERAUTH_CLIENT_METHODS,
 
 #endif
 
@@ -159,16 +161,18 @@ struct assh_event_s
     assh_bool_t        accept;
   }                    hostkey_lookup;
 
-  /** Parameters for the @ref #ASSH_EVENT_USERAUTH_CLIENT event */
+  /** Parameters for the @ref #ASSH_EVENT_USERAUTH_CLIENT_USERNAME event */
   struct {
     const char         *username;
+  }                    userauth_client_username;
+
+  /** Parameters for the @ref #ASSH_EVENT_USERAUTH_CLIENT_METHODS event */
+  struct {
+    assh_bool_t        method_password:1;
+    assh_bool_t        method_user_key:1;
     const char         *password;
-    struct assh_key_s  *user_key;
-    struct assh_key_s  *host_key;
-    assh_bool_t        method_pwd:1;
-    assh_bool_t        method_pk:1;
-    assh_bool_t        method_host:1;
-  }                    userauth_client;
+    struct assh_key_s  *user_keys;
+  }                    userauth_client_methods;
 #endif
 
 #ifdef CONFIG_ASSH_SERVER

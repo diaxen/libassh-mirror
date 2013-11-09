@@ -80,7 +80,7 @@ static ASSH_SERVICE_CLEANUP_FCN(assh_userauth_server_cleanup)
 
   assh_key_flush(s->ctx, &pv->pub_key);
 
-  assh_free(s->ctx, pv, ASSH_ALLOC_INTERNAL);
+  assh_free(s->ctx, pv, ASSH_ALLOC_KEY);
 
   s->srv_pv = NULL;
   s->srv = NULL;
@@ -171,28 +171,34 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
   ASSH_ERR_RET(assh_packet_alloc(s, SSH_MSG_USERAUTH_PK_OK,
                                  4 + algo_name_len + 4 + blob_len, &pout));
 
-  /* add algorithm name */
+  /* add sign algorithm name */
   uint8_t *algo_name;
-  ASSH_ERR_RET(assh_packet_add_string(pout, algo_name_len, &algo_name));
+  ASSH_ASSERT(assh_packet_add_string(pout, algo_name_len, &algo_name));
   memcpy(algo_name, pv->pub_key->algo->name, algo_name_len);
 
   /* add public key blob */
   uint8_t *blob;
-  ASSH_ERR_RET(assh_packet_add_string(pout, blob_len, &blob));
-  ASSH_ERR_RET(pv->pub_key->f_output(s->ctx, pv->pub_key,
-               blob, &blob_len, ASSH_KEY_FMT_PUB_RFC4253_6_6));
+  ASSH_ASSERT(assh_packet_add_string(pout, blob_len, &blob));
+  ASSH_ERR_GTO(pv->pub_key->f_output(s->ctx, pv->pub_key,
+                blob, &blob_len, ASSH_KEY_FMT_PUB_RFC4253_6_6), err_packet);
   assh_packet_shrink_string(pout, blob, blob_len);
 
   assh_transport_push(s, pout);
   pv->state = ASSH_USERAUTH_PUBKEY_OK;
 
   return ASSH_OK;
+ err_packet:
+  assh_packet_release(pout);
+  return err;
 }
 
 static ASSH_PROCESS_FCN(assh_userauth_server_process)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
+
+  if (s->tr_st != ASSH_TR_SERVICE)
+    return ASSH_OK;
 
   if (p == NULL)
     return ASSH_OK;
@@ -206,13 +212,14 @@ static ASSH_PROCESS_FCN(assh_userauth_server_process)
   ASSH_ERR_RET(assh_packet_check_string(p, user_name, &srv_name));
   ASSH_ERR_RET(assh_packet_check_string(p, srv_name, &method_name));
   ASSH_ERR_RET(assh_packet_check_string(p, method_name, &second));
-  ASSH_ERR_RET(assh_packet_check_array(p, second, 1, &payload));
 
   if (!assh_string_compare(method_name, "none"))
     {
       ASSH_ERR_RET(assh_userauth_server_failure(s));
       return ASSH_OK;
     }
+
+  ASSH_ERR_RET(assh_packet_check_array(p, second, 1, &payload));
 
   if (*second == 0)
     {
@@ -262,7 +269,6 @@ static ASSH_PROCESS_FCN(assh_userauth_server_process)
           /* return event to check the user password */
           e->id = ASSH_EVENT_USERAUTH_SERVER_PASSWORD;
           e->f_done = assh_userauth_server_password_done;
-          e->done_pv = pv;
           e->userauth_server_password.username = pv->username;
           e->userauth_server_password.password = pv->password;
           e->userauth_server_password.success = 0;
@@ -293,7 +299,6 @@ static ASSH_PROCESS_FCN(assh_userauth_server_process)
               /* return event to lookup authorized user key */
               e->id = ASSH_EVENT_USERAUTH_SERVER_USERKEY;
               e->f_done = assh_userauth_server_userkey_done;
-              e->done_pv = pv;
               e->userauth_server_userkey.username = pv->username;
               e->userauth_server_userkey.pub_key = pv->pub_key;
               e->userauth_server_userkey.found = 0;

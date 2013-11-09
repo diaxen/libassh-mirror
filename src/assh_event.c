@@ -173,6 +173,10 @@ assh_event_done(struct assh_session_s *s,
   assh_error_t err;
   ASSH_ERR_RET(s->tr_st == ASSH_TR_DISCONNECTED ? ASSH_ERR_DISCONNECTED : 0);
 
+#ifdef CONFIG_ASSH_DEBUG_EVENT
+  ASSH_DEBUG("event done id=%u\n", e->id);
+#endif
+
   if (e->f_done == NULL)
     return ASSH_OK;
 
