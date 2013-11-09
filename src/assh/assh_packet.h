@@ -326,5 +326,17 @@ assh_string_compare(const uint8_t *ssh_str, const char *nul_str)
   return strncmp((const char*)ssh_str + 4, nul_str, l) || nul_str[l] != '\0';
 }
 
+static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_string_copy(const uint8_t *ssh_str, char *nul_str, size_t max_len)
+{
+  size_t len = assh_load_u32(ssh_str);
+  assert(max_len > 0);
+  if (len > max_len - 1)
+    return ASSH_ERR_OVERFLOW;
+  memcpy(nul_str, ssh_str + 4, len);
+  nul_str[len] = '\0';
+  return ASSH_OK;
+}
+
 #endif
 

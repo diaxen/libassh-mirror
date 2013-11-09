@@ -73,6 +73,15 @@ typedef ASSH_KEY_LOAD_FCN(assh_key_load_t);
                                                 enum assh_key_format_e format)
 typedef ASSH_KEY_OUTPUT_FCN(assh_key_output_t);
 
+
+/** This function compares two keys and returns a positive value is
+    the keys are equals. If the @tt pub parameter is set, only the
+    public parts of the keys are compared. */
+#define ASSH_KEY_CMP_FCN(n) assh_bool_t (n)(struct assh_key_s *key,     \
+                                            struct assh_key_s *b, assh_bool_t pub)
+typedef ASSH_KEY_CMP_FCN(assh_key_cmp_t);
+
+
 /** @internal This function must release the resources used by the key. */
 #define ASSH_KEY_CLEANUP_FCN(n) void (n)(struct assh_context_s *c, \
                                          struct assh_key_s *key)
@@ -83,8 +92,9 @@ struct assh_key_s
 {
   const struct assh_algo_s *algo;
   struct assh_key_s *next;
-  assh_key_cleanup_t *f_cleanup;
   assh_key_output_t *f_output;
+  assh_key_cmp_t *f_cmp;
+  assh_key_cleanup_t *f_cleanup;
 };
 
 /** @internal This function loads a key using the specified algorithm. */
@@ -108,6 +118,15 @@ static inline assh_key_load(struct assh_context_s *c, struct assh_key_s **key,
                             enum assh_key_format_e format)
 {
   return assh_key_load2(c, key, algo_name, strlen(algo_name), blob, blob_len, format);
+}
+
+/** @This function returns true if both keys are equals. If the @tt
+    pub parameter is set, only the public part of the key are taken
+    into account. */
+static inline assh_bool_t
+assh_key_cmp(struct assh_key_s *key, struct assh_key_s *b, assh_bool_t pub)
+{
+  return key->f_cmp(key, b, pub);
 }
 
 /** @internal This function releases all the keys on the linked list

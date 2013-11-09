@@ -62,8 +62,7 @@ assh_packet_alloc(struct assh_session_s *s,
   /* fallback to alloc */
   if (p == NULL)
     {
-      if ((err = assh_alloc(s->ctx, sizeof(*p) + size, ASSH_ALLOC_PACKET, (void*)&p)))
-        return err;
+      ASSH_ERR_RET(assh_alloc(s->ctx, sizeof(*p) + size, ASSH_ALLOC_PACKET, (void*)&p));
       p->alloc_size = size;
       p->ref_count = 1;
     }

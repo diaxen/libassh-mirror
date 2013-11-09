@@ -67,6 +67,8 @@ static ASSH_KEY_OUTPUT_FCN(assh_sign_dss_key_output)
   struct assh_sign_dss_key_s *k = (void*)key;
   assh_error_t err;
 
+  assert((void*)key->algo == (void*)&assh_sign_dss);
+
   struct assh_bignum_s *bn_[6] = { k->pn, k->qn, k->gn, k->yn, NULL, NULL };
 
   switch (format)
@@ -112,6 +114,24 @@ static ASSH_KEY_OUTPUT_FCN(assh_sign_dss_key_output)
     default:
       ASSH_ERR_RET(ASSH_ERR_NOTSUP);
     }
+}
+
+static ASSH_KEY_CMP_FCN(assh_sign_dss_key_cmp)
+{
+  assert((void*)key->algo == (void*)&assh_sign_dss);
+
+  if (key->algo != b->algo)
+    return 0;
+
+  struct assh_sign_dss_key_s *k = (void*)key;
+  struct assh_sign_dss_key_s *l = (void*)b;
+
+  return (!assh_bignum_cmp(k->pn, l->pn) &&
+          !assh_bignum_cmp(k->qn, l->qn) && 
+          !assh_bignum_cmp(k->gn, l->gn) && 
+          !assh_bignum_cmp(k->yn, l->yn) && 
+          (pub || (k->xn == NULL && l->xn == NULL) ||
+           (k->xn != NULL && l->xn != NULL && !assh_bignum_cmp(k->xn, l->xn))));
 }
 
 static ASSH_KEY_LOAD_FCN(assh_sign_dss_key_load)
@@ -181,8 +201,9 @@ static ASSH_KEY_LOAD_FCN(assh_sign_dss_key_load)
   ASSH_ERR_RET(assh_alloc(c, size, ASSH_ALLOC_KEY, (void**)key));
   struct assh_sign_dss_key_s *k = (void*)*key;
 
-  k->key.f_cleanup = assh_sign_dss_key_cleanup;
   k->key.f_output = assh_sign_dss_key_output;
+  k->key.f_cmp = assh_sign_dss_key_cmp;
+  k->key.f_cleanup = assh_sign_dss_key_cleanup;
 
   /* init key structure */
   k->pn = (struct assh_bignum_s*)(k + 1);

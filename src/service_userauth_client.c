@@ -59,7 +59,7 @@ static ASSH_SERVICE_INIT_FCN(assh_userauth_client_init)
   assh_error_t err;
 
   ASSH_ERR_RET(assh_alloc(s->ctx, sizeof(*pv),
-                          ASSH_ALLOC_INTERNAL, (void**)&pv));
+                    ASSH_ALLOC_INTERNAL, (void**)&pv));
 
   s->srv = &assh_service_userauth_client;
   s->srv_pv = pv;
@@ -67,10 +67,10 @@ static ASSH_SERVICE_INIT_FCN(assh_userauth_client_init)
   pv->user_keys = NULL;
   pv->state = ASSH_USERAUTH_INIT;
 
-  /** get next client requested service */
+  /* get next client requested service */
   ASSH_ERR_RET(s->srv_index >= s->ctx->srvs_count
 	       ? ASSH_ERR_SERVICE_NA : 0);
-  pv->srv = s->ctx->srvs[s->srv_index++];
+  pv->srv = s->ctx->srvs[s->srv_index];
 
   return ASSH_OK;
 }
@@ -87,7 +87,7 @@ static ASSH_SERVICE_CLEANUP_FCN(assh_userauth_client_cleanup)
   s->srv = NULL;
 }
 
-/* allocate a rq packet and append user name, service name and auth method name. */
+/* allocate a packet and append user name, service name and auth method name fields. */
 static assh_error_t assh_userauth_client_pck_head(struct assh_session_s *s,
                                                   struct assh_packet_s **pout,
                                                   const char *method,
@@ -114,6 +114,7 @@ static assh_error_t assh_userauth_client_pck_head(struct assh_session_s *s,
   return ASSH_OK;
 }
 
+/* allocate a packet and append common fileds for a publickey request */
 static assh_error_t assh_userauth_client_pck_pubkey(struct assh_session_s *s,
                                                     struct assh_packet_s **pout,
                                                     struct assh_key_s *user_key,
@@ -154,6 +155,80 @@ static assh_error_t assh_userauth_client_pck_pubkey(struct assh_session_s *s,
   return err;
 }
 
+/* send a password authentication request */
+static assh_error_t assh_userauth_client_req_password(struct assh_session_s *s,
+                                                      const char *passwd)
+{
+  struct assh_userauth_context_s *pv = s->srv_pv;
+  assh_error_t err;
+
+  size_t passwd_len = strlen(passwd);
+  uint8_t *str;
+
+  struct assh_packet_s *pout;
+  ASSH_ERR_RET(assh_userauth_client_pck_head(s, &pout, "password", 1 + 4 + passwd_len));
+  ASSH_ASSERT(assh_packet_add_bytes(pout, 1, &str));
+  *str = 0; // FALSE
+
+  ASSH_ASSERT(assh_packet_add_string(pout, passwd_len, &str));
+  memcpy(str, passwd, passwd_len);
+  assh_transport_push(s, pout);
+
+  pv->state = ASSH_USERAUTH_SENT_PASSWORD_RQ;
+  return ASSH_OK;
+}
+
+/* send a public key authentication request with signature */
+static assh_error_t assh_userauth_client_req_pubkey_sign(struct assh_session_s *s)
+{
+  struct assh_userauth_context_s *pv = s->srv_pv;
+  assh_error_t err;
+
+  struct assh_packet_s *pout;
+  ASSH_ERR_RET(assh_userauth_client_pck_pubkey(s, &pout, pv->user_keys, 1, 1024));
+
+  uint8_t sid_len[4];   /* fake string header for session id */
+  assh_store_u32(sid_len, s->session_id_len);
+
+  /* buffers that must be signed by the client */
+  const uint8_t *sign_ptrs[3] =
+    { sid_len, s->session_id,     &pout->head.msg };
+  size_t sign_sizes[3]        =
+    { 4,       s->session_id_len, pout->data_size - 5 };
+
+  const struct assh_algo_sign_s *algo = (const void *)pv->user_keys->algo;
+  ASSH_ERR_GTO(algo->f_add_sign(s->ctx, pv->user_keys, 3, sign_ptrs, sign_sizes, pout), err_packet);
+
+  assh_transport_push(s, pout);
+
+  /* drop used key */
+  assh_key_drop(s->ctx, &pv->user_keys);
+
+  return ASSH_OK;
+
+ err_packet:
+  assh_packet_release(pout);
+  return err;
+}
+
+/* send a public key authentication probing request */
+static assh_error_t assh_userauth_client_req_pubkey(struct assh_session_s *s)
+{
+  struct assh_userauth_context_s *pv = s->srv_pv;
+  assh_error_t err;
+
+#if 1 /* send the signature directly */
+  ASSH_ERR_RET(assh_userauth_client_req_pubkey_sign(s));
+  pv->state = ASSH_USERAUTH_SENT_USER_KEY_RQ;
+#else /* send a public key request first */
+  struct assh_packet_s *pout;
+  ASSH_ERR_RET(assh_userauth_client_pck_pubkey(s, &pout, pv->user_keys, 0, 0));
+  assh_transport_push(s, pout);
+  pv->state = ASSH_USERAUTH_SENT_USER_KEY;
+#endif
+  return ASSH_OK;
+}
+
 static ASSH_EVENT_DONE_FCN(assh_userauth_client_username_done)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
@@ -183,7 +258,6 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_methods_done)
 
   ASSH_ERR_RET(pv->state != ASSH_USERAUTH_GET_AUTHDATA ? ASSH_ERR_STATE : 0);
 
-  struct assh_packet_s *pout;
   const char *passwd = e->userauth_client_methods.password;
   struct assh_key_s *k = e->userauth_client_methods.user_keys;
 
@@ -199,52 +273,30 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_methods_done)
     }
 
   if (passwd != NULL)
-    {
-      size_t passwd_len = strlen(passwd);
-      uint8_t *str;
-
-      /* send password */
-      ASSH_ERR_RET(assh_userauth_client_pck_head(s, &pout, "password", 1 + 4 + passwd_len));
-      ASSH_ASSERT(assh_packet_add_bytes(pout, 1, &str));
-      *str = 0; // FALSE
-      ASSH_ASSERT(assh_packet_add_string(pout, passwd_len, &str));
-      memcpy(str, passwd, passwd_len);
-      assh_transport_push(s, pout);
-
-      pv->state = ASSH_USERAUTH_SENT_PASSWORD_RQ;
-      return ASSH_OK;
-    }
-
+    ASSH_ERR_RET(assh_userauth_client_req_password(s, passwd));
   else if (pv->user_keys != NULL)
-    {
-      ASSH_ERR_RET(assh_userauth_client_pck_pubkey(s, &pout, pv->user_keys, 0, 0));
-      assh_transport_push(s, pout);
-
-      pv->state = ASSH_USERAUTH_SENT_USER_KEY;
-      return ASSH_OK;
-    }
-
+    ASSH_ERR_RET(assh_userauth_client_req_pubkey(s));
   else /* no authentication method */
-    {
-      ASSH_ERR_RET(ASSH_ERR_CODE(ASSH_ERR_NO_AUTH,
-                     SSH_DISCONNECT_NO_MORE_AUTH_METHODS_AVAILABLE));
-    }
+    ASSH_ERR_RET(ASSH_ERR_CODE(ASSH_ERR_NO_AUTH,
+                   SSH_DISCONNECT_NO_MORE_AUTH_METHODS_AVAILABLE));
 }
 
+/* cleanup the authentication service and start the next service. */
 static assh_error_t assh_userauth_client_success(struct assh_session_s *s)
 {
   assh_error_t err;
   struct assh_userauth_context_s *pv = s->srv_pv;
   const struct assh_service_s *srv = pv->srv;
 
-  /* cleanup the authentication service and start the next requested service. */
   assh_userauth_client_cleanup(s);
 
   ASSH_ERR_RET(srv->f_init(s));
+  s->srv_index++;
 
   return ASSH_OK;
 }
 
+/* extract the list of acceptable authentication methods from a failure packet */
 static assh_error_t assh_userauth_client_failure(struct assh_session_s *s,
                                                  struct assh_packet_s *p,
                                                  struct assh_event_s *e)
@@ -282,11 +334,9 @@ static assh_error_t assh_userauth_client_failure(struct assh_session_s *s,
             {
               if (pv->user_keys != NULL)
                 {
-                  /* some user keys are already available, do not need to request more. */
-                  struct assh_packet_s *pout;
-                  ASSH_ERR_RET(assh_userauth_client_pck_pubkey(s, &pout, pv->user_keys, 0, 0));
-                  assh_transport_push(s, pout);
-                  pv->state = ASSH_USERAUTH_SENT_USER_KEY;
+                  /* some user keys are already available, do not need
+                     to request more yet. */
+                  ASSH_ERR_RET(assh_userauth_client_req_pubkey(s));
                   return ASSH_OK;
                 }
 
@@ -310,39 +360,6 @@ static assh_error_t assh_userauth_client_failure(struct assh_session_s *s,
   pv->state = ASSH_USERAUTH_GET_AUTHDATA;
 
   return ASSH_OK;
-}
-
-static assh_error_t assh_userauth_client_pkok(struct assh_session_s *s,
-                                              struct assh_packet_s *p)
-{
-  struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
-
-  struct assh_packet_s *pout;
-  ASSH_ERR_RET(assh_userauth_client_pck_pubkey(s, &pout, pv->user_keys, 1, 1024));
-
-  uint8_t sid_len[4];   /* fake string header for session id */
-  assh_store_u32(sid_len, s->session_id_len);
-
-  /* buffers that must be signed by the client */
-  const uint8_t *sign_ptrs[3] =
-    { sid_len, s->session_id,     &pout->head.msg };
-  size_t sign_sizes[3]        =
-    { 4,       s->session_id_len, pout->data_size - 5 };
-
-  const struct assh_algo_sign_s *algo = (const void *)pv->user_keys->algo;
-  ASSH_ERR_GTO(algo->f_add_sign(s->ctx, pv->user_keys, 3, sign_ptrs, sign_sizes, pout), err_packet);
-
-  assh_transport_push(s, pout);
-
-  /* drop used key */
-  assh_key_drop(s->ctx, &pv->user_keys);
-
-  return ASSH_OK;
-
- err_packet:
-  assh_packet_release(pout);
-  return err;
 }
 
 static ASSH_PROCESS_FCN(assh_userauth_client_process)
@@ -392,7 +409,7 @@ static ASSH_PROCESS_FCN(assh_userauth_client_process)
       switch(p->head.msg)
         {
         case SSH_MSG_USERAUTH_PK_OK:
-          ASSH_ERR_RET(assh_userauth_client_pkok(s, p));
+          ASSH_ERR_RET(assh_userauth_client_req_pubkey_sign(s));
           pv->state = ASSH_USERAUTH_SENT_USER_KEY_RQ;
           return ASSH_OK;
 
