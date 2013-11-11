@@ -29,34 +29,43 @@
 #include "assh_key.h"
 
 /** This function must compute the signature of the passed data using
-    provided keys and append it to the given packet payload. */
-#define ASSH_SIGN_ADD_SIGN_FCN(n) assh_error_t (n)(struct assh_context_s *c, \
+    the provided key and writes it to the @tt sign buffer. The @tt
+    sign_len parameter indicates the size of the buffer and is updated
+    with the actual size of the signature blob.
+
+    The data to sign can be split into multiple buffers. The @tt
+    data_count parameter must specify the number of data buffers to use.
+
+    If the @tt sign parameter is @tt NULL, the function updates the
+    @tt sign_len parmeter with a size value which is greater or equal
+    to what is needed to hold the signature blob. In this case, the
+    @tt data_* parameters are not used.
+ */
+#define ASSH_SIGN_GENERATE_FCN(n) assh_error_t (n)(struct assh_context_s *c, \
                                                    const struct assh_key_s *key, size_t data_count, \
                                                    const uint8_t * const data[], size_t const data_len[], \
-                                                   struct assh_packet_s *pout)
-typedef ASSH_SIGN_ADD_SIGN_FCN(assh_sign_add_sign_t);
+                                                   uint8_t *sign, size_t *sign_len)
+typedef ASSH_SIGN_GENERATE_FCN(assh_sign_generate_t);
 
+/** This function must verify the signature of the passed data using
+    the provided key and update the @tt ok parameter accordingly.
 
-#define ASSH_SIGN_CHECK_FCN(n) assh_error_t (n)(struct assh_context_s *c, \
-                                                const struct assh_key_s *key, size_t data_count, \
-                                                const uint8_t * const data[], size_t const data_len[], \
-                                                const uint8_t *sign_str, assh_bool_t *ok)
-typedef ASSH_SIGN_CHECK_FCN(assh_sign_check_t);
+    The data can be split into multiple buffers. The @tt data_count
+    parameter must specify the number of data buffers used.
+ */
+#define ASSH_SIGN_VERIFY_FCN(n) assh_error_t (n)(struct assh_context_s *c, \
+                                                 const struct assh_key_s *key, size_t data_count, \
+                                                 const uint8_t * const data[], size_t const data_len[], \
+                                                 const uint8_t *sign, size_t sign_len, assh_bool_t *ok)
+typedef ASSH_SIGN_VERIFY_FCN(assh_sign_verify_t);
 
-
-/** This function must append the public key blob to the given packet payload. */
-#define ASSH_SIGN_ADD_PUB_FCN(n) assh_error_t (n)(struct assh_context_s *c, \
-                                                 const struct assh_key_s *key, \
-                                                 struct assh_packet_s *pout)
-typedef ASSH_SIGN_ADD_PUB_FCN(assh_sign_add_pub_t);
 
 struct assh_algo_sign_s
 {
   struct assh_algo_s algo;
   assh_key_load_t *f_key_load;
-  assh_sign_add_sign_t *f_add_sign;
-  assh_sign_check_t *f_verify;
-  assh_sign_add_pub_t *f_add_pub;
+  assh_sign_generate_t *f_generate;
+  assh_sign_verify_t *f_verify;
 };
 
 extern struct assh_algo_sign_s assh_sign_dss;

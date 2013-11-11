@@ -43,6 +43,7 @@ assh_error_t assh_hash_bignum(void *ctx_, assh_hash_update_t *update, const stru
 {
   assh_error_t err;
   size_t l = assh_bignum_mpint_size(bn);
+#warning do not store bignum on stack
   uint8_t s[l];
 
   ASSH_ERR_RET(assh_bignum_to_mpint(bn, s));

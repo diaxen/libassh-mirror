@@ -25,6 +25,7 @@
 #include <assh/assh_bignum.h>
 #include <assh/assh_sign.h>
 #include <assh/hash_sha1.h>
+#include <assh/assh_prng.h>
 
 #include <string.h>
 
@@ -134,6 +135,58 @@ static ASSH_KEY_CMP_FCN(assh_sign_dss_key_cmp)
            (k->xn != NULL && l->xn != NULL && !assh_bignum_cmp(k->xn, l->xn))));
 }
 
+static ASSH_KEY_VALIDATE_FCN(assh_sign_dss_key_validate)
+{
+  struct assh_sign_dss_key_s *k = (void*)key;
+  assh_error_t err = ASSH_OK;
+
+  *valid = 0;
+
+  /*
+   * FIPS 186-4 Appendix A2.2
+   * SP 800-89 section 5.3.1
+   */
+
+  unsigned int l = assh_bignum_bits(k->pn);
+  unsigned int n = assh_bignum_bits(k->qn);
+
+  /* check key size */
+  if (l < 1024 || n < 160 || l > 8192 || n > 512 || l % 8 || n % 8)
+    goto err_;
+
+  /* check generator range */
+  if (assh_bignum_cmp_uint(k->gn, 2) > 0 ||  /* g >= 2 */
+      assh_bignum_cmp(k->gn, k->pn) <= 0)    /* g < p */
+    goto err_;
+
+  /* check generator order in the group */
+  ASSH_BIGNUM_ALLOC(c, rn, l, err_);
+  ASSH_ERR_GTO(assh_bignum_expmod(rn, k->gn, k->qn, k->pn), err_rn);
+  if (assh_bignum_cmp_uint(rn, 1))
+    goto err_rn;
+
+  /* check public key range */
+  if (assh_bignum_cmp_uint(k->yn, 2) > 0)   /* y >= 2 */
+    goto err_rn;
+
+  ASSH_ERR_GTO(assh_bignum_uint(rn, 2), err_rn);
+  ASSH_ERR_GTO(assh_bignum_sub(rn, k->pn, rn), err_rn);
+  if (assh_bignum_cmp(k->yn, rn) < 0) /* y <= p-2 */
+    goto err_rn;
+
+  /* check public key order in the group */
+  ASSH_ERR_GTO(assh_bignum_expmod(rn, k->yn, k->qn, k->pn), err_rn);
+  if (assh_bignum_cmp_uint(rn, 1))
+    goto err_rn;
+
+  *valid = 1;
+
+ err_rn:
+  ASSH_BIGNUM_FREE(c, rn);
+ err_:
+  return err;
+}
+
 static ASSH_KEY_LOAD_FCN(assh_sign_dss_key_load)
 {
   assh_error_t err;
@@ -186,8 +239,8 @@ static ASSH_KEY_LOAD_FCN(assh_sign_dss_key_load)
     }
 
   /* allocate key structure */
-  if (l > 8192 || n > 256)
-    ASSH_ERR_RET(ASSH_ERR_OVERFLOW);
+  ASSH_ERR_RET(l < 1024 || n < 160 || l % 8 || n % 8 ? ASSH_ERR_BAD_DATA : 0);
+  ASSH_ERR_RET(l > 8192 || n > 512 ? ASSH_ERR_OVERFLOW : 0);
 
   size_t size = sizeof(struct assh_sign_dss_key_s)
     + assh_bignum_sizeof(l)  /* p */
@@ -202,6 +255,7 @@ static ASSH_KEY_LOAD_FCN(assh_sign_dss_key_load)
   struct assh_sign_dss_key_s *k = (void*)*key;
 
   k->key.f_output = assh_sign_dss_key_output;
+  k->key.f_validate = assh_sign_dss_key_validate;
   k->key.f_cmp = assh_sign_dss_key_cmp;
   k->key.f_cleanup = assh_sign_dss_key_cleanup;
 
@@ -240,8 +294,6 @@ static ASSH_KEY_LOAD_FCN(assh_sign_dss_key_load)
     default:
       break;
     }
-
-#warning FIXME check values
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
   assh_bignum_print(stderr, "dss key p", k->pn);
@@ -326,7 +378,7 @@ static assh_error_t assh_sign_dss_hash(size_t data_count, const uint8_t * const 
   return ASSH_OK;
 }
 
-static ASSH_SIGN_ADD_SIGN_FCN(assh_sign_dss_add_sign)
+static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
 {
   struct assh_sign_dss_key_s *k = (void*)key;
   assh_error_t err;
@@ -341,23 +393,52 @@ static ASSH_SIGN_ADD_SIGN_FCN(assh_sign_dss_add_sign)
   ASSH_DEBUG("N=%u L=%u\n", n, l);
 #endif
 
+  /* check/return signature length */
+  size_t len = assh_dss_id_len + 4 + n * 2 / 8;
+
+  if (sign == NULL)
+    {
+      *sign_len = len;
+      return ASSH_OK;
+    }
+
+  ASSH_ERR_RET(*sign_len < len ? ASSH_ERR_OVERFLOW : 0);
+  *sign_len = len;
+
   /* message hash */
   ASSH_BIGNUM_ALLOC(c, mn, n, err_);
   ASSH_ERR_GTO(assh_sign_dss_hash(data_count, data, data_len, n, mn), err_mn);
 
-  /* add signature string to packet */
-  uint8_t *out_str;
-  ASSH_ERR_GTO(assh_packet_add_string(pout, assh_dss_id_len + 4 + n * 2 / 8, &out_str), err_mn);
-
-  memcpy(out_str, assh_dss_id, assh_dss_id_len);
-  assh_store_u32(out_str + assh_dss_id_len, n * 2 / 8);
-  uint8_t *r_str = out_str + assh_dss_id_len + 4;
+  memcpy(sign, assh_dss_id, assh_dss_id_len);
+  assh_store_u32(sign + assh_dss_id_len, n * 2 / 8);
+  uint8_t *r_str = sign + assh_dss_id_len + 4;
   uint8_t *s_str = r_str + n / 8;
 
-  /* random seed */
   ASSH_BIGNUM_ALLOC(c, kn, n, err_mn);
-  ASSH_ERR_GTO(assh_bignum_rand(c, kn), err_kn);
-  ASSH_ERR_GTO(assh_bignum_div(kn, NULL, kn, k->qn), err_kn);
+  /* Do not use the prng output directly as dsa nonce in order to
+     avoid leaking key bits in case of a weak prng. Random data is
+     hashed along with the private key and the message data. */
+  {
+    uint8_t rnd[n / 8 + 20];
+    unsigned int i;
+    struct assh_hash_sha1_context_s sha1;
+
+    ASSH_ERR_GTO(c->prng->f_get(c, rnd, n / 8), err_kn);
+    assh_sha1_init(&sha1);
+    for (i = 0; i < data_count; i++)
+      assh_sha1_update(&sha1, data[i], data_len[i]);
+    assh_hash_bignum(&sha1, &assh_sha1_update, k->xn);
+    for (i = 0; ; )
+      {
+        assh_sha1_update(&sha1, rnd, n / 8);
+        assh_sha1_final(&sha1, rnd + i);
+        if ((i += 20) >= n / 8)
+          break;
+        assh_sha1_init(&sha1);
+      }
+    ASSH_ERR_GTO(assh_bignum_from_data(kn, rnd, n / 8), err_mn);
+    ASSH_ERR_GTO(assh_bignum_div(kn, NULL, kn, k->qn), err_kn);
+  }
 
   /* compute R */
   ASSH_BIGNUM_ALLOC(c, rn, l, err_kn);
@@ -399,33 +480,7 @@ static ASSH_SIGN_ADD_SIGN_FCN(assh_sign_dss_add_sign)
   return err;
 }
 
-static ASSH_SIGN_ADD_PUB_FCN(assh_sign_dss_add_pub)
-{
-  struct assh_sign_dss_key_s *k = (void*)key;
-  assh_error_t err;
-
-  /* reserve blob size header */
-  uint8_t *blob_hdr;
-  ASSH_ERR_RET(assh_packet_add_bytes(pout, 4, &blob_hdr));
-
-  /* add key type identifier string */
-  uint8_t *id;
-  ASSH_ERR_RET(assh_packet_add_bytes(pout, assh_dss_id_len, &id));
-  memcpy(id, assh_dss_id, assh_dss_id_len);
-
-  /* add key numbers */
-  ASSH_ERR_RET(assh_packet_add_mpint(pout, k->pn));
-  ASSH_ERR_RET(assh_packet_add_mpint(pout, k->qn));
-  ASSH_ERR_RET(assh_packet_add_mpint(pout, k->gn));
-  ASSH_ERR_RET(assh_packet_add_mpint(pout, k->yn));
-
-  /* update blob size header */
-  assh_store_u32(blob_hdr, pout->data + pout->data_size - blob_hdr - 4);
-
-  return ASSH_OK;
-}
-
-static ASSH_SIGN_CHECK_FCN(assh_sign_dss_check)
+static ASSH_SIGN_VERIFY_FCN(assh_sign_dss_verify)
 {
   struct assh_sign_dss_key_s *k = (void*)key;
   assh_error_t err;
@@ -437,12 +492,11 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_dss_check)
   ASSH_DEBUG("N=%u L=%u\n", n, l);
 #endif
 
-  size_t sign_size = assh_load_u32(sign_str);
-  ASSH_ERR_RET(sign_size != assh_dss_id_len + 4 + n * 2 / 8 ? ASSH_ERR_OVERFLOW : 0);
+  ASSH_ERR_RET(sign_len != assh_dss_id_len + 4 + n * 2 / 8 ? ASSH_ERR_OVERFLOW : 0);
 
-  ASSH_ERR_RET(memcmp(sign_str + 4, assh_dss_id, assh_dss_id_len) ? ASSH_ERR_BAD_DATA : 0);
+  ASSH_ERR_RET(memcmp(sign, assh_dss_id, assh_dss_id_len) ? ASSH_ERR_BAD_DATA : 0);
 
-  uint8_t *rs_str = (uint8_t*)sign_str + 4 + assh_dss_id_len;
+  uint8_t *rs_str = (uint8_t*)sign + assh_dss_id_len;
   ASSH_ERR_RET(assh_load_u32(rs_str) != n * 2 / 8 ? ASSH_ERR_OVERFLOW : 0);
 
   ASSH_BIGNUM_ALLOC(c, rn, n, err_);
@@ -511,8 +565,7 @@ struct assh_algo_sign_s assh_sign_dss =
 {
   .algo = { .name = "ssh-dss", .class_ = ASSH_ALGO_SIGN, .need_host_key = 1 },
   .f_key_load = assh_sign_dss_key_load,
-  .f_add_sign = assh_sign_dss_add_sign,
-  .f_verify = assh_sign_dss_check,
-  .f_add_pub = assh_sign_dss_add_pub,
+  .f_generate = assh_sign_dss_generate,
+  .f_verify = assh_sign_dss_verify,
 };
 

@@ -115,8 +115,8 @@ int main(int argc, char **argv)
         }
 
         case ASSH_EVENT_USERAUTH_CLIENT_METHODS: {
-          if (event.userauth_client_methods.method_user_key)
-            assh_load_key_filename(&context, &event.userauth_client_methods.user_keys,
+          if (event.userauth_client_methods.pub_keys)
+            assh_load_key_filename(&context, &event.userauth_client_methods.pub_keys,
                                    "ssh-dss", "/home/test/.ssh/id_dsa", ASSH_KEY_FMT_PV_RFC2440_PEM_ASN1);
 
 #if 0

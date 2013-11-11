@@ -169,9 +169,9 @@ struct assh_event_s
   /** Parameters for the @ref #ASSH_EVENT_USERAUTH_CLIENT_METHODS event */
   struct {
     assh_bool_t        method_password:1;
-    assh_bool_t        method_user_key:1;
+    assh_bool_t        method_pub_key:1;
     const char         *password;
-    struct assh_key_s  *user_keys;
+    struct assh_key_s  *pub_keys;
   }                    userauth_client_methods;
 #endif
 

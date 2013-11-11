@@ -24,6 +24,7 @@
 #include <assh/assh_key.h>
 #include <assh/assh_sign.h>
 #include <assh/assh_algo.h>
+#include <assh/assh_packet.h>
 
 #include <string.h>
 
@@ -59,6 +60,16 @@ assh_error_t assh_key_load2(struct assh_context_s *c, struct assh_key_s **key,
 {
   assh_error_t err;
   const struct assh_algo_s *algo;
+
+  /* guess algorithm name from key blob */
+  if (algo_name == NULL && format == ASSH_KEY_FMT_PUB_RFC4253_6_6)
+    {
+      uint8_t *end;
+      ASSH_ERR_RET(assh_check_string(blob, blob_len, blob, &end));
+      algo_name = (const char*)blob + 4;
+      algo_name_len = end - blob - 4;
+    }
+  ASSH_ERR_RET(algo_name == NULL ? ASSH_NOT_FOUND : 0);
 
   ASSH_ERR_RET(assh_algo_by_name(c, ASSH_ALGO_SIGN, algo_name, algo_name_len, &algo));
   ASSH_ERR_RET(assh_key_load3(c, key, algo, blob, blob_len, format));

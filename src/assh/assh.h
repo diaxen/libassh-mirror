@@ -38,8 +38,6 @@
 # error CONFIG_ASSH_SERVER and CONFIG_ASSH_CLIENT are both undefined
 #endif
 
-#warning check packet alloc errors
-
 struct assh_context_s;
 struct assh_session_s;
 struct assh_packet_s;

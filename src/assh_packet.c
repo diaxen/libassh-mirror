@@ -21,6 +21,8 @@
 
 */
 
+#warning check packet alloc errors
+
 #include <assh/assh_packet.h>
 #include <assh/assh_bignum.h>
 #include <assh/assh_queue.h>

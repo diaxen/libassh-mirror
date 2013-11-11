@@ -27,16 +27,18 @@
 
 #include "assh_sign.h"
 
-/** @internal @This loads a key from a file handler and inserts
+#include <stdio.h>
+
+/** @This loads a key from a file handler and inserts
     the key in a linked list. Both binary and text key formats are
-    supported. This function relies on @ref assh_key_load to load the
+    supported. This function relies on @ref assh_key_load2 to load the
     binary key blob. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_load_key_file(struct assh_context_s *c,
 		   struct assh_key_s **head, const char *algo,
 		   FILE *file, enum assh_key_format_e format);
 
-/** @internal @This loads a key from a file name and inserts
+/** @This loads a key from a file name and inserts
     the key in a linked list. This function relies on @ref
     assh_key_loads_file. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
@@ -45,13 +47,15 @@ assh_load_key_filename(struct assh_context_s *c,
 		       const char *algo, const char *filename,
 		       enum assh_key_format_e format);
 
-/** @This loads an host key from a file handler. */
+/** @This loads a key from a file handler and register the key as an
+    host key for the context. @see assh_load_key_file */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_load_hostkey_file(struct assh_context_s *c,
 		       const char *algo, FILE *file,
 		       enum assh_key_format_e format);
 
-/** @This loads an host key from a file name. */
+/** @This loads a key from a file name and register the key as an
+    host key for the context. @see assh_load_key_filename */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_load_hostkey_filename(struct assh_context_s *c,
 			   const char *algo, const char *filename,
