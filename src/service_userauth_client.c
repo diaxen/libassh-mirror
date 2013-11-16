@@ -119,7 +119,7 @@ static assh_error_t assh_userauth_client_pck_head(struct assh_session_s *s,
   size_t srvname_len = strlen(pv->srv->name);
   size_t method_len = strlen(method);
 
-  ASSH_ERR_RET(assh_packet_alloc(s, SSH_MSG_USERAUTH_REQUEST,
+  ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_USERAUTH_REQUEST,
                  4 + username_len + 4 + srvname_len +
                  4 + method_len + extra_len, pout));
   uint8_t *str;
@@ -453,7 +453,7 @@ static assh_error_t assh_userauth_client_failure(struct assh_session_s *s,
   return ASSH_OK;
 }
 
-static ASSH_PROCESS_FCN(assh_userauth_client_process)
+static ASSH_SERVICE_PROCESS_FCN(assh_userauth_client_process)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;

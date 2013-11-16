@@ -27,18 +27,18 @@
 
 #include "assh.h"
 
-#define ASSH_PCK_POOL_MIN 6
-#define ASSH_PCK_POOL_MAX 16
-#define ASSH_PCK_POOL_SIZE (ASSH_PCK_POOL_MAX - ASSH_PCK_POOL_MIN)
-
-#define ASSH_MAX_ALGORITHMS 40
-#define ASSH_MAX_SERVICES 4
-
 /** This specifies the type of ssh session. */
 enum assh_context_type_e
 {
   ASSH_SERVER,
   ASSH_CLIENT,
+};
+
+struct assh_packet_pool_s
+{
+  struct assh_packet_s *pck;
+  size_t count;
+  size_t size;
 };
 
 struct assh_context_s
@@ -69,8 +69,15 @@ struct assh_context_s
   struct assh_key_s *host_keys;
 #endif
 
+  /** maximum allocated size in a single bucket. */
+  size_t pck_pool_max_bsize;
+  /** maximum allocated size. */
+  size_t pck_pool_max_size;
+  /** allocated size. */
+  size_t pck_pool_size;
+
   /** Pool of spare packets by size. */
-  struct assh_packet_s *pck_pool[ASSH_PCK_POOL_SIZE];
+  struct assh_packet_pool_s pool[ASSH_PCK_POOL_SIZE];
 
   /** Registered algorithms */
   const struct assh_algo_s *algos[ASSH_MAX_ALGORITHMS];

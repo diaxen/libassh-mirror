@@ -88,6 +88,7 @@ enum assh_error_e
   ASSH_ERR_CRYPTO,
   /** Unsupported parameter value. */
   ASSH_ERR_NOTSUP,
+  ASSH_ERR_KEX_FAILED,
   /**  */
   ASSH_ERR_MISSING_KEY,
   ASSH_ERR_MISSING_ALGO,
@@ -113,6 +114,21 @@ enum assh_error_e
 #define ASSH_ASSERT(expr) do { assh_error_t _e_ = (expr); assert(_e_ == ASSH_OK); } while(0)
 
 typedef int assh_error_t;
+
+/** Maximum size of incoming packet length, including header and mac. */
+#define ASSH_MAX_PCK_LEN 35000
+
+/** Log2 of smallest packet size bucket in the packet allocator pool. */
+#define ASSH_PCK_POOL_MIN 6
+/** Log2 of largest packet size bucket in the packet allocator pool. */
+#define ASSH_PCK_POOL_MAX 16
+/** Number of buckets in the packet allocator pool */
+#define ASSH_PCK_POOL_SIZE (ASSH_PCK_POOL_MAX - ASSH_PCK_POOL_MIN)
+
+/** Size of the context registered algorithms pointer array */
+#define ASSH_MAX_ALGORITHMS 40
+/** Size of the context registered services pointer array */
+#define ASSH_MAX_SERVICES 4
 
 /** Maximum size of hash algorithms output in bytes. */
 #define ASSH_MAX_HASH_SIZE 64
@@ -207,12 +223,6 @@ enum assh_alloc_type_e;
 					   size_t size, enum assh_alloc_type_e type)
 /** @see #ASSH_ALLOCATOR */
 typedef ASSH_ALLOCATOR(assh_allocator_t);
-
-#warning process function doc
-#define ASSH_PROCESS_FCN(n) assh_error_t (n)(struct assh_session_s *s, \
-                                             struct assh_packet_s *p, \
-                                             struct assh_event_s *e)
-typedef ASSH_PROCESS_FCN(assh_process_t);
 
 #define ASSH_MAX(a, b) ({ typeof(a) __a = (a); typeof(b) __b = (b); __a > __b ? __a : __b; })
 #define ASSH_MIN(a, b) ({ typeof(a) __a = (a); typeof(b) __b = (b); __a < __b ? __a : __b; })

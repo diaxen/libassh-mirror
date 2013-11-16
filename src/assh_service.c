@@ -126,7 +126,7 @@ assh_error_t assh_service_got_request(struct assh_session_s *s,
 
   /* send accept packet */
   struct assh_packet_s *pout;
-  ASSH_ERR_RET(assh_packet_alloc(s, SSH_MSG_SERVICE_ACCEPT, name_len + 4, &pout));
+  ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_SERVICE_ACCEPT, name_len + 4, &pout));
   ASSH_ASSERT(assh_packet_add_string(pout, name_len, &name));
   memcpy(name, srv->name, name_len);
   assh_transport_push(s, pout);
@@ -170,7 +170,7 @@ assh_error_t assh_service_send_request(struct assh_session_s *s)
   struct assh_packet_s *pout;
   size_t name_len = strlen(srv->name);
   uint8_t *name;
-  ASSH_ERR_RET(assh_packet_alloc(s, SSH_MSG_SERVICE_REQUEST, name_len + 4, &pout));
+  ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_SERVICE_REQUEST, name_len + 4, &pout));
   ASSH_ASSERT(assh_packet_add_string(pout, name_len, &name));
   memcpy(name, srv->name, name_len);
   assh_transport_push(s, pout);

@@ -82,7 +82,8 @@ static assh_error_t assh_kex_dh_send_expmod(struct assh_session_s *s)
 
   /* send a packet containing e */
   struct assh_packet_s *p;
-  ASSH_ERR_GTO(assh_packet_alloc(s, SSH_MSG_KEX_DH_REQUEST, 64 + gr->size / 8, &p), err_pn);
+  ASSH_ERR_GTO(assh_packet_alloc(s->ctx, SSH_MSG_KEX_DH_REQUEST,
+                                 assh_bignum_mpint_size(pv->en), &p), err_pn);
 
   ASSH_ERR_GTO(assh_packet_add_mpint(p, pv->en), err_p);
 
@@ -149,25 +150,23 @@ static assh_error_t assh_kex_dh_client_sent_e(struct assh_session_s *s,
   assh_hash_payload_as_string(&sha1, &assh_sha1_update, s->kex_init_local);
   assh_hash_payload_as_string(&sha1, &assh_sha1_update, s->kex_init_remote);
   assh_hash_string(&sha1, &assh_sha1_update, ks_str);
-  assh_hash_bignum(&sha1, &assh_sha1_update, pv->en);
+  ASSH_ERR_RET(assh_hash_bignum(&sha1, &assh_sha1_update, pv->en));
   assh_hash_string(&sha1, &assh_sha1_update, f_str);
-  assh_hash_bignum(&sha1, &assh_sha1_update, kn);
+  ASSH_ERR_RET(assh_hash_bignum(&sha1, &assh_sha1_update, kn));
 
   uint8_t ex_hash[20];
   assh_sha1_final(&sha1, ex_hash);
 
-  /* load and verify signature */
+  /* load key and verify signature */
   assh_bool_t sign_ok;
-  struct assh_key_s *host_key;
   const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
 
-  ASSH_ERR_GTO(sign_algo->f_key_load(s->ctx, ks_str + 4, assh_load_u32(ks_str),
-                              &host_key, ASSH_KEY_FMT_PUB_RFC4253_6_6), err_kn);
-  pv->host_key = host_key;
+  ASSH_ERR_GTO(assh_key_load3(s->ctx, &pv->host_key, &sign_algo->algo, ks_str + 4,
+                 assh_load_u32(ks_str), ASSH_KEY_FMT_PUB_RFC4253_6_6), err_kn);
 
   const uint8_t *sign_ptrs[1] = { ex_hash };
   size_t sign_sizes[1] = { sizeof(ex_hash) };
-  ASSH_ERR_GTO(sign_algo->f_verify(s->ctx, host_key, 1, sign_ptrs, sign_sizes,
+  ASSH_ERR_GTO(sign_algo->f_verify(s->ctx, pv->host_key, 1, sign_ptrs, sign_sizes,
                             h_str + 4, end - h_str - 4, &sign_ok), err_kn);
 
   ASSH_ERR_GTO(!sign_ok ? ASSH_ERR_CODE(ASSH_ERR_HOSTKEY_SIGNATURE, 
@@ -242,7 +241,7 @@ static assh_error_t assh_kex_dh_server_wait_e(struct assh_session_s *s,
   ASSH_ERR_GTO(sign_algo->f_generate(s->ctx, host_key, 0,
                               NULL, NULL, NULL, &sign_len), err_pn);
 
-  ASSH_ERR_GTO(assh_packet_alloc(s, SSH_MSG_KEX_DH_REPLY,
+  ASSH_ERR_GTO(assh_packet_alloc(s->ctx, SSH_MSG_KEX_DH_REPLY,
                 (4 + ks_len) + assh_bignum_mpint_size(fn) + (4 + sign_len), &pout), err_pn);
 
   /* append public host key to packet. */
@@ -268,7 +267,7 @@ static assh_error_t assh_kex_dh_server_wait_e(struct assh_session_s *s,
   assh_hash_string(&sha1, &assh_sha1_update, ks_str - 4);
   assh_hash_string(&sha1, &assh_sha1_update, e_str);
   assh_hash_string(&sha1, &assh_sha1_update, f_str);
-  assh_hash_bignum(&sha1, &assh_sha1_update, pv->kn);
+  ASSH_ERR_GTO(assh_hash_bignum(&sha1, &assh_sha1_update, pv->kn), err_p);
 
   uint8_t ex_hash[20];
   assh_sha1_final(&sha1, ex_hash);
@@ -310,11 +309,18 @@ static assh_error_t assh_kex_dh_server_wait_e(struct assh_session_s *s,
 #ifdef CONFIG_ASSH_CLIENT
 static ASSH_EVENT_DONE_FCN(assh_kex_dh_host_key_lookup_done)
 {
-  return assh_kex_end(s, e->hostkey_lookup.accept);
+  struct assh_kex_dh_private_s *pv = s->kex_pv;
+  assh_error_t err;
+
+  ASSH_ERR_RET(pv->state != ASSH_KEX_DH_CLIENT_LOOKUP_HOST_KEY_WAIT
+               ? ASSH_ERR_PROTOCOL : 0);
+
+  ASSH_ERR_RET(assh_kex_end(s, e->hostkey_lookup.accept));
+  return ASSH_OK;
 }
 #endif
 
-static ASSH_PROCESS_FCN(assh_kex_dh_process)
+static ASSH_KEX_PROCESS_FCN(assh_kex_dh_process)
 {
   struct assh_kex_dh_private_s *pv = s->kex_pv;
   assh_error_t err;
@@ -342,7 +348,8 @@ static ASSH_PROCESS_FCN(assh_kex_dh_process)
 #ifdef CONFIG_ASSH_SERVER
     case ASSH_KEX_DH_SERVER_WAIT_E:
       ASSH_ERR_RET(assh_kex_dh_server_wait_e(s, p));
-      return assh_kex_end(s, 1);
+      ASSH_ERR_RET(assh_kex_end(s, 1));
+      return ASSH_OK;
 #endif
     }
 

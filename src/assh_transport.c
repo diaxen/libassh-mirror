@@ -53,6 +53,7 @@ assh_error_t assh_event_read(struct assh_session_s *s,
     {
     case ASSH_TR_IN_HELLO:
       *data = s->hello_str + s->hello_len;
+#warning read more bytes in hello
       *size = 1;
       s->stream_in_st = ASSH_TR_IN_HELLO_DONE;
       return ASSH_OK;
@@ -87,7 +88,7 @@ assh_error_t assh_event_read(struct assh_session_s *s,
       size_t mac_len = k != NULL ? k->mac->mac_size : 0;
       len = len + mac_len;
 
-      ASSH_ERR_RET(assh_packet_alloc(s, 0, len - 6, &p));
+      ASSH_ERR_RET(assh_packet_alloc2(s->ctx, 0, len - 6, &p));
 
       s->stream_in_pck = p;
       memcpy(p->data, s->stream_in_pck_head, 16);
@@ -173,7 +174,7 @@ ASSH_EVENT_DONE_FCN(assh_event_read_done)
 	  ASSH_ERR_RET(k->mac->f_compute(k->mac_ctx, s->in_seq, p->data,
 					 p->data_size - mac_len, mac));
 
-	  ASSH_ERR_RET(memcmp(mac, p->data + p->data_size - mac_len, mac_len)
+	  ASSH_ERR_RET(assh_memcmp(mac, p->data + p->data_size - mac_len, mac_len)
 		       ? ASSH_ERR_CODE(ASSH_ERR_MAC, SSH_DISCONNECT_MAC_ERROR) : 0);
 	}
 
@@ -307,7 +308,7 @@ assh_error_t assh_transport_disconnect(struct assh_session_s *s, uint32_t code)
   assh_error_t err;
   struct assh_packet_s *pout;
 
-  ASSH_ERR_RET(assh_packet_alloc(s, SSH_MSG_DISCONNECT, 12, &pout));
+  ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_DISCONNECT, 12, &pout));
 
   uint8_t *reason;
   ASSH_ASSERT(assh_packet_add_bytes(pout, 4, &reason)); /* reason code */
@@ -355,11 +356,13 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
     case ASSH_TR_KEX_WAIT:
       ASSH_ERR_RET(msg != SSH_MSG_KEXINIT ? ASSH_ERR_PROTOCOL : 0);
       s->tr_st = ASSH_TR_KEX_RUNNING;
-      ASSH_ERR_RET(assh_kex_got_init(p));
+      ASSH_ERR_RET(assh_kex_got_init(s, p));
       return ASSH_OK;
 
     case ASSH_TR_KEX_RUNNING:
-      /* only allowed msgs are 1-4, 7-19, 20-29, 30-49 */
+      /* allowed msgs are 1-4, 7-19, 20-29, 30-49 */
+      ASSH_ERR_RET(msg > 49 || msg == SSH_MSG_SERVICE_REQUEST ||
+		   msg == SSH_MSG_SERVICE_ACCEPT ? ASSH_ERR_PROTOCOL : 0);
       ASSH_ERR_RET(s->kex->f_process(s, p, e));
       return ASSH_OK;
 
@@ -388,7 +391,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
     case SSH_MSG_KEXINIT:
       ASSH_ERR_RET(s->new_keys_out != NULL ? ASSH_ERR_PROTOCOL : 0);
       ASSH_ERR_RET(assh_algo_kex_send_init(s));
-      ASSH_ERR_RET(assh_kex_got_init(p));
+      ASSH_ERR_RET(assh_kex_got_init(s, p));
       s->tr_st = ASSH_TR_KEX_RUNNING;
       return ASSH_OK;
 

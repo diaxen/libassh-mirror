@@ -45,6 +45,24 @@ typedef ASSH_SERVICE_INIT_FCN(assh_service_init_t);
   void (n)(struct assh_session_s *s)
 typedef ASSH_SERVICE_CLEANUP_FCN(assh_service_cleanup_t);
 
+/** @internal @This defines the prototype of the service processing
+    function. This function is called from the @ref assh_event_get
+    function. A packet may be passed to the function for processing by
+    the running service, if no new received packet is available, the
+    parameter is @tt NULL.
+
+    The function may initialize the passed event object, in this case
+    the event will be propagated to the caller of the @ref
+    assh_event_get function.
+
+    This function should check the current state of the transport
+    protocol. @see assh_transport_state_e
+*/
+#define ASSH_SERVICE_PROCESS_FCN(n) assh_error_t (n)(struct assh_session_s *s, \
+                                                     struct assh_packet_s *p, \
+                                                     struct assh_event_s *e)
+typedef ASSH_SERVICE_PROCESS_FCN(assh_service_process_t);
+
 /** @This describes the implementation of an ssh service. */
 struct assh_service_s
 {
@@ -52,7 +70,7 @@ struct assh_service_s
   enum assh_context_type_e side;
   assh_service_init_t *f_init;
   assh_service_cleanup_t *f_cleanup;
-  assh_process_t *f_process;
+  assh_service_process_t *f_process;
 };
 
 /** @This function registers a single @ref assh_service_s for use by

@@ -118,11 +118,6 @@ assh_bignum_uint(struct assh_bignum_s *bn,
   return ASSH_OK;
 }
 
-void assh_bignum_zero(struct assh_bignum_s *bn)
-{
-  assh_bignum_uint(bn, 0);
-}
-
 assh_error_t
 assh_bignum_copy(struct assh_bignum_s *a,
                  const struct assh_bignum_s *b)
@@ -149,7 +144,7 @@ int assh_bignum_cmp(const struct assh_bignum_s *a,
 int assh_bignum_cmp_uint(const struct assh_bignum_s *a, unsigned int x)
 {
   assert(a->n != NULL);
-  return gcry_mpi_cmp_ui(a->n, x);
+  return -gcry_mpi_cmp_ui(a->n, x);
 }
 
 assh_bool_t assh_bignum_cmpz(const struct assh_bignum_s *a)

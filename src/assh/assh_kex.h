@@ -31,7 +31,7 @@ ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_kex_send_init(struct assh_session_s *s);
 
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_kex_got_init(struct assh_packet_s *p);
+assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p);
 
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_kex_new_keys(struct assh_session_s *s,
@@ -56,6 +56,18 @@ typedef ASSH_KEX_INIT_FCN(assh_kex_init_t);
 #define ASSH_KEX_CLEANUP_FCN(n) void (n)(struct assh_session_s *s)
 typedef ASSH_KEX_CLEANUP_FCN(assh_kex_cleanup_t);
 
+/** This function is called when the current transport state is @ref
+    #ASSH_TR_KEX_RUNNING and an incoming key exchange packet is available.
+
+    The function may initialize the passed event object, in this case
+    the event will be propagated to the caller of the @ref
+    assh_event_get function.
+*/
+#define ASSH_KEX_PROCESS_FCN(n) assh_error_t (n)(struct assh_session_s *s, \
+                                                 struct assh_packet_s *p, \
+                                                 struct assh_event_s *e)
+typedef ASSH_KEX_PROCESS_FCN(assh_kex_process_t);
+
 struct assh_kex_keys_s
 {
   const struct assh_algo_cipher_s *cipher;
@@ -72,7 +84,7 @@ struct assh_algo_kex_s
   struct assh_algo_s algo;
   assh_kex_init_t *f_init;
   assh_kex_cleanup_t *f_cleanup;
-  assh_process_t *f_process;
+  assh_kex_process_t *f_process;
 };
 
 extern struct assh_algo_kex_s assh_kex_dh_group1_sha1;

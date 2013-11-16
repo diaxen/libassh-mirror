@@ -36,7 +36,7 @@ static ASSH_SERVICE_CLEANUP_FCN(assh_connection_server_cleanup)
   s->srv = NULL;
 }
 
-static ASSH_PROCESS_FCN(assh_connection_server_process)
+static ASSH_SERVICE_PROCESS_FCN(assh_connection_server_process)
 {
   return ASSH_OK;
 }

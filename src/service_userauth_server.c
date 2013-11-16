@@ -161,7 +161,7 @@ static assh_error_t assh_userauth_server_failure(struct assh_session_s *s)
   uint8_t *list, *partial_success;
   size_t list_len = strlen(list_);
 
-  ASSH_ERR_RET(assh_packet_alloc(s, SSH_MSG_USERAUTH_FAILURE, 4 + list_len + 1, &pout));
+  ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_USERAUTH_FAILURE, 4 + list_len + 1, &pout));
   ASSH_ASSERT(assh_packet_add_string(pout, list_len, &list));
   memcpy(list, list_, list_len);
   ASSH_ASSERT(assh_packet_add_bytes(pout, 1, &partial_success));
@@ -183,7 +183,7 @@ static assh_error_t assh_userauth_server_success(struct assh_session_s *s)
 
   /* send the authentication success packet */
   struct assh_packet_s *pout;
-  ASSH_ERR_RET(assh_packet_alloc(s, SSH_MSG_USERAUTH_SUCCESS, 0, &pout));
+  ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_USERAUTH_SUCCESS, 0, &pout));
   assh_transport_push(s, pout);
 
   /* start the next requested service */
@@ -304,7 +304,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
                      NULL, &blob_len, ASSH_KEY_FMT_PUB_RFC4253_6_6));
 
       struct assh_packet_s *pout;
-      ASSH_ERR_RET(assh_packet_alloc(s, SSH_MSG_USERAUTH_PK_OK,
+      ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_USERAUTH_PK_OK,
                                      4 + algo_name_len + 4 + blob_len, &pout));
 
       /* add sign algorithm name */
@@ -454,7 +454,7 @@ static assh_error_t assh_userauth_server_req_new(struct assh_session_s *s,
   return ASSH_OK;
 }
 
-static ASSH_PROCESS_FCN(assh_userauth_server_process)
+static ASSH_SERVICE_PROCESS_FCN(assh_userauth_server_process)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;

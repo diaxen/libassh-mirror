@@ -29,19 +29,30 @@
 
 #include <string.h>
 
+/** @internal SSH packet object */
 struct assh_packet_s
 {
   union {
+    /** Packet queue entry, valid when packet is allocated. */
     struct assh_queue_entry_s entry;
+    /** Spare packet pool entry, valid when packet has been released. */
     struct assh_packet_s *pool_next;
   };
 
-  struct assh_session_s *session;
+  /** Associated assh context */
+  struct assh_context_s *ctx;
+
+  /** Size of the allocated packet data buffer. */
   uint_fast32_t alloc_size;
+  /** Amount of valid packet data. This value is increased when adding
+      data to the packet and is used when the packet is finally sent out. */
   uint_fast32_t data_size;
+
+  /** Number of references to this packet. */
   uint_fast16_t ref_count;
 
   union {
+    /** Start of packet data */
     uint8_t     data[0];
     struct {
       uint32_t  pck_len;
@@ -52,12 +63,7 @@ struct assh_packet_s
   };
 };
 
-static const size_t ASSH_MAX_PCK_POOL_SIZE = 8;
-static const size_t ASSH_MAX_PCK_LEN  = 35000;
-static const size_t ASSH_MAX_PAYLOAD_LEN  = 32768;
-static const size_t ASSH_MAX_PAD_LEN  = 255;
-static const size_t ASSH_MAX_MAC_LEN = 32;
-
+/** @internal @This specifies the standard values for ssh message ids. */
 enum assh_ssh_msg_e
 {
   /* SSH-TRANS */
@@ -99,10 +105,10 @@ enum assh_ssh_msg_e
   SSH_MSG_CHANNEL_FAILURE           = 100,
 };
 
-/** @This specifies standard ssh disconnect reasons. These codes can
-    be associated to an @ref assh_error_e code when returned by a
-    function by using the @ref #ASSH_ERR_CODE macro. This will make
-    the library send a disconnect packet before stopping the
+/** @internal @This specifies standard ssh disconnect reasons. These
+    codes can be associated to an @ref assh_error_e code when returned
+    by a function by using the @ref #ASSH_ERR_CODE macro. This will
+    make the library send a disconnect packet before stopping the
     communication. When @ref SSH_DISCONNECT_NONE is used, no
     disconnect packet is sent. */
 enum assh_ssh_disconnect_e
@@ -127,31 +133,46 @@ enum assh_ssh_disconnect_e
   SSH_DISCONNECT_ILLEGAL_USER_NAME              = 15,
 };
 
-/** This function allocates a new packet. If the pool parameter is not
-    NULL and the queue is not empty, the packet is taken from the
-    queue instead of being allocated. */
+/** @internal This function allocates a new packet. The @tt
+    alloc_size parameter specifies total allocated size. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_packet_alloc(struct assh_session_s *s,
-                  uint8_t msg, size_t payload_size,
+assh_packet_alloc2(struct assh_context_s *c,
+                  uint8_t msg, size_t alloc_size,
                   struct assh_packet_s **p);
 
-/** This function decreases the reference counter of the packet and
-    frees the associated memory if the new counter value is zero. If
-    the pool parameter is not NULL and the pool has not too many
-    entries, the packet is pushed on the pool instead of being freed. */
+/** @internal This function allocates a new packet. The @tt
+    payload_size parameter specifies the amount of bytes needed
+    between the message id byte and the mac bytes. */
+static inline assh_error_t
+assh_packet_alloc(struct assh_context_s *c,
+                  uint8_t msg, size_t payload_size,
+                  struct assh_packet_s **result)
+{
+  size_t size = /* pck_len */ 4 + /* pad_len */ 1 + /* msg */ 1 + payload_size +
+          /* mac */ ASSH_MAX_HASH_SIZE + /* padding */ (ASSH_MAX_BLOCK_SIZE - 1);
+
+  return assh_packet_alloc2(c, msg, size, result);
+}
+
+
+/** @internal This function decreases the reference counter of the
+    packet and release the packet if the new counter value is
+    zero. */
 void assh_packet_release(struct assh_packet_s *p);
 
-/** This function increase the reference counter of the packet. */
+/** @internal This function increase the reference counter of the packet. */
 static inline void assh_packet_refinc(struct assh_packet_s *p)
 {
   p->ref_count++;
 }
 
-/** This function creates a copy of a packet. */
+/** @internal This function creates a copy of a packet. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_packet_dup(struct assh_packet_s *p,
                 struct assh_packet_s **copy);
 
+/** @internal This function stores a 32 bytes value in network byte
+    order into a non-aligned location. */
 static inline void assh_store_u32(uint8_t *s, uint32_t x)
 {
   s[0] = x >> 24;
@@ -160,164 +181,104 @@ static inline void assh_store_u32(uint8_t *s, uint32_t x)
   s[3] = x;
 }
 
+/** @internal This function loads a 32 bytes value in network byte
+    order from a non-aligned location. */
 static inline uint32_t assh_load_u32(const uint8_t *s)
 {
   return s[3] + (s[2] << 8) + (s[1] << 16) + (s[0] << 24);
 }
 
-/** This function allocates an array of bytes in a packet and returns
-    a pointer to the array. If there is not enough space left in the
-    packet, an error is returned. */
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_packet_add_bytes(struct assh_packet_s *p, size_t len, uint8_t **result)
-{
-  if (p->data_size + len > p->alloc_size)
-    return ASSH_ERR_MEM;
-  uint8_t *d = p->data + p->data_size;
-  p->data_size += len;
-  *result = d;
-  return ASSH_OK;
-}
+/** @internal This function allocates an array of bytes in a packet
+    and returns a pointer to the array. If there is not enough space
+    left in the packet, an error is returned. */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_packet_add_bytes(struct assh_packet_s *p, size_t len, uint8_t **result);
 
-/** This function allocates a string in a packet and returns a pointer
-    to the first char of the string. If there is not enough space left
-    in the packet, and error is returned. */
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_packet_add_string(struct assh_packet_s *p, size_t len, uint8_t **result)
-{
-  uint8_t *d;
-  assh_error_t err;
-  if ((err = assh_packet_add_bytes(p, len + 4, &d)))
-    return err;
-  assh_store_u32(d, len);
-  *result = d + 4;
-  return ASSH_OK;
-}
+/** @internal This function allocates a string in a packet and returns
+    a pointer to the first char of the string. If there is not enough
+    space left in the packet, and error is returned. */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_packet_add_string(struct assh_packet_s *p, size_t len, uint8_t **result);
 
-/** This function enlarges a string previously allocated in a packet
-    and returns a pointer to the first additional char of the
+/** @internal This function enlarges a string previously allocated in
+    a packet and returns a pointer to the first additional char of the
     string. If there is not enough space left in the packet, an error
     is returned. The string must be the last allocated thing in the
     packet when this function is called. */
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_packet_enlarge_string(struct assh_packet_s *p, uint8_t *str,
-                           size_t len, uint8_t **result)
-{
-  size_t olen = assh_load_u32(str - 4);
-  assert(str + olen == p->data + p->data_size);
-  assh_error_t err;
-  if ((err = assh_packet_add_bytes(p, len, result)))
-    return err;
-  assh_store_u32(str - 4, olen + len);
-  return ASSH_OK;
-}
+                           size_t len, uint8_t **result);
 
-/** This function reduces the size of a string previously allocated in
-    a packet. The string must be the last allocated thing in the
-    packet when this function is called. */
-static inline void
+/** @internal This function reduces the size of a string previously
+    allocated in a packet. The string must be the last allocated thing
+    in the packet when this function is called. */
+void
 assh_packet_shrink_string(struct assh_packet_s *p, uint8_t *str,
-                          size_t len)
-{
-  size_t olen = assh_load_u32(str - 4);
-  assert(str + olen == p->data + p->data_size);
-  assert(olen >= len);
-  assh_store_u32(str - 4, len);
-  p->data_size -= olen - len;
-}
+                          size_t new_len);
 
-/** This function allocates a string in a packet and writes the given
-    big number in mpint representation as string content. */
+/** @internal This function allocates a string in a packet and writes
+    the given big number in mpint representation as string
+    content. The @ref assh_bignum_mpint_size function can be used to
+    find the amount of space needed to store the number. */
 assh_error_t ASSH_WARN_UNUSED_RESULT
 assh_packet_add_mpint(struct assh_packet_s *p,
                       const struct assh_bignum_s *bn);
 
-/** This function checks that an array is well inside a buffer. If no
-    error is returned, the @tt next parameter is set to point to the
-    first byte in buffer following the array. */
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+/** @internal This function checks that an array is well inside a
+    buffer. If no error is returned, the @tt next parameter is set to
+    point to the first byte following the array in the buffer. */
+ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_check_array(const uint8_t *buffer, size_t buffer_len,
-                 const uint8_t *array, size_t array_len, uint8_t **next)
-{
-  const uint8_t *e = buffer + buffer_len;
-  if (array < buffer || array > e)
-    return ASSH_ERR_OVERFLOW;
-  if (e - array < array_len)
-    return ASSH_ERR_OVERFLOW;
-  if (next != NULL)
-    *next = (uint8_t*)array + array_len;
-  return ASSH_OK;
-}
+                 const uint8_t *array, size_t array_len, uint8_t **next);
 
-/** This function checks that a string is well inside a buffer. If no
-    error is returned, the @tt next parameter is set to point to the
-    first byte in buffer following the string. */
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_check_string(const uint8_t *buffer, size_t buffer_len, const uint8_t *str, uint8_t **next)
-{
-  const uint8_t *e = buffer + buffer_len;
-  if (str < buffer || str > e - 4)
-    return ASSH_ERR_OVERFLOW;
-  uint32_t s = assh_load_u32(str);
-  if (e - 4 - str < s)
-    return ASSH_ERR_OVERFLOW;
-  if (next != NULL)
-    *next = (uint8_t*)str + 4 + s;
-  return ASSH_OK;
-}
+/** @internal This function checks that a string is well inside a
+    buffer. If no error is returned, the @tt next parameter is set to
+    point to the first byte following the string in the buffer. */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_check_string(const uint8_t *buffer, size_t buffer_len,
+                  const uint8_t *str, uint8_t **next);
 
-/** This function checks that an asn1 value is well inside a
+/** @internal This function checks that an asn1 DER value is well inside a
     buffer. If no error is returned, the @tt value parameter is set to
     point to the first byte of the value and the @tt next parameter is
     set to point to the first byte in the buffer following the
     value. Any of these two parameters may be @tt NULL. */
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_check_asn1(const uint8_t *buffer, size_t buffer_len, const uint8_t *str,
-                uint8_t **value, uint8_t **next)
-{
-  const uint8_t *e = buffer + buffer_len;
-  if (str < buffer || str > e - 2)
-    return ASSH_ERR_OVERFLOW;
+                uint8_t **value, uint8_t **next);
 
-  str++; /* discard type identifer */
-  unsigned int l = *str++;
-  if (l & 0x80)  /* long length form ? */
-    {
-      unsigned int ll = l & 0x7f;
-      if (e - str < ll)
-        return ASSH_ERR_OVERFLOW;
-      for (l = 0; ll > 0; ll--)
-        l = (l << 8) | *str++;
-    }
-  if (e - str < l)
-    return ASSH_ERR_OVERFLOW;
-  if (value != NULL)
-    *value = (uint8_t*)str;
-  if (next != NULL)
-    *next = (uint8_t*)str + l;
-  return ASSH_OK;
-}
-
-/** This function checks that a string is well inside packet
+/** @internal This function checks that a string is well inside packet
     bounds. If no error is returned, the @tt next parameter is set to
-    point to the first packet byte following the string. */
+    point to the first byte of the packet following the string. */
 static inline ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_packet_check_string(struct assh_packet_s *p, const uint8_t *str, uint8_t **next)
+assh_packet_check_string(const struct assh_packet_s *p, const uint8_t *str,
+                         uint8_t **next)
 {
   return assh_check_string(p->data, p->data_size, str, next);
 }
 
-/** This function checks that an array is well inside packet
+/** @internal This function checks that an array is well inside packet
     bounds. If no error is returned, the @tt next parameter is set to
-    point to the first packet byte following the array. */
+    point to the first byte of the packet following the array. */
 static inline ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_packet_check_array(struct assh_packet_s *p, const uint8_t *array,
+assh_packet_check_array(const struct assh_packet_s *p, const uint8_t *array,
                         size_t array_len, uint8_t **next)
 {
   return assh_check_array(p->data, p->data_size, array, array_len, next);
 }
 
-/** @This function compares a ssh string with a size header to a @tt
+/** @internal This function compare two byte buffers. The processing
+    time does not depend on the buffer contents. */
+static inline ASSH_WARN_UNUSED_RESULT assh_bool_t
+assh_memcmp(const uint8_t *nula, const uint8_t *nulb, size_t len)
+{
+  assh_bool_t r = 0;
+  while (len--)
+    r |= nula[len] ^ nulb[len];
+  return r;  
+}
+
+/** @internal This function compares a ssh string with a size header to a @tt
     NUL terminated string. No bound checking is performed. */
 static inline ASSH_WARN_UNUSED_RESULT int
 assh_string_compare(const uint8_t *ssh_str, const char *nul_str)
@@ -326,17 +287,12 @@ assh_string_compare(const uint8_t *ssh_str, const char *nul_str)
   return strncmp((const char*)ssh_str + 4, nul_str, l) || nul_str[l] != '\0';
 }
 
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_string_copy(const uint8_t *ssh_str, char *nul_str, size_t max_len)
-{
-  size_t len = assh_load_u32(ssh_str);
-  assert(max_len > 0);
-  if (len > max_len - 1)
-    return ASSH_ERR_OVERFLOW;
-  memcpy(nul_str, ssh_str + 4, len);
-  nul_str[len] = '\0';
-  return ASSH_OK;
-}
+/** @internal This function copies a ssh string to a nul terminated
+    string. An error is returned if the size of the buffer is not
+    large enough to store the string along with its nul terminating
+    byte. */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_string_copy(const uint8_t *ssh_str, char *nul_str, size_t max_len);
 
 #endif
 

@@ -54,7 +54,15 @@ void assh_context_init(struct assh_context_s *c,
 
   int i;
   for (i = 0; i < ASSH_PCK_POOL_SIZE; i++)
-    c->pck_pool[i] = NULL;
+    {
+      c->pool[i].pck = NULL;
+      c->pool[i].count = 0;
+      c->pool[i].size = 0;
+    }
+
+  c->pck_pool_max_size = 1 << 20;
+  c->pck_pool_max_bsize = c->pck_pool_max_size / ASSH_PCK_POOL_SIZE;
+  c->pck_pool_size = 0;
 
 #ifdef CONFIG_ASSH_SERVER
   c->srvs_count = 0;
@@ -67,12 +75,19 @@ static void assh_pck_pool_cleanup(struct assh_context_s *c)
   for (i = 0; i < ASSH_PCK_POOL_SIZE; i++)
     {
       struct assh_packet_s *n, *p;
-      for (p = c->pck_pool[i]; p != NULL; p = n)
+      struct assh_packet_pool_s *pl = c->pool + i;
+
+      for (p = pl->pck; p != NULL; p = n)
         {
           n = p->pool_next;
+          pl->size -= p->alloc_size;
+          pl->count--;
           assh_free(c, p, ASSH_ALLOC_PACKET);
         }
-      c->pck_pool[i] = NULL;
+
+      assert(pl->count == 0);
+      assert(pl->size == 0);
+      pl->pck = NULL;
     }
 }
 

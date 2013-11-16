@@ -128,15 +128,16 @@ int main()
 
 	  switch (event.id)
 	    {
-	    case ASSH_EVENT_USERAUTH_SERVER_USERKEY:
-	      /* FIXME check that event public key is in the list of
+	    case ASSH_EVENT_USERAUTH_SERVER_USERKEY: {
+	      /* XXX check that event public key is in the list of
 		 user authorized keys. */
-	      event.userauth_server_userkey.found = 0;
+	      event.userauth_server_userkey.found = 1;
 	      break;
+	    }
 
 	    case ASSH_EVENT_USERAUTH_SERVER_PASSWORD:
-	      /* FIXME check that event user/password pair matches. */
-	      event.userauth_server_password.success = 0;
+	      /* XXX check that event user/password pair matches. */
+	      event.userauth_server_password.success = 1;
 	      break;
 
 	    default:
@@ -149,6 +150,7 @@ int main()
 	}
 
       assh_session_cleanup(&session);
+      break;
     }
 
   assh_context_cleanup(&context);

@@ -145,7 +145,7 @@ assh_bignum_cleanup(struct assh_context_s *c, struct assh_bignum_s *bn)
 {
 }
 
-#ifdef CONFIG_ASSH_BIGNUM_ALLOCA
+#ifdef CONFIG_ASSH_ALLOCA
 
 # include <alloca.h>
 
@@ -281,14 +281,12 @@ ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_bignum_copy(struct assh_bignum_s *a,
                  const struct assh_bignum_s *b);
 
-/** This function sets the number to zero. */
-void assh_bignum_zero(struct assh_bignum_s *bn);
-
 /** This function compares two big numbers. */
 int assh_bignum_cmp(const struct assh_bignum_s *a,
 		    const struct assh_bignum_s *b);
 
-/** This function tests if a big numbers is zero. */
+/** This function tests if a big numbers is zero. The processing time
+    does not depend on the number value. */
 assh_bool_t assh_bignum_cmpz(const struct assh_bignum_s *a);
 
 /** This function compares a big number and an integer. */

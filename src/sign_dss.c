@@ -427,7 +427,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
     assh_sha1_init(&sha1);
     for (i = 0; i < data_count; i++)
       assh_sha1_update(&sha1, data[i], data_len[i]);
-    assh_hash_bignum(&sha1, &assh_sha1_update, k->xn);
+    ASSH_ERR_RET(assh_hash_bignum(&sha1, &assh_sha1_update, k->xn));
     for (i = 0; ; )
       {
         assh_sha1_update(&sha1, rnd, n / 8);
@@ -533,9 +533,11 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_dss_verify)
   ASSH_BIGNUM_ALLOC(c, vn, l, err_v2n);
   ASSH_ERR_GTO(assh_bignum_mulmod(vn, v1n, v2n, k->pn), err_vn);
 
-  ASSH_ERR_GTO(assh_bignum_div(vn, NULL, vn, k->qn), err_);
+  ASSH_ERR_GTO(assh_bignum_div(vn, NULL, vn, k->qn), err_vn);
 
-  *ok = assh_bignum_cmp(vn, rn) == 0;
+  ASSH_ERR_GTO(assh_bignum_sub(vn, rn, vn), err_vn);
+
+  *ok = assh_bignum_cmpz(vn);
 
   err = ASSH_OK;
 

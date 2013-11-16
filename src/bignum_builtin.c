@@ -54,14 +54,6 @@ assh_error_t assh_bignum_uint(struct assh_bignum_s *n,
   return x != 0 ? ASSH_ERR_OVERFLOW : ASSH_OK;
 }
 
-
-void assh_bignum_zero(struct assh_bignum_s *bn)
-{
-  unsigned int i;
-  for (i = 0; i < bn->l; i++)
-    bn->n[i] = 0;
-}
-
 assh_error_t assh_bignum_rand(struct assh_context_s *c,
 			      struct assh_bignum_s *n)
 {
@@ -212,11 +204,12 @@ int assh_bignum_cmp(const struct assh_bignum_s *a,
 assh_bool_t assh_bignum_cmpz(const struct assh_bignum_s *a)
 {
   unsigned int a_len = a->l;
+  assh_bool_t r = 0;
 
-  while (a_len > 0 && a->n[a_len - 1] == 0)
-    a_len--;
+  while (a_len--)
+    r |= !!a->n[a_len];
 
-  return a_len == 0;
+  return r;
 }
 
 int assh_bignum_cmp_uint(const struct assh_bignum_s *a,
@@ -235,7 +228,7 @@ int assh_bignum_cmp_uint(const struct assh_bignum_s *a,
       b[b_len++] = x;
       if (sizeof(x) <= sizeof(assh_bnword_t))
         break;
-      x >>= ASSH_BIGNUM_W;
+      x = (uint64_t)x >> ASSH_BIGNUM_W;
     }
 
   return assh_bignum_cmp_raw(a->n, a_len, b, b_len);

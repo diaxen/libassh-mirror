@@ -31,32 +31,36 @@
 #include <assert.h>
 #include <string.h>
 
-static inline int assh_packet_pool_idx(int size)
+/* This function returns the index of the bucket associated to a given
+   packet size in the allocator pool. */
+static inline struct assh_packet_pool_s *
+assh_packet_pool(struct assh_context_s *c, uint32_t size)
 {
   int i = sizeof(int) * 8 - __builtin_clz(size) - ASSH_PCK_POOL_MIN;
   if (i < 0)
     i = 0;
   else if (i >= ASSH_PCK_POOL_SIZE)
     i = ASSH_PCK_POOL_SIZE - 1;
-  return i;
+  return c->pool + i;
 }
 
 assh_error_t
-assh_packet_alloc(struct assh_session_s *s,
-                  uint8_t msg, size_t size,
-                  struct assh_packet_s **result)
+assh_packet_alloc2(struct assh_context_s *c,
+                   uint8_t msg, size_t size,
+                   struct assh_packet_s **result)
 {
   struct assh_packet_s *p, **r;
-  int i = assh_packet_pool_idx(size);
   assh_error_t err;
+  struct assh_packet_pool_s *pl = assh_packet_pool(c, size);
 
-  size += /* pck_len */ 4 + /* pad_len */ 1 + /* msg */ 1 + ASSH_MAX_MAC_LEN;
   /* get from pool */
-  for (r = &s->ctx->pck_pool[i]; (p = *r) != NULL; r = &(*r)->pool_next)
+  for (r = &pl->pck; (p = *r) != NULL; r = &(*r)->pool_next)
     {
       if (p->alloc_size >= size)
 	{
 	  *r = p->pool_next;
+          pl->size -= p->alloc_size;
+          pl->count--;
 	  break;
 	}
     }
@@ -64,13 +68,13 @@ assh_packet_alloc(struct assh_session_s *s,
   /* fallback to alloc */
   if (p == NULL)
     {
-      ASSH_ERR_RET(assh_alloc(s->ctx, sizeof(*p) + size, ASSH_ALLOC_PACKET, (void*)&p));
+      ASSH_ERR_RET(assh_alloc(c, sizeof(*p) + size, ASSH_ALLOC_PACKET, (void*)&p));
       p->alloc_size = size;
-      p->ref_count = 1;
     }
 
   /* init */
-  p->session = s;
+  p->ref_count = 1;
+  p->ctx = c;
   p->data_size = /* pck_len */ 4 + /* pad_len */ 1 + /* msg */ 1;
   p->head.msg = msg;
 
@@ -85,16 +89,21 @@ void assh_packet_release(struct assh_packet_s *p)
 
   assert(p->ref_count == 0);
 
-  struct assh_session_s *s = p->session;
-  int i = assh_packet_pool_idx(p->alloc_size);
+  struct assh_context_s *c = p->ctx;
+  struct assh_packet_pool_s *pl = assh_packet_pool(c, p->alloc_size);
 
-  p->pool_next = s->ctx->pck_pool[i];
-  s->ctx->pck_pool[i] = p;
-
-#warning Free some unused packets?
-#if 0
-  assh_free(s->ctx, p, ASSH_ALLOC_PACKET);
-#endif
+  if (pl->size + p->alloc_size >= c->pck_pool_max_bsize ||
+      c->pck_pool_size + p->alloc_size >= c->pck_pool_max_size)
+    {
+      assh_free(c, p, ASSH_ALLOC_PACKET);
+    }
+  else
+    {
+      p->pool_next = pl->pck;
+      pl->pck = p;
+      pl->count++;
+      pl->size += p->alloc_size;
+    }
 }
 
 ASSH_WARN_UNUSED_RESULT assh_error_t
@@ -102,7 +111,7 @@ assh_packet_dup(struct assh_packet_s *p, struct assh_packet_s **copy)
 {
   assh_error_t err;
 
-  if ((err = assh_packet_alloc(p->session, 0, p->alloc_size - 6, copy)))
+  if ((err = assh_packet_alloc2(p->ctx, 0, p->alloc_size, copy)))
     return err;
   struct assh_packet_s *r = *copy;
 
@@ -127,3 +136,117 @@ assh_error_t assh_packet_add_mpint(struct assh_packet_s *p,
   return ASSH_OK;
 }
 
+assh_error_t
+assh_check_asn1(const uint8_t *buffer, size_t buffer_len, const uint8_t *str,
+                uint8_t **value, uint8_t **next)
+{
+  const uint8_t *e = buffer + buffer_len;
+  if (str < buffer || str > e - 2)
+    return ASSH_ERR_OVERFLOW;
+
+  str++; /* discard type identifer */
+  unsigned int l = *str++;
+  if (l & 0x80)  /* long length form ? */
+    {
+      unsigned int ll = l & 0x7f;
+      if (e - str < ll)
+        return ASSH_ERR_OVERFLOW;
+      for (l = 0; ll > 0; ll--)
+        l = (l << 8) | *str++;
+    }
+  if (e - str < l)
+    return ASSH_ERR_OVERFLOW;
+  if (value != NULL)
+    *value = (uint8_t*)str;
+  if (next != NULL)
+    *next = (uint8_t*)str + l;
+  return ASSH_OK;
+}
+
+assh_error_t
+assh_check_string(const uint8_t *buffer, size_t buffer_len,
+                  const uint8_t *str, uint8_t **next)
+{
+  const uint8_t *e = buffer + buffer_len;
+  if (str < buffer || str > e - 4)
+    return ASSH_ERR_OVERFLOW;
+  uint32_t s = assh_load_u32(str);
+  if (e - 4 - str < s)
+    return ASSH_ERR_OVERFLOW;
+  if (next != NULL)
+    *next = (uint8_t*)str + 4 + s;
+  return ASSH_OK;
+}
+
+assh_error_t
+assh_check_array(const uint8_t *buffer, size_t buffer_len,
+                 const uint8_t *array, size_t array_len, uint8_t **next)
+{
+  const uint8_t *e = buffer + buffer_len;
+  if (array < buffer || array > e)
+    return ASSH_ERR_OVERFLOW;
+  if (e - array < array_len)
+    return ASSH_ERR_OVERFLOW;
+  if (next != NULL)
+    *next = (uint8_t*)array + array_len;
+  return ASSH_OK;
+}
+
+assh_error_t
+assh_packet_add_bytes(struct assh_packet_s *p, size_t len, uint8_t **result)
+{
+  if (p->data_size + len > p->alloc_size)
+    return ASSH_ERR_MEM;
+  uint8_t *d = p->data + p->data_size;
+  p->data_size += len;
+  *result = d;
+  return ASSH_OK;
+}
+
+assh_error_t
+assh_packet_add_string(struct assh_packet_s *p, size_t len, uint8_t **result)
+{
+  uint8_t *d;
+  assh_error_t err;
+  if ((err = assh_packet_add_bytes(p, len + 4, &d)))
+    return err;
+  assh_store_u32(d, len);
+  *result = d + 4;
+  return ASSH_OK;
+}
+
+assh_error_t
+assh_packet_enlarge_string(struct assh_packet_s *p, uint8_t *str,
+                           size_t len, uint8_t **result)
+{
+  size_t olen = assh_load_u32(str - 4);
+  assert(str + olen == p->data + p->data_size);
+  assh_error_t err;
+  if ((err = assh_packet_add_bytes(p, len, result)))
+    return err;
+  assh_store_u32(str - 4, olen + len);
+  return ASSH_OK;
+}
+
+void
+assh_packet_shrink_string(struct assh_packet_s *p, uint8_t *str,
+                          size_t new_len)
+{
+  size_t olen = assh_load_u32(str - 4);
+  assert(str + olen == p->data + p->data_size);
+  assert(olen >= new_len);
+  assh_store_u32(str - 4, new_len);
+  p->data_size -= olen - new_len;
+}
+
+assh_error_t
+assh_string_copy(const uint8_t *ssh_str, char *nul_str, size_t max_len)
+{
+  size_t len = assh_load_u32(ssh_str);
+  assert(max_len > 0);
+  if (len > max_len - 1)
+    return ASSH_ERR_OVERFLOW;
+  memcpy(nul_str, ssh_str + 4, len);
+  nul_str[len] = '\0';
+  return ASSH_OK;
+}
