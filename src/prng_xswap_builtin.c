@@ -24,87 +24,85 @@
 
 #include <assh/assh_prng.h>
 #include <assh/assh_context.h>
+#include <assh/assh_packet.h>
 
 #include <string.h>
 
-/** Number of words in the XSWAP prng pool */
-#define ASSH_PRNG_XSWAP_SIZE 128
+  /*
+   ______              ______
+  /      \            /      \
+  |      |            |      |
+  |      v            v      |
+  |  +--------------------+  |
+  |  |   256 bits state   |  |
+  |  +--------------------+  |
+  |      |            |      |
+ XOR<----+----.  .----+---->XOR
+  ^      |     \/     |      ^
+  |      v     /\     v      |
+  |     TEA<--'  '-->TEA     |
+  |      |            |      |
+  \______/            |______/
+                      |
+                      v
+                     Out
+  */
 
 struct assh_prng_ctx_s
 {
-  uint32_t pool[ASSH_PRNG_XSWAP_SIZE];
-  uint32_t key[4];
-  uint32_t i;
+  uint32_t s[8];
+  uint8_t buf[16];
 };
 
-static void assh_prng_xswap_tea_cipher(struct assh_prng_ctx_s *ctx,
-				       uint32_t *v0_, uint32_t *v1_)
+static void xtea_cipher(const uint32_t key[4], uint32_t *v0_,
+                        uint32_t *v1_, uint32_t delta)
 {
-  uint32_t k0 = ctx->key[0], k1 = ctx->key[1], k2 = ctx->key[2], k3 = ctx->key[3];
   uint32_t v0 = *v0_, v1 = *v1_;
   uint32_t sum = 0;
-  unsigned int i;
+  uint_fast8_t i;
 
   for (i = 0; i < 32; i++)
     {
-      sum += 0x9e3779b9;
-      v0 += ((v1 << 4) + k0) ^ (v1 + sum) ^ ((v1 >> 5) + k1);
-      v1 += ((v0 << 4) + k2) ^ (v0 + sum) ^ ((v0 >> 5) + k3);  
+      v0 += (((v1 << 4) ^ (v1 >> 5)) + v1) ^ (sum + key[sum & 3]);
+      sum += delta;
+      v1 += (((v0 << 4) ^ (v0 >> 5)) + v0) ^ (sum + key[(sum >> 11) & 3]);
     }
+
   *v0_ = v0;
   *v1_ = v1;
 }
 
-static uint32_t assh_prng_xswap_get32(struct assh_prng_ctx_s *ctx)
+static void assh_prng_xswap_round(struct assh_prng_ctx_s *ctx)
 {
-  /* 
-                 |    i += 2   | j = rand(i, i+N/4) * 2 + N/8 |
-    ------------------------------------------/ /---------------
-          |      |      |      |      |      / /    |       |
-    ----------------------------------------/ /-----------------
-                     pool[i]              pool[j]
-                  \___________/        \___________/
-                        |                    |
-                        |                    |
-                        |------>(xor64)<-----|
-                        |          |         |
-                        |          v         |
-     128 bits key >---  |  ----->(tea)       |
-                        |          |         |
-                        v          |         v
-                     (xor64)<------|----->(xor64)
-                        |          |         |
-                        |          \-------  |  -->(xor32)---> result
-                        |                    |
-                   _____v_____          _____v_____
-                  /           \        /           \
-                     pool[i]              pool[j]
-    ------------------------------------------/ /---------------
-          |      |      |      |      |      / /    |       |
-    ----------------------------------------/ /-----------------
-  */
+  const uint32_t *s = ctx->s;
+  uint32_t s0 = s[0];
+  uint32_t s1 = s[1];
+  uint32_t s2 = s[2];
+  uint32_t s3 = s[3];
+  uint32_t s4 = s[4];
+  uint32_t s5 = s[5];
+  uint32_t s6 = s[6];
+  uint32_t s7 = s[7];
 
-  uint32_t *i0 = ctx->pool + ((ctx->i + 0) & (ASSH_PRNG_XSWAP_SIZE - 1));
-  uint32_t *i1 = ctx->pool + ((ctx->i + 1) & (ASSH_PRNG_XSWAP_SIZE - 1));
+  xtea_cipher(s + 4, &s0, &s1, 0x9e3779b9);
+  xtea_cipher(s + 4, &s2, &s3, 0x71374491);
+  xtea_cipher(s + 0, &s4, &s5, 0xb5c0fbcf);
+  xtea_cipher(s + 0, &s6, &s7, 0xe9b5dba5);
 
-  uint32_t j = ctx->i + (*i0 & (ASSH_PRNG_XSWAP_SIZE / 4 - 1)) * 2 + ASSH_PRNG_XSWAP_SIZE / 8;
+  ctx->s[0] ^= s0;
+  ctx->s[1] ^= s1;
+  ctx->s[2] ^= s2;
+  ctx->s[3] ^= s3;
+  ctx->s[4] ^= s4;
+  ctx->s[5] ^= s5;
+  ctx->s[6] ^= s6;
+  ctx->s[7] ^= s7;
 
-  uint32_t *j0 = ctx->pool + ((j + 0) & (ASSH_PRNG_XSWAP_SIZE - 1));
-  uint32_t *j1 = ctx->pool + ((j + 1) & (ASSH_PRNG_XSWAP_SIZE - 1));
-
-  uint32_t x0 = *i0 ^ *j0;
-  uint32_t x1 = *i1 ^ *j1;
-
-  assh_prng_xswap_tea_cipher(ctx, &x0, &x1);
-
-  *i0 ^= x0;
-  *i1 ^= x1;
-  *j0 ^= x0;
-  *j1 ^= x1;
-
-  ctx->i += 2;
-
-  return x0 ^ x1;
+  uint8_t *buf = ctx->buf;
+  assh_store_u32(buf + 0, s0);
+  assh_store_u32(buf + 4, s1);
+  assh_store_u32(buf + 8, s4);
+  assh_store_u32(buf + 12, s5);
 }
 
 static ASSH_PRNG_INIT_FCN(assh_prng_xswap_init)
@@ -114,22 +112,8 @@ static ASSH_PRNG_INIT_FCN(assh_prng_xswap_init)
   ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_prng_ctx_s), ASSH_ALLOC_KEY, &c->prng_ctx));
   struct assh_prng_ctx_s *ctx = c->prng_ctx;
 
-  assert((ASSH_PRNG_XSWAP_SIZE & (ASSH_PRNG_XSWAP_SIZE-1)) == 0 && "power of 2");
-  assert(ASSH_PRNG_XSWAP_SIZE >= 32);
-
-  c->prng_entropy = -(int)sizeof(ctx->pool);
-
-  /* setup initial state (pool + key) */
-  uint32_t i;
-  for (i = 0; i < ASSH_PRNG_XSWAP_SIZE; i++)
-    ctx->pool[i] = i;
-
-  ctx->key[0] = 0x243f6a88;  /* pi */
-  ctx->key[1] = 0x85a308d3;
-  ctx->key[2] = 0x13198a2e;
-  ctx->key[3] = 0x03707344;
-
-  ctx->i = 0;
+  c->prng_entropy = 0;
+  memset(ctx, 0, sizeof(*ctx));
 
   return ASSH_OK;
 }
@@ -137,20 +121,15 @@ static ASSH_PRNG_INIT_FCN(assh_prng_xswap_init)
 static ASSH_PRNG_GET_FCN(assh_prng_xswap_get)
 {
   struct assh_prng_ctx_s *ctx = c->prng_ctx;
-  union {
-    uint8_t bytes[4];
-    uint32_t word;
-  } x;
 
   c->prng_entropy -= rdata_len;
 
   while (rdata_len > 0)
     {
-      x.word = assh_prng_xswap_get32(ctx);
-
-      unsigned int n, l = ASSH_MIN(sizeof(x.word), rdata_len);
+      unsigned int n, l = ASSH_MIN(16, rdata_len);
+      assh_prng_xswap_round(ctx);
       for (n = 0; n < l; n++)
-	*rdata++ = x.bytes[n];
+	*rdata++ = ctx->buf[n];
       rdata_len -= l;
     }
 
@@ -160,28 +139,24 @@ static ASSH_PRNG_GET_FCN(assh_prng_xswap_get)
 static ASSH_PRNG_FEED_FCN(assh_prng_xswap_feed)
 {
   struct assh_prng_ctx_s *ctx = c->prng_ctx;
-  union {
-    uint8_t bytes[4];
-    uint32_t word;
-  } x;
+  uint8_t *buf = ctx->buf;
 
-  c->prng_entropy += rdata_len & ~(size_t)3;
-  uint32_t i = ctx->i;
+  c->prng_entropy += rdata_len;
 
   while (rdata_len > 0)
     {
-      x.word = 0;
-      unsigned int n, l = ASSH_MIN(sizeof(x.word), rdata_len);
+      unsigned int n, l = ASSH_MIN(16, rdata_len);
       for (n = 0; n < l; n++)
-        x.bytes[n] = *rdata++;
+        buf[n] = *rdata++;
       rdata_len -= l;
 
-      ctx->pool[i & (ASSH_PRNG_XSWAP_SIZE - 1)] ^= x.word;
-      ctx->key[i & 3] ^= x.word;
-      i += l / sizeof(x.word);
-    }
+      ctx->s[4] ^= assh_load_u32(buf + 0);
+      ctx->s[5] ^= assh_load_u32(buf + 4);
+      ctx->s[6] ^= assh_load_u32(buf + 8);
+      ctx->s[7] ^= assh_load_u32(buf + 12);
 
-  ctx->i = i;
+      assh_prng_xswap_round(ctx);
+    }
 
   return ASSH_OK;
 }
