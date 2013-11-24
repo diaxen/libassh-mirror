@@ -348,9 +348,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
   /* transport state machine */
   switch (s->tr_st)
     {
-    case ASSH_TR_KEX_INIT:
-      abort();
-
+#warning test rekeying
     case ASSH_TR_KEX_WAIT_REPLY:
       ASSH_ERR_RET(assh_algo_kex_send_init(s));
     case ASSH_TR_KEX_WAIT:
@@ -379,6 +377,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
     case ASSH_TR_SERVICE:
       break;
 
+    case ASSH_TR_KEX_INIT:
     case ASSH_TR_FLUSHING:
     case ASSH_TR_ENDING:
     case ASSH_TR_DISCONNECTED:

@@ -35,7 +35,8 @@ assh_error_t assh_service_register(struct assh_context_s *c,
 {
   assh_error_t err;
 
-  ASSH_ERR_RET(srv->side != c->type ? ASSH_ERR_NOTSUP : 0);
+  ASSH_ERR_RET(srv->side != ASSH_CLIENT_SERVER &&
+               srv->side != c->type ? ASSH_ERR_NOTSUP : 0);
   ASSH_ERR_RET(c->srvs_count == ASSH_MAX_SERVICES ? ASSH_ERR_OVERFLOW : 0);
   c->srvs[c->srvs_count++] = srv;
   return ASSH_OK;
@@ -68,13 +69,13 @@ assh_error_t assh_service_register_default(struct assh_context_s *c)
 #ifdef CONFIG_ASSH_CLIENT
     case ASSH_CLIENT:
       return assh_service_register_va(c, &assh_service_userauth_client,
-                                      &assh_service_connection_client, NULL);
+                                      &assh_service_connection, NULL);
 #endif
 
 #ifdef CONFIG_ASSH_SERVER
     case ASSH_SERVER:
       return assh_service_register_va(c, &assh_service_userauth_server,
-                                      &assh_service_connection_server, NULL);
+                                      &assh_service_connection, NULL);
 #endif
 
     default:

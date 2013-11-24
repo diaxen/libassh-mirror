@@ -336,7 +336,7 @@ static ASSH_KEX_PROCESS_FCN(assh_kex_dh_process)
       e->id = ASSH_EVENT_HOSTKEY_LOOKUP;
       e->f_done = assh_kex_dh_host_key_lookup_done;
       e->done_pv = pv;
-      e->hostkey_lookup.key = pv->host_key;
+      *(const struct assh_key_s **)&e->hostkey_lookup.key = pv->host_key;
       e->hostkey_lookup.accept = 0;
 
       return ASSH_OK;
@@ -377,17 +377,18 @@ static assh_error_t assh_kex_dh_init(struct assh_session_s *s, const struct assh
 
   switch (s->ctx->type)
     {
-    case ASSH_CLIENT:
 #ifdef CONFIG_ASSH_CLIENT
+    case ASSH_CLIENT:
       pv->state = ASSH_KEX_DH_CLIENT_SENT_E;
-#endif
       break;
-
-    case ASSH_SERVER:
+#endif
 #ifdef CONFIG_ASSH_SERVER
+    case ASSH_SERVER:
       pv->state = ASSH_KEX_DH_SERVER_WAIT_E;
-#endif
       break;
+#endif
+    default:
+      abort();
     }
 
   ASSH_ERR_GTO(assh_bignum_init(s->ctx, pv->en, group->size), err_pv);

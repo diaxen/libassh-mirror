@@ -109,18 +109,18 @@ int main(int argc, char **argv)
           event.hostkey_lookup.accept = 1;
           break;
 
-        case ASSH_EVENT_USERAUTH_CLIENT_USERNAME: {
-          event.userauth_client_username.username = "test";
+        case ASSH_EVENT_USERAUTH_CLIENT_USER: {
+          event.userauth_client.user.username = "test";
           break;
         }
 
         case ASSH_EVENT_USERAUTH_CLIENT_METHODS: {
-          if (event.userauth_client_methods.pub_keys)
-            assh_load_key_filename(&context, &event.userauth_client_methods.pub_keys,
+          if (event.userauth_client.methods.pub_keys)
+            assh_load_key_filename(&context, &event.userauth_client.methods.pub_keys,
                                    "ssh-dss", "/home/test/.ssh/id_dsa", ASSH_KEY_FMT_PV_RFC2440_PEM_ASN1);
 
 #if 0
-          if (event.userauth_client_methods.method_password)
+          if (event.userauth_client.methods.password)
             event.userauth_client_methods.password = "test";
 #endif
           break;

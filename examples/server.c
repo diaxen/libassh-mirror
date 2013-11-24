@@ -131,13 +131,13 @@ int main()
 	    case ASSH_EVENT_USERAUTH_SERVER_USERKEY: {
 	      /* XXX check that event public key is in the list of
 		 user authorized keys. */
-	      event.userauth_server_userkey.found = 1;
+	      event.userauth_server.userkey.found = 1;
 	      break;
 	    }
 
 	    case ASSH_EVENT_USERAUTH_SERVER_PASSWORD:
 	      /* XXX check that event user/password pair matches. */
-	      event.userauth_server_password.success = 1;
+	      event.userauth_server.password.success = 1;
 	      break;
 
 	    default:

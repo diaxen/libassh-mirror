@@ -114,18 +114,17 @@ assh_service_by_name(struct assh_context_s *c,
                      size_t name_len, const char *name,
                      const struct assh_service_s **srv_);
 
+/** @This provides the standard @tt ssh-connection service. */
+extern const struct assh_service_s assh_service_connection;
+
 #ifdef CONFIG_ASSH_SERVER
 /** @This provides the standard server side @tt ssh-userauth service. */
 extern const struct assh_service_s assh_service_userauth_server;
-/** @This provides the standard server side @tt ssh-connection service. */
-extern const struct assh_service_s assh_service_connection_server;
 #endif
 
 #ifdef CONFIG_ASSH_CLIENT
 /** @This provides the standard client side @tt ssh-userauth service. */
 extern const struct assh_service_s assh_service_userauth_client;
-/** @This provides the standard client side @tt ssh-connection service. */
-extern const struct assh_service_s assh_service_connection_client;
 #endif
 
 #endif

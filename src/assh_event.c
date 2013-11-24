@@ -42,8 +42,6 @@ assh_error_t assh_event_get(struct assh_session_s *s,
 {
   assh_error_t err;
 
-  ASSH_ERR_RET(s->tr_st == ASSH_TR_DISCONNECTED ? ASSH_ERR_DISCONNECTED : 0);
-
   /* need to get some entropy for the prng */
   if (s->ctx->prng_entropy < 0)
     {
@@ -94,7 +92,7 @@ assh_error_t assh_event_get(struct assh_session_s *s,
     goto done;
 
   /* all service events have been processed, flusing done */
-  if (s->tr_st == ASSH_TR_FLUSHING)
+  if (s->tr_st >= ASSH_TR_FLUSHING)
     {
       s->tr_st = ASSH_TR_DISCONNECTED;
       ASSH_ERR_RET(ASSH_ERR_DISCONNECTED);
@@ -110,7 +108,8 @@ assh_error_t assh_event_get(struct assh_session_s *s,
     case ASSH_TR_OUT_HELLO:
       event->id = ASSH_EVENT_WRITE;
       event->f_done = &assh_event_write_done;
-      ASSH_ERR_GTO(assh_event_write(s, &event->write.data, &event->write.size), err);
+      ASSH_ERR_GTO(assh_event_write(s, (const void **)&event->write.data,
+                                    (size_t*)&event->write.size), err);
       goto done;
 
     default:
@@ -132,14 +131,16 @@ assh_error_t assh_event_get(struct assh_session_s *s,
       assert(s->in_pck == NULL);
       event->id = ASSH_EVENT_IDLE;
       event->f_done = &assh_event_read_done;
-      ASSH_ERR_GTO(assh_event_read(s, &event->read.data, &event->read.size), err);
+      ASSH_ERR_GTO(assh_event_read(s, (void**)&event->read.data,
+                                   (size_t*)&event->read.size), err);
       goto done;
 
     case ASSH_TR_IN_HELLO:
     case ASSH_TR_IN_PAYLOAD:
       event->id = ASSH_EVENT_READ;
       event->f_done = &assh_event_read_done;
-      ASSH_ERR_GTO(assh_event_read(s, &event->read.data, &event->read.size), err);
+      ASSH_ERR_GTO(assh_event_read(s, (void**)&event->read.data,
+                                   (size_t*)&event->read.size), err);
       goto done;
 
     default:

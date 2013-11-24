@@ -156,7 +156,7 @@ assh_key_drop(struct assh_context_s *c, struct assh_key_s **head);
 
 /** This function checks the key validity. */
 static inline ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_key_validate(struct assh_context_s *c, struct assh_key_s *key,
+assh_key_validate(struct assh_context_s *c, const struct assh_key_s *key,
                   assh_bool_t *valid)
 {
   return key->f_validate(c, key, valid);

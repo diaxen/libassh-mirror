@@ -41,7 +41,21 @@ void assh_context_init(struct assh_context_s *c,
                        enum assh_context_type_e type)
 {
   c->session_count = 0;
-  c->type = type;
+
+  switch (type)
+    {
+#ifdef CONFIG_ASSH_CLIENT
+    case ASSH_CLIENT:
+#endif
+#ifdef CONFIG_ASSH_SERVER
+    case ASSH_SERVER:
+#endif
+      c->type = type;
+      break;
+    default:
+      // ASSH_ERR_RET(ASSH_ERR_NOTSUP);
+      abort();
+    }
 
   c->f_alloc = assh_default_allocator;
 

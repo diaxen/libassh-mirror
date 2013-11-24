@@ -32,6 +32,7 @@ enum assh_context_type_e
 {
   ASSH_SERVER,
   ASSH_CLIENT,
+  ASSH_CLIENT_SERVER,
 };
 
 struct assh_packet_pool_s

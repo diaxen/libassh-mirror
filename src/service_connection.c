@@ -24,29 +24,33 @@
 #include <assh/assh_service.h>
 #include <assh/assh_session.h>
 
-static ASSH_SERVICE_INIT_FCN(assh_connection_server_init)
+struct assh_connection_context_s
 {
-  s->srv = &assh_service_connection_server;
+};
+
+static ASSH_SERVICE_INIT_FCN(assh_connection_init)
+{
+  s->srv = &assh_service_connection;
 
   return ASSH_OK;
 }
 
-static ASSH_SERVICE_CLEANUP_FCN(assh_connection_server_cleanup)
+static ASSH_SERVICE_CLEANUP_FCN(assh_connection_cleanup)
 {
   s->srv = NULL;
 }
 
-static ASSH_SERVICE_PROCESS_FCN(assh_connection_server_process)
+static ASSH_SERVICE_PROCESS_FCN(assh_connection_process)
 {
   return ASSH_OK;
 }
 
-const struct assh_service_s assh_service_connection_server =
+const struct assh_service_s assh_service_connection =
 {
   .name = "ssh-connection",
-  .side = ASSH_SERVER,
-  .f_init = assh_connection_server_init,
-  .f_cleanup = assh_connection_server_cleanup,
-  .f_process = assh_connection_server_process,  
+  .side = ASSH_CLIENT_SERVER,
+  .f_init = assh_connection_init,
+  .f_cleanup = assh_connection_cleanup,
+  .f_process = assh_connection_process,  
 };
 

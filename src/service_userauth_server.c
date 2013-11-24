@@ -203,7 +203,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_password_done)
 
   ASSH_ERR_RET(pv->state != ASSH_USERAUTH_PASSWORD ? ASSH_ERR_STATE : 0);
 
-  if (e->userauth_server_password.success)
+  if (e->userauth_server.password.success)
     ASSH_ERR_RET(assh_userauth_server_success(s));
   else
     ASSH_ERR_RET(assh_userauth_server_failure(s));    
@@ -233,9 +233,11 @@ static assh_error_t assh_userauth_server_req_password(struct assh_session_s *s,
   /* return event to check the user password */
   e->id = ASSH_EVENT_USERAUTH_SERVER_PASSWORD;
   e->f_done = assh_userauth_server_password_done;
-  e->userauth_server_password.username = pv->username;
-  e->userauth_server_password.password = pv->password;
-  e->userauth_server_password.success = 0;
+  *(const char**)&e->userauth_server.password.username = pv->username;
+  *(size_t*)&e->userauth_server.password.username_len = strlen(pv->username);
+  *(const char**)&e->userauth_server.password.password = pv->password;
+  *(size_t*)&e->userauth_server.password.password_len = strlen(pv->password);
+  e->userauth_server.password.success = 0;
 
   pv->state = ASSH_USERAUTH_PASSWORD;
   return ASSH_OK;
@@ -290,7 +292,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
     case ASSH_USERAUTH_PUBKEY_PKOK: {      /* may need to send PK_OK */
       pv->state = ASSH_USERAUTH_WAIT_RQ;
 
-      if (!e->userauth_server_userkey.found)
+      if (!e->userauth_server.userkey.found)
         {
           ASSH_ERR_RET(assh_userauth_server_failure(s));
           return ASSH_OK;
@@ -331,7 +333,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
     case ASSH_USERAUTH_PUBKEY_VERIFY: {
       pv->state = ASSH_USERAUTH_WAIT_RQ;
 
-      if (!e->userauth_server_userkey.found)
+      if (!e->userauth_server.userkey.found)
         ASSH_ERR_RET(assh_userauth_server_failure(s));
       else
         ASSH_ERR_RET(assh_userauth_server_pubkey_verify(s, pv->sign_pck, pv->sign));
@@ -412,9 +414,10 @@ static assh_error_t assh_userauth_server_req_pubkey(struct assh_session_s *s,
   /* return an event to lookup the key in the list of authorized user keys */
   e->id = ASSH_EVENT_USERAUTH_SERVER_USERKEY;
   e->f_done = assh_userauth_server_userkey_done;
-  e->userauth_server_userkey.username = pv->username;
-  e->userauth_server_userkey.pub_key = pv->pub_key;
-  e->userauth_server_userkey.found = 0;
+  *(const char**)&e->userauth_server.userkey.username = pv->username;
+  *(size_t*)&e->userauth_server.userkey.username_len = strlen(pv->username);
+  *(const struct assh_key_s**)&e->userauth_server.userkey.pub_key = pv->pub_key;
+  e->userauth_server.userkey.found = 0;
 
   return ASSH_OK;
 }

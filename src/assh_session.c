@@ -40,22 +40,19 @@ assh_error_t assh_session_init(struct assh_context_s *c,
 
   switch (c->type)
     {
-    case ASSH_SERVER:
 #ifdef CONFIG_ASSH_SERVER
+    case ASSH_SERVER:
       ASSH_ERR_RET(c->host_keys == NULL ? ASSH_ERR_MISSING_KEY : 0);
       s->tr_st = ASSH_TR_KEX_INIT;      
-#else
-      ASSH_ERR_RET(ASSH_ERR_NOTSUP);
-#endif
       break;
-
-    case ASSH_CLIENT:
+#endif
 #ifdef CONFIG_ASSH_CLIENT
+    case ASSH_CLIENT:
       s->tr_st = ASSH_TR_KEX_WAIT_REPLY;
-#else
-      ASSH_ERR_RET(ASSH_ERR_NOTSUP);
-#endif
       break;
+#endif
+    default:
+      ASSH_ERR_RET(ASSH_ERR_NOTSUP);
     }
 
   assh_queue_init(&s->out_queue);

@@ -277,20 +277,18 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
   /* select proper algorithms based on registered algorithms and name-lists */
   switch (s->ctx->type)
     {
-    case ASSH_SERVER:
 #ifdef CONFIG_ASSH_SERVER
+    case ASSH_SERVER:
       ASSH_ERR_RET(assh_kex_server_algos(s->ctx, lists, algos, &guessed));
-#else
-      abort();
-#endif
       break;
-    case ASSH_CLIENT:
+#endif
 #ifdef CONFIG_ASSH_CLIENT
+    case ASSH_CLIENT:
       ASSH_ERR_RET(assh_kex_client_algos(s->ctx, lists, algos, &guessed));
-#else
-      abort();
-#endif
       break;
+#endif
+    default:
+      abort();
     }
 
   const struct assh_algo_kex_s *kex           = (const void *)algos[0];
