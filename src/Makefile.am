@@ -21,7 +21,7 @@ lib_LTLIBRARIES = libassh.la
 
 libassh_la_SOURCES = assh_context.c assh_session.c assh_packet.c	\
 	assh_event.c assh_transport.c assh_kex.c assh_hash.c		\
-	assh_algo.c assh_key.c assh_service.c				\
+	assh_algo.c assh_key.c assh_service.c assh_map.c		\
 	service_userauth_client.c service_userauth_server.c		\
 	service_connection.c						\
 	kex_dh.c mac_sha1.c sign_dss.c					\

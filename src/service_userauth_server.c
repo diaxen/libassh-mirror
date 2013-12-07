@@ -233,10 +233,10 @@ static assh_error_t assh_userauth_server_req_password(struct assh_session_s *s,
   /* return event to check the user password */
   e->id = ASSH_EVENT_USERAUTH_SERVER_PASSWORD;
   e->f_done = assh_userauth_server_password_done;
-  *(const char**)&e->userauth_server.password.username = pv->username;
-  *(size_t*)&e->userauth_server.password.username_len = strlen(pv->username);
-  *(const char**)&e->userauth_server.password.password = pv->password;
-  *(size_t*)&e->userauth_server.password.password_len = strlen(pv->password);
+  *(const char**)&e->userauth_server.password.username.str = pv->username;
+  *(size_t*)&e->userauth_server.password.username.len = strlen(pv->username);
+  *(const char**)&e->userauth_server.password.password.str = pv->password;
+  *(size_t*)&e->userauth_server.password.password.len = strlen(pv->password);
   e->userauth_server.password.success = 0;
 
   pv->state = ASSH_USERAUTH_PASSWORD;
@@ -414,8 +414,8 @@ static assh_error_t assh_userauth_server_req_pubkey(struct assh_session_s *s,
   /* return an event to lookup the key in the list of authorized user keys */
   e->id = ASSH_EVENT_USERAUTH_SERVER_USERKEY;
   e->f_done = assh_userauth_server_userkey_done;
-  *(const char**)&e->userauth_server.userkey.username = pv->username;
-  *(size_t*)&e->userauth_server.userkey.username_len = strlen(pv->username);
+  *(const char**)&e->userauth_server.userkey.username.str = pv->username;
+  *(size_t*)&e->userauth_server.userkey.username.len = strlen(pv->username);
   *(const struct assh_key_s**)&e->userauth_server.userkey.pub_key = pv->pub_key;
   e->userauth_server.userkey.found = 0;
 

@@ -42,6 +42,7 @@ struct assh_context_s;
 struct assh_session_s;
 struct assh_packet_s;
 struct assh_channel_s;
+struct assh_request_s;
 struct assh_bignum_s;
 struct assh_kex_keys_s;
 struct assh_algo_kex_s;
@@ -202,6 +203,18 @@ static inline void assh_hexdump(const char *name, const void *data, unsigned int
     }
   fputc('\n', stderr);
 }
+
+struct assh_string_s
+{
+  const char *str;
+  size_t len;
+};
+
+struct assh_buffer_s
+{
+  const uint8_t *data;
+  size_t size;
+};
 
 struct assh_queue_entry_s
 {

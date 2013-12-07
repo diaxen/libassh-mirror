@@ -110,7 +110,8 @@ int main(int argc, char **argv)
           break;
 
         case ASSH_EVENT_USERAUTH_CLIENT_USER: {
-          event.userauth_client.user.username = "test";
+          event.userauth_client.user.username.str = "test";
+          event.userauth_client.user.username.len = 4;
           break;
         }
 

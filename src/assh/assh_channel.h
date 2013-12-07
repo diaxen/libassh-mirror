@@ -26,12 +26,13 @@
 #define ASSH_CHANNEL_H_
 
 #include "assh.h"
+#include "assh_map.h"
 
 /** @internal */
 enum assh_channel_status_e
 {
   ASSH_CHANNEL_REQUESTED,
-  ASSH_CHANNEL_OPENED,
+  ASSH_CHANNEL_OPEN,
   ASSH_CHANNEL_EOF_SENT,
   ASSH_CHANNEL_EOF_RECEIVED,
   ASSH_CHANNEL_CLOSE_SENT,
@@ -41,13 +42,27 @@ enum assh_channel_status_e
 /** @internal */
 struct assh_channel_s
 {
+  union {
+    /** channel queue entry, valid when the channel is waiting for open confirmation. */
+    struct assh_queue_entry_s qentry;
+    /** channel map entry, valid when the channel is open. */
+    struct assh_map_entry_s mentry;
+  };
+
+  uint32_t remote_id;
   enum assh_channel_status_e status;
   struct assh_session_s *session;
   void *pv;
 
-  int chan_id, rchan_id;
   size_t max_pkt_size;
   uint32_t window_size;
+};
+
+/** @internal */
+struct assh_request_s
+{
+  struct assh_queue_entry_s entry;
+  void *pv;
 };
 
 /** This function allocates an @ref assh_channel_s and send a @ref
@@ -70,18 +85,6 @@ struct assh_channel_s
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_channel_open(struct assh_session_s *s, const char *type, size_t type_len,
                   size_t max_pkt_size, struct assh_channel_s **channel);
-
-/** This function sets the value of the channel private pointer. */
-static inline void assh_channel_set_pv(struct assh_channel_s *channel, void *pv)
-{
-  channel->pv = pv;
-}
-
-/** This function returns the value of the channel private pointer. */
-void *assh_channel_get_pv(struct assh_channel_s *channel)
-{
-  return channel->pv;
-}
 
 /** This function transfers data to the remote host through a opened
     channel. Incoming channel data from the remote host are passed
@@ -128,10 +131,13 @@ ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_channel_close(struct assh_channel_s *channel);
 
 /** This function sends a @ref SSH_MSG_CHANNEL_REQUEST message to the
-    remote host. If the @tt want_reply parameter is set and the
-    function returns @ref ASSH_OK, an @ref
-    ASSH_EVENT_CONNECTION_CHANNEL_REQUEST_STATUS event will indicate
-    if the request was successful or not.
+    remote host.
+
+    If the @tt want_reply parameter is set and the function returns
+    @ref ASSH_OK, a new @ref assh_request_s object is allocated and an
+    @ref ASSH_EVENT_CONNECTION_CHANNEL_REQUEST_STATUS event will later
+    indicate if this request was successfully acknowledged by the
+    remote side.
 
     Even if an error occurs, the expected event will be returned
     before the @ref assh_event_get function returns the @ref
@@ -144,13 +150,17 @@ ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_channel_request(struct assh_channel_s *channel,
                      const char *type, size_t type_len,
                      const uint8_t *data, size_t data_len,
-                     assh_bool_t want_reply);
+                     assh_bool_t want_reply,
+                     struct assh_request_s **request);
 
 /** This function sends a @ref SSH_MSG_GLOBAL_REQUEST message to the
-    remote host. If the @tt want_reply parameter is set and the
-    function returns @ref ASSH_OK, an @ref
-    ASSH_EVENT_CONNECTION_GLOBAL_REQUEST_STATUS event will indicate
-    if the request was successful or not.
+    remote host. 
+
+    If the @tt want_reply parameter is set and the function returns
+    @ref ASSH_OK, a new @ref assh_request_s object is allocated and an
+    @ref ASSH_EVENT_CONNECTION_CHANNEL_REQUEST_STATUS event will later
+    indicate if this request was successfully acknowledged by the
+    remote side.
 
     Even if an error occurs, the expected event will be returned
     before the @ref assh_event_get function returns the @ref
@@ -160,9 +170,35 @@ assh_channel_request(struct assh_channel_s *channel,
     not started.
 */
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_global_request(const char *type, size_t type_len,
+assh_global_request(struct assh_session_s *s,
+                    const char *type, size_t type_len,
                     const uint8_t *data, size_t data_len,
-                    assh_bool_t want_reply);
+                    assh_bool_t want_reply,
+                    struct assh_request_s **request);
+
+/** This function sets the value of the channel private pointer. */
+static inline void assh_channel_set_pv(struct assh_channel_s *channel, void *pv)
+{
+  channel->pv = pv;
+}
+
+/** This function returns the value of the channel private pointer. */
+static inline void *assh_channel_get_pv(const struct assh_channel_s *channel)
+{
+  return channel->pv;
+}
+
+/** This function sets the value of the request private pointer. */
+static inline void assh_request_set_pv(struct assh_request_s *request, void *pv)
+{
+  request->pv = pv;
+}
+
+/** This function returns the value of the request private pointer. */
+static inline void *assh_request_get_pv(const struct assh_request_s *request)
+{
+  return request->pv;
+}
 
 #endif
 

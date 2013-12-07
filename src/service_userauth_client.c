@@ -276,9 +276,9 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_username_done)
   ASSH_ERR_RET(pv->state != ASSH_USERAUTH_GET_USERNAME ? ASSH_ERR_STATE : 0);
 
   /* keep username */
-  size_t ulen = e->userauth_client.user.username_len;
+  size_t ulen = e->userauth_client.user.username.len;
   ASSH_ERR_RET(ulen > sizeof(pv->username) ? ASSH_ERR_OVERFLOW : 0);
-  memcpy(pv->username, e->userauth_client.user.username, pv->username_len = ulen);
+  memcpy(pv->username, e->userauth_client.user.username.str, pv->username_len = ulen);
 
   /* send auth request with the "none" method */
   ASSH_ERR_RET(assh_userauth_client_pck_head(s, &pout, "none", 0));
@@ -297,10 +297,10 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_methods_done)
   ASSH_ERR_RET(pv->state != ASSH_USERAUTH_GET_AUTHDATA ? ASSH_ERR_STATE : 0);
 
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PASSWORD
-  const char *password = e->userauth_client.methods.password;
+  const char *password = e->userauth_client.methods.password.str;
   if (password != NULL)
     {
-      size_t password_len = e->userauth_client.methods.password_len;
+      size_t password_len = e->userauth_client.methods.password.len;
       ASSH_ERR_RET(password_len > sizeof(pv->password) ? ASSH_ERR_OVERFLOW : 0);
       memcpy(pv->password, password, pv->password_len = password_len);
     }
@@ -439,7 +439,8 @@ static assh_error_t assh_userauth_client_failure(struct assh_session_s *s,
                  SSH_DISCONNECT_NO_MORE_AUTH_METHODS_AVAILABLE) : 0);
 
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PASSWORD
-  e->userauth_client.methods.password = NULL;
+  e->userauth_client.methods.password.str = NULL;
+  e->userauth_client.methods.password.len = 0;
 #endif
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY
   e->userauth_client.methods.pub_keys = NULL;
@@ -466,8 +467,8 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_client_process)
       ASSH_ERR_RET(p != NULL ? ASSH_ERR_PROTOCOL : 0);
       e->id = ASSH_EVENT_USERAUTH_CLIENT_USER;
       e->f_done = &assh_userauth_client_username_done;
-      e->userauth_client.user.username = NULL;
-      e->userauth_client.user.username_len = 0;
+      e->userauth_client.user.username.str = NULL;
+      e->userauth_client.user.username.len = 0;
       pv->state = ASSH_USERAUTH_GET_USERNAME;
       return ASSH_OK;
 

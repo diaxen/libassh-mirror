@@ -34,7 +34,7 @@
 
 ASSH_EVENT_DONE_FCN(assh_event_random_done)
 {
-  return s->ctx->prng->f_feed(s->ctx, e->random.data, e->random.size);
+  return s->ctx->prng->f_feed(s->ctx, e->random.buf.data, e->random.buf.size);
 }
 
 assh_error_t assh_event_get(struct assh_session_s *s,
@@ -47,8 +47,8 @@ assh_error_t assh_event_get(struct assh_session_s *s,
     {
       event->id = ASSH_EVENT_RANDOM;
       event->f_done = &assh_event_random_done;
-      event->random.data = NULL;
-      event->random.size = -s->ctx->prng_entropy;
+      event->random.buf.data = NULL;
+      event->random.buf.size = -s->ctx->prng_entropy;
       goto done;
     }
 
@@ -108,8 +108,8 @@ assh_error_t assh_event_get(struct assh_session_s *s,
     case ASSH_TR_OUT_HELLO:
       event->id = ASSH_EVENT_WRITE;
       event->f_done = &assh_event_write_done;
-      ASSH_ERR_GTO(assh_event_write(s, (const void **)&event->write.data,
-                                    (size_t*)&event->write.size), err);
+      ASSH_ERR_GTO(assh_event_write(s, (const void **)&event->write.buf.data,
+                                    (size_t*)&event->write.buf.size), err);
       goto done;
 
     default:
@@ -131,16 +131,16 @@ assh_error_t assh_event_get(struct assh_session_s *s,
       assert(s->in_pck == NULL);
       event->id = ASSH_EVENT_IDLE;
       event->f_done = &assh_event_read_done;
-      ASSH_ERR_GTO(assh_event_read(s, (void**)&event->read.data,
-                                   (size_t*)&event->read.size), err);
+      ASSH_ERR_GTO(assh_event_read(s, (void**)&event->read.buf.data,
+                                   (size_t*)&event->read.buf.size), err);
       goto done;
 
     case ASSH_TR_IN_HELLO:
     case ASSH_TR_IN_PAYLOAD:
       event->id = ASSH_EVENT_READ;
       event->f_done = &assh_event_read_done;
-      ASSH_ERR_GTO(assh_event_read(s, (void**)&event->read.data,
-                                   (size_t*)&event->read.size), err);
+      ASSH_ERR_GTO(assh_event_read(s, (void**)&event->read.buf.data,
+                                   (size_t*)&event->read.buf.size), err);
       goto done;
 
     default:

@@ -87,9 +87,9 @@ enum assh_ssh_msg_e
   SSH_MSG_USERAUTH_BANNER           =  53,
   SSH_MSG_USERAUTH_PK_OK            =  60,
   SSH_MSG_USERAUTH_PASSWD_CHANGEREQ =  60,
-  SSH_MSG_GLOBAL_REQUEST            =  80,
 
   /* SSH-CONNECT */
+  SSH_MSG_GLOBAL_REQUEST            =  80,
   SSH_MSG_REQUEST_SUCCESS           =  81,
   SSH_MSG_REQUEST_FAILURE           =  82,
   SSH_MSG_CHANNEL_OPEN              =  90,
@@ -161,9 +161,11 @@ assh_packet_alloc(struct assh_context_s *c,
 void assh_packet_release(struct assh_packet_s *p);
 
 /** @internal This function increase the reference counter of the packet. */
-static inline void assh_packet_refinc(struct assh_packet_s *p)
+static inline struct assh_packet_s *
+assh_packet_refinc(struct assh_packet_s *p)
 {
   p->ref_count++;
+  return p;
 }
 
 /** @internal This function creates a copy of a packet. */

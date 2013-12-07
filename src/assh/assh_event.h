@@ -135,11 +135,11 @@ enum assh_event_id_e
   ASSH_EVENT_CONNECTION_GLOBAL_REQUEST,
 
   /** This event is returned for every successful call to the @ref
-      assh_global_request function. The @ref
-      assh_event_s::connection::global_status::success field indicates
-      if the request has been successfully acknowledged by the remote
-      host. The response specific data is available in
-      assh_event_s::connection::global_status. */
+      assh_global_request function. The @tt success field indicates if
+      the request has been successfully acknowledged by the remote
+      host. In this case, response specific data may be available in
+      @tt rsp_data.  @see
+      assh_event_s::connection::global_request_status. */
   ASSH_EVENT_CONNECTION_GLOBAL_REQUEST_STATUS,
 
   /** This event is returned when the @tt ssh-connection service is
@@ -181,14 +181,14 @@ enum assh_event_id_e
 
   /** This event is returned when the @tt ssh-connection service is
       running and the remote host has sent the @ref
-      SSH_MSG_CHANNEL_EOF message for an opened channel.
+      SSH_MSG_CHANNEL_EOF message for an open channel.
 
       If the channel has already been half-closed in the other
       direction when receiving this messages, an @ref
       SSH_MSG_CHANNEL_CLOSE message is sent. */
   ASSH_EVENT_CONNECTION_CHANNEL_EOF,
 
-  /** This event is returned for opened channels when the remote
+  /** This event is returned for open channels when the remote
       host has sent the @ref SSH_MSG_CHANNEL_CLOSE message or when a
       disconnection occurs. */
   ASSH_EVENT_CONNECTION_CHANNEL_CLOSE,
@@ -212,48 +212,43 @@ struct assh_event_s
   /** Private data for the event acknowledge function. */
   void *done_pv;
 
-  /** Parameters for the @ref #ASSH_EVENT_IDLE and @ref ASSH_EVENT_READ events */
+  /** Parameters for the @ref ASSH_EVENT_IDLE and @ref ASSH_EVENT_READ events */
   struct {
-    void               * const data;
-    size_t             const size;
-  }                    read;
+    const struct assh_buffer_s buf;
+  }                            read;
 
-  /** Parameters for the @ref #ASSH_EVENT_WRITE event */
+  /** Parameters for the @ref ASSH_EVENT_WRITE event */
   struct {
-    const void         * const data;
-    size_t             const size;
-  }                    write;
+    const struct assh_buffer_s buf;
+  }                            write;
 
-  /** Parameters for the @ref #ASSH_EVENT_RANDOM event */
+  /** Parameters for the @ref ASSH_EVENT_RANDOM event */
   struct {
-    const void         * data;
-    size_t             size;
-  }                    random;
+    struct assh_buffer_s     buf;
+  }                          random;
 
 #ifdef CONFIG_ASSH_CLIENT
-  /** Parameters for the @ref #ASSH_EVENT_HOSTKEY_LOOKUP event */
+  /** Parameters for the @ref ASSH_EVENT_HOSTKEY_LOOKUP event */
   struct {
     const struct assh_key_s * const key;
-    assh_bool_t        accept;
-  }                    hostkey_lookup;
+    assh_bool_t               accept;
+  }                           hostkey_lookup;
 
   union {
     /** @see ASSH_EVENT_USERAUTH_CLIENT_USER */
     struct {
-      const char         *username;
-      size_t             username_len;
-    }                    user;
+      struct assh_string_s    username;
+    }                         user;
 
     /** @see ASSH_EVENT_USERAUTH_CLIENT_METHODS */
     struct userauth_client_s {
-      assh_bool_t        const use_password;
-      assh_bool_t        const use_pub_key;
-      const char         *password;
-      size_t             password_len;
-      struct assh_key_s  *pub_keys;
-    }                    methods;
+      const assh_bool_t       use_password;
+      const assh_bool_t       use_pub_key;
+      struct assh_string_s    password;
+      struct assh_key_s       *pub_keys;
+    }                         methods;
 
-  }                      userauth_client;
+  }                           userauth_client;
 #endif
 
 #ifdef CONFIG_ASSH_SERVER
@@ -261,18 +256,15 @@ struct assh_event_s
   union {
     /** @see ASSH_EVENT_USERAUTH_SERVER_USERKEY */
     struct {
-      const char         * const username;
-      size_t             const username_len;
+      const struct assh_string_s username;
       const struct assh_key_s  * const pub_key;
       assh_bool_t        found;
     }                    userkey;
 
     /** @see ASSH_EVENT_USERAUTH_SERVER_PASSWORD */
     struct {
-      const char         * const username;
-      size_t             const username_len;
-      const char         * const password;
-      size_t             const password_len;
+      const struct assh_string_s username;
+      const struct assh_string_s password;
       assh_bool_t        success;
     }                    password;
 
@@ -283,78 +275,72 @@ struct assh_event_s
 
     /** @see ASSH_EVENT_CONNECTION_GLOBAL_REQUEST */
     struct {
-      const char         * const type;
-      size_t             const type_len;
-      const uint8_t      * const data;
-      size_t             const data_len;
-      assh_bool_t        const want_reply;
-      assh_bool_t        success;
-    }                    global_request;
+      const struct assh_string_s     type;
+      const assh_bool_t              want_reply;
+      const struct assh_buffer_s     rq_data;
+      struct assh_buffer_s           rsp_data;
+      assh_bool_t                    success;
+    }                                global_request;
 
     /** @see ASSH_EVENT_CONNECTION_GLOBAL_REQUEST_STATUS */
     struct {
-      void               * const request_pv;
-      assh_bool_t        const success;
-      const uint8_t      * const data;
-      size_t             const data_len;
-    }                    global_request_status;
+      struct assh_request_s          *request;
+      const assh_bool_t              success;
+      const struct assh_buffer_s     rsp_data;
+    }                                global_request_status;
 
     /** @see ASSH_EVENT_CONNECTION_CHANNEL_OPEN */
     struct {
-      const char         * const type;
-      size_t             const type_len;
-      const uint8_t      * const data;
-      size_t             const data_len;
-      assh_bool_t        success;
-      void               *pv;
-    }                    channel_open;
+      const struct assh_string_s     type;
+      const struct assh_buffer_s     data;
+      assh_bool_t                    success;
+      void                           *pv;
+    }                                channel_open;
 
     /** @see ASSH_EVENT_CONNECTION_CHANNEL_STATUS */
     struct {
-      struct assh_channel_s * const channel;
-      assh_bool_t        const success;
-      const uint8_t      * const data;
-      size_t             const data_len;
-    }                    channel_status;
+      struct assh_channel_s          *channel;
+      const assh_bool_t              success;
+      const struct assh_buffer_s     data;
+    }                                channel_status;
 
     /** @see ASSH_EVENT_CONNECTION_CHANNEL_DATA */
     struct {
-      struct assh_channel_s * const channel;
-      assh_bool_t        const extended;
-      uint32_t           const extended_type;
-      const uint8_t      * const data;
-      size_t             const data_len;
-    }                    channel_data;
+      struct assh_channel_s          *channel;
+      const assh_bool_t              extended;
+      const uint32_t                 extended_type;
+      const struct assh_buffer_s     data;
+    }                                channel_data;
 
     /** @see ASSH_EVENT_CONNECTION_CHANNEL_REQUEST */
     struct {
-      struct assh_channel_s * const channel;
-      const char         * const type;
-      size_t             const type_len;
-      const uint8_t      * const data;
-      size_t             const data_len;
-      assh_bool_t        const want_reply;
-      assh_bool_t        success;
-    }                    channel_request;
+      struct assh_channel_s          *channel;
+      const struct assh_string_s     type;
+      const assh_bool_t              want_reply;
+      const struct assh_buffer_s     rq_data;
+      struct assh_buffer_s           rsp_data;
+      assh_bool_t                    success;
+    }                                channel_request;
 
     /** @see ASSH_EVENT_CONNECTION_CHANNEL_REQUEST_STATUS */
     struct {
-      struct assh_channel_s * const channel;
-      assh_bool_t        const success;
-    }                    channel_request_status;
+      struct assh_request_s          *request;
+      struct assh_channel_s          *channel;
+      const assh_bool_t              success;
+    }                                channel_request_status;
 
     /** @see ASSH_EVENT_CONNECTION_CHANNEL_EOF */
     struct {
-      struct assh_channel_s * const channel;
-    }                    channel_eof;
+      struct assh_channel_s          *channel;
+    }                                channel_eof;
 
     /** @see ASSH_EVENT_CONNECTION_CHANNEL_CLOSE */
     struct {
-      struct assh_channel_s * const channel;
-      int                const reason;
-    }                    channel_close;
+      struct assh_channel_s          *channel;
+      const uint32_t                 reason;
+    }                                channel_close;
 
-  }                      connection;
+  }                                  connection;
 
 };
 
