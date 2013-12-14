@@ -141,7 +141,7 @@ typedef int assh_error_t;
 #define ASSH_MAX_IKEY_SIZE 64
 
 /** Maximum cipher block size in bytes. */
-#define ASSH_MAX_BLOCK_SIZE 16
+#define ASSH_MAX_BLOCK_SIZE 16    /* must be >= 16 */
 
 /** Maximum size of cipher/mac keys or iv in bytes. */
 #define ASSH_MAX_SYMKEY_SIZE 64
@@ -206,13 +206,13 @@ static inline void assh_hexdump(const char *name, const void *data, unsigned int
 
 struct assh_string_s
 {
-  const char *str;
+  char *str;
   size_t len;
 };
 
 struct assh_buffer_s
 {
-  const uint8_t *data;
+  uint8_t *data;
   size_t size;
 };
 

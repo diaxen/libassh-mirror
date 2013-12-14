@@ -22,8 +22,8 @@
 */
 
 #include <assh/assh_context.h>
-#include <assh/assh_event.h>
 #include <assh/assh_transport.h>
+#include <assh/assh_event.h>
 #include <assh/assh_packet.h>
 #include <assh/assh_session.h>
 #include <assh/assh_kex.h>
@@ -32,7 +32,7 @@
 
 #include <assert.h>
 
-ASSH_EVENT_DONE_FCN(assh_event_random_done)
+static ASSH_EVENT_DONE_FCN(assh_event_random_done)
 {
   return s->ctx->prng->f_feed(s->ctx, e->random.buf.data, e->random.buf.size);
 }
@@ -105,11 +105,10 @@ assh_error_t assh_event_get(struct assh_session_s *s,
     case ASSH_TR_OUT_PACKETS:
       if (s->out_queue.count == 0)
 	break;
+    case ASSH_TR_OUT_PACKETS_ENCIPHERED:
+      assert(s->out_queue.count != 0);
     case ASSH_TR_OUT_HELLO:
-      event->id = ASSH_EVENT_WRITE;
-      event->f_done = &assh_event_write_done;
-      ASSH_ERR_GTO(assh_event_write(s, (const void **)&event->write.buf.data,
-                                    (size_t*)&event->write.buf.size), err);
+      ASSH_ERR_GTO(assh_event_write(s, event), err);
       goto done;
 
     default:
@@ -125,27 +124,7 @@ assh_error_t assh_event_get(struct assh_session_s *s,
 
   /* run the state machine which extracts a deciphered packet from the
      input ssh stream. */
-  switch (s->stream_in_st)
-    {
-    case ASSH_TR_IN_HEAD:
-      assert(s->in_pck == NULL);
-      event->id = ASSH_EVENT_IDLE;
-      event->f_done = &assh_event_read_done;
-      ASSH_ERR_GTO(assh_event_read(s, (void**)&event->read.buf.data,
-                                   (size_t*)&event->read.buf.size), err);
-      goto done;
-
-    case ASSH_TR_IN_HELLO:
-    case ASSH_TR_IN_PAYLOAD:
-      event->id = ASSH_EVENT_READ;
-      event->f_done = &assh_event_read_done;
-      ASSH_ERR_GTO(assh_event_read(s, (void**)&event->read.buf.data,
-                                   (size_t*)&event->read.buf.size), err);
-      goto done;
-
-    default:
-      ASSH_ERR_GTO(ASSH_ERR_STATE, err);
-    }
+  ASSH_ERR_GTO(assh_event_read(s, event), err);
 
  done:
 #ifdef CONFIG_ASSH_DEBUG_EVENT

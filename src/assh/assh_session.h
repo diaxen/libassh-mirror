@@ -45,6 +45,7 @@ enum assh_stream_in_state_e
   ASSH_TR_IN_HELLO,
   ASSH_TR_IN_HELLO_DONE,
   ASSH_TR_IN_HEAD,
+  ASSH_TR_IN_HEAD_DONE,
   ASSH_TR_IN_PAYLOAD,
   ASSH_TR_IN_PAYLOAD_DONE,
 };
@@ -54,6 +55,7 @@ enum assh_stream_out_state_e
   ASSH_TR_OUT_HELLO,
   ASSH_TR_OUT_HELLO_DONE,
   ASSH_TR_OUT_PACKETS,
+  ASSH_TR_OUT_PACKETS_ENCIPHERED,
   ASSH_TR_OUT_PACKETS_DONE,
 };
 
@@ -80,19 +82,13 @@ struct assh_session_s
 
   /** Session id is first "exchange hash" H */
   uint8_t session_id[ASSH_MAX_HASH_SIZE];
+  /** Session id length */
   size_t session_id_len;
 
-  /** Input packet sequence number */
-  uint32_t in_seq;
-  /** Output packet sequence number */
-  uint32_t out_seq;
-
-  /** Pointer to keys and algorithms in current use, if any. */
-  struct assh_kex_keys_s *cur_keys_in;
-  struct assh_kex_keys_s *cur_keys_out;
-  /** Pointer to next keys and algorithms to use when a New Keys packet is received. */
-  struct assh_kex_keys_s *new_keys_in;
-  struct assh_kex_keys_s *new_keys_out;
+  /** Copy of the hello string sent by the remote host. */
+  uint8_t hello_str[255];
+  /** Size of the hello string sent by the remote host. */
+  int hello_len;
 
   /** host keys signature algorithm */
   const struct assh_algo_sign_s *host_sign_algo;
@@ -108,30 +104,51 @@ struct assh_session_s
   /** Current service private data. */
   void *srv_pv;
 
-  /** Current ssh input packet. This packet is the last deciphered
-      packets and is waiting for dispatch and processing. */
-  struct assh_packet_s *in_pck;
+  /****************** ssh output stream state */
+
+  /** Currrent output ssh stream generator state. */
+  enum assh_stream_out_state_e stream_out_st;
+
   /** Queue of ssh output packets. Packets in this queue will be
       enciphered and sent. */
   struct assh_queue_s out_queue;
   /** Alternate queue of ssh output packets, used to store services
-      packets during a key exechange. */
+      packets during a key exchange. */
   struct assh_queue_s alt_queue;
+  /** Size of already sent data of the top packet in the @ref out_queue queue. */
+  size_t stream_out_size;
 
-  /** Copy of the hello string sent by the remote host. */
-  uint8_t hello_str[255];
-  /** Size of the hello string sent by the remote host. */
-  int hello_len;
+  /** Pointer to output keys and algorithms in current use. */
+  struct assh_kex_keys_s *cur_keys_out;
+  /** Pointer to next output keys and algorithms on SSH_MSG_NEWKEYS transmitted. */
+  struct assh_kex_keys_s *new_keys_out;
+  /** Output packet sequence number */
+  uint32_t out_seq;
 
-  /** Currrent output ssh stream generator state. */
-  enum assh_stream_out_state_e stream_out_st;
+  /****************** ssh input stream state */
+
   /** Current input ssh stream parser state. */
   enum assh_stream_in_state_e stream_in_st;
+
   /** Current input ssh stream header buffer. */
-  uint8_t stream_in_pck_head[16];
+  uint8_t stream_in_pck_head[ASSH_MAX_BLOCK_SIZE];
   /** Current input ssh stream packet. This packet is currently being
       read from the input ssh stream and has not yet been deciphered. */
   struct assh_packet_s *stream_in_pck;
+  /** Size of valid data in the @ref stream_in_pck packet */
+  size_t stream_in_size;
+
+  /** Current ssh input packet. This packet is the last deciphered
+      packets and is waiting for dispatch and processing. */
+  struct assh_packet_s *in_pck;
+
+  /** Pointer to input keys and algorithms in current use. */
+  struct assh_kex_keys_s *cur_keys_in;
+  /** Pointer to next input keys and algorithms on SSH_MSG_NEWKEYS received. */
+  struct assh_kex_keys_s *new_keys_in;
+  /** Input packet sequence number */
+  uint32_t in_seq;
+
 };
 
 /** This function initialize a new ssh session object. */

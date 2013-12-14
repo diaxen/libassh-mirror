@@ -21,16 +21,20 @@
 
 */
 
+#include <assh/srv_userauth_server.h>
+
 #include <assh/assh_service.h>
-#include <assh/assh_context.h>
 #include <assh/assh_session.h>
-#include <assh/assh_packet.h>
 #include <assh/assh_transport.h>
+#include <assh/assh_event.h>
+#include <assh/assh_packet.h>
 #include <assh/assh_algo.h>
 #include <assh/assh_sign.h>
 #include <assh/assh_key.h>
 
 #ifdef CONFIG_ASSH_SERVER
+
+ASSH_EVENT_SIZE_SASSERT(userauth_server);
 
 #ifdef CONFIG_ASSH_SERVER_AUTH_NONE
 # warning CONFIG_ASSH_SERVER_AUTH_NONE is defined, server authentication is bypassed

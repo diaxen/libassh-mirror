@@ -25,7 +25,10 @@
 #include <errno.h>
 
 #include <assh/helper_fd.h>
+
 #include <assh/assh_session.h>
+#include <assh/assh_transport.h>
+#include <assh/assh_event.h>
 
 assh_error_t assh_fd_read(int fd, void *data, size_t size)
 {
@@ -89,15 +92,39 @@ assh_error_t assh_fd_event_get(struct assh_session_s *s,
 
       switch (e->id)
         {
-        case ASSH_EVENT_IDLE:
-        case ASSH_EVENT_READ:
-          ASSH_ERR_GTO(assh_fd_read(ssh_fd, e->read.buf.data, e->read.buf.size), err_io);
+        case ASSH_EVENT_READ: {
+	  struct assh_transport_event_read_s *te = &e->transport.read;
+	  ssize_t r = read(ssh_fd, te->buf.data, te->buf.size);
+	  switch (r)
+	    {
+	    case -1:
+	      if (errno == EAGAIN || errno == EWOULDBLOCK)
+		break;
+	    case 0:
+	      ASSH_ERR_RET(ASSH_ERR_IO);		
+	    default:
+	      te->transferred = r;
+	    }
           ASSH_ERR_RET(assh_event_done(s, e));
           break;
+	}
 
-        case ASSH_EVENT_WRITE:
-          ASSH_ERR_GTO(assh_fd_write(ssh_fd, e->write.buf.data, e->write.buf.size), err_io);
+        case ASSH_EVENT_WRITE: {
+	  struct assh_transport_event_write_s *te = &e->transport.write;
+	  ssize_t r = write(ssh_fd, te->buf.data, te->buf.size);
+	  switch (r)
+	    {
+	    case -1:
+	      if (errno == EAGAIN || errno == EWOULDBLOCK)
+		break;
+	    case 0:
+	      ASSH_ERR_RET(ASSH_ERR_IO);		
+	    default:
+	      te->transferred = r;
+	    }
           ASSH_ERR_RET(assh_event_done(s, e));
+          break;
+	}
           break;
 
         case ASSH_EVENT_RANDOM: {

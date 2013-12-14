@@ -551,8 +551,8 @@ assh_error_t assh_kex_end(struct assh_session_s *s, assh_bool_t accept)
   /* send a NEWKEY packet */
   struct assh_packet_s *p;
   ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_NEWKEYS, 0, &p));
-
   assh_transport_push(s, p);
+
   return ASSH_OK;
 }
 

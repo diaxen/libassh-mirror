@@ -25,7 +25,57 @@
 #ifndef ASSH_TRANSPORT_H_
 #define ASSH_TRANSPORT_H_
 
-#include "assh_event.h"
+#ifdef ASSH_EVENT_H_
+# warning The assh/assh_event.h header should be included after assh_transport.h
+#endif
+
+#include "assh.h"
+
+/** The @ref ASSH_EVENT_READ event is returned when more incoming ssh
+    stream data from the remote host is needed to complete the current
+    input packet.
+
+    The @ref buf field have to be filled with incoming data
+    stream. The @ref assh_event_done function must be called once the
+    data have been copied to the buffer and the @ref transferred field
+    have been set to 1.
+
+    If not enough data is available yet, the event can still be
+    acknowledged by calling the @ref assh_event_done function without
+    setting the @ref transferred field. The buffer will remain valid and
+    will be provided again the next time this event is returned. This
+    allows filling the buffer as more data become available, even
+    after calling @ref assh_event_done.
+*/
+struct assh_transport_event_read_s
+{
+  const struct assh_buffer_s buf;
+  size_t                     transferred;
+};
+
+/** The @ref ASSH_EVENT_WRITE event is returned when some ssh stream
+    data is available for sending to the remote host. The @ref buf
+    field provides a buffer which contain the output data. The @ref
+    assh_event_done function must be called once the output data have
+    been sent.
+
+    If no data can be sent yet, the event can still be acknowledged by
+    calling the @ref assh_event_done without setting the @ref
+    transferred field.  The buffer will remain valid and will be
+    provided again the next time this event is returned. This allows
+    sending the buffer even after calling @ref assh_event_done.
+*/
+struct assh_transport_event_write_s
+{
+  const struct assh_buffer_s buf;
+  size_t                     transferred;
+};
+
+union assh_transport_event_u
+{
+  struct assh_transport_event_read_s  read;
+  struct assh_transport_event_write_s write;
+};
 
 /** @internal */
 ASSH_WARN_UNUSED_RESULT assh_error_t
@@ -50,23 +100,14 @@ assh_transport_dispatch(struct assh_session_s *s,
     been processed. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_event_write(struct assh_session_s *s,
-		 const void **data, size_t *size);
-
-/** @internal This function must be called to indicate that a @ref
-    ASSH_EVENT_WRITE event has been processed. */
-ASSH_EVENT_DONE_FCN(assh_event_write_done);
+		 struct assh_event_s *e);
 
 /** @internal This function returns the address and size of the buffer
     where the next ssh binary input data must be stored. This function
     returns @ref ASSH_NO_DATA if no data needs to be read yet. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_event_read(struct assh_session_s *s,
-		void **data, size_t *size);
-
-/** @internal This function must be called to indicate that either a
-    @ref ASSH_EVENT_IDLE or @ref ASSH_EVENT_READ event has been
-    processed. */
-ASSH_EVENT_DONE_FCN(assh_event_read_done);
+		struct assh_event_s *e);
 
 #endif
 

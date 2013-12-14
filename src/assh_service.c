@@ -27,6 +27,10 @@
 #include <assh/assh_packet.h>
 #include <assh/assh_transport.h>
 
+#include <assh/srv_userauth_client.h>
+#include <assh/srv_userauth_server.h>
+#include <assh/srv_connection.h>
+
 #include <stdarg.h>
 #include <string.h>
 

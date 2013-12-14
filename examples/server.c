@@ -24,6 +24,7 @@
 #include <assh/assh_session.h>
 #include <assh/assh_context.h>
 #include <assh/assh_service.h>
+#include <assh/srv_userauth_server.h>
 #include <assh/assh_prng.h>
 #include <assh/helper_fd.h>
 #include <assh/helper_key.h>

@@ -55,10 +55,6 @@ assh_error_t assh_session_init(struct assh_context_s *c,
       ASSH_ERR_RET(ASSH_ERR_NOTSUP);
     }
 
-  assh_queue_init(&s->out_queue);
-  assh_queue_init(&s->alt_queue);
-  s->in_pck = NULL;
-
   s->hello_len = 0;
   s->session_id_len = 0;
 
@@ -66,24 +62,27 @@ assh_error_t assh_session_init(struct assh_context_s *c,
   s->kex_init_remote = NULL;
   s->kex_pv = NULL;
 
-  s->in_seq = 0;
-  s->out_seq = 0;
-
-  s->cur_keys_in = NULL;
-  s->new_keys_in = NULL;
-  s->cur_keys_out = NULL;
-  s->new_keys_out = NULL;
-
 #ifdef CONFIG_ASSH_CLIENT
   s->srv_rq = NULL;
   s->srv_index = 0;
 #endif
   s->srv = NULL;
 
-  s->stream_in_pck = NULL;
-
   s->stream_out_st = ASSH_TR_OUT_HELLO;
+  assh_queue_init(&s->out_queue);
+  assh_queue_init(&s->alt_queue);
+  s->stream_out_size = 0;
+  s->cur_keys_out = NULL;
+  s->new_keys_out = NULL;
+  s->out_seq = 0;
+
   s->stream_in_st = ASSH_TR_IN_HELLO;
+  s->stream_in_pck = NULL;
+  s->stream_in_size = 0;
+  s->in_pck = NULL;
+  s->cur_keys_in = NULL;
+  s->new_keys_in = NULL;
+  s->in_seq = 0;
 
   c->session_count++;
 

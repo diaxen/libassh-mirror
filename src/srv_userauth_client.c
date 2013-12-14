@@ -21,6 +21,8 @@
 
 */
 
+#include <assh/srv_userauth_client.h>
+
 #include <assh/assh_service.h>
 #include <assh/assh_session.h>
 #include <assh/assh_packet.h>
@@ -30,6 +32,8 @@
 #include <assh/assh_sign.h>
 
 #ifdef CONFIG_ASSH_CLIENT
+
+ASSH_EVENT_SIZE_SASSERT(userauth_client);
 
 #include <stdlib.h>
 

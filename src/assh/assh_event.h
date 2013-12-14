@@ -33,25 +33,9 @@ enum assh_event_id_e
       non-initialized event objects. */
   ASSH_EVENT_INVALID,
 
-  /** This event is returned when there is nothing to do. The fields
-      in @ref assh_event_s::read provide a buffer which can be filled
-      with ssh stream data, if the requested amount is available. When
-      this is the case, the @ref assh_event_done function can be
-      called to indicate that the data have copied to the buffer. */
-  ASSH_EVENT_IDLE,
-
-  /** This event is returned when some ssh stream data are needed. The
-      fields in @ref assh_event_s::read provide a buffer which
-      must be filled with incoming data. The @ref assh_event_done
-      function must be called once the data have been copied to the
-      buffer. */
+  /** @see assh_transport_event_read_s */
   ASSH_EVENT_READ,
-
-  /** This event is returned when some ssh output stream data are
-      available. The fields in @ref assh_event_s::write provide
-      a buffer which contain the output data. The @ref
-      assh_event_done function must be called once the output
-      data have been sent, before requesting the next event. */
+  /** @see assh_transport_event_write_s */
   ASSH_EVENT_WRITE,
 
   /** This event is returned when the prng needs some entropy. The
@@ -62,7 +46,6 @@ enum assh_event_id_e
       too if the amount of available random data is different. */
   ASSH_EVENT_RANDOM,
 
-#ifdef CONFIG_ASSH_CLIENT
   /** This event is returned when a client needs to lookup a server
       host key in the local database. The @ref
       assh_event_s::userauth_client::hostkey_lookup::accept field must
@@ -70,127 +53,35 @@ enum assh_event_id_e
       function. */
   ASSH_EVENT_HOSTKEY_LOOKUP,
 
-  /** This event is returned when the client-side user authentication
-      service is running and the service needs to provide a user name
-      to the server. */
+  /** @see assh_userauth_client_user_event_s */
   ASSH_EVENT_USERAUTH_CLIENT_USER,
-
-  /** This event is returned when the client-side user authentication
-      service is running. The @ref
-      assh_event_s::userauth_client::method_password and @ref
-      assh_event_s::userauth_client::method_user_key fields indicate
-      the authentication methods that are accepted by the server.
-
-      Other fields are initially set to @tt NULL and can be modified
-      to enable one or more authentication methods among those
-      supported.
-
-      The assh_event_s::userauth_client::password string must be NUL
-      terminated when present. The @ref
-      assh_event_s::userauth_client::user_key field can be setup by
-      calling either the @ref assh_key_load, @ref assh_load_key_file
-      or @ref assh_load_key_filename functions. Multiple keys can be
-      loaded. The assh library will take care of releasing the
-      provided keys.
-
-      This event may be returned multiple times until the
-      authentication is successful. The authentication fails if no
-      password or key is provided.
-  */
+  /** @see assh_userauth_client_methods_event_s */
   ASSH_EVENT_USERAUTH_CLIENT_METHODS,
 
-#endif
-
-#ifdef CONFIG_ASSH_SERVER
-
-  /** This event is returned when the server-side user authentication
-      service is running. The user public key given in @ref
-      assh_event_s::userauth_server::userkey must be searched in the
-      list of authorized keys for the user on this server. The @tt
-      found field must be updated accordingly before calling the @ref
-      assh_event_done function. */
+  /** @see assh_userauth_server_userkey_event_s */
   ASSH_EVENT_USERAUTH_SERVER_USERKEY,
-
-  /** This event is returned when the server-side user authentication
-      service is running. The user name and password pair in @ref
-      assh_event_s::userauth_server::password must be checked and the
-      @tt success field must be updated accordingly before calling the
-      @ref assh_event_done function. */
+  /** @see assh_userauth_server_password_event_s */
   ASSH_EVENT_USERAUTH_SERVER_PASSWORD,
 
-#endif
-
-  /** This event is returned when the @tt ssh-connection service has just
-      started. The channel related functions can be used from this point. */
+  /** @see assh_connection_event_start_s */
   ASSH_EVENT_CONNECTION_START,
-
-  /** This event is returned when the @tt ssh-connection service is
-      running and a @ref SSH_MSG_GLOBAL_REQUEST message has been
-      received. The request type name and associated specific data are
-      available in @ref assh_event_s::connection::global_request.
-
-      The @tt success field can be set before calling the @ref
-      assh_event_done function if the remote host expect a reply. The
-      default value of this field is 0. */
+  /** @see assh_connection_event_global_request_s */
   ASSH_EVENT_CONNECTION_GLOBAL_REQUEST,
-
-  /** This event is returned for every successful call to the @ref
-      assh_global_request function. The @tt success field indicates if
-      the request has been successfully acknowledged by the remote
-      host. In this case, response specific data may be available in
-      @tt rsp_data.  @see
-      assh_event_s::connection::global_request_status. */
-  ASSH_EVENT_CONNECTION_GLOBAL_REQUEST_STATUS,
-
-  /** This event is returned when the @tt ssh-connection service is
-      running and a @ref SSH_MSG_CHANNEL_OPEN message is received
-      from the remote host. The channel type name and associated
-      specific data are available in @ref
-      assh_event_s::connection::channel_open. The @tt success field
-      must be set before calling the @ref assh_event_done function if
-      the channel open request is accepted. In this case, a new
-      @ref assh_channel_s object will be allocated and the @tt pv
-      field of the event will be used to setup the channel private pointer. */
+  /** @see assh_connection_event_global_request_reply_s */
+  ASSH_EVENT_CONNECTION_GLOBAL_REQUEST_REPLY,
+  /** @see assh_connection_event_channel_open_s */
   ASSH_EVENT_CONNECTION_CHANNEL_OPEN,
-
-  /** This event is returned for every successful call to the @ref
-      assh_channel_open function. The @ref
-      assh_event_s::connection::channel_status::success field indicates
-      if the channel has been successfully opened. If the request was
-      not successful, the associated @ref assh_channel_s object will
-      be released when calling the @ref assh_event_done function. */
-  ASSH_EVENT_CONNECTION_CHANNEL_STATUS,
-
-  /** This event is returned when when the @tt ssh-connection service is
-      running and some incoming channel data are available. */
+  /** @see assh_connection_event_channel_open_reply_s */
+  ASSH_EVENT_CONNECTION_CHANNEL_OPEN_REPLY,
+  /** @see assh_connection_event_channel_data_s */
   ASSH_EVENT_CONNECTION_CHANNEL_DATA,
-
-  /** This event is returned when the @tt ssh-connection service is
-      running and a @ref SSH_MSG_CHANNEL_REQUEST message is received
-      from the remote host. The request type name and associated
-      specific data are available in @ref
-      assh_event_s::connection::channel_request. The @tt success field
-      can be set before calling the @ref assh_event_done function if
-      the remote host expect a reply. The default value of this field is 0. */
+  /** @see assh_connection_event_channel_request_s */
   ASSH_EVENT_CONNECTION_CHANNEL_REQUEST,
-
-  /** This event is returned for each successful call to the @ref
-      assh_channel_request function. The @tt success field
-      indicates if the channel request was successful. */
-  ASSH_EVENT_CONNECTION_CHANNEL_REQUEST_STATUS,
-
-  /** This event is returned when the @tt ssh-connection service is
-      running and the remote host has sent the @ref
-      SSH_MSG_CHANNEL_EOF message for an open channel.
-
-      If the channel has already been half-closed in the other
-      direction when receiving this messages, an @ref
-      SSH_MSG_CHANNEL_CLOSE message is sent. */
+  /** @see assh_connection_event_channel_request_reply_s */
+  ASSH_EVENT_CONNECTION_CHANNEL_REQUEST_REPLY,
+  /** @see assh_connection_event_channel_eof_s */
   ASSH_EVENT_CONNECTION_CHANNEL_EOF,
-
-  /** This event is returned for open channels when the remote
-      host has sent the @ref SSH_MSG_CHANNEL_CLOSE message or when a
-      disconnection occurs. */
+  /** @see assh_connection_event_channel_close_s */
   ASSH_EVENT_CONNECTION_CHANNEL_CLOSE,
 
   /** @internal */
@@ -212,137 +103,54 @@ struct assh_event_s
   /** Private data for the event acknowledge function. */
   void *done_pv;
 
-  /** Parameters for the @ref ASSH_EVENT_IDLE and @ref ASSH_EVENT_READ events */
-  struct {
-    const struct assh_buffer_s buf;
-  }                            read;
+  union {
 
-  /** Parameters for the @ref ASSH_EVENT_WRITE event */
-  struct {
-    const struct assh_buffer_s buf;
-  }                            write;
+#ifdef ASSH_TRANSPORT_H_
+    union assh_transport_event_u transport;
+#endif
 
-  /** Parameters for the @ref ASSH_EVENT_RANDOM event */
-  struct {
-    struct assh_buffer_s     buf;
-  }                          random;
+    /** Parameters for the @ref ASSH_EVENT_RANDOM event */
+    struct {
+      struct assh_buffer_s       buf;
+    }                            random;
 
 #ifdef CONFIG_ASSH_CLIENT
-  /** Parameters for the @ref ASSH_EVENT_HOSTKEY_LOOKUP event */
-  struct {
-    const struct assh_key_s * const key;
-    assh_bool_t               accept;
-  }                           hostkey_lookup;
-
-  union {
-    /** @see ASSH_EVENT_USERAUTH_CLIENT_USER */
+    /** Parameters for the @ref ASSH_EVENT_HOSTKEY_LOOKUP event */
     struct {
-      struct assh_string_s    username;
-    }                         user;
+      const struct assh_key_s * const key;
+      assh_bool_t               accept;
+    }                           hostkey_lookup;
 
-    /** @see ASSH_EVENT_USERAUTH_CLIENT_METHODS */
-    struct userauth_client_s {
-      const assh_bool_t       use_password;
-      const assh_bool_t       use_pub_key;
-      struct assh_string_s    password;
-      struct assh_key_s       *pub_keys;
-    }                         methods;
-
-  }                           userauth_client;
+# ifdef ASSH_SRV_USERAUTH_CLIENT_H_
+    union assh_userauth_client_event_u userauth_client;
+# endif
 #endif
 
 #ifdef CONFIG_ASSH_SERVER
-
-  union {
-    /** @see ASSH_EVENT_USERAUTH_SERVER_USERKEY */
-    struct {
-      const struct assh_string_s username;
-      const struct assh_key_s  * const pub_key;
-      assh_bool_t        found;
-    }                    userkey;
-
-    /** @see ASSH_EVENT_USERAUTH_SERVER_PASSWORD */
-    struct {
-      const struct assh_string_s username;
-      const struct assh_string_s password;
-      assh_bool_t        success;
-    }                    password;
-
-  }                      userauth_server;
+# ifdef ASSH_SRV_USERAUTH_SERVER_H_
+    union assh_userauth_server_event_u userauth_server;
+# endif
 #endif
 
-  union {
+#ifdef ASSH_SRV_CONNECTION_H_
+    union assh_connection_event_u connection;
+#endif
 
-    /** @see ASSH_EVENT_CONNECTION_GLOBAL_REQUEST */
-    struct {
-      const struct assh_string_s     type;
-      const assh_bool_t              want_reply;
-      const struct assh_buffer_s     rq_data;
-      struct assh_buffer_s           rsp_data;
-      assh_bool_t                    success;
-    }                                global_request;
+#ifdef ASSH_USER_EVENTS_UNION
+    ASSH_USER_EVENTS_UNION;
+#endif
 
-    /** @see ASSH_EVENT_CONNECTION_GLOBAL_REQUEST_STATUS */
-    struct {
-      struct assh_request_s          *request;
-      const assh_bool_t              success;
-      const struct assh_buffer_s     rsp_data;
-    }                                global_request_status;
-
-    /** @see ASSH_EVENT_CONNECTION_CHANNEL_OPEN */
-    struct {
-      const struct assh_string_s     type;
-      const struct assh_buffer_s     data;
-      assh_bool_t                    success;
-      void                           *pv;
-    }                                channel_open;
-
-    /** @see ASSH_EVENT_CONNECTION_CHANNEL_STATUS */
-    struct {
-      struct assh_channel_s          *channel;
-      const assh_bool_t              success;
-      const struct assh_buffer_s     data;
-    }                                channel_status;
-
-    /** @see ASSH_EVENT_CONNECTION_CHANNEL_DATA */
-    struct {
-      struct assh_channel_s          *channel;
-      const assh_bool_t              extended;
-      const uint32_t                 extended_type;
-      const struct assh_buffer_s     data;
-    }                                channel_data;
-
-    /** @see ASSH_EVENT_CONNECTION_CHANNEL_REQUEST */
-    struct {
-      struct assh_channel_s          *channel;
-      const struct assh_string_s     type;
-      const assh_bool_t              want_reply;
-      const struct assh_buffer_s     rq_data;
-      struct assh_buffer_s           rsp_data;
-      assh_bool_t                    success;
-    }                                channel_request;
-
-    /** @see ASSH_EVENT_CONNECTION_CHANNEL_REQUEST_STATUS */
-    struct {
-      struct assh_request_s          *request;
-      struct assh_channel_s          *channel;
-      const assh_bool_t              success;
-    }                                channel_request_status;
-
-    /** @see ASSH_EVENT_CONNECTION_CHANNEL_EOF */
-    struct {
-      struct assh_channel_s          *channel;
-    }                                channel_eof;
-
-    /** @see ASSH_EVENT_CONNECTION_CHANNEL_CLOSE */
-    struct {
-      struct assh_channel_s          *channel;
-      const uint32_t                 reason;
-    }                                channel_close;
-
-  }                                  connection;
+    /** @internal Padding */
+    long params[10];
+  };
 
 };
+
+/** @hidden check sizeof event union */
+#define ASSH_EVENT_SIZE_SASSERT(name)					\
+  typedef char assh_##name##_event_larger_than_padding			\
+     [(sizeof(union assh_##name##_event_u)				\
+       <= sizeof(((struct assh_event_s*)0)->params)) - 1];
 
 /** This function runs the various state machines which implement the
     ssh protocol and returns the next event in queue.
@@ -366,10 +174,6 @@ assh_event_get(struct assh_session_s *s,
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_event_done(struct assh_session_s *s,
                 struct assh_event_s *e);
-
-/** @internal This function must be called to indicate that a @ref
-    ASSH_EVENT_RANDOM event has been processed. */
-ASSH_EVENT_DONE_FCN(assh_event_random_done);
 
 #endif
 

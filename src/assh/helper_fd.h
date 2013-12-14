@@ -25,7 +25,7 @@
 #ifndef ASSH_HELPER_FD_H_
 #define ASSH_HELPER_FD_H_
 
-#include "assh_event.h"
+#include "assh.h"
 
 /** This function keeps calling the read system call until the buffer
     if filled with the requested amount of data. */
