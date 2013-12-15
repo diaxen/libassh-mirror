@@ -41,12 +41,8 @@ enum assh_event_id_e
   /** @see assh_event_prng_feed_s */
   ASSH_EVENT_PRNG_FEED,
 
-  /** This event is returned when a client needs to lookup a server
-      host key in the local database. The @ref
-      assh_event_s::userauth_client::hostkey_lookup::accept field must
-      be updated accordingly before calling the @ref assh_event_done
-      function. */
-  ASSH_EVENT_HOSTKEY_LOOKUP,
+  /** @see assh_event_kex_hostkey_lookup_s */
+  ASSH_EVENT_KEX_HOSTKEY_LOOKUP,
 
   /** @see assh_userauth_client_user_event_s */
   ASSH_EVENT_USERAUTH_CLIENT_USER,
@@ -109,11 +105,9 @@ struct assh_event_s
 #endif
 
 #ifdef CONFIG_ASSH_CLIENT
-    /** Parameters for the @ref ASSH_EVENT_HOSTKEY_LOOKUP event */
-    struct {
-      const struct assh_key_s * const key;
-      assh_bool_t               accept;
-    }                           hostkey_lookup;
+# ifdef ASSH_KEX_H_
+    union assh_event_kex_u kex;
+# endif
 
 # ifdef ASSH_SRV_USERAUTH_CLIENT_H_
     union assh_userauth_client_event_u userauth_client;

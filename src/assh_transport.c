@@ -454,7 +454,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
     {
 #warning test rekeying
     case ASSH_TR_KEX_WAIT_REPLY:
-      ASSH_ERR_RET(assh_algo_kex_send_init(s));
+      ASSH_ERR_RET(assh_kex_send_init(s));
     case ASSH_TR_KEX_WAIT:
       ASSH_ERR_RET(msg != SSH_MSG_KEXINIT ? ASSH_ERR_PROTOCOL : 0);
       s->tr_st = ASSH_TR_KEX_RUNNING;
@@ -493,7 +493,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
     {
     case SSH_MSG_KEXINIT:
       ASSH_ERR_RET(s->new_keys_out != NULL ? ASSH_ERR_PROTOCOL : 0);
-      ASSH_ERR_RET(assh_algo_kex_send_init(s));
+      ASSH_ERR_RET(assh_kex_send_init(s));
       ASSH_ERR_RET(assh_kex_got_init(s, p));
 #warning do not allow KEX when st > ASSH_TR_SERVICE
       s->tr_st = ASSH_TR_KEX_RUNNING;

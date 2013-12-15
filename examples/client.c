@@ -27,6 +27,7 @@
 #include <assh/srv_userauth_client.h>
 #include <assh/helper_fd.h>
 #include <assh/helper_key.h>
+#include <assh/assh_kex.h>
 #include <assh/assh_event.h>
 #include <assh/assh_algo.h>
 
@@ -104,9 +105,17 @@ int main(int argc, char **argv)
 
       switch (event.id)
         {
-        case ASSH_EVENT_HOSTKEY_LOOKUP:
-          event.hostkey_lookup.accept = 1;
+        case ASSH_EVENT_KEX_HOSTKEY_LOOKUP: {
+          /* XXX the key validity may be checked before adding
+             the key to the list of known hosts. */
+          assh_bool_t valid;
+          if (assh_key_validate(&context, event.kex.hostkey_lookup.key,
+                                &valid) || !valid)
+            break;
+
+          event.kex.hostkey_lookup.accept = 1;
           break;
+        }
 
         case ASSH_EVENT_USERAUTH_CLIENT_USER: {
           event.userauth_client.user.username.str = "test";

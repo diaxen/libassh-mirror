@@ -42,7 +42,6 @@ assh_error_t assh_session_init(struct assh_context_s *c,
     {
 #ifdef CONFIG_ASSH_SERVER
     case ASSH_SERVER:
-      ASSH_ERR_RET(c->host_keys == NULL ? ASSH_ERR_MISSING_KEY : 0);
       s->tr_st = ASSH_TR_KEX_INIT;      
       break;
 #endif

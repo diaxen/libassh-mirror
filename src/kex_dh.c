@@ -315,7 +315,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_dh_host_key_lookup_done)
   ASSH_ERR_RET(pv->state != ASSH_KEX_DH_CLIENT_LOOKUP_HOST_KEY_WAIT
                ? ASSH_ERR_PROTOCOL : 0);
 
-  ASSH_ERR_RET(assh_kex_end(s, e->hostkey_lookup.accept));
+  ASSH_ERR_RET(assh_kex_end(s, e->kex.hostkey_lookup.accept));
   return ASSH_OK;
 }
 #endif
@@ -333,11 +333,11 @@ static ASSH_KEX_PROCESS_FCN(assh_kex_dh_process)
       pv->state = ASSH_KEX_DH_CLIENT_LOOKUP_HOST_KEY_WAIT;
 
       /* return an host key lookup event */
-      e->id = ASSH_EVENT_HOSTKEY_LOOKUP;
+      e->id = ASSH_EVENT_KEX_HOSTKEY_LOOKUP;
       e->f_done = assh_kex_dh_host_key_lookup_done;
       e->done_pv = pv;
-      *(const struct assh_key_s **)&e->hostkey_lookup.key = pv->host_key;
-      e->hostkey_lookup.accept = 0;
+      *(const struct assh_key_s **)&e->kex.hostkey_lookup.key = pv->host_key;
+      e->kex.hostkey_lookup.accept = 0;
 
       return ASSH_OK;
 

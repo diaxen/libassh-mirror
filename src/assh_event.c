@@ -60,7 +60,7 @@ assh_error_t assh_event_get(struct assh_session_s *s,
   if (s->tr_st == ASSH_TR_KEX_INIT)
     {
       s->tr_st = ASSH_TR_KEX_WAIT;
-      ASSH_ERR_GTO(assh_algo_kex_send_init(s), err);
+      ASSH_ERR_GTO(assh_kex_send_init(s), err);
     }
 #endif
 

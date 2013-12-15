@@ -41,23 +41,6 @@
 # include <alloca.h>
 #endif
 
-/*
-      byte         SSH_MSG_KEXINIT
-      byte[16]     cookie (random bytes)
-      name-list    kex_algorithms
-      name-list    server_host_key_algorithms
-      name-list    encryption_algorithms_client_to_server
-      name-list    encryption_algorithms_server_to_client
-      name-list    mac_algorithms_client_to_server
-      name-list    mac_algorithms_server_to_client
-      name-list    compression_algorithms_client_to_server
-      name-list    compression_algorithms_server_to_client
-      name-list    languages_client_to_server
-      name-list    languages_server_to_client
-      boolean      first_kex_packet_follows
-      uint32       0 (reserved for future extension)
-*/
-
 static const enum assh_algo_class_e assh_kex_algos_classes[8] = {
   ASSH_ALGO_KEX, ASSH_ALGO_SIGN,
   ASSH_ALGO_CIPHER, ASSH_ALGO_CIPHER,
@@ -65,7 +48,7 @@ static const enum assh_algo_class_e assh_kex_algos_classes[8] = {
   ASSH_ALGO_COMPRESS, ASSH_ALGO_COMPRESS
 };
 
-assh_error_t assh_algo_kex_send_init(struct assh_session_s *s)
+assh_error_t assh_kex_send_init(struct assh_session_s *s)
 {
   assh_error_t err;
 
