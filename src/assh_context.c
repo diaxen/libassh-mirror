@@ -131,6 +131,17 @@ assh_error_t assh_context_prng(struct assh_context_s *c,
 			       const struct assh_prng_s *prng)
 {
   assh_error_t err;
+
+  if (prng == NULL)
+    {
+      if (c->prng != NULL)
+	return ASSH_OK;
+      prng = &assh_prng_xswap;
+    }
+
+  if (c->prng != NULL)
+    c->prng->f_cleanup(c);
+
   c->prng = prng;
   ASSH_ERR_RET(prng->f_init(c));
   return ASSH_OK;

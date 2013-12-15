@@ -25,7 +25,6 @@
 #include <assh/assh_context.h>
 #include <assh/assh_service.h>
 #include <assh/srv_userauth_server.h>
-#include <assh/assh_prng.h>
 #include <assh/helper_fd.h>
 #include <assh/helper_key.h>
 #include <assh/assh_event.h>
@@ -80,9 +79,6 @@ int main()
     return -1;
 
   if (assh_algo_register_default(&context) != ASSH_OK)
-    return -1;
-
-  if (assh_context_prng(&context, &assh_prng_xswap) != ASSH_OK)
     return -1;
 
   if (assh_load_hostkey_filename(&context, "ssh-dss", "host_keys",

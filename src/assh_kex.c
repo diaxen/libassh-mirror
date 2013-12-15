@@ -74,7 +74,7 @@ assh_error_t assh_algo_kex_send_init(struct assh_session_s *s)
 
   uint8_t *cookie;
   ASSH_ERR_GTO(assh_packet_add_bytes(p, 16, &cookie), err_pck);
-  ASSH_ERR_GTO(s->ctx->prng->f_get(s->ctx, cookie, 16), err_pck);
+  ASSH_ERR_GTO(s->ctx->prng->f_get(s->ctx, cookie, 16, ASSH_PRNG_QUALITY_NONCE), err_pck);
 
   unsigned int ac = s->ctx->algos_count;
 

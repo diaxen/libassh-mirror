@@ -38,13 +38,8 @@ enum assh_event_id_e
   /** @see assh_transport_event_write_s */
   ASSH_EVENT_WRITE,
 
-  /** This event is returned when the prng needs some entropy. The
-      @ref assh_event_s::random::data field must be updated to point
-      to a buffer containing random data before calling the @ref
-      assh_event_done function. The @ref assh_event_s::random::size
-      field gives the amount of requested data; it can be updated
-      too if the amount of available random data is different. */
-  ASSH_EVENT_RANDOM,
+  /** @see assh_event_prng_feed_s */
+  ASSH_EVENT_PRNG_FEED,
 
   /** This event is returned when a client needs to lookup a server
       host key in the local database. The @ref
@@ -109,10 +104,9 @@ struct assh_event_s
     union assh_transport_event_u transport;
 #endif
 
-    /** Parameters for the @ref ASSH_EVENT_RANDOM event */
-    struct {
-      struct assh_buffer_s       buf;
-    }                            random;
+#ifdef ASSH_PRNG_H_
+    union assh_event_prng_u prng;
+#endif
 
 #ifdef CONFIG_ASSH_CLIENT
     /** Parameters for the @ref ASSH_EVENT_HOSTKEY_LOOKUP event */

@@ -55,9 +55,10 @@ assh_error_t assh_bignum_uint(struct assh_bignum_s *n,
 }
 
 assh_error_t assh_bignum_rand(struct assh_context_s *c,
-			      struct assh_bignum_s *n)
+			      struct assh_bignum_s *n,
+			      enum assh_prng_quality_e quality)
 {
-  return c->prng->f_get(c, (uint8_t*)n->n, n->l * sizeof(assh_bnword_t));
+  return c->prng->f_get(c, (uint8_t*)n->n, n->l * sizeof(assh_bnword_t), quality);
 }
 
 assh_error_t assh_bignum_from_data(struct assh_bignum_s *bn,

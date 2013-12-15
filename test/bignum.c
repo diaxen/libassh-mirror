@@ -52,7 +52,7 @@ assh_error_t test_shift()
   ASSH_BIGNUM_ALLOC(&context, a, 256, err_);
   ASSH_BIGNUM_ALLOC(&context, r, 256, err_);
 
-  ASSH_ERR_GTO(assh_bignum_rand(&context, a), err_);
+  ASSH_ERR_RET(assh_bignum_rand(&context, a, ASSH_PRNG_QUALITY_WEAK));
   assh_bignum_print(stderr, "shift", a);
 
   ASSH_ERR_GTO(assh_bignum_rshift(r, a, 32), err_);
@@ -88,8 +88,8 @@ assh_error_t test_add_sub(unsigned int count)
       ASSH_BIGNUM_ALLOC(&context, b, lb, err_);
       ASSH_BIGNUM_ALLOC(&context, r, lr, err_);
 
-      ASSH_ERR_GTO(assh_bignum_rand(&context, a), err_);
-      ASSH_ERR_GTO(assh_bignum_rand(&context, b), err_);
+      ASSH_ERR_RET(assh_bignum_rand(&context, a, ASSH_PRNG_QUALITY_WEAK));
+      ASSH_ERR_RET(assh_bignum_rand(&context, b, ASSH_PRNG_QUALITY_WEAK));
 
       ASSH_ERR_GTO(assh_bignum_rshift(a, a, assh_bignum_bits(a) - la), err_);
       ASSH_ERR_GTO(assh_bignum_rshift(b, b, assh_bignum_bits(b) - lb), err_);
@@ -131,8 +131,8 @@ assh_error_t test_div(unsigned int count)
 
   for (i = 0; i < count; i++)
     {
-      ASSH_ERR_RET(assh_bignum_rand(&context, b));
-      ASSH_ERR_RET(assh_bignum_rand(&context, c));
+      ASSH_ERR_RET(assh_bignum_rand(&context, b, ASSH_PRNG_QUALITY_WEAK));
+      ASSH_ERR_RET(assh_bignum_rand(&context, c, ASSH_PRNG_QUALITY_WEAK));
 
       ASSH_ERR_RET(assh_bignum_rshift(a, b, rand() % 255));
 
@@ -183,7 +183,7 @@ assh_error_t test_modinv(unsigned int count)
 
   for (i = 0; i < count; i++)
     {
-      ASSH_ERR_RET(assh_bignum_rand(&context, c));
+      ASSH_ERR_RET(assh_bignum_rand(&context, c, ASSH_PRNG_QUALITY_WEAK));
       ASSH_ERR_RET(assh_bignum_rshift(b, c, 129 + rand() % 900));
 
       ASSH_ERR_RET(assh_bignum_modinv((c), (b), (a)));
@@ -243,7 +243,7 @@ assh_error_t test_expmod(unsigned int count)
   ASSH_ERR_RET(assh_bignum_from_mpint(p, NULL, prime));
 
   /* a modulo prime */
-  ASSH_ERR_RET(assh_bignum_rand(&context, a));
+  ASSH_ERR_RET(assh_bignum_rand(&context, a, ASSH_PRNG_QUALITY_WEAK));
   ASSH_ERR_RET(assh_bignum_div(a, NULL, a, p));
 
   /* a^-1 modulo prime */
@@ -251,8 +251,8 @@ assh_error_t test_expmod(unsigned int count)
 
   for (i = 0; i < count; i++)
     {
-      ASSH_ERR_RET(assh_bignum_rand(&context, x));
-      ASSH_ERR_RET(assh_bignum_rand(&context, e));
+      ASSH_ERR_RET(assh_bignum_rand(&context, x, ASSH_PRNG_QUALITY_WEAK));
+      ASSH_ERR_RET(assh_bignum_rand(&context, e, ASSH_PRNG_QUALITY_WEAK));
 
       // check ((((a * x) % p)^e) % p) * ((inv(a)^e) % p) == x^e % p
       ASSH_ERR_RET(assh_bignum_mulmod(r3, a, x, p));
@@ -304,7 +304,7 @@ int main(int argc, char **argv)
 #endif
 
   assh_context_init(&context, ASSH_SERVER);
-  ASSH_ERR_RET(assh_context_prng(&context, &assh_prng_xswap));
+  ASSH_ERR_RET(assh_context_prng(&context, NULL));
 
   test_shift();
 

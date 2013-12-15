@@ -28,6 +28,7 @@
 
 #include <assh/assh_session.h>
 #include <assh/assh_transport.h>
+#include <assh/assh_prng.h>
 #include <assh/assh_event.h>
 
 assh_error_t assh_fd_read(int fd, void *data, size_t size)
@@ -127,12 +128,12 @@ assh_error_t assh_fd_event_get(struct assh_session_s *s,
 	}
           break;
 
-        case ASSH_EVENT_RANDOM: {
+        case ASSH_EVENT_PRNG_FEED: {
           if (rand_fd < 0)
             return ASSH_OK;
-	  uint8_t data[e->random.buf.size];
-	  e->random.buf.data = data;
-	  ASSH_ERR_GTO(assh_fd_read(rand_fd, data, e->random.buf.size), err_io);
+	  uint8_t data[e->prng.feed.size];
+	  e->prng.feed.buf.data = data;
+	  ASSH_ERR_GTO(assh_fd_read(rand_fd, data, e->prng.feed.buf.size), err_io);
           ASSH_ERR_RET(assh_event_done(s, e));
           break;
 	}

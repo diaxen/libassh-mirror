@@ -25,7 +25,38 @@
 #ifndef ASSH_PRNG_H_
 #define ASSH_PRNG_H_
 
+#ifdef ASSH_EVENT_H_
+# warning The assh/assh_prng.h header should be included after assh_transport.h
+#endif
+
 #include "assh_algo.h"
+
+enum assh_prng_quality_e
+{
+  ASSH_PRNG_QUALITY_WEAK,          //< weak random data for use in the testsuite
+  ASSH_PRNG_QUALITY_NONCE,         //< random data for use as nonce in signature algorithms
+  ASSH_PRNG_QUALITY_EPHEMERAL_KEY, //< random data for use in ephemeral key generation
+  ASSH_PRNG_QUALITY_LONGTERM_KEY,  //< random data for use in long term key generation
+};
+
+/**
+   The @ref ASSH_EVENT_PRNG_FEED event is returned when the pluggable
+   prng needs some entropy input. The @ref buf buffer must be updated
+   to point to random data before calling the @ref assh_event_done
+   function. The @ref size field gives the prefered amount of random
+   data.
+*/
+struct assh_event_prng_feed_s
+{
+  const size_t               size;      //< input
+  struct assh_buffer_s       buf;       //< output
+};
+
+/** @internal */
+union assh_event_prng_u
+{
+  struct assh_event_prng_feed_s feed;  
+};
 
 #define ASSH_PRNG_INIT_FCN(n) \
   ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_context_s *c)
@@ -33,7 +64,8 @@ typedef ASSH_PRNG_INIT_FCN(assh_prng_init_t);
 
 #define ASSH_PRNG_GET_FCN(n) \
   ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_context_s *c,    \
-                                           uint8_t *rdata, size_t rdata_len)
+                                           uint8_t *rdata, size_t rdata_len, \
+					   enum assh_prng_quality_e quality)
 typedef ASSH_PRNG_GET_FCN(assh_prng_get_t);
 
 #define ASSH_PRNG_FEED_FCN(n) \

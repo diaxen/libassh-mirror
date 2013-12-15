@@ -89,17 +89,46 @@ assh_bignum_msb_to_data(const struct assh_bignum_s *bn,
 
 assh_error_t
 assh_bignum_rand(struct assh_context_s *c,
-                 struct assh_bignum_s *bn)
+                 struct assh_bignum_s *bn,
+		 enum assh_prng_quality_e quality)
 {
   assh_error_t err;
-  uint8_t rnd[bn->l / 8];
 
-  ASSH_ERR_RET(c->prng->f_get(c, rnd, sizeof(rnd)));
+  ASSH_ERR_RET(c->prng == NULL ? ASSH_ERR_MISSING_ALGO : 0);
 
-  if (bn->n != NULL)
-    gcry_mpi_release(bn->n);
-  ASSH_ERR_RET(gcry_mpi_scan(&bn->n, GCRYMPI_FMT_USG, rnd, sizeof(rnd), NULL)
-	       ? ASSH_ERR_CRYPTO : 0);
+  if (c->prng == &assh_prng_gcrypt)
+    {
+      enum gcry_random_level level;
+      switch (quality)
+	{
+	case ASSH_PRNG_QUALITY_WEAK:
+	  level = GCRY_WEAK_RANDOM;
+	  break;
+	case ASSH_PRNG_QUALITY_NONCE:
+	case ASSH_PRNG_QUALITY_EPHEMERAL_KEY:
+	  level = GCRY_STRONG_RANDOM;
+	  break;
+	case ASSH_PRNG_QUALITY_LONGTERM_KEY:
+	default:
+	  level = GCRY_VERY_STRONG_RANDOM;
+	  break;
+	}
+      if (bn->n == NULL)
+	bn->n = gcry_mpi_new(bn->l);
+      ASSH_ERR_RET(bn->n == NULL ? ASSH_ERR_MEM : 0);
+      gcry_mpi_randomize(bn->n, bn->l, level);
+    }
+  else
+    {
+      uint8_t rnd[bn->l / 8];
+
+      ASSH_ERR_RET(c->prng->f_get(c, rnd, sizeof(rnd), quality));
+
+      if (bn->n != NULL)
+	gcry_mpi_release(bn->n);
+      ASSH_ERR_RET(gcry_mpi_scan(&bn->n, GCRYMPI_FMT_USG, rnd, sizeof(rnd), NULL)
+		   ? ASSH_ERR_CRYPTO : 0);
+    }
 
   return ASSH_OK;
 }

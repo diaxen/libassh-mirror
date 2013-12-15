@@ -62,7 +62,7 @@ struct assh_context_s
   void *prng_ctx;
   /** Current amount of entropy in the prng pool. a negative value
       will make the @ref assh_event_get function return an @ref
-      ASSH_EVENT_RANDOM event.  */
+      ASSH_EVENT_PRNG_FEED event.  */
   int prng_entropy;
 
 #ifdef CONFIG_ASSH_SERVER
@@ -137,7 +137,13 @@ void assh_context_allocator(struct assh_context_s *c,
 			    void *alloc_pv);
 
 /** This function setups the pseudo-random number generator to use for
-    this context. No default generator is initialy setup. */
+    this context. If an other prng has already been setup, it will be
+    properly released.
+
+    If this function is called with @tt NULL as @tt prng parameter and
+    no prng has already been registered, a default prng is setup.
+    This is performed when calling the @ref assh_session_init function.
+*/
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_context_prng(struct assh_context_s *s,
 		  const struct assh_prng_s *prng);

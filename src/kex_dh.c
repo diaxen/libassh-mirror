@@ -70,7 +70,7 @@ static assh_error_t assh_kex_dh_send_expmod(struct assh_session_s *s)
   assh_error_t err;
 
   /* diffie hellman stuff */
-  ASSH_ERR_RET(assh_bignum_rand(s->ctx, pv->kn));
+  ASSH_ERR_RET(assh_bignum_rand(s->ctx, pv->kn, ASSH_PRNG_QUALITY_EPHEMERAL_KEY));
 
   ASSH_BIGNUM_ALLOC(s->ctx, gn, gr->size, err_);
   ASSH_BIGNUM_ALLOC(s->ctx, pn, gr->size, err_gn);
@@ -223,7 +223,7 @@ static assh_error_t assh_kex_dh_server_wait_e(struct assh_session_s *s,
   ASSH_BIGNUM_ALLOC(s->ctx, gn, gr->size, err_fn);
   ASSH_BIGNUM_ALLOC(s->ctx, pn, gr->size, err_gn);
 
-  ASSH_ERR_GTO(assh_bignum_rand(s->ctx, xn), err_pn);
+  ASSH_ERR_GTO(assh_bignum_rand(s->ctx, xn, ASSH_PRNG_QUALITY_EPHEMERAL_KEY), err_pn);
 
   ASSH_ERR_GTO(assh_bignum_from_mpint(gn, NULL, gr->generator), err_pn);
   ASSH_ERR_GTO(assh_bignum_from_mpint(pn, NULL, gr->prime), err_pn);

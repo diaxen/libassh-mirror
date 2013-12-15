@@ -42,7 +42,7 @@ assh_fd_write(int fd, const void *data, size_t size);
     ASSH_EVENT_READ and @ref ASSH_EVENT_WRITE events are processed
     internally by transferring data using the specified file
     descriptor. If the @tt rand_fd parameter is not negative, the @ref
-    ASSH_EVENT_RANDOM is also handled by reading random data from a
+    ASSH_EVENT_PRNG_FEED is also handled by reading random data from a
     file descriptor. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_fd_event_get(struct assh_session_s *s,

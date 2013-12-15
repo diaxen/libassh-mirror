@@ -26,6 +26,7 @@
 #define ASSH_BIGNUM_H_
 
 #include "assh_context.h"
+#include "assh_prng.h"
 
 #ifdef CONFIG_ASSH_USE_GCRYPT
 
@@ -269,7 +270,8 @@ assh_bignum_msb_to_data(const struct assh_bignum_s *bn,
 /** This function sets the number to a random value. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_bignum_rand(struct assh_context_s *c,
-                 struct assh_bignum_s *n);
+                 struct assh_bignum_s *n,
+		 enum assh_prng_quality_e quality);
 
 /** This function sets the number to the specified integer value. */
 ASSH_WARN_UNUSED_RESULT assh_error_t

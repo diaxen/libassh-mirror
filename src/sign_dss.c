@@ -423,7 +423,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
     unsigned int i;
     struct assh_hash_sha1_context_s sha1;
 
-    ASSH_ERR_GTO(c->prng->f_get(c, rnd, n / 8), err_kn);
+    ASSH_ERR_GTO(c->prng->f_get(c, rnd, n / 8, ASSH_PRNG_QUALITY_NONCE), err_kn);
     assh_sha1_init(&sha1);
     for (i = 0; i < data_count; i++)
       assh_sha1_update(&sha1, data[i], data_len[i]);

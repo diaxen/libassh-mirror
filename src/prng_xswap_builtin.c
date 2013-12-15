@@ -27,6 +27,7 @@
 #include <assh/assh_packet.h>
 
 #include <string.h>
+#include <stdlib.h>
 
   /*
    ______              ______
@@ -121,6 +122,13 @@ static ASSH_PRNG_INIT_FCN(assh_prng_xswap_init)
 static ASSH_PRNG_GET_FCN(assh_prng_xswap_get)
 {
   struct assh_prng_ctx_s *ctx = c->prng_ctx;
+
+  if (quality == ASSH_PRNG_QUALITY_WEAK)
+    {
+      while (rdata_len--)
+	*rdata++ = rand();
+      return ASSH_OK;
+    }
 
   c->prng_entropy -= rdata_len;
 

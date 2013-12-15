@@ -24,7 +24,6 @@
 
 #include <assh/assh_bignum.h>
 #include <assh/assh_context.h>
-#include <assh/assh_prng.h>
 
 #ifdef CONFIG_ASSH_USE_GCRYPT
 # include <gcrypt.h>
@@ -41,7 +40,6 @@ int main()
 #endif
 
   assh_context_init(&context, ASSH_SERVER);
-  ASSH_ERR_RET(assh_context_prng(&context, &assh_prng_xswap));
 
   unsigned int n = 160, l = 512;
 
@@ -66,8 +64,7 @@ int main()
   assh_bignum_print(stderr, "xn", xn);
 
   ASSH_BIGNUM_ALLOC(&context, kn, n, err_);
-  ASSH_ERR_RET(assh_bignum_rand(&context, kn));
-  //  ASSH_ERR_RET(assh_bignum_from_hex(kn, NULL, "79577ddcaafddc038b865b19f8eb1ada8a2838c6", n / 4));
+  ASSH_ERR_RET(assh_bignum_from_hex(kn, NULL, "79577ddcaafddc038b865b19f8eb1ada8a2838c6", n / 4));
   assh_bignum_print(stderr, "kn", kn);
 
   /* compute R */
@@ -134,6 +131,9 @@ int main()
 
   assh_bignum_print(stderr, "v = (g^u1 * y^u2) mod p mod q", vn);
 
+  ASSH_ERR_RET(assh_bignum_cmp(vn, rn) ? ASSH_ERR_BAD_DATA : 0);
+
+  ASSH_ERR_RET(assh_bignum_from_hex(rn, NULL, "9b77f7054c81531c4e46a4692fbfe0f77f7ebff2", n / 4));
   ASSH_ERR_RET(assh_bignum_cmp(vn, rn) ? ASSH_ERR_BAD_DATA : 0);
 
  err_:

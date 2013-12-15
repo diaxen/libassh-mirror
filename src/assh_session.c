@@ -26,6 +26,7 @@
 #include <assh/assh_context.h>
 #include <assh/assh_packet.h>
 #include <assh/assh_kex.h>
+#include <assh/assh_prng.h>
 #include <assh/assh_queue.h>
 #include <assh/assh_service.h>
 
@@ -34,8 +35,7 @@ assh_error_t assh_session_init(struct assh_context_s *c,
 {
   assh_error_t err;
 
-  ASSH_ERR_RET(c->prng == NULL ? ASSH_ERR_MISSING_ALGO : 0);
-
+  ASSH_ERR_RET(assh_context_prng(c, NULL));
   s->ctx = c;
 
   switch (c->type)
