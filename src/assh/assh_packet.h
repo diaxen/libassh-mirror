@@ -29,6 +29,15 @@
 
 #include <string.h>
 
+/** Start of packet data */
+struct assh_packet_head_s
+{
+  uint32_t  pck_len;
+  uint8_t   pad_len;
+  uint8_t   msg;
+  uint8_t   end[0];
+};
+
 /** @internal SSH packet object */
 struct assh_packet_s
 {
@@ -52,14 +61,8 @@ struct assh_packet_s
   uint_fast16_t ref_count;
 
   union {
-    /** Start of packet data */
-    uint8_t     data[0];
-    struct {
-      uint32_t  pck_len;
-      uint8_t   pad_len;
-      uint8_t   msg;
-      uint8_t   end[0];
-    }           head;
+    uint8_t                   data[0];
+    struct assh_packet_head_s head;
   };
 };
 
@@ -133,8 +136,9 @@ enum assh_ssh_disconnect_e
   SSH_DISCONNECT_ILLEGAL_USER_NAME              = 15,
 };
 
-/** @internal This function allocates a new packet. The @tt
-    alloc_size parameter specifies total allocated size. */
+/** @internal This function allocates a new packet. The @tt alloc_size
+    parameter specifies total allocated size. No range checking is
+    performed on the size parameter. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_packet_alloc2(struct assh_context_s *c,
                   uint8_t msg, size_t alloc_size,
@@ -143,17 +147,10 @@ assh_packet_alloc2(struct assh_context_s *c,
 /** @internal This function allocates a new packet. The @tt
     payload_size parameter specifies the amount of bytes needed
     between the message id byte and the mac bytes. */
-static inline assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_packet_alloc(struct assh_context_s *c,
                   uint8_t msg, size_t payload_size,
-                  struct assh_packet_s **result)
-{
-  size_t size = /* pck_len */ 4 + /* pad_len */ 1 + /* msg */ 1 + payload_size +
-          /* mac */ ASSH_MAX_HASH_SIZE + /* padding */ (ASSH_MAX_BLOCK_SIZE - 1);
-
-  return assh_packet_alloc2(c, msg, size, result);
-}
-
+                  struct assh_packet_s **result);
 
 /** @internal This function decreases the reference counter of the
     packet and release the packet if the new counter value is
@@ -195,6 +192,16 @@ static inline uint32_t assh_load_u32(const uint8_t *s)
     left in the packet, an error is returned. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_packet_add_bytes(struct assh_packet_s *p, size_t len, uint8_t **result);
+
+static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_packet_add_u32(struct assh_packet_s *p, uint32_t value)
+{
+  uint8_t *be;
+  assh_error_t err = assh_packet_add_bytes(p, 4, &be);
+  if (!err)
+    assh_store_u32(be, value);
+  return err;
+}
 
 /** @internal This function allocates a string in a packet and returns
     a pointer to the first char of the string. If there is not enough
@@ -250,8 +257,7 @@ assh_check_asn1(const uint8_t *buffer, size_t buffer_len, const uint8_t *str,
                 uint8_t **value, uint8_t **next);
 
 /** @internal This function checks that a string is well inside packet
-    bounds. If no error is returned, the @tt next parameter is set to
-    point to the first byte of the packet following the string. */
+    bounds. @see assh_check_string */
 static inline ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_packet_check_string(const struct assh_packet_s *p, const uint8_t *str,
                          uint8_t **next)
@@ -260,8 +266,7 @@ assh_packet_check_string(const struct assh_packet_s *p, const uint8_t *str,
 }
 
 /** @internal This function checks that an array is well inside packet
-    bounds. If no error is returned, the @tt next parameter is set to
-    point to the first byte of the packet following the array. */
+    bounds. @see assh_check_array */
 static inline ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_packet_check_array(const struct assh_packet_s *p, const uint8_t *array,
                         size_t array_len, uint8_t **next)

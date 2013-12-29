@@ -47,7 +47,7 @@
     allows filling the buffer as more data become available, even
     after calling @ref assh_event_done.
 */
-struct assh_transport_event_read_s
+struct assh_event_transport_read_s
 {
   const struct assh_buffer_s buf;
   size_t                     transferred;
@@ -65,16 +65,16 @@ struct assh_transport_event_read_s
     provided again the next time this event is returned. This allows
     sending the buffer even after calling @ref assh_event_done.
 */
-struct assh_transport_event_write_s
+struct assh_event_transport_write_s
 {
   const struct assh_buffer_s buf;
   size_t                     transferred;
 };
 
-union assh_transport_event_u
+union assh_event_transport_u
 {
-  struct assh_transport_event_read_s  read;
-  struct assh_transport_event_write_s write;
+  struct assh_event_transport_read_s  read;
+  struct assh_event_transport_write_s write;
 };
 
 /** @internal */

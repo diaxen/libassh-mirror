@@ -95,7 +95,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 		ASSH_ERR_RET(strncmp((char*)s->hello_str + 4, "2.0", 3) ? ASSH_ERR_BAD_VERSION : 0);
 
 		/* copy remaining unused bytes to packet header buffer */
-		memmove(s->stream_in_pck_head, s->hello_str + i + 1, s->stream_in_size);
+		memcpy(s->stream_in_pck_head, s->hello_str + i + 1, s->stream_in_size);
 
 		/* ajust and keep hello string length */
 		if (s->hello_str[i - 1] == '\r')

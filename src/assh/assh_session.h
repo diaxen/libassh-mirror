@@ -104,6 +104,9 @@ struct assh_session_s
   /** Current service private data. */
   void *srv_pv;
 
+  /** User defined private pointer */
+  void *pv;
+
   /****************** ssh output stream state */
 
   /** Currrent output ssh stream generator state. */
@@ -155,6 +158,18 @@ struct assh_session_s
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_session_init(struct assh_context_s *c,
 		  struct assh_session_s *s);
+
+/** This function sets the value of the session private pointer. */
+static inline void assh_session_set_pv(struct assh_session_s *s, void *pv)
+{
+  s->pv = pv;
+}
+
+/** This function returns the value of the session private pointer. */
+static inline void *assh_session_get_pv(const struct assh_session_s *s)
+{
+  return s->pv;
+}
 
 /** This function marks the session as invalid so that the @ref
     assh_event_get function always returns @ref ASSH_ERR_DISCONNECTED. */

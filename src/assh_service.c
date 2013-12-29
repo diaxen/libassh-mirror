@@ -41,7 +41,7 @@ assh_error_t assh_service_register(struct assh_context_s *c,
 
   ASSH_ERR_RET(srv->side != ASSH_CLIENT_SERVER &&
                srv->side != c->type ? ASSH_ERR_NOTSUP : 0);
-  ASSH_ERR_RET(c->srvs_count == ASSH_MAX_SERVICES ? ASSH_ERR_OVERFLOW : 0);
+  ASSH_ERR_RET(c->srvs_count == ASSH_MAX_SERVICES ? ASSH_ERR_MEM : 0);
   c->srvs[c->srvs_count++] = srv;
   return ASSH_OK;
 }

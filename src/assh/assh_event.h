@@ -33,9 +33,9 @@ enum assh_event_id_e
       non-initialized event objects. */
   ASSH_EVENT_INVALID,
 
-  /** @see assh_transport_event_read_s */
+  /** @see assh_event_transport_read_s */
   ASSH_EVENT_READ,
-  /** @see assh_transport_event_write_s */
+  /** @see assh_event_transport_write_s */
   ASSH_EVENT_WRITE,
 
   /** @see assh_event_prng_feed_s */
@@ -44,36 +44,32 @@ enum assh_event_id_e
   /** @see assh_event_kex_hostkey_lookup_s */
   ASSH_EVENT_KEX_HOSTKEY_LOOKUP,
 
-  /** @see assh_userauth_client_user_event_s */
+  /** @see assh_event_userauth_client_user_s */
   ASSH_EVENT_USERAUTH_CLIENT_USER,
-  /** @see assh_userauth_client_methods_event_s */
+  /** @see assh_event_userauth_client_methods_s */
   ASSH_EVENT_USERAUTH_CLIENT_METHODS,
 
-  /** @see assh_userauth_server_userkey_event_s */
+  /** @see assh_event_userauth_server_userkey_s */
   ASSH_EVENT_USERAUTH_SERVER_USERKEY,
-  /** @see assh_userauth_server_password_event_s */
+  /** @see assh_event_userauth_server_password_s */
   ASSH_EVENT_USERAUTH_SERVER_PASSWORD,
 
-  /** @see assh_connection_event_start_s */
+  /** @see assh_event_connection_start_s */
   ASSH_EVENT_CONNECTION_START,
-  /** @see assh_connection_event_global_request_s */
-  ASSH_EVENT_CONNECTION_GLOBAL_REQUEST,
-  /** @see assh_connection_event_global_request_reply_s */
-  ASSH_EVENT_CONNECTION_GLOBAL_REQUEST_REPLY,
-  /** @see assh_connection_event_channel_open_s */
-  ASSH_EVENT_CONNECTION_CHANNEL_OPEN,
-  /** @see assh_connection_event_channel_open_reply_s */
-  ASSH_EVENT_CONNECTION_CHANNEL_OPEN_REPLY,
-  /** @see assh_connection_event_channel_data_s */
-  ASSH_EVENT_CONNECTION_CHANNEL_DATA,
-  /** @see assh_connection_event_channel_request_s */
-  ASSH_EVENT_CONNECTION_CHANNEL_REQUEST,
-  /** @see assh_connection_event_channel_request_reply_s */
-  ASSH_EVENT_CONNECTION_CHANNEL_REQUEST_REPLY,
-  /** @see assh_connection_event_channel_eof_s */
-  ASSH_EVENT_CONNECTION_CHANNEL_EOF,
-  /** @see assh_connection_event_channel_close_s */
-  ASSH_EVENT_CONNECTION_CHANNEL_CLOSE,
+  /** @see assh_event_request_s */
+  ASSH_EVENT_REQUEST,
+  /** @see assh_event_request_reply_s */
+  ASSH_EVENT_REQUEST_REPLY,
+  /** @see assh_event_channel_open_s */
+  ASSH_EVENT_CHANNEL_OPEN,
+  /** @see assh_event_channel_open_reply_s */
+  ASSH_EVENT_CHANNEL_OPEN_REPLY,
+  /** @see assh_event_channel_data_s */
+  ASSH_EVENT_CHANNEL_DATA,
+  /** @see assh_event_channel_eof_s */
+  ASSH_EVENT_CHANNEL_EOF,
+  /** @see assh_event_channel_close_s */
+  ASSH_EVENT_CHANNEL_CLOSE,
 
   /** @internal */
   ASSH_EVENT_COUNT,
@@ -97,7 +93,7 @@ struct assh_event_s
   union {
 
 #ifdef ASSH_TRANSPORT_H_
-    union assh_transport_event_u transport;
+    union assh_event_transport_u transport;
 #endif
 
 #ifdef ASSH_PRNG_H_
@@ -110,18 +106,18 @@ struct assh_event_s
 # endif
 
 # ifdef ASSH_SRV_USERAUTH_CLIENT_H_
-    union assh_userauth_client_event_u userauth_client;
+    union assh_event_userauth_client_u userauth_client;
 # endif
 #endif
 
 #ifdef CONFIG_ASSH_SERVER
 # ifdef ASSH_SRV_USERAUTH_SERVER_H_
-    union assh_userauth_server_event_u userauth_server;
+    union assh_event_userauth_server_u userauth_server;
 # endif
 #endif
 
 #ifdef ASSH_SRV_CONNECTION_H_
-    union assh_connection_event_u connection;
+    union assh_event_connection_u connection;
 #endif
 
 #ifdef ASSH_USER_EVENTS_UNION
@@ -136,12 +132,15 @@ struct assh_event_s
 
 /** @hidden check sizeof event union */
 #define ASSH_EVENT_SIZE_SASSERT(name)					\
-  typedef char assh_##name##_event_larger_than_padding			\
-     [(sizeof(union assh_##name##_event_u)				\
+  typedef char assh_event_##name##_larger_than_padding			\
+     [(sizeof(union assh_event_##name##_u)				\
        <= sizeof(((struct assh_event_s*)0)->params)) - 1];
 
 /** This function runs the various state machines which implement the
-    ssh protocol and returns the next event in queue.
+    ssh protocol and running service. It returns the next available event.
+
+    The @ref assh_event_done function must be called after each
+    successful call to this function, before requesting the next event.
 
     This function can be called in a loop until the @ref
     ASSH_ERR_DISCONNECTED error code is returned. Other error codes

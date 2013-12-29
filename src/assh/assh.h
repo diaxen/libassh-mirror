@@ -89,6 +89,7 @@ enum assh_error_e
   ASSH_ERR_CRYPTO,
   /** Unsupported parameter value. */
   ASSH_ERR_NOTSUP,
+  ASSH_ERR_BUSY,
   ASSH_ERR_KEX_FAILED,
   /**  */
   ASSH_ERR_MISSING_KEY,
@@ -116,9 +117,6 @@ enum assh_error_e
 
 typedef int assh_error_t;
 
-/** Maximum size of incoming packet length, including header and mac. */
-#define ASSH_MAX_PCK_LEN 35000
-
 /** Log2 of smallest packet size bucket in the packet allocator pool. */
 #define ASSH_PCK_POOL_MIN 6
 /** Log2 of largest packet size bucket in the packet allocator pool. */
@@ -145,6 +143,16 @@ typedef int assh_error_t;
 
 /** Maximum size of cipher/mac keys or iv in bytes. */
 #define ASSH_MAX_SYMKEY_SIZE 64
+
+/** Maximum mac output size in bytes. */
+#define ASSH_MAX_MAC_SIZE 32
+
+/** Maximum size of incoming packet length, including header and mac. */
+#define ASSH_MAX_PCK_LEN 35000
+
+/** Maximum size of packet payload */
+#define ASSH_MAX_PCK_PAYLOAD_SIZE (ASSH_MAX_PCK_LEN - sizeof(struct assh_packet_head_s) \
+                                   - ASSH_MAX_MAC_SIZE - ASSH_MAX_BLOCK_SIZE)
 
 #if 0
 # define ASSH_ERR_GTO(expr, label) do { if ((err = (expr))) goto label; } while (0)

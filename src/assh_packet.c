@@ -45,6 +45,20 @@ assh_packet_pool(struct assh_context_s *c, uint32_t size)
 }
 
 assh_error_t
+assh_packet_alloc(struct assh_context_s *c,
+                  uint8_t msg, size_t payload_size,
+                  struct assh_packet_s **result)
+{
+  assh_error_t err;
+  ASSH_ERR_RET(payload_size > ASSH_MAX_PCK_PAYLOAD_SIZE ? ASSH_ERR_PACKET_SIZE : 0);
+
+  size_t size = /* pck_len */ 4 + /* pad_len */ 1 + /* msg */ 1 + payload_size +
+          /* mac */ ASSH_MAX_HASH_SIZE + /* padding */ (ASSH_MAX_BLOCK_SIZE - 1);
+
+  return assh_packet_alloc2(c, msg, size, result);
+}
+
+assh_error_t
 assh_packet_alloc2(struct assh_context_s *c,
                    uint8_t msg, size_t size,
                    struct assh_packet_s **result)
@@ -77,6 +91,8 @@ assh_packet_alloc2(struct assh_context_s *c,
   p->ctx = c;
   p->data_size = /* pck_len */ 4 + /* pad_len */ 1 + /* msg */ 1;
   p->head.msg = msg;
+
+#warning zero out packet payload
 
   *result = p;
   return ASSH_OK;

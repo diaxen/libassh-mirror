@@ -48,7 +48,7 @@
     server. The @tt found field must be updated accordingly before
     calling the @ref assh_event_done function.
     @see ASSH_EVENT_USERAUTH_SERVER_USERKEY */
-struct assh_userauth_server_userkey_event_s
+struct assh_event_userauth_server_userkey_s
 {
   const struct assh_string_s      username;
   const struct assh_key_s * const pub_key;
@@ -61,7 +61,7 @@ struct assh_userauth_server_userkey_event_s
     @tt success field must be updated accordingly before calling the
     @ref assh_event_done function. 
     @see ASSH_EVENT_USERAUTH_SERVER_PASSWORD */
-struct assh_userauth_server_password_event_s
+struct assh_event_userauth_server_password_s
 {
   const struct assh_string_s username;
   const struct assh_string_s password;
@@ -69,10 +69,10 @@ struct assh_userauth_server_password_event_s
 };
 
 /** @This contains all server side user authentication related events */
-union assh_userauth_server_event_u
+union assh_event_userauth_server_u
 {
-  struct assh_userauth_server_userkey_event_s  userkey;
-  struct assh_userauth_server_password_event_s password;
+  struct assh_event_userauth_server_userkey_s  userkey;
+  struct assh_event_userauth_server_password_s password;
 };
 
 /** @This implements the standard server side @tt ssh-userauth service. */

@@ -136,7 +136,7 @@ int main(int argc, char **argv)
         }
 
         default:
-          assert(!"Don't know how to handle this event");
+          printf("Don't know how to handle event %u\n", event.id);
         }
 
       err = assh_event_done(&session, &event);

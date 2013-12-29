@@ -25,6 +25,7 @@
 #include <assh/assh_context.h>
 #include <assh/assh_service.h>
 #include <assh/srv_userauth_server.h>
+#include <assh/srv_connection.h>
 #include <assh/helper_fd.h>
 #include <assh/helper_key.h>
 #include <assh/assh_event.h>
@@ -137,8 +138,12 @@ int main()
 	      event.userauth_server.password.success = 1;
 	      break;
 
+	    case ASSH_EVENT_CHANNEL_OPEN:
+	      event.connection.channel_open.reply = ASSH_CONNECTION_REPLY_SUCCESS;
+	      break;
+
 	    default:
-	      assert(!"Don't know how to handle this event");
+	      printf("Don't know how to handle event %u\n", event.id);
 	    }
 
 	  err = assh_event_done(&session, &event);

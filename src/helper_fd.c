@@ -94,7 +94,7 @@ assh_error_t assh_fd_event_get(struct assh_session_s *s,
       switch (e->id)
         {
         case ASSH_EVENT_READ: {
-	  struct assh_transport_event_read_s *te = &e->transport.read;
+	  struct assh_event_transport_read_s *te = &e->transport.read;
 	  ssize_t r = read(ssh_fd, te->buf.data, te->buf.size);
 	  switch (r)
 	    {
@@ -111,7 +111,7 @@ assh_error_t assh_fd_event_get(struct assh_session_s *s,
 	}
 
         case ASSH_EVENT_WRITE: {
-	  struct assh_transport_event_write_s *te = &e->transport.write;
+	  struct assh_event_transport_write_s *te = &e->transport.write;
 	  ssize_t r = write(ssh_fd, te->buf.data, te->buf.size);
 	  switch (r)
 	    {

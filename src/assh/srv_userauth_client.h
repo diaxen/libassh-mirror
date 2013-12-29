@@ -48,7 +48,7 @@
 
     @see ASSH_EVENT_USERAUTH_CLIENT_USER
 */
-struct assh_userauth_client_user_event_s
+struct assh_event_userauth_client_user_s
 {
   struct assh_string_s    username;
 };
@@ -73,7 +73,7 @@ struct assh_userauth_client_user_event_s
 
     @see ASSH_EVENT_USERAUTH_CLIENT_METHODS
 */
-struct assh_userauth_client_methods_event_s
+struct assh_event_userauth_client_methods_s
 {
   const assh_bool_t       use_password;
   const assh_bool_t       use_pub_key;
@@ -82,10 +82,10 @@ struct assh_userauth_client_methods_event_s
 };
 
 /** @This contains all client side user authentication related events */
-union assh_userauth_client_event_u
+union assh_event_userauth_client_u
 {
-  struct assh_userauth_client_user_event_s    user;
-  struct assh_userauth_client_methods_event_s methods;
+  struct assh_event_userauth_client_user_s    user;
+  struct assh_event_userauth_client_methods_s methods;
 };
 
 /** @This implements the standard client side @tt ssh-userauth service. */
