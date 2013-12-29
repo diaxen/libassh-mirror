@@ -49,13 +49,15 @@ assh_packet_alloc(struct assh_context_s *c,
                   uint8_t msg, size_t payload_size,
                   struct assh_packet_s **result)
 {
-  assh_error_t err;
+  assh_error_t err; 
+
   ASSH_ERR_RET(payload_size > ASSH_MAX_PCK_PAYLOAD_SIZE ? ASSH_ERR_PACKET_SIZE : 0);
 
   size_t size = /* pck_len */ 4 + /* pad_len */ 1 + /* msg */ 1 + payload_size +
           /* mac */ ASSH_MAX_HASH_SIZE + /* padding */ (ASSH_MAX_BLOCK_SIZE - 1);
 
-  return assh_packet_alloc2(c, msg, size, result);
+  ASSH_ERR_RET(assh_packet_alloc2(c, msg, size, result));
+  return ASSH_OK;
 }
 
 assh_error_t
@@ -145,7 +147,7 @@ assh_error_t assh_packet_add_mpint(struct assh_packet_s *p,
   size_t l = assh_bignum_mpint_size(bn);
   uint8_t *s;
 
-  ASSH_ERR_RET(assh_packet_add_bytes(p, l, &s));
+  ASSH_ERR_RET(assh_packet_add_array(p, l, &s));
   ASSH_ERR_RET(assh_bignum_to_mpint(bn, s));
 
   p->data_size -= (l - 4) - assh_load_u32(s);
@@ -209,7 +211,7 @@ assh_check_array(const uint8_t *buffer, size_t buffer_len,
 }
 
 assh_error_t
-assh_packet_add_bytes(struct assh_packet_s *p, size_t len, uint8_t **result)
+assh_packet_add_array(struct assh_packet_s *p, size_t len, uint8_t **result)
 {
   if (p->data_size + len > p->alloc_size)
     return ASSH_ERR_MEM;
@@ -224,10 +226,11 @@ assh_packet_add_string(struct assh_packet_s *p, size_t len, uint8_t **result)
 {
   uint8_t *d;
   assh_error_t err;
-  if ((err = assh_packet_add_bytes(p, len + 4, &d)))
+  if ((err = assh_packet_add_array(p, len + 4, &d)))
     return err;
   assh_store_u32(d, len);
-  *result = d + 4;
+  if (result != NULL)
+    *result = d + 4;
   return ASSH_OK;
 }
 
@@ -238,7 +241,7 @@ assh_packet_enlarge_string(struct assh_packet_s *p, uint8_t *str,
   size_t olen = assh_load_u32(str - 4);
   assert(str + olen == p->data + p->data_size);
   assh_error_t err;
-  if ((err = assh_packet_add_bytes(p, len, result)))
+  if ((err = assh_packet_add_array(p, len, result)))
     return err;
   assh_store_u32(str - 4, olen + len);
   return ASSH_OK;

@@ -88,7 +88,7 @@ assh_request_reply(struct assh_request_s *rq,
         {
           /* add request specific data to reply */
           uint8_t *data;
-          ASSH_ASSERT(assh_packet_add_bytes(rq->reply_pck, rsp_data_size, &data));
+          ASSH_ASSERT(assh_packet_add_array(rq->reply_pck, rsp_data_size, &data));
           memcpy(data, rsp_data, rsp_data_size);
         }
       rq->status = ASSH_REQUEST_ST_REPLY_READY;
@@ -171,9 +171,9 @@ assh_connection_got_request(struct assh_session_s *s,
   else
     {
       /* lookup channel */
-      uint8_t *ch_id = p->head.end;
-      ASSH_ERR_RET(assh_packet_check_array(p, &ch_id, 4, &type));
-      ch = (void*)assh_map_lookup(pv->channel_map, assh_load_u32(ch_id), NULL);
+      uint32_t ch_id;
+      ASSH_ERR_RET(assh_packet_check_u32(p, &ch_id, p->head.end, &type));
+      ch = (void*)assh_map_lookup(&pv->channel_map, ch_id, NULL);
       ASSH_ERR_RET(ch == NULL ? ASSH_ERR_PROTOCOL : 0);
 
       switch (ch->status)
@@ -279,7 +279,7 @@ assh_error_t assh_request(struct assh_session_s *s,
   uint8_t *str;
   ASSH_ASSERT(assh_packet_add_string(pout, type_len, &str));
   memcpy(str, type, type_len);
-  ASSH_ASSERT(assh_packet_add_bytes(pout, 1, &str));
+  ASSH_ASSERT(assh_packet_add_array(pout, 1, &str));
   *str = want_reply;
   ASSH_ASSERT(assh_packet_add_string(pout, data_len, &str));
   memcpy(str, data, data_len);
@@ -347,9 +347,9 @@ assh_connection_got_request_reply(struct assh_session_s *s,
   struct assh_queue_s *q = &pv->request_lqueue;
   if (!global)
     {
-      uint8_t *ch_id = p->head.end;
-      ASSH_ERR_RET(assh_packet_check_array(p, ch_id, 4, &data));
-      ch = (void*)assh_map_lookup(pv->channel_map, assh_load_u32(ch_id), NULL);
+      uint32_t ch_id;
+      ASSH_ERR_RET(assh_packet_check_u32(p, &ch_id, p->head.end, &data));
+      ch = (void*)assh_map_lookup(&pv->channel_map, ch_id, NULL);
       ASSH_ERR_RET(ch == NULL ? ASSH_ERR_PROTOCOL : 0);
       q = &ch->request_lqueue;
 
@@ -432,7 +432,7 @@ assh_channel_open_reply(struct assh_channel_s *ch,
       ASSH_ASSERT(assh_packet_add_u32(pout, ch->mentry.id));
       ASSH_ASSERT(assh_packet_add_u32(pout, ch->lwin_size));
       ASSH_ASSERT(assh_packet_add_u32(pout, ch->lpkt_size));
-      ASSH_ASSERT(assh_packet_add_bytes(pout, rsp_data_len, &data));
+      ASSH_ASSERT(assh_packet_add_array(pout, rsp_data_len, &data));
       memcpy(data, rsp_data, rsp_data_len);
       assh_transport_push(s, pout);
 
@@ -479,12 +479,9 @@ assh_connection_got_channel_open(struct assh_session_s *s,
   uint8_t *type = p->head.end, *data;
   uint32_t rid, wsize, msize;
   ASSH_ERR_RET(assh_packet_check_string(p, type, &data));
-  ASSH_ERR_RET(assh_packet_check_array(p, data, data, &data));
-  rid = assh_load_u32(data);
-  ASSH_ERR_RET(assh_packet_check_array(p, data, 4, &data));
-  wsize = assh_load_u32(data);
-  ASSH_ERR_RET(assh_packet_check_array(p, data, 4, &data));
-  msize = assh_load_u32(data);
+  ASSH_ERR_RET(assh_packet_check_u32(p, &rid, data, &data));
+  ASSH_ERR_RET(assh_packet_check_u32(p, &wsize, data, &data));
+  ASSH_ERR_RET(assh_packet_check_u32(p, &msize, data, &data));
 
   ASSH_ERR_RET(msize < 1 ? ASSH_ERR_PROTOCOL : 0);
 

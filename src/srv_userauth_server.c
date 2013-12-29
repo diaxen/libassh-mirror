@@ -168,7 +168,7 @@ static assh_error_t assh_userauth_server_failure(struct assh_session_s *s)
   ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_USERAUTH_FAILURE, 4 + list_len + 1, &pout));
   ASSH_ASSERT(assh_packet_add_string(pout, list_len, &list));
   memcpy(list, list_, list_len);
-  ASSH_ASSERT(assh_packet_add_bytes(pout, 1, &partial_success));
+  ASSH_ASSERT(assh_packet_add_array(pout, 1, &partial_success));
   *partial_success = 0;
   assh_transport_push(s, pout);
 

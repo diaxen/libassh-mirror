@@ -56,7 +56,7 @@ assh_error_t assh_kex_send_init(struct assh_session_s *s)
   ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_KEXINIT, 2048, &p));
 
   uint8_t *cookie;
-  ASSH_ERR_GTO(assh_packet_add_bytes(p, 16, &cookie), err_pck);
+  ASSH_ERR_GTO(assh_packet_add_array(p, 16, &cookie), err_pck);
   ASSH_ERR_GTO(s->ctx->prng->f_get(s->ctx, cookie, 16, ASSH_PRNG_QUALITY_NONCE), err_pck);
 
   unsigned int ac = s->ctx->algos_count;
@@ -112,7 +112,7 @@ assh_error_t assh_kex_send_init(struct assh_session_s *s)
   ASSH_ERR_GTO(assh_packet_add_string(p, 0, &x), err_pck);
   ASSH_ERR_GTO(assh_packet_add_string(p, 0, &x), err_pck);
 
-  ASSH_ERR_GTO(assh_packet_add_bytes(p, 5, &x), err_pck);
+  ASSH_ERR_GTO(assh_packet_add_array(p, 5, &x), err_pck);
   memset(x, 0, 5);
 
   /* keep a copy of our KEX_INIT packet, will be needed for hashing */

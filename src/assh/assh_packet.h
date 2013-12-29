@@ -191,13 +191,13 @@ static inline uint32_t assh_load_u32(const uint8_t *s)
     and returns a pointer to the array. If there is not enough space
     left in the packet, an error is returned. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_packet_add_bytes(struct assh_packet_s *p, size_t len, uint8_t **result);
+assh_packet_add_array(struct assh_packet_s *p, size_t len, uint8_t **result);
 
 static inline ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_packet_add_u32(struct assh_packet_s *p, uint32_t value)
 {
   uint8_t *be;
-  assh_error_t err = assh_packet_add_bytes(p, 4, &be);
+  assh_error_t err = assh_packet_add_array(p, 4, &be);
   if (!err)
     assh_store_u32(be, value);
   return err;
@@ -272,6 +272,19 @@ assh_packet_check_array(const struct assh_packet_s *p, const uint8_t *array,
                         size_t array_len, uint8_t **next)
 {
   return assh_check_array(p->data, p->data_size, array, array_len, next);
+}
+
+/** @internal This function checks that a 32 bits integer is well
+    inside packet bounds and converts the value from network byte
+    order. @see assh_packet_check_array */
+static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_packet_check_u32(struct assh_packet_s *p, uint32_t *u32,
+		      const uint8_t *data, uint8_t **next)
+{
+  assh_error_t err = assh_packet_check_array(p, data, 4, next);
+  if (!err)
+    *u32 = assh_load_u32(data);
+  return err;
 }
 
 /** @internal This function compare two byte buffers. The processing

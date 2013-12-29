@@ -414,7 +414,7 @@ assh_error_t assh_transport_disconnect(struct assh_session_s *s, uint32_t code)
   ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_DISCONNECT, 12, &pout));
 
   uint8_t *reason;
-  ASSH_ASSERT(assh_packet_add_bytes(pout, 4, &reason)); /* reason code */
+  ASSH_ASSERT(assh_packet_add_array(pout, 4, &reason)); /* reason code */
   assh_store_u32(reason, code);
 
   uint8_t *unused;

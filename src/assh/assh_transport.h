@@ -71,6 +71,7 @@ struct assh_event_transport_write_s
   size_t                     transferred;
 };
 
+/** @internal */
 union assh_event_transport_u
 {
   struct assh_event_transport_read_s  read;
