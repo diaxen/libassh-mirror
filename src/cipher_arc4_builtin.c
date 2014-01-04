@@ -103,7 +103,7 @@ static ASSH_CIPHER_CLEANUP_FCN(assh_arc4_cleanup)
 
 struct assh_algo_cipher_s assh_cipher_arc4 =
 {
-  .algo = { .name = "arcfour", .class_ = ASSH_ALGO_CIPHER, .priority = 10 },
+  .algo = { .name = "arcfour", .class_ = ASSH_ALGO_CIPHER, .safety = 5, .speed = 80 },
   .ctx_size = sizeof(struct assh_cipher_arc4_context_s),
   .block_size = 8,
   .key_size = 16,
@@ -115,7 +115,7 @@ struct assh_algo_cipher_s assh_cipher_arc4 =
 
 struct assh_algo_cipher_s assh_cipher_arc4_128 =
 {
-  .algo = { .name = "arcfour128", .class_ = ASSH_ALGO_CIPHER, .priority = 11 },
+  .algo = { .name = "arcfour128", .class_ = ASSH_ALGO_CIPHER, .safety = 10, .speed = 80 },
   .ctx_size = sizeof(struct assh_cipher_arc4_context_s),
   .block_size = 8,
   .key_size = 16,
@@ -127,7 +127,7 @@ struct assh_algo_cipher_s assh_cipher_arc4_128 =
 
 struct assh_algo_cipher_s assh_cipher_arc4_256 =
 {
-  .algo = { .name = "arcfour256", .class_ = ASSH_ALGO_CIPHER, .priority = 12 },
+  .algo = { .name = "arcfour256", .class_ = ASSH_ALGO_CIPHER, .safety = 15, .speed = 80 },
   .ctx_size = sizeof(struct assh_cipher_arc4_context_s),
   .block_size = 8,
   .key_size = 32,

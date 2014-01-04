@@ -108,7 +108,7 @@ static ASSH_CIPHER_CLEANUP_FCN(assh_gcrypt_cleanup)
   gcry_cipher_close(ctx->hd);
 }
 
-#define ASSH_GCRYPT_CIPHER(id_, name_, algo_, mode_, bsize_, ksize_, prio_, is_stream_) \
+#define ASSH_GCRYPT_CIPHER(id_, name_, algo_, mode_, bsize_, ksize_, saf_, spd_, is_stream_) \
 extern struct assh_algo_cipher_s assh_cipher_##id_;			\
 									\
 static ASSH_CIPHER_INIT_FCN(assh_gcrypt_##id_##_init)			\
@@ -119,7 +119,7 @@ static ASSH_CIPHER_INIT_FCN(assh_gcrypt_##id_##_init)			\
 									\
 struct assh_algo_cipher_s assh_cipher_##id_ =				\
 {									\
-  .algo = { .name = name_, .class_ = ASSH_ALGO_CIPHER, .priority = prio_ }, \
+  .algo = { .name = name_, .class_ = ASSH_ALGO_CIPHER, .safety = saf_, .speed = spd_ }, \
   .ctx_size = sizeof(struct assh_cipher_gcrypt_context_s),		\
   .block_size = bsize_,							\
   .key_size = ksize_,							\
@@ -129,37 +129,37 @@ struct assh_algo_cipher_s assh_cipher_##id_ =				\
   .f_cleanup = assh_gcrypt_cleanup,					\
 };
 
-ASSH_GCRYPT_CIPHER(gcrypt_arc4,           "arcfour",        GCRY_CIPHER_ARCFOUR,    GCRY_CIPHER_MODE_STREAM, 1, 16, 10, 1);
-ASSH_GCRYPT_CIPHER(gcrypt_arc4_128,       "arcfour128",     GCRY_CIPHER_ARCFOUR,    GCRY_CIPHER_MODE_STREAM, 1, 16, 110, 1);
-ASSH_GCRYPT_CIPHER(gcrypt_arc4_256,       "arcfour256",     GCRY_CIPHER_ARCFOUR,    GCRY_CIPHER_MODE_STREAM, 1, 32, 111, 1);
+ASSH_GCRYPT_CIPHER(arc4,           "arcfour",        GCRY_CIPHER_ARCFOUR,    GCRY_CIPHER_MODE_STREAM, 1,  16, 5,  80, 1);
+ASSH_GCRYPT_CIPHER(arc4_128,       "arcfour128",     GCRY_CIPHER_ARCFOUR,    GCRY_CIPHER_MODE_STREAM, 1,  16, 10, 80, 1);
+ASSH_GCRYPT_CIPHER(arc4_256,       "arcfour256",     GCRY_CIPHER_ARCFOUR,    GCRY_CIPHER_MODE_STREAM, 1,  32, 15, 80, 1);
 
-ASSH_GCRYPT_CIPHER(gcrypt_tdes_cbc,       "3des-cbc",       GCRY_CIPHER_3DES,       GCRY_CIPHER_MODE_CBC,    8, 24, 20, 0);
-ASSH_GCRYPT_CIPHER(gcrypt_tdes_ctr,       "3des-ctr",       GCRY_CIPHER_3DES,       GCRY_CIPHER_MODE_CTR,    8, 24, 120, 0);
+ASSH_GCRYPT_CIPHER(tdes_cbc,       "3des-cbc",       GCRY_CIPHER_3DES,       GCRY_CIPHER_MODE_CBC,    8,  24, 20, 30, 0);
+ASSH_GCRYPT_CIPHER(tdes_ctr,       "3des-ctr",       GCRY_CIPHER_3DES,       GCRY_CIPHER_MODE_CTR,    8,  24, 21, 30, 0);
 
-ASSH_GCRYPT_CIPHER(gcrypt_cast128_cbc,    "cast128-cbc",    GCRY_CIPHER_CAST5,      GCRY_CIPHER_MODE_CBC,    16, 16, 30, 0);
-ASSH_GCRYPT_CIPHER(gcrypt_cast128_ctr,    "cast128-ctr",    GCRY_CIPHER_CAST5,      GCRY_CIPHER_MODE_CTR,    16, 16, 130, 0);
+ASSH_GCRYPT_CIPHER(cast128_cbc,    "cast128-cbc",    GCRY_CIPHER_CAST5,      GCRY_CIPHER_MODE_CBC,    16, 16, 25, 50, 0);
+ASSH_GCRYPT_CIPHER(cast128_ctr,    "cast128-ctr",    GCRY_CIPHER_CAST5,      GCRY_CIPHER_MODE_CTR,    16, 16, 26, 50, 0);
 
-ASSH_GCRYPT_CIPHER(gcrypt_blowfish_cbc,   "blowfish-cbc",   GCRY_CIPHER_BLOWFISH,   GCRY_CIPHER_MODE_CBC,    8, 16, 40, 0);
-ASSH_GCRYPT_CIPHER(gcrypt_blowfish_ctr,   "blowfish-ctr",   GCRY_CIPHER_BLOWFISH,   GCRY_CIPHER_MODE_CTR,    8, 32, 140, 0);
+ASSH_GCRYPT_CIPHER(blowfish_cbc,   "blowfish-cbc",   GCRY_CIPHER_BLOWFISH,   GCRY_CIPHER_MODE_CBC,    8,  16, 30, 60, 0);
+ASSH_GCRYPT_CIPHER(blowfish_ctr,   "blowfish-ctr",   GCRY_CIPHER_BLOWFISH,   GCRY_CIPHER_MODE_CTR,    8,  32, 35, 60, 0);
 
-ASSH_GCRYPT_CIPHER(gcrypt_aes128_cbc,     "aes128-cbc",     GCRY_CIPHER_AES128,     GCRY_CIPHER_MODE_CBC,    16, 16, 70, 0);
-ASSH_GCRYPT_CIPHER(gcrypt_aes192_cbc,     "aes192-cbc",     GCRY_CIPHER_AES192,     GCRY_CIPHER_MODE_CBC,    16, 24, 71, 0);
-ASSH_GCRYPT_CIPHER(gcrypt_aes256_cbc,     "aes256-cbc",     GCRY_CIPHER_AES256,     GCRY_CIPHER_MODE_CBC,    16, 32, 72, 0);
-ASSH_GCRYPT_CIPHER(gcrypt_aes128_ctr,     "aes128-ctr",     GCRY_CIPHER_AES128,     GCRY_CIPHER_MODE_CTR,    16, 16, 170, 0);
-ASSH_GCRYPT_CIPHER(gcrypt_aes192_ctr,     "aes192-ctr",     GCRY_CIPHER_AES192,     GCRY_CIPHER_MODE_CTR,    16, 24, 171, 0);
-ASSH_GCRYPT_CIPHER(gcrypt_aes256_ctr,     "aes256-ctr",     GCRY_CIPHER_AES256,     GCRY_CIPHER_MODE_CTR,    16, 32, 172, 0);
+ASSH_GCRYPT_CIPHER(aes128_cbc,     "aes128-cbc",     GCRY_CIPHER_AES128,     GCRY_CIPHER_MODE_CBC,    16, 16, 40, 70, 0);
+ASSH_GCRYPT_CIPHER(aes192_cbc,     "aes192-cbc",     GCRY_CIPHER_AES192,     GCRY_CIPHER_MODE_CBC,    16, 24, 50, 65, 0);
+ASSH_GCRYPT_CIPHER(aes256_cbc,     "aes256-cbc",     GCRY_CIPHER_AES256,     GCRY_CIPHER_MODE_CBC,    16, 32, 60, 60, 0);
+ASSH_GCRYPT_CIPHER(aes128_ctr,     "aes128-ctr",     GCRY_CIPHER_AES128,     GCRY_CIPHER_MODE_CTR,    16, 16, 41, 70, 0);
+ASSH_GCRYPT_CIPHER(aes192_ctr,     "aes192-ctr",     GCRY_CIPHER_AES192,     GCRY_CIPHER_MODE_CTR,    16, 24, 51, 65, 0);
+ASSH_GCRYPT_CIPHER(aes256_ctr,     "aes256-ctr",     GCRY_CIPHER_AES256,     GCRY_CIPHER_MODE_CTR,    16, 32, 61, 60, 0);
 
-ASSH_GCRYPT_CIPHER(gcrypt_twofish128_cbc, "twofish128-cbc", GCRY_CIPHER_TWOFISH128, GCRY_CIPHER_MODE_CBC,    16, 16, 80, 0);
-ASSH_GCRYPT_CIPHER(gcrypt_twofish256_cbc, "twofish256-cbc", GCRY_CIPHER_TWOFISH   , GCRY_CIPHER_MODE_CBC,    16, 32, 81, 0);
-ASSH_GCRYPT_CIPHER(gcrypt_twofish128_ctr, "twofish128-ctr", GCRY_CIPHER_TWOFISH128, GCRY_CIPHER_MODE_CTR,    16, 16, 180, 0);
-ASSH_GCRYPT_CIPHER(gcrypt_twofish256_ctr, "twofish256-ctr", GCRY_CIPHER_TWOFISH,    GCRY_CIPHER_MODE_CTR,    16, 32, 181, 0);
+ASSH_GCRYPT_CIPHER(twofish128_cbc, "twofish128-cbc", GCRY_CIPHER_TWOFISH128, GCRY_CIPHER_MODE_CBC,    16, 16, 50, 60, 0);
+ASSH_GCRYPT_CIPHER(twofish256_cbc, "twofish256-cbc", GCRY_CIPHER_TWOFISH   , GCRY_CIPHER_MODE_CBC,    16, 32, 70, 60, 0);
+ASSH_GCRYPT_CIPHER(twofish128_ctr, "twofish128-ctr", GCRY_CIPHER_TWOFISH128, GCRY_CIPHER_MODE_CTR,    16, 16, 51, 60, 0);
+ASSH_GCRYPT_CIPHER(twofish256_ctr, "twofish256-ctr", GCRY_CIPHER_TWOFISH,    GCRY_CIPHER_MODE_CTR,    16, 32, 71, 60, 0);
 
-ASSH_GCRYPT_CIPHER(gcrypt_serpent128_cbc, "serpent128-cbc", GCRY_CIPHER_SERPENT128, GCRY_CIPHER_MODE_CBC,    16, 16, 90, 0);
-ASSH_GCRYPT_CIPHER(gcrypt_serpent192_cbc, "serpent192-cbc", GCRY_CIPHER_SERPENT192, GCRY_CIPHER_MODE_CBC,    16, 24, 91, 0);
-ASSH_GCRYPT_CIPHER(gcrypt_serpent256_cbc, "serpent256-cbc", GCRY_CIPHER_SERPENT256, GCRY_CIPHER_MODE_CBC,    16, 32, 92, 0);
-ASSH_GCRYPT_CIPHER(gcrypt_serpent128_ctr, "serpent128-ctr", GCRY_CIPHER_SERPENT128, GCRY_CIPHER_MODE_CTR,    16, 16, 190, 0);
-ASSH_GCRYPT_CIPHER(gcrypt_serpent192_ctr, "serpent192-ctr", GCRY_CIPHER_SERPENT192, GCRY_CIPHER_MODE_CTR,    16, 24, 191, 0);
-ASSH_GCRYPT_CIPHER(gcrypt_serpent256_ctr, "serpent256-ctr", GCRY_CIPHER_SERPENT256, GCRY_CIPHER_MODE_CTR,    16, 32, 192, 0);
+ASSH_GCRYPT_CIPHER(serpent128_cbc, "serpent128-cbc", GCRY_CIPHER_SERPENT128, GCRY_CIPHER_MODE_CBC,    16, 16, 55, 40, 0);
+ASSH_GCRYPT_CIPHER(serpent192_cbc, "serpent192-cbc", GCRY_CIPHER_SERPENT192, GCRY_CIPHER_MODE_CBC,    16, 24, 65, 40, 0);
+ASSH_GCRYPT_CIPHER(serpent256_cbc, "serpent256-cbc", GCRY_CIPHER_SERPENT256, GCRY_CIPHER_MODE_CBC,    16, 32, 75, 40, 0);
+ASSH_GCRYPT_CIPHER(serpent128_ctr, "serpent128-ctr", GCRY_CIPHER_SERPENT128, GCRY_CIPHER_MODE_CTR,    16, 16, 56, 40, 0);
+ASSH_GCRYPT_CIPHER(serpent192_ctr, "serpent192-ctr", GCRY_CIPHER_SERPENT192, GCRY_CIPHER_MODE_CTR,    16, 24, 66, 40, 0);
+ASSH_GCRYPT_CIPHER(serpent256_ctr, "serpent256-ctr", GCRY_CIPHER_SERPENT256, GCRY_CIPHER_MODE_CTR,    16, 32, 76, 40, 0);
 
 assh_error_t assh_cipher_register_gcrypt(struct assh_context_s *c)
 {

@@ -71,12 +71,10 @@ int main(int argc, char **argv)
   struct assh_context_s context;
   assh_context_init(&context, ASSH_CLIENT);
 
-  if (assh_service_register_default(&context))
+  if (assh_service_register_default(&context) != ASSH_OK)
     return -1;
 
-  if (assh_algo_register_default(&context) != ASSH_OK)
-    return -1;
-
+  if (assh_algo_register_default(&context, 99, 10) != ASSH_OK)
     return -1;
 
   struct assh_session_s session;

@@ -40,43 +40,45 @@ struct assh_algo_s
 {
   const char *name;
   enum assh_algo_class_e class_;
-  int_fast16_t priority;
+  int_fast16_t safety;          //< safety factor in range [0, 99]
+  int_fast16_t speed;           //< speed factor in range [0, 99]
   assh_bool_t need_host_key;
   struct assh_algo_s *next;
 };
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_algo_register(struct assh_context_s *c,
-                   struct assh_algo_s *algo);
+/**
+   This function registers the specified algoritms for use by the
+   given context. The last parameter must be @tt NULL.
 
+   The algorithms are sorted depending on their safety factor and
+   speed factor. The @tt safety parameter indicates how algorithms
+   safety must be favored over speed. Valid range for this parameter
+   is [0, 99]. The order is relevant for client sessions. 
+
+   Algorithms with a safety factor less than @tt min_safety are
+   skipped.
+
+   If multiple implementations of the same algorithm are registered,
+   the algorithm which appears first in the list after sorting is kept
+   an other entries with the same name are discarded.
+*/
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_algo_register_va(struct assh_context_s *c, ...);
+assh_algo_register_va(struct assh_context_s *c, unsigned int safety,
+		      unsigned int min_safety, ...);
 
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_by_name(struct assh_context_s *c,
 		  enum assh_algo_class_e class_, const char *name,
                   size_t name_len, const struct assh_algo_s **algo);
 
+/**
+   This function registers the default set of available algorithms
+   depending on the library configuration. It relies on the @ref
+   assh_algo_register_va function.
+*/
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_kex_register_builtin(struct assh_context_s *c);
-
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_sign_register_builtin(struct assh_context_s *c);
-
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_cipher_register_builtin(struct assh_context_s *c);
-
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_mac_register_builtin(struct assh_context_s *c);
-
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_compress_register_builtin(struct assh_context_s *c);
-
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_algo_register_builtin(struct assh_context_s *c);
-
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_algo_register_default(struct assh_context_s *c);
+assh_algo_register_default(struct assh_context_s *c, unsigned int safety,
+			   unsigned int min_safety);
 
 #endif
 

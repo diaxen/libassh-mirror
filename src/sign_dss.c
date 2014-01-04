@@ -565,7 +565,8 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_dss_verify)
 
 struct assh_algo_sign_s assh_sign_dss =
 {
-  .algo = { .name = "ssh-dss", .class_ = ASSH_ALGO_SIGN, .need_host_key = 1 },
+  .algo = { .name = "ssh-dss", .class_ = ASSH_ALGO_SIGN,
+            .need_host_key = 1, .safety = 50, .speed = 50 },
   .f_key_load = assh_sign_dss_key_load,
   .f_generate = assh_sign_dss_generate,
   .f_verify = assh_sign_dss_verify,

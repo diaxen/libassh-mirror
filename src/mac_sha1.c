@@ -82,7 +82,8 @@ static ASSH_MAC_COMPUTE_FCN(assh_hmac_sha1_compute)
 
 struct assh_algo_mac_s assh_hmac_sha1 = 
 {
-  .algo = { .name = "hmac-sha1", .class_ = ASSH_ALGO_MAC, .priority = 21 },
+  .algo = { .name = "hmac-sha1", .class_ = ASSH_ALGO_MAC,
+            .safety = 21, .speed = 50 },
   .ctx_size = sizeof(struct assh_hmac_sha1_context_s),
   .key_size = 20,
   .mac_size = 20,
@@ -101,7 +102,8 @@ static ASSH_MAC_COMPUTE_FCN(assh_hmac_sha1_96_compute)
 
 struct assh_algo_mac_s assh_hmac_sha1_96 = 
 {
-  .algo = { .name = "hmac-sha1-96", .class_ = ASSH_ALGO_MAC, .priority = 20 },
+  .algo = { .name = "hmac-sha1-96", .class_ = ASSH_ALGO_MAC,
+            .safety = 20, .speed = 50 },
   .ctx_size = sizeof(struct assh_hmac_sha1_context_s),
   .key_size = 20,
   .mac_size = 12,

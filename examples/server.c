@@ -76,10 +76,10 @@ int main()
   struct assh_context_s context;
   assh_context_init(&context, ASSH_SERVER);
 
-  if (assh_service_register_default(&context))
+  if (assh_service_register_default(&context) != ASSH_OK)
     return -1;
 
-  if (assh_algo_register_default(&context) != ASSH_OK)
+  if (assh_algo_register_default(&context, 99, 10) != ASSH_OK)
     return -1;
 
   if (assh_load_hostkey_filename(&context, "ssh-dss", "host_keys",

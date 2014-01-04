@@ -30,130 +30,86 @@
 #include <assh/assh_sign.h>
 #include <assh/assh_compress.h>
 
-#ifdef CONFIG_ASSH_USE_GCRYPT
-#include <assh/cipher_gcrypt.h>
-#endif
-
 #include <string.h>
-#include <stdlib.h>
 #include <stdarg.h>
 
-static assh_error_t assh_algo_register_(struct assh_context_s *c,
-                                        struct assh_algo_s *algo)
+static int assh_algo_order(const struct assh_algo_s *a,
+			   const struct assh_algo_s *b,
+			   unsigned int safety)
 {
-  assh_error_t err;
-
-  ASSH_ERR_RET(c->algos_count == ASSH_MAX_ALGORITHMS ? ASSH_ERR_OVERFLOW : 0);
-  c->algos[c->algos_count++] = algo;
-  return ASSH_OK;
-}
-
-static int assh_algo_order(const void *a_, const void *b_)
-{
-  const struct assh_algo_s *a = *(const struct assh_algo_s **)a_,
-                           *b = *(const struct assh_algo_s **)b_;
-
   if (a->class_ != b->class_)
     return a->class_ - b->class_;
-  return b->priority - a->priority;
+  return ((b->speed * (99 - safety) + b->safety * safety) -
+	  (a->speed * (99 - safety) + a->safety * safety));
 }
 
-assh_error_t assh_algo_register(struct assh_context_s *c,
-                                struct assh_algo_s *algo)
-{
-  assh_error_t err;
-
-  ASSH_ERR_RET(assh_algo_register_(c, algo));
-  qsort(c->algos, c->algos_count, sizeof(struct assh_algo_s *), assh_algo_order);
-
-  return ASSH_OK;
-}
-
-assh_error_t assh_algo_register_va(struct assh_context_s *c, ...)
+assh_error_t assh_algo_register_va(struct assh_context_s *c, unsigned int safety,
+				   unsigned int min_safety, ...)
 {
   assh_error_t err = ASSH_OK;
   va_list ap;
-  va_start(ap, c);
+  va_start(ap, min_safety);
 
+  /* append algorithms to the array */
   while (1)
     {
       struct assh_algo_s *algo = va_arg(ap, void*);
       if (algo == NULL)
         break;
-      ASSH_ERR_GTO(assh_algo_register_(c, algo), err_);
+      if (algo->safety < min_safety)
+	continue;
+      ASSH_ERR_GTO(c->algos_count == ASSH_MAX_ALGORITHMS ? ASSH_ERR_MEM : 0, err_);
+      c->algos[c->algos_count++] = algo;
     }
  err_:
-  qsort(c->algos, c->algos_count, sizeof(struct assh_algo_s *), assh_algo_order);
 
   va_end(ap);
+
+  if (safety == (unsigned int)-1)
+    return err;
+
+  ASSH_ERR_RET(safety > 99 ? ASSH_ERR_OVERFLOW : 0);
+
+  /* sort algorithms by class and safety/speed factor */
+  int i, j, k;
+  for (i = 0; i < c->algos_count; i++)
+    {
+      const struct assh_algo_s *a = c->algos[i];
+      for (j = i - 1; j >= 0; j--)
+	{
+	  const struct assh_algo_s *b = c->algos[j];
+	  if (assh_algo_order(a, b, safety) > 0)
+	    break;
+	  c->algos[j + 1] = b;
+	}
+      c->algos[j + 1] = a;
+    }
+
+  /* remove duplicated names in the same class */
+  for (i = 0; i < c->algos_count; i++)
+    {
+      for (k = j = i + 1; j < c->algos_count; j++)
+	{
+	  const struct assh_algo_s *a = c->algos[i];
+	  const struct assh_algo_s *b = c->algos[j];
+
+	  int d = a->class_ != b->class_;
+	  if (k < j)
+	    c->algos[k] = b;
+	  else if (d)
+	    goto next;
+	  if (d || strcmp(a->name, b->name))
+	    k++;
+	}
+      c->algos_count = k;
+    next:;
+    }
+
   return err;
 }
 
-assh_error_t assh_kex_register_builtin(struct assh_context_s *c)
-{
-  return assh_algo_register_va(c, 
-                               /* kex_dh.c */
-                               &assh_kex_dh_group1_sha1,
-                               &assh_kex_dh_group14_sha1,
-                               NULL);
-}
-
-assh_error_t assh_sign_register_builtin(struct assh_context_s *c)
-{
-  return assh_algo_register_va(c, 
-                               /* sign_dss.c */
-                               &assh_sign_dss,
-                               NULL);
-}
-
-assh_error_t assh_cipher_register_builtin(struct assh_context_s *c)
-{
-  return assh_algo_register_va(c,
-                               /* cipher_arc4.c */
-                               &assh_cipher_arc4,
-                               &assh_cipher_arc4_128,
-                               &assh_cipher_arc4_256,
-                               NULL);
-}
-
-assh_error_t assh_mac_register_builtin(struct assh_context_s *c)
-{
-  return assh_algo_register_va(c, 
-                               /* mac_sha1.c */
-                               &assh_hmac_sha1,
-                               &assh_hmac_sha1_96,
-                               NULL);
-}
-
-assh_error_t assh_compress_register_builtin(struct assh_context_s *c)
-{
-  return assh_algo_register_va(c,
-                               /* compress_none.c */
-                               &assh_compress_none,
-                               NULL);
-}
-
-assh_error_t assh_algo_register_builtin(struct assh_context_s *c)
-{
-  return assh_algo_register_va(c, 
-                               /* kex_dh.c */
-                               &assh_kex_dh_group1_sha1,
-                               &assh_kex_dh_group14_sha1,
-                               /* sign_dss.c */
-                               &assh_sign_dss,
-                               /* cipher_arc4.c */
-                               &assh_cipher_arc4,
-                               &assh_cipher_arc4_128,
-                               &assh_cipher_arc4_256,
-                               /* mac_sha1.c */
-                               &assh_hmac_sha1,
-                               &assh_hmac_sha1_96,
-                               /* compress_none.c */
-                               &assh_compress_none,
-                               NULL);
-}
-
-assh_error_t assh_algo_register_default(struct assh_context_s *c)
+assh_error_t assh_algo_register_default(struct assh_context_s *c, unsigned int safety,
+					unsigned int min_safety)
 {
   assh_error_t err;
 #ifdef CONFIG_ASSH_USE_GCRYPT
@@ -162,9 +118,27 @@ assh_error_t assh_algo_register_default(struct assh_context_s *c)
   ASSH_ERR_RET(assh_cipher_register_gcrypt(c));
   ASSH_ERR_RET(assh_mac_register_builtin(c));
   ASSH_ERR_RET(assh_compress_register_builtin(c));
-#else
-  ASSH_ERR_RET(assh_algo_register_builtin(c));
 #endif
+
+  ASSH_ERR_RET(assh_algo_register_va(c, safety, min_safety,
+			/* kex_dh.c */
+			&assh_kex_dh_group1_sha1,
+			&assh_kex_dh_group14_sha1,
+			/* sign_dss.c */
+			&assh_sign_dss,
+
+#ifndef CONFIG_ASSH_USE_GCRYPT_CIPHERS
+			/* cipher_arc4_builting.c */
+			&assh_cipher_arc4,
+			&assh_cipher_arc4_128,
+			&assh_cipher_arc4_256,
+#endif
+			/* mac_sha1.c */
+			&assh_hmac_sha1,
+			&assh_hmac_sha1_96,
+			/* compress_none.c */
+			&assh_compress_none,
+				     NULL));
 
   return ASSH_OK;
 }
