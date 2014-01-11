@@ -169,7 +169,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_sign_dss_key_validate)
   if (assh_bignum_cmp_uint(k->yn, 2) > 0)   /* y >= 2 */
     goto err_rn;
 
-  ASSH_ERR_GTO(assh_bignum_uint(rn, 2), err_rn);
+  ASSH_ERR_GTO(assh_bignum_from_uint(rn, 2), err_rn);
   ASSH_ERR_GTO(assh_bignum_sub(rn, k->pn, rn), err_rn);
   if (assh_bignum_cmp(k->yn, rn) < 0) /* y <= p-2 */
     goto err_rn;

@@ -134,7 +134,7 @@ assh_bignum_rand(struct assh_context_s *c,
 }
 
 assh_error_t
-assh_bignum_uint(struct assh_bignum_s *bn,
+assh_bignum_from_uint(struct assh_bignum_s *bn,
                  unsigned int x)
 {
   assh_error_t err;

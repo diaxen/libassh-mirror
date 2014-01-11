@@ -41,7 +41,7 @@ static inline int assh_clz(assh_bnword_t x)
 
 /********************************************************* init and convert */
 
-assh_error_t assh_bignum_uint(struct assh_bignum_s *n,
+assh_error_t assh_bignum_from_uint(struct assh_bignum_s *n,
 			      unsigned int x)
 {
   unsigned int i;

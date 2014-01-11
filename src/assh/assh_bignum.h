@@ -245,6 +245,11 @@ ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_bignum_from_hex(struct assh_bignum_s *bn, unsigned int *bits,
 		     const char * __restrict__ hex, size_t hex_len);
 
+/** This function sets the number to the specified integer value. */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_bignum_from_uint(struct assh_bignum_s *n,
+		      unsigned int x);
+
 /** @This converts a big number to the mpint format used in ssh
     packets. The mpint buffer must contain enough room for the mpint
     representation as returned by the @ref assh_bignum_mpint_size
@@ -272,11 +277,6 @@ ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_bignum_rand(struct assh_context_s *c,
                  struct assh_bignum_s *n,
 		 enum assh_prng_quality_e quality);
-
-/** This function sets the number to the specified integer value. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_bignum_uint(struct assh_bignum_s *n,
-                 unsigned int x);
 
 /** This function copy a big number. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
