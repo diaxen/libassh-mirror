@@ -57,5 +57,49 @@ extern struct assh_algo_cipher_s assh_cipher_arc4;
 extern struct assh_algo_cipher_s assh_cipher_arc4_128;
 extern struct assh_algo_cipher_s assh_cipher_arc4_256;
 
+extern struct assh_algo_cipher_s assh_cipher_aes128_cbc;
+extern struct assh_algo_cipher_s assh_cipher_aes192_cbc;
+extern struct assh_algo_cipher_s assh_cipher_aes256_cbc;
+extern struct assh_algo_cipher_s assh_cipher_aes128_ctr;
+extern struct assh_algo_cipher_s assh_cipher_aes192_ctr;
+extern struct assh_algo_cipher_s assh_cipher_aes256_ctr;
+
+#ifdef CONFIG_ASSH_USE_GCRYPT_CIPHERS
+
+/** @This registers all gcrypt based ciphers algorithms. @see
+    assh_algo_register_va */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_cipher_register_gcrypt(struct assh_context_s *c, unsigned int safety,
+			    unsigned int min_safety);
+
+extern struct assh_algo_cipher_s assh_cipher_tdes_cbc;
+extern struct assh_algo_cipher_s assh_cipher_tdes_ctr;
+
+extern struct assh_algo_cipher_s assh_cipher_cast128_cbc;
+extern struct assh_algo_cipher_s assh_cipher_cast128_ctr;
+
+extern struct assh_algo_cipher_s assh_cipher_blowfish_cbc;
+extern struct assh_algo_cipher_s assh_cipher_blowfish_ctr;
+
+extern struct assh_algo_cipher_s assh_cipher_aes128_cbc;
+extern struct assh_algo_cipher_s assh_cipher_aes192_cbc;
+extern struct assh_algo_cipher_s assh_cipher_aes256_cbc;
+extern struct assh_algo_cipher_s assh_cipher_aes128_ctr;
+extern struct assh_algo_cipher_s assh_cipher_aes192_ctr;
+extern struct assh_algo_cipher_s assh_cipher_aes256_ctr;
+
+extern struct assh_algo_cipher_s assh_cipher_twofish128_cbc;
+extern struct assh_algo_cipher_s assh_cipher_twofish256_cbc;
+extern struct assh_algo_cipher_s assh_cipher_twofish128_ctr;
+extern struct assh_algo_cipher_s assh_cipher_twofish256_ctr;
+
+extern struct assh_algo_cipher_s assh_cipher_serpent128_cbc;
+extern struct assh_algo_cipher_s assh_cipher_serpent192_cbc;
+extern struct assh_algo_cipher_s assh_cipher_serpent256_cbc;
+extern struct assh_algo_cipher_s assh_cipher_serpent128_ctr;
+extern struct assh_algo_cipher_s assh_cipher_serpent192_ctr;
+extern struct assh_algo_cipher_s assh_cipher_serpent256_ctr;
 #endif
+#endif
+
 

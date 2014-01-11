@@ -21,7 +21,7 @@
 
 */
 
-#include <assh/cipher_gcrypt.h>
+#include <assh/assh_cipher.h>
 
 #include <gcrypt.h>
 
@@ -62,8 +62,8 @@ assh_cipher_gcrypt_init(const struct assh_algo_cipher_s *cipher,
     case GCRY_CIPHER_MODE_STREAM:
       assert(cipher->is_stream);
 
-      if (cipher == &assh_cipher_gcrypt_arc4_128 ||
-	  cipher == &assh_cipher_gcrypt_arc4_256)
+      if (cipher == &assh_cipher_arc4_128 ||
+	  cipher == &assh_cipher_arc4_256)
 	{
 	  uint8_t dummy[128];
 	  unsigned int i;
@@ -161,19 +161,20 @@ ASSH_GCRYPT_CIPHER(serpent128_ctr, "serpent128-ctr", GCRY_CIPHER_SERPENT128, GCR
 ASSH_GCRYPT_CIPHER(serpent192_ctr, "serpent192-ctr", GCRY_CIPHER_SERPENT192, GCRY_CIPHER_MODE_CTR,    16, 24, 66, 40, 0);
 ASSH_GCRYPT_CIPHER(serpent256_ctr, "serpent256-ctr", GCRY_CIPHER_SERPENT256, GCRY_CIPHER_MODE_CTR,    16, 32, 76, 40, 0);
 
-assh_error_t assh_cipher_register_gcrypt(struct assh_context_s *c)
+assh_error_t assh_cipher_register_gcrypt(struct assh_context_s *c, unsigned int safety,
+					 unsigned int min_safety)
 {
-  return assh_algo_register_va(c,
-    &assh_cipher_gcrypt_arc4, &assh_cipher_gcrypt_arc4_128, &assh_cipher_gcrypt_arc4_256,
-    &assh_cipher_gcrypt_tdes_cbc, &assh_cipher_gcrypt_tdes_ctr,
-    &assh_cipher_gcrypt_cast128_cbc, &assh_cipher_gcrypt_cast128_ctr,
-    &assh_cipher_gcrypt_blowfish_cbc, &assh_cipher_gcrypt_blowfish_ctr,
-    &assh_cipher_gcrypt_aes128_cbc, &assh_cipher_gcrypt_aes192_cbc, &assh_cipher_gcrypt_aes256_cbc,
-    &assh_cipher_gcrypt_aes128_ctr, &assh_cipher_gcrypt_aes192_ctr, &assh_cipher_gcrypt_aes256_ctr,
-    &assh_cipher_gcrypt_twofish128_cbc, &assh_cipher_gcrypt_twofish256_cbc,
-    &assh_cipher_gcrypt_twofish128_ctr, &assh_cipher_gcrypt_twofish256_ctr,
-    &assh_cipher_gcrypt_serpent128_cbc, &assh_cipher_gcrypt_serpent192_cbc, &assh_cipher_gcrypt_serpent256_cbc,
-    &assh_cipher_gcrypt_serpent128_ctr, &assh_cipher_gcrypt_serpent192_ctr, &assh_cipher_gcrypt_serpent256_ctr,
+  return assh_algo_register_va(c, safety, min_safety,
+    &assh_cipher_arc4, &assh_cipher_arc4_128, &assh_cipher_arc4_256,
+    &assh_cipher_tdes_cbc, &assh_cipher_tdes_ctr,
+    &assh_cipher_cast128_cbc, &assh_cipher_cast128_ctr,
+    &assh_cipher_blowfish_cbc, &assh_cipher_blowfish_ctr,
+    &assh_cipher_aes128_cbc, &assh_cipher_aes192_cbc, &assh_cipher_aes256_cbc,
+    &assh_cipher_aes128_ctr, &assh_cipher_aes192_ctr, &assh_cipher_aes256_ctr,
+    &assh_cipher_twofish128_cbc, &assh_cipher_twofish256_cbc,
+    &assh_cipher_twofish128_ctr, &assh_cipher_twofish256_ctr,
+    &assh_cipher_serpent128_cbc, &assh_cipher_serpent192_cbc, &assh_cipher_serpent256_cbc,
+    &assh_cipher_serpent128_ctr, &assh_cipher_serpent192_ctr, &assh_cipher_serpent256_ctr,
     NULL);
 }
 

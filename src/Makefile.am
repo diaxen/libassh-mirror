@@ -22,16 +22,30 @@ lib_LTLIBRARIES = libassh.la
 libassh_la_SOURCES = assh_context.c assh_session.c assh_packet.c	\
 	assh_event.c assh_transport.c assh_kex.c assh_hash.c		\
 	assh_algo.c assh_key.c assh_service.c assh_map.c		\
-	srv_userauth_client.c srv_userauth_server.c		\
-	srv_connection.c						\
-	kex_dh.c mac_sha1.c sign_dss.c					\
-	compress_none.c helper_key.c helper_fd.c bignum_common.c
+	bignum_common.c							\
+	srv_connection.c srv_userauth_client.c srv_userauth_server.c	\
+	kex_dh.c						\
+	mac_sha1.c							\
+	sign_dss.c							\
+	compress_none.c							\
+	helper_key.c helper_fd.c
 
-libassh_la_SOURCES +=   hash_sha1_builtin.c prng_xswap_builtin.c cipher_arc4_builtin.c
+libassh_la_SOURCES +=   hash_sha1_builtin.c prng_xswap_builtin.c
 
-if COND_gcrypt
-libassh_la_SOURCES +=	cipher_gcrypt.c bignum_gcrypt.c
+if COND_gcrypt_bignum
+libassh_la_SOURCES +=	bignum_gcrypt.c
 else
 libassh_la_SOURCES +=	bignum_builtin.c
 endif
+
+if COND_gcrypt_prng
+libassh_la_SOURCES +=	prng_gcrypt.c
+endif
+
+if COND_gcrypt_ciphers
+libassh_la_SOURCES +=	cipher_gcrypt.c
+else
+libassh_la_SOURCES +=	cipher_arc4_builtin.c 
+endif
+
 

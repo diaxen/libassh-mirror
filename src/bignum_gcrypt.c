@@ -29,7 +29,7 @@
 void assh_bignum_print(FILE *out, const char *name,
 		       const struct assh_bignum_s *bn)
 {
-  uint8_t buf[bn->l / 4 + 2];
+  uint8_t buf[bn->l / 4 + 4];
   size_t l;
 
   assert(bn->n != NULL);
@@ -39,9 +39,9 @@ void assh_bignum_print(FILE *out, const char *name,
   if (!gcry_mpi_print(GCRYMPI_FMT_HEX, buf, sizeof(buf), &l, bn->n))
     fwrite(buf, l, 1, out);
   else
-    fputs("[error]", out);  
+    fputs("[error]", out);
   if (name != NULL)
-    fputs("\n", out);  
+    fputs("\n", out);
 }
 
 assh_error_t assh_bignum_from_data(struct assh_bignum_s *bn,
@@ -295,7 +295,8 @@ assh_bignum_div(struct assh_bignum_s *r,
   assert(a->n != NULL);
   assert(b->n != NULL);
 
-  ASSH_ERR_RET(gcry_mpi_cmp_ui(b->n, 0) ? 0 : ASSH_ERR_OVERFLOW);
+  if (!gcry_mpi_cmp_ui(b->n, 0))
+    return ASSH_ERR_OVERFLOW;
 
   gcry_mpi_div(d == NULL ? NULL : d->n, r->n, a->n, b->n, 0);
 

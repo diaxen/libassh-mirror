@@ -28,7 +28,7 @@
 #include "assh_context.h"
 #include "assh_prng.h"
 
-#ifdef CONFIG_ASSH_USE_GCRYPT
+#ifdef CONFIG_ASSH_USE_GCRYPT_BIGNUM
 
 #include <gcrypt.h>
 

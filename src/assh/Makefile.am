@@ -24,7 +24,7 @@ pkginclude_HEADERS = assh.h assh_algo.h assh_bignum.h			\
 	assh_context.h assh_event.h assh_hash.h assh_kex.h assh_key.h	\
 	assh_mac.h assh_packet.h assh_prng.h assh_queue.h		\
 	assh_session.h assh_sign.h assh_service.h assh_transport.h	\
-	cipher_gcrypt.h hash_sha1.h					\
+	hash_sha1.h							\
 	srv_connection.h srv_userauth_client.h srv_userauth_server.h	\
 	helper_fd.h helper_key.h
 

@@ -34,20 +34,56 @@ AC_CHECK_HEADERS(assert.h, AC_DEFINE([HAVE_ASSERT_H]))
 AC_C_CONST
 AC_C_INLINE
 
-AC_ARG_ENABLE(gcrypt, AC_HELP_STRING(--enable-gcrypt, [Gcrypt support]),
-		       enable_gcrypt=$enableval, enable_gcrypt=no)
+AC_ARG_ENABLE(gcrypt, AC_HELP_STRING(--disable-gcrypt, [Disable use of gcrypt support]),
+		       enable_gcrypt=$enableval, enable_gcrypt=yes)
+
+AC_ARG_ENABLE(gcrypt_bignum, AC_HELP_STRING(--disable-gcrypt-bignum, [Disable use of gcrypt big number functions]),
+		       enable_gcrypt_bignum=$enableval, enable_gcrypt_bignum=yes)
+
+AC_ARG_ENABLE(gcrypt_prng, AC_HELP_STRING(--disable-gcrypt-prng, [Disable use of gcrypt random number generation]),
+		       enable_gcrypt_prng=$enableval, enable_gcrypt_prng=yes)
+
+AC_ARG_ENABLE(gcrypt_alloc, AC_HELP_STRING(--disable-gcrypt-alloc, [Disable use of gcrypt secur memory allocation]),
+		       enable_gcrypt_alloc=$enableval, enable_gcrypt_alloc=yes)
+
+AC_ARG_ENABLE(gcrypt_ciphers, AC_HELP_STRING(--disable-gcrypt-ciphers, [Disable use of gcrypt ciphers]),
+		       enable_gcrypt_ciphers=$enableval, enable_gcrypt_ciphers=yes)
 
 if test x$enable_gcrypt = xyes ; then
-  AC_CHECK_LIB(gcrypt, gcry_cipher_open, [
+  AC_CHECK_LIB(gcrypt, gcry_check_version, [
     AC_CHECK_HEADERS(gcrypt.h, [
-      AC_DEFINE([CONFIG_ASSH_USE_GCRYPT], [], [Libgcrypt support])
-      enable_gcrypt=found
       LIBS="$LIBS -lgcrypt"
+      AC_DEFINE([CONFIG_ASSH_USE_GCRYPT], [], [Libgcrypt support])
+
+      if test x$enable_gcrypt_bignum = xyes ; then
+	AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_BIGNUM], [], [use of gcrypt big number functions])
+      fi
+
+      if test x$enable_gcrypt_prng = xyes ; then
+	AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_PRNG], [], [use of gcrypt random number generation])
+      fi
+
+      if test x$enable_gcrypt_alloc = xyes ; then
+	AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_ALLOC], [], [use of gcrypt secur memory allocation])
+      fi
+
+      if test x$enable_gcrypt_ciphers = xyes ; then
+	AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_CIPHERS], [], [use of gcrypt cipherss])
+      fi
+
     ])
   ])
+else
+      enable_gcrypt_bignum=no
+      enable_gcrypt_prng=no
+      enable_gcrypt_alloc=no
+      enable_gcrypt_ciphers=no
 fi
 
-AM_CONDITIONAL(COND_gcrypt, [test x$enable_gcrypt = xfound])
+
+AM_CONDITIONAL(COND_gcrypt_bignum, [test x$enable_gcrypt_bignum = xyes])
+AM_CONDITIONAL(COND_gcrypt_prng,   [test x$enable_gcrypt_prng = xyes])
+AM_CONDITIONAL(COND_gcrypt_ciphers, [test x$enable_gcrypt_ciphers = xyes])
 
 AC_DEFINE([CONFIG_ASSH_SERVER], [], [SSH server support])
 AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_PUBLICKEY], [], [SSH server authentication: public key support])

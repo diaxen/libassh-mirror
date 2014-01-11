@@ -86,5 +86,8 @@ struct assh_prng_s
 
 extern const struct assh_prng_s assh_prng_xswap;
 
+#ifdef CONFIG_ASSH_USE_GCRYPT_PRNG
+extern const struct assh_prng_s assh_prng_gcrypt;
 #endif
 
+#endif

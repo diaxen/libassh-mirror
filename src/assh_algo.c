@@ -112,12 +112,9 @@ assh_error_t assh_algo_register_default(struct assh_context_s *c, unsigned int s
 					unsigned int min_safety)
 {
   assh_error_t err;
-#ifdef CONFIG_ASSH_USE_GCRYPT
-  ASSH_ERR_RET(assh_kex_register_builtin(c));
-  ASSH_ERR_RET(assh_sign_register_builtin(c));
-  ASSH_ERR_RET(assh_cipher_register_gcrypt(c));
-  ASSH_ERR_RET(assh_mac_register_builtin(c));
-  ASSH_ERR_RET(assh_compress_register_builtin(c));
+
+#ifdef CONFIG_ASSH_USE_GCRYPT_CIPHERS
+  ASSH_ERR_RET(assh_cipher_register_gcrypt(c, -1, min_safety));
 #endif
 
   ASSH_ERR_RET(assh_algo_register_va(c, safety, min_safety,

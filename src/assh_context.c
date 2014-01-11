@@ -31,10 +31,42 @@
 
 #include <stdlib.h>
 
+#ifdef CONFIG_ASSH_USE_GCRYPT
+# include <gcrypt.h>
+#endif
+
 static ASSH_ALLOCATOR(assh_default_allocator)
 {
+#ifdef CONFIG_ASSH_USE_GCRYPT_ALLOCATOR
+  if (size == 0)
+    {
+      gcry_free(*ptr);
+      return ASSH_OK;
+    }
+  else if (*ptr == NULL)
+    {
+      switch (type)
+	{
+	case ASSH_ALLOC_INTERNAL:
+	case ASSH_ALLOC_PACKET:
+	  *ptr = gcry_malloc(size);
+	  break;
+	case ASSH_ALLOC_KEY:
+	  *ptr = gcry_malloc_secure(size);
+	  break;
+	}
+      return *ptr != NULL ? ASSH_OK : ASSH_ERR_MEM;
+    }
+  else
+    {
+      *ptr = gcry_realloc(*ptr, size);
+      return *ptr != NULL ? ASSH_OK : ASSH_ERR_MEM;
+    }
+#else
+# warning The default allocator relies on the standard non-secur realloc function
   *ptr = realloc(*ptr, size);
   return (size == 0 || *ptr != NULL) ? ASSH_OK : ASSH_ERR_MEM;
+#endif
 }
 
 void assh_context_init(struct assh_context_s *c,
@@ -136,7 +168,11 @@ assh_error_t assh_context_prng(struct assh_context_s *c,
     {
       if (c->prng != NULL)
 	return ASSH_OK;
+#ifdef CONFIG_ASSH_USE_GCRYPT_PRNG
+      prng = &assh_prng_gcrypt;
+#else
       prng = &assh_prng_xswap;
+#endif
     }
 
   if (c->prng != NULL)
@@ -144,6 +180,7 @@ assh_error_t assh_context_prng(struct assh_context_s *c,
 
   c->prng = prng;
   ASSH_ERR_RET(prng->f_init(c));
+
   return ASSH_OK;
 }
 
