@@ -43,7 +43,7 @@
      @item The @ref assh_kex_end function must be called once from the
        module code when the key exchange is over.
      @item The @ref assh_kex_cleanup_t function of the module is called.
-   @end
+   @end list
 
    The server host key must be verified during the key exchange by
    using the pluggable signature algorithm pointed to by @ref

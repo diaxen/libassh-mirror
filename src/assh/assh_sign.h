@@ -70,7 +70,6 @@ struct assh_algo_sign_s
 
 extern struct assh_algo_sign_s assh_sign_dss;
 extern struct assh_algo_sign_s assh_sign_rsa;
-extern struct assh_algo_sign_s assh_sign_ecdsa;
 
 #endif
 

@@ -86,7 +86,6 @@ int main(int argc, char **argv)
 
   assh_error_t err;
 
-  fprintf(stderr, "assh loop\n");
   while (1)
     {
       struct assh_event_s event;
