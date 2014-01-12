@@ -53,6 +53,7 @@ struct assh_algo_mac_s
 
 void assh_mac_register(struct assh_algo_mac_s *m);
 
+extern struct assh_algo_mac_s assh_hmac_none;
 extern struct assh_algo_mac_s assh_hmac_sha1;
 extern struct assh_algo_mac_s assh_hmac_sha1_96;
 

@@ -53,6 +53,8 @@ struct assh_algo_cipher_s
   assh_cipher_cleanup_t *f_cleanup;
 };
 
+extern struct assh_algo_cipher_s assh_cipher_none;
+
 extern struct assh_algo_cipher_s assh_cipher_arc4;
 extern struct assh_algo_cipher_s assh_cipher_arc4_128;
 extern struct assh_algo_cipher_s assh_cipher_arc4_256;

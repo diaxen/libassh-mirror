@@ -68,6 +68,7 @@ struct assh_algo_sign_s
   assh_sign_verify_t *f_verify;
 };
 
+extern struct assh_algo_sign_s assh_sign_none;
 extern struct assh_algo_sign_s assh_sign_dss;
 extern struct assh_algo_sign_s assh_sign_rsa;
 
