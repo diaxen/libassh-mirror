@@ -38,21 +38,7 @@ assh_error_t assh_session_init(struct assh_context_s *c,
   ASSH_ERR_RET(assh_context_prng(c, NULL));
   s->ctx = c;
 
-  switch (c->type)
-    {
-#ifdef CONFIG_ASSH_SERVER
-    case ASSH_SERVER:
-      s->tr_st = ASSH_TR_KEX_INIT;      
-      break;
-#endif
-#ifdef CONFIG_ASSH_CLIENT
-    case ASSH_CLIENT:
-      s->tr_st = ASSH_TR_KEX_WAIT_REPLY;
-      break;
-#endif
-    default:
-      ASSH_ERR_RET(ASSH_ERR_NOTSUP);
-    }
+  assh_transport_state(s, ASSH_TR_KEX_INIT);
 
   s->hello_len = 0;
   s->session_id_len = 0;

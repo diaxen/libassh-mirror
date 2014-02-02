@@ -529,7 +529,7 @@ assh_error_t assh_kex_end(struct assh_session_s *s, assh_bool_t accept)
                  SSH_DISCONNECT_KEY_EXCHANGE_FAILED) : 0);
 
   /* next state is wait for NEWKEY packet */
-  s->tr_st = ASSH_TR_NEWKEY;
+  assh_transport_state(s, ASSH_TR_NEWKEY);
 
   /* send a NEWKEY packet */
   struct assh_packet_s *p;

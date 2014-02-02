@@ -55,41 +55,13 @@ assh_error_t assh_event_get(struct assh_session_s *s,
       goto done;
     }
 
-#ifdef CONFIG_ASSH_SERVER
-  /* server initiates key exchange */
-  if (s->tr_st == ASSH_TR_KEX_INIT)
-    {
-      s->tr_st = ASSH_TR_KEX_WAIT;
-      ASSH_ERR_GTO(assh_kex_send_init(s), err);
-    }
-#endif
-
   event->id = ASSH_EVENT_INVALID;
 
   /* process the next incoming deciphered packet */
-  if (s->tr_st < ASSH_TR_ENDING && s->in_pck != NULL)
-    {
-      err = assh_transport_dispatch(s, s->in_pck, event);
-      assh_packet_release(s->in_pck);
-      s->in_pck = NULL;
-      ASSH_ERR_GTO(err, err);
-    }
-
-  /* get event from running service */
-  if (event->id == ASSH_EVENT_INVALID && s->srv != NULL)
-    {
-      ASSH_ERR_GTO(s->srv->f_process(s, NULL, event), err);
-    }
-
-#ifdef CONFIG_ASSH_CLIENT
-  if (s->tr_st == ASSH_TR_SERVICE)
-    {
-      /* client requests next service */
-      if (s->ctx->type == ASSH_CLIENT &&
-          s->srv == NULL && s->srv_rq == NULL)
-        ASSH_ERR_GTO(assh_service_send_request(s), err);
-    }
-#endif
+  err = assh_transport_dispatch(s, s->in_pck, event);
+  assh_packet_release(s->in_pck);
+  s->in_pck = NULL;
+  ASSH_ERR_GTO(err, err);
 
   if (event->id != ASSH_EVENT_INVALID)
     goto done;
@@ -97,37 +69,27 @@ assh_error_t assh_event_get(struct assh_session_s *s,
   /* all service events have been processed, flusing done */
   if (s->tr_st >= ASSH_TR_FLUSHING)
     {
-      s->tr_st = ASSH_TR_DISCONNECTED;
+      assh_transport_state(s, ASSH_TR_DISCONNECTED);
       ASSH_ERR_RET(ASSH_ERR_DISCONNECTED);
     }
 
   /* run the state machine which converts output packets to enciphered
      ssh stream */
-  switch (s->stream_out_st)
-    {
-    case ASSH_TR_OUT_PACKETS:
-      if (s->out_queue.count == 0)
-	break;
-    case ASSH_TR_OUT_PACKETS_ENCIPHERED:
-      assert(s->out_queue.count != 0);
-    case ASSH_TR_OUT_HELLO:
-      ASSH_ERR_GTO(assh_event_write(s, event), err);
-      goto done;
+  ASSH_ERR_GTO(assh_transport_write(s, event), err);
 
-    default:
-      ASSH_ERR_RET(ASSH_ERR_STATE);
-    }
+  if (event->id != ASSH_EVENT_INVALID)
+    goto done;
 
   /* all data has been sent, ending done */
   if (s->tr_st == ASSH_TR_ENDING)
     {
-      s->tr_st = ASSH_TR_DISCONNECTED;
+      assh_transport_state(s, ASSH_TR_DISCONNECTED);
       ASSH_ERR_RET(ASSH_ERR_DISCONNECTED);
     }
 
   /* run the state machine which extracts a deciphered packet from the
      input ssh stream. */
-  ASSH_ERR_GTO(assh_event_read(s, event), err);
+  ASSH_ERR_GTO(assh_transport_read(s, event), err);
 
  done:
 #ifdef CONFIG_ASSH_DEBUG_EVENT
@@ -138,12 +100,13 @@ assh_error_t assh_event_get(struct assh_session_s *s,
  err:
   if (ASSH_ERR_DISCONNECT(err))
     {
+#warning this FIXME reverts err to ASSH_OK
       ASSH_ERR_RET(assh_transport_disconnect(s, ASSH_ERR_DISCONNECT(err)));
-      s->tr_st = ASSH_TR_ENDING;
+      assh_transport_state(s, ASSH_TR_ENDING);
     }
   else
     {
-      s->tr_st = ASSH_TR_DISCONNECTED;
+      assh_transport_state(s, ASSH_TR_DISCONNECTED);
     }
 
   return err;
@@ -168,11 +131,11 @@ assh_event_done(struct assh_session_s *s,
       if (ASSH_ERR_DISCONNECT(err))
         {
           ASSH_ERR_RET(assh_transport_disconnect(s, ASSH_ERR_DISCONNECT(err)));
-          s->tr_st = ASSH_TR_ENDING;
+          assh_transport_state(s, ASSH_TR_ENDING);
         }
       else
         {
-          s->tr_st = ASSH_TR_DISCONNECTED;
+          assh_transport_state(s, ASSH_TR_DISCONNECTED);
         }
     }
   return err;

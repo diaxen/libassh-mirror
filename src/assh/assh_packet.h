@@ -69,6 +69,8 @@ struct assh_packet_s
 /** @internal @This specifies the standard values for ssh message ids. */
 enum assh_ssh_msg_e
 {
+  SSH_MSG_INVALID                   =   0,
+
   /* SSH-TRANS */
   SSH_MSG_DISCONNECT                =   1,
   SSH_MSG_IGNORE                    =   2,

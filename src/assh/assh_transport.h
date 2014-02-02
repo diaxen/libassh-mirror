@@ -90,6 +90,14 @@ void assh_transport_push(struct assh_session_s *s,
 /** @internal This function dispatches incoming packets depending
     on packet message id and transport internal state. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_transport_write(struct assh_session_s *s,
+                     struct assh_event_s *e);
+
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_transport_read(struct assh_session_s *s,
+                    struct assh_event_s *e);
+
+ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_transport_dispatch(struct assh_session_s *s,
 			struct assh_packet_s *p,
 			struct assh_event_s *e);
@@ -99,16 +107,8 @@ assh_transport_dispatch(struct assh_session_s *s,
     returns @ref ASSH_NO_DATA if no data is available yet. The @ref
     assh_tr_stream_out_done function must be called once the data has
     been processed. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_event_write(struct assh_session_s *s,
-		 struct assh_event_s *e);
-
 /** @internal This function returns the address and size of the buffer
     where the next ssh binary input data must be stored. This function
     returns @ref ASSH_NO_DATA if no data needs to be read yet. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_event_read(struct assh_session_s *s,
-		struct assh_event_s *e);
-
 #endif
 

@@ -29,9 +29,8 @@
 /** This specifies the current status of an ssh session. */
 enum assh_transport_state_e
 {
-  ASSH_TR_KEX_INIT,         //< We will send a KEX_INIT packet.
+  ASSH_TR_KEX_INIT,         //< send a KEX_INIT packet then go to ASSH_TR_KEX_WAIT
   ASSH_TR_KEX_WAIT,         //< We wait for a KEX_INIT packet.
-  ASSH_TR_KEX_WAIT_REPLY,   //< We wait for a KEX_INIT packet and send a KEX_INIT packet.
   ASSH_TR_KEX_RUNNING,      //< Both KEX_INIT packet were sent, the key exchange is taking place.
   ASSH_TR_NEWKEY,           //< The key exchange is over and a @ref SSH_MSG_NEWKEYS packet is expected.
   ASSH_TR_SERVICE,          //< No key exchange is running, service packets are allowed.
@@ -53,9 +52,11 @@ enum assh_stream_in_state_e
 enum assh_stream_out_state_e
 {
   ASSH_TR_OUT_HELLO,
+  ASSH_TR_OUT_HELLO_PAUSE,
   ASSH_TR_OUT_HELLO_DONE,
   ASSH_TR_OUT_PACKETS,
   ASSH_TR_OUT_PACKETS_ENCIPHERED,
+  ASSH_TR_OUT_PACKETS_PAUSE,
   ASSH_TR_OUT_PACKETS_DONE,
 };
 
@@ -151,8 +152,17 @@ struct assh_session_s
   struct assh_kex_keys_s *new_keys_in;
   /** Input packet sequence number */
   uint32_t in_seq;
-
 };
+
+/** @internal This changes the current transport state */
+static inline void assh_transport_state(struct assh_session_s *s,
+                                        enum assh_transport_state_e st)
+{
+#ifdef CONFIG_ASSH_DEBUG_PROTOCOL
+  ASSH_DEBUG("transport state=%u\n", st);
+#endif
+  s->tr_st = st;
+}
 
 /** This function initialize a new ssh session object. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
