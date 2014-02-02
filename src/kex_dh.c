@@ -44,7 +44,8 @@ struct assh_kex_dh_group_s
 enum assh_kex_dh_state_e
 {
 #ifdef CONFIG_ASSH_CLIENT
-  ASSH_KEX_DH_CLIENT_SENT_E,
+  ASSH_KEX_DH_CLIENT_WAIT_F,
+  ASSH_KEX_DH_CLIENT_INIT,
   ASSH_KEX_DH_CLIENT_LOOKUP_HOST_KEY_WAIT,
 #endif
 #ifdef CONFIG_ASSH_SERVER
@@ -328,7 +329,15 @@ static ASSH_KEX_PROCESS_FCN(assh_kex_dh_process)
   switch (pv->state)
     {
 #ifdef CONFIG_ASSH_CLIENT
-    case ASSH_KEX_DH_CLIENT_SENT_E:
+    case ASSH_KEX_DH_CLIENT_INIT:
+      assert(p == NULL);
+      ASSH_ERR_RET(assh_kex_dh_send_expmod(s));
+      pv->state = ASSH_KEX_DH_CLIENT_WAIT_F;
+      return ASSH_OK;
+
+    case ASSH_KEX_DH_CLIENT_WAIT_F:
+      if (p == NULL)
+        return ASSH_OK;
       ASSH_ERR_RET(assh_kex_dh_client_sent_e(s, p));
       pv->state = ASSH_KEX_DH_CLIENT_LOOKUP_HOST_KEY_WAIT;
 
@@ -338,7 +347,6 @@ static ASSH_KEX_PROCESS_FCN(assh_kex_dh_process)
       e->done_pv = pv;
       *(const struct assh_key_s **)&e->kex.hostkey_lookup.key = pv->host_key;
       e->kex.hostkey_lookup.accept = 0;
-
       return ASSH_OK;
 
     case ASSH_KEX_DH_CLIENT_LOOKUP_HOST_KEY_WAIT:
@@ -347,6 +355,8 @@ static ASSH_KEX_PROCESS_FCN(assh_kex_dh_process)
 
 #ifdef CONFIG_ASSH_SERVER
     case ASSH_KEX_DH_SERVER_WAIT_E:
+      if (p == NULL)
+        return ASSH_OK;
       ASSH_ERR_RET(assh_kex_dh_server_wait_e(s, p));
       ASSH_ERR_RET(assh_kex_end(s, 1));
       return ASSH_OK;
@@ -379,7 +389,7 @@ static assh_error_t assh_kex_dh_init(struct assh_session_s *s, const struct assh
     {
 #ifdef CONFIG_ASSH_CLIENT
     case ASSH_CLIENT:
-      pv->state = ASSH_KEX_DH_CLIENT_SENT_E;
+      pv->state = ASSH_KEX_DH_CLIENT_INIT;
       break;
 #endif
 #ifdef CONFIG_ASSH_SERVER
@@ -393,11 +403,6 @@ static assh_error_t assh_kex_dh_init(struct assh_session_s *s, const struct assh
 
   ASSH_ERR_GTO(assh_bignum_init(s->ctx, pv->en, group->size), err_pv);
   ASSH_ERR_GTO(assh_bignum_init(s->ctx, pv->kn, group->size), err_pv);
-
-#ifdef CONFIG_ASSH_CLIENT
-  if (s->ctx->type == ASSH_CLIENT)
-    ASSH_ERR_GTO(assh_kex_dh_send_expmod(s), err_pv);
-#endif
 
   return ASSH_OK;
  err_pv:
