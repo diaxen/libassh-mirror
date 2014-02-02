@@ -16,8 +16,8 @@
 
 AM_CPPFLAGS = -I$(top_builddir)/src/assh
 
-noinst_PROGRAMS = bignum sha1 dsa
-TESTS = bignum sha1 dsa
+noinst_PROGRAMS = bignum sha1 dsa connection
+TESTS = bignum sha1 dsa connection
 
 bignum_SOURCES = bignum.c
 bignum_LDADD = $(top_builddir)/src/libassh.la
@@ -30,4 +30,8 @@ sha1_CFLAGS = -I$(top_srcdir)/src
 dsa_SOURCES = dsa.c
 dsa_LDADD = $(top_builddir)/src/libassh.la
 dsa_CFLAGS = -I$(top_srcdir)/src
+
+connection_SOURCES = connection.c
+connection_LDADD = $(top_builddir)/src/libassh.la
+connection_CFLAGS = -I$(top_srcdir)/src
 
