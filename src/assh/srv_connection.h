@@ -184,12 +184,12 @@ struct assh_event_connection_start_s
 */
 struct assh_event_request_s
 {
-  struct assh_channel_s           * const ch;   //< input
-  struct assh_request_s           * const rq;   //< input
-  const struct assh_string_s      type;         //< input
-  const struct assh_buffer_s      rq_data;      //< input
-  enum assh_connection_reply_e    reply;        //< output
-  struct assh_buffer_s            rsp_data;     //< output
+  struct assh_channel_s * ASSH_EV_CONST ch;         //< input
+  struct assh_request_s * ASSH_EV_CONST rq;         //< input
+  ASSH_EV_CONST struct assh_string_s    type;       //< input
+  ASSH_EV_CONST struct assh_buffer_s    rq_data;    //< input
+  enum assh_connection_reply_e          reply;      //< output
+  struct assh_buffer_s                  rsp_data;   //< output
 };
 
 /**
@@ -250,10 +250,10 @@ assh_request_failed_reply(struct assh_request_s *rq);
 */
 struct assh_event_request_reply_s
 {
-  struct assh_channel_s           * const ch;      //< input
-  struct assh_request_s           * const rq;      //< input
-  const enum assh_connection_reply_e reply;        //< input
-  const struct assh_buffer_s      rsp_data;        //< input
+  struct assh_channel_s      * ASSH_EV_CONST ch;        //< input
+  struct assh_request_s      * ASSH_EV_CONST rq;        //< input
+  ASSH_EV_CONST enum assh_connection_reply_e reply;     //< input
+  ASSH_EV_CONST struct assh_buffer_s         rsp_data;  //< input
 };
 
 
@@ -322,14 +322,14 @@ assh_request(struct assh_session_s *s,
 */
 struct assh_event_channel_open_s
 {
-  struct assh_channel_s           * const ch;       //< input
-  const struct assh_string_s      type;             //< input
-  const struct assh_buffer_s      rq_data;          //< input
-  enum assh_connection_reply_e    reply;            //< output
-  enum assh_channel_open_reason_e reason;           //< output
-  uint32_t                        win_size;         //< input/output
-  uint32_t                        pkt_size;         //< input/output
-  struct assh_buffer_s            rsp_data;         //< output
+  struct assh_channel_s * ASSH_EV_CONST ch;       //< input
+  ASSH_EV_CONST struct assh_string_s    type;     //< input
+  ASSH_EV_CONST struct assh_buffer_s    rq_data;  //< input
+  enum assh_connection_reply_e          reply;    //< output
+  enum assh_channel_open_reason_e       reason;   //< output
+  uint32_t                              win_size; //< input/output
+  uint32_t                              pkt_size; //< input/output
+  struct assh_buffer_s                  rsp_data; //< output
 };
 
 /**
@@ -380,10 +380,10 @@ assh_channel_open_failed_reply(struct assh_channel_s *ch,
 */
 struct assh_event_channel_open_reply_s
 {
-  struct assh_channel_s         * const ch;         //< input
-  const enum assh_connection_reply_e    reply;      //< input
-  const enum assh_channel_open_reason_e reason;     //< input
-  const struct assh_buffer_s            rsp_data;   //< input
+  struct assh_channel_s * ASSH_EV_CONST         ch;         //< input
+  ASSH_EV_CONST enum assh_connection_reply_e    reply;      //< input
+  ASSH_EV_CONST enum assh_channel_open_reason_e reason;     //< input
+  ASSH_EV_CONST struct assh_buffer_s            rsp_data;   //< input
 };
 
 /**
@@ -424,10 +424,10 @@ assh_channel_open(struct assh_session_s *s,
 */
 struct assh_event_channel_data_s
 {
-  struct assh_channel_s           * const ch;      //< input
-  const assh_bool_t               ext;             //< input
-  const uint32_t                  ext_type;        //< input
-  const struct assh_buffer_s      data;            //< input
+  struct assh_channel_s * ASSH_EV_CONST   ch;         //< input
+  ASSH_EV_CONST assh_bool_t               ext;        //< input
+  ASSH_EV_CONST uint32_t                  ext_type;   //< input
+  ASSH_EV_CONST struct assh_buffer_s      data;       //< input
 };
 
 /************************************************* outgoing channel data */
@@ -469,8 +469,8 @@ assh_channel_data(struct assh_channel_s *ch,
 */
 struct assh_event_channel_eof_s
 {
-  struct assh_channel_s           * const ch; //< input
-}                                 channel_eof;
+  struct assh_channel_s   * ASSH_EV_CONST ch; //< input
+};
 
 /**
    This event is returned for open channels when the remote
@@ -483,7 +483,7 @@ struct assh_event_channel_eof_s
 */
 struct assh_event_channel_close_s
 {
-  struct assh_channel_s           * const ch; //< input
+  struct assh_channel_s           * ASSH_EV_CONST ch; //< input
 };
 
 /************************************************* outgoing channel close/eof */

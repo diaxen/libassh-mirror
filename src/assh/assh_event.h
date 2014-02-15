@@ -21,7 +21,6 @@
 
 */
 
-
 #ifndef ASSH_EVENT_H_
 #define ASSH_EVENT_H_
 

@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_EV_CONST /* write access to event const fields */
+
 #include <assh/assh_kex.h>
 #include <assh/assh_session.h>
 #include <assh/assh_packet.h>
@@ -345,7 +347,7 @@ static ASSH_KEX_PROCESS_FCN(assh_kex_dh_process)
       e->id = ASSH_EVENT_KEX_HOSTKEY_LOOKUP;
       e->f_done = assh_kex_dh_host_key_lookup_done;
       e->done_pv = pv;
-      *(const struct assh_key_s **)&e->kex.hostkey_lookup.key = pv->host_key;
+      e->kex.hostkey_lookup.key = pv->host_key;
       e->kex.hostkey_lookup.accept = 0;
       return ASSH_OK;
 

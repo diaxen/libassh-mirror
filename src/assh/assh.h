@@ -38,6 +38,11 @@
 # error CONFIG_ASSH_SERVER and CONFIG_ASSH_CLIENT are both undefined
 #endif
 
+/* make event fields written by the library read-only for user. */
+#ifndef ASSH_EV_CONST
+# define ASSH_EV_CONST const
+#endif
+
 struct assh_context_s;
 struct assh_session_s;
 struct assh_packet_s;

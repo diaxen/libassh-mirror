@@ -49,8 +49,8 @@
 */
 struct assh_event_transport_read_s
 {
-  const struct assh_buffer_s buf;
-  size_t                     transferred;
+  ASSH_EV_CONST struct assh_buffer_s buf;         //< input
+  size_t                             transferred; //< output
 };
 
 /** The @ref ASSH_EVENT_WRITE event is returned when some ssh stream
@@ -67,8 +67,8 @@ struct assh_event_transport_read_s
 */
 struct assh_event_transport_write_s
 {
-  const struct assh_buffer_s buf;
-  size_t                     transferred;
+  ASSH_EV_CONST struct assh_buffer_s buf;         //< input
+  size_t                             transferred; //< output
 };
 
 /** @internal */

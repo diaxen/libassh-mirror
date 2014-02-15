@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_EV_CONST /* write access to event const fields */
+
 #include <assh/srv_userauth_client.h>
 
 #include <assh/assh_service.h>
@@ -387,10 +389,10 @@ static assh_error_t assh_userauth_client_failure(struct assh_session_s *s,
   ASSH_ERR_RET(assh_packet_check_array(p, partial_success, 1, NULL));
 
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PASSWORD
-  *(assh_bool_t*)&e->userauth_client.methods.use_password = 0;
+  e->userauth_client.methods.use_password = 0;
 #endif
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY
-  *(assh_bool_t*)&e->userauth_client.methods.use_pub_key = 0;
+  e->userauth_client.methods.use_pub_key = 0;
 #endif
   int count = 0;
 
@@ -412,7 +414,7 @@ static assh_error_t assh_userauth_client_failure(struct assh_session_s *s,
                   ASSH_ERR_RET(assh_userauth_client_req_password(s));
                   return ASSH_OK;
                 }
-              *(assh_bool_t*)&e->userauth_client.methods.use_password = 1;
+              e->userauth_client.methods.use_password = 1;
               count++;
             }
           break;
@@ -429,7 +431,7 @@ static assh_error_t assh_userauth_client_failure(struct assh_session_s *s,
                   return ASSH_OK;
                 }
 
-              *(assh_bool_t*)&e->userauth_client.methods.use_pub_key = 1;
+              e->userauth_client.methods.use_pub_key = 1;
               count++;
             }
 #endif

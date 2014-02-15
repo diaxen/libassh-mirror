@@ -167,8 +167,8 @@ struct assh_kex_keys_s
 */
 struct assh_event_kex_hostkey_lookup_s
 {
-  const struct assh_key_s * const key;      //< input
-  assh_bool_t               accept;         //< output
+  struct assh_key_s * ASSH_EV_CONST key;  //< input
+  assh_bool_t               accept;             //< output
 };
 
 /** @internal */

@@ -31,56 +31,6 @@
 #include <assh/assh_prng.h>
 #include <assh/assh_event.h>
 
-assh_error_t assh_fd_read(int fd, void *data, size_t size)
-{
-  assh_error_t err;
-  ssize_t r;
-
-  while (size > 0)
-    {
-      r = read(fd, data, size);
-
-      switch (r)
-        {
-        case -1:
-          if (errno == EAGAIN || errno == EWOULDBLOCK)
-            continue;
-        case 0:
-          ASSH_ERR_RET(ASSH_ERR_IO);
-        default:
-          size -= r;
-          data = (uint8_t*)data + r;
-        }
-    }
-
-  return ASSH_OK;
-}
-
-assh_error_t assh_fd_write(int fd, const void *data, size_t size)
-{
-  assh_error_t err;
-  ssize_t r;
-
-  while (size > 0)
-    {
-      r = write(fd, data, size);
-
-      switch (r)
-        {
-        case -1:
-          if (errno == EAGAIN || errno == EWOULDBLOCK)
-            continue;
-        case 0:
-          ASSH_ERR_RET(ASSH_ERR_IO);
-        default:
-          size -= r;
-          data = (uint8_t*)data + r;
-        }
-    }
-
-  return ASSH_OK;
-}
-
 assh_error_t assh_fd_event_get(struct assh_session_s *s,
 			       int ssh_fd, int rand_fd,
 			       struct assh_event_s *e)
@@ -102,7 +52,8 @@ assh_error_t assh_fd_event_get(struct assh_session_s *s,
 	      if (errno == EAGAIN || errno == EWOULDBLOCK)
 		break;
 	    case 0:
-	      ASSH_ERR_RET(ASSH_ERR_IO);		
+	      assh_session_invalidate(s);
+	      ASSH_ERR_RET(ASSH_ERR_IO);
 	    default:
 	      te->transferred = r;
 	    }
@@ -119,7 +70,8 @@ assh_error_t assh_fd_event_get(struct assh_session_s *s,
 	      if (errno == EAGAIN || errno == EWOULDBLOCK)
 		break;
 	    case 0:
-	      ASSH_ERR_RET(ASSH_ERR_IO);		
+	      assh_session_invalidate(s);
+	      ASSH_ERR_RET(ASSH_ERR_IO);
 	    default:
 	      te->transferred = r;
 	    }
@@ -132,8 +84,19 @@ assh_error_t assh_fd_event_get(struct assh_session_s *s,
           if (rand_fd < 0)
             return ASSH_OK;
 	  uint8_t data[e->prng.feed.size];
-	  e->prng.feed.buf.data = data;
-	  ASSH_ERR_GTO(assh_fd_read(rand_fd, data, e->prng.feed.buf.size), err_io);
+	  ssize_t r = read(ssh_fd, data, sizeof(data));
+	  switch (r)
+	    {
+	    case -1:
+	      if (errno == EAGAIN || errno == EWOULDBLOCK)
+		break;
+	    case 0:
+	      assh_session_invalidate(s);
+	      ASSH_ERR_RET(ASSH_ERR_IO);
+	    default:
+	      e->prng.feed.buf.data = data;
+	      e->prng.feed.buf.size = r;
+	    }
           ASSH_ERR_RET(assh_event_done(s, e));
           break;
 	}
@@ -141,10 +104,6 @@ assh_error_t assh_fd_event_get(struct assh_session_s *s,
 	default:
           return ASSH_OK;
         }
-    }  
-
- err_io:
-  assh_session_invalidate(s);
-  return err;
+    }
 }
 

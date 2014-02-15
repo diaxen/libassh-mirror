@@ -50,9 +50,9 @@
     @see ASSH_EVENT_USERAUTH_SERVER_USERKEY */
 struct assh_event_userauth_server_userkey_s
 {
-  const struct assh_string_s      username;
-  const struct assh_key_s * const pub_key;
-  assh_bool_t                     found;
+  ASSH_EV_CONST struct assh_string_s      username;
+  const struct assh_key_s * ASSH_EV_CONST pub_key;
+  assh_bool_t                             found;
 };
 
 /** This event is returned when the server-side user authentication
@@ -63,9 +63,9 @@ struct assh_event_userauth_server_userkey_s
     @see ASSH_EVENT_USERAUTH_SERVER_PASSWORD */
 struct assh_event_userauth_server_password_s
 {
-  const struct assh_string_s username;
-  const struct assh_string_s password;
-  assh_bool_t                success;
+  ASSH_EV_CONST struct assh_string_s username;
+  ASSH_EV_CONST struct assh_string_s password;
+  assh_bool_t                        success;
 };
 
 /** @This contains all server side user authentication related events */

@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_EV_CONST /* write access to event const fields */
+
 #include <assh/assh_transport.h>
 
 #include <assh/assh_context.h>
@@ -222,8 +224,8 @@ assh_error_t assh_transport_read(struct assh_session_s *s,
 {
   assh_error_t err;
   struct assh_kex_keys_s *k = s->cur_keys_in;
-  void **data = (void**)&e->transport.read.buf.data;
-  size_t *size = (size_t*)&e->transport.read.buf.size;
+  uint8_t **data = &e->transport.read.buf.data;
+  size_t *size = &e->transport.read.buf.size;
 
   switch (s->stream_in_st)
     {
@@ -311,14 +313,14 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 				  struct assh_event_s *e)
 {
   assh_error_t err;
-  const void **data = (const void **)&e->transport.write.buf.data;
-  size_t *size = (size_t*)&e->transport.write.buf.size;
+  uint8_t **data = &e->transport.write.buf.data;
+  size_t *size = &e->transport.write.buf.size;
 
   switch (s->stream_out_st)
     {
     /* the write stream buffer is the constant hello string */
     case ASSH_TR_OUT_HELLO: {
-      *data = ASSH_HELLO + s->stream_out_size;
+      *data = (uint8_t*)ASSH_HELLO + s->stream_out_size;
       *size = sizeof(ASSH_HELLO) - 1 - s->stream_out_size;
       s->stream_out_st = ASSH_TR_OUT_HELLO_DONE;
       break;

@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_EV_CONST /* write access to event const fields */
+
 #include <assh/assh_context.h>
 #include <assh/assh_transport.h>
 #include <assh/assh_packet.h>
@@ -51,7 +53,8 @@ assh_error_t assh_event_get(struct assh_session_s *s,
       event->id = ASSH_EVENT_PRNG_FEED;
       event->f_done = &assh_event_random_done;
       event->prng.feed.buf.data = NULL;
-      event->prng.feed.buf.size = -s->ctx->prng_entropy;
+      event->prng.feed.buf.size = 0;
+      event->prng.feed.size = -s->ctx->prng_entropy;
       goto done;
     }
 

@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_EV_CONST /* write access to event const fields */
+
 #include <assh/srv_connection.h>
 
 #include <assh/assh_service.h>
@@ -254,14 +256,14 @@ assh_connection_got_request(struct assh_session_s *s,
   e->id = ASSH_EVENT_REQUEST;
   e->f_done = assh_event_request_done;
 
-  *(struct assh_channel_s**)&e->connection.request.ch = ch;
-  *(struct assh_request_s**)&e->connection.request.rq = rq;
+  e->connection.request.ch = ch;
+  e->connection.request.rq = rq;
 
-  struct assh_string_s *type_ = (void*)&e->connection.request.type;
+  struct assh_string_s *type_ = &e->connection.request.type;
   type_->str = (char*)type + 4;
   type_->len = want_reply - type - 4;
 
-  struct assh_buffer_s *rq_data = (void*)&e->connection.request.rq_data;
+  struct assh_buffer_s *rq_data = &e->connection.request.rq_data;
   rq_data->size = p->data + p->data_size - data;
   rq_data->data = rq_data->size > 0 ? data : NULL;
 
@@ -409,12 +411,12 @@ assh_connection_got_request_reply(struct assh_session_s *s,
   pv->state = e->id = ASSH_EVENT_REQUEST_REPLY;
   e->f_done = assh_event_request_reply_done;
 
-  *(struct assh_channel_s**)&e->connection.request_reply.ch = ch;
-  *(struct assh_request_s**)&e->connection.request_reply.rq = rq;
-  *(enum assh_connection_reply_e*)&e->connection.request_reply.reply = success
+  e->connection.request_reply.ch = ch;
+  e->connection.request_reply.rq = rq;
+  e->connection.request_reply.reply = success
     ? ASSH_CONNECTION_REPLY_SUCCESS : ASSH_CONNECTION_REPLY_FAILED;
 
-  struct assh_buffer_s *rsp_data = (void*)&e->connection.request_reply.rsp_data;
+  struct assh_buffer_s *rsp_data = &e->connection.request_reply.rsp_data;
   rsp_data->size = global && success ? p->data + p->data_size - data : 0;
   rsp_data->data = rsp_data->size > 0 ? data : NULL;
 
@@ -562,16 +564,16 @@ assh_connection_got_channel_open(struct assh_session_s *s,
   pv->state = e->id = ASSH_EVENT_CHANNEL_OPEN;
   e->f_done = assh_event_channel_open_done;
 
-  *(struct assh_channel_s**)&e->connection.channel_open.ch = ch;
+  e->connection.channel_open.ch = ch;
 
-  struct assh_string_s *type_ = (void*)&e->connection.channel_open.type;
+  struct assh_string_s *type_ = &e->connection.channel_open.type;
   type_->str = (char*)type + 4;
   type_->len = assh_load_u32(type);
 
   e->connection.channel_open.win_size = wsize;
   e->connection.channel_open.pkt_size = msize;
 
-  struct assh_buffer_s *rq_data = (void*)&e->connection.channel_open.rq_data;
+  struct assh_buffer_s *rq_data = &e->connection.channel_open.rq_data;
   rq_data->size = p->data + p->data_size - data;
   rq_data->data = rq_data->size > 0 ? data : NULL;
 
@@ -693,8 +695,8 @@ assh_connection_got_channel_open_reply(struct assh_session_s *s,
   pv->state = e->id = ASSH_EVENT_CHANNEL_OPEN_REPLY;
   e->f_done = assh_event_channel_open_reply_done;
 
-  *(struct assh_channel_s**)&e->connection.channel_open_reply.ch = ch;
-  struct assh_buffer_s *rsp_data = (void*)&e->connection.channel_open_reply.rsp_data;
+  e->connection.channel_open_reply.ch = ch;
+  struct assh_buffer_s *rsp_data = &e->connection.channel_open_reply.rsp_data;
 
   if (success)
     {
@@ -704,8 +706,7 @@ assh_connection_got_channel_open_reply(struct assh_session_s *s,
 
       ASSH_ERR_RET(ch->rpkt_size < 1 ? ASSH_ERR_PROTOCOL : 0);
 
-      *(enum assh_connection_reply_e*)&e->connection.channel_open_reply.reply =
-	ASSH_CONNECTION_REPLY_SUCCESS;
+      e->connection.channel_open_reply.reply = ASSH_CONNECTION_REPLY_SUCCESS;
 
       rsp_data->size = p->data + p->data_size - data;
       rsp_data->data = rsp_data->size > 0 ? data : NULL;
@@ -717,10 +718,8 @@ assh_connection_got_channel_open_reply(struct assh_session_s *s,
       uint32_t reason;
       ASSH_ERR_RET(assh_packet_check_u32(p, &reason, data, &data));
 
-      *(enum assh_connection_reply_e*)&e->connection.channel_open_reply.reply =
-	ASSH_CONNECTION_REPLY_FAILED;
-      *(enum assh_channel_open_reason_e*)&e->connection.channel_open_reply.reason =
-	(enum assh_channel_open_reason_e)reason;
+      e->connection.channel_open_reply.reply = ASSH_CONNECTION_REPLY_FAILED;
+      e->connection.channel_open_reply.reason = (enum assh_channel_open_reason_e)reason;
 
       rsp_data->data = NULL;
       rsp_data->size = 0;
@@ -824,7 +823,7 @@ assh_connection_got_channel_close(struct assh_session_s *s,
 
   pv->state = e->id = ASSH_EVENT_CHANNEL_CLOSE;
   e->f_done = assh_event_channel_close_done;
-  *(struct assh_channel_s**)&e->connection.channel_close.ch = ch;
+  e->connection.channel_close.ch = ch;
 
   return ASSH_OK;
 }
