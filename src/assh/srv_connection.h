@@ -43,18 +43,6 @@
 #include "assh_map.h"
 
 /** @internal */
-enum assh_channel_status_e
-{
-  ASSH_CHANNEL_ST_OPEN_SENT,
-  ASSH_CHANNEL_ST_OPEN_RECEIVED,
-  ASSH_CHANNEL_ST_OPEN,
-  ASSH_CHANNEL_ST_EOF_SENT,
-  ASSH_CHANNEL_ST_EOF_RECEIVED,
-  ASSH_CHANNEL_ST_CLOSE_SENT,
-  ASSH_CHANNEL_ST_CLOSED,
-};
-
-/** @internal */
 enum assh_request_status_e
 {
   ASSH_REQUEST_ST_WAIT_REPLY,      //< outgoing request not replied by remote host
@@ -75,10 +63,22 @@ struct assh_request_s
 };
 
 /** @internal */
+enum assh_channel_status_e
+{
+  ASSH_CHANNEL_ST_OPEN_SENT,
+  ASSH_CHANNEL_ST_OPEN_RECEIVED,
+  ASSH_CHANNEL_ST_OPEN,
+  ASSH_CHANNEL_ST_EOF_SENT,
+  ASSH_CHANNEL_ST_EOF_RECEIVED,
+  ASSH_CHANNEL_ST_CLOSE_SENT,
+  ASSH_CHANNEL_ST_CLOSED,
+};
+
+/** @internal */
 struct assh_channel_s
 {
   union {
-    /** channel queue entry, valid when the channel is waiting for open confirmation. */
+    /** channel queue entry, valid when the channel is waiting for close. */
     struct assh_queue_entry_s qentry;
     /** channel map entry, valid when the channel is open. */
     struct assh_map_entry_s mentry;
@@ -164,7 +164,7 @@ struct assh_event_connection_start_s
 
    The @ref channel field is @tt NULL for global requests.
 
-   If the @ref request pointer field is not @tt NULL, the remote host
+   If the @ref rq pointer field is not @tt NULL, the remote host
    excepts a reply for this request. In this case, the @ref reply
    field can be set to @ref ASSH_CONNECTION_REPLY_SUCCESS in order to
    successfully acknowledge the request and some response data may
@@ -180,7 +180,7 @@ struct assh_event_connection_start_s
    send the reply expected by the remote host. Care should be taken not
    to postpone too many requests in order to avoid resource-exhaustion attacks.
 
-   @See ASSH_EVENT_REQUEST
+   @see ASSH_EVENT_REQUEST
 */
 struct assh_event_request_s
 {
@@ -198,21 +198,36 @@ struct assh_event_request_s
    the @ref ASSH_CONNECTION_REPLY_POSTPONED value in the @tt reply
    field of the associated event.
 
-   When a success is reported, some response data may optionally be
-   included in the response by mean of the @tt rsp_data and @tt
-   rsp_data_len parameters.
+   Some response data may optionally be included in the response by
+   using the @tt rsp_data and @tt rsp_data_len parameters.
 
-   If multiple requests are waiting for a reply on the same global or
-   channel queue, even if this function can be called in any order,
-   the replies will be send in the received order. This means that a
-   non replied request may further postpone replies to subsequent
-   requests.
+   If multiple requests on the same queue (global or per channel) are
+   waiting for a reply, the replies will be send in the received
+   order. This function can be called in any order but a non replied
+   request may further postpone replies to subsequent requests.
+
+   @see assh_request_failed_reply
 */
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_request_reply(struct assh_request_s *rq,
-                   enum assh_connection_reply_e reply,
-                   const uint8_t *rsp_data,
-                   size_t rsp_data_len);
+assh_request_success_reply(struct assh_request_s *rq,
+                           const uint8_t *rsp_data,
+                           size_t rsp_data_len);
+
+/**
+   This function acknowledge and release a previously received global
+   or channel request which has not been replied yet due to the use of
+   the @ref ASSH_CONNECTION_REPLY_POSTPONED value in the @tt reply
+   field of the associated event.
+
+   If multiple requests on the same queue (global or per channel) are
+   waiting for a reply, the replies will be send in the received
+   order. This function can be called in any order but a non replied
+   request may further postpone replies to subsequent requests.
+
+   @see assh_request_success_reply
+*/
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_request_failed_reply(struct assh_request_s *rq);
 
 /************************************************* outgoing request */
 
@@ -278,31 +293,30 @@ assh_request(struct assh_session_s *s,
    This event is returned when the @tt ssh-connection service is
    running and a @ref SSH_MSG_CHANNEL_OPEN message is received from
    the remote host. The channel type name and specific data are
-   available in the @ref type, @ref pkt_size and @ref rq_data
-   fields. These buffers will not remain valid after the call to @ref
-   assh_event_done.
+   available in the @ref type and @ref rq_data fields. These buffers
+   will not remain valid after the call to @ref assh_event_done.
 
    The @ref pkt_size and the @ref win_size fields initially contain
    the maximum packet size accepted by the remote host for this
    channel and the initial window data size. The values can be
    modified if they need to be different for the other direction. The
    maximum packet size value will be reduced if larger than what the
-   libassh transport layer can accept.
+   libassh transport layer can handle.
 
-   The @ref reply field can be set to @ref ASSH_CONNECTION_REPLY_SUCCESS
-   in order to successfully acknowledge the channel open and some
-   response data may optionally be passed in the @ref rsp_data field.
-   The default value of the @ref reply field is
-   @ref ASSH_CONNECTION_REPLY_FAILED. In the later case, the @ref
-   assh_channel_s object will be release when calling the @ref
-   assh_event_done function.
+   The @ref reply field can be set to @ref
+   ASSH_CONNECTION_REPLY_SUCCESS in order to successfully acknowledge
+   the channel open and some response data may optionally be passed in
+   the @ref rsp_data field.  The default value of the @ref reply field
+   is @ref ASSH_CONNECTION_REPLY_FAILED. If an open failure is sent,
+   the @ref assh_channel_s object will be release when calling the
+   @ref assh_event_done function.
 
    If it's not possible to reply to the channel open when calling the
    @ref assh_event_done function, the @ref ASSH_CONNECTION_REPLY_POSTPONED
    value must be used. In this case, the @ref assh_channel_open_reply
    function must be called later to send the reply expected by the
-   remote host. Care should be taken not to postpone of accept too many
-   channel open in order to avoid resource-exhaustion attacks.
+   remote host. Care should be taken not to postpone or accept too many
+   channel open requests in order to avoid resource-exhaustion attacks.
 
    @see ASSH_EVENT_CHANNEL_OPEN
 */
@@ -311,33 +325,43 @@ struct assh_event_channel_open_s
   struct assh_channel_s           * const ch;       //< input
   const struct assh_string_s      type;             //< input
   const struct assh_buffer_s      rq_data;          //< input
-  uint32_t                        win_size;         //< input/output
-  uint32_t                        pkt_size;         //< input/output
   enum assh_connection_reply_e    reply;            //< output
   enum assh_channel_open_reason_e reason;           //< output
+  uint32_t                        win_size;         //< input/output
+  uint32_t                        pkt_size;         //< input/output
   struct assh_buffer_s            rsp_data;         //< output
 };
 
 /**
    This function acknowledge a channel open message which has not been
-   replied yet due to the use of the @ref
-   ASSH_CONNECTION_REPLY_POSTPONED value in the @tt reply field of the
-   @ref assh_event_channel_open_s event.
+   replied yet due to the use of the @ref ASSH_CONNECTION_REPLY_POSTPONED
+   value in the @tt reply field of the @ref assh_event_channel_open_s event.
 
-   When an open confirmation is reported, some response data may
-   optionally be included in the response by mean of the @tt rsp_data
-   and @tt rsp_data_len parameters.
+   Some response data may optionally be included in the response by
+   using the @tt rsp_data and @tt rsp_data_len parameters.
 
    Channel open replies can be send in any order.
+
+   @see assh_channel_open_failed_reply
 */
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_channel_open_reply(struct assh_channel_s *s,
-                        enum assh_connection_reply_e reply,
-                        enum assh_channel_open_reason_e reason,
-			uint32_t win_size,
-			uint32_t pkt_size,
-                        const uint8_t *rsp_data,
-                        size_t rsp_data_len);
+assh_channel_open_success_reply(struct assh_channel_s *ch,
+                                uint32_t win_size, uint32_t pkt_size,
+                                const uint8_t *rsp_data,
+                                size_t rsp_data_len);
+
+/**
+   This function acknowledge a channel open message which has not been
+   replied yet due to the use of the @ref ASSH_CONNECTION_REPLY_POSTPONED
+   value in the @tt reply field of the @ref assh_event_channel_open_s event.
+
+   Channel open replies can be send in any order.
+
+   @see assh_channel_open_success_reply
+*/
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_channel_open_failed_reply(struct assh_channel_s *ch,
+                               enum assh_channel_open_reason_e reason);
 
 /************************************************* outgoing channel open */
 
@@ -356,9 +380,10 @@ assh_channel_open_reply(struct assh_channel_s *s,
 */
 struct assh_event_channel_open_reply_s
 {
-  struct assh_channel_s           * const ch;       //< input
-  const enum assh_connection_reply_e reply;         //< input
-  const struct assh_buffer_s      rsp_data;         //< input
+  struct assh_channel_s         * const ch;         //< input
+  const enum assh_connection_reply_e    reply;      //< input
+  const enum assh_channel_open_reason_e reason;     //< input
+  const struct assh_buffer_s            rsp_data;   //< input
 };
 
 /**
@@ -369,19 +394,23 @@ struct assh_event_channel_open_reply_s
    indicate if the remote host has accepted the channel open request.
 
    Every successfully opened channel will generate an @ref
-   ASSH_EVENT_CHANNEL_CLOSE event either when the remote
-   host close the channel or when a disconnection occurs.
+   ASSH_EVENT_CHANNEL_OPEN event unless the session cleanup is
+   performed before. This will occur either when the remote host close
+   the channel or when a disconnection occurs.
 
-   In any case, is this function call returns @ref ASSH_OK, one of
-   this event will be returned before the @ref assh_event_get
-   function returns the @ref ASSH_ERR_DISCONNECTED error code.
+   In any case, if this function returns @ref ASSH_OK, one of this
+   event will be returned before the @ref assh_event_get function
+   returns the @ref ASSH_ERR_DISCONNECTED error code.
 
    This function will fail if the @tt ssh-connection service is
    not started.
 */
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_channel_open(struct assh_session_s *s, const char *type, size_t type_len,
-                  size_t max_pkt_size, struct assh_channel_s **ch);
+assh_channel_open(struct assh_session_s *s,
+                  const char *type, size_t type_len,
+                  const uint8_t *data, size_t data_len,
+                  size_t pkt_size, size_t win_size,
+                  struct assh_channel_s **ch);
 
 /************************************************* incoming channel data */
 
@@ -404,7 +433,7 @@ struct assh_event_channel_data_s
 /************************************************* outgoing channel data */
 
 /**
-   This function transfers data to the remote host through a opened
+   This function transfers data to the remote host through an opened
    channel. Incoming channel data from the remote host are passed
    using the @ref ASSH_EVENT_CHANNEL_DATA event.
 
@@ -412,13 +441,17 @@ struct assh_event_channel_data_s
    @ref SSH_MSG_CHANNEL_DATA message if the @tt ext parameter is
    set. In this case, the @tt ext_type parameter is relevant.
 
+   If not all data have been transfered, the function returns @ref
+   ASSH_NO_DATA and the size parameter is set to the amount of
+   data which has been transfered.
+
    This function will fail if the @tt ssh-connection service is
    not started.
 */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_channel_data(struct assh_channel_s *ch,
                   assh_bool_t ext, uint32_t ext_type,
-                  const uint8_t *data, size_t size);
+                  const uint8_t *data, size_t *size);
 
 /************************************************* incoming channel close/eof */
 
@@ -476,8 +509,8 @@ assh_channel_eof(struct assh_channel_s *ch);
    the internal buffers, that's why the @ref
    ASSH_EVENT_CHANNEL_DATA event and other channel related
    events can still be returned by the @ref assh_get_event function
-   for this channel after the call. The channel is released when the
-   @ref ASSH_EVENT_CHANNEL_CLOSE event is returned.
+   for this channel after the call. The channel is released on the
+   @ref ASSH_EVENT_CHANNEL_CLOSE event.
 
    This function will fail if the @tt ssh-connection service is
    not started.
