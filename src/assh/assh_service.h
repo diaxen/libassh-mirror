@@ -47,13 +47,22 @@ typedef ASSH_SERVICE_CLEANUP_FCN(assh_service_cleanup_t);
 
 /** @internal @This defines the prototype of the service processing
     function. This function is called from the @ref assh_event_get
-    function. A packet may be passed to the function for processing by
-    the running service, if no new received packet is available, the
+    function.
+
+    A packet may be passed to the function for processing by the
+    running service, if no new received packet is available, the
     parameter is @tt NULL.
 
     The function may initialize the passed event object, in this case
-    the event will be propagated to the caller of the @ref
+    the event will be reported to the caller of the @ref
     assh_event_get function.
+
+    The function can return the @ref ASSH_NO_DATA value to indicate
+    that the provided packet has not been processed and must be
+    provided again on the next call.
+
+    If no event is reported and @ref ASSH_NO_DATA is returned, the
+    function is called again immediately.
 
     This function should check the current state of the transport
     protocol. @see assh_transport_state_e

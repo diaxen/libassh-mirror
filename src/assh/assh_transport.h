@@ -99,7 +99,6 @@ assh_transport_read(struct assh_session_s *s,
 
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_transport_dispatch(struct assh_session_s *s,
-			struct assh_packet_s *p,
 			struct assh_event_s *e);
 
 /** @internal This function returns the address and size of the buffer

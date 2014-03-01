@@ -61,10 +61,7 @@ assh_error_t assh_event_get(struct assh_session_s *s,
   event->id = ASSH_EVENT_INVALID;
 
   /* process the next incoming deciphered packet */
-  err = assh_transport_dispatch(s, s->in_pck, event);
-  assh_packet_release(s->in_pck);
-  s->in_pck = NULL;
-  ASSH_ERR_GTO(err, err);
+  ASSH_ERR_GTO(assh_transport_dispatch(s, event), err);
 
   if (event->id != ASSH_EVENT_INVALID)
     goto done;
@@ -96,7 +93,8 @@ assh_error_t assh_event_get(struct assh_session_s *s,
 
  done:
 #ifdef CONFIG_ASSH_DEBUG_EVENT
-  ASSH_DEBUG("event id=%u\n", event->id);
+  if (event->id > 2)
+    ASSH_DEBUG("ctx=%p session=%p event id=%u\n", s->ctx, s, event->id);
 #endif
   return ASSH_OK;
 
@@ -123,7 +121,8 @@ assh_event_done(struct assh_session_s *s,
   ASSH_ERR_RET(s->tr_st == ASSH_TR_DISCONNECTED ? ASSH_ERR_DISCONNECTED : 0);
 
 #ifdef CONFIG_ASSH_DEBUG_EVENT
-  ASSH_DEBUG("event done id=%u\n", e->id);
+  if (e->id > 2)
+    ASSH_DEBUG("ctx=%p session=%p event done id=%u\n", s->ctx, s, e->id);
 #endif
 
   if (e->f_done == NULL)

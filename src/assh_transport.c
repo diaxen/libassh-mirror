@@ -222,7 +222,6 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 assh_error_t assh_transport_read(struct assh_session_s *s,
 				 struct assh_event_s *e)
 {
-  assh_error_t err;
   struct assh_kex_keys_s *k = s->cur_keys_in;
   uint8_t **data = &e->transport.read.buf.data;
   size_t *size = &e->transport.read.buf.size;
@@ -452,11 +451,11 @@ assh_error_t assh_transport_disconnect(struct assh_session_s *s, uint32_t code)
 }
 
 assh_error_t assh_transport_dispatch(struct assh_session_s *s,
-				     struct assh_packet_s *p,
 				     struct assh_event_s *e)
 {
-  assh_error_t err;
+  assh_error_t err = ASSH_OK;
   enum assh_ssh_msg_e msg = SSH_MSG_INVALID;
+  struct assh_packet_s *p = s->in_pck;
 
   if (p != NULL)
     {
@@ -471,7 +470,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 	  assh_transport_state(s, ASSH_TR_FLUSHING);
 	case SSH_MSG_DEBUG:
 	case SSH_MSG_IGNORE:
-	  return ASSH_OK;
+	  goto end;
 	default:
 	  break;
 	}
@@ -489,7 +488,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
     /* wait for initial kex init packet during session init */
     case ASSH_TR_KEX_WAIT:
       if (msg == SSH_MSG_INVALID)
-	return ASSH_OK;
+	goto end;
       ASSH_ERR_RET(msg != SSH_MSG_KEXINIT ? ASSH_ERR_PROTOCOL : 0);
       ASSH_ERR_RET(assh_kex_got_init(s, p));
 
@@ -505,12 +504,12 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
       ASSH_ERR_RET(msg > 49 || msg == SSH_MSG_SERVICE_REQUEST ||
 		   msg == SSH_MSG_SERVICE_ACCEPT ? ASSH_ERR_PROTOCOL : 0);
       ASSH_ERR_RET(s->kex->f_process(s, p, e));
-      return ASSH_OK;
+      goto end;
 
     /* kex exchange is over, NEWKEYS packet expected */
     case ASSH_TR_NEWKEY:
       if (msg == SSH_MSG_INVALID)
-	return ASSH_OK;
+	goto end;
       ASSH_ERR_RET(msg != SSH_MSG_NEWKEYS ? ASSH_ERR_PROTOCOL : 0);
 
       /* release the old input cipher/mac context and install the new one */
@@ -538,7 +537,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 	  ASSH_ERR_RET(assh_kex_got_init(s, p));
 #warning do not allow KEX when st > ASSH_TR_SERVICE
 	  assh_transport_state(s, ASSH_TR_KEX_RUNNING);
-	  return ASSH_OK;
+	  goto end;
 
 	/* handle a service request packet */
 	case SSH_MSG_SERVICE_REQUEST:
@@ -578,19 +577,27 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
       assert(!"possible");
     }
 
-    if (s->srv == NULL)
-      {
+  if (s->srv == NULL)
+    {
 #ifdef CONFIG_ASSH_CLIENT
-        /* client send a service request if no service is currently running */
-        if (s->ctx->type == ASSH_CLIENT && s->srv_rq == NULL)
-	  ASSH_ERR_RET(assh_service_send_request(s));
+      /* client send a service request if no service is currently running */
+      if (s->ctx->type == ASSH_CLIENT && s->srv_rq == NULL)
+	ASSH_ERR_RET(assh_service_send_request(s));
 #endif
-	return ASSH_OK;
-      }
+      goto end;
+    }
 
+  do {
     /* call service processing function, with or without a packet */
-    ASSH_ERR_RET(s->srv->f_process(s, p, e));
+    err = s->srv->f_process(s, p, e);
+  } while (err == ASSH_NO_DATA && e->id == ASSH_EVENT_INVALID);
 
+  if (err == ASSH_NO_DATA)
     return ASSH_OK;
+
+ end:
+  assh_packet_release(s->in_pck);
+  s->in_pck = NULL;
+  return err;
 }
 

@@ -34,6 +34,7 @@ static ASSH_ALLOCATOR(assh_leaks_allocator)
       size_t *bsize = *ptr;
       bsize--;
       alloc_size -= *bsize;
+      memset((void*)bsize, 0x5a, *bsize);
       free((void*)bsize);
       return ASSH_OK;
     }

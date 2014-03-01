@@ -46,9 +46,11 @@
 #define RQ_FIFO_SIZE 32
 #define CH_MAP_SIZE 32
 
+struct ch_map_entry_s;
+
 struct rq_fifo_entry_s
 {
-  struct assh_channel_s *ch;
+  struct ch_map_entry_s *che;
   struct assh_request_s *srq;	/* sender request */
   struct assh_request_s *rrq;	/* receiver request */
   unsigned int          type_len;
@@ -61,11 +63,18 @@ struct rq_fifo_entry_s
 
 struct rq_fifo_s
 {
-  unsigned int first;
-  unsigned int first_r;
-  unsigned int count;
+  int first;
+  int first_r;
+  int count;
   struct rq_fifo_entry_s entry[RQ_FIFO_SIZE];
 };
+
+static void rq_fifo_init(struct rq_fifo_s *f)
+{
+  f->first = 0;
+  f->first_r = 0;
+  f->count = 0;	  
+}
 
 struct ch_map_entry_s
 {
@@ -77,10 +86,15 @@ struct ch_map_entry_s
   uint8_t               data[32];
   int                   status:8;
   int                   initiator:8;
+  int                   close_sent:3;
+  int                   eof_sent:3;
 };
 
 struct ch_map_entry_s ch_map[CH_MAP_SIZE];
 unsigned int ch_refs;
+
+#define RQ_POSTPONED_SIZE (RQ_FIFO_SIZE * (CH_MAP_SIZE + 1)) 
+struct rq_fifo_entry_s *rq_postponed[RQ_POSTPONED_SIZE];
 
 struct fifo_s fifo[2];
 struct assh_context_s context[2];
@@ -95,6 +109,7 @@ unsigned long rq_reply_failed = 0;
 unsigned long rq_event_count = 0;
 unsigned long rq_event_success_count = 0;
 unsigned long rq_event_failed_count = 0;
+unsigned long rq_event_closed_count = 0;
 unsigned long rq_postpone_count = 0;
 unsigned long ch_open_count = 0;
 unsigned long ch_event_open_count = 0;
@@ -104,6 +119,12 @@ unsigned long ch_postpone_count = 0;
 unsigned long ch_close_count = 0;
 unsigned long ch_event_close_count = 0;
 
+#define TEST_FAIL(...)				\
+  do {						\
+    fprintf(stderr, "FAIL " __VA_ARGS__);	\
+    return 1;					\
+  } while (0)
+
 int test(int (*fend)(int, int), int n)
 {
   assh_error_t err;
@@ -111,6 +132,8 @@ int test(int (*fend)(int, int), int n)
   assh_bool_t started[2] = {};
 
   /********************* intiailization */
+
+  //  ASSH_DEBUG("==============================================================\n");
 
   assh_context_init(&context[0], ASSH_SERVER);
   assh_context_init(&context[1], ASSH_CLIENT);
@@ -121,9 +144,7 @@ int test(int (*fend)(int, int), int n)
       for (i = 0; i < 2; i++)
 	{
 	  ch_map[j].ch[i] = NULL;
-	  ch_map[j].rq_fifo[i].first = 0;
-	  ch_map[j].rq_fifo[i].first_r = 0;
-	  ch_map[j].rq_fifo[i].count = 0;	  
+	  rq_fifo_init(&ch_map[j].rq_fifo[i]);
 	}
       ch_map[j].status = 0;
     }
@@ -132,9 +153,7 @@ int test(int (*fend)(int, int), int n)
     {
       fifo_init(&fifo[i]);
 
-      global_rq_fifo[i].first = 0;
-      global_rq_fifo[i].first_r = 0;
-      global_rq_fifo[i].count = 0;
+      rq_fifo_init(&global_rq_fifo[i]);
 
       assh_context_allocator(&context[i], assh_leaks_allocator, NULL);
 
@@ -153,6 +172,9 @@ int test(int (*fend)(int, int), int n)
       if (assh_session_init(&context[i], &session[i]) != ASSH_OK)
 	return -1;
     }
+
+  for (i = 0; i < RQ_POSTPONED_SIZE; i++)
+    rq_postponed[i] = NULL;
 
   if (assh_load_hostkey_filename(&context[0], "none@libassh.org", "/dev/null",
 				 ASSH_KEY_FMT_PV_PEM_ASN1) != ASSH_OK)
@@ -173,20 +195,30 @@ int test(int (*fend)(int, int), int n)
 
 	  //	  ASSH_DEBUG("=== context %u ===\n", i);
 
-	  struct rq_fifo_s *lrqf = &global_rq_fifo[i];
-	  struct rq_fifo_s *rrqf = &global_rq_fifo[i^1];
-
 	  /********************* generate request and channel open... */
 
 	  if (started[i])
-	    switch (rand() % 5)
+	    switch (rand() % 10)
 	      {
-	      case 0: {    	/***** send a new request *****/
+	      case 0:
+	      case 1: {    	/***** send a new request *****/
+		unsigned int k = rand() % CH_MAP_SIZE;
+		struct ch_map_entry_s *che = &ch_map[k];
+		struct assh_channel_s *ch = NULL;
+		struct rq_fifo_s *lrqf = &global_rq_fifo[i];
+		if (che->status == 5 && che->ch[i] && !(che->close_sent & (1 << i)))
+		  {
+		    lrqf = &che->rq_fifo[i];
+		    ch = che->ch[i];
+		  }
+
 		if (lrqf->count >= RQ_FIFO_SIZE || j > n)
 		  break;
 
 		struct rq_fifo_entry_s *rqe = &lrqf->entry[(lrqf->first + lrqf->count++) % RQ_FIFO_SIZE];
 		assh_bool_t want_reply = rand() % 2;
+
+		rqe->che = ch ? che : NULL;
 
 		rqe->type_len = rand() % (sizeof(rqe->type) - 1) + 1;
 		memset(rqe->type, 'a' + rand() % 26, rqe->type_len);
@@ -195,57 +227,65 @@ int test(int (*fend)(int, int), int n)
 		memset(rqe->rq_data, rand(), rqe->data_len);
 
 		rqe->status = 1;
-		err = assh_request(&session[i], NULL, rqe->type, rqe->type_len,
+		err = assh_request(&session[i], ch, rqe->type, rqe->type_len,
 				   rqe->data_len || rand() % 2 ? rqe->rq_data : NULL, rqe->data_len,
 				   want_reply, &rqe->srq);
 		rq_send_count++;
+		if (want_reply)
+		  assh_request_set_pv(rqe->srq, rqe);
 		rqe->rrq = NULL;
 		if (err)
 		  return 3;
 		break;
 	      }
 
-	      case 1: {		/***** reply to postponed request *****/
+	      case 2:
+	      case 3: {		/***** reply to postponed request *****/
 		struct rq_fifo_entry_s *rqe;
-		unsigned int l;
+		unsigned int n, l = rand() % RQ_POSTPONED_SIZE;
 
 		/* look for postponed requests in the fifo */
-		for (l = 0; l < rrqf->count; l++)
+		for (n = 0; n < RQ_POSTPONED_SIZE; n++)
 		  {
-		    rqe = &rrqf->entry[((rrqf->first + l) % RQ_FIFO_SIZE)];
-		    if (rqe->status == 4)
+		    if ((rqe = rq_postponed[(n+l) % RQ_POSTPONED_SIZE]))
 		      break;
 		  }
-		if (l == rrqf->count)
+		if (n == RQ_POSTPONED_SIZE)
 		  break;
+		rq_postponed[(n+l) % RQ_POSTPONED_SIZE] = NULL;
+		assert(rqe->status == 4);
+		rqe->data_len = 0;
 
 		switch (rand() % 2)
 		  {
-		  case 0:
-		    rqe->data_len = rand() % sizeof(rqe->rsp_data);
-		    memset(rqe->rsp_data, rand(), rqe->data_len);
-		    if (assh_request_success_reply(rqe->rrq, rqe->rsp_data, rqe->data_len))
-		    {
-		      ASSH_DEBUG("FAIL (ctx %u seed %u) assh_request_reply(ASSH_CONNECTION_REPLY_SUCCESS)\n", i, seed);
-		      return 1;
-		    }
+		  case 0: {
+		    if (rqe->che == NULL)
+		      {
+			rqe->data_len = rand() % sizeof(rqe->rsp_data);
+			memset(rqe->rsp_data, rand(), rqe->data_len);
+		      }
+
+		    assh_error_t er = assh_request_success_reply(rqe->rrq, rqe->rsp_data, rqe->data_len);
+		    if (er > ASSH_NO_DATA)
+		      TEST_FAIL("(ctx %u seed %u) assh_request_reply(ASSH_CONNECTION_REPLY_SUCCESS)\n", i, seed);
+
 		    rq_reply_success++;
 		    rqe->status = 2;
 		    break;
-		  case 1:
-		    if (assh_request_failed_reply(rqe->rrq))
-		      {
-			ASSH_DEBUG("FAIL (ctx %u seed %u) assh_request_reply(ASSH_CONNECTION_REPLY_FAILED)\n", i, seed);
-			return 1;
-		      }
+		  }
+		  case 1: {
+		    assh_error_t er = assh_request_failed_reply(rqe->rrq);
+		    if (er > ASSH_NO_DATA)
+		      TEST_FAIL("(ctx %u seed %u) assh_request_reply(ASSH_CONNECTION_REPLY_FAILED)\n", i, seed);
 		    rq_reply_failed++;
 		    rqe->status = 3;
 		    break;
 		  }
+		  }
 		break;
 	      }
 
-	      case 2: {    	/***** channel actions *****/
+	      case 4: {    	/***** channel actions *****/
 		unsigned int k = rand() % CH_MAP_SIZE;
 		struct ch_map_entry_s *che = &ch_map[k];
 
@@ -270,6 +310,10 @@ int test(int (*fend)(int, int), int n)
 		    assh_channel_set_pv(che->ch[i], che);
 		    che->initiator = i;
 		    che->status = 1;
+		    che->close_sent = 0;
+		    che->eof_sent = 0;
+		    rq_fifo_init(&che->rq_fifo[0]);
+		    rq_fifo_init(&che->rq_fifo[1]);
 		    ch_open_count++;
 		    break;
 		  }
@@ -302,10 +346,22 @@ int test(int (*fend)(int, int), int n)
 		    if (che->ch[i] == NULL)
 		      break;
 		    ch_close_count++;
+		    if (che->close_sent & (1 << i))
+		      break;
+		    che->close_sent |= 1 << i;
 		    if (assh_channel_close(che->ch[i]))
 		      return 1;
+		    /* forget all postponed requests */
+		    unsigned int n;
+		    for (n = 0; n < RQ_POSTPONED_SIZE; n++)
+		      {
+			if (rq_postponed[n] != NULL && rq_postponed[n]->che == che)
+			  rq_postponed[n] = NULL;
+		      }
+		    break;
 		  }
 		  }
+		break;
 	      }
 
 	      }
@@ -320,58 +376,51 @@ int test(int (*fend)(int, int), int n)
 	    {
 	    case ASSH_EVENT_REQUEST: {        /***** incoming request *****/
 	      struct assh_event_request_s *e = &event.connection.request;
+	      struct rq_fifo_s *rrqf = &global_rq_fifo[i^1];
+	      if (e->ch != NULL)
+		{
+		  struct ch_map_entry_s *che = assh_channel_get_pv(e->ch);
+		  rrqf = &che->rq_fifo[i^1];
+		}
 	      struct rq_fifo_entry_s *rqe = &rrqf->entry[(rrqf->first_r++ % RQ_FIFO_SIZE)];
 
 	      rqe->rrq = e->rq;
 
 	      if (rrqf->count == 0)
-		{
-		  ASSH_DEBUG("FAIL (ctx %u seed %u) rrqf->count is zero\n", i, seed);
-		  return 1;
-		}
+		TEST_FAIL("(ctx %u seed %u) rrqf->count is zero\n", i, seed);
 
 	      if (rqe->status != 1)
-		{
-		  ASSH_DEBUG("FAIL (ctx %u seed %u) request status %u, (0 expected)\n",
-			     i, seed, rqe->status);
-		  return 1;
-		}
+		TEST_FAIL("(ctx %u seed %u) request status %u, (0 expected)\n",
+			  i, seed, rqe->status);
 
 	      if (rqe->type_len != e->type.len)
 		{
-		  ASSH_DEBUG("FAIL (ctx %u seed %u) request.type_len: rq:%u ev:%zu\n",
-			     i, seed, rqe->type_len, e->type.len);
-		  return 1;
+		  assh_hexdump("rq", rqe->type, rqe->type_len);
+		  assh_hexdump("ev", e->type.str, e->type.len);
+		  TEST_FAIL("(ctx %u seed %u) request.type_len: rq:%u ev:%zu\n",
+			    i, seed, rqe->type_len, e->type.len);
 		}
 
 	      if (e->type.len && memcmp(rqe->type, e->type.str, e->type.len))
 		{
-		  ASSH_DEBUG("FAIL (ctx %u seed %u) request.type\n", i, seed);
 		  assh_hexdump("rq", rqe->type, rqe->type_len);
 		  assh_hexdump("ev", e->type.str, e->type.len);
-		  return 1;
+		  TEST_FAIL("(ctx %u seed %u) request.type\n", i, seed);
 		}
 
 	      if (rqe->data_len != e->rq_data.size)
-		{
-		  ASSH_DEBUG("FAIL (ctx %u seed %u) request.data_len: rq:%u ev:%zu\n",
+		TEST_FAIL("(ctx %u seed %u) request.data_len: rq:%u ev:%zu\n",
 			     i, seed, rqe->data_len, e->rq_data.size);
-		  return 1;
-		}
 
 	      if (e->rq_data.size && memcmp(rqe->rq_data, e->rq_data.data, e->rq_data.size))
 		{
-		  ASSH_DEBUG("FAIL (ctx %u seed %u) request.data\n", i, seed);
 		  assh_hexdump("rq", rqe->rq_data, rqe->data_len);
 		  assh_hexdump("ev", e->rq_data.data, e->rq_data.size);
-		  return 1;
+		  TEST_FAIL("(ctx %u seed %u) request.data\n", i, seed);
 		}
 
 	      if (!rqe->rrq != !rqe->srq)
-		{
-		  ASSH_DEBUG("FAIL (ctx %u seed %u) request.rq\n", i, seed);
-		  return 1;
-		}
+		TEST_FAIL("(ctx %u seed %u) request.rq\n", i, seed);
 
 	      rq_event_count++;
 
@@ -383,19 +432,27 @@ int test(int (*fend)(int, int), int n)
 		    {
 		      rrqf->first++;
 		      rrqf->count--;
+		      break;
 		    }
 		  rqe->status = 5;
 		  break;
 		}
 
+	      assh_request_set_pv(e->rq, rqe);
+	      e->rsp_data.data = NULL;
+	      rqe->data_len = e->rsp_data.size = 0;
+
 	      switch (rand() % 3)
 		{
 		case 0:
 		  e->reply = ASSH_CONNECTION_REPLY_SUCCESS;
-		  rqe->data_len = rand() % sizeof(rqe->rsp_data);
-		  memset(rqe->rsp_data, rand(), rqe->data_len);
-		  e->rsp_data.data = rqe->rsp_data;
-		  e->rsp_data.size = rqe->data_len;
+		  if (e->ch == NULL)
+		    {
+		      rqe->data_len = rand() % sizeof(rqe->rsp_data);
+		      memset(rqe->rsp_data, rand(), rqe->data_len);
+		      e->rsp_data.data = rqe->rsp_data;
+		      e->rsp_data.size = rqe->data_len;
+		    }
 		  rqe->status = 2;
 		  rq_reply_success++;
 		  break;
@@ -404,11 +461,18 @@ int test(int (*fend)(int, int), int n)
 		  rqe->status = 3;
 		  rq_reply_failed++;
 		  break;
-		case 2:
+		case 2: {
+		  unsigned int n;
 		  e->reply = ASSH_CONNECTION_REPLY_POSTPONED;
 		  rqe->status = 4;
 		  rq_postpone_count++;
+		  for (n = 0; n < RQ_POSTPONED_SIZE; n++)
+		    if (rq_postponed[n] == NULL)
+		      break;
+		  assert(n < RQ_POSTPONED_SIZE);
+		  rq_postponed[n] = rqe;
 		  break;
+		}
 		}
 
 	      break;
@@ -416,51 +480,64 @@ int test(int (*fend)(int, int), int n)
 
 	    case ASSH_EVENT_REQUEST_REPLY: {      /***** request reply *****/
 	      struct assh_event_request_reply_s *e = &event.connection.request_reply;
-	      struct rq_fifo_entry_s *rqe = &lrqf->entry[(lrqf->first % RQ_FIFO_SIZE)];
+	      struct rq_fifo_s *lrqf = &global_rq_fifo[i];
+	      struct ch_map_entry_s *che = NULL;
+	      if (e->ch != NULL)
+		{
+		  che = assh_channel_get_pv(e->ch);
+		  lrqf = &che->rq_fifo[i];
+		}
+	      struct rq_fifo_entry_s *rqe;
+
+	      while (1)
+		{
+		  rqe = &lrqf->entry[lrqf->first % RQ_FIFO_SIZE];
+		  // rqe = assh_request_get_pv(e->rq);
+		  if (e->reply != ASSH_CONNECTION_REPLY_CLOSED || rqe->srq != NULL)
+		    break;
+		  lrqf->first++;
+		  lrqf->count--;
+		}
 
 	      assert(e->rq == rqe->srq);
-	      assert(lrqf->count > 0);
+
+	      if (lrqf->count <= 0)
+		TEST_FAIL("(ctx %u seed %u) request count %u %p, (> 0 expected) %u\n",
+			     i, seed, lrqf->count, &lrqf->count, rqe->status);
 
 	      switch (e->reply)
 		{
 		case ASSH_CONNECTION_REPLY_SUCCESS:
 		  if (rqe->status != 2)
-		    {
-		      ASSH_DEBUG("FAIL (ctx %u seed %u) request status %u, (2 expected)\n",
+		    TEST_FAIL("(ctx %u seed %u) request status %u, (2 expected)\n",
 				 i, seed, rqe->status);
-		      return 1;
-		    }
 
 		  if (rqe->data_len != e->rsp_data.size)
-		    {
-		      ASSH_DEBUG("FAIL (ctx %u seed %u) request_reply.rsp_data.size: rq:%u ev:%zu\n",
+		    TEST_FAIL("(ctx %u seed %u) request_reply.rsp_data.size: rq:%u ev:%zu\n",
 				 i, seed, rqe->data_len, e->rsp_data.size);
-		      return 4;
-		    }
 
 		  if (e->rsp_data.size && memcmp(rqe->rsp_data, e->rsp_data.data, e->rsp_data.size))
 		    {
-		      ASSH_DEBUG("FAIL (ctx %u seed %u) request_reply.rsp_data.data\n", i, seed);
 		      assh_hexdump("rq", rqe->rsp_data, rqe->data_len);
 		      assh_hexdump("ev", e->rsp_data.data, e->rsp_data.size);
-		      return 4;
+		      TEST_FAIL("(ctx %u seed %u) request_reply.rsp_data.data\n", i, seed);
 		    }
 		  rq_event_success_count++;
 		  break;
 
 		case ASSH_CONNECTION_REPLY_FAILED:
 		  if (rqe->status != 3)
-		    {
-		      ASSH_DEBUG("FAIL (ctx %u seed %u) request status %u, (3 expected)\n",
-				 i, seed, rqe->status);
-		      return 1;
-		    }
+		    TEST_FAIL("(ctx %u seed %u) request status %u, (3 expected)\n",
+			      i, seed, rqe->status);
 		  rq_event_failed_count++;
 		  break;
 
+		case ASSH_CONNECTION_REPLY_CLOSED:
+		  rq_event_closed_count++;
+		  break;
+
 		default:
-		  ASSH_DEBUG("FAIL (ctx %u seed %u) request_reply.reply\n", seed, rqe->status);
-		  return 1;
+		  TEST_FAIL("(ctx %u seed %u) request_reply.reply\n", seed, rqe->status);
 		}
 	      rqe->status = 0;
 
@@ -470,7 +547,7 @@ int test(int (*fend)(int, int), int n)
 		lrqf->first++;
 		lrqf->count--;
 		rqe = &lrqf->entry[(lrqf->first % RQ_FIFO_SIZE)];
-	      } while (lrqf->count > 0 && rqe->status == 5);
+	      } while (lrqf->count > 0 && (rqe->status == 5));
 
 	      break;
 	    }
@@ -481,51 +558,34 @@ int test(int (*fend)(int, int), int n)
 	      struct ch_map_entry_s *che = &ch_map[k];
 
 	      if (k >= CH_MAP_SIZE)
-		{
-		  ASSH_DEBUG("FAIL (ctx %u seed %u) CH_MAP_SIZE\n", i, seed);
-		  return 1;
-		}
+		TEST_FAIL("(ctx %u seed %u) CH_MAP_SIZE\n", i, seed);
 
 	      if (che->status != 1)
-		{
-		  ASSH_DEBUG("FAIL (ctx %u seed %u) channel_open status %u\n", i, seed, che->status);
-		  return 1;
-		}
+		TEST_FAIL("(ctx %u seed %u) channel_open status %u\n", i, seed, che->status);
 
 	      if (che->ch[i] != NULL || che->ch[i^1] == NULL)
-		{
-		  ASSH_DEBUG("FAIL (ctx %u seed %u) channel_open ptr\n", i, seed);
-		  return 1;
-		}
+		TEST_FAIL("(ctx %u seed %u) channel_open ptr\n", i, seed);
 
 	      if (che->type_len != e->type.len)
-		{
-		  ASSH_DEBUG("FAIL (ctx %u seed %u) channel_open.type_len: ch:%u ev:%zu\n",
+		TEST_FAIL("(ctx %u seed %u) channel_open.type_len: ch:%u ev:%zu\n",
 			     i, seed, che->type_len, e->type.len);
-		  return 1;
-		}
 
 	      if (e->type.len && memcmp(che->type, e->type.str, e->type.len))
 		{
-		  ASSH_DEBUG("FAIL (ctx %u seed %u) channel_open.type\n", i, seed);
 		  assh_hexdump("ch", che->type, che->type_len);
 		  assh_hexdump("ev", e->type.str, e->type.len);
-		  return 1;
+		  TEST_FAIL("(ctx %u seed %u) channel_open.type\n", i, seed);
 		}
 
 	      if (che->data_len != e->rq_data.size)
-		{
-		  ASSH_DEBUG("FAIL (ctx %u seed %u) channel_open.data_len: ch:%u ev:%zu\n",
-			     i, seed, che->data_len, e->rq_data.size);
-		  return 1;
-		}
+		TEST_FAIL("(ctx %u seed %u) channel_open.data_len: ch:%u ev:%zu\n",
+			  i, seed, che->data_len, e->rq_data.size);
 
 	      if (e->rq_data.size && memcmp(che->data, e->rq_data.data, e->rq_data.size))
 		{
-		  ASSH_DEBUG("FAIL (ctx %u seed %u) channel_open.data\n", i, seed);
 		  assh_hexdump("ch", che->data, che->data_len);
 		  assh_hexdump("ev", e->rq_data.data, e->rq_data.size);
-		  return 1;
+		  TEST_FAIL("(ctx %u seed %u) channel_open.data\n", i, seed);
 		}
 
 	      ch_event_open_count++;
@@ -571,18 +631,14 @@ int test(int (*fend)(int, int), int n)
 		  ch_refs++;
 
 		  if (che->data_len != e->rsp_data.size)
-		    {
-		      ASSH_DEBUG("FAIL (ctx %u seed %u) channel_open_reply.data_len: ch:%u ev:%zu\n",
-				 i, seed, che->data_len, e->rsp_data.size);
-		      return 1;
-		    }
+		    TEST_FAIL("(ctx %u seed %u) channel_open_reply.data_len: ch:%u ev:%zu\n",
+			      i, seed, che->data_len, e->rsp_data.size);
 
 		  if (e->rsp_data.size && memcmp(che->data, e->rsp_data.data, e->rsp_data.size))
 		    {
-		      ASSH_DEBUG("FAIL (ctx %u seed %u) channel_open_reply.data\n", i, seed);
 		      assh_hexdump("ch", che->data, che->data_len);
 		      assh_hexdump("ev", e->rsp_data.data, e->rsp_data.size);
-		      return 1;
+		      TEST_FAIL("(ctx %u seed %u) channel_open_reply.data\n", i, seed);
 		    }
 
 		  break;
@@ -591,8 +647,7 @@ int test(int (*fend)(int, int), int n)
 		  che->status = 0;
 		  break;
 		default:
-		  ASSH_DEBUG("FAIL (ctx %u seed %u) channel_open_reply status\n", i, seed);
-		  return 1;
+		  TEST_FAIL("(ctx %u seed %u) channel_open_reply status\n", i, seed);
 		}
 
 	      break;
@@ -604,17 +659,22 @@ int test(int (*fend)(int, int), int n)
 
 	      ch_event_close_count++;
 	      if (che->ch[i] == NULL)
-		{
-		  ASSH_DEBUG("FAIL (ctx %u seed %u) channel_close\n",
-			     i, seed, che->status);
-		  return 1;
-		}
+		TEST_FAIL("(ctx %u seed %u) channel_close\n",
+			  i, seed, che->status);
 
 	      che->ch[i] = NULL;
 	      if (che->ch[0] == NULL && che->ch[1] == NULL)
 		{
 		  ch_refs--;
 		  che->status = 0;
+		}
+
+	      /* forget all postponed requests */
+	      unsigned int n;
+	      for (n = 0; n < RQ_POSTPONED_SIZE; n++)
+		{
+		  if (rq_postponed[n] != NULL && rq_postponed[n]->che == che)
+		    rq_postponed[n] = NULL;
 		}
 	      break;
 	    }
@@ -660,10 +720,7 @@ int test(int (*fend)(int, int), int n)
   /********************* cleanup and memory leak checking */
 
   if (alloc_size == 0)
-    {
-      ASSH_DEBUG("leak checking not working\n");
-      return 1;
-    }
+    TEST_FAIL("leak checking not working\n");
 
   for (i = 0; i < 2; i++)
     {
@@ -672,10 +729,7 @@ int test(int (*fend)(int, int), int n)
     }
 
   if (alloc_size != 0)
-    {
-      ASSH_DEBUG("memory leak detected, %zu bytes allocated\n", alloc_size);
-      return 1;
-    }
+    TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
 
   return 0;
 }
@@ -686,6 +740,8 @@ static int end_no_more_requests(int j, int n)
 	  global_rq_fifo[0].count > 0 ||
 	  global_rq_fifo[1].count > 0 ||
 	  ch_refs > 0);
+
+#warning check alloc counts when there is no more reuqests/channels
 }
 
 static int end_early_cleanup(int j, int n)
@@ -706,15 +762,18 @@ int main(int argc, char **argv)
   unsigned int count = argc > 1 ? atoi(argv[1]) : 1000;
   unsigned int k;
 
-  for (k = 0; k < count; k++)
+  for (k = 0; k < count; )
     {
       putc('r', stderr);
-      if (test(&end_no_more_requests, 1000))
+      if (test(&end_no_more_requests, 10000))
 	return 1;
 
       putc('e', stderr);
       if (test(&end_early_cleanup, 10000))
 	return 1;
+
+      if (++k % 32 == 0)
+	fprintf(stderr, " seed=%u\n", seed);
     }
 
   fprintf(stderr, "Summary:\n"
@@ -724,6 +783,7 @@ int main(int argc, char **argv)
 	  "  %8lu request received events\n"
 	  "  %8lu request reply events (success)\n"
 	  "  %8lu request reply events (failed)\n"
+	  "  %8lu request reply events (closed)\n"
 	  "  %8lu request postponed\n"
 	  "  %8lu channel open requests\n"
 	  "  %8lu channel open events\n"
@@ -735,13 +795,12 @@ int main(int argc, char **argv)
 	  ,
 	  rq_send_count, rq_reply_success, rq_reply_failed,
 	  rq_event_count, rq_event_success_count,
-	  rq_event_failed_count, rq_postpone_count,
+	  rq_event_failed_count, rq_event_closed_count, rq_postpone_count,
 	  ch_open_count, ch_event_open_count,
 	  ch_open_reply_success_count,
 	  ch_open_reply_failed_count, ch_postpone_count,
 	  ch_close_count, ch_event_close_count
 	  );
-
 
   return 0;
 }
