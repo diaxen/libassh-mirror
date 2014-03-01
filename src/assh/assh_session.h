@@ -176,7 +176,7 @@ static inline void assh_session_set_pv(struct assh_session_s *s, void *pv)
 }
 
 /** This function returns the value of the session private pointer. */
-static inline void *assh_session_get_pv(const struct assh_session_s *s)
+static inline void *assh_session_pv(const struct assh_session_s *s)
 {
   return s->pv;
 }
