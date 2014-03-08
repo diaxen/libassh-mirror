@@ -118,6 +118,8 @@ unsigned long ch_open_reply_failed_count = 0;
 unsigned long ch_postpone_count = 0;
 unsigned long ch_close_count = 0;
 unsigned long ch_event_close_count = 0;
+unsigned long ch_eof_count = 0;
+unsigned long ch_event_eof_count = 0;
 
 #define TEST_FAIL(...)				\
   do {						\
@@ -227,9 +229,10 @@ int test(int (*fend)(int, int), int n)
 		memset(rqe->rq_data, rand(), rqe->data_len);
 
 		rqe->status = 1;
+		rqe->srq = NULL;
 		err = assh_request(&session[i], ch, rqe->type, rqe->type_len,
 				   rqe->data_len || rand() % 2 ? rqe->rq_data : NULL, rqe->data_len,
-				   want_reply, &rqe->srq);
+				   want_reply ? &rqe->srq : NULL);
 		rq_send_count++;
 		if (want_reply)
 		  assh_request_set_pv(rqe->srq, rqe);
@@ -327,7 +330,7 @@ int test(int (*fend)(int, int), int n)
 			che->data_len = rand() % sizeof(che->data);
 			memset(che->data, rand(), che->data_len);
 			if (assh_channel_open_success_reply(che->ch[i],
-					  rand() % 32, rand() % 31 + 1,
+							    rand() % 32, rand() % 31 + 1,
 							    che->data, che->data_len))
 			  return 1;
 			che->status = 2;
@@ -342,21 +345,40 @@ int test(int (*fend)(int, int), int n)
 		      }
 		    break;
 		  }
-		  case 5: { /**** channel is open, may close ****/
-		    if (che->ch[i] == NULL)
-		      break;
-		    ch_close_count++;
-		    if (che->close_sent & (1 << i))
-		      break;
-		    che->close_sent |= 1 << i;
-		    if (assh_channel_close(che->ch[i]))
-		      return 1;
-		    /* forget all postponed requests */
-		    unsigned int n;
-		    for (n = 0; n < RQ_POSTPONED_SIZE; n++)
+		  case 5: { /**** channel is open ****/
+
+		    switch (rand() % 2)
 		      {
-			if (rq_postponed[n] != NULL && rq_postponed[n]->che == che)
-			  rq_postponed[n] = NULL;
+		      case 0: {	/**** may close ****/
+			if (che->ch[i] == NULL)
+			  break;
+			ch_close_count++;
+			if (che->close_sent & (1 << i))
+			  break;
+			che->close_sent |= 1 << i;
+			if (assh_channel_close(che->ch[i]))
+			  return 1;
+
+			/* forget all postponed requests */
+			unsigned int n;
+			for (n = 0; n < RQ_POSTPONED_SIZE; n++)
+			  {
+			    if (rq_postponed[n] != NULL && rq_postponed[n]->che == che)
+			      rq_postponed[n] = NULL;
+			  }
+			break;
+		      }
+		      case 1: {	/**** may send eof ****/
+			if (che->ch[i] == NULL)
+			  break;
+			if ((che->eof_sent | che->close_sent) & (1 << i))
+			  break;
+			ch_eof_count++;
+			che->eof_sent |= 1 << i;
+			if (assh_channel_eof(che->ch[i]))
+			  return 1;
+			break;
+		      }
 		      }
 		    break;
 		  }
@@ -379,7 +401,7 @@ int test(int (*fend)(int, int), int n)
 	      struct rq_fifo_s *rrqf = &global_rq_fifo[i^1];
 	      if (e->ch != NULL)
 		{
-		  struct ch_map_entry_s *che = assh_channel_get_pv(e->ch);
+		  struct ch_map_entry_s *che = assh_channel_pv(e->ch);
 		  rrqf = &che->rq_fifo[i^1];
 		}
 	      struct rq_fifo_entry_s *rqe = &rrqf->entry[(rrqf->first_r++ % RQ_FIFO_SIZE)];
@@ -484,7 +506,7 @@ int test(int (*fend)(int, int), int n)
 	      struct ch_map_entry_s *che = NULL;
 	      if (e->ch != NULL)
 		{
-		  che = assh_channel_get_pv(e->ch);
+		  che = assh_channel_pv(e->ch);
 		  lrqf = &che->rq_fifo[i];
 		}
 	      struct rq_fifo_entry_s *rqe;
@@ -492,7 +514,7 @@ int test(int (*fend)(int, int), int n)
 	      while (1)
 		{
 		  rqe = &lrqf->entry[lrqf->first % RQ_FIFO_SIZE];
-		  // rqe = assh_request_get_pv(e->rq);
+		  // rqe = assh_request_pv(e->rq);
 		  if (e->reply != ASSH_CONNECTION_REPLY_CLOSED || rqe->srq != NULL)
 		    break;
 		  lrqf->first++;
@@ -539,6 +561,18 @@ int test(int (*fend)(int, int), int n)
 		default:
 		  TEST_FAIL("(ctx %u seed %u) request_reply.reply\n", seed, rqe->status);
 		}
+
+	      /* remove postponed request entry */
+	      if (rqe->status == 4)
+		{
+		  unsigned int n;
+		  for (n = 0; n < RQ_POSTPONED_SIZE; n++)
+		    if (rq_postponed[n] == rqe)
+		      break;
+		  if (n < RQ_POSTPONED_SIZE)
+		    rq_postponed[n] = NULL;
+		}
+
 	      rqe->status = 0;
 
 	      /* pop request as well as subsequent
@@ -623,7 +657,7 @@ int test(int (*fend)(int, int), int n)
 
 	    case ASSH_EVENT_CHANNEL_OPEN_REPLY: {      /***** open reply event *****/
 	      struct assh_event_channel_open_reply_s *e = &event.connection.channel_open_reply;
-	      struct ch_map_entry_s *che = assh_channel_get_pv(e->ch);
+	      struct ch_map_entry_s *che = assh_channel_pv(e->ch);
 	      switch (che->status)
 		{
 		case 2:
@@ -655,7 +689,7 @@ int test(int (*fend)(int, int), int n)
 
 	    case ASSH_EVENT_CHANNEL_CLOSE: {      /***** close event *****/
 	      struct assh_event_channel_close_s *e = &event.connection.channel_close;
-	      struct ch_map_entry_s *che = assh_channel_get_pv(e->ch);
+	      struct ch_map_entry_s *che = assh_channel_pv(e->ch);
 
 	      ch_event_close_count++;
 	      if (che->ch[i] == NULL)
@@ -676,6 +710,22 @@ int test(int (*fend)(int, int), int n)
 		  if (rq_postponed[n] != NULL && rq_postponed[n]->che == che)
 		    rq_postponed[n] = NULL;
 		}
+	      break;
+	    }
+
+	    case ASSH_EVENT_CHANNEL_EOF: {      /***** eof event *****/
+	      struct assh_event_channel_close_s *e = &event.connection.channel_eof;
+	      struct ch_map_entry_s *che = assh_channel_pv(e->ch);
+
+	      ch_event_eof_count++;
+	      if (che->ch[i] == NULL)
+		TEST_FAIL("(ctx %u seed %u) channel_eof\n",
+			  i, seed, che->status);
+
+	      if ((che->eof_sent & (2 >> i)) == 0)
+		TEST_FAIL("(ctx %u seed %u) channel_eof sent\n",
+			  i, seed, che->status);
+
 	      break;
 	    }
 
@@ -777,7 +827,7 @@ int main(int argc, char **argv)
     }
 
   fprintf(stderr, "Summary:\n"
-	  "  %8lu requests\n"
+	  "  %8lu request calls\n"
 	  "  %8lu request replies (success)\n"
 	  "  %8lu request replies (failed)\n"
 	  "  %8lu request received events\n"
@@ -785,13 +835,15 @@ int main(int argc, char **argv)
 	  "  %8lu request reply events (failed)\n"
 	  "  %8lu request reply events (closed)\n"
 	  "  %8lu request postponed\n"
-	  "  %8lu channel open requests\n"
+	  "  %8lu channel open calls\n"
 	  "  %8lu channel open events\n"
 	  "  %8lu channel open reply (success)\n"
 	  "  %8lu channel open reply (failed)\n"
 	  "  %8lu channel open postponed\n"
-	  "  %8lu channel close requests\n"
+	  "  %8lu channel close calls\n"
 	  "  %8lu channel close events\n"
+	  "  %8lu channel eof calls\n"
+	  "  %8lu channel eof events\n"
 	  ,
 	  rq_send_count, rq_reply_success, rq_reply_failed,
 	  rq_event_count, rq_event_success_count,
@@ -799,7 +851,8 @@ int main(int argc, char **argv)
 	  ch_open_count, ch_event_open_count,
 	  ch_open_reply_success_count,
 	  ch_open_reply_failed_count, ch_postpone_count,
-	  ch_close_count, ch_event_close_count
+	  ch_close_count, ch_event_close_count,
+	  ch_eof_count, ch_event_eof_count
 	  );
 
   return 0;

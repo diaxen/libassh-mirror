@@ -25,7 +25,7 @@
    @file
    @short Implementation of the server side ssh-userauth service (rfc4252)
 
-   This header file defines events which are returned to the
+   This header file defines events which are reported to the
    application when the server side @tt ssh-userauth service is
    running.
 
@@ -42,7 +42,7 @@
 
 #include "assh.h"
 
-/** This event is returned when the server-side user authentication
+/** This event is reported when the server-side user authentication
     service is running. The user public key @tt pub_key must be
     searched in the list of authorized keys for the user on this
     server. The @tt found field must be updated accordingly before
@@ -55,7 +55,7 @@ struct assh_event_userauth_server_userkey_s
   assh_bool_t                             found;
 };
 
-/** This event is returned when the server-side user authentication
+/** This event is reported when the server-side user authentication
     service is running. The user name and password pair in @ref
     assh_event_s::userauth_server::password must be checked and the
     @tt success field must be updated accordingly before calling the

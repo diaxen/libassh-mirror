@@ -25,7 +25,7 @@
    @file
    @short Implementation of the client side ssh-userauth service (rfc4252)
 
-   This header file defines events which are returned to the
+   This header file defines events which are reported to the
    application when the client side @tt ssh-userauth service is
    running.
 
@@ -42,7 +42,7 @@
 
 #include "assh.h"
 
-/** This event is returned when the client-side user authentication
+/** This event is reported when the client-side user authentication
     service is running and the service needs to provide a user name
     to the server. 
 
@@ -53,7 +53,7 @@ struct assh_event_userauth_client_user_s
   struct assh_string_s    username;    //< output
 };
 
-/** This event is returned when the client-side user authentication
+/** This event is reported when the client-side user authentication
     service is running. The @ref use_password and @ref use_pub_key
     fields indicate the authentication methods that are accepted by
     the server.
@@ -67,7 +67,7 @@ struct assh_event_userauth_client_user_s
     assh_load_key_filename functions. Multiple keys can be loaded. The
     assh library will take care of releasing the provided keys.
 
-    This event may be returned multiple times until the authentication
+    This event may be reported multiple times until the authentication
     is successful. The authentication fails if no password or key is
     provided.
 
