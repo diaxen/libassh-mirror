@@ -65,6 +65,8 @@ enum assh_event_id_e
   ASSH_EVENT_CHANNEL_OPEN_REPLY,
   /** @see assh_event_channel_data_s */
   ASSH_EVENT_CHANNEL_DATA,
+  /** @see assh_event_channel_window_s */
+  ASSH_EVENT_CHANNEL_WINDOW,
   /** @see assh_event_channel_eof_s */
   ASSH_EVENT_CHANNEL_EOF,
   /** @see assh_event_channel_close_s */

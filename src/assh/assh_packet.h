@@ -29,10 +29,10 @@
 
 #include <string.h>
 
-/** Start of packet data */
+/** @internal SSH protocol packet header */
 struct assh_packet_head_s
 {
-  uint32_t  pck_len;
+  uint8_t   pck_len[4];
   uint8_t   pad_len;
   uint8_t   msg;
   uint8_t   end[0];

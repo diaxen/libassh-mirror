@@ -43,6 +43,7 @@ enum assh_connection_state_e
   ASSH_CONNECTION_ST_EVENT_REQUEST_REPLY,
   ASSH_CONNECTION_ST_EVENT_CHANNEL_OPEN,
   ASSH_CONNECTION_ST_EVENT_CHANNEL_OPEN_REPLY,
+  ASSH_CONNECTION_ST_EVENT_CHANNEL_DATA,
   ASSH_CONNECTION_ST_EVENT_CHANNEL_CLOSE,
   ASSH_CONNECTION_ST_EVENT_CHANNEL_EOF,
 };
@@ -61,8 +62,6 @@ struct assh_connection_context_s
 
   uint32_t ch_id_counter;
 };
-
-#warning check if/which srv_cn API functions can be called directly between event/done calls
 
 static void assh_request_queue_cleanup(struct assh_session_s *s,
 				       struct assh_queue_s *q)
@@ -85,6 +84,7 @@ static void assh_channel_cleanup(struct assh_channel_s *ch)
 
   assh_request_queue_cleanup(s, &ch->request_rqueue);
   assh_request_queue_cleanup(s, &ch->request_lqueue);
+  assh_packet_release(ch->data_pck);
 
   assh_free(s->ctx, ch, ASSH_ALLOC_INTERNAL);  
 }
@@ -129,8 +129,10 @@ assh_request_failed_reply(struct assh_request_s *rq)
 {
   assh_error_t err;
   struct assh_session_s *s = rq->session;
+  struct assh_connection_context_s *pv = s->srv_pv;
 
   ASSH_ERR_RET(s->srv != &assh_service_connection ? ASSH_ERR_SERVICE_NA : 0);
+  ASSH_ERR_RET(pv->state != ASSH_CONNECTION_ST_IDLE ? ASSH_ERR_STATE : 0);
   ASSH_ERR_RET(rq->status != ASSH_REQUEST_ST_REPLY_POSTPONED ? ASSH_ERR_STATE : 0);
 
   /* prepare failed reply packet */
@@ -181,8 +183,10 @@ assh_request_success_reply(struct assh_request_s *rq,
 {
   assh_error_t err;
   struct assh_session_s *s = rq->session;
+  struct assh_connection_context_s *pv = s->srv_pv;
 
   ASSH_ERR_RET(s->srv != &assh_service_connection ? ASSH_ERR_SERVICE_NA : 0);
+  ASSH_ERR_RET(pv->state != ASSH_CONNECTION_ST_IDLE ? ASSH_ERR_STATE : 0);
   ASSH_ERR_RET(rq->status != ASSH_REQUEST_ST_REPLY_POSTPONED ? ASSH_ERR_STATE : 0);
 
   /* prepare success reply packet */
@@ -272,7 +276,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_request_done)
 }
 
 /* setup an event from incoming request */
-static assh_error_t
+static ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_connection_got_request(struct assh_session_s *s,
                             struct assh_packet_s *p,
                             struct assh_event_s *e,
@@ -382,6 +386,7 @@ assh_error_t assh_request(struct assh_session_s *s,
   struct assh_connection_context_s *pv = s->srv_pv;
 
   ASSH_ERR_RET(s->srv != &assh_service_connection ? ASSH_ERR_SERVICE_NA : 0);
+  ASSH_ERR_RET(pv->state != ASSH_CONNECTION_ST_IDLE ? ASSH_ERR_STATE : 0);
 
   /* send request packet */
   struct assh_packet_s *pout;
@@ -402,9 +407,7 @@ assh_error_t assh_request(struct assh_session_s *s,
 
       case ASSH_CHANNEL_ST_EOF_CLOSE:
       case ASSH_CHANNEL_ST_CLOSING:
-        /* create the request, a failed reply event will be reported
-           before the close event */
-	goto end;
+	return ASSH_NO_DATA;
 
       case ASSH_CHANNEL_ST_OPEN:
       case ASSH_CHANNEL_ST_EOF_SENT:
@@ -423,7 +426,6 @@ assh_error_t assh_request(struct assh_session_s *s,
 
   assh_transport_push(s, pout);
 
- end:;
   struct assh_request_s *rq = NULL;
 
   /* push a new entry in the request queue */
@@ -473,7 +475,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_request_reply_done)
 }
 
 /* pop the next unreplied requests and report a reply failed event */
-static assh_error_t
+static ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_request_reply_flush(struct assh_session_s *s,
                          struct assh_channel_s *ch,
                          struct assh_event_s *e)
@@ -503,7 +505,7 @@ assh_request_reply_flush(struct assh_session_s *s,
 }
 
 /* setup an event from incoming request reply */
-static assh_error_t
+static ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_connection_got_request_reply(struct assh_session_s *s,
                                   struct assh_packet_s *p,
                                   struct assh_event_s *e,
@@ -588,6 +590,7 @@ assh_channel_open_failed_reply(struct assh_channel_s *ch,
 
   ASSH_ERR_RET(s->srv != &assh_service_connection ? ASSH_ERR_SERVICE_NA : 0);
   ASSH_ERR_RET(ch->status != ASSH_CHANNEL_ST_OPEN_RECEIVED ? ASSH_ERR_STATE : 0);
+  ASSH_ERR_RET(pv->state != ASSH_CONNECTION_ST_IDLE ? ASSH_ERR_STATE : 0);
 
   struct assh_packet_s *pout;
 
@@ -607,16 +610,18 @@ assh_channel_open_failed_reply(struct assh_channel_s *ch,
 }
 
 assh_error_t
-assh_channel_open_success_reply(struct assh_channel_s *ch,
-                                uint32_t win_size, uint32_t pkt_size,
-                                const uint8_t *rsp_data,
-                                size_t rsp_data_len)
+assh_channel_open_success_reply2(struct assh_channel_s *ch,
+                                 uint32_t pkt_size, uint32_t win_size,
+                                 const uint8_t *rsp_data,
+                                 size_t rsp_data_len)
 {
   assh_error_t err;
   struct assh_session_s *s = ch->session;
+  struct assh_connection_context_s *pv = s->srv_pv;
 
   ASSH_ERR_RET(s->srv != &assh_service_connection ? ASSH_ERR_SERVICE_NA : 0);
   ASSH_ERR_RET(ch->status != ASSH_CHANNEL_ST_OPEN_RECEIVED ? ASSH_ERR_STATE : 0);
+  ASSH_ERR_RET(pv->state != ASSH_CONNECTION_ST_IDLE ? ASSH_ERR_STATE : 0);
   ASSH_ERR_RET(pkt_size < 1 ? ASSH_ERR_BAD_DATA : 0);
 
 
@@ -628,13 +633,13 @@ assh_channel_open_success_reply(struct assh_channel_s *ch,
                                  4 * 4 + rsp_data_len, &pout));
 
   ch->lpkt_size = ASSH_MIN(pkt_size, ASSH_MAX_PCK_PAYLOAD_SIZE
-                           - /* extended data message header */ 3 * 4);
-  ch->lwin_size = win_size;
+                           - /* extended data message header */ 2 * 4);
+  ch->lwin_size = ch->lwin_left = ASSH_MAX(win_size, ch->lpkt_size * 2);
   ch->status = ASSH_CHANNEL_ST_OPEN;
 
   ASSH_ASSERT(assh_packet_add_u32(pout, ch->remote_id));
   ASSH_ASSERT(assh_packet_add_u32(pout, ch->mentry.id));
-  ASSH_ASSERT(assh_packet_add_u32(pout, ch->lwin_size));
+  ASSH_ASSERT(assh_packet_add_u32(pout, ch->lwin_left));
   ASSH_ASSERT(assh_packet_add_u32(pout, ch->lpkt_size));
   ASSH_ASSERT(assh_packet_add_array(pout, rsp_data_len, &data));
   memcpy(data, rsp_data, rsp_data_len);
@@ -663,13 +668,16 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_open_done)
   switch (eo->reply)
     {
     case ASSH_CONNECTION_REPLY_SUCCESS:
-      ASSH_ERR_RET(assh_channel_open_success_reply(eo->ch, eo->win_size,
+      ASSH_ERR_RET(assh_channel_open_success_reply2(eo->ch, eo->win_size,
                      eo->pkt_size, eo->rsp_data.data, eo->rsp_data.size));
       break;
     case ASSH_CONNECTION_REPLY_FAILED:
       ASSH_ERR_RET(assh_channel_open_failed_reply(eo->ch, eo->reason));
       break;
     case ASSH_CONNECTION_REPLY_POSTPONED:
+      /* keep values for assh_channel_open_success_reply */
+      eo->ch->lpkt_size = eo->pkt_size;
+      eo->ch->lwin_size = eo->win_size;
       break;
     case ASSH_CONNECTION_REPLY_CLOSED:
       ASSH_ERR_RET(ASSH_ERR_BAD_DATA);
@@ -678,7 +686,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_open_done)
   return ASSH_OK;      
 }
 
-static assh_error_t
+static ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_connection_got_channel_open(struct assh_session_s *s,
                                  struct assh_packet_s *p,
                                  struct assh_event_s *e)
@@ -688,13 +696,13 @@ assh_connection_got_channel_open(struct assh_session_s *s,
 
   /* parse packet */
   uint8_t *type = p->head.end, *data;
-  uint32_t rid, wsize, msize;
+  uint32_t rid, win_size, pkt_size;
   ASSH_ERR_RET(assh_packet_check_string(p, type, &data));
   ASSH_ERR_RET(assh_packet_check_u32(p, &rid, data, &data));
-  ASSH_ERR_RET(assh_packet_check_u32(p, &wsize, data, &data));
-  ASSH_ERR_RET(assh_packet_check_u32(p, &msize, data, &data));
+  ASSH_ERR_RET(assh_packet_check_u32(p, &win_size, data, &data));
+  ASSH_ERR_RET(assh_packet_check_u32(p, &pkt_size, data, &data));
 
-  ASSH_ERR_RET(msize < 1 ? ASSH_ERR_PROTOCOL : 0);
+  ASSH_ERR_RET(pkt_size < 1 ? ASSH_ERR_PROTOCOL : 0);
 
   /* create channel object */
   struct assh_channel_s *ch;
@@ -702,10 +710,11 @@ assh_connection_got_channel_open(struct assh_session_s *s,
 
   ch->mentry.id = pv->ch_id_counter++;
   ch->remote_id = rid;
-  ch->rwin_size = wsize;
-  ch->rpkt_size = msize;
+  ch->rpkt_size = pkt_size;
+  ch->rwin_left = win_size;
   ch->status = ASSH_CHANNEL_ST_OPEN_RECEIVED;
   ch->session = s;
+  ch->data_pck = NULL;
   assh_queue_init(&ch->request_rqueue);
   assh_queue_init(&ch->request_lqueue);
 
@@ -722,8 +731,8 @@ assh_connection_got_channel_open(struct assh_session_s *s,
   type_->str = (char*)type + 4;
   type_->len = assh_load_u32(type);
 
-  e->connection.channel_open.win_size = wsize;
-  e->connection.channel_open.pkt_size = msize;
+  e->connection.channel_open.win_size = win_size;
+  e->connection.channel_open.pkt_size = pkt_size;
 
   struct assh_buffer_s *rq_data = &e->connection.channel_open.rq_data;
   rq_data->size = p->data + p->data_size - data;
@@ -745,16 +754,18 @@ assh_connection_got_channel_open(struct assh_session_s *s,
 /************************************************* outgoing channel open */
 
 assh_error_t
-assh_channel_open(struct assh_session_s *s,
-                  const char *type, size_t type_len,
-                  const uint8_t *data, size_t data_len,
-                  size_t pkt_size, size_t win_size,
-                  struct assh_channel_s **ch_)
+assh_channel_open2(struct assh_session_s *s,
+                   const char *type, size_t type_len,
+                   const uint8_t *data, size_t data_len,
+                   uint32_t pkt_size, uint32_t win_size,
+		   struct assh_channel_s **ch_)
 {
   assh_error_t err;
   struct assh_connection_context_s *pv = s->srv_pv;
 
   ASSH_ERR_RET(s->srv != &assh_service_connection ? ASSH_ERR_SERVICE_NA : 0);
+  ASSH_ERR_RET(pv->state != ASSH_CONNECTION_ST_IDLE ? ASSH_ERR_STATE : 0);
+  ASSH_ERR_RET(pkt_size < 1 ? ASSH_ERR_BAD_DATA : 0);
 
   /* alloc open msg packet */
   struct assh_packet_s *pout;
@@ -767,11 +778,13 @@ assh_channel_open(struct assh_session_s *s,
   ASSH_ERR_GTO(assh_alloc(s->ctx, sizeof(*ch), ASSH_ALLOC_INTERNAL,
                           (void**)&ch), err_pkt);
 
+  ch->lpkt_size = ASSH_MIN(pkt_size, ASSH_MAX_PCK_PAYLOAD_SIZE
+                           - /* extended data message header */ 2 * 4);
+  ch->lwin_size = ch->lwin_left = ASSH_MAX(win_size, ch->lpkt_size * 2);
   ch->mentry.id = pv->ch_id_counter++;
-  ch->lwin_size = win_size;
-  ch->lpkt_size = pkt_size;
   ch->status = ASSH_CHANNEL_ST_OPEN_SENT;
   ch->session = s;
+  ch->data_pck = NULL;
   assh_queue_init(&ch->request_rqueue);
   assh_queue_init(&ch->request_lqueue);
 
@@ -783,8 +796,8 @@ assh_channel_open(struct assh_session_s *s,
   ASSH_ASSERT(assh_packet_add_string(pout, type_len, &str));
   memcpy(str, type, type_len);
   ASSH_ASSERT(assh_packet_add_u32(pout, ch->mentry.id));
-  ASSH_ASSERT(assh_packet_add_u32(pout, win_size));
-  ASSH_ASSERT(assh_packet_add_u32(pout, pkt_size));
+  ASSH_ASSERT(assh_packet_add_u32(pout, ch->lwin_left));
+  ASSH_ASSERT(assh_packet_add_u32(pout, ch->lpkt_size));
   ASSH_ASSERT(assh_packet_add_array(pout, data_len, &str));
   memcpy(str, data, data_len);
 
@@ -830,7 +843,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_open_reply_done)
     }
 }
 
-static assh_error_t
+static ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_connection_got_channel_open_reply(struct assh_session_s *s,
                                        struct assh_packet_s *p,
                                        struct assh_event_s *e,
@@ -857,7 +870,7 @@ assh_connection_got_channel_open_reply(struct assh_session_s *s,
   if (success)
     {
       ASSH_ERR_RET(assh_packet_check_u32(p, &ch->remote_id, data, &data));
-      ASSH_ERR_RET(assh_packet_check_u32(p, &ch->rwin_size, data, &data));
+      ASSH_ERR_RET(assh_packet_check_u32(p, &ch->rwin_left, data, &data));
       ASSH_ERR_RET(assh_packet_check_u32(p, &ch->rpkt_size, data, &data));
 
       ASSH_ERR_RET(ch->rpkt_size < 1 ? ASSH_ERR_PROTOCOL : 0);
@@ -890,45 +903,316 @@ assh_connection_got_channel_open_reply(struct assh_session_s *s,
 
 /************************************************* incoming channel data */
 
-static assh_error_t
-assh_connection_got_channel_data(struct assh_session_s *s,
-                                 struct assh_packet_s *p,
-                                 assh_bool_t extended)
+static ASSH_EVENT_DONE_FCN(assh_event_channel_data_done)
 {
+  assh_error_t err;
+  struct assh_connection_context_s *pv = s->srv_pv;
+
+  assert(s->srv == &assh_service_connection);
+  ASSH_ERR_RET(pv->state != ASSH_CONNECTION_ST_EVENT_CHANNEL_DATA
+               ? ASSH_ERR_STATE : 0);
+
+  /* release request packet */
+  assh_packet_release(pv->pck);
+  pv->pck = NULL;
+  pv->state = ASSH_CONNECTION_ST_IDLE;
+
   return ASSH_OK;
 }
 
-static assh_error_t
-assh_connection_got_channel_window_adjust(struct assh_session_s *s,
-                                          struct assh_packet_s *p)
+static ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_connection_got_channel_data(struct assh_session_s *s,
+                                 struct assh_packet_s *p,
+				 struct assh_event_s *e,
+                                 assh_bool_t ext)
 {
+  assh_error_t err;
+  struct assh_connection_context_s *pv = s->srv_pv;
+
+  uint32_t ch_id;
+  uint8_t *data;
+  ASSH_ERR_RET(assh_packet_check_u32(p, &ch_id, p->head.end, &data));
+
+  struct assh_channel_s *ch = (void*)assh_map_lookup(&pv->channel_map, ch_id, NULL);
+  ASSH_ERR_RET(ch == NULL ? ASSH_ERR_PROTOCOL : 0);
+
+  switch (ch->status)
+    {
+    case ASSH_CHANNEL_ST_OPEN_SENT:
+    case ASSH_CHANNEL_ST_OPEN_RECEIVED:
+    case ASSH_CHANNEL_ST_EOF_RECEIVED:
+    case ASSH_CHANNEL_ST_EOF_CLOSE:
+      ASSH_ERR_RET(ASSH_ERR_PROTOCOL);
+
+    case ASSH_CHANNEL_ST_CLOSE_CALLED:
+    case ASSH_CHANNEL_ST_OPEN:
+    case ASSH_CHANNEL_ST_EOF_SENT:
+      break;
+
+    case ASSH_CHANNEL_ST_CLOSING:
+    case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
+      assert(!"possible");
+    }
+
+  uint32_t ext_type = 0;
+  if (ext)
+    ASSH_ERR_RET(assh_packet_check_u32(p, &ext_type, data, &data));
+
+  size_t size = p->data + p->data_size - data;
+
+  ASSH_ERR_RET(size > ch->lpkt_size ? ASSH_ERR_PROTOCOL : 0);
+
+#if 1
+  ASSH_ERR_RET(size > ch->lwin_left ? ASSH_ERR_PROTOCOL : 0);
+#else
+  if (ch->lwin_left < size)
+    size = ch->lwin_left;     /* ignore extra data, rfc4254 section 5.2 */
+#endif
+
+  /* update window and send adjustment */
+  ch->lwin_left -= size;
+
+  if ((ch->lwin_left < ch->lpkt_size * 2 ||
+       ch->lwin_left < ch->lwin_size / 2) &&
+      ch->status != ASSH_CHANNEL_ST_CLOSE_CALLED)
+    {
+      uint32_t inc = ch->lwin_size - ch->lwin_left;
+
+      struct assh_packet_s *pout;
+      ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_CHANNEL_WINDOW_ADJUST, 2 * 4, &pout));
+      ASSH_ASSERT(assh_packet_add_u32(pout, ch->remote_id));
+      ASSH_ASSERT(assh_packet_add_u32(pout, inc));
+      assh_transport_push(s, pout);
+
+      ch->lwin_left += inc;
+    }
+
+  /* setup event */
+  e->id = ASSH_EVENT_CHANNEL_DATA;
+  e->f_done = assh_event_channel_data_done;
+
+  e->connection.channel_data.ch = ch;
+  e->connection.channel_data.ext = ext;
+  e->connection.channel_data.ext_type = ext_type;
+
+  e->connection.channel_data.data.size = size;
+  e->connection.channel_data.data.data = data;
+
+  /* keep packet for data buffer */
+  pv->pck = assh_packet_refinc(p);
+
+  pv->state = ASSH_CONNECTION_ST_EVENT_CHANNEL_DATA;
+
+  return ASSH_OK;
+}
+
+static ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_connection_got_channel_window_adjust(struct assh_session_s *s,
+                                          struct assh_packet_s *p,
+					  struct assh_event_s *e)
+{
+  assh_error_t err;
+  struct assh_connection_context_s *pv = s->srv_pv;
+
+  uint32_t ch_id, inc;
+  uint8_t *data;
+  ASSH_ERR_RET(assh_packet_check_u32(p, &ch_id, p->head.end, &data));
+  ASSH_ERR_RET(assh_packet_check_u32(p, &inc, data, NULL));
+
+  struct assh_channel_s *ch = (void*)assh_map_lookup(&pv->channel_map, ch_id, NULL);
+  ASSH_ERR_RET(ch == NULL ? ASSH_ERR_PROTOCOL : 0);
+
+  switch (ch->status)
+    {
+    case ASSH_CHANNEL_ST_OPEN_SENT:
+    case ASSH_CHANNEL_ST_OPEN_RECEIVED:
+      ASSH_ERR_RET(ASSH_ERR_PROTOCOL);
+
+    case ASSH_CHANNEL_ST_EOF_SENT:
+    case ASSH_CHANNEL_ST_EOF_CLOSE:
+      return ASSH_OK;
+
+    case ASSH_CHANNEL_ST_CLOSE_CALLED:
+    case ASSH_CHANNEL_ST_EOF_RECEIVED:
+    case ASSH_CHANNEL_ST_OPEN:
+      break;
+
+    case ASSH_CHANNEL_ST_CLOSING:
+    case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
+      assert(!"possible");
+    }
+
+  if (inc == 0)
+    return ASSH_OK;
+
+  uint32_t left = ch->rwin_left + inc;
+
+  ASSH_ERR_RET(left < ch->rwin_left ? ASSH_ERR_PROTOCOL : 0);
+
+  /* setup event */
+  e->id = ASSH_EVENT_CHANNEL_WINDOW;
+  e->f_done = NULL;
+
+  e->connection.channel_window.ch = ch;
+  e->connection.channel_window.old_size = ch->rwin_left;
+  e->connection.channel_window.new_size = left;
+
+  ch->rwin_left = left;
+
   return ASSH_OK;
 }
 
 /************************************************* outgoing channel data */
 
-assh_error_t
-assh_channel_data(struct assh_channel_s *channel,
-                  assh_bool_t extended, uint32_t extended_type,
-                  const uint8_t *data, size_t *size)
+static ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_channel_data_alloc_chk(struct assh_channel_s *ch,
+                            size_t *size, size_t min_size)
 {
   assh_error_t err;
-  struct assh_session_s *s = channel->session;
-  struct assh_connection_context_s *pv = s->srv_pv;
+  struct assh_session_s *s = ch->session;
+
   ASSH_ERR_RET(s->srv != &assh_service_connection ? ASSH_ERR_SERVICE_NA : 0);
+
+  switch (ch->status)
+    {
+    case ASSH_CHANNEL_ST_OPEN_SENT:
+    case ASSH_CHANNEL_ST_OPEN_RECEIVED:
+    case ASSH_CHANNEL_ST_EOF_SENT:
+    case ASSH_CHANNEL_ST_EOF_CLOSE:
+    case ASSH_CHANNEL_ST_CLOSE_CALLED:
+    case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
+      ASSH_ERR_RET(ASSH_ERR_STATE);
+
+    case ASSH_CHANNEL_ST_OPEN:
+    case ASSH_CHANNEL_ST_EOF_RECEIVED:
+      break;
+
+    case ASSH_CHANNEL_ST_CLOSING:
+      *size = 0;
+      return ASSH_NO_DATA;
+    }
+
+  /* adjust size */
+  size_t sz = *size;
+  if (sz > ch->rpkt_size)
+    sz = ch->rpkt_size;
+  if (sz > ch->rwin_left)
+    sz = ch->rwin_left;
+  *size = sz;
+
+  if (sz < min_size || min_size == 0)
+    return ASSH_NO_DATA;
+
+  /* release old unused packet */
+  assh_packet_release(ch->data_pck);
+  ch->data_pck = NULL;
+
+  return ASSH_OK;
+}
+
+assh_error_t
+assh_channel_data_alloc(struct assh_channel_s *ch,
+                        uint8_t **data, size_t *size,
+                        size_t min_size)
+{
+  assh_error_t err;
+  struct assh_session_s *s = ch->session;
+
+  err = assh_channel_data_alloc_chk(ch, size, min_size);
+  if (err)
+    return err;
+
+  struct assh_packet_s *pout;
+
+  ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_CHANNEL_DATA,
+				 4 + *size, &pout));
+  ASSH_ASSERT(assh_packet_add_u32(pout, ch->remote_id));
+
+  *data = pout->data + pout->data_size;
+
+  ch->data_pck = pout;
+
+  return ASSH_OK;
+}
+
+assh_error_t
+assh_channel_data_alloc_ext(struct assh_channel_s *ch,
+                            uint32_t ext_type,
+                            uint8_t **data, size_t *size,
+                            size_t min_size)
+{
+  assh_error_t err;
+  struct assh_session_s *s = ch->session;
+
+  err = assh_channel_data_alloc_chk(ch, size, min_size);
+  if (err)
+    return err;
+
+  struct assh_packet_s *pout;
+
+  ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_CHANNEL_EXTENDED_DATA,
+				 2 * 4 + *size, &pout));
+  ASSH_ASSERT(assh_packet_add_u32(pout, ch->remote_id));
+  ASSH_ASSERT(assh_packet_add_u32(pout, ext_type));
+
+  *data = pout->data + pout->data_size;
+
+  ch->data_pck = pout;
+
+  return ASSH_OK;
+}
+
+assh_error_t
+assh_channel_data_send(struct assh_channel_s *ch, size_t size)
+{
+  assh_error_t err;
+  struct assh_session_s *s = ch->session;
+  struct assh_connection_context_s *pv = s->srv_pv;
+
+  ASSH_ERR_RET(s->srv != &assh_service_connection ? ASSH_ERR_SERVICE_NA : 0);
+  ASSH_ERR_RET(pv->state != ASSH_CONNECTION_ST_IDLE ? ASSH_ERR_STATE : 0);
+
+  switch (ch->status)
+    {
+    case ASSH_CHANNEL_ST_OPEN_SENT:
+    case ASSH_CHANNEL_ST_OPEN_RECEIVED:
+    case ASSH_CHANNEL_ST_EOF_SENT:
+    case ASSH_CHANNEL_ST_EOF_CLOSE:
+    case ASSH_CHANNEL_ST_CLOSE_CALLED:
+    case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
+      ASSH_ERR_RET(ASSH_ERR_STATE);
+
+    case ASSH_CHANNEL_ST_OPEN:
+    case ASSH_CHANNEL_ST_EOF_RECEIVED:
+      break;
+
+    case ASSH_CHANNEL_ST_CLOSING:
+      return ASSH_NO_DATA;
+    }
+
+  struct assh_packet_s *pout = ch->data_pck;
+
+  ASSH_ERR_RET(pout == NULL ? ASSH_ERR_STATE : 0);
+  ASSH_ERR_RET(size > pout->alloc_size - pout->data_size ? ASSH_ERR_OVERFLOW : 0);
+  assert(ch->rwin_left >= size);
+
+  pout->data_size += size;
+  ch->rwin_left -= size;
+
+  assh_transport_push(ch->session, ch->data_pck);
+  ch->data_pck = NULL;
 
   return ASSH_OK;
 }
 
 /************************************************* incoming channel close/eof */
 
-static assh_error_t
+static ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_connection_send_channel_close(struct assh_session_s *s,
                                    struct assh_channel_s *ch,
                                    uint8_t msg)
 {
   assh_error_t err;
-  struct assh_connection_context_s *pv = s->srv_pv;
 
   struct assh_packet_s *pout;
   ASSH_ERR_RET(assh_packet_alloc(s->ctx, msg, 4, &pout));
@@ -939,7 +1223,7 @@ assh_connection_send_channel_close(struct assh_session_s *s,
   return ASSH_OK;
 }
 
-static assh_error_t
+static ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_connection_got_channel_close(struct assh_session_s *s,
                                   struct assh_packet_s *p,
                                   struct assh_event_s *e)
@@ -1023,7 +1307,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_eof_done)
   return ASSH_OK;
 }
 
-static assh_error_t
+static ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_connection_got_channel_eof(struct assh_session_s *s,
                                 struct assh_packet_s *p,
                                 struct assh_event_s *e)
@@ -1082,7 +1366,9 @@ assh_channel_eof(struct assh_channel_s *ch)
   assh_error_t err;
   struct assh_session_s *s = ch->session;
   struct assh_connection_context_s *pv = s->srv_pv;
+
   ASSH_ERR_RET(s->srv != &assh_service_connection ? ASSH_ERR_SERVICE_NA : 0);
+  ASSH_ERR_RET(pv->state != ASSH_CONNECTION_ST_IDLE ? ASSH_ERR_STATE : 0);
 
   switch (ch->status)
     {
@@ -1119,7 +1405,9 @@ assh_channel_close(struct assh_channel_s *ch)
   assh_error_t err;
   struct assh_session_s *s = ch->session;
   struct assh_connection_context_s *pv = s->srv_pv;
+
   ASSH_ERR_RET(s->srv != &assh_service_connection ? ASSH_ERR_SERVICE_NA : 0);
+  ASSH_ERR_RET(pv->state != ASSH_CONNECTION_ST_IDLE ? ASSH_ERR_STATE : 0);
 
   switch (ch->status)
     {
@@ -1266,13 +1554,13 @@ static ASSH_SERVICE_PROCESS_FCN(assh_connection_process)
       err = assh_connection_got_channel_open_reply(s, p, e, 0);
       break;
     case SSH_MSG_CHANNEL_WINDOW_ADJUST:
-      err = assh_connection_got_channel_window_adjust(s, p);
+      err = assh_connection_got_channel_window_adjust(s, p, e);
       break;
     case SSH_MSG_CHANNEL_DATA:
-      err = assh_connection_got_channel_data(s, p, 0);
+      err = assh_connection_got_channel_data(s, p, e, 0);
       break;
     case SSH_MSG_CHANNEL_EXTENDED_DATA:
-      err = assh_connection_got_channel_data(s, p, 1);
+      err = assh_connection_got_channel_data(s, p, e, 1);
       break;
     case SSH_MSG_CHANNEL_EOF:
       err = assh_connection_got_channel_eof(s, p, e);

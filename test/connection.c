@@ -233,12 +233,14 @@ int test(int (*fend)(int, int), int n)
 		err = assh_request(&session[i], ch, rqe->type, rqe->type_len,
 				   rqe->data_len || rand() % 2 ? rqe->rq_data : NULL, rqe->data_len,
 				   want_reply ? &rqe->srq : NULL);
+		if (err == ASSH_NO_DATA)
+		  break;
+		if (err > ASSH_NO_DATA)
+		  return 3;
 		rq_send_count++;
 		if (want_reply)
 		  assh_request_set_pv(rqe->srq, rqe);
 		rqe->rrq = NULL;
-		if (err)
-		  return 3;
 		break;
 	      }
 
@@ -304,10 +306,10 @@ int test(int (*fend)(int, int), int n)
 		    che->data_len = rand() % sizeof(che->data);
 		    memset(che->data, rand(), che->data_len);
 
-		    if (assh_channel_open(&session[i], che->type, che->type_len,
-					  che->data, che->data_len,
-					  rand() % 31 + 1, rand() % 32,
-					  &che->ch[i]))
+		    if (assh_channel_open2(&session[i], che->type, che->type_len,
+					   che->data, che->data_len,
+					   rand() % 31 + 1, rand() % 128,
+					   &che->ch[i]))
 		      return 1;
 
 		    assh_channel_set_pv(che->ch[i], che);
@@ -329,8 +331,8 @@ int test(int (*fend)(int, int), int n)
 		      case 0:
 			che->data_len = rand() % sizeof(che->data);
 			memset(che->data, rand(), che->data_len);
-			if (assh_channel_open_success_reply(che->ch[i],
-							    rand() % 32, rand() % 31 + 1,
+			if (assh_channel_open_success_reply2(che->ch[i],
+							    rand() % 31 + 1, rand() % 128,
 							    che->data, che->data_len))
 			  return 1;
 			che->status = 2;
@@ -714,7 +716,7 @@ int test(int (*fend)(int, int), int n)
 	    }
 
 	    case ASSH_EVENT_CHANNEL_EOF: {      /***** eof event *****/
-	      struct assh_event_channel_close_s *e = &event.connection.channel_eof;
+	      struct assh_event_channel_close_s *e = &event.connection.channel_close;
 	      struct ch_map_entry_s *che = assh_channel_pv(e->ch);
 
 	      ch_event_eof_count++;
