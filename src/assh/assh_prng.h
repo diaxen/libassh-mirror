@@ -48,8 +48,8 @@ enum assh_prng_quality_e
 */
 struct assh_event_prng_feed_s
 {
-  ASSH_EV_CONST size_t       size;      //< input
-  struct assh_buffer_s       buf;       //< output
+  size_t       size;       //< input/output
+  uint8_t      buf[32];    //< output
 };
 
 /** @internal */

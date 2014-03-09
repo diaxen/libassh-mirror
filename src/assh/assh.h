@@ -58,6 +58,8 @@ struct assh_algo_mac_s;
 struct assh_algo_sign_s;
 struct assh_event_s;
 struct assh_service_s;
+struct assh_event_hndl_table_s;
+struct assh_event_s;
 
 typedef char assh_bool_t;
 

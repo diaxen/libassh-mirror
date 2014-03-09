@@ -25,9 +25,9 @@
 #include <assh/assh_context.h>
 #include <assh/assh_service.h>
 #include <assh/srv_userauth_client.h>
-#include <assh/helper_fd.h>
 #include <assh/helper_key.h>
 #include <assh/assh_kex.h>
+#include <assh/helper_fd.h>
 #include <assh/assh_event.h>
 #include <assh/assh_algo.h>
 
@@ -86,11 +86,17 @@ int main(int argc, char **argv)
 
   assh_error_t err;
 
+  struct assh_event_hndl_table_s ev_table;
+  assh_event_table_init(&ev_table);
+
+  struct assh_fd_context_s fd_ctx;
+  assh_fd_events_register(&ev_table, &fd_ctx, sock, rnd_fd);
+
   while (1)
     {
       struct assh_event_s event;
 
-      err = assh_fd_event_get(&session, sock, rnd_fd, &event);
+      err = assh_event_table_run(&session, &ev_table, &event);
       if (ASSH_ERR_ERROR(err) != ASSH_OK)
         {
           fprintf(stderr, "assh error %i in main loop (errno=%i)\n", err, errno);

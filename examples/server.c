@@ -26,10 +26,11 @@
 #include <assh/assh_service.h>
 #include <assh/srv_userauth_server.h>
 #include <assh/srv_connection.h>
-#include <assh/helper_fd.h>
-#include <assh/helper_key.h>
 #include <assh/assh_event.h>
 #include <assh/assh_algo.h>
+
+#include <assh/helper_fd.h>
+#include <assh/helper_key.h>
 
 #ifdef CONFIG_ASSH_USE_GCRYPT
 # include <gcrypt.h>
@@ -105,12 +106,29 @@ int main()
       time_t t = time(0);
       fprintf(stderr, "============== %s\n", ctime(&t));
 
-      fprintf(stderr, "assh loop\n");
+      /** rely on an event table to handle most events returned by the assh core */
+      struct assh_event_hndl_table_s ev_table;
+      assh_event_table_init(&ev_table);
+
+      /** register helper event handlers to process io events using
+	  file descriptors. */
+      struct assh_fd_context_s fd_ctx;
+      assh_fd_events_register(&ev_table, &fd_ctx, conn, rnd_fd);
+
+#if 0
+      /** register helper event handlers to process ssh-connection
+	  (rfc4254) events in a way to serve shell */
+      struct assh_unix_shell_server_s ush_ctx;
+      assh_unix_shell_server_register(&ev_table, &ush_ctx);
+#endif
+
       while (1)
 	{
 	  struct assh_event_s event;
 
-	  assh_error_t err = assh_fd_event_get(&session, conn, rnd_fd, &event);
+	  /** get events from the core and use registered event
+	      handlers to process most events. */
+	  assh_error_t err = assh_event_table_run(&session, &ev_table, &event);
 	  if (ASSH_ERR_ERROR(err) != ASSH_OK)
 	    {
 	      fprintf(stderr, "assh error %i in main loop (errno=%i)\n", err, errno);
@@ -124,6 +142,7 @@ int main()
 	      continue;
 	    }
 
+	  /** we still have to process events not handled in the table */
 	  switch (event.id)
 	    {
 	    case ASSH_EVENT_USERAUTH_SERVER_USERKEY: {

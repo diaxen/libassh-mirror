@@ -36,9 +36,8 @@
 
 static ASSH_EVENT_DONE_FCN(assh_event_random_done)
 {
-  if (e->prng.feed.buf.data != NULL)
-    return s->ctx->prng->f_feed(s->ctx, e->prng.feed.buf.data,
-				e->prng.feed.buf.size);
+  return s->ctx->prng->f_feed(s->ctx, e->prng.feed.buf,
+			      e->prng.feed.size);
   return ASSH_OK;
 }
 
@@ -52,9 +51,8 @@ assh_error_t assh_event_get(struct assh_session_s *s,
     {
       event->id = ASSH_EVENT_PRNG_FEED;
       event->f_done = &assh_event_random_done;
-      event->prng.feed.buf.data = NULL;
-      event->prng.feed.buf.size = 0;
-      event->prng.feed.size = -s->ctx->prng_entropy;
+      event->prng.feed.size = ASSH_MIN(-s->ctx->prng_entropy,
+				       sizeof (event->prng.feed.buf));
       goto done;
     }
 
@@ -141,5 +139,44 @@ assh_event_done(struct assh_session_s *s,
         }
     }
   return err;
+}
+
+void assh_event_table_init(struct assh_event_hndl_table_s *t)
+{
+  unsigned int i;
+  for (i = 0; i < ASSH_EVENT_COUNT; i++)
+    t->table[i] = NULL;
+}
+
+void assh_event_table_register(struct assh_event_hndl_table_s *t,
+			       enum assh_event_id_e id,
+			       struct assh_event_hndl_s *h,
+			       assh_event_hndl_func_t *f, void *ctx)
+{
+  struct assh_event_hndl_s **t_ = t->table + id;
+
+  *t_ = h;
+  h->f_handler = f;
+  h->ctx = ctx;
+}
+
+assh_error_t
+assh_event_table_run(struct assh_session_s *s,
+		     struct assh_event_hndl_table_s *t, 
+		     struct assh_event_s *e)
+{
+  assh_error_t err;
+
+  while (1)
+    {
+      ASSH_ERR_RET(assh_event_get(s, e));
+
+      struct assh_event_hndl_s *h = t->table[e->id];
+
+      if (h == NULL)
+        return ASSH_OK;
+      ASSH_ERR_RET(h->f_handler(s, e, h->ctx));
+      ASSH_ERR_RET(assh_event_done(s, e));
+    }
 }
 

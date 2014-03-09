@@ -25,29 +25,35 @@
 #ifndef ASSH_HELPER_FD_H_
 #define ASSH_HELPER_FD_H_
 
-#include "assh.h"
+#include "assh_event.h"
 
-/** This function keeps calling the read system call until the buffer
-    if filled with the requested amount of data. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_fd_read(int fd, void *data, size_t size);
+struct assh_fd_context_s
+{
+  int ssh_fd;
+  int rand_fd;
 
-/** This function keeps calling the write system call until the whole
-    buffer has been processed. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_fd_write(int fd, const void *data, size_t size);
+  struct assh_event_hndl_s h_read;
+  struct assh_event_hndl_s h_write;
+  struct assh_event_hndl_s h_prng_feed;
+};
 
-/** This function returns the next event just like the @ref
-    assh_event_get function but the @ref ASSH_EVENT_IDLE, @ref
-    ASSH_EVENT_READ and @ref ASSH_EVENT_WRITE events are processed
-    internally by transferring data using the specified file
-    descriptor. If the @tt rand_fd parameter is not negative, the @ref
-    ASSH_EVENT_PRNG_FEED is also handled by reading random data from a
-    file descriptor. */
+void assh_fd_events_register(struct assh_event_hndl_table_s *t,
+			     struct assh_fd_context_s *ctx,
+			     int ssh_fd, int rand_fd);
+
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_fd_event_get(struct assh_session_s *s,
-		  int ssh_fd, int rand_fd,
-		  struct assh_event_s *event);
+assh_fd_event_read(struct assh_session_s *s,
+		   struct assh_event_s *e,
+		   void *ctx);
+
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_fd_event_write(struct assh_session_s *s,
+		    struct assh_event_s *e,
+		    void *ctx);
+
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_fd_event_prng_feed(struct assh_session_s *s,
+			struct assh_event_s *e,
+			void *ctx);
 
 #endif
-
