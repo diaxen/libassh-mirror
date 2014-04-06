@@ -39,24 +39,24 @@ assh_cipher_gcrypt_init(const struct assh_algo_cipher_s *cipher,
 {
   assh_error_t err;
 
-  ASSH_ERR_RET(gcry_cipher_open(&ctx->hd, algo, mode, 0)
-	       ? ASSH_ERR_CRYPTO : 0);
+  ASSH_CHK_RET(gcry_cipher_open(&ctx->hd, algo, mode, 0),
+	       ASSH_ERR_CRYPTO);
 
-  ASSH_ERR_GTO(gcry_cipher_setkey(ctx->hd, key, cipher->key_size)
-	       ? ASSH_ERR_CRYPTO : 0, err_open);
+  ASSH_CHK_GTO(gcry_cipher_setkey(ctx->hd, key, cipher->key_size),
+	       ASSH_ERR_CRYPTO, err_open);
 
   ctx->encrypt = encrypt;
 
   switch (mode)
     {
     case GCRY_CIPHER_MODE_CBC:
-      ASSH_ERR_GTO(gcry_cipher_setiv(ctx->hd, iv, cipher->block_size)
-	? ASSH_ERR_CRYPTO : 0, err_open);
+      ASSH_CHK_GTO(gcry_cipher_setiv(ctx->hd, iv, cipher->block_size),
+		   ASSH_ERR_CRYPTO, err_open);
       break;
 
     case GCRY_CIPHER_MODE_CTR:
-      ASSH_ERR_GTO(gcry_cipher_setctr(ctx->hd, iv, cipher->block_size)
-	? ASSH_ERR_CRYPTO : 0, err_open);
+      ASSH_CHK_GTO(gcry_cipher_setctr(ctx->hd, iv, cipher->block_size),
+		   ASSH_ERR_CRYPTO, err_open);
       break;
 
     case GCRY_CIPHER_MODE_STREAM:
@@ -71,11 +71,11 @@ assh_cipher_gcrypt_init(const struct assh_algo_cipher_s *cipher,
 	  memset(dummy, 0, sizeof(dummy));
 	  for (i = 0; i < 1536; i += sizeof(dummy))
 	    if (encrypt)
-	      ASSH_ERR_GTO(gcry_cipher_encrypt(ctx->hd, dummy, sizeof(dummy), NULL, 0)
-			   ? ASSH_ERR_CRYPTO : 0, err_open);
+	      ASSH_CHK_GTO(gcry_cipher_encrypt(ctx->hd, dummy, sizeof(dummy), NULL, 0),
+			   ASSH_ERR_CRYPTO, err_open);
 	    else
-	      ASSH_ERR_GTO(gcry_cipher_decrypt(ctx->hd, dummy, sizeof(dummy), NULL, 0)
-			   ? ASSH_ERR_CRYPTO : 0, err_open);
+	      ASSH_CHK_GTO(gcry_cipher_decrypt(ctx->hd, dummy, sizeof(dummy), NULL, 0),
+			   ASSH_ERR_CRYPTO, err_open);
 	}
       break;
     }
@@ -93,11 +93,11 @@ static ASSH_CIPHER_PROCESS_FCN(assh_gcrypt_process)
   struct assh_cipher_gcrypt_context_s *ctx = ctx_;
 
   if (ctx->encrypt)
-    ASSH_ERR_RET(gcry_cipher_encrypt(ctx->hd, data, len, NULL, 0)
-		 ? ASSH_ERR_CRYPTO : 0);
+    ASSH_CHK_RET(gcry_cipher_encrypt(ctx->hd, data, len, NULL, 0),
+		 ASSH_ERR_CRYPTO);
   else
-    ASSH_ERR_RET(gcry_cipher_decrypt(ctx->hd, data, len, NULL, 0)
-		 ? ASSH_ERR_CRYPTO : 0);
+    ASSH_CHK_RET(gcry_cipher_decrypt(ctx->hd, data, len, NULL, 0),
+		 ASSH_ERR_CRYPTO);
 
   return ASSH_OK;
 }

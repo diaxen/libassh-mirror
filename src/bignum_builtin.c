@@ -42,7 +42,7 @@ static inline int assh_clz(assh_bnword_t x)
 /********************************************************* init and convert */
 
 assh_error_t assh_bignum_from_uint(struct assh_bignum_s *n,
-			      unsigned int x)
+				   unsigned int x)
 {
   unsigned int i;
   for (i = 0; i < n->l; i++)
@@ -51,7 +51,8 @@ assh_error_t assh_bignum_from_uint(struct assh_bignum_s *n,
       x = (ASSH_BIGNUM_W < sizeof(x) * 8) ? x >> ASSH_BIGNUM_W : 0;
     }
 
-  return x != 0 ? ASSH_ERR_OVERFLOW : ASSH_OK;
+  ASSH_CHK_RET(x != 0, ASSH_ERR_NUM_OVERFLOW);
+  return ASSH_OK;
 }
 
 assh_error_t assh_bignum_rand(struct assh_context_s *c,
@@ -77,7 +78,7 @@ assh_error_t assh_bignum_from_data(struct assh_bignum_s *bn,
       bn->n[i] = x;
     }
 
-  ASSH_ERR_RET(e >= data ? ASSH_ERR_OVERFLOW : 0);
+  ASSH_CHK_RET(e >= data, ASSH_ERR_OUTPUT_OVERFLOW);
   return ASSH_OK;
 }
 
@@ -86,7 +87,7 @@ assh_error_t assh_bignum_msb_to_data(const struct assh_bignum_s *bn,
 {
   assh_error_t err;
 
-  ASSH_ERR_RET(bn->l * sizeof(assh_bnword_t) < data_len ? ASSH_ERR_OVERFLOW : 0);
+  ASSH_CHK_RET(bn->l * sizeof(assh_bnword_t) < data_len, ASSH_ERR_OUTPUT_OVERFLOW);
 
   int i;
   for (i = 0; i < data_len; i++)
@@ -138,8 +139,7 @@ assh_error_t assh_bignum_copy(struct assh_bignum_s *a,
   for (; i < a->l; i++)
     a->n[i] = 0;
   for (; i < b->l; i++)
-    if (b->n[i])
-      return ASSH_ERR_OVERFLOW;
+    ASSH_CHK_RET(b->n[i] != 0, ASSH_ERR_OUTPUT_OVERFLOW);
 
   return ASSH_OK;
 }
@@ -243,7 +243,7 @@ assh_error_t assh_bignum_add(struct assh_bignum_s *r,
   unsigned int i;
   assh_bnlong_t t = 0;
 
-  ASSH_ERR_RET(r->l < ASSH_MAX(a->l, b->l) ? ASSH_ERR_OVERFLOW : 0);
+  ASSH_CHK_RET(r->l < ASSH_MAX(a->l, b->l), ASSH_ERR_OUTPUT_OVERFLOW);
 
   if (a->l < b->l)
     ASSH_SWAP(a, b);
@@ -255,7 +255,7 @@ assh_error_t assh_bignum_add(struct assh_bignum_s *r,
   for (; i < r->l; i++)
     r->n[i] = t = (t >> ASSH_BIGNUM_W);
 
-  ASSH_ERR_RET(t >> ASSH_BIGNUM_W ? ASSH_ERR_OVERFLOW : 0);
+  ASSH_CHK_RET(t >> ASSH_BIGNUM_W, ASSH_ERR_NUM_OVERFLOW);
   return ASSH_OK;
 }
 
@@ -269,7 +269,7 @@ assh_error_t assh_bignum_sub(struct assh_bignum_s *r,
   assh_bnword_t bmask = (assh_bnword_t)(a->l < b->l) - 1;
   assh_bnword_t amask = ~bmask;
 
-  ASSH_ERR_RET(r->l < ASSH_MAX(a->l, b->l) ? ASSH_ERR_OVERFLOW : 0);
+  ASSH_CHK_RET(r->l < ASSH_MAX(a->l, b->l), ASSH_ERR_OUTPUT_OVERFLOW);
 
   if (amask)
     ASSH_SWAP(a, b);
@@ -281,7 +281,7 @@ assh_error_t assh_bignum_sub(struct assh_bignum_s *r,
   for (; i < r->l; i++)
     r->n[i] = t = (t >> ASSH_BIGNUM_W);
 
-  ASSH_ERR_RET(t >> ASSH_BIGNUM_W != 1 ? ASSH_ERR_OVERFLOW : 0);
+  ASSH_CHK_RET(t >> ASSH_BIGNUM_W != 1, ASSH_ERR_NUM_OVERFLOW);
   return ASSH_OK;
 }
 
@@ -385,8 +385,8 @@ assh_bignum_div_euclidean(assh_bnword_t * __restrict__ r,
   unsigned int az, al, bz, bl, da, sa;
   assh_bnword_t at, bt, q;
 
-  if (assh_bignum_div_strip(&b_len, b))
-    return ASSH_ERR_BAD_DATA;
+  /* div by zero */
+  ASSH_CHK_RET(assh_bignum_div_strip(&b_len, b), ASSH_ERR_NUM_OVERFLOW);
 
   assh_bignum_div_clz(b_len, b, &bz, &bl, &bt);
 
@@ -438,10 +438,10 @@ assh_error_t assh_bignum_div(struct assh_bignum_s *r,
 
   assert(r != d && a != d && b != d && b != r);
 
-  ASSH_ERR_RET(a->l < b->l ? ASSH_ERR_OVERFLOW : 0);
-  ASSH_ERR_RET(r->l < a->l ? ASSH_ERR_OVERFLOW : 0);
+  ASSH_CHK_RET(a->l < b->l, ASSH_ERR_OUTPUT_OVERFLOW);
+  ASSH_CHK_RET(r->l < a->l, ASSH_ERR_OUTPUT_OVERFLOW);
   if (d != NULL)
-    ASSH_ERR_RET(d->l < a->l ? ASSH_ERR_OVERFLOW : 0);
+    ASSH_CHK_RET(d->l < a->l, ASSH_ERR_OUTPUT_OVERFLOW);
 
   if (a != r)
     {
@@ -479,9 +479,9 @@ assh_bignum_modinv_euclidean(assh_bnword_t * __restrict__ u,
   unsigned int r_len = a_len, p_len = a_len;
   assh_bnword_t *xr = r, *xp = p, *xu = u, *xv = v;
 
-  if (assh_bignum_div_strip(&r_len, xr) ||
-      assh_bignum_div_strip(&p_len, xp) || r_len < p_len)
-    ASSH_ERR_RET(ASSH_ERR_BAD_DATA);
+  ASSH_CHK_RET(assh_bignum_div_strip(&r_len, xr) ||
+	       assh_bignum_div_strip(&p_len, xp) ||
+	       r_len < p_len, ASSH_ERR_NUM_OVERFLOW);
 
   while (1)
     {
@@ -499,8 +499,7 @@ assh_bignum_modinv_euclidean(assh_bnword_t * __restrict__ u,
       /* find factor */
       assh_bignum_div_clz(r_len, xr, &az, &al, &at);
       assh_bignum_div_clz(p_len, xp, &bz, &bl, &bt);
-      if (al < bl)
-	ASSH_ERR_RET(ASSH_ERR_BAD_DATA);
+      ASSH_CHK_RET(al < bl, ASSH_ERR_NUM_OVERFLOW);
 
       q = assh_bignum_div_factor(at, bt, al - bl, &sa, &da);
 
@@ -539,8 +538,8 @@ assh_error_t assh_bignum_modinv(struct assh_bignum_s *u,
 
   assert(u != a && u != m);
 
-  ASSH_ERR_RET(a->l < m->l ? ASSH_ERR_OVERFLOW : 0);
-  ASSH_ERR_RET(u->l < a->l ? ASSH_ERR_OVERFLOW : 0);
+  ASSH_CHK_RET(a->l < m->l, ASSH_ERR_OUTPUT_OVERFLOW : 0);
+  ASSH_CHK_RET(u->l < a->l, ASSH_ERR_OUTPUT_OVERFLOW : 0);
 
   return assh_bignum_modinv_euclidean(u->n, u->l, m->n, m->l, a->n, a->l);
 }
@@ -565,7 +564,7 @@ static void assh_bignum_school_square(assh_bnword_t * __restrict__ r,
     }
   for (t = i = 0; i < alen; i++)
     {
-#warning BUG t [0-2], might overflow when a[i]==0xff, r[i*2]==0xff and t==2
+#warning BUG t [0-2], will overflow when a[i]==0xff, r[i*2]==0xff and t==2
       r[i * 2] = t = (assh_bnlong_t)a[i] * a[i] + ((assh_bnlong_t)r[i * 2] << 1) + (t >> ASSH_BIGNUM_W);
       r[i * 2 + 1] = t = ((assh_bnlong_t)r[i * 2 + 1] << 1) + (t >> ASSH_BIGNUM_W);
     }
@@ -657,7 +656,7 @@ assh_error_t assh_bignum_mul(struct assh_bignum_s *r,
 
   assert(r != a && r != b);
 
-  ASSH_ERR_RET(r->l < a->l + b->l ? ASSH_ERR_OVERFLOW : 0);
+  ASSH_CHK_RET(r->l < a->l + b->l, ASSH_ERR_OUTPUT_OVERFLOW);
 
   size_t l = a->l + b->l;
 
@@ -680,7 +679,7 @@ assh_error_t assh_bignum_mulmod(struct assh_bignum_s *r,
 
   assert(r != a && r != b && r != m);
 
-  ASSH_ERR_RET(r->l < m->l ? ASSH_ERR_OVERFLOW : 0);
+  ASSH_CHK_RET(r->l < m->l, ASSH_ERR_OUTPUT_OVERFLOW);
   size_t l = a->l + b->l;
 
   assh_bnword_t x[l];
@@ -707,8 +706,8 @@ assh_error_t assh_bignum_rshift(struct assh_bignum_s *r,
   assh_error_t err;
   unsigned int i;
 
-  ASSH_ERR_RET(r->l != a->l ? ASSH_ERR_OVERFLOW : 0);
-  ASSH_ERR_RET(n >= a->l * ASSH_BIGNUM_W ? ASSH_ERR_OVERFLOW : 0);
+  ASSH_CHK_RET(r->l != a->l, ASSH_ERR_OUTPUT_OVERFLOW);
+  ASSH_CHK_RET(n >= a->l * ASSH_BIGNUM_W, ASSH_ERR_OUTPUT_OVERFLOW);
 
   if (r == a && n == 0)
     return ASSH_OK;
@@ -745,7 +744,7 @@ assh_error_t assh_bignum_expmod(struct assh_bignum_s *r,
   assh_bnword_t *ra = NULL, *rb = r_[1];
   unsigned int i, j;
 
-  ASSH_ERR_RET(r->l < mod->l ? ASSH_ERR_OVERFLOW : 0);
+  ASSH_CHK_RET(r->l < mod->l, ASSH_ERR_OUTPUT_OVERFLOW);
 
   memcpy(sqa, x->n, x->l * sizeof(assh_bnword_t));
   memset(sqa + x->l, 0, (sql - x->l) * sizeof(assh_bnword_t));
@@ -766,6 +765,7 @@ assh_error_t assh_bignum_expmod(struct assh_bignum_s *r,
 		  assh_bignum_karatsuba(rb, ra, sqa, sql / 2);
 		  ASSH_ERR_RET(assh_bignum_div_euclidean(rb, sql, NULL, 0, mod->n, mod->l));
 		}
+#warning constant time
 	      ASSH_SWAP(ra, rb);
 	    }
 
@@ -775,8 +775,7 @@ assh_error_t assh_bignum_expmod(struct assh_bignum_s *r,
 	}
     }
 
-  if (ra == NULL)     /* zero exponent case */
-    ASSH_ERR_RET(ASSH_ERR_BAD_DATA);
+  ASSH_ERR_CHK(ra == NULL, ASSH_ERR_NUM_OVERFLOW);     /* zero exponent case */
 
   memcpy(r->n, ra, mod->l * sizeof(assh_bnword_t));
   memset(r->n + mod->l, 0, (r->l - mod->l) * sizeof(assh_bnword_t));

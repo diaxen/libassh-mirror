@@ -73,24 +73,29 @@ int main()
   if (listen(sock, 8) < 0)
     abort();
 
-
+  /** init a server context */
   struct assh_context_s context;
   assh_context_init(&context, ASSH_SERVER);
 
+  /** register authentication and connection services */
   if (assh_service_register_default(&context) != ASSH_OK)
     return -1;
 
+  /** register algorithms */
   if (assh_algo_register_default(&context, 99, 10) != ASSH_OK)
     return -1;
 
+  /** load host key */
   if (assh_load_hostkey_filename(&context, "ssh-dss", "dsa_host_key",
 				 ASSH_KEY_FMT_PV_RFC2440_PEM_ASN1) != ASSH_OK)
     return -1;
 
   signal(SIGPIPE, SIG_IGN);
 
+  /** random data source */
   int rnd_fd = open("/dev/urandom", O_RDONLY);
-  assert(rnd_fd >= 0);
+  if (rnd_fd < 0)
+    return -1;
 
   while (1)
     {
@@ -99,6 +104,7 @@ int main()
 
       int conn = accept(sock, (struct sockaddr*)&con_addr, &addr_size);
 
+      /** init a session for the incoming connection */
       struct assh_session_s session;
       if (assh_session_init(&context, &session) != ASSH_OK)
 	return -1;
@@ -133,7 +139,7 @@ int main()
 	    {
 	      fprintf(stderr, "assh error %i in main loop (errno=%i)\n", err, errno);
 
-	      if (ASSH_ERR_ERROR(err) == ASSH_ERR_DISCONNECTED)
+	      if (ASSH_ERR_ERROR(err) == ASSH_ERR_CLOSED)
 		{
 		  close(conn);
 		  break;

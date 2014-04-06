@@ -42,8 +42,7 @@ ASSH_EVENT_HANDLER_FCN(assh_fd_event_read)
       if (errno == EAGAIN || errno == EWOULDBLOCK)
 	break;
     case 0:
-      assh_session_invalidate(s);
-      ASSH_ERR_RET(ASSH_ERR_IO);
+      ASSH_ERR_RET(ASSH_ERR_IO | ASSH_ERRSV_FIN);
     default:
       te->transferred = r;
     }
@@ -62,8 +61,7 @@ ASSH_EVENT_HANDLER_FCN(assh_fd_event_write)
       if (errno == EAGAIN || errno == EWOULDBLOCK)
 	break;
     case 0:
-      assh_session_invalidate(s);
-      ASSH_ERR_RET(ASSH_ERR_IO);
+      ASSH_ERR_RET(ASSH_ERR_IO | ASSH_ERRSV_FIN);
     default:
       te->transferred = r;
     }
@@ -82,8 +80,7 @@ ASSH_EVENT_HANDLER_FCN(assh_fd_event_prng_feed)
       if (errno == EAGAIN || errno == EWOULDBLOCK)
 	break;
     case 0:
-      assh_session_invalidate(s);
-      ASSH_ERR_RET(ASSH_ERR_IO);
+      ASSH_ERR_RET(ASSH_ERR_IO | ASSH_ERRSV_FIN);
     default:
       e->prng.feed.size = r;
     }

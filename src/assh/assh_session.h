@@ -34,15 +34,14 @@ enum assh_transport_state_e
   ASSH_TR_KEX_RUNNING,      //< Both KEX_INIT packet were sent, the key exchange is taking place.
   ASSH_TR_NEWKEY,           //< The key exchange is over and a @ref SSH_MSG_NEWKEYS packet is expected.
   ASSH_TR_SERVICE,          //< No key exchange is running, service packets are allowed.
-  ASSH_TR_ENDING,           //< Process service events and send output packets then move to disconnected state.
-  ASSH_TR_FLUSHING,         //< Process service events then move to disconnected data.
-  ASSH_TR_DISCONNECTED,     //< Disconnected.
+  ASSH_TR_FIN,              //< Do not exchange packets with the remote side anymore. Report last events.
+  ASSH_TR_CLOSED,           //< Session closed, no more event will be reported.
 };
 
 enum assh_stream_in_state_e
 {
-  ASSH_TR_IN_HELLO,
-  ASSH_TR_IN_HELLO_DONE,
+  ASSH_TR_IN_IDENT,
+  ASSH_TR_IN_IDENT_DONE,
   ASSH_TR_IN_HEAD,
   ASSH_TR_IN_HEAD_DONE,
   ASSH_TR_IN_PAYLOAD,
@@ -51,9 +50,9 @@ enum assh_stream_in_state_e
 
 enum assh_stream_out_state_e
 {
-  ASSH_TR_OUT_HELLO,
-  ASSH_TR_OUT_HELLO_PAUSE,
-  ASSH_TR_OUT_HELLO_DONE,
+  ASSH_TR_OUT_IDENT,
+  ASSH_TR_OUT_IDENT_PAUSE,
+  ASSH_TR_OUT_IDENT_DONE,
   ASSH_TR_OUT_PACKETS,
   ASSH_TR_OUT_PACKETS_ENCIPHERED,
   ASSH_TR_OUT_PACKETS_PAUSE,
@@ -86,10 +85,10 @@ struct assh_session_s
   /** Session id length */
   size_t session_id_len;
 
-  /** Copy of the hello string sent by the remote host. */
-  uint8_t hello_str[255];
-  /** Size of the hello string sent by the remote host. */
-  int hello_len;
+  /** Copy of the ident string sent by the remote host. */
+  uint8_t ident_str[255];
+  /** Size of the ident string sent by the remote host. */
+  int ident_len;
 
   /** host keys signature algorithm */
   const struct assh_algo_sign_s *host_sign_algo;
@@ -181,15 +180,25 @@ static inline void *assh_session_pv(const struct assh_session_s *s)
   return s->pv;
 }
 
-/** This function marks the session as invalid so that the @ref
-    assh_event_get function always returns @ref ASSH_ERR_DISCONNECTED. */
-static inline void assh_session_invalidate(struct assh_session_s *s)
-{
-  s->tr_st = ASSH_TR_DISCONNECTED;
-}
-
 /** This function cleanup a ssh session object. */
 void assh_session_cleanup(struct assh_session_s *s);
+
+/** This change the session state according to the provided error code
+    and associated severity level.
+
+    This function returns the original error code but the error
+    severity level may be increased. This function is responsible for
+    sending the session close message to the remote hsot.
+
+    This function is called from the @ref assh_event_get, @ref
+    assh_event_done and @ref assh_event_table_run functions. It is
+    also called from other functions of the public API which can
+    modify the session state.
+
+    @see assh_error_e @see
+    assh_error_severity_e
+*/
+assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t err);
 
 #endif
 

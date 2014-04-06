@@ -79,7 +79,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_sign_dss_key_output)
       size_t l = assh_dss_id_len;
       if (blob != NULL)
         {
-          ASSH_ERR_RET(assh_dss_id_len > *blob_len ? ASSH_ERR_OVERFLOW : 0);
+          ASSH_CHK_RET(assh_dss_id_len > *blob_len, ASSH_ERR_OUTPUT_OVERFLOW);
           memcpy(blob, assh_dss_id, assh_dss_id_len);
           *blob_len -= assh_dss_id_len;
           blob += assh_dss_id_len;
@@ -92,7 +92,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_sign_dss_key_output)
           size_t s = assh_bignum_mpint_size(*bn);
           if (blob != NULL)
             {
-              ASSH_ERR_RET(s > *blob_len ? ASSH_ERR_OVERFLOW : 0);
+              ASSH_CHK_RET(s > *blob_len, ASSH_ERR_OUTPUT_OVERFLOW);
               ASSH_ERR_RET(assh_bignum_to_mpint(*bn, blob));
               s = assh_load_u32(blob) + 4;
               *blob_len -= s;
@@ -106,7 +106,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_sign_dss_key_output)
 
 #if 0
     case ASSH_KEY_FMT_PV_PEM_ASN1: {
-      ASSH_ERR_RET(k->xn == NULL ? ASSH_ERR_NOTSUP : 0);
+      ASSH_CHK_RET(k->xn == NULL, ASSH_ERR_NOTSUP);
       bn_[4] = k->xn;
       return ASSH_OK;
     }
@@ -160,7 +160,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_sign_dss_key_validate)
     goto err_;
 
   /* check generator order in the group */
-  ASSH_BIGNUM_ALLOC(c, rn, l, err_);
+  ASSH_BIGNUM_ALLOC(c, rn, l, ASSH_ERRSV_CONTINUE, err_);
   ASSH_ERR_GTO(assh_bignum_expmod(rn, k->gn, k->qn, k->pn), err_rn);
   if (assh_bignum_cmp_uint(rn, 1))
     goto err_rn;
@@ -199,8 +199,8 @@ static ASSH_KEY_LOAD_FCN(assh_sign_dss_key_load)
     {
     case ASSH_KEY_FMT_PUB_RFC4253_6_6: {
 
-      if (blob_len < assh_dss_id_len || memcmp(assh_dss_id, blob, assh_dss_id_len))
-        ASSH_ERR_RET(ASSH_ERR_BAD_DATA);
+      ASSH_CHK_RET(blob_len < assh_dss_id_len, ASSH_ERR_INPUT_OVERFLOW);
+      ASSH_CHK_RET(memcmp(assh_dss_id, blob, assh_dss_id_len), ASSH_ERR_BAD_DATA);
 
       p_str = (uint8_t*)blob + assh_dss_id_len;
       ASSH_ERR_RET(assh_check_string(blob, blob_len, p_str, &q_str));
@@ -217,8 +217,8 @@ static ASSH_KEY_LOAD_FCN(assh_sign_dss_key_load)
       uint8_t *seq, *seq_end, *val;
       ASSH_ERR_RET(assh_check_asn1(blob, blob_len, blob, &seq, &seq_end));
 
-      if (blob[0] != 0x30)   /* sequence type */
-        ASSH_ERR_RET(ASSH_ERR_BAD_DATA);
+      /* sequence type */
+      ASSH_CHK_RET(blob[0] != 0x30, ASSH_ERR_BAD_DATA);
 
       /* skip first value */
       ASSH_ERR_RET(assh_check_asn1(blob, blob_len, seq, NULL, &p_str));
@@ -239,8 +239,8 @@ static ASSH_KEY_LOAD_FCN(assh_sign_dss_key_load)
     }
 
   /* allocate key structure */
-  ASSH_ERR_RET(l < 1024 || n < 160 || l % 8 || n % 8 ? ASSH_ERR_BAD_DATA : 0);
-  ASSH_ERR_RET(l > 8192 || n > 512 ? ASSH_ERR_OVERFLOW : 0);
+  ASSH_CHK_RET(l < 1024 || n < 160 || l % 8 || n % 8, ASSH_ERR_BAD_DATA);
+  ASSH_CHK_RET(l > 8192 || n > 512, ASSH_ERR_NOTSUP);
 
   size_t size = sizeof(struct assh_sign_dss_key_s)
     + assh_bignum_sizeof(l)  /* p */
@@ -384,7 +384,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
   assh_error_t err;
 
   /* check availability of the private key */
-  ASSH_ERR_RET(k->xn == NULL ? ASSH_ERR_MISSING_KEY : 0);
+  ASSH_CHK_RET(k->xn == NULL, ASSH_ERR_MISSING_KEY);
 
   unsigned int l = assh_bignum_bits(k->pn);
   unsigned int n = assh_bignum_bits(k->qn);
@@ -402,11 +402,11 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
       return ASSH_OK;
     }
 
-  ASSH_ERR_RET(*sign_len < len ? ASSH_ERR_OVERFLOW : 0);
+  ASSH_CHK_RET(*sign_len < len, ASSH_ERR_OUTPUT_OVERFLOW);
   *sign_len = len;
 
   /* message hash */
-  ASSH_BIGNUM_ALLOC(c, mn, n, err_);
+  ASSH_BIGNUM_ALLOC(c, mn, n, ASSH_ERRSV_CONTINUE, err_);
   ASSH_ERR_GTO(assh_sign_dss_hash(data_count, data, data_len, n, mn), err_mn);
 
   memcpy(sign, assh_dss_id, assh_dss_id_len);
@@ -414,11 +414,12 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
   uint8_t *r_str = sign + assh_dss_id_len + 4;
   uint8_t *s_str = r_str + n / 8;
 
-  ASSH_BIGNUM_ALLOC(c, kn, n, err_mn);
+  ASSH_BIGNUM_ALLOC(c, kn, n, ASSH_ERRSV_CONTINUE, err_mn);
   /* Do not use the prng output directly as dsa nonce in order to
      avoid leaking key bits in case of a weak prng. Random data is
      hashed along with the private key and the message data. */
   {
+#warning FIXME alloc in secur memory
     uint8_t rnd[n / 8 + 20];
     unsigned int i;
     struct assh_hash_sha1_context_s sha1;
@@ -441,18 +442,18 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
   }
 
   /* compute R */
-  ASSH_BIGNUM_ALLOC(c, rn, l, err_kn);
+  ASSH_BIGNUM_ALLOC(c, rn, l, ASSH_ERRSV_CONTINUE, err_kn);
   ASSH_ERR_GTO(assh_bignum_expmod(rn, k->gn, kn, k->pn), err_rn);
   ASSH_ERR_GTO(assh_bignum_div(rn, NULL, rn, k->qn), err_rn);
   ASSH_ERR_GTO(assh_bignum_shrink(rn, n), err_rn);
 
   /* compute S */
-  ASSH_BIGNUM_ALLOC(c, sn, n, err_rn);
+  ASSH_BIGNUM_ALLOC(c, sn, n, ASSH_ERRSV_CONTINUE, err_rn);
 
-  ASSH_BIGNUM_ALLOC(c, r1, n, err_sn);
+  ASSH_BIGNUM_ALLOC(c, r1, n, ASSH_ERRSV_CONTINUE, err_sn);
   ASSH_ERR_GTO(assh_bignum_mulmod(r1, k->xn, rn, k->qn), err_r1);
 
-  ASSH_BIGNUM_ALLOC(c, r2, n + 1, err_r1);
+  ASSH_BIGNUM_ALLOC(c, r2, n + 1, ASSH_ERRSV_CONTINUE, err_r1);
   ASSH_ERR_GTO(assh_bignum_add(r2, mn, r1), err_r2);
 
   ASSH_ERR_GTO(assh_bignum_modinv(r1, kn, k->qn), err_r2);
@@ -492,45 +493,45 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_dss_verify)
   ASSH_DEBUG("N=%u L=%u\n", n, l);
 #endif
 
-  ASSH_ERR_RET(sign_len != assh_dss_id_len + 4 + n * 2 / 8 ? ASSH_ERR_OVERFLOW : 0);
+  ASSH_CHK_RET(sign_len != assh_dss_id_len + 4 + n * 2 / 8, ASSH_ERR_INPUT_OVERFLOW);
 
-  ASSH_ERR_RET(memcmp(sign, assh_dss_id, assh_dss_id_len) ? ASSH_ERR_BAD_DATA : 0);
+  ASSH_CHK_RET(memcmp(sign, assh_dss_id, assh_dss_id_len), ASSH_ERR_BAD_DATA);
 
   uint8_t *rs_str = (uint8_t*)sign + assh_dss_id_len;
-  ASSH_ERR_RET(assh_load_u32(rs_str) != n * 2 / 8 ? ASSH_ERR_OVERFLOW : 0);
+  ASSH_CHK_RET(assh_load_u32(rs_str) != n * 2 / 8, ASSH_ERR_INPUT_OVERFLOW);
 
-  ASSH_BIGNUM_ALLOC(c, rn, n, err_);
+  ASSH_BIGNUM_ALLOC(c, rn, n, ASSH_ERRSV_CONTINUE, err_);
   ASSH_ERR_GTO(assh_bignum_from_data(rn, rs_str + 4, n / 8), err_rn);
 
-  ASSH_BIGNUM_ALLOC(c, sn, n, err_rn);
+  ASSH_BIGNUM_ALLOC(c, sn, n, ASSH_ERRSV_CONTINUE, err_rn);
   ASSH_ERR_GTO(assh_bignum_from_data(sn, rs_str + 4 + n / 8, n / 8), err_sn);
 
-  ASSH_ERR_GTO(assh_bignum_cmp(k->qn, rn) > 0 ? ASSH_ERR_BAD_DATA : 0, err_sn);
-  ASSH_ERR_GTO(assh_bignum_cmp(k->qn, sn) > 0 ? ASSH_ERR_BAD_DATA : 0, err_sn);
-  ASSH_ERR_GTO(assh_bignum_cmpz(rn) ? ASSH_ERR_BAD_DATA : 0, err_sn);
-  ASSH_ERR_GTO(assh_bignum_cmpz(sn) ? ASSH_ERR_BAD_DATA : 0, err_sn);
+  ASSH_CHK_GTO(assh_bignum_cmp(k->qn, rn) > 0, ASSH_ERR_BAD_DATA, err_sn);
+  ASSH_CHK_GTO(assh_bignum_cmp(k->qn, sn) > 0, ASSH_ERR_BAD_DATA, err_sn);
+  ASSH_CHK_GTO(assh_bignum_cmpz(rn), ASSH_ERR_BAD_DATA, err_sn);
+  ASSH_CHK_GTO(assh_bignum_cmpz(sn), ASSH_ERR_BAD_DATA, err_sn);
 
-  ASSH_BIGNUM_ALLOC(c, mn, n, err_sn);
+  ASSH_BIGNUM_ALLOC(c, mn, n, ASSH_ERRSV_CONTINUE, err_sn);
   
   ASSH_ERR_GTO(assh_sign_dss_hash(data_count, data, data_len, n, mn), err_mn);
 
   /* copute w */
-  ASSH_BIGNUM_ALLOC(c, wn, n, err_mn);
+  ASSH_BIGNUM_ALLOC(c, wn, n, ASSH_ERRSV_CONTINUE, err_mn);
   ASSH_ERR_GTO(assh_bignum_modinv(wn, sn, k->qn), err_wn);
 
-  ASSH_BIGNUM_ALLOC(c, u1n, n, err_wn);
+  ASSH_BIGNUM_ALLOC(c, u1n, n, ASSH_ERRSV_CONTINUE, err_wn);
   ASSH_ERR_GTO(assh_bignum_mulmod(u1n, mn, wn, k->qn), err_u1n);
 
-  ASSH_BIGNUM_ALLOC(c, v1n, l, err_u1n);
+  ASSH_BIGNUM_ALLOC(c, v1n, l, ASSH_ERRSV_CONTINUE, err_u1n);
   ASSH_ERR_GTO(assh_bignum_expmod(v1n, k->gn, u1n, k->pn), err_v1n);
 
-  ASSH_BIGNUM_ALLOC(c, u2n, n, err_v1n);
+  ASSH_BIGNUM_ALLOC(c, u2n, n, ASSH_ERRSV_CONTINUE, err_v1n);
   ASSH_ERR_GTO(assh_bignum_mulmod(u2n, rn, wn, k->qn), err_u2n);
 
-  ASSH_BIGNUM_ALLOC(c, v2n, l, err_u2n);
+  ASSH_BIGNUM_ALLOC(c, v2n, l, ASSH_ERRSV_CONTINUE, err_u2n);
   ASSH_ERR_GTO(assh_bignum_expmod(v2n, k->yn, u2n, k->pn), err_v2n);
 
-  ASSH_BIGNUM_ALLOC(c, vn, l, err_v2n);
+  ASSH_BIGNUM_ALLOC(c, vn, l, ASSH_ERRSV_CONTINUE, err_v2n);
   ASSH_ERR_GTO(assh_bignum_mulmod(vn, v1n, v2n, k->pn), err_vn);
 
   ASSH_ERR_GTO(assh_bignum_div(vn, NULL, vn, k->qn), err_vn);

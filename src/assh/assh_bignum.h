@@ -59,9 +59,9 @@ assh_bignum_cleanup(struct assh_context_s *c, struct assh_bignum_s *bn)
     gcry_mpi_release(bn->n);
 }
 
-# define ASSH_BIGNUM_ALLOC(context, name, bits, lbl)                    \
+# define ASSH_BIGNUM_ALLOC(context, name, bits, sv, lbl)		\
   struct assh_bignum_s name##_, *name = &name##_;                       \
-  ASSH_ERR_GTO(assh_bignum_init(context, name, bits), lbl);             \
+  ASSH_ERR_GTO(assh_bignum_init(context, name, bits) | sv, lbl);	\
 
 # define ASSH_BIGNUM_FREE(context, name)        \
   assh_bignum_cleanup(context, name);
@@ -152,10 +152,10 @@ assh_bignum_cleanup(struct assh_context_s *c, struct assh_bignum_s *bn)
 
 /** @This declares a pointer to a big number, allocate the required
     storage using @ref alloca and initializes the number. */
-# define ASSH_BIGNUM_ALLOC(context, name, bits, lbl)                     \
+# define ASSH_BIGNUM_ALLOC(context, name, bits, sv, lbl)                \
   size_t name##_l__ = ASSH_BIGNUM_WORDS(bits);                          \
   struct assh_bignum_s *name = alloca(sizeof(struct assh_bignum_s)      \
-               + name##_l__ * sizeof(assh_bnword_t));              \
+               + name##_l__ * sizeof(assh_bnword_t));                   \
   if (0)                                                                \
     goto lbl;                                                           \
   name->l = name##_l__;
@@ -167,11 +167,11 @@ assh_bignum_cleanup(struct assh_context_s *c, struct assh_bignum_s *bn)
 
 /** @This declares a pointer to a big number, allocate the required
     storage using the context allocator and initializes the number. */
-# define ASSH_BIGNUM_ALLOC(context, name, bits, lbl)                     \
+# define ASSH_BIGNUM_ALLOC(context, name, bits, sv, lbl)                \
   size_t name##_l__ = ASSH_BIGNUM_WORDS(bits);                          \
   struct assh_bignum_s *name;                                           \
   ASSH_ERR_GTO(assh_alloc(context, sizeof(struct assh_bignum_s)         \
-      + name##_l__ * sizeof(assh_bnword_t), ASSH_ALLOC_KEY, (void**)&name), lbl); \
+      + name##_l__ * sizeof(assh_bnword_t), ASSH_ALLOC_KEY, (void**)&name) | sv, lbl); \
   name->l = name##_l__;
 
 /** @This releases the big number allocated using @ref #ASSH_BIGNUM_ALLOC */

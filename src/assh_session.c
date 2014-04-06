@@ -29,6 +29,7 @@
 #include <assh/assh_prng.h>
 #include <assh/assh_queue.h>
 #include <assh/assh_service.h>
+#include <assh/assh_transport.h>
 
 assh_error_t assh_session_init(struct assh_context_s *c,
 			       struct assh_session_s *s)
@@ -40,7 +41,7 @@ assh_error_t assh_session_init(struct assh_context_s *c,
 
   assh_transport_state(s, ASSH_TR_KEX_INIT);
 
-  s->hello_len = 0;
+  s->ident_len = 0;
   s->session_id_len = 0;
 
   s->kex_init_local = NULL;
@@ -53,7 +54,7 @@ assh_error_t assh_session_init(struct assh_context_s *c,
 #endif
   s->srv = NULL;
 
-  s->stream_out_st = ASSH_TR_OUT_HELLO;
+  s->stream_out_st = ASSH_TR_OUT_IDENT;
   assh_queue_init(&s->out_queue);
   assh_queue_init(&s->alt_queue);
   s->stream_out_size = 0;
@@ -61,7 +62,7 @@ assh_error_t assh_session_init(struct assh_context_s *c,
   s->new_keys_out = NULL;
   s->out_seq = 0;
 
-  s->stream_in_st = ASSH_TR_IN_HELLO;
+  s->stream_in_st = ASSH_TR_IN_IDENT;
   s->stream_in_pck = NULL;
   s->stream_in_size = 0;
   s->in_pck = NULL;
@@ -110,5 +111,123 @@ void assh_session_cleanup(struct assh_session_s *s)
   assh_packet_release(s->stream_in_pck);
 
   s->ctx->session_count--;
+}
+
+assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t err)
+{
+  if ((err & ASSH_ERRSV_FATAL) || s->tr_st == ASSH_TR_CLOSED)
+    {
+      assh_transport_state(s, ASSH_TR_CLOSED);
+      return err | ASSH_ERRSV_FATAL;
+    }
+
+  if ((err & ASSH_ERRSV_FIN) || s->tr_st == ASSH_TR_FIN)
+    {
+      assh_transport_state(s, ASSH_TR_FIN);
+      return err | ASSH_ERRSV_FIN;
+    }
+
+  uint32_t reason = SSH_DISCONNECT_RESERVED;
+  const char *desc = NULL;
+
+  switch (err & 0xfff)
+    {
+    case ASSH_ERR_BAD_DATA:
+    case ASSH_ERR_PROTOCOL:
+#ifdef CONFIG_ASSH_VERBOSE_ERROR
+      reason = SSH_DISCONNECT_PROTOCOL_ERROR;
+      break;
+#endif
+
+    case ASSH_ERR_INPUT_OVERFLOW:
+    case ASSH_ERR_OUTPUT_OVERFLOW:
+    case ASSH_ERR_IO:
+    case ASSH_ERR_BAD_VERSION:
+    case ASSH_ERR_DISCONNECTED:
+    case ASSH_ERR_CLOSED:
+      assh_transport_state(s, ASSH_TR_FIN);
+      return err | ASSH_ERRSV_FIN;      
+
+    case ASSH_ERR_STATE:
+      assh_transport_state(s, ASSH_TR_CLOSED);
+      return err | ASSH_ERRSV_FATAL;      
+
+    case ASSH_ERR_MEM:
+      reason = SSH_DISCONNECT_RESERVED;
+#ifdef CONFIG_ASSH_VERBOSE_ERROR
+      desc = "memory resource shortage";
+#endif
+      break;
+    case ASSH_ERR_NUM_OVERFLOW:
+      reason = SSH_DISCONNECT_RESERVED;
+#ifdef CONFIG_ASSH_VERBOSE_ERROR
+      desc = "numerical overflow";
+#endif
+      break;
+    case ASSH_ERR_MAC:
+      reason = SSH_DISCONNECT_MAC_ERROR;
+      break;
+    case ASSH_ERR_CRYPTO:
+#ifdef CONFIG_ASSH_VERBOSE_ERROR
+      desc = "crypto error";
+#endif
+      reason = SSH_DISCONNECT_RESERVED;
+      break;
+    case ASSH_ERR_NOTSUP:
+      desc = "not supported";
+      reason = SSH_DISCONNECT_RESERVED;
+      break;
+    case ASSH_ERR_BUSY:
+      reason = SSH_DISCONNECT_TOO_MANY_CONNECTIONS;
+      break;
+    case ASSH_ERR_KEX_FAILED:
+      reason = SSH_DISCONNECT_KEY_EXCHANGE_FAILED;
+      break;
+    case ASSH_ERR_MISSING_KEY:
+      desc = "missing key";
+      reason = SSH_DISCONNECT_RESERVED;
+      break;
+    case ASSH_ERR_MISSING_ALGO:
+      desc = "algorithm not available";
+      reason = SSH_DISCONNECT_RESERVED;
+      break;
+    case ASSH_ERR_HOSTKEY_SIGNATURE:
+      reason = SSH_DISCONNECT_HOST_KEY_NOT_VERIFIABLE;
+      break;
+    case ASSH_ERR_SERVICE_NA:
+      reason = SSH_DISCONNECT_SERVICE_NOT_AVAILABLE;
+      break;
+    case ASSH_ERR_NO_AUTH:
+      reason = SSH_DISCONNECT_NO_MORE_AUTH_METHODS_AVAILABLE;
+      break;
+    case ASSH_ERR_NO_MORE_SERVICE:
+      reason = SSH_DISCONNECT_BY_APPLICATION;
+      break;
+    }
+
+  if (!(err & ASSH_ERRSV_DISCONNECT))
+    return err;
+
+  struct assh_packet_s *pout;
+  size_t sz = 0;
+  if (desc != NULL)
+    sz = 4 + strlen(desc);
+
+  ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_DISCONNECT, 3 * 4 + sz, &pout)
+	       | ASSH_ERRSV_FIN);
+
+  ASSH_ASSERT(assh_packet_add_u32(pout, reason)); /* reason code */
+
+  uint8_t *str;
+  ASSH_ASSERT(assh_packet_add_string(pout, sz, &str)); /* description */
+  if (desc != NULL)
+    memcpy(str, desc, sz - 4);
+
+  ASSH_ASSERT(assh_packet_add_string(pout, 0, NULL)); /* language */
+
+  assh_transport_push(s, pout);
+
+  assh_transport_state(s, ASSH_TR_FIN);
+  return err | ASSH_ERRSV_FIN;
 }
 

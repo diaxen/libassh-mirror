@@ -110,17 +110,9 @@ enum assh_ssh_msg_e
   SSH_MSG_CHANNEL_FAILURE           = 100,
 };
 
-/** @internal @This specifies standard ssh disconnect reasons. These
-    codes can be associated to an @ref assh_error_e code when returned
-    by a function by using the @ref #ASSH_ERR_CODE macro. This will
-    make the library send a disconnect packet before stopping the
-    communication. When @ref SSH_DISCONNECT_NONE is used, no
-    disconnect packet is sent. */
+/** @internal @This specifies standard ssh disconnect reasons. */
 enum assh_ssh_disconnect_e
 {
-  /** No disconnect reason packet must be send. */
-  SSH_DISCONNECT_NONE                           =  0,
-  /** @multiple Standard ssh disconnect reason code. */
   SSH_DISCONNECT_HOST_NOT_ALLOWED_TO_CONNECT    =  1,
   SSH_DISCONNECT_PROTOCOL_ERROR                 =  2,
   SSH_DISCONNECT_KEY_EXCHANGE_FAILED            =  3,

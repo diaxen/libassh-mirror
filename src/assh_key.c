@@ -39,11 +39,12 @@ assh_error_t assh_key_load3(struct assh_context_s *c, struct assh_key_s **key,
   switch (algo->class_)
     {
     case ASSH_ALGO_SIGN:
-      ASSH_ERR_RET(((struct assh_algo_sign_s*)algo)->f_key_load(c, blob, blob_len, &k, format));
+      ASSH_ERR_RET(((struct assh_algo_sign_s*)algo)
+		   ->f_key_load(c, blob, blob_len, &k, format));
       break;
 
     default:
-      ASSH_ERR_RET(ASSH_ERR_NOTSUP);
+      ASSH_ERR_RET(ASSH_ERR_NOTSUP | ASSH_ERRSV_CONTINUE);
     }
 
   k->algo = algo;
@@ -69,7 +70,7 @@ assh_error_t assh_key_load2(struct assh_context_s *c, struct assh_key_s **key,
       algo_name = (const char*)blob + 4;
       algo_name_len = end - blob - 4;
     }
-  ASSH_ERR_RET(algo_name == NULL ? ASSH_NOT_FOUND : 0);
+  ASSH_CHK_RET(algo_name == NULL, ASSH_NOT_FOUND | ASSH_ERRSV_CONTINUE);
 
   ASSH_ERR_RET(assh_algo_by_name(c, ASSH_ALGO_SIGN, algo_name, algo_name_len, &algo));
   ASSH_ERR_RET(assh_key_load3(c, key, algo, blob, blob_len, format));

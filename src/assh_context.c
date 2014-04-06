@@ -37,6 +37,8 @@
 
 static ASSH_ALLOCATOR(assh_default_allocator)
 {
+  assh_error_t err;
+
 #ifdef CONFIG_ASSH_USE_GCRYPT_ALLOCATOR
   if (size == 0)
     {
@@ -55,23 +57,28 @@ static ASSH_ALLOCATOR(assh_default_allocator)
 	  *ptr = gcry_malloc_secure(size);
 	  break;
 	}
-      return *ptr != NULL ? ASSH_OK : ASSH_ERR_MEM;
+      ASSH_CHK_RET(*ptr == NULL, ASSH_ERR_MEM);
+      return ASSH_OK;
     }
   else
     {
       *ptr = gcry_realloc(*ptr, size);
-      return *ptr != NULL ? ASSH_OK : ASSH_ERR_MEM;
+      ASSH_CHK_RET(*ptr == NULL, ASSH_ERR_MEM);
+      return ASSH_OK;
     }
 #else
 # warning The default allocator relies on the standard non-secur realloc function
   *ptr = realloc(*ptr, size);
-  return (size == 0 || *ptr != NULL) ? ASSH_OK : ASSH_ERR_MEM;
+  ASSH_CHK_RET(size != 0 && *ptr == NULL, ASSH_ERR_MEM);
+  return ASSH_OK;
 #endif
+#warning clear freed memory
 }
 
 void assh_context_init(struct assh_context_s *c,
                        enum assh_context_type_e type)
 {
+  assh_error_t err;
   c->session_count = 0;
 
   switch (type)
@@ -85,8 +92,7 @@ void assh_context_init(struct assh_context_s *c,
       c->type = type;
       break;
     default:
-      // ASSH_ERR_RET(ASSH_ERR_NOTSUP);
-      abort();
+      ASSH_ERR_RET(ASSH_ERR_NOTSUP);
     }
 
   c->f_alloc = assh_default_allocator;

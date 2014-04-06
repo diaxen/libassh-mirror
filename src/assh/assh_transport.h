@@ -78,10 +78,6 @@ union assh_event_transport_u
   struct assh_event_transport_write_s write;
 };
 
-/** @internal */
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_transport_disconnect(struct assh_session_s *s, uint32_t code);
-
 /** @internal This function puts a packet in the output queue. The
     packet will be released once it has been enciphered and sent. */
 void assh_transport_push(struct assh_session_s *s,

@@ -31,6 +31,7 @@
 #endif
 
 #include <stdlib.h>
+#include <stdio.h>
 
  /* 1024 bits prime number */
 static const uint8_t *prime = (const uint8_t*)"\x00\x00\x00\x81"
@@ -49,8 +50,8 @@ assh_error_t test_shift()
 {
   assh_error_t err;
 
-  ASSH_BIGNUM_ALLOC(&context, a, 256, err_);
-  ASSH_BIGNUM_ALLOC(&context, r, 256, err_);
+  ASSH_BIGNUM_ALLOC(&context, a, 256, ASSH_ERRSV_CONTINUE, err_);
+  ASSH_BIGNUM_ALLOC(&context, r, 256, ASSH_ERRSV_CONTINUE, err_);
 
   ASSH_ERR_RET(assh_bignum_rand(&context, a, ASSH_PRNG_QUALITY_WEAK));
   assh_bignum_print(stderr, "shift", a);
@@ -84,9 +85,9 @@ assh_error_t test_add_sub(unsigned int count)
       size_t lb = rand() % 255 + 1;
       size_t lr = ASSH_MAX(la, lb) + 1;
 
-      ASSH_BIGNUM_ALLOC(&context, a, la, err_);
-      ASSH_BIGNUM_ALLOC(&context, b, lb, err_);
-      ASSH_BIGNUM_ALLOC(&context, r, lr, err_);
+      ASSH_BIGNUM_ALLOC(&context, a, la, ASSH_ERRSV_CONTINUE, err_);
+      ASSH_BIGNUM_ALLOC(&context, b, lb, ASSH_ERRSV_CONTINUE, err_);
+      ASSH_BIGNUM_ALLOC(&context, r, lr, ASSH_ERRSV_CONTINUE, err_);
 
       ASSH_ERR_RET(assh_bignum_rand(&context, a, ASSH_PRNG_QUALITY_WEAK));
       ASSH_ERR_RET(assh_bignum_rand(&context, b, ASSH_PRNG_QUALITY_WEAK));
@@ -122,12 +123,12 @@ assh_error_t test_div(unsigned int count)
   assh_error_t err;
   int i;
 
-  ASSH_BIGNUM_ALLOC(&context, a, 256, err_);
-  ASSH_BIGNUM_ALLOC(&context, b, 256, err_);
-  ASSH_BIGNUM_ALLOC(&context, c, 256, err_);
-  ASSH_BIGNUM_ALLOC(&context, r, 256, err_);
-  ASSH_BIGNUM_ALLOC(&context, d, 256, err_);
-  ASSH_BIGNUM_ALLOC(&context, e, 512, err_);
+  ASSH_BIGNUM_ALLOC(&context, a, 256, ASSH_ERRSV_CONTINUE, err_);
+  ASSH_BIGNUM_ALLOC(&context, b, 256, ASSH_ERRSV_CONTINUE, err_);
+  ASSH_BIGNUM_ALLOC(&context, c, 256, ASSH_ERRSV_CONTINUE, err_);
+  ASSH_BIGNUM_ALLOC(&context, r, 256, ASSH_ERRSV_CONTINUE, err_);
+  ASSH_BIGNUM_ALLOC(&context, d, 256, ASSH_ERRSV_CONTINUE, err_);
+  ASSH_BIGNUM_ALLOC(&context, e, 512, ASSH_ERRSV_CONTINUE, err_);
 
   for (i = 0; i < count; i++)
     {
@@ -173,11 +174,11 @@ assh_error_t test_modinv(unsigned int count)
   assh_error_t err;
   int i;
 
-  ASSH_BIGNUM_ALLOC(&context, a, 1024+128, err_);
-  ASSH_BIGNUM_ALLOC(&context, b, 1024+128, err_);
-  ASSH_BIGNUM_ALLOC(&context, c, 1024+128, err_);
-  ASSH_BIGNUM_ALLOC(&context, d, 2048+256, err_);
-  ASSH_BIGNUM_ALLOC(&context, r, 2048+256, err_);
+  ASSH_BIGNUM_ALLOC(&context, a, 1024+128, ASSH_ERRSV_CONTINUE, err_);
+  ASSH_BIGNUM_ALLOC(&context, b, 1024+128, ASSH_ERRSV_CONTINUE, err_);
+  ASSH_BIGNUM_ALLOC(&context, c, 1024+128, ASSH_ERRSV_CONTINUE, err_);
+  ASSH_BIGNUM_ALLOC(&context, d, 2048+256, ASSH_ERRSV_CONTINUE, err_);
+  ASSH_BIGNUM_ALLOC(&context, r, 2048+256, ASSH_ERRSV_CONTINUE, err_);
 
   ASSH_ERR_RET(assh_bignum_from_mpint(a, NULL, prime));
 
@@ -227,16 +228,16 @@ assh_error_t test_expmod(unsigned int count)
   assh_error_t err;
   int i;
 
-  ASSH_BIGNUM_ALLOC(&context, p, 1024, err_);
-  ASSH_BIGNUM_ALLOC(&context, a, 1024, err_);
-  ASSH_BIGNUM_ALLOC(&context, ia, 1024, err_);
-  ASSH_BIGNUM_ALLOC(&context, x, 1024, err_);
-  ASSH_BIGNUM_ALLOC(&context, e, 1024, err_);
-  ASSH_BIGNUM_ALLOC(&context, r1, 1024, err_);
-  ASSH_BIGNUM_ALLOC(&context, r2, 1024, err_);
-  ASSH_BIGNUM_ALLOC(&context, r3, 1024, err_);
-  ASSH_BIGNUM_ALLOC(&context, r4, 1024, err_);
-  ASSH_BIGNUM_ALLOC(&context, r5, 1024, err_);
+  ASSH_BIGNUM_ALLOC(&context, p, 1024, ASSH_ERRSV_CONTINUE, err_);
+  ASSH_BIGNUM_ALLOC(&context, a, 1024, ASSH_ERRSV_CONTINUE, err_);
+  ASSH_BIGNUM_ALLOC(&context, ia, 1024, ASSH_ERRSV_CONTINUE, err_);
+  ASSH_BIGNUM_ALLOC(&context, x, 1024, ASSH_ERRSV_CONTINUE, err_);
+  ASSH_BIGNUM_ALLOC(&context, e, 1024, ASSH_ERRSV_CONTINUE, err_);
+  ASSH_BIGNUM_ALLOC(&context, r1, 1024, ASSH_ERRSV_CONTINUE, err_);
+  ASSH_BIGNUM_ALLOC(&context, r2, 1024, ASSH_ERRSV_CONTINUE, err_);
+  ASSH_BIGNUM_ALLOC(&context, r3, 1024, ASSH_ERRSV_CONTINUE, err_);
+  ASSH_BIGNUM_ALLOC(&context, r4, 1024, ASSH_ERRSV_CONTINUE, err_);
+  ASSH_BIGNUM_ALLOC(&context, r5, 1024, ASSH_ERRSV_CONTINUE, err_);
 
   /* prime */
 

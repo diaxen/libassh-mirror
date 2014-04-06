@@ -58,7 +58,7 @@ assh_error_t assh_algo_register_va(struct assh_context_s *c, unsigned int safety
         break;
       if (algo->safety < min_safety)
 	continue;
-      ASSH_ERR_GTO(c->algos_count == ASSH_MAX_ALGORITHMS ? ASSH_ERR_MEM : 0, err_);
+      ASSH_CHK_GTO(c->algos_count == ASSH_MAX_ALGORITHMS, ASSH_ERR_MEM, err_);
       c->algos[c->algos_count++] = algo;
     }
  err_:
@@ -68,7 +68,7 @@ assh_error_t assh_algo_register_va(struct assh_context_s *c, unsigned int safety
   if (safety == (unsigned int)-1)
     return err;
 
-  ASSH_ERR_RET(safety > 99 ? ASSH_ERR_OVERFLOW : 0);
+  ASSH_CHK_RET(safety > 99, ASSH_ERR_BAD_ARG);
 
   /* sort algorithms by class and safety/speed factor */
   int i, j, k;

@@ -147,9 +147,9 @@ struct assh_event_s
     successful call to this function, before requesting the next event.
 
     This function can be called in a loop until the @ref
-    ASSH_ERR_DISCONNECTED error code is returned. Other error codes
+    ASSH_ERR_CLOSED error code is returned. Other error codes
     can be returned but calling this function again may still return
-    more pending events. The @ref ASSH_ERR_DISCONNECTED error is only
+    more pending events. The @ref ASSH_ERR_CLOSED error is only
     returned when no more events are pending.
 */
 ASSH_WARN_UNUSED_RESULT assh_error_t

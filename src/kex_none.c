@@ -11,7 +11,7 @@ static ASSH_KEX_PROCESS_FCN(assh_kex_none_process)
   assert(p == NULL);
 
   /* shared secret is 42 (64 bits) */
-  ASSH_BIGNUM_ALLOC(s->ctx, kn, 64, err_);
+  ASSH_BIGNUM_ALLOC(s->ctx, kn, 64, ASSH_ERRSV_CONTINUE, err_);
   ASSH_ERR_GTO(assh_bignum_from_uint(kn, 42), err_k);
 
   /* exchange hash is zero (160 bits) */

@@ -41,19 +41,8 @@ void assh_fd_events_register(struct assh_event_hndl_table_s *t,
 			     struct assh_fd_context_s *ctx,
 			     int ssh_fd, int rand_fd);
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_fd_event_read(struct assh_session_s *s,
-		   struct assh_event_s *e,
-		   void *ctx);
-
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_fd_event_write(struct assh_session_s *s,
-		    struct assh_event_s *e,
-		    void *ctx);
-
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_fd_event_prng_feed(struct assh_session_s *s,
-			struct assh_event_s *e,
-			void *ctx);
+ASSH_EVENT_HANDLER_FCN(assh_fd_event_read);
+ASSH_EVENT_HANDLER_FCN(assh_fd_event_write);
+ASSH_EVENT_HANDLER_FCN(assh_fd_event_prng_feed);
 
 #endif

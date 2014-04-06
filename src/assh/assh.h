@@ -64,63 +64,103 @@ struct assh_event_s;
 typedef char assh_bool_t;
 
 enum assh_key_format_e;
+enum assh_alloc_type_e;
+enum assh_ssh_msg_e;
 
+/** @This specify the error severity and must be used along with error
+    code constants (@ref assh_error_e).
+
+    These values indicate how the state of the session has been
+    impacted by the error.
+
+    Multiple error severity bits may be ored together; in this case
+    the highest bit set prevails. This allows increasing the error
+    severity returned by a callee from the caller function. */
+enum assh_error_severity_e
+{
+  /** The error is not critical and the connection may continue. This
+      is the default when no severity is specified. */
+  ASSH_ERRSV_CONTINUE              = 0x0000,
+  /** The error prevent further communication with the remote host but
+      a disconnect packet may still be send before closing the connection. */
+  ASSH_ERRSV_DISCONNECT            = 0x2000,
+  /** The error prevent further communication with the remote host due
+      to irrecoverable protocol error. */
+  ASSH_ERRSV_FIN                   = 0x4000,
+  /** The error is due to an implementation related issue. It's not
+      possible to continue, cleanup functions may be called. This
+      should never happen. */
+  ASSH_ERRSV_FATAL                 = 0x8000,
+};
+
+/** @This specify possible return codes returned by @em libassh
+    functions. All codes indicating an error must always be ored with
+    a severity code (@ref assh_error_severity_e). */
 enum assh_error_e
 {
   /** Success error code. */
-  ASSH_OK = 0,
+  ASSH_OK                          = 0,
   /** No data were available, this is not fatal. */
-  ASSH_NO_DATA = 1,
+  ASSH_NO_DATA                     = 1,
   /** The requested entry was not found, this is not fatal. */
-  ASSH_NOT_FOUND = 2,
+  ASSH_NOT_FOUND                   = 2,
 
   /** IO error. */
-  ASSH_ERR_IO = 101,
+  ASSH_ERR_IO                      = 0x100,
   /** Memory allocation error. */
-  ASSH_ERR_MEM,
-  /** Buffer overflow or arithmetic overflow. */
-  ASSH_ERR_OVERFLOW,
-  /** Bad packet size. */
-  ASSH_ERR_PACKET_SIZE,
+  ASSH_ERR_MEM                     = 0x101,
+  /** Buffer overflow in input data. Input data contains bad or
+      corrupt data which would result in memory access outside allowed bounds. */
+  ASSH_ERR_INPUT_OVERFLOW          = 0x102,
+  /** Output buffer is not large enough to write expected data. */
+  ASSH_ERR_OUTPUT_OVERFLOW         = 0x103,
+  /** Arithmetic overflow on big number. */
+  ASSH_ERR_NUM_OVERFLOW            = 0x104,
   /** Bad version of the ssh protocol. */
-  ASSH_ERR_BAD_VERSION,
-  /** Packet contains bad corrupt data. */
-  ASSH_ERR_BAD_DATA,
+  ASSH_ERR_BAD_VERSION             = 0x105,
+  /** Packet or buffer contains unexpected or corrupt data. */
+  ASSH_ERR_BAD_DATA                = 0x106,
+  /** Invalid function arguments */
+  ASSH_ERR_BAD_ARG                 = 0x107,
   /** Message authentication code error. */
-  ASSH_ERR_MAC,
+  ASSH_ERR_MAC                     = 0x108,
   /** Packet content doesn't match current state of the protocol. */
-  ASSH_ERR_PROTOCOL,
+  ASSH_ERR_PROTOCOL                = 0x10a,
   /** The function can not be called in the current state of the protocol. */
-  ASSH_ERR_STATE,
-  /** Crypto initialization or pressing error. */
-  ASSH_ERR_CRYPTO,
+  ASSH_ERR_STATE                   = 0x10b,
+  /** Crypto initialization or processing error. */
+  ASSH_ERR_CRYPTO                  = 0x10c,
   /** Unsupported parameter value. */
-  ASSH_ERR_NOTSUP,
-  ASSH_ERR_BUSY,
-  ASSH_ERR_KEX_FAILED,
-  /**  */
-  ASSH_ERR_MISSING_KEY,
-  ASSH_ERR_MISSING_ALGO,
-  ASSH_ERR_MISSMATCH_KEY,
-  ASSH_ERR_HOSTKEY_SIGNATURE,
-  ASSH_ERR_SERVICE_NA,
-  ASSH_ERR_NO_AUTH,
-  ASSH_ERR_DISCONNECTED,
+  ASSH_ERR_NOTSUP                  = 0x10d,
+  ASSH_ERR_BUSY                    = 0x10e,
+  /** The key exchange has failed */
+  ASSH_ERR_KEX_FAILED              = 0x10f,
+  /** The required key is not available. */
+  ASSH_ERR_MISSING_KEY             = 0x110,
+  /** The required algorithm is not available. */
+  ASSH_ERR_MISSING_ALGO            = 0x111,
+  /** The host key verification has failed */
+  ASSH_ERR_HOSTKEY_SIGNATURE       = 0x113,
+  /** The requested service is not available */
+  ASSH_ERR_SERVICE_NA              = 0x114,
+  /** No more authentication method available. */
+  ASSH_ERR_NO_AUTH                 = 0x115,
+  /** The remote host sent a disconnect packet. */
+  ASSH_ERR_DISCONNECTED            = 0x116,
+  /** The client has reached the end of list of services to request. */
+  ASSH_ERR_NO_MORE_SERVICE         = 0x117,
+  /** The session is closed. */
+  ASSH_ERR_CLOSED                  = 0x118,
 };
 
-/** @This associates an @ref assh_ssh_disconnect_e standard disconnect
-    reason code to the @ref assh_error_e error code.
-    @see #ASSH_ERR_ERROR @see #ASSH_ERR_DISCONNECT */
-#define ASSH_ERR_CODE(err, disconnect) ((err) | ((disconnect) << 16))
-
 /** @This extracts the @ref assh_error_e part of an error code
-    returned by a function. @see #ASSH_ERR_CODE */
-#define ASSH_ERR_ERROR(code) ((err) & 0xffff)
-/** @This extracts the @ref assh_ssh_disconnect_e part of an error
-    code returned by a function. @see #ASSH_ERR_CODE */
-#define ASSH_ERR_DISCONNECT(code) ((err) >> 16)
+    returned by a function. */
+#define ASSH_ERR_ERROR(code) ((code) & 0xfff)
+/** @This extracts the @ref assh_error_severity_e part of an error
+    code returned by a function. This consists of ored flag values. */
+#define ASSH_ERR_SEVERITY(code) ((code) & 0xf000)
 
-#define ASSH_ASSERT(expr) do { assh_error_t _e_ = (expr); assert(_e_ == ASSH_OK); } while(0)
+#define ASSH_ASSERT(expr) do { assh_error_t _e_ = (expr); assert((_e_ & 0xfff) == ASSH_OK); } while(0)
 
 typedef int assh_error_t;
 
@@ -163,39 +203,46 @@ typedef int assh_error_t;
    - ASSH_MAX_MAC_SIZE - ASSH_MAX_BLOCK_SIZE)
 
 #if 0
-# define ASSH_ERR_GTO(expr, label) do { if ((err = (expr))) goto label; } while (0)
-# define ASSH_ERR_RET(expr) do { if ((err = (expr))) return err; } while (0)
+# define ASSH_ERR_GTO(expr, label) do { if ((err = (expr) & 0x100)) goto label; err &= 0xff; } while (0)
+# define ASSH_ERR_RET(expr) do { if ((err = (expr) & 0x100)) return err; err &= 0xff; } while (0)
 #else
 
-# define ASSH_ERR_GTO(expr, label)               \
-do {                                             \
-  if ((err = (expr)))                            \
-    {                                            \
-      fprintf(stderr, "%s:%u:assh ERROR %u in %s, expr:`%s'\n", \
-              __FILE__, __LINE__, err, __func__, #expr);              \
-      goto label;                                \
-    }                                            \
-  else {                                              \
-    /*    fprintf(stderr, "%s:%u:assh in %s.\n",      \
-	  __FILE__, __LINE__, __func__);      */      \
-    }                                            \
-} while (0)
+# define ASSH_ERR_GTO(expr, label)					\
+  do {									\
+    err = (expr);							\
+    if (err & 0x100)							\
+      {									\
+	fprintf(stderr, "%s:%u:assh ERROR %u in %s, expr:`%s'\n",	\
+		__FILE__, __LINE__, err, __func__, #expr);              \
+	goto label;							\
+      }									\
+    else {								\
+      err &= 0xff;							\
+      /*    fprintf(stderr, "%s:%u:assh in %s.\n",			\
+	    __FILE__, __LINE__, __func__);      */			\
+    }									\
+  } while (0)
 
-# define ASSH_ERR_RET(expr)                     \
-do {                                            \
-  if ((err = (expr)))                           \
-    {                                           \
-      fprintf(stderr, "%s:%u:assh ERROR %u in %s, expr:`%s'\n", \
-              __FILE__, __LINE__, err, __func__, #expr);              \
-      return err;                               \
-    }                                           \
-  else {                                              \
-    /*    fprintf(stderr, "%s:%u:assh in %s.\n",      \
-	  __FILE__, __LINE__, __func__);        */    \
-    }                                            \
-} while (0)
+# define ASSH_ERR_RET(expr)						\
+  do {									\
+    err = (expr);							\
+    if (err & 0x100)							\
+      {									\
+	fprintf(stderr, "%s:%u:assh ERROR %u in %s, expr:`%s'\n",	\
+		__FILE__, __LINE__, err, __func__, #expr);              \
+	return err;							\
+      }									\
+    else {								\
+      err &= 0xff;							\
+      /*    fprintf(stderr, "%s:%u:assh in %s.\n",			\
+	    __FILE__, __LINE__, __func__);        */			\
+    }									\
+  } while (0)
 
 #endif
+
+# define ASSH_CHK_GTO(cond, err, label) ASSH_ERR_GTO(cond ? err : 0, label) 
+# define ASSH_CHK_RET(cond, err) ASSH_ERR_RET(cond ? err : 0) 
 
 #define ASSH_DEBUG(...) fprintf(stderr, "assh_debug: " __VA_ARGS__)
 
@@ -243,7 +290,7 @@ struct assh_queue_s
   int count;
 };
 
-#define ASSH_HELLO "SSH-2.0-LIBASSH\r\n"
+#define ASSH_IDENT "SSH-2.0-LIBASSH\r\n"
 
 enum assh_alloc_type_e;
 

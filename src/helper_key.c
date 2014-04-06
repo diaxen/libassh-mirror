@@ -74,17 +74,17 @@ static assh_error_t assh_base64_update(struct assh_base64_ctx_s *ctx,
         case -1:
           ASSH_ERR_RET(ASSH_ERR_BAD_DATA);
         case -3:     /* padding char = */
-          ASSH_ERR_RET(ctx->pad++ >= 2 ? ASSH_ERR_BAD_DATA : 0);
+          ASSH_CHK_RET(ctx->pad++ >= 2, ASSH_ERR_BAD_DATA);
         case -2:
           continue;  /* ignore blank chars */
         case -4:
 	  return ASSH_OK;  /* NUL termination */
         default:
-	  ASSH_ERR_RET(ctx->pad > 0 ? ASSH_ERR_BAD_DATA : 0);
+	  ASSH_CHK_RET(ctx->pad > 0, ASSH_ERR_BAD_DATA);
           ctx->x = (ctx->x << 6) | c;
 	  if ((++ctx->in & 3) != 0)
 	    continue;
-	  ASSH_ERR_RET(ctx->out + 2 >= ctx->out_end ? ASSH_ERR_OVERFLOW : 0);
+	  ASSH_CHK_RET(ctx->out + 2 >= ctx->out_end, ASSH_ERR_OUTPUT_OVERFLOW);
 	  *ctx->out++ = ctx->x >> 16;
 	  *ctx->out++ = ctx->x >> 8;
 	  *ctx->out++ = ctx->x;
@@ -98,10 +98,10 @@ static assh_error_t assh_base64_final(struct assh_base64_ctx_s *ctx)
 {
   assh_error_t err;
 
-  ASSH_ERR_RET((ctx->in + ctx->pad) & 3 ? ASSH_ERR_BAD_DATA : 0);
+  ASSH_CHK_RET((ctx->in + ctx->pad) & 3, ASSH_ERR_BAD_DATA);
 
-  ASSH_ERR_RET(ctx->out + ((2 - ctx->pad) % 2) >= ctx->out_end ?
-	       ASSH_ERR_OVERFLOW : 0);
+  ASSH_CHK_RET(ctx->out + ((2 - ctx->pad) % 2) >= ctx->out_end,
+	       ASSH_ERR_OUTPUT_OVERFLOW);
   switch (ctx->pad)
     {
     case 2:
@@ -156,7 +156,7 @@ static assh_error_t assh_load_rfc4716(FILE *file, uint8_t *kdata, size_t *klen)
 	case 3:
 	  if (l[0] != '-')
 	    break;
-	  ASSH_ERR_RET(!strstr(l, "END ") ? ASSH_ERR_BAD_DATA : 0);
+	  ASSH_CHK_RET(!strstr(l, "END "), ASSH_ERR_BAD_DATA);
 	  state = 0;
 	  ASSH_ERR_RET(assh_base64_final(&ctx));
 	  *klen = assh_base64_size(&ctx);
@@ -191,7 +191,6 @@ assh_error_t assh_load_key_file(struct assh_context_s *c,
     case ASSH_KEY_FMT_PUB_RFC4253_6_6:
     case ASSH_KEY_FMT_PV_PEM_ASN1:
       blob_len = fread(blob, blob_len, 1, file);
-      ASSH_ERR_RET(blob_len < 1 ? ASSH_ERR_IO : 0);
       break;
 
     default:
@@ -211,7 +210,7 @@ assh_error_t assh_load_key_filename(struct assh_context_s *c,
   assh_error_t err;;
 
   FILE *file = fopen(filename, "r");
-  ASSH_ERR_RET(file == NULL ? ASSH_ERR_IO : 0);
+  ASSH_CHK_RET(file == NULL, ASSH_ERR_IO);
 
   ASSH_ERR_GTO(assh_load_key_file(c, head, algo, file, format), err_);
 

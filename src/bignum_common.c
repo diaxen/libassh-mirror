@@ -51,9 +51,9 @@ assh_error_t assh_bignum_from_hex(struct assh_bignum_s *bn, unsigned int *bits,
 				  const char * __restrict__ hex, size_t hex_len)
 {
   assh_error_t err;
-  int i;
+  unsigned int i;
 
-  ASSH_ERR_RET((hex_len % 2) ? ASSH_ERR_BAD_DATA : 0);
+  ASSH_CHK_RET(hex_len % 2, ASSH_ERR_INPUT_OVERFLOW);
 
   uint8_t buf[hex_len / 2];
 
@@ -61,27 +61,29 @@ assh_error_t assh_bignum_from_hex(struct assh_bignum_s *bn, unsigned int *bits,
     {
       uint8_t a = assh_bignum_hex_char(hex[i]);
       uint8_t b = assh_bignum_hex_char(hex[i + 1]);
-      ASSH_ERR_RET(a > 15 || b > 15 ? ASSH_ERR_BAD_DATA : 0);
+      ASSH_CHK_RET(a > 15 || b > 15, ASSH_ERR_NUM_OVERFLOW);
       buf[i/2] = (a << 4) | b;
     }
 
   ASSH_ERR_RET(assh_bignum_from_bytes(bn, bits, buf, hex_len / 2));
-  return ASSH_OK;  
+  return ASSH_OK;
 }
 
 assh_error_t assh_bignum_from_mpint(struct assh_bignum_s *bn, unsigned int *bits,
 				    const uint8_t * __restrict__ mpint)
 {
+  assh_error_t err;
   size_t s = assh_load_u32(mpint);
   /* uint8_t sign = s > 0 && (mpint[4] & 0x80); */
-  return assh_bignum_from_bytes(bn, bits, mpint + 4, s);
+  ASSH_ERR_RET(assh_bignum_from_bytes(bn, bits, mpint + 4, s));
+  return ASSH_OK;
 }
 
 assh_error_t assh_bignum_from_asn1(struct assh_bignum_s *bn, unsigned int *bits,
                                    const uint8_t * __restrict__ integer)
 {
   assh_error_t err;
-  ASSH_ERR_RET(*integer++ != 0x02 ? ASSH_ERR_BAD_DATA : 0);
+  ASSH_CHK_RET(*integer++ != 0x02, ASSH_ERR_BAD_DATA);
 
   unsigned int l = *integer++;
   if (l & 0x80)  /* long length form ? */
