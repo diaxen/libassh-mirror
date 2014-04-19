@@ -258,7 +258,7 @@ assh_packet_shrink_string(struct assh_packet_s *p, uint8_t *str,
 }
 
 assh_error_t
-assh_string_copy(const uint8_t *ssh_str, char *nul_str, size_t max_len)
+assh_ssh_string_copy(const uint8_t *ssh_str, char *nul_str, size_t max_len)
 {
   assh_error_t err;
 

@@ -237,7 +237,7 @@ static assh_error_t assh_userauth_server_req_password(struct assh_session_s *s,
 
   /* copy password */
   ASSH_ERR_RET(assh_packet_check_string(p, password, NULL) | ASSH_ERRSV_DISCONNECT);
-  ASSH_ERR_RET(assh_string_copy(password, pv->password, sizeof(pv->password))
+  ASSH_ERR_RET(assh_ssh_string_copy(password, pv->password, sizeof(pv->password))
 	       | ASSH_ERRSV_DISCONNECT);
 
   /* return event to check the user password */
@@ -450,9 +450,9 @@ static assh_error_t assh_userauth_server_req_new(struct assh_session_s *s,
   assh_error_t err;
 
   if (pv->srv == NULL ||
-      !assh_string_compare(srv_name, pv->srv->name) ||
-      !assh_string_compare(username, pv->username) ||
-      !assh_string_compare(method_name, pv->method_name))
+      !assh_ssh_string_compare(srv_name, pv->srv->name) ||
+      !assh_ssh_string_compare(username, pv->username) ||
+      !assh_ssh_string_compare(method_name, pv->method_name))
     {
       assh_userauth_server_flush_state(s);
 
@@ -465,9 +465,9 @@ static assh_error_t assh_userauth_server_req_new(struct assh_session_s *s,
         }
 
       /* keep method name and user name */
-      ASSH_ERR_RET(assh_string_copy(username, pv->username, sizeof(pv->username))
+      ASSH_ERR_RET(assh_ssh_string_copy(username, pv->username, sizeof(pv->username))
 		   | ASSH_ERRSV_DISCONNECT);
-      ASSH_ERR_RET(assh_string_copy(method_name, pv->method_name, sizeof(pv->method_name))
+      ASSH_ERR_RET(assh_ssh_string_copy(method_name, pv->method_name, sizeof(pv->method_name))
 		   | ASSH_ERRSV_DISCONNECT);
     }
 
@@ -502,7 +502,7 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_server_process)
     {
 #ifdef CONFIG_ASSH_SERVER_AUTH_NONE
     case 4:
-      if (!assh_string_compare(method_name, "none"))
+      if (!assh_ssh_string_compare(method_name, "none"))
         {
           ASSH_ERR_RET(assh_userauth_server_req_new(s, srv_name, username, method_name)
 		       | ASSH_ERRSV_DISCONNECT);
@@ -515,7 +515,7 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_server_process)
 
 #ifdef CONFIG_ASSH_SERVER_AUTH_PASSWORD
     case 8:
-      if (!assh_string_compare(method_name, "password"))
+      if (!assh_ssh_string_compare(method_name, "password"))
         {
           ASSH_ERR_RET(assh_userauth_server_req_new(s, srv_name, username, method_name)
 		       | ASSH_ERRSV_DISCONNECT);
@@ -528,7 +528,7 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_server_process)
 
 #ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
     case 9:
-      if (!assh_string_compare(method_name, "publickey"))
+      if (!assh_ssh_string_compare(method_name, "publickey"))
         {
           ASSH_ERR_RET(assh_userauth_server_req_new(s, srv_name, username, method_name)
 		       | ASSH_ERRSV_DISCONNECT);

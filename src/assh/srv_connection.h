@@ -286,7 +286,7 @@ struct assh_event_request_s
 {
   struct assh_channel_s * ASSH_EV_CONST ch;         //< input
   struct assh_request_s * ASSH_EV_CONST rq;         //< input
-  ASSH_EV_CONST struct assh_string_s    type;       //< input
+  ASSH_EV_CONST struct assh_buffer_s    type;       //< input
   ASSH_EV_CONST struct assh_buffer_s    rq_data;    //< input
   enum assh_connection_reply_e          reply;      //< output
   struct assh_buffer_s                  rsp_data;   //< output
@@ -426,7 +426,7 @@ assh_request(struct assh_session_s *s,
 struct assh_event_channel_open_s
 {
   struct assh_channel_s * ASSH_EV_CONST ch;       //< input
-  ASSH_EV_CONST struct assh_string_s    type;     //< input
+  ASSH_EV_CONST struct assh_buffer_s    type;     //< input
   ASSH_EV_CONST struct assh_buffer_s    rq_data;  //< input
   enum assh_connection_reply_e          reply;    //< output
   enum assh_channel_open_reason_e       reason;   //< output

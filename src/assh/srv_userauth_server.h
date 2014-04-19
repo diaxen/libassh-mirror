@@ -50,7 +50,7 @@
     @see ASSH_EVENT_USERAUTH_SERVER_USERKEY */
 struct assh_event_userauth_server_userkey_s
 {
-  ASSH_EV_CONST struct assh_string_s      username;
+  ASSH_EV_CONST struct assh_buffer_s      username;
   const struct assh_key_s * ASSH_EV_CONST pub_key;
   assh_bool_t                             found;
 };
@@ -63,8 +63,8 @@ struct assh_event_userauth_server_userkey_s
     @see ASSH_EVENT_USERAUTH_SERVER_PASSWORD */
 struct assh_event_userauth_server_password_s
 {
-  ASSH_EV_CONST struct assh_string_s username;
-  ASSH_EV_CONST struct assh_string_s password;
+  ASSH_EV_CONST struct assh_buffer_s username;
+  ASSH_EV_CONST struct assh_buffer_s password;
   assh_bool_t                        success;
 };
 

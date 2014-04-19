@@ -50,7 +50,7 @@
 */
 struct assh_event_userauth_client_user_s
 {
-  struct assh_string_s    username;    //< output
+  struct assh_buffer_s    username;    //< output
 };
 
 /** This event is reported when the client-side user authentication
@@ -77,7 +77,7 @@ struct assh_event_userauth_client_methods_s
 {
   ASSH_EV_CONST assh_bool_t  use_password; //< input
   ASSH_EV_CONST assh_bool_t  use_pub_key;  //< input
-  struct assh_string_s       password;     //< output
+  struct assh_buffer_s       password;     //< output
   struct assh_key_s          *pub_keys;    //< output
 };
 

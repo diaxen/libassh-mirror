@@ -295,7 +295,7 @@ assh_memcmp(const uint8_t *nula, const uint8_t *nulb, size_t len)
 /** @internal This function compares a ssh string with a size header to a @tt
     NUL terminated string. No bound checking is performed. */
 static inline ASSH_WARN_UNUSED_RESULT int
-assh_string_compare(const uint8_t *ssh_str, const char *nul_str)
+assh_ssh_string_compare(const uint8_t *ssh_str, const char *nul_str)
 {
   size_t l = assh_load_u32(ssh_str);
   return strncmp((const char*)ssh_str + 4, nul_str, l) || nul_str[l] != '\0';
@@ -306,7 +306,17 @@ assh_string_compare(const uint8_t *ssh_str, const char *nul_str)
     large enough to store the string along with its nul terminating
     byte. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_string_copy(const uint8_t *ssh_str, char *nul_str, size_t max_len);
+assh_ssh_string_copy(const uint8_t *ssh_str, char *nul_str, size_t max_len);
+
+static inline ASSH_WARN_UNUSED_RESULT int
+assh_buffer_strcmp(const struct assh_buffer_s *buf, const char *nul_str)
+{
+  uint_fast16_t i;
+  for (i = 0; i < buf->len; i++)
+    if (!nul_str[i] || buf->str[i] != nul_str[i])
+      return 1;
+  return nul_str[i];
+}
 
 #endif
 

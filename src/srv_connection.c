@@ -371,7 +371,7 @@ assh_connection_got_request(struct assh_session_s *s,
   e->connection.request.ch = ch;
   e->connection.request.rq = rq;
 
-  struct assh_string_s *type_ = &e->connection.request.type;
+  struct assh_buffer_s *type_ = &e->connection.request.type;
   type_->str = (char*)type + 4;
   type_->len = want_reply - type - 4;
 
@@ -783,7 +783,7 @@ assh_connection_got_channel_open(struct assh_session_s *s,
 
   e->connection.channel_open.ch = ch;
 
-  struct assh_string_s *type_ = &e->connection.channel_open.type;
+  struct assh_buffer_s *type_ = &e->connection.channel_open.type;
   type_->str = (char*)type + 4;
   type_->len = assh_load_u32(type);
 

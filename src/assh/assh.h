@@ -267,16 +267,16 @@ static inline void assh_hexdump(const char *name, const void *data, unsigned int
   fputc('\n', stderr);
 }
 
-struct assh_string_s
-{
-  char *str;
-  size_t len;
-};
-
 struct assh_buffer_s
 {
-  uint8_t *data;
-  size_t size;
+  union {
+    char *str;
+    uint8_t *data;
+  };
+  union {
+    size_t size;
+    size_t len;
+  };
 };
 
 struct assh_queue_entry_s

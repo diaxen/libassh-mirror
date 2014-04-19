@@ -164,7 +164,7 @@ assh_error_t assh_service_got_accept(struct assh_session_s *s,
   uint8_t *name = p->head.end, *name_end;
   ASSH_ERR_RET(assh_packet_check_string(p, name, &name_end));
 
-  ASSH_CHK_RET(assh_string_compare(name, s->srv_rq->name),
+  ASSH_CHK_RET(assh_ssh_string_compare(name, s->srv_rq->name),
 	       ASSH_ERR_PROTOCOL);
 
   /* init service */
