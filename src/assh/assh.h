@@ -132,7 +132,6 @@ enum assh_error_e
   ASSH_ERR_CRYPTO                  = 0x10c,
   /** Unsupported parameter value. */
   ASSH_ERR_NOTSUP                  = 0x10d,
-  ASSH_ERR_BUSY                    = 0x10e,
   /** The key exchange has failed */
   ASSH_ERR_KEX_FAILED              = 0x10f,
   /** The required key is not available. */

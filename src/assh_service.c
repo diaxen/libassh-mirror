@@ -149,6 +149,7 @@ assh_error_t assh_service_got_request(struct assh_session_s *s,
   return ASSH_OK;
  err_pkt:
   assh_packet_release(pout);
+  return err;
 }
 #endif
 

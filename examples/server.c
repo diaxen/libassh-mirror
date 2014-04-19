@@ -28,6 +28,7 @@
 #include <assh/srv_connection.h>
 #include <assh/assh_event.h>
 #include <assh/assh_algo.h>
+#include <assh/assh_packet.h>
 
 #include <assh/helper_fd.h>
 #include <assh/helper_key.h>
@@ -137,7 +138,7 @@ int main()
 	  assh_error_t err = assh_event_table_run(&session, &ev_table, &event);
 	  if (ASSH_ERR_ERROR(err) != ASSH_OK)
 	    {
-	      fprintf(stderr, "assh error %i in main loop (errno=%i)\n", err, errno);
+	      fprintf(stderr, "assh error %x in main loop (errno=%i)\n", err, errno);
 
 	      if (ASSH_ERR_ERROR(err) == ASSH_ERR_CLOSED)
 		{
@@ -155,24 +156,68 @@ int main()
 	      /* XXX check that event public key is in the list of
 		 user authorized keys. */
 	      event.userauth_server.userkey.found = 1;
+	      err = assh_event_done(&session, &event);
 	      break;
 	    }
 
 	    case ASSH_EVENT_USERAUTH_SERVER_PASSWORD:
 	      /* XXX check that event user/password pair matches. */
 	      event.userauth_server.password.success = 1;
+	      err = assh_event_done(&session, &event);
 	      break;
 
-	    case ASSH_EVENT_CHANNEL_OPEN:
-	      event.connection.channel_open.reply = ASSH_CONNECTION_REPLY_SUCCESS;
+	    case ASSH_EVENT_CHANNEL_OPEN: {
+	      struct assh_event_channel_open_s *co_e = &event.connection.channel_open;
+
+	      if (!assh_buffer_strcmp(&co_e->type, "session"))
+		{
+		  co_e->reply = ASSH_CONNECTION_REPLY_SUCCESS;
+		}
+	      err = assh_event_done(&session, &event);
 	      break;
+	    }
+
+	    case ASSH_EVENT_REQUEST: {
+	      struct assh_event_request_s *rq_e = &event.connection.request;
+
+	      if (!assh_buffer_strcmp(&rq_e->type, "shell"))
+		{
+		  rq_e->reply = ASSH_CONNECTION_REPLY_SUCCESS;
+		}
+	      else if (!assh_buffer_strcmp(&rq_e->type, "pty-req"))
+		{
+		  rq_e->reply = ASSH_CONNECTION_REPLY_SUCCESS;
+		}
+	      err = assh_event_done(&session, &event);
+	      break;
+	    }
+
+	    case ASSH_EVENT_CHANNEL_DATA: {
+	      struct assh_event_channel_data_s *dt_e = &event.connection.channel_data;
+
+	      uint8_t *data;
+	      size_t size = dt_e->data.size;
+
+	      /* allocate output data packet */
+	      assh_error_t perr = assh_channel_data_alloc(dt_e->ch, &data, &size, size);
+
+	      if (perr == ASSH_OK)  /* copy input data to output buffer */
+		memcpy(data, dt_e->data.data, size);
+
+	      /* acknowledge input data event before sending */
+	      err = assh_event_done(&session, &event);
+
+	      if (perr == ASSH_OK)  /* send output data */
+		assh_channel_data_send(dt_e->ch, size);
+	      break;
+	    }
 
 	    default:
 	      printf("Don't know how to handle event %u\n", event.id);
+	      err = assh_event_done(&session, &event);
 	    }
 
-	  err = assh_event_done(&session, &event);
-	  if (ASSH_ERR_ERROR(err) != ASSH_OK)
+	  if (err != ASSH_OK)
 	    fprintf(stderr, "assh error %i in main loop (errno=%i)\n", err, errno);
 	}
 

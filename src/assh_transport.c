@@ -442,7 +442,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 {
   assh_error_t err = ASSH_OK;
   enum assh_ssh_msg_e msg = SSH_MSG_INVALID;
-  struct assh_packet_s *p = s->in_pck;
+  struct assh_packet_s *p = s->tr_st <= ASSH_TR_SERVICE ? s->in_pck : NULL;
 
   if (p != NULL)
     {
@@ -561,6 +561,8 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
       break;
 
     case ASSH_TR_FIN:
+      if (s->srv == NULL)
+	return ASSH_OK;
       break;
 
     case ASSH_TR_CLOSED:

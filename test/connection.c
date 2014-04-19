@@ -33,6 +33,7 @@
 #include <assh/assh_transport.h>
 #include <assh/srv_connection.h>
 #include <assh/assh_event.h>
+#include <assh/helper_key.h>
 
 #include "fifo.h"
 #include "leaks_check.h"
@@ -695,8 +696,7 @@ int test(int (*fend)(int, int), int n)
 
 	      ch_event_close_count++;
 	      if (che->ch[i] == NULL)
-		TEST_FAIL("(ctx %u seed %u) channel_close\n",
-			  i, seed, che->status);
+		TEST_FAIL("(ctx %u seed %u) channel_close\n", i, seed);
 
 	      che->ch[i] = NULL;
 	      if (che->ch[0] == NULL && che->ch[1] == NULL)
@@ -721,12 +721,10 @@ int test(int (*fend)(int, int), int n)
 
 	      ch_event_eof_count++;
 	      if (che->ch[i] == NULL)
-		TEST_FAIL("(ctx %u seed %u) channel_eof\n",
-			  i, seed, che->status);
+		TEST_FAIL("(ctx %u seed %u) channel_eof\n", i, seed);
 
 	      if ((che->eof_sent & (2 >> i)) == 0)
-		TEST_FAIL("(ctx %u seed %u) channel_eof sent\n",
-			  i, seed, che->status);
+		TEST_FAIL("(ctx %u seed %u) channel_eof sent\n", i, seed);
 
 	      break;
 	    }
@@ -798,10 +796,10 @@ static int end_no_more_requests(int j, int n)
 
 static int end_early_cleanup(int j, int n)
 {
-  return (global_rq_fifo[0].count < RQ_FIFO_SIZE / 2 ||
+  return (/* global_rq_fifo[0].count < RQ_FIFO_SIZE / 2 ||
 	  global_rq_fifo[1].count < RQ_FIFO_SIZE / 2 ||
-	  ch_refs < CH_MAP_SIZE / 2,
-	  rand() % 100);
+	  ch_refs < CH_MAP_SIZE / 2 ||*/
+	  rand() % 1000);
 }
 
 int main(int argc, char **argv)

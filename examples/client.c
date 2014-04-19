@@ -99,10 +99,10 @@ int main(int argc, char **argv)
       err = assh_event_table_run(&session, &ev_table, &event);
       if (ASSH_ERR_ERROR(err) != ASSH_OK)
         {
-          fprintf(stderr, "assh error %i in main loop (errno=%i)\n", err, errno);
+          fprintf(stderr, "assh error %x in main loop (errno=%i)\n", err, errno);
 
-          if (ASSH_ERR_ERROR(err) == ASSH_ERR_DISCONNECTED)
-            return err;
+          if (ASSH_ERR_ERROR(err) == ASSH_ERR_CLOSED)
+            goto err_;
           continue;
         }
 
@@ -143,10 +143,11 @@ int main(int argc, char **argv)
         }
 
       err = assh_event_done(&session, &event);
-      if (ASSH_ERR_ERROR(err) != ASSH_OK)
+      if (err != ASSH_OK)
         fprintf(stderr, "assh error %i in main loop (errno=%i)\n", err, errno);
     }
 
+ err_:
   assh_session_cleanup(&session);
   assh_context_cleanup(&context);
   return 0;

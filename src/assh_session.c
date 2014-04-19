@@ -113,24 +113,24 @@ void assh_session_cleanup(struct assh_session_s *s)
   s->ctx->session_count--;
 }
 
-assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t err)
+assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t inerr)
 {
-  if ((err & ASSH_ERRSV_FATAL) || s->tr_st == ASSH_TR_CLOSED)
+  if ((inerr & ASSH_ERRSV_FATAL) || s->tr_st == ASSH_TR_CLOSED)
     {
       assh_transport_state(s, ASSH_TR_CLOSED);
-      return err | ASSH_ERRSV_FATAL;
+      return inerr | ASSH_ERRSV_FATAL;
     }
 
-  if ((err & ASSH_ERRSV_FIN) || s->tr_st == ASSH_TR_FIN)
+  if ((inerr & ASSH_ERRSV_FIN) || s->tr_st == ASSH_TR_FIN)
     {
       assh_transport_state(s, ASSH_TR_FIN);
-      return err | ASSH_ERRSV_FIN;
+      return inerr | ASSH_ERRSV_FIN;
     }
 
   uint32_t reason = SSH_DISCONNECT_RESERVED;
   const char *desc = NULL;
 
-  switch (err & 0xfff)
+  switch (inerr & 0xfff)
     {
     case ASSH_ERR_BAD_DATA:
     case ASSH_ERR_PROTOCOL:
@@ -146,11 +146,11 @@ assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t err)
     case ASSH_ERR_DISCONNECTED:
     case ASSH_ERR_CLOSED:
       assh_transport_state(s, ASSH_TR_FIN);
-      return err | ASSH_ERRSV_FIN;      
+      return inerr | ASSH_ERRSV_FIN;      
 
     case ASSH_ERR_STATE:
       assh_transport_state(s, ASSH_TR_CLOSED);
-      return err | ASSH_ERRSV_FATAL;      
+      return inerr | ASSH_ERRSV_FATAL;      
 
     case ASSH_ERR_MEM:
       reason = SSH_DISCONNECT_RESERVED;
@@ -177,9 +177,6 @@ assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t err)
       desc = "not supported";
       reason = SSH_DISCONNECT_RESERVED;
       break;
-    case ASSH_ERR_BUSY:
-      reason = SSH_DISCONNECT_TOO_MANY_CONNECTIONS;
-      break;
     case ASSH_ERR_KEX_FAILED:
       reason = SSH_DISCONNECT_KEY_EXCHANGE_FAILED;
       break;
@@ -205,29 +202,29 @@ assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t err)
       break;
     }
 
-  if (!(err & ASSH_ERRSV_DISCONNECT))
-    return err;
+  if (!(inerr & ASSH_ERRSV_DISCONNECT))
+    return inerr;
 
   struct assh_packet_s *pout;
   size_t sz = 0;
   if (desc != NULL)
     sz = 4 + strlen(desc);
 
-  ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_DISCONNECT, 3 * 4 + sz, &pout)
-	       | ASSH_ERRSV_FIN);
+  if (assh_packet_alloc(s->ctx, SSH_MSG_DISCONNECT, 3 * 4 + sz, &pout) == ASSH_OK)
+    {
+      ASSH_ASSERT(assh_packet_add_u32(pout, reason)); /* reason code */
 
-  ASSH_ASSERT(assh_packet_add_u32(pout, reason)); /* reason code */
+      uint8_t *str;
+      ASSH_ASSERT(assh_packet_add_string(pout, sz, &str)); /* description */
+      if (desc != NULL)
+	memcpy(str, desc, sz - 4);
 
-  uint8_t *str;
-  ASSH_ASSERT(assh_packet_add_string(pout, sz, &str)); /* description */
-  if (desc != NULL)
-    memcpy(str, desc, sz - 4);
+      ASSH_ASSERT(assh_packet_add_string(pout, 0, NULL)); /* language */
 
-  ASSH_ASSERT(assh_packet_add_string(pout, 0, NULL)); /* language */
-
-  assh_transport_push(s, pout);
+      assh_transport_push(s, pout);
+    }
 
   assh_transport_state(s, ASSH_TR_FIN);
-  return err | ASSH_ERRSV_FIN;
+  return inerr | ASSH_ERRSV_FIN;
 }
 
