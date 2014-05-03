@@ -25,6 +25,7 @@
 #include <assh/assh_prng.h>
 #include <assh/assh_context.h>
 #include <assh/assh_packet.h>
+#include <assh/assh_alloc.h>
 
 #include <string.h>
 #include <stdlib.h>

@@ -24,6 +24,7 @@
 #include <assh/assh_hash.h>
 #include <assh/assh_bignum.h>
 #include <assh/assh_packet.h>
+#include <assh/assh_alloc.h>
 
 void assh_hash_bytes_as_string(void *ctx_, assh_hash_update_t *update, const uint8_t *bytes, size_t len)
 {
@@ -39,17 +40,23 @@ void assh_hash_string(void *ctx_, assh_hash_update_t *update, const uint8_t *str
   update(ctx_, str, s + 4);
 }
 
-assh_error_t assh_hash_bignum(void *ctx_, assh_hash_update_t *update, const struct assh_bignum_s *bn)
+assh_error_t assh_hash_bignum(struct assh_context_s *ctx, void *ctx_,
+			      assh_hash_update_t *update, const struct assh_bignum_s *bn)
 {
   assh_error_t err;
   size_t l = assh_bignum_mpint_size(bn);
-#warning do not store bignum on stack
-  uint8_t s[l];
 
-  ASSH_ERR_RET(assh_bignum_to_mpint(bn, s));
+  ASSH_SCRATCH_ALLOC(ctx, uint8_t, s, l, ASSH_ERRSV_CONTINUE, err);
+
+  ASSH_ERR_GTO(assh_bignum_to_mpint(bn, s), err_alloc);
   update(ctx_, s, assh_load_u32(s) + 4);
 
-  return ASSH_OK;
+  err = ASSH_OK;
+
+ err_alloc:
+  ASSH_SCRATCH_FREE(ctx, s);
+ err:
+  return err;
 }
 
 void assh_hash_payload_as_string(void *ctx_, assh_hash_update_t *update, const struct assh_packet_s *p)

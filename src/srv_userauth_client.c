@@ -32,6 +32,7 @@
 #include <assh/assh_event.h>
 #include <assh/assh_key.h>
 #include <assh/assh_sign.h>
+#include <assh/assh_alloc.h>
 
 #ifdef CONFIG_ASSH_CLIENT
 

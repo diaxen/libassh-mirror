@@ -59,7 +59,8 @@ void assh_hash_bytes_as_string(void *ctx_, assh_hash_update_t *update, const uin
 
 /** This function convert the big number to the ssh mpint representation and hash the result. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_hash_bignum(void *ctx_, assh_hash_update_t *update, const struct assh_bignum_s *bn);
+assh_hash_bignum(struct assh_context_s *ctx, void *ctx_,
+		 assh_hash_update_t *update, const struct assh_bignum_s *bn);
 
 /** This function hash the packet payload. The packet must contain a valid
     32 bits size header; not check is performed by this function. */

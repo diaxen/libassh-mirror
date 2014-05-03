@@ -33,6 +33,7 @@
 #include <assh/assh_algo.h>
 #include <assh/assh_sign.h>
 #include <assh/assh_key.h>
+#include <assh/assh_alloc.h>
 
 #ifdef CONFIG_ASSH_SERVER
 

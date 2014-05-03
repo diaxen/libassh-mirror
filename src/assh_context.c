@@ -28,6 +28,7 @@
 #include <assh/assh_key.h>
 #include <assh/assh_kex.h>
 #include <assh/assh_prng.h>
+#include <assh/assh_alloc.h>
 
 #include <stdlib.h>
 
@@ -72,7 +73,6 @@ static ASSH_ALLOCATOR(assh_default_allocator)
   ASSH_CHK_RET(size != 0 && *ptr == NULL, ASSH_ERR_MEM);
   return ASSH_OK;
 #endif
-#warning clear freed memory
 }
 
 void assh_context_init(struct assh_context_s *c,

@@ -91,39 +91,6 @@ struct assh_context_s
   unsigned int srvs_count;
 };
 
-/** This specifies the type of data to be stored in the allocated memory. */
-enum assh_alloc_type_e
-{
-  /** General purpose allocation. */
-  ASSH_ALLOC_INTERNAL,
-  /** Cryptographic buffer allocation. */
-  ASSH_ALLOC_KEY,
-  /** SSH packet allocation. */
-  ASSH_ALLOC_PACKET,
-};
-
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_alloc(struct assh_context_s *c, size_t size,
-	   enum assh_alloc_type_e type, void **result)
-{
-  *result = NULL;
-  return c->f_alloc(c, result, size, type);
-}
-
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_realloc(struct assh_context_s *c, void **ptr, size_t size,
-	     enum assh_alloc_type_e type)
-{
-  return c->f_alloc(c, ptr, size, type);
-}
-
-static inline void assh_free(struct assh_context_s *c, void *ptr,
-			     enum assh_alloc_type_e type)
-{
-  if (ptr != NULL)
-    (void)c->f_alloc(c, &ptr, 0, type);
-}
-
 void assh_context_init(struct assh_context_s *ctx,
                        enum assh_context_type_e type);
 

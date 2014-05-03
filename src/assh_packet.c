@@ -21,12 +21,11 @@
 
 */
 
-#warning check packet alloc errors
-
 #include <assh/assh_packet.h>
 #include <assh/assh_bignum.h>
 #include <assh/assh_queue.h>
 #include <assh/assh_session.h>
+#include <assh/assh_alloc.h>
 
 #include <assert.h>
 #include <string.h>
@@ -92,9 +91,8 @@ assh_packet_alloc2(struct assh_context_s *c,
   p->ref_count = 1;
   p->ctx = c;
   p->data_size = /* pck_len */ 4 + /* pad_len */ 1 + /* msg */ 1;
+  memset(p->data, 0, p->alloc_size);
   p->head.msg = msg;
-
-#warning zero out packet payload
 
   *result = p;
   return ASSH_OK;

@@ -26,6 +26,7 @@
 #include <assh/assh_sign.h>
 #include <assh/hash_sha1.h>
 #include <assh/assh_prng.h>
+#include <assh/assh_alloc.h>
 
 #include <string.h>
 
@@ -353,28 +354,41 @@ static ASSH_KEY_LOAD_FCN(assh_sign_dss_key_load)
 
  */
 
-static assh_error_t assh_sign_dss_hash(size_t data_count, const uint8_t * const data[], const size_t data_len[],
-				       unsigned int n, struct assh_bignum_s *bn)
+static assh_error_t
+assh_sign_dss_hash(struct assh_context_s *c, size_t data_count,
+		   const uint8_t * const data[],
+		   const size_t data_len[],
+		   unsigned int n, struct assh_bignum_s *bn)
 {
   assh_error_t err;
-  uint8_t hash[n / 8];
   unsigned int i;
 
   switch (n)
     {
     case 160: {
-      struct assh_hash_sha1_context_s sha1;
-      assh_sha1_init(&sha1);
+      ASSH_SCRATCH_ALLOC(c, uint8_t, scratch,
+			 sizeof(struct assh_hash_sha1_context_s) + n / 8,
+			 ASSH_ERRSV_CONTINUE, err);
+
+      struct assh_hash_sha1_context_s *sha1 = (void*)scratch;
+      uint8_t *hash = scratch + sizeof(*sha1);
+
+      assh_sha1_init(sha1);
       for (i = 0; i < data_count; i++)
-        assh_sha1_update(&sha1, data[i], data_len[i]);
-      assh_sha1_final(&sha1, hash);
-      break;
+        assh_sha1_update(sha1, data[i], data_len[i]);
+      assh_sha1_final(sha1, hash);
+
+      ASSH_ERR_GTO(assh_bignum_from_data(bn, hash, n / 8), err);
+
+      err = ASSH_OK;
+     err:
+      ASSH_SCRATCH_FREE(c, scratch);
+      return err;
     }
     default:
       ASSH_ERR_RET(ASSH_ERR_NOTSUP);
     }
 
-  ASSH_ERR_RET(assh_bignum_from_data(bn, hash, sizeof(hash)));
   return ASSH_OK;
 }
 
@@ -407,7 +421,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
 
   /* message hash */
   ASSH_BIGNUM_ALLOC(c, mn, n, ASSH_ERRSV_CONTINUE, err_);
-  ASSH_ERR_GTO(assh_sign_dss_hash(data_count, data, data_len, n, mn), err_mn);
+  ASSH_ERR_GTO(assh_sign_dss_hash(c, data_count, data, data_len, n, mn), err_mn);
 
   memcpy(sign, assh_dss_id, assh_dss_id_len);
   assh_store_u32(sign + assh_dss_id_len, n * 2 / 8);
@@ -417,32 +431,35 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
   ASSH_BIGNUM_ALLOC(c, kn, n, ASSH_ERRSV_CONTINUE, err_mn);
   /* Do not use the prng output directly as dsa nonce in order to
      avoid leaking key bits in case of a weak prng. Random data is
-     hashed along with the private key and the message data. */
-  {
-#warning FIXME alloc in secur memory
-    uint8_t rnd[n / 8 + 20];
-    unsigned int i;
-    struct assh_hash_sha1_context_s sha1;
+     hashed with the private key and the message data. */
+  ASSH_SCRATCH_ALLOC(c, uint8_t, scratch,
+		     sizeof(struct assh_hash_sha1_context_s)
+		     + /* sizeof rnd[] */ n / 8 + 20,
+		     ASSH_ERRSV_CONTINUE, err_kn);
 
-    ASSH_ERR_GTO(c->prng->f_get(c, rnd, n / 8, ASSH_PRNG_QUALITY_NONCE), err_kn);
-    assh_sha1_init(&sha1);
-    for (i = 0; i < data_count; i++)
-      assh_sha1_update(&sha1, data[i], data_len[i]);
-    ASSH_ERR_RET(assh_hash_bignum(&sha1, &assh_sha1_update, k->xn));
-    for (i = 0; ; )
-      {
-        assh_sha1_update(&sha1, rnd, n / 8);
-        assh_sha1_final(&sha1, rnd + i);
-        if ((i += 20) >= n / 8)
-          break;
-        assh_sha1_init(&sha1);
-      }
-    ASSH_ERR_GTO(assh_bignum_from_data(kn, rnd, n / 8), err_mn);
-    ASSH_ERR_GTO(assh_bignum_div(kn, NULL, kn, k->qn), err_kn);
-  }
+  struct assh_hash_sha1_context_s *sha1 = (void*)scratch;
+  uint8_t *rnd = scratch + sizeof(*sha1);
+
+  unsigned int i;
+
+  ASSH_ERR_GTO(c->prng->f_get(c, rnd, n / 8, ASSH_PRNG_QUALITY_NONCE), err_scratch);
+  assh_sha1_init(sha1);
+  for (i = 0; i < data_count; i++)
+    assh_sha1_update(sha1, data[i], data_len[i]);
+  ASSH_ERR_GTO(assh_hash_bignum(c, sha1, &assh_sha1_update, k->xn), err_scratch);
+  for (i = 0; ; )
+    {
+      assh_sha1_update(sha1, rnd, n / 8);
+      assh_sha1_final(sha1, rnd + i);
+      if ((i += 20) >= n / 8)
+	break;
+      assh_sha1_init(sha1);
+    }
+  ASSH_ERR_GTO(assh_bignum_from_data(kn, rnd, n / 8), err_scratch);
+  ASSH_ERR_GTO(assh_bignum_div(kn, NULL, kn, k->qn), err_scratch);
 
   /* compute R */
-  ASSH_BIGNUM_ALLOC(c, rn, l, ASSH_ERRSV_CONTINUE, err_kn);
+  ASSH_BIGNUM_ALLOC(c, rn, l, ASSH_ERRSV_CONTINUE, err_scratch);
   ASSH_ERR_GTO(assh_bignum_expmod(rn, k->gn, kn, k->pn), err_rn);
   ASSH_ERR_GTO(assh_bignum_div(rn, NULL, rn, k->qn), err_rn);
   ASSH_ERR_GTO(assh_bignum_shrink(rn, n), err_rn);
@@ -473,6 +490,8 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
   ASSH_BIGNUM_FREE(c, sn);
  err_rn:
   ASSH_BIGNUM_FREE(c, rn);
+ err_scratch:
+  ASSH_SCRATCH_FREE(c, scratch);
  err_kn:
   ASSH_BIGNUM_FREE(c, kn);
  err_mn:
@@ -513,7 +532,7 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_dss_verify)
 
   ASSH_BIGNUM_ALLOC(c, mn, n, ASSH_ERRSV_CONTINUE, err_sn);
   
-  ASSH_ERR_GTO(assh_sign_dss_hash(data_count, data, data_len, n, mn), err_mn);
+  ASSH_ERR_GTO(assh_sign_dss_hash(c, data_count, data, data_len, n, mn), err_mn);
 
   /* copute w */
   ASSH_BIGNUM_ALLOC(c, wn, n, ASSH_ERRSV_CONTINUE, err_mn);

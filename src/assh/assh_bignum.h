@@ -25,7 +25,7 @@
 #ifndef ASSH_BIGNUM_H_
 #define ASSH_BIGNUM_H_
 
-#include "assh_context.h"
+#include "assh_alloc.h"
 #include "assh_prng.h"
 
 #ifdef CONFIG_ASSH_USE_GCRYPT_BIGNUM
@@ -61,7 +61,7 @@ assh_bignum_cleanup(struct assh_context_s *c, struct assh_bignum_s *bn)
 
 # define ASSH_BIGNUM_ALLOC(context, name, bits, sv, lbl)		\
   struct assh_bignum_s name##_, *name = &name##_;                       \
-  ASSH_ERR_GTO(assh_bignum_init(context, name, bits) | sv, lbl);	\
+  ASSH_ERR_GTO(assh_bignum_init(context, name, bits) | sv, lbl);
 
 # define ASSH_BIGNUM_FREE(context, name)        \
   assh_bignum_cleanup(context, name);
@@ -115,6 +115,7 @@ typedef uint16_t assh_bnlong_t;
 /** @This holds a big number. */
 struct assh_bignum_s
 {
+  struct assh_context_s *ctx;
   unsigned l;
   assh_bnword_t n[0];
 };
@@ -136,6 +137,7 @@ assh_bignum_sizeof(unsigned int bits)
 static inline ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_bignum_init(struct assh_context_s *c, struct assh_bignum_s *bn, unsigned int bits)
 {
+  bn->ctx = c;
   bn->l = ASSH_BIGNUM_WORDS(bits);
   return ASSH_OK;
 }
@@ -158,6 +160,7 @@ assh_bignum_cleanup(struct assh_context_s *c, struct assh_bignum_s *bn)
                + name##_l__ * sizeof(assh_bnword_t));                   \
   if (0)                                                                \
     goto lbl;                                                           \
+  name->ctx = (context);						\
   name->l = name##_l__;
 
 /** @This releases the big number allocated using @ref #ASSH_BIGNUM_ALLOC */
@@ -171,7 +174,8 @@ assh_bignum_cleanup(struct assh_context_s *c, struct assh_bignum_s *bn)
   size_t name##_l__ = ASSH_BIGNUM_WORDS(bits);                          \
   struct assh_bignum_s *name;                                           \
   ASSH_ERR_GTO(assh_alloc(context, sizeof(struct assh_bignum_s)         \
-      + name##_l__ * sizeof(assh_bnword_t), ASSH_ALLOC_KEY, (void**)&name) | sv, lbl); \
+      + name##_l__ * sizeof(assh_bnword_t), ASSH_ALLOC_SCRATCH, (void**)&name) | sv, lbl); \
+  name->ctx = (context);						\
   name->l = name##_l__;
 
 /** @This releases the big number allocated using @ref #ASSH_BIGNUM_ALLOC */
@@ -193,7 +197,7 @@ assh_bignum_shrink(struct assh_bignum_s *bn,
                    unsigned int bits)
 {
   assh_error_t err;
-  ASSH_ERR_RET(bits > bn->l * ASSH_BIGNUM_W ? ASSH_ERR_OVERFLOW : 0);
+  ASSH_CHK_RET(bits > bn->l * ASSH_BIGNUM_W, ASSH_ERR_NUM_OVERFLOW);
   bn->l = ASSH_BIGNUM_WORDS(bits);
   return ASSH_OK;
 }

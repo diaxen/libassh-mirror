@@ -32,6 +32,7 @@
 #include <assh/assh_event.h>
 #include <assh/assh_queue.h>
 #include <assh/assh_map.h>
+#include <assh/assh_alloc.h>
 
 ASSH_EVENT_SIZE_SASSERT(connection);
 

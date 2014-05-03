@@ -382,6 +382,7 @@ assh_bignum_div_euclidean(assh_bnword_t * __restrict__ r,
                           const assh_bnword_t * __restrict__ b,
                           unsigned int b_len)
 {
+  assh_error_t err;
   unsigned int az, al, bz, bl, da, sa;
   assh_bnword_t at, bt, q;
 
@@ -463,10 +464,13 @@ assh_bignum_modinv_euclidean(assh_bnword_t * __restrict__ u,
                              const assh_bnword_t * __restrict__ a,
                              unsigned int a_len,
                              const assh_bnword_t * __restrict__ b,
-                             unsigned int b_len)
+                             unsigned int b_len, assh_bnword_t *scratch)
 {
   assh_error_t err;
-  assh_bnword_t r[a_len], p[a_len], v[a_len];
+
+  assh_bnword_t *r = scratch;
+  assh_bnword_t *p = scratch + a_len;
+  assh_bnword_t *v = scratch + a_len * 2;
 
   memcpy(r, a, a_len * sizeof(assh_bnword_t));
   memcpy(p, b, b_len * sizeof(assh_bnword_t));
@@ -538,10 +542,20 @@ assh_error_t assh_bignum_modinv(struct assh_bignum_s *u,
 
   assert(u != a && u != m);
 
-  ASSH_CHK_RET(a->l < m->l, ASSH_ERR_OUTPUT_OVERFLOW : 0);
-  ASSH_CHK_RET(u->l < a->l, ASSH_ERR_OUTPUT_OVERFLOW : 0);
+  ASSH_CHK_RET(a->l < m->l, ASSH_ERR_OUTPUT_OVERFLOW);
+  ASSH_CHK_RET(u->l < a->l, ASSH_ERR_OUTPUT_OVERFLOW);
 
-  return assh_bignum_modinv_euclidean(u->n, u->l, m->n, m->l, a->n, a->l);
+  ASSH_SCRATCH_ALLOC(m->ctx, assh_bnword_t, scratch, m->l * 3,
+		     ASSH_ERRSV_CONTINUE, err);
+
+  ASSH_ERR_GTO(assh_bignum_modinv_euclidean(u->n, u->l, m->n, m->l,
+		a->n, a->l, scratch), err_scratch);
+
+  err = ASSH_OK;
+ err_scratch:
+  ASSH_SCRATCH_FREE(m->ctx, scratch);
+ err:
+  return err;
 }
 
 /*********************************************************************** mul */
@@ -598,16 +612,29 @@ static void assh_bignum_school_mul(assh_bnword_t * __restrict__ r,
 static void assh_bignum_karatsuba(assh_bnword_t * __restrict__ r,
 				  const assh_bnword_t *a,
 				  const assh_bnword_t *b,
+				  assh_bnword_t *scratch,
 				  unsigned int l)
 {
   if (l < ASSH_BIGNUM_KARATSUBA_THRESHOLD || (l & 1))
     return assh_bignum_school_mul(r, a, l, b, l);
 
+  /*
+    scratch buffer:
+      layout: x[h], y_[h], z1[l+1]
+      size: 2*l+1        per stack frame
+            4*l+log2(l)  on initial call
+  */
+
+#define ASSH_KARA_SCRATCH(len) (len * 4)
+          /* + log2(len) - ASSH_KARA_SCRATCH(ASSH_BIGNUM_KARATSUBA_THRESHOLD) */
+
   unsigned int i, h = l / 2;
-  assh_bnword_t x[h];
-  assh_bnword_t y_[h], *y = x;
   assh_bnlong_t tx = 0, ty = 0;
   assh_bnword_t cx, cy;
+
+  assh_bnword_t *x = scratch;
+  assh_bnword_t *y_ = scratch + h;
+  assh_bnword_t *y = x;
 
   /* compute high/low parts sums */
   for (i = 0; i < h; i++)
@@ -623,11 +650,12 @@ static void assh_bignum_karatsuba(assh_bnword_t * __restrict__ r,
     }
 
   /* recusive calls */
-  assh_bnword_t z1[l+1];
+  assh_bnword_t *z1 = scratch + l;
 
-  assh_bignum_karatsuba(r + l, a + h, b + h, h); /* z0 */
-  assh_bignum_karatsuba(z1   , x    , y    , h); /* z1 */
-  assh_bignum_karatsuba(r    , a    , b    , h); /* z2 */
+  scratch += 2 * l + 1;
+  assh_bignum_karatsuba(r + l, a + h, b + h, scratch, h); /* z0 */
+  assh_bignum_karatsuba(z1   , x    , y    , scratch, h); /* z1 */
+  assh_bignum_karatsuba(r    , a    , b    , scratch, h); /* z2 */
 
   /* z1 = z1 - z0 - z2 */
   assh_bnlong_t t = (assh_bnlong_t)2 << ASSH_BIGNUM_W;
@@ -661,13 +689,21 @@ assh_error_t assh_bignum_mul(struct assh_bignum_s *r,
   size_t l = a->l + b->l;
 
   if (a->l == b->l && !(a->l & 1))
-    assh_bignum_karatsuba(r->n, a->n, b->n, a->l);
+    {
+      ASSH_SCRATCH_ALLOC(a->ctx, assh_bnword_t, scratch,
+			 ASSH_KARA_SCRATCH(a->l),
+			 ASSH_ERRSV_CONTINUE, err);
+      assh_bignum_karatsuba(r->n, a->n, b->n, scratch, a->l);
+      ASSH_SCRATCH_FREE(a->ctx, scratch);
+    }
   else
     assh_bignum_school_mul(r->n, a->n, a->l, b->n, b->l);
 
   memset(r->n + l, 0, l - r->l);
 
-  return ASSH_OK;
+  err = ASSH_OK;
+ err:
+  return err;
 }
 
 assh_error_t assh_bignum_mulmod(struct assh_bignum_s *r,
@@ -680,21 +716,34 @@ assh_error_t assh_bignum_mulmod(struct assh_bignum_s *r,
   assert(r != a && r != b && r != m);
 
   ASSH_CHK_RET(r->l < m->l, ASSH_ERR_OUTPUT_OVERFLOW);
-  size_t l = a->l + b->l;
 
-  assh_bnword_t x[l];
+  size_t l = a->l + b->l; /* result size */
 
-  if (a->l == b->l && !(a->l & 1))
-    assh_bignum_karatsuba(x, a->n, b->n, a->l);
+  assh_bool_t use_kara = a->l == b->l && !(a->l & 1);
+  size_t scratch_len = l;
+  if (use_kara)
+    scratch_len += ASSH_KARA_SCRATCH(a->l);
+
+  ASSH_SCRATCH_ALLOC(a->ctx, assh_bnword_t, scratch, scratch_len,
+		     ASSH_ERRSV_CONTINUE, err);
+
+  assh_bnword_t *x = scratch;
+
+  if (use_kara)
+    assh_bignum_karatsuba(x, a->n, b->n, scratch + l, a->l);
   else
     assh_bignum_school_mul(x, a->n, a->l, b->n, b->l);
 
-  ASSH_ERR_RET(assh_bignum_div_euclidean(x, l, NULL, 0, m->n, m->l));
+  ASSH_ERR_GTO(assh_bignum_div_euclidean(x, l, NULL, 0, m->n, m->l), err_scratch);
 
   memcpy(r->n, x, m->l * sizeof(assh_bnword_t));
   memset(r->n + m->l, 0, (r->l - m->l) * sizeof(assh_bnword_t));
 
-  return ASSH_OK;
+  err = ASSH_OK;
+ err_scratch:
+  ASSH_SCRATCH_FREE(a->ctx, scratch);
+ err:
+  return err;
 }
 
 /*********************************************************************** shift */
@@ -737,14 +786,22 @@ assh_error_t assh_bignum_expmod(struct assh_bignum_s *r,
 				const struct assh_bignum_s *mod)
 {
   assh_error_t err;
-  unsigned int sql = ASSH_MAX(mod->l, x->l) * 2;
-  assh_bnword_t sq_[2][sql];
-  assh_bnword_t *sqa = sq_[0], *sqb = sq_[1];
-  assh_bnword_t r_[2][sql];
-  assh_bnword_t *ra = NULL, *rb = r_[1];
-  unsigned int i, j;
 
   ASSH_CHK_RET(r->l < mod->l, ASSH_ERR_OUTPUT_OVERFLOW);
+
+  /* square length */
+  unsigned int sql = ASSH_MAX(mod->l, x->l) * 2;
+
+  ASSH_SCRATCH_ALLOC(x->ctx, assh_bnword_t, scratch,
+		     + sql * 2  /* sq[2] */
+		     + sql * 2  /* r[2] */
+		     + ASSH_KARA_SCRATCH(sql / 2),
+		     ASSH_ERRSV_CONTINUE, err);
+
+  assh_bnword_t *sqa = scratch, *sqb = scratch + sql;
+  assh_bnword_t *ra = NULL,     *rb = scratch + sql * 3;
+  assh_bnword_t *kara_scratch = scratch + sql * 4;
+  unsigned int i, j;
 
   memcpy(sqa, x->n, x->l * sizeof(assh_bnword_t));
   memset(sqa + x->l, 0, (sql - x->l) * sizeof(assh_bnword_t));
@@ -758,28 +815,35 @@ assh_error_t assh_bignum_expmod(struct assh_bignum_s *r,
 	      if (ra == NULL)
 		{
 		  memcpy(rb, sqa, sql * sizeof(assh_bnword_t));
-		  ra = r_[0];
+		  ra = scratch + sql * 2;
 		}
 	      else
 		{
-		  assh_bignum_karatsuba(rb, ra, sqa, sql / 2);
-		  ASSH_ERR_RET(assh_bignum_div_euclidean(rb, sql, NULL, 0, mod->n, mod->l));
+		  assh_bignum_karatsuba(rb, ra, sqa, kara_scratch, sql / 2);
+		  ASSH_ERR_GTO(assh_bignum_div_euclidean(rb, sql, NULL, 0,
+					       mod->n, mod->l), err_scratch);
 		}
-#warning constant time
+
 	      ASSH_SWAP(ra, rb);
 	    }
 
-	  assh_bignum_karatsuba(sqb, sqa, sqa, sql / 2);
-	  ASSH_ERR_RET(assh_bignum_div_euclidean(sqb, sql, NULL, 0, mod->n, mod->l));
+	  assh_bignum_karatsuba(sqb, sqa, sqa, kara_scratch, sql / 2);
+	  ASSH_ERR_GTO(assh_bignum_div_euclidean(sqb, sql, NULL, 0,
+					 mod->n, mod->l), err_scratch);
 	  ASSH_SWAP(sqa, sqb);
 	}
     }
 
-  ASSH_ERR_CHK(ra == NULL, ASSH_ERR_NUM_OVERFLOW);     /* zero exponent case */
+  /* zero exponent case */
+  ASSH_CHK_GTO(ra == NULL, ASSH_ERR_NUM_OVERFLOW, err_scratch);
 
   memcpy(r->n, ra, mod->l * sizeof(assh_bnword_t));
   memset(r->n + mod->l, 0, (r->l - mod->l) * sizeof(assh_bnword_t));
 
-  return ASSH_OK;
+  err = ASSH_OK;
+ err_scratch:
+  ASSH_SCRATCH_FREE(x->ctx, scratch);
+ err:
+  return err;
 }
 

@@ -22,6 +22,7 @@
 */
 
 #include <assh/assh_context.h>
+#include <assh/assh_alloc.h>
 
 #include <stdlib.h>
 
