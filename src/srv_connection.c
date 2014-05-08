@@ -682,8 +682,8 @@ assh_channel_open_success_reply2(struct assh_channel_s *ch,
                  4 * 4 + rsp_data_len, &pout) | ASSH_ERRSV_CONTINUE, err);
 
   ch->lpkt_size = ASSH_MIN(pkt_size, ASSH_MAX_PCK_PAYLOAD_SIZE
-                           - /* extended data message header */ 2 * 4);
-  ch->lwin_size = ch->lwin_left = ASSH_MAX(win_size, ch->lpkt_size * 2);
+                           - /* extended data message header */ 3 * 4);
+  ch->lwin_size = ch->lwin_left = ASSH_MAX(win_size, ch->lpkt_size * 4);
   ch->status = ASSH_CHANNEL_ST_OPEN;
 
   ASSH_ASSERT(assh_packet_add_u32(pout, ch->remote_id));
@@ -843,8 +843,8 @@ assh_channel_open2(struct assh_session_s *s,
 	       | ASSH_ERRSV_CONTINUE, err_pkt);
 
   ch->lpkt_size = ASSH_MIN(pkt_size, ASSH_MAX_PCK_PAYLOAD_SIZE
-                           - /* extended data message header */ 2 * 4);
-  ch->lwin_size = ch->lwin_left = ASSH_MAX(win_size, ch->lpkt_size * 2);
+                           - /* extended data message header */ 3 * 4);
+  ch->lwin_size = ch->lwin_left = ASSH_MAX(win_size, ch->lpkt_size * 4);
   ch->mentry.id = pv->ch_id_counter++;
   ch->status = ASSH_CHANNEL_ST_OPEN_SENT;
   ch->session = s;
@@ -1036,7 +1036,9 @@ assh_connection_got_channel_data(struct assh_session_s *s,
     ASSH_ERR_RET(assh_packet_check_u32(p, &ext_type, data, &data)
 		 | ASSH_ERRSV_DISCONNECT);
 
-  size_t size = p->data + p->data_size - data;
+  uint32_t size = 0;
+  ASSH_ERR_RET(assh_packet_check_u32(p, &size, data, &data) | ASSH_ERRSV_DISCONNECT);
+  ASSH_ERR_RET(assh_packet_check_array(p, data, size, NULL) | ASSH_ERRSV_DISCONNECT);
 
   ASSH_CHK_RET(size > ch->lpkt_size,
 	       ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
@@ -1045,15 +1047,19 @@ assh_connection_got_channel_data(struct assh_session_s *s,
   ASSH_CHK_RET(size > ch->lwin_left,
 	       ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
 #else
-  if (ch->lwin_left < size)
+  if (size > ch->lwin_left)
     size = ch->lwin_left;     /* ignore extra data, rfc4254 section 5.2 */
 #endif
 
   /* update window and send adjustment */
   ch->lwin_left -= size;
 
-  if ((ch->lwin_left < ch->lpkt_size * 2 ||
-       ch->lwin_left < ch->lwin_size / 2) &&
+#if 0
+  ASSH_DEBUG("lwin_left=%u lwin_size=%u lpkt_size=%u\n",
+	     ch->lwin_left, ch->lwin_size, ch->lpkt_size);
+#endif
+
+  if ((ch->lwin_left < ch->lwin_size / 2) &&
       ch->status != ASSH_CHANNEL_ST_CLOSE_CALLED)
     {
       uint32_t inc = ch->lwin_size - ch->lwin_left;
@@ -1207,10 +1213,11 @@ assh_channel_data_alloc(struct assh_channel_s *ch,
   struct assh_packet_s *pout;
 
   ASSH_ERR_GTO(assh_packet_alloc(s->ctx, SSH_MSG_CHANNEL_DATA,
-		 4 + *size, &pout) | ASSH_ERRSV_CONTINUE, err);
+		 2 * 4 + *size, &pout) | ASSH_ERRSV_CONTINUE, err);
   ASSH_ASSERT(assh_packet_add_u32(pout, ch->remote_id));
 
-  *data = pout->data + pout->data_size;
+  *data = pout->data + pout->data_size
+    + /* room for data size */ 4;
 
   ch->data_pck = pout;
 
@@ -1233,11 +1240,12 @@ assh_channel_data_alloc_ext(struct assh_channel_s *ch,
   struct assh_packet_s *pout;
 
   ASSH_ERR_GTO(assh_packet_alloc(s->ctx, SSH_MSG_CHANNEL_EXTENDED_DATA,
-		 2 * 4 + *size, &pout) | ASSH_ERRSV_CONTINUE, err);
+		 3 * 4 + *size, &pout) | ASSH_ERRSV_CONTINUE, err);
   ASSH_ASSERT(assh_packet_add_u32(pout, ch->remote_id));
   ASSH_ASSERT(assh_packet_add_u32(pout, ext_type));
 
-  *data = pout->data + pout->data_size;
+  *data = pout->data + pout->data_size
+    + /* room for data size */ 4;
 
   ch->data_pck = pout;
 
@@ -1279,8 +1287,11 @@ assh_channel_data_send(struct assh_channel_s *ch, size_t size)
   struct assh_packet_s *pout = ch->data_pck;
 
   ASSH_CHK_GTO(pout == NULL, ASSH_ERR_STATE | ASSH_ERRSV_FATAL, err);
-  ASSH_CHK_GTO(size > pout->alloc_size - pout->data_size,
+  ASSH_CHK_GTO(size > pout->alloc_size - pout->data_size - 4,
 	       ASSH_ERR_OUTPUT_OVERFLOW | ASSH_ERRSV_CONTINUE, err);
+
+  ASSH_ASSERT(assh_packet_add_u32(pout, size));
+
   assert(ch->rwin_left >= size);
 
   pout->data_size += size;
