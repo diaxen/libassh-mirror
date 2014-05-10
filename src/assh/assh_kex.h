@@ -90,6 +90,37 @@ assh_kex_send_init(struct assh_session_s *s);
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p);
 
+#ifdef CONFIG_ASSH_CLIENT
+
+#define ASSH_KEX_CLIENT_HASH(n) \
+  ASSH_WARN_UNUSED_RESULT assh_error_t (n) (struct assh_session_s *s,   \
+                                            const struct assh_hash_s *hash_algo, \
+                                            void *hash_ctx)
+
+typedef ASSH_KEX_CLIENT_HASH(assh_kex_client_hash_t);
+
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_kex_client_hash(struct assh_session_s *s, assh_kex_client_hash_t *fcn,
+                     const struct assh_hash_s *hash_algo,
+                     struct assh_key_s **host_key, const uint8_t *secret_str,
+                     const uint8_t *host_key_str, const uint8_t *host_sign_str);
+#endif
+
+#ifdef CONFIG_ASSH_SERVER
+
+#define ASSH_KEX_SERVER_HASH(n) \
+  ASSH_WARN_UNUSED_RESULT assh_error_t (n) (struct assh_session_s *s, \
+                                            const struct assh_hash_s *hash_algo, \
+                                            void *hash_ctx, struct assh_packet_s *pout)
+
+typedef ASSH_KEX_SERVER_HASH(assh_kex_server_hash_t);
+
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_kex_server_hash(struct assh_session_s *s, assh_kex_server_hash_t *fnc,
+                     size_t kex_len, const struct assh_hash_s *hash_algo,
+                     const uint8_t *secret_str);
+#endif
+
 /**
    @internal This function is called by the pluggable key exchange
    module when the exchange hash and the shared secret are
@@ -103,8 +134,8 @@ assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p);
 */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_kex_new_keys(struct assh_session_s *s,
-                  const struct assh_hash_s *hash_algo,
-                  const uint8_t *ex_hash, struct assh_bignum_s *k);
+                  const struct assh_hash_s *hash_algo, const uint8_t *ex_hash,
+                  const uint8_t *secret_str);
 
 /**
    @internal This function is called by the pluggable key exchange

@@ -49,6 +49,7 @@ struct assh_packet_s;
 struct assh_channel_s;
 struct assh_request_s;
 struct assh_bignum_s;
+struct assh_key_s;
 struct assh_kex_keys_s;
 struct assh_algo_kex_s;
 struct assh_hash_s;

@@ -354,9 +354,8 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
 /* derive cipher/mac/iv key from shared secret */
 static assh_error_t assh_kex_new_key(struct assh_session_s *s, void *hash_ctx,
                                      const struct assh_hash_s *hash_algo,
-                                     const uint8_t *ex_hash,
-                                     struct assh_bignum_s *k, char c,
-                                     uint8_t *key, size_t key_size)
+                                     const uint8_t *ex_hash, const uint8_t *secret_str,
+                                     char c, uint8_t *key, size_t key_size)
 {
   assh_error_t err;
 
@@ -371,8 +370,7 @@ static assh_error_t assh_kex_new_key(struct assh_session_s *s, void *hash_ctx,
 
   /* derive key */
   hash_algo->f_init(hash_ctx);
-  ASSH_ERR_GTO(assh_hash_bignum(s->ctx, hash_ctx, hash_algo->f_update, k)
-	       | ASSH_ERRSV_DISCONNECT, err_buf);
+  hash_algo->f_update(hash_ctx, secret_str, assh_load_u32(secret_str) + 4);
   hash_algo->f_update(hash_ctx, ex_hash, hash_algo->hash_size);
   hash_algo->f_update(hash_ctx, &c, 1);
   hash_algo->f_update(hash_ctx, s->session_id, s->session_id_len);
@@ -386,8 +384,7 @@ static assh_error_t assh_kex_new_key(struct assh_session_s *s, void *hash_ctx,
       assert(size + hash_algo->hash_size <= ASSH_MAX_SYMKEY_SIZE);
 
       hash_algo->f_init(hash_ctx);
-      ASSH_ERR_GTO(assh_hash_bignum(s->ctx, hash_ctx, hash_algo->f_update, k)
-		   | ASSH_ERRSV_DISCONNECT, err_buf);
+      hash_algo->f_update(hash_ctx, secret_str, assh_load_u32(secret_str) + 4);
       hash_algo->f_update(hash_ctx, ex_hash, hash_algo->hash_size);
       hash_algo->f_update(hash_ctx, buf, size);
       hash_algo->f_final(hash_ctx, buf + size);
@@ -397,15 +394,15 @@ static assh_error_t assh_kex_new_key(struct assh_session_s *s, void *hash_ctx,
 
   err = ASSH_OK;
 
- err_buf:
   ASSH_SCRATCH_FREE(s->ctx, buf);
  err:
   return err;
 }
 
-assh_error_t assh_kex_new_keys(struct assh_session_s *s,
-                               const struct assh_hash_s *hash_algo,
-                               const uint8_t *ex_hash, struct assh_bignum_s *k)
+assh_error_t
+assh_kex_new_keys(struct assh_session_s *s,
+                  const struct assh_hash_s *hash_algo, const uint8_t *ex_hash,
+                  const uint8_t *secret_str)
 {
   assh_error_t err;
 #if defined(CONFIG_ASSH_SERVER) && defined(CONFIG_ASSH_CLIENT)
@@ -432,8 +429,9 @@ assh_error_t assh_kex_new_keys(struct assh_session_s *s,
 
   /* get input IV */
   if (!kin->cipher->is_stream)
-    ASSH_ERR_GTO(assh_kex_new_key(s, hash_ctx, hash_algo, ex_hash, k, *c,
-                   kin->iv, kin->cipher->block_size)
+    ASSH_ERR_GTO(assh_kex_new_key(s, hash_ctx, hash_algo, ex_hash,
+                                  secret_str, *c,
+                                  kin->iv, kin->cipher->block_size)
 		 | ASSH_ERRSV_DISCONNECT, err_scratch);
 #ifdef CONFIG_ASSH_DEBUG_KEX
   assh_hexdump("in iv", kin->iv, kin->cipher->block_size);
@@ -442,8 +440,9 @@ assh_error_t assh_kex_new_keys(struct assh_session_s *s,
 
   /* get output IV */
   if (!kout->cipher->is_stream)
-    ASSH_ERR_GTO(assh_kex_new_key(s, hash_ctx, hash_algo, ex_hash, k, *c,
-                   kout->iv, kout->cipher->block_size)
+    ASSH_ERR_GTO(assh_kex_new_key(s, hash_ctx, hash_algo, ex_hash,
+                                  secret_str, *c,
+                                  kout->iv, kout->cipher->block_size)
 		 | ASSH_ERRSV_DISCONNECT, err_scratch);
 #ifdef CONFIG_ASSH_DEBUG_KEX
   assh_hexdump("out iv", kout->iv, kout->cipher->block_size);
@@ -451,8 +450,9 @@ assh_error_t assh_kex_new_keys(struct assh_session_s *s,
   c++;
 
   /* get input cipher key and init cipher */
-  ASSH_ERR_GTO(assh_kex_new_key(s, hash_ctx, hash_algo, ex_hash, k, *c++,
-                 key, kin->cipher->key_size)
+  ASSH_ERR_GTO(assh_kex_new_key(s, hash_ctx, hash_algo, ex_hash,
+                                secret_str, *c++,
+                                key, kin->cipher->key_size)
 	       | ASSH_ERRSV_DISCONNECT, err_scratch);
   kin->cipher_ctx = (void*)(kin + 1);
   ASSH_ERR_GTO(kin->cipher->f_init(s->ctx, kin->cipher_ctx, key, kin->iv, 0)
@@ -462,8 +462,9 @@ assh_error_t assh_kex_new_keys(struct assh_session_s *s,
 #endif
 
   /* get output cipher key and init cipher */
-  ASSH_ERR_GTO(assh_kex_new_key(s, hash_ctx, hash_algo, ex_hash, k, *c++,
-                 key, kout->cipher->key_size)
+  ASSH_ERR_GTO(assh_kex_new_key(s, hash_ctx, hash_algo, ex_hash,
+                                secret_str, *c++,
+                                key, kout->cipher->key_size)
 	       | ASSH_ERRSV_DISCONNECT, err_cipher_out);
   kout->cipher_ctx = (void*)(kout + 1);
   ASSH_ERR_GTO(kout->cipher->f_init(s->ctx, kout->cipher_ctx, key, kout->iv, 1)
@@ -473,8 +474,9 @@ assh_error_t assh_kex_new_keys(struct assh_session_s *s,
 #endif
 
   /* get input integrity key and init mac */
-  ASSH_ERR_GTO(assh_kex_new_key(s, hash_ctx, hash_algo, ex_hash, k, *c++,
-                 key, kin->mac->key_size)
+  ASSH_ERR_GTO(assh_kex_new_key(s, hash_ctx, hash_algo, ex_hash,
+                                secret_str, *c++,
+                                key, kin->mac->key_size)
 	       | ASSH_ERRSV_DISCONNECT, err_mac_in);
   kin->mac_ctx = (void*)((uint8_t*)(kin->cipher_ctx) + kin->cipher->ctx_size);
   ASSH_ERR_GTO(kin->mac->f_init(s->ctx, kin->mac_ctx, key)
@@ -484,8 +486,9 @@ assh_error_t assh_kex_new_keys(struct assh_session_s *s,
 #endif
 
   /* get output integrity key and init cipher */
-  ASSH_ERR_GTO(assh_kex_new_key(s, hash_ctx, hash_algo, ex_hash, k, *c++,
-                 key, kout->mac->key_size)
+  ASSH_ERR_GTO(assh_kex_new_key(s, hash_ctx, hash_algo, ex_hash,
+                                secret_str, *c++,
+                                key, kout->mac->key_size)
 	       | ASSH_ERRSV_DISCONNECT, err_mac_out);
   kout->mac_ctx = (void*)((uint8_t*)(kout->cipher_ctx) + kout->cipher->ctx_size);
   ASSH_ERR_GTO(kout->mac->f_init(s->ctx, kout->mac_ctx, key)
@@ -529,6 +532,164 @@ assh_error_t assh_kex_new_keys(struct assh_session_s *s,
  err:
   return err;
 }
+
+#ifdef CONFIG_ASSH_CLIENT
+assh_error_t
+assh_kex_client_hash(struct assh_session_s *s, assh_kex_client_hash_t *fcn,
+                     const struct assh_hash_s *hash_algo,
+                     struct assh_key_s **host_key, const uint8_t *secret_str,
+                     const uint8_t *host_key_str, const uint8_t *host_sign_str)
+{
+  assh_error_t err;
+  struct assh_context_s *c = s->ctx;
+
+  /* compute the exchange hash H */
+  ASSH_SCRATCH_ALLOC(c, void, hash_ctx, hash_algo->ctx_size,
+		     ASSH_ERRSV_CONTINUE, err_);
+
+  memset(hash_ctx, 0x5a, hash_algo->ctx_size);
+  hash_algo->f_init(hash_ctx);
+
+  assh_hash_bytes_as_string(hash_ctx, hash_algo->f_update, (const uint8_t*)ASSH_IDENT,
+			    sizeof(ASSH_IDENT) /* \r\n\0 */ - 3);
+  assh_hash_bytes_as_string(hash_ctx, hash_algo->f_update, s->ident_str, s->ident_len);
+
+  assh_hash_payload_as_string(hash_ctx, hash_algo->f_update, s->kex_init_local);
+
+  assh_hash_payload_as_string(hash_ctx, hash_algo->f_update, s->kex_init_remote);
+
+  assh_hash_string(hash_ctx, hash_algo->f_update, host_key_str);
+
+  ASSH_ERR_GTO(fcn(s, hash_algo, hash_ctx), err_scratch);
+
+  assh_hash_string(hash_ctx, hash_algo->f_update, secret_str);
+
+  uint8_t ex_hash[ASSH_MAX_HASH_SIZE];
+  hash_algo->f_final(hash_ctx, ex_hash);
+
+  /* load key and verify signature */
+  const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
+
+  ASSH_ERR_GTO(assh_key_load3(s->ctx, host_key, &sign_algo->algo, host_key_str + 4,
+                 assh_load_u32(host_key_str), ASSH_KEY_FMT_PUB_RFC4253_6_6)
+               | ASSH_ERRSV_DISCONNECT, err_scratch);
+
+  assh_bool_t sign_ok;
+  const uint8_t *sign_ptrs[1] = { ex_hash };
+  size_t sign_sizes[1] = { hash_algo->hash_size };
+
+  ASSH_ERR_GTO(sign_algo->f_verify(c, *host_key, 1, sign_ptrs, sign_sizes,
+                                   host_sign_str + 4, assh_load_u32(host_sign_str),
+                                   &sign_ok) | ASSH_ERRSV_DISCONNECT, err_hk);
+
+  ASSH_CHK_GTO(!sign_ok, ASSH_ERR_HOSTKEY_SIGNATURE | ASSH_ERRSV_DISCONNECT, err_hk);
+
+  /* setup new keys */
+  ASSH_ERR_GTO(assh_kex_new_keys(s, hash_algo, ex_hash, secret_str)
+               | ASSH_ERRSV_DISCONNECT, err_hk);
+
+  ASSH_SCRATCH_FREE(c, hash_ctx);
+  return ASSH_OK;
+
+ err_hk:
+  assh_key_flush(s->ctx, host_key);
+ err_scratch:
+  ASSH_SCRATCH_FREE(c, hash_ctx);
+ err_:
+  return err;
+}
+#endif
+
+#ifdef CONFIG_ASSH_SERVER
+assh_error_t
+assh_kex_server_hash(struct assh_session_s *s,
+                     assh_kex_server_hash_t *fcn, size_t kex_len,
+                     const struct assh_hash_s *hash_algo,
+                     const uint8_t *secret_str)
+{
+  assh_error_t err;
+  struct assh_context_s *c = s->ctx;
+
+  /* look for an host key pair which matchs the selected algorithm. */
+  const struct assh_key_s *hk = c->host_keys;
+  const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
+  while (hk != NULL && hk->algo != (struct assh_algo_s*)sign_algo)
+    hk = hk->next;
+  ASSH_CHK_RET(hk == NULL, ASSH_ERR_MISSING_KEY | ASSH_ERRSV_DISCONNECT);
+
+  /* alloc reply packet */
+  size_t ks_len;
+  ASSH_ERR_RET(hk->f_output(c, hk, NULL, &ks_len,
+	         ASSH_KEY_FMT_PUB_RFC4253_6_6)
+	       | ASSH_ERRSV_DISCONNECT);
+
+  size_t sign_len;
+  ASSH_ERR_RET(sign_algo->f_generate(c, hk, 0, NULL, NULL, NULL, &sign_len)
+	       | ASSH_ERRSV_DISCONNECT);
+
+  struct assh_packet_s *pout;
+  ASSH_ERR_RET(assh_packet_alloc(c, SSH_MSG_KEX_DH_REPLY,
+		(4 + ks_len) + kex_len + (4 + sign_len), &pout)
+	       | ASSH_ERRSV_DISCONNECT);
+
+  /* append public host key to packet. */
+  uint8_t *ks_str;
+  ASSH_ASSERT(assh_packet_add_string(pout, ks_len, &ks_str));
+  ASSH_ERR_GTO(hk->f_output(c, hk, ks_str, &ks_len,
+		ASSH_KEY_FMT_PUB_RFC4253_6_6)
+	       | ASSH_ERRSV_DISCONNECT, err_p);
+
+  assh_packet_shrink_string(pout, ks_str, ks_len);
+
+  /* compute the exchange hash H */
+  ASSH_SCRATCH_ALLOC(c, void, hash_ctx, hash_algo->ctx_size,
+		     ASSH_ERRSV_CONTINUE, err_p);
+
+  hash_algo->f_init(hash_ctx);
+
+  assh_hash_bytes_as_string(hash_ctx, hash_algo->f_update, s->ident_str, s->ident_len);
+  assh_hash_bytes_as_string(hash_ctx, hash_algo->f_update, (const uint8_t*)ASSH_IDENT,
+			    sizeof(ASSH_IDENT) /* \r\n\0 */ - 3);
+  assh_hash_payload_as_string(hash_ctx, hash_algo->f_update, s->kex_init_remote);
+  assh_hash_payload_as_string(hash_ctx, hash_algo->f_update, s->kex_init_local);
+  assh_hash_string(hash_ctx, hash_algo->f_update, ks_str - 4);
+
+  ASSH_ERR_GTO(fcn(s, hash_algo, hash_ctx, pout), err_scratch);
+
+  assh_hash_string(hash_ctx, hash_algo->f_update, secret_str);
+
+  uint8_t ex_hash[ASSH_MAX_HASH_SIZE];
+  hash_algo->f_final(hash_ctx, ex_hash);
+
+  const uint8_t *sign_ptrs[1] = { ex_hash };
+  size_t sign_sizes[1] = { hash_algo->hash_size };
+
+  /* append the signature */
+  uint8_t *sign;
+  ASSH_ASSERT(assh_packet_add_string(pout, sign_len, &sign));
+
+  ASSH_ERR_GTO(sign_algo->f_generate(c, hk, 1,
+		 sign_ptrs, sign_sizes, sign, &sign_len)
+	       | ASSH_ERRSV_DISCONNECT, err_scratch);
+  assh_packet_shrink_string(pout, sign, sign_len);
+
+  /* setup new symmetric keys */
+  ASSH_ERR_GTO(assh_kex_new_keys(s, hash_algo, ex_hash, secret_str)
+	       | ASSH_ERRSV_DISCONNECT, err_scratch);
+
+  assh_transport_push(s, pout);
+
+  ASSH_SCRATCH_FREE(c, hash_ctx);
+
+  return ASSH_OK;
+
+ err_scratch:
+  ASSH_SCRATCH_FREE(c, hash_ctx);
+ err_p:
+  assh_packet_release(pout);
+  return err;
+}
+#endif
 
 void assh_kex_keys_cleanup(struct assh_session_s *s, struct assh_kex_keys_s *keys)
 {
