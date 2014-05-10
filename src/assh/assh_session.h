@@ -89,6 +89,10 @@ struct assh_session_s
   /** this flag is set when a key re-exchange init packet has been sent */
   assh_bool_t kex_init_sent;
 
+  /** this flag indicates if we have to skip the first kex packet from
+      the remote side. */
+  assh_bool_t kex_bad_guess;
+
   /** Session id is first "exchange hash" H */
   uint8_t session_id[ASSH_MAX_HASH_SIZE];
   /** Session id length */

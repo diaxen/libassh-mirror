@@ -183,7 +183,8 @@ assh_kex_server_algos(struct assh_context_s *c, uint8_t *lists[9],
 
         next:
           start = n + 1;
-          *guessed = 0;
+          if (i < 2) /* KEX or HOST KEY algorithm */
+            *guessed = 0;
         }
 
       ASSH_ERR_RET(ASSH_ERR_MISSING_ALGO | ASSH_ERRSV_DISCONNECT);
@@ -236,8 +237,9 @@ assh_kex_client_algos(struct assh_context_s *c, uint8_t *lists[9],
                   goto done;
                 }
 
-              *guessed = 0;
               start = n + 1;
+              if (i < 2) /* KEX or HOST KEY algorithm */
+                *guessed = 0;
             }
         }
     done:;
@@ -251,37 +253,47 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
 {
   assh_error_t err;
 
-  uint8_t *lists[9];
+  uint8_t *lists[11];
 
   unsigned int i;
 
-  /* get pointers to the 8 name-lists and check bounds */
+  /* get pointers to the 10 name-lists while checking bounds */
   lists[0] = p->head.end /* cookie */ + 16;
-  for (i = 0; i < 8; i++)
+  for (i = 0; i < 10; i++)
     ASSH_ERR_RET(assh_packet_check_string(p, lists[i], lists + i + 1)
 		 | ASSH_ERRSV_DISCONNECT);
 
+  ASSH_ERR_RET(assh_packet_check_array(p, lists[10], 1, NULL)
+               | ASSH_ERRSV_DISCONNECT);
+
+  assh_bool_t guess_follows = *lists[10];
+  assh_bool_t good_guess;
+
   const struct assh_algo_s *algos[8];
-  assh_bool_t guessed;
 
   /* select proper algorithms based on registered algorithms and name-lists */
   switch (s->ctx->type)
     {
 #ifdef CONFIG_ASSH_SERVER
     case ASSH_SERVER:
-      ASSH_ERR_RET(assh_kex_server_algos(s->ctx, lists, algos, &guessed)
+      ASSH_ERR_RET(assh_kex_server_algos(s->ctx, lists, algos, &good_guess)
 		   | ASSH_ERRSV_DISCONNECT);
       break;
 #endif
 #ifdef CONFIG_ASSH_CLIENT
     case ASSH_CLIENT:
-      ASSH_ERR_RET(assh_kex_client_algos(s->ctx, lists, algos, &guessed)
+      ASSH_ERR_RET(assh_kex_client_algos(s->ctx, lists, algos, &good_guess)
 		   | ASSH_ERRSV_DISCONNECT);
       break;
 #endif
     default:
       abort();
     }
+
+  s->kex_bad_guess = guess_follows && !good_guess;
+#ifdef CONFIG_ASSH_DEBUG_KEX
+  ASSH_DEBUG("kex guess: follows=%x good=%x\n", guess_follows, good_guess);
+#endif
 
   const struct assh_algo_kex_s *kex           = (const void *)algos[0];
   const struct assh_algo_sign_s *sign         = (const void *)algos[1];
@@ -291,8 +303,6 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
   const struct assh_algo_mac_s *mac_out       = (const void *)algos[5];
   const struct assh_algo_compress_s *cmp_in   = (const void *)algos[6];
   const struct assh_algo_compress_s *cmp_out  = (const void *)algos[7];
-
-#warning handle guess
 
   /* keep the remote KEX_INIT packet, will be needed for hashing */
   assert(s->kex_init_remote == NULL);

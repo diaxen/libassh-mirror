@@ -508,7 +508,11 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 	   1-4, 7-19, 20-29, 30-49 */
       ASSH_CHK_RET(msg > 49 || msg == SSH_MSG_SERVICE_REQUEST || msg == SSH_MSG_SERVICE_ACCEPT,
 		   ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
-      ASSH_ERR_RET(s->kex->f_process(s, p, e) | ASSH_ERRSV_DISCONNECT);
+
+      if (!s->kex_bad_guess || msg == SSH_MSG_INVALID)
+	ASSH_ERR_RET(s->kex->f_process(s, p, e) | ASSH_ERRSV_DISCONNECT);
+      else
+	s->kex_bad_guess = 0;
       goto end;
 
     /* kex exchange is over, NEWKEYS packet expected */
