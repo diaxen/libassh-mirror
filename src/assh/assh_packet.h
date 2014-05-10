@@ -84,6 +84,8 @@ enum assh_ssh_msg_e
   /* SSH-KEX */
   SSH_MSG_KEX_DH_REQUEST            =  30,
   SSH_MSG_KEX_DH_REPLY              =  31,
+  SSH_MSG_KEX_ECDH_INIT             =  30,
+  SSH_MSG_KEX_ECDH_REPLY            =  31,
 
   /* SSH-USERAUTH */
   SSH_MSG_USERAUTH_REQUEST          =  50,

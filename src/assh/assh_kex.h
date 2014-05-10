@@ -229,6 +229,7 @@ struct assh_algo_kex_s
 
 extern struct assh_algo_kex_s assh_kex_dh_group1_sha1;
 extern struct assh_algo_kex_s assh_kex_dh_group14_sha1;
+extern struct assh_algo_kex_s assh_kex_curve25519_sha256;
 extern struct assh_algo_kex_s assh_kex_none;
 
 #endif
