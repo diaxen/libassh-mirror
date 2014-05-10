@@ -46,18 +46,26 @@ void assh_transport_push(struct assh_session_s *s,
 {
   struct assh_queue_s *q = &s->out_queue;
 
+  /* service packets are postponed during kex */
+  assh_bool_t kex_msg = p->head.msg <= 49 &&
+    p->head.msg != SSH_MSG_SERVICE_REQUEST &&
+    p->head.msg != SSH_MSG_SERVICE_ACCEPT;
+
   switch (s->tr_st)
     {
     case ASSH_TR_KEX_INIT:
     case ASSH_TR_KEX_WAIT:
     case ASSH_TR_KEX_RUNNING:
     case ASSH_TR_NEWKEY:
-      /* service packets are postponed during kex */
-      if (p->head.msg >= 50)
+      if (!kex_msg)
 	q = &s->alt_queue;
+      assh_queue_push_back(q, &p->entry);
+      break;
 
     case ASSH_TR_SERVICE:
-      assh_queue_push_front(q, &p->entry);
+      if (!kex_msg && s->kex_init_sent)
+	q = &s->alt_queue;
+      assh_queue_push_back(q, &p->entry);
       break;
 
     case ASSH_TR_FIN:
@@ -198,10 +206,12 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 	}
 
 #ifdef CONFIG_ASSH_DEBUG_PROTOCOL
-      ASSH_DEBUG("incoming packet: tr_st=%i, size=%zu, msg=%u\n",
-		 s->tr_st, p->data_size, p->head.msg);
+      ASSH_DEBUG("incoming packet: session=%p tr_st=%i, size=%zu, msg=%u\n",
+		 s, s->tr_st, p->data_size, p->head.msg);
       assh_hexdump("in packet", p->data, p->data_size);
 #endif
+
+      s->kex_bytes += p->data_size;
 
       /* reduce packet size to actual payload */
       p->data_size -= mac_len + p->head.pad_len;
@@ -291,13 +301,13 @@ static ASSH_EVENT_DONE_FCN(assh_event_write_done)
     case ASSH_TR_OUT_PACKETS_DONE: {
       assert(s->out_queue.count > 0);
 
-      struct assh_queue_entry_s *e = assh_queue_back(&s->out_queue);
+      struct assh_queue_entry_s *e = assh_queue_front(&s->out_queue);
       struct assh_packet_s *p = (void*)e;
 
       if (s->stream_out_size < p->data_size)
 	{
-	  /* packet partially sent, need to return one more write
-	     event after input. */
+	  /* packet partially sent, need to report one more write
+	     event later. Yield to the input state machine for now. */
 	  s->stream_out_st = ASSH_TR_OUT_PACKETS_PAUSE;
 	  return ASSH_OK;
 	}
@@ -346,7 +356,7 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
       if (s->out_queue.count == 0)
 	return ASSH_OK;
 
-      struct assh_packet_s *p = (void*)assh_queue_back(&s->out_queue);
+      struct assh_packet_s *p = (void*)assh_queue_front(&s->out_queue);
 
       /* compute various length and payload pointer values */
       struct assh_kex_keys_s *k = s->cur_keys_out;
@@ -365,7 +375,6 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 
       assert(pad_len >= 4 && pad_len < 255);
 
-      ASSH_DEBUG("%u %u %u %u\n", p->data_size, p->alloc_size, pad_len, mac_len);
       p->data_size += pad_len + mac_len;
       assert(p->data_size <= p->alloc_size);
 
@@ -377,21 +386,15 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
       if (pad_len > 0)
 	memset(pad, 42, pad_len);
 
-      if (p->head.msg == SSH_MSG_NEWKEYS)
-	{
-	  /* release the old output cipher/mac context and install the new one */
-	  assh_kex_keys_cleanup(s, s->cur_keys_out);
-	  s->cur_keys_out = s->new_keys_out;
-	  s->new_keys_out = NULL;
-	}
-
 #warning FIXME compress
 
 #ifdef CONFIG_ASSH_DEBUG_PROTOCOL
-      ASSH_DEBUG("outgoing packet: tr_st=%i, size=%zu, msg=%u\n",
-		 s->tr_st, p->data_size, p->head.msg);
+      ASSH_DEBUG("outgoing packet: session=%p tr_st=%i, size=%zu, msg=%u\n",
+		 s, s->tr_st, p->data_size, p->head.msg);
       assh_hexdump("out packet", p->data, p->data_size);
 #endif
+
+      assh_bool_t newkey = p->head.msg == SSH_MSG_NEWKEYS;
 
       /* compute MAC and encipher packet */
       if (k != NULL)
@@ -403,6 +406,15 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 			    p->data_size - mac_len) | ASSH_ERRSV_FIN);
 	}
 
+      if (newkey)
+	{
+	  /* release the old output cipher/mac context and install the new one */
+	  assh_kex_keys_cleanup(s, s->cur_keys_out);
+	  s->cur_keys_out = s->new_keys_out;
+	  s->new_keys_out = NULL;
+	}
+
+      s->kex_bytes += p->data_size;
       s->out_seq++;
 
       /* reinit output state */
@@ -417,7 +429,7 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
     case ASSH_TR_OUT_PACKETS_ENCIPHERED: {
 
       assert(s->out_queue.count != 0);
-      struct assh_packet_s *p = (void*)assh_queue_back(&s->out_queue);
+      struct assh_packet_s *p = (void*)assh_queue_front(&s->out_queue);
 
       *data = p->data + s->stream_out_size;
       *size = p->data_size - s->stream_out_size;
@@ -472,7 +484,6 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
   /* transport protocol state machine */
   switch (s->tr_st)
     {
-#warning test rekeying
     /* send first kex init packet during session init */
     case ASSH_TR_KEX_INIT:
       ASSH_ERR_RET(assh_kex_send_init(s) | ASSH_ERRSV_DISCONNECT);
@@ -483,6 +494,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
       if (msg == SSH_MSG_INVALID)
 	goto end;
       ASSH_CHK_RET(msg != SSH_MSG_KEXINIT, ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+    kex_init:
       ASSH_ERR_RET(assh_kex_got_init(s, p) | ASSH_ERRSV_DISCONNECT);
 
       /* switch to key exchange running state */
@@ -526,10 +538,9 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
         /* received a rekeying request, reply and switch to ASSH_TR_KEX_RUNNING */
 	case SSH_MSG_KEXINIT:
 	  ASSH_CHK_RET(s->new_keys_out != NULL, ASSH_ERR_PROTOCOL | ASSH_ERRSV_FIN);
-	  ASSH_ERR_RET(assh_kex_send_init(s) | ASSH_ERRSV_DISCONNECT);
-	  ASSH_ERR_RET(assh_kex_got_init(s, p) | ASSH_ERRSV_DISCONNECT);
-	  assh_transport_state(s, ASSH_TR_KEX_RUNNING);
-	  goto end;
+	  if (!s->kex_init_sent)
+	    ASSH_ERR_RET(assh_kex_send_init(s) | ASSH_ERRSV_DISCONNECT);
+	  goto kex_init;
 
 	/* handle a service request packet */
 	case SSH_MSG_SERVICE_REQUEST:

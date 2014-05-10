@@ -471,6 +471,8 @@ assh_bignum_modinv_euclidean(assh_bnword_t * __restrict__ u,
 {
   assh_error_t err;
 
+#define ASSH_MODINV_SCRATCH(len) (len * 3)
+
   assh_bnword_t *r = scratch;
   assh_bnword_t *p = scratch + a_len;
   assh_bnword_t *v = scratch + a_len * 2;
@@ -548,7 +550,7 @@ assh_error_t assh_bignum_modinv(struct assh_bignum_s *u,
   ASSH_CHK_RET(a->l < m->l, ASSH_ERR_OUTPUT_OVERFLOW);
   ASSH_CHK_RET(u->l < a->l, ASSH_ERR_OUTPUT_OVERFLOW);
 
-  ASSH_SCRATCH_ALLOC(m->ctx, assh_bnword_t, scratch, m->l * 3,
+  ASSH_SCRATCH_ALLOC(m->ctx, assh_bnword_t, scratch, ASSH_MODINV_SCRATCH(m->l),
 		     ASSH_ERRSV_CONTINUE, err);
 
   ASSH_ERR_GTO(assh_bignum_modinv_euclidean(u->n, u->l, m->n, m->l,

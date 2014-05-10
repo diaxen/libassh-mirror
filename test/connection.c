@@ -174,6 +174,9 @@ int test(int (*fend)(int, int), int n)
 
       if (assh_session_init(&context[i], &session[i]) != ASSH_OK)
 	return -1;
+
+      if (assh_kex_set_threshold(&session[i], 1 + rand() % 4096))
+	return -1;
     }
 
   for (i = 0; i < RQ_POSTPONED_SIZE; i++)

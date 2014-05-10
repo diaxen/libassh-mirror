@@ -128,10 +128,11 @@ assh_error_t assh_kex_send_init(struct assh_session_s *s)
 	       | ASSH_ERRSV_DISCONNECT, err_pck);
   s->kex_init_local = c;
 
-  /* setup fake packet len and padding fields for the copy */
+  /* setup packet len and padding fields of the copy */
   assh_store_u32(c->data, c->data_size - 4);
   c->head.pad_len = 0;
 
+  s->kex_init_sent = 1;
   assh_transport_push(s, p);
   return ASSH_OK;
 
@@ -493,7 +494,7 @@ assh_error_t assh_kex_new_keys(struct assh_session_s *s,
   ASSH_ERR_GTO(kout->cmp->f_init(s->ctx, kout->cmp_ctx, 1)
 	       | ASSH_ERRSV_DISCONNECT, err_cmp_out);
 
-  ASSH_SCRATCH_FREE(s->ctx, hash_ctx);
+  ASSH_SCRATCH_FREE(s->ctx, scratch);
   return ASSH_OK;
 
  err_cmp_out:
@@ -551,6 +552,9 @@ assh_error_t assh_kex_end(struct assh_session_s *s, assh_bool_t accept)
 
   ASSH_CHK_RET(!accept, ASSH_ERR_KEX_FAILED | ASSH_ERRSV_DISCONNECT);
 
+  s->kex_bytes = 0;
+  s->kex_init_sent = 0;
+
   /* next state is wait for NEWKEY packet */
   assh_transport_state(s, ASSH_TR_NEWKEY);
 
@@ -559,6 +563,18 @@ assh_error_t assh_kex_end(struct assh_session_s *s, assh_bool_t accept)
   ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_NEWKEYS, 0, &p) | ASSH_ERRSV_DISCONNECT);
   assh_transport_push(s, p);
 
+  return ASSH_OK;
+}
+
+assh_error_t
+assh_kex_set_threshold(struct assh_session_s *s, uint32_t bytes)
+{
+  assh_error_t err;
+
+  ASSH_CHK_RET(bytes < 1 || bytes > ASSH_REKEX_THRESHOLD,
+	       ASSH_ERR_BAD_ARG | ASSH_ERRSV_CONTINUE);
+
+  s->kex_max_bytes = bytes;
   return ASSH_OK;
 }
 

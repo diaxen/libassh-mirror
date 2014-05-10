@@ -196,6 +196,9 @@ typedef int assh_error_t;
 /** Maximum size of incoming packet length, including header and mac. */
 #define ASSH_MAX_PCK_LEN 35000
 
+/** Default key re-echange threshold in bytes */
+#define ASSH_REKEX_THRESHOLD (1 << 31)
+
 /** Maximum size of packet payload */
 #define ASSH_MAX_PCK_PAYLOAD_SIZE \
   (ASSH_MAX_PCK_LEN - /* sizeof(struct assh_packet_head_s) */ 6 \

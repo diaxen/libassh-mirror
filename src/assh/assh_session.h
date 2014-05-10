@@ -80,6 +80,15 @@ struct assh_session_s
       during key exechange. Freed on sessions cleanup if not @tt NULL. */
   struct assh_packet_s *kex_init_remote;
 
+  /** amount of data transfered since last kex */
+  uint32_t kex_bytes;
+
+  /** kex re-exchange threshold */
+  uint32_t kex_max_bytes;
+
+  /** this flag is set when a key re-exchange init packet has been sent */
+  assh_bool_t kex_init_sent;
+
   /** Session id is first "exchange hash" H */
   uint8_t session_id[ASSH_MAX_HASH_SIZE];
   /** Session id length */

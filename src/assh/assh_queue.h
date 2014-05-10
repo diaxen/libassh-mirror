@@ -87,7 +87,7 @@ static inline void assh_queue_push_back(struct assh_queue_s *q,
 }
 
 static inline void assh_queue_concat(struct assh_queue_s *q,
-                                        struct assh_queue_s *r)
+				     struct assh_queue_s *r)
 {
   struct assh_queue_entry_s *a = &q->head;
   struct assh_queue_entry_s *b = &r->head;

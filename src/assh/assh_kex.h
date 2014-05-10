@@ -60,6 +60,13 @@
 #include "assh_algo.h"
 
 /**
+   This function set the amount of ssh stream that can flow between
+   the client and server between requesting a new key exchange.
+*/
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_kex_set_threshold(struct assh_session_s *s, uint32_t bytes);
+
+/**
    @internal This function is called internally by the transport layer
    when a key-exchange must be performed.
 
@@ -119,12 +126,14 @@ assh_kex_end(struct assh_session_s *s, assh_bool_t accept);
 void assh_kex_keys_cleanup(struct assh_session_s *s,
                            struct assh_kex_keys_s *keys);
 
+/** @internal @see assh_kex_init_t */
 #define ASSH_KEX_INIT_FCN(n) assh_error_t (n)(struct assh_session_s *s)
 /** @internal This function is called when the key exchange is
     initiated. It may allocate a private context and store it in the
     @ref assh_session_s::kex_pv field. */
 typedef ASSH_KEX_INIT_FCN(assh_kex_init_t);
 
+/** @internal @see assh_kex_cleanup_t */
 #define ASSH_KEX_CLEANUP_FCN(n) void (n)(struct assh_session_s *s)
 /** @internal This function is called when the key exchange is over if
     the @ref assh_session_s::kex_pv field is not @tt NULL. It must
