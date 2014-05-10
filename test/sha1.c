@@ -33,26 +33,35 @@ int
 main(int argc, char **argv)
 {
   struct assh_hash_sha1_context_s ctx;
-  unsigned char hash[20], buf[BUFSIZE];
-  int i;
+  size_t bs = BUFSIZE;
 
 #ifdef CONFIG_ASSH_USE_GCRYPT
   if (!gcry_check_version(GCRYPT_VERSION))
     return -1;
 #endif
 
-  for(i = 0; i < BUFSIZE; i++)
-    buf[i] = i;
+  do
+    {
+      bs /= 2;
 
-  assh_sha1_init(&ctx);
-  for(i = 0; i < 1000; i++)
-    assh_sha1_update(&ctx, buf, BUFSIZE);
-  assh_sha1_final(&ctx, hash);
+      unsigned char hash[20], buf[bs];
+      int i;
 
-  printf("SHA1=");
-  for(i=0;i<20;i++)
-    printf("%02x", hash[i]);
-  printf("\n");
+      for(i = 0; i < bs; i++)
+        buf[i] = i;
+
+      assh_sha1_init(&ctx);
+      for(i = 0; i <= bs; i++)
+        assh_sha1_update(&ctx, buf, bs);
+      assh_sha1_final(&ctx, hash);
+
+      printf("SHA1=");
+      for(i=0;i<20;i++)
+        printf("%02x", hash[i]);
+      printf("\n");
+
+    }
+  while (bs);
 
   return 0;
 }
