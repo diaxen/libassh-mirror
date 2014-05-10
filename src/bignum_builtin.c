@@ -45,6 +45,8 @@ assh_error_t assh_bignum_from_uint(struct assh_bignum_s *n,
 				   unsigned int x)
 {
   unsigned int i;
+  assh_error_t err;
+
   for (i = 0; i < n->l; i++)
     {
       n->n[i] = x;
@@ -132,6 +134,7 @@ size_t assh_bignum_mpint_size(const struct assh_bignum_s *bn)
 assh_error_t assh_bignum_copy(struct assh_bignum_s *a,
 			      const struct assh_bignum_s *b)
 {
+  assh_error_t err;
   int i, l = ASSH_MIN(a->l, b->l);
 
   for (i = 0; i < l; i++)
@@ -205,12 +208,12 @@ int assh_bignum_cmp(const struct assh_bignum_s *a,
 assh_bool_t assh_bignum_cmpz(const struct assh_bignum_s *a)
 {
   unsigned int a_len = a->l;
-  assh_bool_t r = 0;
+  assh_bnword_t r = 0;
 
   while (a_len--)
-    r |= !!a->n[a_len];
+    r |= a->n[a_len];
 
-  return r;
+  return r == 0;
 }
 
 int assh_bignum_cmp_uint(const struct assh_bignum_s *a,
@@ -560,42 +563,12 @@ assh_error_t assh_bignum_modinv(struct assh_bignum_s *u,
 
 /*********************************************************************** mul */
 
-#if 0
-static void assh_bignum_school_square(assh_bnword_t * __restrict__ r,
-				      const assh_bnword_t *a,
-				      unsigned int alen)
-{
-  unsigned int j, i;
-  assh_bnlong_t t;
-
-  memset(r, 0, alen * 2 * sizeof(assh_bnword_t));
-
-  for (j = 1; j < alen; j++)
-    {
-      for (t = i = 0; i < j; i++)
-	r[i + j] = t = (assh_bnlong_t)a[i] * a[j] + r[i + j] + (t >> ASSH_BIGNUM_W);
-      r[i + j] = (t >> ASSH_BIGNUM_W);
-    }
-  for (t = i = 0; i < alen; i++)
-    {
-#warning BUG t [0-2], will overflow when a[i]==0xff, r[i*2]==0xff and t==2
-      r[i * 2] = t = (assh_bnlong_t)a[i] * a[i] + ((assh_bnlong_t)r[i * 2] << 1) + (t >> ASSH_BIGNUM_W);
-      r[i * 2 + 1] = t = ((assh_bnlong_t)r[i * 2 + 1] << 1) + (t >> ASSH_BIGNUM_W);
-    }
-}
-#endif
-
 static void assh_bignum_school_mul(assh_bnword_t * __restrict__ r,
 				   const assh_bnword_t *a,
 				   unsigned int alen,
 				   const assh_bnword_t *b,
 				   unsigned int blen)
 {
-#if 0
-  if (a == b)
-    return assh_bignum_school_square(r, a, alen);
-#endif
-
   memset(r, 0, alen * sizeof(assh_bnword_t));
 
   unsigned int j, i;

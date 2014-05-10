@@ -24,8 +24,8 @@
 #include <assh/assh_session.h>
 #include <assh/assh_context.h>
 #include <assh/assh_service.h>
-#include <assh/srv_userauth_server.h>
-#include <assh/srv_connection.h>
+#include <assh/assh_userauth_server.h>
+#include <assh/assh_connection.h>
 #include <assh/assh_event.h>
 #include <assh/assh_algo.h>
 #include <assh/assh_packet.h>

@@ -27,13 +27,13 @@
 
 #include <assh/assh_context.h>
 #include <assh/assh_session.h>
-#include <assh/assh_event.h>
 #include <assh/assh_packet.h>
 #include <assh/assh_queue.h>
 #include <assh/assh_service.h>
 #include <assh/assh_cipher.h>
 #include <assh/assh_mac.h>
 #include <assh/assh_kex.h>
+#include <assh/assh_event.h>
 
 #include <assert.h>
 #include <string.h>
@@ -221,6 +221,8 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
     default:
       ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
     }
+
+  return ASSH_OK;
 }
 
 assh_error_t assh_transport_read(struct assh_session_s *s,
@@ -311,6 +313,8 @@ static ASSH_EVENT_DONE_FCN(assh_event_write_done)
     default:
       ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
     }
+
+  return ASSH_OK;
 }
 
 assh_error_t assh_transport_write(struct assh_session_s *s,
@@ -524,7 +528,6 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 	  ASSH_CHK_RET(s->new_keys_out != NULL, ASSH_ERR_PROTOCOL | ASSH_ERRSV_FIN);
 	  ASSH_ERR_RET(assh_kex_send_init(s) | ASSH_ERRSV_DISCONNECT);
 	  ASSH_ERR_RET(assh_kex_got_init(s, p) | ASSH_ERRSV_DISCONNECT);
-#warning do not allow KEX when st > ASSH_TR_SERVICE
 	  assh_transport_state(s, ASSH_TR_KEX_RUNNING);
 	  goto end;
 

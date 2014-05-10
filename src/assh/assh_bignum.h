@@ -98,9 +98,9 @@ typedef int16_t assh_bnsword_t;
 typedef uint32_t assh_bnlong_t;
 #else
 
-/* 8 bits big number word is useful for testing algorithms because
-   there are fewer possible word values, it will test more corner
-   cases quickly. */
+/* 8 bits big number word is useful for testing bignum algorithms
+   because there are fewer possible word values, it will test more
+   corner cases quickly. */
 typedef uint8_t assh_bnword_t;
 typedef int8_t assh_bnsword_t;
 typedef uint16_t assh_bnlong_t;

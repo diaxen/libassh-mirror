@@ -23,7 +23,7 @@
 
 #define ASSH_EV_CONST /* write access to event const fields */
 
-#include <assh/srv_userauth_server.h>
+#include <assh/assh_userauth_server.h>
 
 #include <assh/assh_service.h>
 #include <assh/assh_session.h>
@@ -357,6 +357,8 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
     default:
       ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
     }
+
+  return ASSH_OK;
 }
 
 /* handle public key request packet */
@@ -377,13 +379,17 @@ static assh_error_t assh_userauth_server_req_pubkey(struct assh_session_s *s,
 
   const struct assh_algo_s *algo;
 
-  /* lookup algorithm and load the public key from client provided blob */
-#warning send failure instead ?
-  ASSH_ERR_RET(assh_algo_by_name(s->ctx, ASSH_ALGO_SIGN, (char*)algo_name + 4,
-                 pub_blob - algo_name - 4, &algo) | ASSH_ERRSV_DISCONNECT);
+  /* check if we support the algorithm for the provided key */
+  if (assh_algo_by_name(s->ctx, ASSH_ALGO_SIGN, (char*)algo_name + 4,
+			pub_blob - algo_name - 4, &algo) != ASSH_OK)
+    {
+      ASSH_ERR_RET(assh_userauth_server_failure(s) | ASSH_ERRSV_DISCONNECT);
+      return ASSH_OK;
+    }
 
   struct assh_key_s *pub_key = NULL;
 
+  /* load the public key from the client provided blob */
   ASSH_ERR_RET(assh_key_load3(s->ctx, &pub_key, algo,
                               pub_blob + 4, sign - pub_blob - 4,
                               ASSH_KEY_FMT_PUB_RFC4253_6_6) | ASSH_ERRSV_DISCONNECT);

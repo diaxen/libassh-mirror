@@ -54,7 +54,7 @@
 #define ASSH_KEX_H_
 
 #ifdef ASSH_EVENT_H_
-# warning The assh/assh_kex.h header should be included after assh_transport.h
+# warning The assh/assh_event.h header should be included after assh_kex.h
 #endif
 
 #include "assh_algo.h"

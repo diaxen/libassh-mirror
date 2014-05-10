@@ -37,7 +37,7 @@
 #define ASSH_SRV_USERAUTH_SERVER_H_
 
 #ifdef ASSH_EVENT_H_
-# warning The assh/assh_event.h header should be included after srv_userauth_server.h
+# warning The assh/assh_event.h header should be included after assh_userauth_server.h
 #endif
 
 #include "assh.h"

@@ -23,7 +23,7 @@
 
 #define ASSH_EV_CONST /* write access to event const fields */
 
-#include <assh/srv_connection.h>
+#include <assh/assh_connection.h>
 
 #include <assh/assh_service.h>
 #include <assh/assh_session.h>

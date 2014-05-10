@@ -81,20 +81,16 @@ void assh_context_init(struct assh_context_s *c,
   assh_error_t err;
   c->session_count = 0;
 
-  switch (type)
-    {
+  assert(
 #ifdef CONFIG_ASSH_CLIENT
-    case ASSH_CLIENT:
+	 type == ASSH_CLIENT ||
 #endif
 #ifdef CONFIG_ASSH_SERVER
-    case ASSH_SERVER:
+	 type == ASSH_SERVER ||
 #endif
-      c->type = type;
-      break;
-    default:
-      ASSH_ERR_RET(ASSH_ERR_NOTSUP);
-    }
+	 0);
 
+  c->type = type;
   c->f_alloc = assh_default_allocator;
 
   c->prng = NULL;

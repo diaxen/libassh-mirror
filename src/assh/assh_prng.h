@@ -26,7 +26,7 @@
 #define ASSH_PRNG_H_
 
 #ifdef ASSH_EVENT_H_
-# warning The assh/assh_prng.h header should be included after assh_transport.h
+# warning The assh/assh_event.h header should be included after assh_prng.h
 #endif
 
 #include "assh_algo.h"

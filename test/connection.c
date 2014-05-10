@@ -31,7 +31,7 @@
 #include <assh/assh_prng.h>
 #include <assh/assh_compress.h>
 #include <assh/assh_transport.h>
-#include <assh/srv_connection.h>
+#include <assh/assh_connection.h>
 #include <assh/assh_event.h>
 #include <assh/helper_key.h>
 

@@ -116,6 +116,8 @@ static ASSH_KEY_OUTPUT_FCN(assh_sign_dss_key_output)
     default:
       ASSH_ERR_RET(ASSH_ERR_NOTSUP);
     }
+
+  return ASSH_OK;
 }
 
 static ASSH_KEY_CMP_FCN(assh_sign_dss_key_cmp)
@@ -429,7 +431,8 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
   uint8_t *s_str = r_str + n / 8;
 
   ASSH_BIGNUM_ALLOC(c, kn, n, ASSH_ERRSV_CONTINUE, err_mn);
-  /* Do not use the prng output directly as dsa nonce in order to
+
+  /* Do not use the prng output directly as the DSA nonce in order to
      avoid leaking key bits in case of a weak prng. Random data is
      hashed with the private key and the message data. */
   ASSH_SCRATCH_ALLOC(c, uint8_t, scratch,

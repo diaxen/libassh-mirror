@@ -38,7 +38,7 @@
 #include <string.h>
 
 #ifdef ASSH_EVENT_H_
-# warning The assh/assh_event.h header should be included after srv_connection.h
+# warning The assh/assh_event.h header should be included after assh_connection.h
 #endif
 
 #include "assh.h"

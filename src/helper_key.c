@@ -166,6 +166,8 @@ static assh_error_t assh_load_rfc4716(FILE *file, uint8_t *kdata, size_t *klen)
     }
 
   ASSH_ERR_RET(ASSH_ERR_BAD_DATA);
+
+  return ASSH_OK;
 }
 
 assh_error_t assh_load_key_file(struct assh_context_s *c,
@@ -207,7 +209,7 @@ assh_error_t assh_load_key_filename(struct assh_context_s *c,
 				    const char *algo, const char *filename,
 				    enum assh_key_format_e format)
 {
-  assh_error_t err;;
+  assh_error_t err;
 
   FILE *file = fopen(filename, "r");
   ASSH_CHK_RET(file == NULL, ASSH_ERR_IO);
@@ -226,7 +228,7 @@ assh_error_t assh_load_hostkey_file(struct assh_context_s *c,
 #ifdef CONFIG_ASSH_SERVER
   return assh_load_key_file(c, &c->host_keys, algo, file, format);
 #else
-  ASSH_ERR_RET(ASSH_ERR_NOTSUP);
+  return ASSH_ERR_NOTSUP;
 #endif
 }
 
@@ -237,7 +239,7 @@ assh_error_t assh_load_hostkey_filename(struct assh_context_s *c,
 #ifdef CONFIG_ASSH_SERVER
   return assh_load_key_filename(c, &c->host_keys, algo, filename, format);
 #else
-  ASSH_ERR_RET(ASSH_ERR_NOTSUP);
+  return ASSH_ERR_NOTSUP;
 #endif
 }
 

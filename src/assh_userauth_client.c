@@ -23,7 +23,7 @@
 
 #define ASSH_EV_CONST /* write access to event const fields */
 
-#include <assh/srv_userauth_client.h>
+#include <assh/assh_userauth_client.h>
 
 #include <assh/assh_service.h>
 #include <assh/assh_session.h>
@@ -319,7 +319,8 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_methods_done)
       size_t password_len = e->userauth_client.methods.password.len;
       ASSH_CHK_RET(password_len > sizeof(pv->password),
 		   ASSH_ERR_OUTPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
-      memcpy(pv->password, password, pv->password_len = password_len);
+      memcpy(pv->password, password, password_len);
+      pv->password_len = password_len;
     }
 #endif
 
@@ -354,6 +355,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_methods_done)
 #endif
 
    ASSH_ERR_RET(ASSH_ERR_NO_AUTH | ASSH_ERRSV_DISCONNECT);
+   return ASSH_OK;
 }
 
 /* cleanup the authentication service and start the next service. */
@@ -544,6 +546,8 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_client_process)
     default:
       ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
     }
+
+  return ASSH_OK;
 }
 
 const struct assh_service_s assh_service_userauth_client =
