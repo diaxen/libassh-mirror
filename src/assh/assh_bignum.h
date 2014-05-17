@@ -44,12 +44,11 @@ assh_bignum_sizeof(unsigned int bits)
   return sizeof(struct assh_bignum_s);
 }
 
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+static inline void
 assh_bignum_init(struct assh_context_s *c, struct assh_bignum_s *bn, unsigned int bits)
 {
   bn->n = NULL;
   bn->l = bits;
-  return ASSH_OK;
 }
 
 static inline void
@@ -61,7 +60,7 @@ assh_bignum_cleanup(struct assh_context_s *c, struct assh_bignum_s *bn)
 
 # define ASSH_BIGNUM_ALLOC(context, name, bits, sv, lbl)		\
   struct assh_bignum_s name##_, *name = &name##_;                       \
-  ASSH_ERR_GTO(assh_bignum_init(context, name, bits) | sv, lbl);
+  assh_bignum_init(context, name, bits);
 
 # define ASSH_BIGNUM_FREE(context, name)        \
   assh_bignum_cleanup(context, name);
@@ -129,17 +128,17 @@ struct assh_bignum_s
 static inline size_t
 assh_bignum_sizeof(unsigned int bits)
 {
-  return sizeof(struct assh_bignum_s)
+  size_t s = sizeof(struct assh_bignum_s)
     + ASSH_BIGNUM_WORDS(bits) * sizeof(assh_bnword_t);
+  return ((s - 1) | (sizeof(void*) - 1)) + 1;
 }
 
 /** @This initializes a big number. */
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+static inline void
 assh_bignum_init(struct assh_context_s *c, struct assh_bignum_s *bn, unsigned int bits)
 {
   bn->ctx = c;
   bn->l = ASSH_BIGNUM_WORDS(bits);
-  return ASSH_OK;
 }
 
 /** @This release the resources used by a big number. */
@@ -244,7 +243,10 @@ ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_bignum_from_data(struct assh_bignum_s *bn,
                       const uint8_t * __restrict__ data, size_t data_len);
 
-/** @This initializes a big number using an hexadecimal string. */
+/** @This initializes a big number using an hexadecimal string. If @tt
+    bits is not @tt NULL, it will be set to the bit size of the hex
+    string. If @tt hex_len is 0, @ref strlen is used to compute the
+    string size. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_bignum_from_hex(struct assh_bignum_s *bn, unsigned int *bits,
 		     const char * __restrict__ hex, size_t hex_len);
@@ -256,7 +258,8 @@ assh_bignum_from_uint(struct assh_bignum_s *n,
 
 /** @This converts a big number to the mpint format used in ssh
     packets. The mpint buffer must contain enough room for the mpint
-    representation as returned by the @ref assh_bignum_mpint_size
+    representation as returned by either the @ref
+    assh_bignum_mpint_size or @ref assh_packet_mpint_size function.
     function. The actual number of bytes used by the mpint can be
     smaller. @see assh_packet_add_mpint */
 ASSH_WARN_UNUSED_RESULT assh_error_t
@@ -353,6 +356,154 @@ assh_bignum_expmod(struct assh_bignum_s *r,
                    const struct assh_bignum_s *x,
                    const struct assh_bignum_s *e,
                    const struct assh_bignum_s *m);
+
+typedef uint32_t assh_bignum_op_t;
+
+/**
+
+   Execute big number operations specified by the bytecode on provided
+   arguments and temporaries.
+
+   The format string indicates the types of arguments passed to the
+   function and the number of temporaries big numbers. The @tt move
+   instruction can be used to convert between big numbers (argument or
+   temporary) and other type of arguments. All other instructions are
+   designed to be used on big numbers only.
+
+   The format string pattern is @em{[NMSHDIT]+T*} :
+   @list
+     @item N: big number argument, pointer to number expected as va_arg
+     @item M: mpint, pointer to mpint expected as va_arg
+     @item S: ssh string, pointer to ssh string expected as va_arg
+     @item H: nul terminated hex string, char * expected as va_arg
+     @item D: bytes array, uint8_t * expected, deduce size from number argument
+     @item I: integer, intptr_t * expected as va_arg
+     @item T: big number temporary, bit size of number expected as va_arg
+   @end list
+
+@code R
+      op       src2     src1     dst
+      xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
+      |        |        |        |
+      |        |        |        \------- destination value index
+      |        |        |
+      |        |        \------- source 1 value index
+      |        |
+      |        \------ source 2 value index / count
+      |
+      \---------- op
+
+		  00000000: move(dst, src1)
+                  00000000: end()
+                  00000001: add(dst, src1, src2)
+                  00000010: sub(dst, src1, src2)
+                  00000011: mul(dst, src1, src2)
+                  00000100: div(dst, src1, src2)
+                  00000101: addmod(dst, src1, src2)
+                  00000110: submod(dst, src1, src2)
+                  00000111: mulmod(dst, src1, src2)
+                  00001000: expmod(dst, src1, src2)
+                  00001001: modinv(dst, src1, src2)
+                  00001010: setmod(src1)
+                  00001011: rand(dst, src1 = quality)
+
+      op       src2     src1     cmpop
+      xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
+      |        |        |        |
+      |        |        |        \------- comparison
+      |        |        |
+      |        |        \------- source 1 value index
+      |        |
+      |        \------ source 2 value index / count
+      |
+      \---------- op
+
+                  00001100: cmp
+
+      op       imm              dst
+      xxxxxxxx xxxxxxxxxxxxxxxx xxxxxxxx
+      |        |
+      |        \------- value
+      |
+      \---------- op
+                  00001101: repeat(count)
+		  00001110: setuint(dst, value)
+                  00001111: dump(src1)
+
+@end code
+
+*/
+assh_error_t assh_bignum_bytecode(struct assh_context_s *c,
+                                  const assh_bignum_op_t *ops,
+                                  const char *format, ...);
+
+#define ASSH_BIGNUM_BC_FMT1(op, a, b, c) ((op << 24) | (a << 16) | (b << 8) | c)
+#define ASSH_BIGNUM_BC_FMT2(op, a, b)    ((op << 24) | (a << 8) | b)
+
+/** This instruction terminates execution of the bytecode */
+#define ASSH_BIGNUM_BC_END()                       ASSH_BIGNUM_BC_FMT1(0, 0, 0, 0)
+
+/** This instruction moves between big numbers, or convert to/from
+    other types of arguments. */
+#define ASSH_BIGNUM_BC_MOVE(dst, src)              ASSH_BIGNUM_BC_FMT1(0, 0, src, dst)
+
+/** This instruction computes dst = src1 + src2 */
+#define ASSH_BIGNUM_BC_ADD(dst, src1, src2)        ASSH_BIGNUM_BC_FMT1(1, src2, src1, dst)
+
+/** This instruction computes dst = src1 - src2 */
+#define ASSH_BIGNUM_BC_SUB(dst, src1, src2)        ASSH_BIGNUM_BC_FMT1(2, src2, src1, dst)
+
+/** This instruction computes dst = src1 * src2 */
+#define ASSH_BIGNUM_BC_MUL(dst, src1, src2)        ASSH_BIGNUM_BC_FMT1(3, src2, src1, dst)
+
+/** This instruction computes dst = dst % src2.
+    It also computes src1 = dst / src2  if src1 != src2. */
+#define ASSH_BIGNUM_BC_DIV(dst, src1, src2)        ASSH_BIGNUM_BC_FMT1(4, src2, src1, dst)
+
+/** This instruction computes dst = (src1 + src2) % mod */
+#define ASSH_BIGNUM_BC_ADDMOD(dst, src1, src2)     ASSH_BIGNUM_BC_FMT1(5, src2, src1, dst)
+
+/** This instruction computes dst = (src1 - src2) % mod */
+#define ASSH_BIGNUM_BC_SUBMOD(dst, src1, src2)     ASSH_BIGNUM_BC_FMT1(6, src2, src1, dst)
+
+/** This instruction computes dst = (src1 * src2) % mod */
+#define ASSH_BIGNUM_BC_MULMOD(dst, src1, src2)     ASSH_BIGNUM_BC_FMT1(7, src2, src1, dst)
+
+/** This instruction computes dst = (src1 ** src2) % mod */
+#define ASSH_BIGNUM_BC_EXPMOD(dst, src1, src2)     ASSH_BIGNUM_BC_FMT1(8, src2, src1, dst)
+
+/** This instruction computes dst = invmod(src1, src2) */
+#define ASSH_BIGNUM_BC_MODINV(dst, src1, src2)     ASSH_BIGNUM_BC_FMT1(9, src2, src1, dst)
+
+/** This instruction sets the index of the modulus register used
+    implicitly by some instructions. */
+#define ASSH_BIGNUM_BC_SETMOD(src1)                ASSH_BIGNUM_BC_FMT1(10, 0, src1, 0)
+
+/** This instruction initializes a big number with random data. The
+    quality operand is of the type @ref assh_prng_quality_e. */
+#define ASSH_BIGNUM_BC_RAND(dst, quality)          ASSH_BIGNUM_BC_FMT1(11, 0, quality, dst)
+
+/** This instruction makes the @ref assh_bignum_bytecode function
+    return an error if the two number are not equal. */
+#define ASSH_BIGNUM_BC_CMPEQ(src1, src2)           ASSH_BIGNUM_BC_FMT1(12, src2, src1, 0)
+/** This instruction makes the @ref assh_bignum_bytecode function
+    return an error if the two number are equal. */
+#define ASSH_BIGNUM_BC_CMPNE(src1, src2)           ASSH_BIGNUM_BC_FMT1(12, src2, src1, 1)
+/** This instruction makes the @ref assh_bignum_bytecode function
+    return an error if the first number is less than the second. */
+#define ASSH_BIGNUM_BC_CMPLT(src1, src2)           ASSH_BIGNUM_BC_FMT1(12, src2, src1, 2)
+/** This instruction makes the @ref assh_bignum_bytecode function
+    return an error if the first number is less than or equal to the second. */
+#define ASSH_BIGNUM_BC_CMPLTEQ(src1, src2)         ASSH_BIGNUM_BC_FMT1(12, src2, src1, 3)
+
+/** This instruction makes the next instruction repeat a fixed number of times. */
+#define ASSH_BIGNUM_BC_REPEAT(count)               ASSH_BIGNUM_BC_FMT2(13, count, 0)
+
+/** This instruction initializes a big number with a constant unsigned integer value. */
+#define ASSH_BIGNUM_BC_UINT(dst, value)         ASSH_BIGNUM_BC_FMT2(14, value, dst)
+
+/** This instruction print a big number argument for debugging purpose. */
+#define ASSH_BIGNUM_BC_BNDUMP(src)                   ASSH_BIGNUM_BC_FMT1(15, 0, src, 0)
 
 #endif
 

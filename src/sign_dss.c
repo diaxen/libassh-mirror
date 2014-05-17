@@ -143,8 +143,6 @@ static ASSH_KEY_VALIDATE_FCN(assh_sign_dss_key_validate)
   struct assh_sign_dss_key_s *k = (void*)key;
   assh_error_t err = ASSH_OK;
 
-  *valid = 0;
-
   /*
    * FIPS 186-4 Appendix A2.2
    * SP 800-89 section 5.3.1
@@ -157,35 +155,43 @@ static ASSH_KEY_VALIDATE_FCN(assh_sign_dss_key_validate)
   if (l < 1024 || n < 160 || l > 8192 || n > 512 || l % 8 || n % 8)
     goto err_;
 
-  /* check generator range */
-  if (assh_bignum_cmp_uint(k->gn, 2) > 0 ||  /* g >= 2 */
-      assh_bignum_cmp(k->gn, k->pn) <= 0)    /* g < p */
-    goto err_;
+  enum bytecode_args_e
+  {
+    P, Q, G, Y, T1, T2
+  };
 
-  /* check generator order in the group */
-  ASSH_BIGNUM_ALLOC(c, rn, l, ASSH_ERRSV_CONTINUE, err_);
-  ASSH_ERR_GTO(assh_bignum_expmod(rn, k->gn, k->qn, k->pn), err_rn);
-  if (assh_bignum_cmp_uint(rn, 1))
-    goto err_rn;
+  assh_bignum_op_t bytecode[] = {
+    ASSH_BIGNUM_BC_UINT(        T1,     1               ),
 
-  /* check public key range */
-  if (assh_bignum_cmp_uint(k->yn, 2) > 0)   /* y >= 2 */
-    goto err_rn;
+    /* check generator range */
+    ASSH_BIGNUM_BC_CMPLT(       T1,     G               ), /* g > 1 */
+    ASSH_BIGNUM_BC_CMPLT(       G,      P               ), /* g < p */
 
-  ASSH_ERR_GTO(assh_bignum_from_uint(rn, 2), err_rn);
-  ASSH_ERR_GTO(assh_bignum_sub(rn, k->pn, rn), err_rn);
-  if (assh_bignum_cmp(k->yn, rn) < 0) /* y <= p-2 */
-    goto err_rn;
+    /* check generator order in the group */
+    ASSH_BIGNUM_BC_SETMOD(      P                       ),
+    ASSH_BIGNUM_BC_EXPMOD(      T2,     G,      Q       ),
+    ASSH_BIGNUM_BC_CMPEQ(       T1,     T2              ),
 
-  /* check public key order in the group */
-  ASSH_ERR_GTO(assh_bignum_expmod(rn, k->yn, k->qn, k->pn), err_rn);
-  if (assh_bignum_cmp_uint(rn, 1))
-    goto err_rn;
+    /* check public key range */
+    ASSH_BIGNUM_BC_CMPLT(       T1,     G               ), /* y > 1 */
+    ASSH_BIGNUM_BC_EXPMOD(      T2,     P,      T1      ),
+    ASSH_BIGNUM_BC_CMPLT(       Y,      T2              ), /* y < p-1 */
 
-  *valid = 1;
+    /* check public key order in the group */
+    ASSH_BIGNUM_BC_EXPMOD(      T2,     Y,      Q       ),
+    ASSH_BIGNUM_BC_CMPEQ(       T1,     T2              ),
 
- err_rn:
-  ASSH_BIGNUM_FREE(c, rn);
+    ASSH_BIGNUM_BC_END(),
+  };
+
+  err = assh_bignum_bytecode(c, bytecode, "NNNNTT",
+                             k->pn, k->qn, k->gn, k->yn, l, l);
+
+  if (err != ASSH_ERR_NUM_COMPARE_FAILED)
+    ASSH_ERR_RET(err);
+
+  *valid = (err == ASSH_OK);
+
  err_:
   return err;
 }
@@ -270,13 +276,13 @@ static ASSH_KEY_LOAD_FCN(assh_sign_dss_key_load)
   k->xn = (struct assh_bignum_s*)((x_str != NULL) ? (uint8_t*)k->yn + assh_bignum_sizeof(l) : NULL);
 
   /* init numbers */
-  ASSH_ERR_GTO(assh_bignum_init(c, k->pn, l), err_k);
-  ASSH_ERR_GTO(assh_bignum_init(c, k->qn, n), err_pn);
-  ASSH_ERR_GTO(assh_bignum_init(c, k->gn, l), err_qn);
-  ASSH_ERR_GTO(assh_bignum_init(c, k->yn, l), err_gn);
+  assh_bignum_init(c, k->pn, l);
+  assh_bignum_init(c, k->qn, n);
+  assh_bignum_init(c, k->gn, l);
+  assh_bignum_init(c, k->yn, l);
 
   if (x_str != NULL)
-    ASSH_ERR_GTO(assh_bignum_init(c, k->xn, n), err_yn);
+    assh_bignum_init(c, k->xn, n);
 
   /* convert numbers from blob representation */
   switch (format)
@@ -312,49 +318,15 @@ static ASSH_KEY_LOAD_FCN(assh_sign_dss_key_load)
  err_xn:
   if (k->xn != NULL)
     assh_bignum_cleanup(c, k->xn);
- err_yn:
   assh_bignum_cleanup(c, k->yn);
- err_gn:
   assh_bignum_cleanup(c, k->gn);
- err_qn:
   assh_bignum_cleanup(c, k->qn);
- err_pn:
   assh_bignum_cleanup(c, k->pn);
- err_k:
   assh_free(c, k, ASSH_ALLOC_KEY);
   return err;
 }
 
 /************************************************************ dss sign algo */
-
-/*
-
-  p is a prime
-  q is a prime divisor of p-1 (160 bits)
-  g = h^((p-1)/q) mod p, where 1 < h < p-1 and h^((p-1)/q) mod p > 1
-  p, q, g are known
-  x is private key (random)
-  y = g^x mod p
-  y is the public key
-  k is a secret single use random value
-
-  sign:
-
-  r = (g^k mod p) mod q
-  s = (k^-1 * (sha(m) + x * r)) mod q
-
-  k^-1 is multiplication inverse of k mod q
-
-  verify:
-
-  assert(r < q && s < q)
-  w = s^-1 mod q
-  u1 = (sha(m) * w) mod q
-  u2 = r * w mod q
-  v = (g^u1 * y^u2) mod p mod q
-  return (v == r)
-
- */
 
 static assh_error_t
 assh_sign_dss_hash(struct assh_context_s *c, size_t data_count,
@@ -430,15 +402,13 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
   uint8_t *r_str = sign + assh_dss_id_len + 4;
   uint8_t *s_str = r_str + n / 8;
 
-  ASSH_BIGNUM_ALLOC(c, kn, n, ASSH_ERRSV_CONTINUE, err_mn);
-
   /* Do not use the prng output directly as the DSA nonce in order to
      avoid leaking key bits in case of a weak prng. Random data is
      hashed with the private key and the message data. */
   ASSH_SCRATCH_ALLOC(c, uint8_t, scratch,
 		     sizeof(struct assh_hash_sha1_context_s)
 		     + /* sizeof rnd[] */ n / 8 + 20,
-		     ASSH_ERRSV_CONTINUE, err_kn);
+		     ASSH_ERRSV_CONTINUE, err_mn);
 
   struct assh_hash_sha1_context_s *sha1 = (void*)scratch;
   uint8_t *rnd = scratch + sizeof(*sha1);
@@ -458,45 +428,54 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
 	break;
       assh_sha1_init(sha1);
     }
-  ASSH_ERR_GTO(assh_bignum_from_data(kn, rnd, n / 8), err_scratch);
-  ASSH_ERR_GTO(assh_bignum_div(kn, NULL, kn, k->qn), err_scratch);
 
-  /* compute R */
-  ASSH_BIGNUM_ALLOC(c, rn, l, ASSH_ERRSV_CONTINUE, err_scratch);
-  ASSH_ERR_GTO(assh_bignum_expmod(rn, k->gn, kn, k->pn), err_rn);
-  ASSH_ERR_GTO(assh_bignum_div(rn, NULL, rn, k->qn), err_rn);
-  ASSH_ERR_GTO(assh_bignum_shrink(rn, n), err_rn);
+  enum bytecode_args_e
+  {
+    K_data, R_data, S_data,     /* data buffers */
+    P, Q, G, X, M,              /* big number inputs */
+    K, R, S, R1, R2, R3         /* big number temporaries */
+  };
 
-  /* compute S */
-  ASSH_BIGNUM_ALLOC(c, sn, n, ASSH_ERRSV_CONTINUE, err_rn);
+  assh_bignum_op_t bytecode[] = {
+    ASSH_BIGNUM_BC_MOVE(        K,      K_data          ),
 
-  ASSH_BIGNUM_ALLOC(c, r1, n, ASSH_ERRSV_CONTINUE, err_sn);
-  ASSH_ERR_GTO(assh_bignum_mulmod(r1, k->xn, rn, k->qn), err_r1);
+    /* g^k mod p */
+    ASSH_BIGNUM_BC_SETMOD(      P                       ),
+    ASSH_BIGNUM_BC_EXPMOD(      R3,     G,      K       ),
 
-  ASSH_BIGNUM_ALLOC(c, r2, n + 1, ASSH_ERRSV_CONTINUE, err_r1);
-  ASSH_ERR_GTO(assh_bignum_add(r2, mn, r1), err_r2);
+    /* r = (g^k mod p) mod q */
+    ASSH_BIGNUM_BC_DIV(         R3,     Q,      Q       ),
+    ASSH_BIGNUM_BC_MOVE(        R,      R3              ),
+    ASSH_BIGNUM_BC_MOVE(        R_data, R               ),
 
-  ASSH_ERR_GTO(assh_bignum_modinv(r1, kn, k->qn), err_r2);
+    /* (x * r) mod q */
+    ASSH_BIGNUM_BC_SETMOD(      Q                       ),
+    ASSH_BIGNUM_BC_MULMOD(      R1,     X,      R       ),
 
-  ASSH_ERR_GTO(assh_bignum_mulmod(sn, r1, r2, k->qn), err_r2);
+    /* sha(m) + (x * r) */
+    ASSH_BIGNUM_BC_ADD(         R2,     M,      R1      ),
 
-  ASSH_ERR_GTO(assh_bignum_msb_to_data(rn, r_str, n / 8), err_r2);
-  ASSH_ERR_GTO(assh_bignum_msb_to_data(sn, s_str, n / 8), err_r2);
+    /* k^-1 */
+    ASSH_BIGNUM_BC_MODINV(      R1,     K,      Q       ),
+
+    /* s = k^-1 * (sha(m) + (x * r)) mod q */
+    ASSH_BIGNUM_BC_MULMOD(      S,      R1,     R2      ),
+
+    ASSH_BIGNUM_BC_MOVE(        R_data, R               ),
+    ASSH_BIGNUM_BC_MOVE(        S_data, S               ),
+
+    ASSH_BIGNUM_BC_END(),
+  };
+
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "DDDNNNNNTTTTTT",
+                                    /* D */ rnd, r_str, s_str,
+                                    /* N */ k->pn, k->qn, k->gn, k->xn, mn,
+                                    /* T */ n, n, n, n, n + 1, l), err_scratch);
 
   err = ASSH_OK;
 
- err_r2:
-  ASSH_BIGNUM_FREE(c, r2);
- err_r1:
-  ASSH_BIGNUM_FREE(c, r1);
- err_sn:
-  ASSH_BIGNUM_FREE(c, sn);
- err_rn:
-  ASSH_BIGNUM_FREE(c, rn);
  err_scratch:
   ASSH_SCRATCH_FREE(c, scratch);
- err_kn:
-  ASSH_BIGNUM_FREE(c, kn);
  err_mn:
   ASSH_BIGNUM_FREE(c, mn);
  err_:
@@ -522,66 +501,62 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_dss_verify)
   uint8_t *rs_str = (uint8_t*)sign + assh_dss_id_len;
   ASSH_CHK_RET(assh_load_u32(rs_str) != n * 2 / 8, ASSH_ERR_INPUT_OVERFLOW);
 
-  ASSH_BIGNUM_ALLOC(c, rn, n, ASSH_ERRSV_CONTINUE, err_);
-  ASSH_ERR_GTO(assh_bignum_from_data(rn, rs_str + 4, n / 8), err_rn);
-
-  ASSH_BIGNUM_ALLOC(c, sn, n, ASSH_ERRSV_CONTINUE, err_rn);
-  ASSH_ERR_GTO(assh_bignum_from_data(sn, rs_str + 4 + n / 8, n / 8), err_sn);
-
-  ASSH_CHK_GTO(assh_bignum_cmp(k->qn, rn) > 0, ASSH_ERR_BAD_DATA, err_sn);
-  ASSH_CHK_GTO(assh_bignum_cmp(k->qn, sn) > 0, ASSH_ERR_BAD_DATA, err_sn);
-  ASSH_CHK_GTO(assh_bignum_cmpz(rn), ASSH_ERR_BAD_DATA, err_sn);
-  ASSH_CHK_GTO(assh_bignum_cmpz(sn), ASSH_ERR_BAD_DATA, err_sn);
-
-  ASSH_BIGNUM_ALLOC(c, mn, n, ASSH_ERRSV_CONTINUE, err_sn);
-  
+  ASSH_BIGNUM_ALLOC(c, mn, n, ASSH_ERRSV_CONTINUE, err_);  
   ASSH_ERR_GTO(assh_sign_dss_hash(c, data_count, data, data_len, n, mn), err_mn);
 
-  /* copute w */
-  ASSH_BIGNUM_ALLOC(c, wn, n, ASSH_ERRSV_CONTINUE, err_mn);
-  ASSH_ERR_GTO(assh_bignum_modinv(wn, sn, k->qn), err_wn);
+  enum bytecode_args_e
+  {
+    R_data, S_data,             /* data buffers */
+    P, Q, G, Y, M,              /* big number inputs */
+    R, S, W, U1, V1, U2, V2, V  /* big number temporaries */
+  };
 
-  ASSH_BIGNUM_ALLOC(c, u1n, n, ASSH_ERRSV_CONTINUE, err_wn);
-  ASSH_ERR_GTO(assh_bignum_mulmod(u1n, mn, wn, k->qn), err_u1n);
+  assh_bignum_op_t bytecode[] = {
+    ASSH_BIGNUM_BC_MOVE(        R,      R_data          ),
+    ASSH_BIGNUM_BC_MOVE(        S,      S_data          ),
 
-  ASSH_BIGNUM_ALLOC(c, v1n, l, ASSH_ERRSV_CONTINUE, err_u1n);
-  ASSH_ERR_GTO(assh_bignum_expmod(v1n, k->gn, u1n, k->pn), err_v1n);
+    ASSH_BIGNUM_BC_MODINV(      W,      S,      Q       ),
 
-  ASSH_BIGNUM_ALLOC(c, u2n, n, ASSH_ERRSV_CONTINUE, err_v1n);
-  ASSH_ERR_GTO(assh_bignum_mulmod(u2n, rn, wn, k->qn), err_u2n);
+    /* (sha(m) * w) mod q */
+    ASSH_BIGNUM_BC_SETMOD(      Q                       ),
+    ASSH_BIGNUM_BC_MULMOD(      U1,     M,      W       ),
 
-  ASSH_BIGNUM_ALLOC(c, v2n, l, ASSH_ERRSV_CONTINUE, err_u2n);
-  ASSH_ERR_GTO(assh_bignum_expmod(v2n, k->yn, u2n, k->pn), err_v2n);
+    /* g^u1 */
+    ASSH_BIGNUM_BC_SETMOD(      P                       ),
+    ASSH_BIGNUM_BC_EXPMOD(      V1,     G,      U1      ),
 
-  ASSH_BIGNUM_ALLOC(c, vn, l, ASSH_ERRSV_CONTINUE, err_v2n);
-  ASSH_ERR_GTO(assh_bignum_mulmod(vn, v1n, v2n, k->pn), err_vn);
+    /* r * w mod q */
+    ASSH_BIGNUM_BC_SETMOD(      Q                       ),
+    ASSH_BIGNUM_BC_MULMOD(      U2,     R,      W       ),
 
-  ASSH_ERR_GTO(assh_bignum_div(vn, NULL, vn, k->qn), err_vn);
+    /* y^u2 */
+    ASSH_BIGNUM_BC_SETMOD(      P                       ),
+    ASSH_BIGNUM_BC_EXPMOD(      V2,     Y,      U2      ),
 
-  ASSH_ERR_GTO(assh_bignum_sub(vn, rn, vn), err_vn);
+    /* (g^u1 * y^u2) mod p */
+    ASSH_BIGNUM_BC_MULMOD(      V,      V1,     V2      ),
 
-  *ok = assh_bignum_cmpz(vn);
+    /* v = (g^u1 * y^u2) mod p mod q */
+    ASSH_BIGNUM_BC_DIV(         V,      Q,      Q       ),
+
+    ASSH_BIGNUM_BC_CMPEQ(       V,      R               ),
+    ASSH_BIGNUM_BC_END(),
+  };
+
+  err = assh_bignum_bytecode(c, bytecode, "DDNNNNNTTTTTTTT",
+                             /* D */ rs_str + 4, rs_str + 4 + n / 8,
+                             /* N */ k->pn, k->qn, k->gn, k->yn, mn,
+                             /* T */ n, n, n, n, l, n, l, l);
+
+  if (err != ASSH_ERR_NUM_COMPARE_FAILED)
+    ASSH_ERR_GTO(err, err_mn);
+
+  *ok = (err == ASSH_OK);
 
   err = ASSH_OK;
 
- err_vn:
-  ASSH_BIGNUM_FREE(c, vn);
- err_v2n:
-  ASSH_BIGNUM_FREE(c, v2n);
- err_u2n:
-  ASSH_BIGNUM_FREE(c, u2n);
- err_v1n:
-  ASSH_BIGNUM_FREE(c, v1n);
- err_u1n:
-  ASSH_BIGNUM_FREE(c, u1n);
- err_wn:
-  ASSH_BIGNUM_FREE(c, wn);
  err_mn:
   ASSH_BIGNUM_FREE(c, mn);
- err_sn:
-  ASSH_BIGNUM_FREE(c, sn);
- err_rn:
-  ASSH_BIGNUM_FREE(c, rn);
  err_:
   return err;
 }

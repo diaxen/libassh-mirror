@@ -117,14 +117,16 @@ enum assh_error_e
   ASSH_ERR_OUTPUT_OVERFLOW         = 0x103,
   /** Arithmetic overflow on big number. */
   ASSH_ERR_NUM_OVERFLOW            = 0x104,
+  /** Compare failed on big number. */
+  ASSH_ERR_NUM_COMPARE_FAILED      = 0x105,
   /** Bad version of the ssh protocol. */
-  ASSH_ERR_BAD_VERSION             = 0x105,
+  ASSH_ERR_BAD_VERSION             = 0x106,
   /** Packet or buffer contains unexpected or corrupt data. */
-  ASSH_ERR_BAD_DATA                = 0x106,
+  ASSH_ERR_BAD_DATA                = 0x107,
   /** Invalid function arguments */
-  ASSH_ERR_BAD_ARG                 = 0x107,
+  ASSH_ERR_BAD_ARG                 = 0x108,
   /** Message authentication code error. */
-  ASSH_ERR_MAC                     = 0x108,
+  ASSH_ERR_MAC                     = 0x109,
   /** Packet content doesn't match current state of the protocol. */
   ASSH_ERR_PROTOCOL                = 0x10a,
   /** The function can not be called in the current state of the protocol. */
