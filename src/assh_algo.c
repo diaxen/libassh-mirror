@@ -124,6 +124,8 @@ assh_error_t assh_algo_register_default(struct assh_context_s *c, unsigned int s
 			&assh_kex_dh_group14_sha1,
 			/* sign_dss.c */
 			&assh_sign_dss,
+			/* sign_rsa.c */
+			&assh_sign_rsa,
 
 #ifndef CONFIG_ASSH_USE_GCRYPT_CIPHERS
 			/* cipher_arc4_builting.c */

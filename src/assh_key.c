@@ -72,7 +72,8 @@ assh_error_t assh_key_load2(struct assh_context_s *c, struct assh_key_s **key,
     }
   ASSH_CHK_RET(algo_name == NULL, ASSH_NOT_FOUND | ASSH_ERRSV_CONTINUE);
 
-  ASSH_ERR_RET(assh_algo_by_name(c, ASSH_ALGO_SIGN, algo_name, algo_name_len, &algo));
+  ASSH_CHK_RET(assh_algo_by_name(c, ASSH_ALGO_SIGN, algo_name, algo_name_len, &algo)
+               != ASSH_OK, ASSH_ERR_MISSING_KEY);
   ASSH_ERR_RET(assh_key_load3(c, key, algo, blob, blob_len, format));
 
   return ASSH_OK;

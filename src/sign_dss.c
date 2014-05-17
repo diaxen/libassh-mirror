@@ -143,6 +143,8 @@ static ASSH_KEY_VALIDATE_FCN(assh_sign_dss_key_validate)
   struct assh_sign_dss_key_s *k = (void*)key;
   assh_error_t err = ASSH_OK;
 
+#warning validate private keys too
+
   /*
    * FIPS 186-4 Appendix A2.2
    * SP 800-89 section 5.3.1
@@ -151,9 +153,11 @@ static ASSH_KEY_VALIDATE_FCN(assh_sign_dss_key_validate)
   unsigned int l = assh_bignum_bits(k->pn);
   unsigned int n = assh_bignum_bits(k->qn);
 
+  *valid = 0;
+
   /* check key size */
   if (l < 1024 || n < 160 || l > 8192 || n > 512 || l % 8 || n % 8)
-    goto err_;
+    return ASSH_OK;
 
   enum bytecode_args_e
   {
@@ -191,6 +195,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_sign_dss_key_validate)
     ASSH_ERR_RET(err);
 
   *valid = (err == ASSH_OK);
+  return ASSH_OK;
 
  err_:
   return err;

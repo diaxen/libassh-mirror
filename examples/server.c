@@ -89,7 +89,11 @@ int main()
   /** load host key */
   if (assh_load_hostkey_filename(&context, "ssh-dss", "dsa_host_key",
 				 ASSH_KEY_FMT_PV_RFC2440_PEM_ASN1) != ASSH_OK)
-    return -1;
+    fprintf(stderr, "unable to load dsa key\n");
+
+  if (assh_load_hostkey_filename(&context, "ssh-rsa", "rsa_host_key",
+				 ASSH_KEY_FMT_PV_RFC2440_PEM_ASN1) != ASSH_OK)
+    fprintf(stderr, "unable to load rsa key\n");
 
   signal(SIGPIPE, SIG_IGN);
 
