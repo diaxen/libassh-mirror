@@ -335,6 +335,12 @@ assh_bignum_modinv(struct assh_bignum_s *r,
                    const struct assh_bignum_s *a,
                    const struct assh_bignum_s *m);
 
+/** This computes the greatest common divisor of @em a and @em {b}. */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_bignum_gcd(struct assh_bignum_s *r,
+                const struct assh_bignum_s *a,
+                const struct assh_bignum_s *b);
+
 /** This function divides A by B. The remainder is stored in @tt r. The
     result is stored in @tt d unless it is a NULL pointer. The @tt a
     and @tt r parameters may point to the same number. */
@@ -365,7 +371,7 @@ typedef uint32_t assh_bignum_op_t;
    arguments and temporaries.
 
    The format string indicates the types of arguments passed to the
-   function and the number of temporaries big numbers. The @tt move
+   function and the number of temporary big numbers. The @tt move
    instruction can be used to convert between big numbers (argument or
    temporary) and other type of arguments. All other instructions are
    designed to be used on big numbers only.
@@ -380,6 +386,8 @@ typedef uint32_t assh_bignum_op_t;
      @item I: integer, intptr_t * expected as va_arg
      @item T: big number temporary, bit size of number expected as va_arg
    @end list
+
+   Opcodes:
 
 @code R
       op       src2     src1     dst
@@ -399,8 +407,6 @@ typedef uint32_t assh_bignum_op_t;
                   00000010: sub(dst, src1, src2)
                   00000011: mul(dst, src1, src2)
                   00000100: div(dst, src1, src2)
-                  00000101: addmod(dst, src1, src2)
-                  00000110: submod(dst, src1, src2)
                   00000111: mulmod(dst, src1, src2)
                   00001000: expmod(dst, src1, src2)
                   00001001: modinv(dst, src1, src2)
@@ -437,8 +443,8 @@ assh_error_t assh_bignum_bytecode(struct assh_context_s *c,
                                   const assh_bignum_op_t *ops,
                                   const char *format, ...);
 
-#define ASSH_BIGNUM_BC_FMT1(op, a, b, c) ((op << 24) | (a << 16) | (b << 8) | c)
-#define ASSH_BIGNUM_BC_FMT2(op, a, b)    ((op << 24) | (a << 8) | b)
+#define ASSH_BIGNUM_BC_FMT1(op, a, b, c) (((op) << 24) | ((a) << 16) | ((b) << 8) | (c))
+#define ASSH_BIGNUM_BC_FMT2(op, a, b)    (((op) << 24) | ((a) << 8) | (b))
 
 /** This instruction terminates execution of the bytecode */
 #define ASSH_BIGNUM_BC_END()                       ASSH_BIGNUM_BC_FMT1(0, 0, 0, 0)
@@ -460,11 +466,8 @@ assh_error_t assh_bignum_bytecode(struct assh_context_s *c,
     It also computes src1 = dst / src2  if src1 != src2. */
 #define ASSH_BIGNUM_BC_DIV(dst, src1, src2)        ASSH_BIGNUM_BC_FMT1(4, src2, src1, dst)
 
-/** This instruction computes dst = (src1 + src2) % mod */
-#define ASSH_BIGNUM_BC_ADDMOD(dst, src1, src2)     ASSH_BIGNUM_BC_FMT1(5, src2, src1, dst)
-
-/** This instruction computes dst = (src1 - src2) % mod */
-#define ASSH_BIGNUM_BC_SUBMOD(dst, src1, src2)     ASSH_BIGNUM_BC_FMT1(6, src2, src1, dst)
+/** This instruction computes dst = gcd(src1, src2) */
+#define ASSH_BIGNUM_BC_GCD(dst, src1, src2)     ASSH_BIGNUM_BC_FMT1(5, src2, src1, dst)
 
 /** This instruction computes dst = (src1 * src2) % mod */
 #define ASSH_BIGNUM_BC_MULMOD(dst, src1, src2)     ASSH_BIGNUM_BC_FMT1(7, src2, src1, dst)

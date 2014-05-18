@@ -21,10 +21,11 @@
 
 */
 
-#include <stdarg.h>
-
 #include <assh/assh_bignum.h>
 #include <assh/assh_packet.h>
+
+#include <stdarg.h>
+#include <stdlib.h>
 
 assh_error_t assh_bignum_from_bytes(struct assh_bignum_s *bn, unsigned int *bits,
                                     const uint8_t * __restrict__ data, size_t data_len)
@@ -154,10 +155,12 @@ assh_error_t assh_bignum_bytecode(struct assh_context_s *c,
       uint_fast8_t dst = *ops & 0x000000ff;
       uint_fast8_t src1 = (*ops & 0x0000ff00) >> 8;
       uint_fast8_t src2 = (*ops & 0x00ff0000) >> 16;
-      uint_fast8_t value = (*ops & 0x00ffff00) >> 8;
+      uint_fast16_t value = (*ops & 0x00ffff00) >> 8;
 
+#if 0
       ASSH_DEBUG("exec=%p op=%u dst=%u, src1=%u, src2=%u, value=%u\n",
                  ops, op, dst, src1, src2, value);
+#endif
 
       switch (op)
         {
@@ -223,12 +226,7 @@ assh_error_t assh_bignum_bytecode(struct assh_context_s *c,
           break;
         }
         case 5:
-          ASSH_ERR_GTO(assh_bignum_add(args[dst], args[src1], args[src2]), err_sc);
-          ASSH_ERR_GTO(assh_bignum_div(args[dst], NULL, args[dst], args[modidx]), err_sc);
-          break;
-        case 6:
-          ASSH_ERR_GTO(assh_bignum_sub(args[dst], args[src1], args[src2]), err_sc);
-          ASSH_ERR_GTO(assh_bignum_div(args[dst], NULL, args[dst], args[modidx]), err_sc);
+          ASSH_ERR_GTO(assh_bignum_gcd(args[dst], args[src1], args[src2]), err_sc);
           break;
         case 7:
           ASSH_ERR_GTO(assh_bignum_mulmod(args[dst], args[src1], args[src2], args[modidx]), err_sc);

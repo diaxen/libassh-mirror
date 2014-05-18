@@ -547,7 +547,7 @@ assh_error_t assh_bignum_modinv(struct assh_bignum_s *u,
 
   assert(u != a && u != m);
 
-  ASSH_CHK_RET(a->l < m->l, ASSH_ERR_OUTPUT_OVERFLOW);
+  ASSH_CHK_RET(a->l > m->l, ASSH_ERR_OUTPUT_OVERFLOW);
   ASSH_CHK_RET(u->l < a->l, ASSH_ERR_OUTPUT_OVERFLOW);
 
   ASSH_SCRATCH_ALLOC(m->ctx, assh_bnword_t, scratch, ASSH_MODINV_SCRATCH(m->l),
@@ -559,6 +559,99 @@ assh_error_t assh_bignum_modinv(struct assh_bignum_s *u,
   err = ASSH_OK;
  err_scratch:
   ASSH_SCRATCH_FREE(m->ctx, scratch);
+ err:
+  return err;
+}
+
+static assh_error_t ASSH_WARN_UNUSED_RESULT
+assh_bignum_gcd_euclidean(assh_bnword_t * __restrict__ g,
+                          const assh_bnword_t * __restrict__ a,
+                          unsigned int a_len,
+                          const assh_bnword_t * __restrict__ b,
+                          unsigned int b_len, assh_bnword_t *scratch)
+{
+  assh_error_t err;
+
+#define ASSH_GCD_SCRATCH(len) (len)
+
+  assh_bnword_t *xr = scratch;
+  assh_bnword_t *xp = g;
+
+  /* use largest buffer between scratch and result for the largest
+     input number, actual gcd value will be available in both buffers
+     at the end */
+  if (a_len < b_len)
+    ASSH_SWAP(xr, xp);
+
+  memmove(xr, a, a_len * sizeof(assh_bnword_t));
+  memmove(xp, b, b_len * sizeof(assh_bnword_t));
+
+  unsigned int r_len = a_len, p_len = a_len;
+
+  ASSH_CHK_RET(assh_bignum_div_strip(&r_len, xr) ||
+	       assh_bignum_div_strip(&p_len, xp), ASSH_ERR_NUM_OVERFLOW);
+
+  while (1)
+    {
+      unsigned int az, al, bz, bl, da, sa;
+      assh_bnword_t at, bt, q;
+
+#ifdef CONFIG_ASSH_DEBUG_BIGNUM_GCD
+      assh_bignum_print_raw(stderr, "r", xr, r_len);
+      assh_bignum_print_raw(stderr, "p", xp, p_len);
+#endif
+
+      int c = assh_bignum_cmp_raw(xr, r_len, xp, p_len);
+      if (c == 0)
+        break;
+      if (c > 0)
+	{
+#ifdef CONFIG_ASSH_DEBUG_BIGNUM_GCD
+	  fprintf(stderr, "swap\n");
+#endif
+	  ASSH_SWAP(r_len, p_len);
+	  ASSH_SWAP(xr, xp);
+	}
+
+      /* find factor */
+      assh_bignum_div_clz(r_len, xr, &az, &al, &at);
+      assh_bignum_div_clz(p_len, xp, &bz, &bl, &bt);
+      ASSH_CHK_RET(al < bl, ASSH_ERR_NUM_OVERFLOW);
+
+      q = assh_bignum_div_factor(at, bt, al - bl, &sa, &da);
+
+#ifdef CONFIG_ASSH_DEBUG_BIGNUM_GCD
+      fprintf(stderr, "plen=%u rlen=%u a_len=%u al=%u bl=%u da=%u sa=%u q=%X\n",
+              p_len, r_len, a_len, al, bl, da, sa, q);
+#endif
+
+      assh_bignum_div_update_r(p_len, xp, r_len, xr, q, sa, da);
+
+      ASSH_CHK_RET(assh_bignum_div_strip(&r_len, xr), ASSH_ERR_NUM_OVERFLOW);
+    }
+
+  return ASSH_OK;
+}
+
+assh_error_t assh_bignum_gcd(struct assh_bignum_s *g,
+                             const struct assh_bignum_s *a,
+                             const struct assh_bignum_s *b)
+{
+  assh_error_t err;
+
+  ASSH_CHK_RET(g->l < a->l && g->l < b->l, ASSH_ERR_OUTPUT_OVERFLOW);
+
+  unsigned int l = a->l > b->l ? a->l : b->l;
+
+  ASSH_SCRATCH_ALLOC(a->ctx, assh_bnword_t, scratch, ASSH_GCD_SCRATCH(l),
+		     ASSH_ERRSV_CONTINUE, err);
+
+  ASSH_ERR_GTO(assh_bignum_gcd_euclidean(g->n, a->n, a->l,
+                                         b->n, b->l, scratch), err_scratch);
+
+  err = ASSH_OK;
+ err_scratch:
+  ASSH_SCRATCH_FREE(a->ctx, scratch);
  err:
   return err;
 }

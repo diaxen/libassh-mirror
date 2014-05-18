@@ -79,10 +79,17 @@ assh_bignum_msb_to_data(const struct assh_bignum_s *bn,
                         uint8_t * __restrict__ data, size_t data_len)
 {
   assh_error_t err;
+  size_t s;
 
   assert(bn->n != NULL);
-  ASSH_CHK_RET(gcry_mpi_print(GCRYMPI_FMT_USG, data, data_len, NULL, bn->n),
+  ASSH_CHK_RET(gcry_mpi_print(GCRYMPI_FMT_USG, data, data_len, &s, bn->n),
 	       ASSH_ERR_NUM_OVERFLOW);
+
+  if (s != data_len)
+    {
+      memmove(data + (data_len - s), data, s);
+      memset(data, 0, data_len - s);
+    }
 
   return ASSH_OK;
 }
@@ -271,6 +278,24 @@ assh_bignum_modinv(struct assh_bignum_s *r,
 
   ASSH_ERR_RET(gcry_mpi_invm(r->n, a->n, m->n)
 	       ? 0 : ASSH_ERR_NUM_OVERFLOW);
+
+  return ASSH_OK;
+}
+
+assh_error_t
+assh_bignum_gcd(struct assh_bignum_s *r,
+                const struct assh_bignum_s *a,
+                const struct assh_bignum_s *b)
+{
+  assh_error_t err;
+
+  if (r->n == NULL)
+    r->n = gcry_mpi_new(r->l);
+  ASSH_CHK_RET(r->n == NULL, ASSH_ERR_MEM);
+  assert(a->n != NULL);
+  assert(b->n != NULL);
+
+  gcry_mpi_gcd(r->n, a->n, b->n);
 
   return ASSH_OK;
 }
