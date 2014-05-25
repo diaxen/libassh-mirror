@@ -16,12 +16,10 @@
 
 AM_CPPFLAGS = -I$(top_builddir)/src/assh
 
-noinst_PROGRAMS = bignum sha1 sha256 dsa connection
-TESTS = bignum sha1 sha256 dsa connection
+noinst_PROGRAMS = bignum sha1 sha256 dsa connection signature
+TESTS = bignum sha1 sha256 dsa connection signature
 
-bignum_SOURCES = bignum.c
-bignum_LDADD = $(top_builddir)/src/libassh.la
-bignum_CFLAGS = -I$(top_srcdir)/src
+############################## hash tests
 
 sha1_SOURCES = sha1.c
 sha1_LDADD = $(top_builddir)/src/libassh.la
@@ -31,11 +29,25 @@ sha256_SOURCES = sha256.c
 sha256_LDADD = $(top_builddir)/src/libassh.la
 sha256_CFLAGS = -I$(top_srcdir)/src
 
-dsa_SOURCES = dsa.c
-dsa_LDADD = $(top_builddir)/src/libassh.la
-dsa_CFLAGS = -I$(top_srcdir)/src
+############################## protocol tests
 
 connection_SOURCES = connection.c
 connection_LDADD = $(top_builddir)/src/libassh.la
 connection_CFLAGS = -I$(top_srcdir)/src
+
+############################## bignum tests
+
+bignum_SOURCES = bignum.c
+bignum_LDADD = $(top_builddir)/src/libassh.la
+bignum_CFLAGS = -I$(top_srcdir)/src
+
+dsa_SOURCES = dsa.c
+dsa_LDADD = $(top_builddir)/src/libassh.la
+dsa_CFLAGS = -I$(top_srcdir)/src
+
+############################## signature tests
+
+signature_SOURCES = signature.c
+signature_LDADD = $(top_builddir)/src/libassh.la
+signature_CFLAGS = -I$(top_srcdir)/src
 
