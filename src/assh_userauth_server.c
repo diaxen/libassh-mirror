@@ -280,12 +280,9 @@ static assh_error_t assh_userauth_server_pubkey_verify(struct assh_session_s *s,
     { 4,       s->session_id_len, sign - &p->head.msg };
 
   /* check the signature */
-  assh_bool_t sign_ok;
   struct assh_algo_sign_s *algo = (void*)pv->pub_key->algo;
-  ASSH_ERR_RET(algo->f_verify(s->ctx, pv->pub_key, 3,
-       sign_ptrs, sign_sizes, sign + 4, end - sign - 4, &sign_ok) | ASSH_ERRSV_DISCONNECT);
-
-  if (sign_ok)
+  if (algo->f_verify(s->ctx, pv->pub_key, 3,
+                     sign_ptrs, sign_sizes, sign + 4, end - sign - 4) == ASSH_OK)
     ASSH_ERR_RET(assh_userauth_server_success(s) | ASSH_ERRSV_DISCONNECT);
   else
     ASSH_ERR_RET(assh_userauth_server_failure(s) | ASSH_ERRSV_DISCONNECT);

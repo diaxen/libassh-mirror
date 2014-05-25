@@ -574,15 +574,12 @@ assh_kex_client_hash(struct assh_session_s *s, assh_kex_client_hash_t *fcn,
                  assh_load_u32(host_key_str), ASSH_KEY_FMT_PUB_RFC4253_6_6)
                | ASSH_ERRSV_DISCONNECT, err_scratch);
 
-  assh_bool_t sign_ok;
   const uint8_t *sign_ptrs[1] = { ex_hash };
   size_t sign_sizes[1] = { hash_algo->hash_size };
 
-  ASSH_ERR_GTO(sign_algo->f_verify(c, *host_key, 1, sign_ptrs, sign_sizes,
-                                   host_sign_str + 4, assh_load_u32(host_sign_str),
-                                   &sign_ok) | ASSH_ERRSV_DISCONNECT, err_hk);
-
-  ASSH_CHK_GTO(!sign_ok, ASSH_ERR_HOSTKEY_SIGNATURE | ASSH_ERRSV_DISCONNECT, err_hk);
+  ASSH_CHK_GTO(sign_algo->f_verify(c, *host_key, 1, sign_ptrs, sign_sizes,
+                host_sign_str + 4, assh_load_u32(host_sign_str)) != ASSH_OK,
+               ASSH_ERR_HOSTKEY_SIGNATURE | ASSH_ERRSV_DISCONNECT, err_hk);
 
   /* setup new keys */
   ASSH_ERR_GTO(assh_kex_new_keys(s, hash_algo, ex_hash, secret_str)

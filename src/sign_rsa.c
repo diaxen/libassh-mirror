@@ -177,8 +177,6 @@ static ASSH_KEY_VALIDATE_FCN(assh_sign_rsa_key_validate)
 
   unsigned int n = assh_bignum_bits(k->nn);
 
-  *valid = 0;
-
 #if 0
   /* check key size */
   if (n < 768 || n > 8192 || n % 8)
@@ -200,11 +198,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_sign_rsa_key_validate)
 #endif
 #warning rsa key validate
 
-  *valid = (err == ASSH_OK);
   return ASSH_OK;
-
- err_:
-  return err;
 }
 
 static inline unsigned int
@@ -395,7 +389,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate)
   uint8_t *c_str = sign + assh_rsa_id_len + 4;
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
-  assh_hexdump("rsa generate em", em, n / 8);
+  assh_hexdump("rsa generate em", em_buf, n / 8);
 #endif
 
   enum bytecode_args_e
@@ -412,7 +406,6 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate)
     ASSH_BIGNUM_BC_EXPMOD(      C,     EM,      D       ),
 
     ASSH_BIGNUM_BC_MOVE(        C_data, C               ),
-
     ASSH_BIGNUM_BC_END(),
   };
 
@@ -475,19 +468,13 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_rsa_verify)
   uint8_t *em_end = em + n / 8;
   uint_fast16_t i;
 
-  *ok = 0;
-
   /* check padding */
-  if (*em++ != 0x00)
-    goto invalid;
-  if (*em++ != 0x01)
-    goto invalid;
-  for (i = 0; em < em_end && *em == 0xff; em++)
+  ASSH_CHK_GTO(*em++ != 0x00, ASSH_ERR_BAD_DATA, err_em);
+  ASSH_CHK_GTO(*em++ != 0x01, ASSH_ERR_BAD_DATA, err_em);
+  for (i = 0; em + 1 < em_end && *em == 0xff; em++)
     i++;
-  if (i < 8)
-    goto invalid;
-  if (*em++ != 0x00)
-    goto invalid;
+  ASSH_CHK_GTO(i < 8, ASSH_ERR_BAD_DATA, err_em);
+  ASSH_CHK_GTO(*em++ != 0x00, ASSH_ERR_BAD_DATA, err_em);
 
   /* lookup digest algorithm in use */
   const struct assh_rsa_digest_s *digest;
@@ -501,8 +488,8 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_rsa_verify)
       if (!memcmp(digest->oid, em, digest->oid_len))
         break;
     }
-  if (i == RSA_DIGEST_count)
-    goto invalid;
+
+  ASSH_CHK_GTO(i == RSA_DIGEST_count, ASSH_ERR_NOTSUP, err_em);
 
   /* compute message hash */
   em += digest->oid_len;
@@ -521,10 +508,11 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_rsa_verify)
   assh_hexdump("rsa verify hash", hash, digest->algo->hash_size);
 #endif
 
-  *ok = !memcmp(hash, em, digest->algo->hash_size);
+  ASSH_CHK_GTO(assh_memcmp(hash, em, digest->algo->hash_size),
+               ASSH_ERR_NUM_COMPARE_FAILED, err_hash);
 
- invalid:
   err = ASSH_OK;
+
  err_hash:
   ASSH_SCRATCH_FREE(c, hash_ctx);
  err_em:

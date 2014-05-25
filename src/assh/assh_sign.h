@@ -48,7 +48,7 @@
 typedef ASSH_SIGN_GENERATE_FCN(assh_sign_generate_t);
 
 /** This function must verify the signature of the passed data using
-    the provided key and update the @tt ok parameter accordingly.
+    the provided key.
 
     The data can be split into multiple buffers. The @tt data_count
     parameter must specify the number of data buffers used.
@@ -56,7 +56,7 @@ typedef ASSH_SIGN_GENERATE_FCN(assh_sign_generate_t);
 #define ASSH_SIGN_VERIFY_FCN(n) assh_error_t (n)(struct assh_context_s *c, \
                                                  const struct assh_key_s *key, size_t data_count, \
                                                  const uint8_t * const data[], size_t const data_len[], \
-                                                 const uint8_t *sign, size_t sign_len, assh_bool_t *ok)
+                                                 const uint8_t *sign, size_t sign_len)
 typedef ASSH_SIGN_VERIFY_FCN(assh_sign_verify_t);
 
 

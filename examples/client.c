@@ -111,9 +111,7 @@ int main(int argc, char **argv)
         case ASSH_EVENT_KEX_HOSTKEY_LOOKUP: {
           /* XXX the key validity may be checked before adding
              the key to the list of known hosts. */
-          assh_bool_t valid;
-          if (assh_key_validate(&context, event.kex.hostkey_lookup.key,
-                                &valid) || !valid)
+          if (assh_key_validate(&context, event.kex.hostkey_lookup.key))
             break;
 
           event.kex.hostkey_lookup.accept = 1;

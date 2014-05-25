@@ -47,8 +47,6 @@ static ASSH_KEY_CMP_FCN(assh_sign_none_key_cmp)
 
 static ASSH_KEY_VALIDATE_FCN(assh_sign_none_key_validate)
 {
-  *valid = 1;
-
   return ASSH_OK;
 }
 
@@ -76,8 +74,6 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_none_generate)
 
 static ASSH_SIGN_VERIFY_FCN(assh_sign_none_verify)
 {
-  *ok = 1;
-
   return ASSH_OK;
 }
 

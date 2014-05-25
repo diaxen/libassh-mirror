@@ -50,17 +50,20 @@ struct assh_key_s;
     This function may only support binary key formats; ascii formats
     are handled by helper functions.
 */
-#define ASSH_KEY_LOAD_FCN(n) assh_error_t (n)(struct assh_context_s *c, \
-                                              const uint8_t *blob, size_t blob_len, \
-                                              struct assh_key_s **key, \
-                                              enum assh_key_format_e format)
+#define ASSH_KEY_LOAD_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t (n)   \
+  (struct assh_context_s *c,                                            \
+   const uint8_t *blob, size_t blob_len,                                \
+   struct assh_key_s **key,                                             \
+   enum assh_key_format_e format)
+
 typedef ASSH_KEY_LOAD_FCN(assh_key_load_t);
 
 
 /** @internal This function checks the key validity. */
-#define ASSH_KEY_VALIDATE_FCN(n) assh_error_t (n)(struct assh_context_s *c, \
-                                                  const struct assh_key_s *key, \
-                                                  assh_bool_t *valid)
+#define ASSH_KEY_VALIDATE_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t (n) \
+  (struct assh_context_s *c,                                            \
+   const struct assh_key_s *key)
+
 typedef ASSH_KEY_VALIDATE_FCN(assh_key_validate_t);
 
 
@@ -75,31 +78,44 @@ typedef ASSH_KEY_VALIDATE_FCN(assh_key_validate_t);
     This function may only support the @ref
     ASSH_KEY_FMT_PUB_RFC4253_6_6 format.
 */
-#define ASSH_KEY_OUTPUT_FCN(n) assh_error_t (n)(struct assh_context_s *c, \
-                                                const struct assh_key_s *key, \
-                                                uint8_t *blob, size_t *blob_len, \
-                                                enum assh_key_format_e format)
+#define ASSH_KEY_OUTPUT_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t (n) \
+  (struct assh_context_s *c,                                            \
+   const struct assh_key_s *key,                                        \
+   uint8_t *blob, size_t *blob_len,                                     \
+   enum assh_key_format_e format)
+
 typedef ASSH_KEY_OUTPUT_FCN(assh_key_output_t);
 
 
 /** This function compares two keys and returns a positive value if
     the keys are equals. If the @tt pub parameter is set, only the
     public part of the keys are compared. */
-#define ASSH_KEY_CMP_FCN(n) assh_bool_t (n)(struct assh_key_s *key,     \
-                                            struct assh_key_s *b, assh_bool_t pub)
+#define ASSH_KEY_CMP_FCN(n) ASSH_WARN_UNUSED_RESULT assh_bool_t (n)     \
+  (struct assh_key_s *key,                                              \
+   struct assh_key_s *b, assh_bool_t pub)
+
 typedef ASSH_KEY_CMP_FCN(assh_key_cmp_t);
 
 
 /** @internal This function must release the resources used by the key. */
-#define ASSH_KEY_CLEANUP_FCN(n) void (n)(struct assh_context_s *c, \
-                                         struct assh_key_s *key)
+#define ASSH_KEY_CLEANUP_FCN(n) void (n)                                \
+  (struct assh_context_s *c,                                            \
+   struct assh_key_s *key)
+
 typedef ASSH_KEY_CLEANUP_FCN(assh_key_cleanup_t);
+
+
+#define ASSH_KEY_FINGERPRINT_SIZE 32
 
 /** SSH key structure */
 struct assh_key_s
 {
   const struct assh_algo_s *algo;
   struct assh_key_s *next;
+
+  unsigned int fp_len;
+  uint8_t fp[ASSH_KEY_FINGERPRINT_SIZE];
+
   assh_key_output_t *f_output;
   assh_key_validate_t *f_validate;
   assh_key_cmp_t *f_cmp;
@@ -156,10 +172,9 @@ assh_key_drop(struct assh_context_s *c, struct assh_key_s **head);
 
 /** This function checks the key validity. */
 static inline ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_key_validate(struct assh_context_s *c, const struct assh_key_s *key,
-                  assh_bool_t *valid)
+assh_key_validate(struct assh_context_s *c, const struct assh_key_s *key)
 {
-  return key->f_validate(c, key, valid);
+  return key->f_validate(c, key);
 }
 
 #endif

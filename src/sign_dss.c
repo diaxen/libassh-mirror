@@ -153,8 +153,6 @@ static ASSH_KEY_VALIDATE_FCN(assh_sign_dss_key_validate)
   unsigned int l = assh_bignum_bits(k->pn);
   unsigned int n = assh_bignum_bits(k->qn);
 
-  *valid = 0;
-
   /* check key size */
   if (l < 1024 || n < 160 || l > 8192 || n > 512 || l % 8 || n % 8)
     return ASSH_OK;
@@ -188,17 +186,30 @@ static ASSH_KEY_VALIDATE_FCN(assh_sign_dss_key_validate)
     ASSH_BIGNUM_BC_END(),
   };
 
-  err = assh_bignum_bytecode(c, bytecode, "NNNNTT",
-                             k->pn, k->qn, k->gn, k->yn, l, l);
+  ASSH_ERR_RET(assh_bignum_bytecode(c, bytecode, "NNNNTT",
+                                    k->pn, k->qn, k->gn, k->yn, l, l));
 
-  if (err != ASSH_ERR_NUM_COMPARE_FAILED)
-    ASSH_ERR_RET(err);
+  /* check private key match */
+  if (k->xn != NULL)
+    {
+      enum bytecode_args_e
+      {
+        P, G, Y, X, T1
+      };
 
-  *valid = (err == ASSH_OK);
+      assh_bignum_op_t bytecode[] = {
+        ASSH_BIGNUM_BC_SETMOD(      P                       ),
+        ASSH_BIGNUM_BC_EXPMOD(      T1,     G,      X       ),
+        ASSH_BIGNUM_BC_CMPEQ(       T1,     Y               ),
+
+        ASSH_BIGNUM_BC_END(),
+      };
+
+      ASSH_ERR_RET(assh_bignum_bytecode(c, bytecode, "NNNNT",
+                                        k->pn, k->gn, k->yn, k->xn, l));
+    }
+
   return ASSH_OK;
-
- err_:
-  return err;
 }
 
 static ASSH_KEY_LOAD_FCN(assh_sign_dss_key_load)
@@ -342,33 +353,41 @@ assh_sign_dss_hash(struct assh_context_s *c, size_t data_count,
   assh_error_t err;
   unsigned int i;
 
+  struct assh_hash_s *algo;
+
   switch (n)
     {
-    case 160: {
-      ASSH_SCRATCH_ALLOC(c, uint8_t, scratch,
-			 sizeof(struct assh_hash_sha1_context_s) + n / 8,
-			 ASSH_ERRSV_CONTINUE, err);
-
-      struct assh_hash_sha1_context_s *sha1 = (void*)scratch;
-      uint8_t *hash = scratch + sizeof(*sha1);
-
-      assh_sha1_init(sha1);
-      for (i = 0; i < data_count; i++)
-        assh_sha1_update(sha1, data[i], data_len[i]);
-      assh_sha1_final(sha1, hash);
-
-      ASSH_ERR_GTO(assh_bignum_from_data(bn, hash, n / 8), err);
-
-      err = ASSH_OK;
-     err:
-      ASSH_SCRATCH_FREE(c, scratch);
-      return err;
-    }
+    case 160:
+      algo = &assh_hash_sha1;
+      break;
+    case 224:
+    case 256:
+      algo = &assh_hash_sha256;
+      break;
     default:
       ASSH_ERR_RET(ASSH_ERR_NOTSUP);
     }
 
-  return ASSH_OK;
+  assert(algo->hash_size >= n / 8);
+
+  ASSH_SCRATCH_ALLOC(c, uint8_t, scratch,
+                     algo->ctx_size + algo->hash_size,
+                     ASSH_ERRSV_CONTINUE, err);
+
+  void *hash_ctx = scratch;
+  uint8_t *hash = scratch + algo->ctx_size;
+
+  algo->f_init(hash_ctx);
+  for (i = 0; i < data_count; i++)
+    algo->f_update(hash_ctx, data[i], data_len[i]);
+  algo->f_final(hash_ctx, hash);
+
+  ASSH_ERR_GTO(assh_bignum_from_data(bn, hash, n / 8), err);
+
+  err = ASSH_OK;
+ err:
+  ASSH_SCRATCH_FREE(c, scratch);
+  return err;
 }
 
 static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
@@ -443,6 +462,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
 
   assh_bignum_op_t bytecode[] = {
     ASSH_BIGNUM_BC_MOVE(        K,      K_data          ),
+    ASSH_BIGNUM_BC_DIV(         K,      Q,      Q       ),
 
     /* g^k mod p */
     ASSH_BIGNUM_BC_SETMOD(      P                       ),
@@ -475,7 +495,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
   ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "DDDNNNNNTTTTTT",
                                     /* D */ rnd, r_str, s_str,
                                     /* N */ k->pn, k->qn, k->gn, k->xn, mn,
-                                    /* T */ n, n, n, n, n + 1, l), err_scratch);
+                                    /* T */ n, n, n, n, n + 8, l), err_scratch);
 
   err = ASSH_OK;
 
@@ -496,7 +516,7 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_dss_verify)
   unsigned int n = assh_bignum_bits(k->qn);
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
-  ASSH_DEBUG("N=%u L=%u\n", n, l);
+  ASSH_DEBUG("N=%u L=%u sign_len=%u\n", n, l, sign_len);
 #endif
 
   ASSH_CHK_RET(sign_len != assh_dss_id_len + 4 + n * 2 / 8, ASSH_ERR_INPUT_OVERFLOW);
@@ -548,15 +568,10 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_dss_verify)
     ASSH_BIGNUM_BC_END(),
   };
 
-  err = assh_bignum_bytecode(c, bytecode, "DDNNNNNTTTTTTTT",
-                             /* D */ rs_str + 4, rs_str + 4 + n / 8,
-                             /* N */ k->pn, k->qn, k->gn, k->yn, mn,
-                             /* T */ n, n, n, n, l, n, l, l);
-
-  if (err != ASSH_ERR_NUM_COMPARE_FAILED)
-    ASSH_ERR_GTO(err, err_mn);
-
-  *ok = (err == ASSH_OK);
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "DDNNNNNTTTTTTTT",
+                                    /* D */ rs_str + 4, rs_str + 4 + n / 8,
+                                    /* N */ k->pn, k->qn, k->gn, k->yn, mn,
+                                    /* T */ n, n, n, n, l, n, l, l), err_mn);
 
   err = ASSH_OK;
 
@@ -569,7 +584,7 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_dss_verify)
 struct assh_algo_sign_s assh_sign_dss =
 {
   .algo = { .name = "ssh-dss", .class_ = ASSH_ALGO_SIGN,
-            .need_host_key = 1, .safety = 50, .speed = 50 },
+            .need_host_key = 1, .safety = 60, .speed = 50 },
   .f_key_load = assh_sign_dss_key_load,
   .f_generate = assh_sign_dss_generate,
   .f_verify = assh_sign_dss_verify,
