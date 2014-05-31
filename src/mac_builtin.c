@@ -129,6 +129,42 @@ static ASSH_MAC_COMPUTE_FCN(assh_hmac_compute)
 }
 
 
+static ASSH_MAC_INIT_FCN(assh_hmac_md5_init)
+{
+  return assh_hmac_init(c, &assh_hmac_md5, ctx_, key, &assh_hash_md5);
+}
+
+struct assh_algo_mac_s assh_hmac_md5 = 
+{
+  .algo = { .name = "hmac-md5", .class_ = ASSH_ALGO_MAC,
+            .safety = 30, .speed = 70 },
+  .ctx_size = sizeof(struct assh_hmac_context_s),
+  .key_size = 16,
+  .mac_size = 16,
+  .f_init = assh_hmac_md5_init,
+  .f_compute = assh_hmac_compute,
+  .f_cleanup = assh_hmac_cleanup,
+};
+
+
+static ASSH_MAC_INIT_FCN(assh_hmac_md5_96_init)
+{
+  return assh_hmac_init(c, &assh_hmac_md5_96, ctx_, key, &assh_hash_md5);
+}
+
+struct assh_algo_mac_s assh_hmac_md5_96 = 
+{
+  .algo = { .name = "hmac-md5-96", .class_ = ASSH_ALGO_MAC,
+            .safety = 20, .speed = 75 },
+  .ctx_size = sizeof(struct assh_hmac_context_s),
+  .key_size = 16,
+  .mac_size = 12,
+  .f_init = assh_hmac_md5_96_init,
+  .f_compute = assh_hmac_compute,
+  .f_cleanup = assh_hmac_cleanup,
+};
+
+
 static ASSH_MAC_INIT_FCN(assh_hmac_sha1_init)
 {
   return assh_hmac_init(c, &assh_hmac_sha1, ctx_, key, &assh_hash_sha1);

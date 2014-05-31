@@ -86,6 +86,7 @@ assh_hash_bignum(struct assh_context_s *ctx, void *ctx_,
     32 bits size header; not check is performed by this function. */
 void assh_hash_payload_as_string(void *ctx_, assh_hash_update_t *update, const struct assh_packet_s *p);
 
+extern const struct assh_hash_s assh_hash_md5;
 extern const struct assh_hash_s assh_hash_sha1;
 extern const struct assh_hash_s assh_hash_sha224;
 extern const struct assh_hash_s assh_hash_sha256;
