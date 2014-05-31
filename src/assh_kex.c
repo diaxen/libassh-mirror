@@ -291,9 +291,6 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
     }
 
   s->kex_bad_guess = guess_follows && !good_guess;
-#ifdef CONFIG_ASSH_DEBUG_KEX
-  ASSH_DEBUG("kex guess: follows=%x good=%x\n", guess_follows, good_guess);
-#endif
 
   const struct assh_algo_kex_s *kex           = (const void *)algos[0];
   const struct assh_algo_sign_s *sign         = (const void *)algos[1];
@@ -303,6 +300,18 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
   const struct assh_algo_mac_s *mac_out       = (const void *)algos[5];
   const struct assh_algo_compress_s *cmp_in   = (const void *)algos[6];
   const struct assh_algo_compress_s *cmp_out  = (const void *)algos[7];
+
+#ifdef CONFIG_ASSH_DEBUG_KEX
+  ASSH_DEBUG("kex algorithms:\n"
+             "  kex: %s\n  sign: %s\n  cipher in: %s\n  cipher out: %s\n"
+             "  mac in: %s\n  mac out: %s\n  comp in: %s\n  comp out: %s\n"
+             "  guess: follows=%x good=%x\n",
+             kex->algo.name, sign->algo.name,
+             cipher_in->algo.name, cipher_out->algo.name,
+             mac_in->algo.name, mac_out->algo.name,
+             cmp_in->algo.name, cmp_out->algo.name,
+             guess_follows, good_guess);
+#endif
 
   /* keep the remote KEX_INIT packet, will be needed for hashing */
   assert(s->kex_init_remote == NULL);
