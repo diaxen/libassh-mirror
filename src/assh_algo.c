@@ -136,6 +136,10 @@ assh_error_t assh_algo_register_default(struct assh_context_s *c, unsigned int s
 			/* mac_sha1.c */
 			&assh_hmac_sha1,
 			&assh_hmac_sha1_96,
+			/* mac_sha2.c */
+			&assh_hmac_sha256,
+			&assh_hmac_sha512,
+
 			/* compress_none.c */
 			&assh_compress_none,
 				     NULL));

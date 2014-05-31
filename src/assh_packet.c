@@ -53,7 +53,7 @@ assh_packet_alloc(struct assh_context_s *c,
   ASSH_CHK_RET(payload_size > ASSH_MAX_PCK_PAYLOAD_SIZE, ASSH_ERR_OUTPUT_OVERFLOW);
 
   size_t size = /* pck_len */ 4 + /* pad_len */ 1 + /* msg */ 1 + payload_size +
-          /* mac */ ASSH_MAX_HASH_SIZE + /* padding */ (ASSH_MAX_BLOCK_SIZE - 1);
+          /* mac */ ASSH_MAX_MAC_SIZE + /* padding */ (4 + ASSH_MAX_BLOCK_SIZE - 1);
 
   ASSH_ERR_RET(assh_packet_alloc2(c, msg, size, result));
   return ASSH_OK;

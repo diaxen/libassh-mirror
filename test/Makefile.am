@@ -14,20 +14,18 @@
 # License along with this program.  If not, see
 # <http://www.gnu.org/licenses/>.
 
+AUTOMAKE_OPTIONS = serial-tests
+
 AM_CPPFLAGS = -I$(top_builddir)/src/assh
 
-noinst_PROGRAMS = bignum sha1 sha256 dsa connection signature
-TESTS = bignum sha1 sha256 dsa connection signature
+noinst_PROGRAMS = bignum hash dsa connection signature
+TESTS = bignum hash dsa connection signature
 
 ############################## hash tests
 
-sha1_SOURCES = sha1.c
-sha1_LDADD = $(top_builddir)/src/libassh.la
-sha1_CFLAGS = -I$(top_srcdir)/src
-
-sha256_SOURCES = sha256.c
-sha256_LDADD = $(top_builddir)/src/libassh.la
-sha256_CFLAGS = -I$(top_srcdir)/src
+hash_SOURCES = hash.c
+hash_LDADD = $(top_builddir)/src/libassh.la
+hash_CFLAGS = -I$(top_srcdir)/src
 
 ############################## protocol tests
 

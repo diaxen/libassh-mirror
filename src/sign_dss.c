@@ -24,7 +24,7 @@
 #include <assh/assh_packet.h>
 #include <assh/assh_bignum.h>
 #include <assh/assh_sign.h>
-#include <assh/hash_sha1.h>
+#include <assh/assh_hash.h>
 #include <assh/assh_prng.h>
 #include <assh/assh_alloc.h>
 
@@ -143,8 +143,6 @@ static ASSH_KEY_VALIDATE_FCN(assh_sign_dss_key_validate)
   struct assh_sign_dss_key_s *k = (void*)key;
   assh_error_t err = ASSH_OK;
 
-#warning validate private keys too
-
   /*
    * FIPS 186-4 Appendix A2.2
    * SP 800-89 section 5.3.1
@@ -154,7 +152,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_sign_dss_key_validate)
   unsigned int n = assh_bignum_bits(k->qn);
 
   /* check key size */
-  if (l < 1024 || n < 160 || l > 8192 || n > 512 || l % 8 || n % 8)
+  if (l < 1024 || n < 160 || l > 4096 || n > 256 || l % 8 || n % 8)
     return ASSH_OK;
 
   enum bytecode_args_e
@@ -175,8 +173,8 @@ static ASSH_KEY_VALIDATE_FCN(assh_sign_dss_key_validate)
     ASSH_BIGNUM_BC_CMPEQ(       T1,     T2              ),
 
     /* check public key range */
-    ASSH_BIGNUM_BC_CMPLT(       T1,     G               ), /* y > 1 */
-    ASSH_BIGNUM_BC_EXPMOD(      T2,     P,      T1      ),
+    ASSH_BIGNUM_BC_CMPLT(       T1,     Y               ), /* y > 1 */
+    ASSH_BIGNUM_BC_SUB(         T2,     P,      T1      ),
     ASSH_BIGNUM_BC_CMPLT(       Y,      T2              ), /* y < p-1 */
 
     /* check public key order in the group */
@@ -189,7 +187,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_sign_dss_key_validate)
   ASSH_ERR_RET(assh_bignum_bytecode(c, bytecode, "NNNNTT",
                                     k->pn, k->qn, k->gn, k->yn, l, l));
 
-  /* check private key match */
+  /* check that the private part match the public part of the key */
   if (k->xn != NULL)
     {
       enum bytecode_args_e
@@ -265,7 +263,7 @@ static ASSH_KEY_LOAD_FCN(assh_sign_dss_key_load)
 
   /* allocate key structure */
   ASSH_CHK_RET(l < 1024 || n < 160 || l % 8 || n % 8, ASSH_ERR_BAD_DATA);
-  ASSH_CHK_RET(l > 8192 || n > 512, ASSH_ERR_NOTSUP);
+  ASSH_CHK_RET(l > 4096 || n > 256, ASSH_ERR_NOTSUP);
 
   size_t size = sizeof(struct assh_sign_dss_key_s)
     + assh_bignum_sizeof(l)  /* p */
@@ -345,28 +343,36 @@ static ASSH_KEY_LOAD_FCN(assh_sign_dss_key_load)
 /************************************************************ dss sign algo */
 
 static assh_error_t
-assh_sign_dss_hash(struct assh_context_s *c, size_t data_count,
-		   const uint8_t * const data[],
-		   const size_t data_len[],
-		   unsigned int n, struct assh_bignum_s *bn)
+assh_sign_dss_hash_algo(const struct assh_hash_s **algo, unsigned int n)
 {
   assh_error_t err;
-  unsigned int i;
-
-  struct assh_hash_s *algo;
 
   switch (n)
     {
     case 160:
-      algo = &assh_hash_sha1;
+      *algo = &assh_hash_sha1;
       break;
     case 224:
+      *algo = &assh_hash_sha224;
+      break;
     case 256:
-      algo = &assh_hash_sha256;
+      *algo = &assh_hash_sha256;
       break;
     default:
       ASSH_ERR_RET(ASSH_ERR_NOTSUP);
     }
+
+  return ASSH_OK;
+}
+
+static assh_error_t
+assh_sign_dss_hash(struct assh_context_s *c, size_t data_count,
+		   const uint8_t * const data[], const size_t data_len[],
+		   const struct assh_hash_s *algo,
+		   unsigned int n, struct assh_bignum_s *bn)
+{
+  assh_error_t err;
+  unsigned int i;
 
   assert(algo->hash_size >= n / 8);
 
@@ -408,6 +414,9 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
   /* check/return signature length */
   size_t len = assh_dss_id_len + 4 + n * 2 / 8;
 
+  const struct assh_hash_s *algo;
+  ASSH_ERR_RET(assh_sign_dss_hash_algo(&algo, n));
+
   if (sign == NULL)
     {
       *sign_len = len;
@@ -419,7 +428,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
 
   /* message hash */
   ASSH_BIGNUM_ALLOC(c, mn, n, ASSH_ERRSV_CONTINUE, err_);
-  ASSH_ERR_GTO(assh_sign_dss_hash(c, data_count, data, data_len, n, mn), err_mn);
+  ASSH_ERR_GTO(assh_sign_dss_hash(c, data_count, data, data_len, algo, n, mn), err_mn);
 
   memcpy(sign, assh_dss_id, assh_dss_id_len);
   assh_store_u32(sign + assh_dss_id_len, n * 2 / 8);
@@ -430,27 +439,26 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
      avoid leaking key bits in case of a weak prng. Random data is
      hashed with the private key and the message data. */
   ASSH_SCRATCH_ALLOC(c, uint8_t, scratch,
-		     sizeof(struct assh_hash_sha1_context_s)
-		     + /* sizeof rnd[] */ n / 8 + 20,
+		     algo->ctx_size + /* sizeof rnd[] */ n / 8 + algo->hash_size,
 		     ASSH_ERRSV_CONTINUE, err_mn);
 
-  struct assh_hash_sha1_context_s *sha1 = (void*)scratch;
-  uint8_t *rnd = scratch + sizeof(*sha1);
+  void *hash_ctx = (void*)scratch;
+  uint8_t *rnd = scratch + algo->ctx_size;
 
   unsigned int i;
 
   ASSH_ERR_GTO(c->prng->f_get(c, rnd, n / 8, ASSH_PRNG_QUALITY_NONCE), err_scratch);
-  assh_sha1_init(sha1);
+  algo->f_init(hash_ctx);
   for (i = 0; i < data_count; i++)
-    assh_sha1_update(sha1, data[i], data_len[i]);
-  ASSH_ERR_GTO(assh_hash_bignum(c, sha1, &assh_sha1_update, k->xn), err_scratch);
+    algo->f_update(hash_ctx, data[i], data_len[i]);
+  ASSH_ERR_GTO(assh_hash_bignum(c, hash_ctx, algo->f_update, k->xn), err_scratch);
   for (i = 0; ; )
     {
-      assh_sha1_update(sha1, rnd, n / 8);
-      assh_sha1_final(sha1, rnd + i);
-      if ((i += 20) >= n / 8)
+      algo->f_update(hash_ctx, rnd, n / 8);
+      algo->f_final(hash_ctx, rnd + i);
+      if ((i += algo->hash_size) >= n / 8)
 	break;
-      assh_sha1_init(sha1);
+      algo->f_init(hash_ctx);
     }
 
   enum bytecode_args_e
@@ -523,11 +531,14 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_dss_verify)
 
   ASSH_CHK_RET(memcmp(sign, assh_dss_id, assh_dss_id_len), ASSH_ERR_BAD_DATA);
 
+  const struct assh_hash_s *algo;
+  ASSH_ERR_RET(assh_sign_dss_hash_algo(&algo, n));
+
   uint8_t *rs_str = (uint8_t*)sign + assh_dss_id_len;
   ASSH_CHK_RET(assh_load_u32(rs_str) != n * 2 / 8, ASSH_ERR_INPUT_OVERFLOW);
 
   ASSH_BIGNUM_ALLOC(c, mn, n, ASSH_ERRSV_CONTINUE, err_);  
-  ASSH_ERR_GTO(assh_sign_dss_hash(c, data_count, data, data_len, n, mn), err_mn);
+  ASSH_ERR_GTO(assh_sign_dss_hash(c, data_count, data, data_len, algo, n, mn), err_mn);
 
   enum bytecode_args_e
   {

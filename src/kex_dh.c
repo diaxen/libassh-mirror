@@ -31,8 +31,7 @@
 #include <assh/assh_sign.h>
 #include <assh/assh_event.h>
 #include <assh/assh_alloc.h>
-
-#include <assh/hash_sha1.h>
+#include <assh/assh_hash.h>
 
 #include <string.h>
 #include <stdlib.h>

@@ -176,11 +176,35 @@ static inline void assh_store_u32(uint8_t *s, uint32_t x)
   s[3] = x;
 }
 
+/** @internal This function stores a 64 bytes value in network byte
+    order into a non-aligned location. */
+static inline void assh_store_u64(uint8_t *s, uint64_t x)
+{
+  s[0] = x >> 56;
+  s[1] = x >> 48;
+  s[2] = x >> 40;
+  s[3] = x >> 32;
+  s[4] = x >> 24;
+  s[5] = x >> 16;
+  s[6] = x >> 8;
+  s[7] = x;
+}
+
 /** @internal This function loads a 32 bytes value in network byte
     order from a non-aligned location. */
 static inline uint32_t assh_load_u32(const uint8_t *s)
 {
   return s[3] + (s[2] << 8) + (s[1] << 16) + (s[0] << 24);
+}
+
+/** @internal This function loads a 64 bytes value in network byte
+    order from a non-aligned location. */
+static inline uint64_t assh_load_u64(const uint8_t *s)
+{
+  return (uint64_t)s[7]         + ((uint64_t)s[6] << 8) +
+         ((uint64_t)s[5] << 16) + ((uint64_t)s[4] << 24) +
+         ((uint64_t)s[3] << 32) + ((uint64_t)s[2] << 40) +
+         ((uint64_t)s[1] << 48) + ((uint64_t)s[0] << 56);
 }
 
 /** @internal This function allocates an array of bytes in a packet

@@ -194,7 +194,7 @@ typedef int assh_error_t;
 #define ASSH_MAX_SYMKEY_SIZE 64
 
 /** Maximum mac output size in bytes. */
-#define ASSH_MAX_MAC_SIZE 32
+#define ASSH_MAX_MAC_SIZE 64
 
 /** Maximum size of incoming packet length, including header and mac. */
 #define ASSH_MAX_PCK_LEN 35000

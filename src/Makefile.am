@@ -26,12 +26,12 @@ libassh_la_SOURCES = assh_context.c assh_session.c assh_packet.c	\
 	assh_connection.c assh_userauth_client.c assh_userauth_server.c	\
 	kex_none.c kex_dh.c kex_curve25519.c                            \
 	cipher_none.c							\
-	mac_sha1.c mac_none.c						\
+	mac_builtin.c mac_none.c					\
 	sign_dss.c sign_rsa.c sign_none.c				\
 	compress_none.c							\
 	helper_key.c helper_fd.c
 
-libassh_la_SOURCES +=   hash_sha1_builtin.c hash_sha256_builtin.c prng_xswap_builtin.c
+libassh_la_SOURCES +=   hash_sha1_builtin.c hash_sha2_builtin.c prng_xswap_builtin.c
 
 if COND_gcrypt_bignum
 libassh_la_SOURCES +=	bignum_gcrypt.c

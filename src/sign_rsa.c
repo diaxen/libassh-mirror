@@ -24,8 +24,7 @@
 #include <assh/assh_packet.h>
 #include <assh/assh_bignum.h>
 #include <assh/assh_sign.h>
-#include <assh/hash_sha1.h>
-#include <assh/hash_sha256.h>
+#include <assh/assh_hash.h>
 #include <assh/assh_prng.h>
 #include <assh/assh_alloc.h>
 
@@ -79,9 +78,9 @@ static const struct assh_rsa_digest_s assh_rsa_digests[RSA_DIGEST_count] =
   { 19, "\x30\x31\x30\x0d\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x01\x05\x00\x04\x20",
     &assh_hash_sha256 },
   { 19, "\x30\x41\x30\x0d\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x02\x05\x00\x04\x30",
-    NULL /* sha384 */ },
+    &assh_hash_sha384 },
   { 19, "\x30\x51\x30\x0d\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x03\x05\x00\x04\x40",
-    NULL /* sha512 */ },
+    &assh_hash_sha512 },
 };
 
 static const char *assh_rsa_id = "\x00\x00\x00\x07ssh-rsa";

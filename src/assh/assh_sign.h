@@ -28,10 +28,16 @@
 #include "assh_algo.h"
 #include "assh_key.h"
 
-/** This function must compute the signature of the passed data using
-    the provided key and writes it to the @tt sign buffer. The @tt
-    sign_len parameter indicates the size of the buffer and is updated
-    with the actual size of the signature blob.
+#define ASSH_SIGN_GENERATE_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t(n) \
+  (struct assh_context_s *c,						\
+   const struct assh_key_s *key, size_t data_count,			\
+   const uint8_t * const data[], size_t const data_len[],		\
+   uint8_t *sign, size_t *sign_len)
+
+/** @internal This function must compute the signature of the passed
+    data using the provided key and writes it to the @tt sign
+    buffer. The @tt sign_len parameter indicates the size of the
+    buffer and is updated with the actual size of the signature blob.
 
     The data to sign can be split into multiple buffers. The @tt
     data_count parameter must specify the number of data buffers to use.
@@ -41,22 +47,20 @@
     to what is needed to hold the signature blob. In this case, the
     @tt data_* parameters are not used.
  */
-#define ASSH_SIGN_GENERATE_FCN(n) assh_error_t (n)(struct assh_context_s *c, \
-                                                   const struct assh_key_s *key, size_t data_count, \
-                                                   const uint8_t * const data[], size_t const data_len[], \
-                                                   uint8_t *sign, size_t *sign_len)
 typedef ASSH_SIGN_GENERATE_FCN(assh_sign_generate_t);
 
-/** This function must verify the signature of the passed data using
-    the provided key.
+#define ASSH_SIGN_VERIFY_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t (n) \
+  (struct assh_context_s *c,						\
+   const struct assh_key_s *key, size_t data_count,			\
+   const uint8_t * const data[], size_t const data_len[],		\
+   const uint8_t *sign, size_t sign_len)
+
+/** @internal This function must verify the signature of the passed
+    data using the provided key.
 
     The data can be split into multiple buffers. The @tt data_count
     parameter must specify the number of data buffers used.
  */
-#define ASSH_SIGN_VERIFY_FCN(n) assh_error_t (n)(struct assh_context_s *c, \
-                                                 const struct assh_key_s *key, size_t data_count, \
-                                                 const uint8_t * const data[], size_t const data_len[], \
-                                                 const uint8_t *sign, size_t sign_len)
 typedef ASSH_SIGN_VERIFY_FCN(assh_sign_verify_t);
 
 

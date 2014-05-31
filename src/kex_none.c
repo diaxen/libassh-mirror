@@ -23,8 +23,8 @@
 
 #include <assh/assh_kex.h>
 #include <assh/assh_session.h>
-#include <assh/hash_sha1.h>
 #include <assh/assh_bignum.h>
+#include <assh/assh_hash.h>
 
 #include <string.h>
 

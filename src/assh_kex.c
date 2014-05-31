@@ -359,7 +359,7 @@ static assh_error_t assh_kex_new_key(struct assh_session_s *s, void *hash_ctx,
 {
   assh_error_t err;
 
-  ASSH_SCRATCH_ALLOC(s->ctx, uint8_t, buf, ASSH_MAX_SYMKEY_SIZE,
+  ASSH_SCRATCH_ALLOC(s->ctx, uint8_t, buf, ASSH_MAX_SYMKEY_SIZE + ASSH_MAX_HASH_SIZE,
 		     ASSH_ERRSV_CONTINUE, err);
 
   assert(key_size <= ASSH_MAX_SYMKEY_SIZE);
@@ -381,7 +381,8 @@ static assh_error_t assh_kex_new_key(struct assh_session_s *s, void *hash_ctx,
   for (size = hash_algo->hash_size; size < key_size;
        size += hash_algo->hash_size)
     {
-      assert(size + hash_algo->hash_size <= ASSH_MAX_SYMKEY_SIZE);
+      assert(size + hash_algo->hash_size
+	     <= ASSH_MAX_SYMKEY_SIZE + ASSH_MAX_HASH_SIZE);
 
       hash_algo->f_init(hash_ctx);
       hash_algo->f_update(hash_ctx, secret_str, assh_load_u32(secret_str) + 4);
