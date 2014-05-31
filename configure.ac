@@ -37,6 +37,9 @@ AC_C_INLINE
 AC_ARG_ENABLE(gcrypt, AC_HELP_STRING(--disable-gcrypt, [Disable use of gcrypt support]),
 		       enable_gcrypt=$enableval, enable_gcrypt=yes)
 
+AC_ARG_ENABLE(gcrypt_hash, AC_HELP_STRING(--disable-gcrypt-hash, [Disable use of gcrypt hash algorithms]),
+		       enable_gcrypt_hash=$enableval, enable_gcrypt_hash=yes)
+
 AC_ARG_ENABLE(gcrypt_bignum, AC_HELP_STRING(--disable-gcrypt-bignum, [Disable use of gcrypt big number functions]),
 		       enable_gcrypt_bignum=$enableval, enable_gcrypt_bignum=yes)
 
@@ -54,6 +57,10 @@ if test x$enable_gcrypt = xyes ; then
     AC_CHECK_HEADERS(gcrypt.h, [
       LIBS="$LIBS -lgcrypt"
       AC_DEFINE([CONFIG_ASSH_USE_GCRYPT], [], [Libgcrypt support])
+
+      if test x$enable_gcrypt_hash = xyes ; then
+	AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_HASH], [], [use of gcrypt hash algorithms])
+      fi
 
       if test x$enable_gcrypt_bignum = xyes ; then
 	AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_BIGNUM], [], [use of gcrypt big number functions])
@@ -81,8 +88,9 @@ else
 fi
 
 
-AM_CONDITIONAL(COND_gcrypt_bignum, [test x$enable_gcrypt_bignum = xyes])
-AM_CONDITIONAL(COND_gcrypt_prng,   [test x$enable_gcrypt_prng = xyes])
+AM_CONDITIONAL(COND_gcrypt_bignum,  [test x$enable_gcrypt_bignum = xyes])
+AM_CONDITIONAL(COND_gcrypt_hash,    [test x$enable_gcrypt_hash = xyes])
+AM_CONDITIONAL(COND_gcrypt_prng,    [test x$enable_gcrypt_prng = xyes])
 AM_CONDITIONAL(COND_gcrypt_ciphers, [test x$enable_gcrypt_ciphers = xyes])
 
 AC_DEFINE([CONFIG_ASSH_SERVER], [], [SSH server support])

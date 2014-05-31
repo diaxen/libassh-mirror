@@ -31,7 +31,11 @@ libassh_la_SOURCES = assh_context.c assh_session.c assh_packet.c	\
 	compress_none.c							\
 	helper_key.c helper_fd.c
 
-libassh_la_SOURCES +=   hash_sha1_builtin.c hash_sha2_builtin.c prng_xswap_builtin.c
+if COND_gcrypt_hash
+libassh_la_SOURCES +=   hash_gcrypt.c
+else
+libassh_la_SOURCES +=   hash_md5_builtin.c hash_sha1_builtin.c hash_sha2_builtin.c
+endif
 
 if COND_gcrypt_bignum
 libassh_la_SOURCES +=	bignum_gcrypt.c
@@ -41,6 +45,8 @@ endif
 
 if COND_gcrypt_prng
 libassh_la_SOURCES +=	prng_gcrypt.c
+else
+libassh_la_SOURCES +=	prng_xswap_builtin.c
 endif
 
 if COND_gcrypt_ciphers
