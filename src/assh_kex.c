@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_EV_CONST /* write access to event const fields */
+
 #include <assh/assh_context.h>
 #include <assh/assh_kex.h>
 #include <assh/assh_packet.h>
@@ -34,6 +36,7 @@
 #include <assh/assh_prng.h>
 #include <assh/assh_compress.h>
 #include <assh/assh_alloc.h>
+#include <assh/assh_event.h>
 
 #include <string.h>
 #include <stdlib.h>
@@ -548,10 +551,43 @@ assh_kex_new_keys(struct assh_session_s *s,
 
 #ifdef CONFIG_ASSH_CLIENT
 assh_error_t
+assh_kex_client_get_key(struct assh_session_s *s, struct assh_key_s **host_key,
+                        const uint8_t *ks_str, struct assh_event_s *e,
+                        assh_error_t (*done)(struct assh_session_s *s,
+                                             struct assh_event_s *e), void *pv)
+{
+  assh_error_t err;
+
+  /* load key and verify signature */
+  const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
+
+  ASSH_ERR_RET(assh_key_load3(s->ctx, host_key, &sign_algo->algo, ks_str + 4,
+                 assh_load_u32(ks_str), ASSH_KEY_FMT_PUB_RFC4253_6_6)
+               | ASSH_ERRSV_DISCONNECT);
+
+  /* check if the key can be used by the algorithm */
+  ASSH_CHK_GTO(!assh_algo_suitable_key(&sign_algo->algo, *host_key),
+               ASSH_ERR_WEAK_ALGORITHM | ASSH_ERRSV_DISCONNECT, err_hk);
+
+  /* Return an host key lookup event */
+  e->id = ASSH_EVENT_KEX_HOSTKEY_LOOKUP;
+  e->f_done = done;
+  e->done_pv = pv;
+  e->kex.hostkey_lookup.key = *host_key;
+  e->kex.hostkey_lookup.accept = 0;
+
+  return ASSH_OK;
+
+ err_hk:
+  assh_key_flush(s->ctx, host_key);
+  return err;
+}
+
+assh_error_t
 assh_kex_client_hash(struct assh_session_s *s, assh_kex_client_hash_t *fcn,
                      const struct assh_hash_s *hash_algo,
-                     struct assh_key_s **host_key, const uint8_t *secret_str,
-                     const uint8_t *host_key_str, const uint8_t *host_sign_str)
+                     struct assh_key_s *host_key, const uint8_t *secret_str,
+                     const uint8_t *k_str, const uint8_t *h_str)
 {
   assh_error_t err;
   struct assh_context_s *c = s->ctx;
@@ -560,51 +596,40 @@ assh_kex_client_hash(struct assh_session_s *s, assh_kex_client_hash_t *fcn,
   ASSH_SCRATCH_ALLOC(c, void, hash_ctx, hash_algo->ctx_size,
 		     ASSH_ERRSV_CONTINUE, err_);
 
-  hash_algo->f_init(hash_ctx);
+  ASSH_ERR_GTO(hash_algo->f_init(hash_ctx), err_scratch);
 
   assh_hash_bytes_as_string(hash_ctx, hash_algo->f_update, (const uint8_t*)ASSH_IDENT,
 			    sizeof(ASSH_IDENT) /* \r\n\0 */ - 3);
   assh_hash_bytes_as_string(hash_ctx, hash_algo->f_update, s->ident_str, s->ident_len);
   assh_hash_payload_as_string(hash_ctx, hash_algo->f_update, s->kex_init_local);
   assh_hash_payload_as_string(hash_ctx, hash_algo->f_update, s->kex_init_remote);
-  assh_hash_string(hash_ctx, hash_algo->f_update, host_key_str);
+  assh_hash_string(hash_ctx, hash_algo->f_update, k_str);
 
-  ASSH_ERR_GTO(fcn(s, hash_algo, hash_ctx), err_scratch);
+  ASSH_ERR_GTO(fcn(s, hash_algo, hash_ctx), err_hash);
 
   assh_hash_string(hash_ctx, hash_algo->f_update, secret_str);
 
   uint8_t ex_hash[ASSH_MAX_HASH_SIZE];
   hash_algo->f_final(hash_ctx, ex_hash);
 
-  /* load key and verify signature */
-  const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
-
-  ASSH_ERR_GTO(assh_key_load3(s->ctx, host_key, &sign_algo->algo, host_key_str + 4,
-                 assh_load_u32(host_key_str), ASSH_KEY_FMT_PUB_RFC4253_6_6)
-               | ASSH_ERRSV_DISCONNECT, err_scratch);
-
-  /* check if the key can be used by the algorithm */
-  ASSH_CHK_GTO(!assh_algo_suitable_key(&sign_algo->algo, *host_key),
-               ASSH_ERR_WEAK_ALGORITHM | ASSH_ERRSV_DISCONNECT, err_hk);
-
   const uint8_t *sign_ptrs[1] = { ex_hash };
   size_t sign_sizes[1] = { hash_algo->hash_size };
 
-#warning XXX do not verify signature before ASSH_EVENT_KEX_HOSTKEY_LOOKUP event
+  const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
 
-  ASSH_CHK_GTO(sign_algo->f_verify(c, *host_key, 1, sign_ptrs, sign_sizes,
-                host_sign_str + 4, assh_load_u32(host_sign_str)) != ASSH_OK,
-               ASSH_ERR_HOSTKEY_SIGNATURE | ASSH_ERRSV_DISCONNECT, err_hk);
+  ASSH_CHK_GTO(sign_algo->f_verify(c, host_key, 1, sign_ptrs, sign_sizes,
+                h_str + 4, assh_load_u32(h_str)) != ASSH_OK,
+               ASSH_ERR_HOSTKEY_SIGNATURE | ASSH_ERRSV_DISCONNECT, err_scratch);
 
   /* setup new keys */
   ASSH_ERR_GTO(assh_kex_new_keys(s, hash_algo, ex_hash, secret_str)
-               | ASSH_ERRSV_DISCONNECT, err_hk);
+               | ASSH_ERRSV_DISCONNECT, err_scratch);
 
   ASSH_SCRATCH_FREE(c, hash_ctx);
   return ASSH_OK;
 
- err_hk:
-  assh_key_flush(s->ctx, host_key);
+ err_hash:
+  hash_algo->f_final(hash_ctx, NULL);
  err_scratch:
   ASSH_SCRATCH_FREE(c, hash_ctx);
  err_:
