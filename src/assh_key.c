@@ -47,7 +47,6 @@ assh_error_t assh_key_load3(struct assh_context_s *c, struct assh_key_s **key,
       ASSH_ERR_RET(ASSH_ERR_NOTSUP | ASSH_ERRSV_CONTINUE);
     }
 
-  k->algo = algo;
   k->next = *key;
   *key = k;
 
@@ -71,6 +70,8 @@ assh_error_t assh_key_load2(struct assh_context_s *c, struct assh_key_s **key,
       algo_name_len = end - blob - 4;
     }
   ASSH_CHK_RET(algo_name == NULL, ASSH_NOT_FOUND | ASSH_ERRSV_CONTINUE);
+
+#warning load keys should use key type string instead of algo name?
 
   ASSH_CHK_RET(assh_algo_by_name(c, ASSH_ALGO_SIGN, algo_name, algo_name_len, &algo)
                != ASSH_OK, ASSH_ERR_MISSING_KEY);

@@ -78,10 +78,10 @@ assh_error_t assh_kex_send_init(struct assh_session_s *s)
 
 #ifdef CONFIG_ASSH_SERVER
           /* check host key availability for this algorithm */
-          if (s->ctx->type == ASSH_SERVER && a->need_host_key)
+          if (s->ctx->type == ASSH_SERVER && assh_algo_needs_key(a))
             {
               struct assh_key_s *k = s->ctx->host_keys;
-              while (k != NULL && k->algo != a)
+              while (k != NULL && !assh_algo_suitable_key(a, k))
                 k = k->next;
               if (k == NULL)
                 continue;
@@ -169,10 +169,10 @@ assh_kex_server_algos(struct assh_context_s *c, uint8_t *lists[9],
             goto next;
 
           /* check algorithm key availability */
-          if (a->need_host_key)
+          if (assh_algo_needs_key(a))
             {
               struct assh_key_s *k = c->host_keys;
-              while (k != NULL && k->algo != a)
+              while (k != NULL && !assh_algo_suitable_key(a, k))
                 k = k->next;
               if (k == NULL)
                 goto next;
@@ -303,10 +303,13 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
   ASSH_DEBUG("kex algorithms:\n"
-             "  kex: %s\n  sign: %s\n  cipher in: %s\n  cipher out: %s\n"
+             "  kex: %s (%s)\n"
+             "  sign: %s (%s)\n"
+             "  cipher in: %s\n  cipher out: %s\n"
              "  mac in: %s\n  mac out: %s\n  comp in: %s\n  comp out: %s\n"
              "  guess: follows=%x good=%x\n",
-             kex->algo.name, sign->algo.name,
+             kex->algo.name, kex->algo.variant,
+             sign->algo.name, sign->algo.variant,
              cipher_in->algo.name, cipher_out->algo.name,
              mac_in->algo.name, mac_out->algo.name,
              cmp_in->algo.name, cmp_out->algo.name,
@@ -557,17 +560,13 @@ assh_kex_client_hash(struct assh_session_s *s, assh_kex_client_hash_t *fcn,
   ASSH_SCRATCH_ALLOC(c, void, hash_ctx, hash_algo->ctx_size,
 		     ASSH_ERRSV_CONTINUE, err_);
 
-  memset(hash_ctx, 0x5a, hash_algo->ctx_size);
   hash_algo->f_init(hash_ctx);
 
   assh_hash_bytes_as_string(hash_ctx, hash_algo->f_update, (const uint8_t*)ASSH_IDENT,
 			    sizeof(ASSH_IDENT) /* \r\n\0 */ - 3);
   assh_hash_bytes_as_string(hash_ctx, hash_algo->f_update, s->ident_str, s->ident_len);
-
   assh_hash_payload_as_string(hash_ctx, hash_algo->f_update, s->kex_init_local);
-
   assh_hash_payload_as_string(hash_ctx, hash_algo->f_update, s->kex_init_remote);
-
   assh_hash_string(hash_ctx, hash_algo->f_update, host_key_str);
 
   ASSH_ERR_GTO(fcn(s, hash_algo, hash_ctx), err_scratch);
@@ -584,8 +583,14 @@ assh_kex_client_hash(struct assh_session_s *s, assh_kex_client_hash_t *fcn,
                  assh_load_u32(host_key_str), ASSH_KEY_FMT_PUB_RFC4253_6_6)
                | ASSH_ERRSV_DISCONNECT, err_scratch);
 
+  /* check if the key can be used by the algorithm */
+  ASSH_CHK_GTO(!assh_algo_suitable_key(&sign_algo->algo, *host_key),
+               ASSH_ERR_WEAK_ALGORITHM | ASSH_ERRSV_DISCONNECT, err_hk);
+
   const uint8_t *sign_ptrs[1] = { ex_hash };
   size_t sign_sizes[1] = { hash_algo->hash_size };
+
+#warning XXX do not verify signature before ASSH_EVENT_KEX_HOSTKEY_LOOKUP event
 
   ASSH_CHK_GTO(sign_algo->f_verify(c, *host_key, 1, sign_ptrs, sign_sizes,
                 host_sign_str + 4, assh_load_u32(host_sign_str)) != ASSH_OK,
@@ -617,10 +622,10 @@ assh_kex_server_hash(struct assh_session_s *s,
   assh_error_t err;
   struct assh_context_s *c = s->ctx;
 
-  /* look for an host key pair which matchs the selected algorithm. */
+  /* look for an host key pair which can be used with the selected algorithm. */
   const struct assh_key_s *hk = c->host_keys;
   const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
-  while (hk != NULL && hk->algo != (struct assh_algo_s*)sign_algo)
+  while (hk != NULL && !assh_algo_suitable_key(&sign_algo->algo, hk))
     hk = hk->next;
   ASSH_CHK_RET(hk == NULL, ASSH_ERR_MISSING_KEY | ASSH_ERRSV_DISCONNECT);
 

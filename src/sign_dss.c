@@ -69,7 +69,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_sign_dss_key_output)
   struct assh_sign_dss_key_s *k = (void*)key;
   assh_error_t err;
 
-  assert((void*)key->algo == (void*)&assh_sign_dss);
+  assert(!strcmp(key->type, "ssh-dss"));
 
   struct assh_bignum_s *bn_[6] = { k->pn, k->qn, k->gn, k->yn, NULL, NULL };
 
@@ -122,9 +122,9 @@ static ASSH_KEY_OUTPUT_FCN(assh_sign_dss_key_output)
 
 static ASSH_KEY_CMP_FCN(assh_sign_dss_key_cmp)
 {
-  assert((void*)key->algo == (void*)&assh_sign_dss);
+  assert(!strcmp(key->type, "ssh-dss"));
 
-  if (key->algo != b->algo)
+  if (strcmp(key->type, b->type))
     return 0;
 
   struct assh_sign_dss_key_s *k = (void*)key;
@@ -277,6 +277,7 @@ static ASSH_KEY_LOAD_FCN(assh_sign_dss_key_load)
   ASSH_ERR_RET(assh_alloc(c, size, ASSH_ALLOC_KEY, (void**)key));
   struct assh_sign_dss_key_s *k = (void*)*key;
 
+  k->key.type = "ssh-dss";
   k->key.f_output = assh_sign_dss_key_output;
   k->key.f_validate = assh_sign_dss_key_validate;
   k->key.f_cmp = assh_sign_dss_key_cmp;
@@ -592,10 +593,89 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_dss_verify)
   return err;
 }
 
+static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dss_suitable_key)
+{
+  if (strcmp(key->type, "ssh-dss"))
+    return 0;
+  struct assh_sign_dss_key_s *k = (void*)key;
+  return assh_bignum_bits(k->qn) == 160 &&
+         assh_bignum_bits(k->pn) == 1024;
+}
+
 struct assh_algo_sign_s assh_sign_dss =
 {
-  .algo = { .name = "ssh-dss", .class_ = ASSH_ALGO_SIGN,
-            .need_host_key = 1, .safety = 60, .speed = 50 },
+  .algo = {
+    .name = "ssh-dss", .class_ = ASSH_ALGO_SIGN,
+    .safety = 20, .speed = 40,
+    .f_suitable_key = assh_sign_dss_suitable_key,
+  },
+  .key_type = "ssh-dss",
+  .f_key_load = assh_sign_dss_key_load,
+  .f_generate = assh_sign_dss_generate,
+  .f_verify = assh_sign_dss_verify,
+};
+
+static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dss_suitable_key_2048_224)
+{
+  if (strcmp(key->type, "ssh-dss"))
+    return 0;
+  struct assh_sign_dss_key_s *k = (void*)key;
+  return assh_bignum_bits(k->qn) == 224 &&
+         assh_bignum_bits(k->pn) >= 2048;
+}
+
+struct assh_algo_sign_s assh_sign_dsa2048_sha224 =
+{
+  .algo = {
+    .name = "dsa2048-sha224@libassh.org", .class_ = ASSH_ALGO_SIGN,
+    .safety = 35, .speed = 30,
+    .f_suitable_key = assh_sign_dss_suitable_key_2048_224,
+  },
+  .key_type = "ssh-dss",
+  .f_key_load = assh_sign_dss_key_load,
+  .f_generate = assh_sign_dss_generate,
+  .f_verify = assh_sign_dss_verify,
+};
+
+static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dss_suitable_key_2048_256)
+{
+  if (strcmp(key->type, "ssh-dss"))
+    return 0;
+  struct assh_sign_dss_key_s *k = (void*)key;
+  return assh_bignum_bits(k->qn) == 256 &&
+         assh_bignum_bits(k->pn) >= 2048;
+}
+
+struct assh_algo_sign_s assh_sign_dsa2048_sha256 =
+{
+  .algo = {
+    .name = "dsa2048-sha256@libassh.org", .class_ = ASSH_ALGO_SIGN,
+    .safety = 40, .speed = 30,
+    .f_suitable_key = assh_sign_dss_suitable_key_2048_256,
+  },
+  .key_type = "ssh-dss",
+  .f_key_load = assh_sign_dss_key_load,
+  .f_generate = assh_sign_dss_generate,
+  .f_verify = assh_sign_dss_verify,
+};
+
+static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dss_suitable_key_3072_256)
+{
+  if (strcmp(key->type, "ssh-dss"))
+    return 0;
+  struct assh_sign_dss_key_s *k = (void*)key;
+  return assh_bignum_bits(k->qn) == 256 &&
+         assh_bignum_bits(k->pn) >= 3072;
+}
+
+struct assh_algo_sign_s assh_sign_dsa3072_sha256 =
+{
+  .algo = {
+    .name = "dsa3072-sha256@libassh.org", .class_ = ASSH_ALGO_SIGN,
+    .safety = 50, .speed = 30,
+    .f_suitable_key = assh_sign_dss_suitable_key_3072_256,
+  },
+  .key_type = "ssh-dss",
   .f_key_load = assh_sign_dss_key_load,
   .f_generate = assh_sign_dss_generate,
   .f_verify = assh_sign_dss_verify,

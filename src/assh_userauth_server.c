@@ -84,6 +84,7 @@ struct assh_userauth_context_s
 #ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
   enum assh_userauth_pubkey_state_e pubkey_state;
   struct assh_key_s *pub_key;
+  struct assh_algo_sign_s *algo;
   struct assh_packet_s *sign_pck;
   uint8_t *sign;
 #endif
@@ -280,8 +281,7 @@ static assh_error_t assh_userauth_server_pubkey_verify(struct assh_session_s *s,
     { 4,       s->session_id_len, sign - &p->head.msg };
 
   /* check the signature */
-  struct assh_algo_sign_s *algo = (void*)pv->pub_key->algo;
-  if (algo->f_verify(s->ctx, pv->pub_key, 3,
+  if (pv->algo->f_verify(s->ctx, pv->pub_key, 3,
                      sign_ptrs, sign_sizes, sign + 4, end - sign - 4) == ASSH_OK)
     ASSH_ERR_RET(assh_userauth_server_success(s) | ASSH_ERRSV_DISCONNECT);
   else
@@ -307,7 +307,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
         }
 
       /* alloc packet */
-      size_t algo_name_len = strlen(pv->pub_key->algo->name);
+      size_t algo_name_len = strlen(pv->algo->algo.name);
 
       size_t blob_len;
       ASSH_ERR_RET(pv->pub_key->f_output(s->ctx, pv->pub_key,
@@ -320,7 +320,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
       /* add sign algorithm name */
       uint8_t *algo_name;
       ASSH_ASSERT(assh_packet_add_string(pout, algo_name_len, &algo_name));
-      memcpy(algo_name, pv->pub_key->algo->name, algo_name_len);
+      memcpy(algo_name, pv->algo->algo.name, algo_name_len);
 
       /* add public key blob */
       uint8_t *blob;
@@ -376,7 +376,7 @@ static assh_error_t assh_userauth_server_req_pubkey(struct assh_session_s *s,
 
   const struct assh_algo_s *algo;
 
-  /* check if we support the algorithm for the provided key */
+  /* check if we support the requested signature algorithm */
   if (assh_algo_by_name(s->ctx, ASSH_ALGO_SIGN, (char*)algo_name + 4,
 			pub_blob - algo_name - 4, &algo) != ASSH_OK)
     {
@@ -391,6 +391,14 @@ static assh_error_t assh_userauth_server_req_pubkey(struct assh_session_s *s,
                               pub_blob + 4, sign - pub_blob - 4,
                               ASSH_KEY_FMT_PUB_RFC4253_6_6) | ASSH_ERRSV_DISCONNECT);
 
+  /* check if the key can be used by the algorithm */
+  if (!assh_algo_suitable_key(algo, pub_key))
+    {
+      assh_key_drop(s->ctx, &pub_key);
+      ASSH_ERR_RET(assh_userauth_server_failure(s) | ASSH_ERRSV_DISCONNECT);
+      return ASSH_OK;
+    }
+
   /* test if the key has been previously found in the list of authorized user keys. */
   assh_bool_t new_key = (pv->pubkey_state == ASSH_USERAUTH_PUBKEY_NONE ||
                          !assh_key_cmp(pub_key, pv->pub_key, 1));
@@ -399,6 +407,7 @@ static assh_error_t assh_userauth_server_req_pubkey(struct assh_session_s *s,
     {
       assh_key_flush(s->ctx, &pv->pub_key);
       pv->pub_key = pub_key;
+      pv->algo = (void*)algo;
       pv->pubkey_state = ASSH_USERAUTH_PUBKEY_NEW;
     }
   else

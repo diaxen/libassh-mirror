@@ -100,6 +100,8 @@ assh_error_t assh_algo_register_va(struct assh_context_s *c, unsigned int safety
 	    goto next;
 	  if (d || strcmp(a->name, b->name))
 	    k++;
+	  else if (a->priority < b->priority)
+	    ASSH_SWAP(c->algos[k], c->algos[i]);
 	}
       c->algos_count = k;
     next:;
@@ -124,9 +126,15 @@ assh_error_t assh_algo_register_default(struct assh_context_s *c, unsigned int s
 			&assh_kex_dh_group14_sha1,
 			/* sign_dss.c */
 			&assh_sign_dss,
+		        &assh_sign_dsa2048_sha224,
+		        &assh_sign_dsa2048_sha256,
+		        &assh_sign_dsa3072_sha256,
 			/* sign_rsa.c */
-			&assh_sign_rsa,
-
+			&assh_sign_rsa_sha1_md5,
+			&assh_sign_rsa_sha1,
+			&assh_sign_rsa_sha1_2048,
+			&assh_sign_rsa_sha256,
+			&assh_sign_rsa_sha512,
 #ifndef CONFIG_ASSH_USE_GCRYPT_CIPHERS
 			/* cipher_arc4_builting.c */
 			&assh_cipher_arc4,
@@ -154,7 +162,7 @@ assh_error_t assh_algo_by_name(struct assh_context_s *c,
 			       enum assh_algo_class_e class_, const char *name,
 			       size_t name_len, const struct assh_algo_s **algo)
 {
-  unsigned int i;
+  uint_fast16_t i;
   const struct assh_algo_s *a;
 
   for (i = 0; i < c->algos_count; i++)
@@ -170,6 +178,33 @@ assh_error_t assh_algo_by_name(struct assh_context_s *c,
   if (i == c->algos_count)
     return ASSH_NOT_FOUND;
 
+  *algo = a;
+  return ASSH_OK;
+}
+
+assh_error_t assh_algo_by_key(struct assh_context_s *c,
+			      enum assh_algo_class_e class_,
+			      const struct assh_key_s *key, uint_fast16_t *pos,
+			      const struct assh_algo_s **algo)
+{
+  uint_fast16_t i = pos == NULL ? 0 : *pos;
+  const struct assh_algo_s *a;
+
+  for (; i < c->algos_count; i++)
+    {
+      a = c->algos[i];
+
+      if (a->class_ == class_ &&
+          a->f_suitable_key != NULL &&
+	  a->f_suitable_key(a, key))
+	break;
+    }
+
+  if (i >= c->algos_count)
+    return ASSH_NOT_FOUND;
+
+  if (pos != NULL)
+    *pos = i;
   *algo = a;
   return ASSH_OK;
 }

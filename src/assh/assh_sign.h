@@ -67,14 +67,45 @@ typedef ASSH_SIGN_VERIFY_FCN(assh_sign_verify_t);
 struct assh_algo_sign_s
 {
   struct assh_algo_s algo;
+  const char *key_type;
   assh_key_load_t *f_key_load;
   assh_sign_generate_t *f_generate;
   assh_sign_verify_t *f_verify;
 };
 
 extern struct assh_algo_sign_s assh_sign_none;
+
+/** Use SHA1 and a dsa key with L = 1024 and N = 160. */
 extern struct assh_algo_sign_s assh_sign_dss;
-extern struct assh_algo_sign_s assh_sign_rsa;
+
+/** Use SHA224 and a dsa key with L >= 2048 and N = 224. */
+extern struct assh_algo_sign_s assh_sign_dsa2048_sha224;
+
+/** Use SHA256 and a dsa key with L >= 2048 and N = 256. */
+extern struct assh_algo_sign_s assh_sign_dsa2048_sha256;
+
+/** Use SHA256 and a dsa key with L >= 3072 and N = 256. */
+extern struct assh_algo_sign_s assh_sign_dsa3072_sha256;
+
+/** Accept sha1 and md5 RSA signatures, generate sha1 signatures.
+    Reject keys with modulus size less than 768 bits. */
+extern struct assh_algo_sign_s assh_sign_rsa_sha1_md5;
+
+/** Accept sha1 RSA signatures, generate sha1 signatures,
+    Reject keys with modulus size less than 1024 bits. */
+extern struct assh_algo_sign_s assh_sign_rsa_sha1;
+
+/** Accept sha1 RSA signatures, generate sha1 signatures. 
+    Reject keys with modulus size less than 2048 bits. */
+extern struct assh_algo_sign_s assh_sign_rsa_sha1_2048;
+
+/** Accept sha256 RSA signatures, generate sha256 signatures. 
+    Reject keys with modulus size less than 2048 bits. */
+extern struct assh_algo_sign_s assh_sign_rsa_sha256;
+
+/** Accept sha512 RSA signatures, generate sha512 signatures. 
+    Reject keys with modulus size less than 2048 bits. */
+extern struct assh_algo_sign_s assh_sign_rsa_sha512;
 
 #endif
 

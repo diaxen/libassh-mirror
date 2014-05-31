@@ -63,7 +63,8 @@ struct assh_userauth_context_s
   size_t username_len;
 
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY
-  const struct assh_algo_sign_s *algo;
+  const struct assh_algo_s *algo;
+  uint_fast16_t algo_idx;
   struct assh_key_s *pub_keys;
 #endif
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PASSWORD
@@ -174,12 +175,14 @@ static assh_error_t assh_userauth_client_req_password(struct assh_session_s *s)
 /* allocate a packet and append common fileds for a publickey request */
 static assh_error_t assh_userauth_client_pck_pubkey(struct assh_session_s *s,
                                                     struct assh_packet_s **pout,
-                                                    struct assh_key_s *pub_key,
                                                     assh_bool_t second,
                                                     size_t extra_len)
 {
+  struct assh_userauth_context_s *pv = s->srv_pv;
+  struct assh_key_s *pub_key = pv->pub_keys;
   assh_error_t err;
-  size_t algo_name_len = strlen(pub_key->algo->name);
+
+  size_t algo_name_len = strlen(pv->algo->name);
 
   size_t blob_len;
   ASSH_ERR_RET(pub_key->f_output(s->ctx, pub_key,
@@ -196,7 +199,7 @@ static assh_error_t assh_userauth_client_pck_pubkey(struct assh_session_s *s,
   /* add signature algorithm name */
   uint8_t *algo_name;
   ASSH_ASSERT(assh_packet_add_string(*pout, algo_name_len, &algo_name));
-  memcpy(algo_name, pub_key->algo->name, algo_name_len);
+  memcpy(algo_name, pv->algo->name, algo_name_len);
 
   /* add public key blob */
   uint8_t *blob;
@@ -218,9 +221,8 @@ static assh_error_t assh_userauth_client_pck_pubkey(struct assh_session_s *s,
 static assh_error_t assh_userauth_client_req_pubkey_sign(struct assh_session_s *s)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
+  const struct assh_algo_sign_s *algo = (const void *)pv->algo;
   assh_error_t err;
-
-  const struct assh_algo_sign_s *algo = (const void *)pv->pub_keys->algo;
 
   size_t sign_len;
   ASSH_ERR_RET(algo->f_generate(s->ctx, pv->pub_keys, 0,
@@ -228,7 +230,7 @@ static assh_error_t assh_userauth_client_req_pubkey_sign(struct assh_session_s *
 
   struct assh_packet_s *pout;
   ASSH_ERR_RET(assh_userauth_client_pck_pubkey(s, &pout,
-                pv->pub_keys, 1, 4 + sign_len) | ASSH_ERRSV_DISCONNECT);
+                1, 4 + sign_len) | ASSH_ERRSV_DISCONNECT);
 
   uint8_t sid_len[4];   /* fake string header for session id */
   assh_store_u32(sid_len, s->session_id_len);
@@ -266,7 +268,7 @@ static assh_error_t assh_userauth_client_req_pubkey(struct assh_session_s *s)
 #ifdef CONFIG_ASSH_CLIENT_AUTH_USE_PKOK /* send a public key lookup first */
   struct assh_packet_s *pout;
   ASSH_ERR_RET(assh_userauth_client_pck_pubkey(s, &pout,
-                 pv->pub_keys, 0, 0) | ASSH_ERRSV_DISCONNECT);
+                 0, 0) | ASSH_ERRSV_DISCONNECT);
   assh_transport_push(s, pout);
   pv->state = ASSH_USERAUTH_SENT_PUB_KEY;
 #else  /* compute and send the signature directly */
@@ -327,16 +329,21 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_methods_done)
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY
   struct assh_key_s *k = e->userauth_client.methods.pub_keys;
 
-  /* insert provided keys in internal list */
   while (k != NULL)
     {
-      ASSH_CHK_RET(k->algo->class_ != ASSH_ALGO_SIGN,
-		   ASSH_ERR_BAD_DATA | ASSH_ERRSV_DISCONNECT);
-
-      struct assh_key_s *next = k->next;
-      k->next = pv->pub_keys;
-      pv->pub_keys = k;
-      k = next;
+      /* check usable keys */
+      pv->algo_idx = 0;
+      if (assh_algo_by_key(s->ctx, ASSH_ALGO_SIGN, k,
+                           &pv->algo_idx, &pv->algo) == ASSH_OK)
+        {
+          /* insert provided keys in internal list */
+          struct assh_key_s *next = k->next;
+          k->next = pv->pub_keys;
+          pv->pub_keys = k;
+          k = next;
+        }
+      else
+        assh_key_drop(s->ctx, &k);
     }
 
   if (pv->pub_keys != NULL)
@@ -385,8 +392,16 @@ static assh_error_t assh_userauth_client_failure(struct assh_session_s *s,
     {
     case ASSH_USERAUTH_SENT_PUB_KEY_RQ:
     case ASSH_USERAUTH_SENT_PUB_KEY:
-      /* drop used key */
-      assh_key_drop(s->ctx, &pv->pub_keys);
+      /* try next algorithm usable with the same key */
+      pv->algo_idx++;
+      while (pv->pub_keys != NULL &&
+             assh_algo_by_key(s->ctx, ASSH_ALGO_SIGN, pv->pub_keys,
+                              &pv->algo_idx, &pv->algo) != ASSH_OK)
+        {
+          /* drop used key */
+          assh_key_drop(s->ctx, &pv->pub_keys);
+          pv->algo_idx = 0;
+        }
       break;
     case ASSH_USERAUTH_SENT_PASSWORD_RQ:
       /* drop used password */

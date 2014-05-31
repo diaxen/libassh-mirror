@@ -83,7 +83,7 @@ int main()
     return -1;
 
   /** register algorithms */
-  if (assh_algo_register_default(&context, 99, 10) != ASSH_OK)
+  if (assh_algo_register_default(&context, 99, 25) != ASSH_OK)
     return -1;
 
   /** load host key */
@@ -159,6 +159,9 @@ int main()
 	    case ASSH_EVENT_USERAUTH_SERVER_USERKEY: {
 	      /* XXX check that event public key is in the list of
 		 user authorized keys. */
+
+#warning validate key ? keys should be validated once when added to the list
+
 	      event.userauth_server.userkey.found = 1;
 	      err = assh_event_done(&session, &event);
 	      break;

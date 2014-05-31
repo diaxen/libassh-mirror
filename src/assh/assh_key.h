@@ -110,7 +110,7 @@ typedef ASSH_KEY_CLEANUP_FCN(assh_key_cleanup_t);
 /** SSH key structure */
 struct assh_key_s
 {
-  const struct assh_algo_s *algo;
+  const char *type;
   struct assh_key_s *next;
 
   unsigned int fp_len;

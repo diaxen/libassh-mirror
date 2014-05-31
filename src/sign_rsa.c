@@ -52,9 +52,6 @@ struct assh_sign_rsa_key_s
   /* RSA exponents */
   struct assh_bignum_s *en;
   struct assh_bignum_s *dn;
-
-  /* digest to use for signature generation */
-  enum assh_rsa_digest_e digest_id;
 };
 
 struct assh_rsa_digest_s
@@ -72,7 +69,7 @@ static const struct assh_rsa_digest_s assh_rsa_digests[RSA_DIGEST_count] =
   { 18, "\x30\x20\x30\x0c\x06\x08\x2a\x86\x48\x86\xf7\x0d\x02\x02\x05\x00\x04\x10",
     NULL /* md2 */ },
   { 18, "\x30\x20\x30\x0c\x06\x08\x2a\x86\x48\x86\xf7\x0d\x02\x05\x05\x00\x04\x10",
-    NULL /* md5 */ },
+    &assh_hash_md5 },
   { 15, "\x30\x21\x30\x09\x06\x05\x2b\x0e\x03\x02\x1a\x05\x00\x04\x14",
     &assh_hash_sha1 },
   { 19, "\x30\x31\x30\x0d\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x01\x05\x00\x04\x20",
@@ -101,8 +98,6 @@ static ASSH_KEY_OUTPUT_FCN(assh_sign_rsa_key_output)
 {
   struct assh_sign_rsa_key_s *k = (void*)key;
   assh_error_t err;
-
-  assert((void*)key->algo == (void*)&assh_sign_rsa);
 
   struct assh_bignum_s *bn_[4] = { k->en, k->nn, NULL, NULL };
 
@@ -155,9 +150,9 @@ static ASSH_KEY_OUTPUT_FCN(assh_sign_rsa_key_output)
 
 static ASSH_KEY_CMP_FCN(assh_sign_rsa_key_cmp)
 {
-  assert((void*)key->algo == (void*)&assh_sign_rsa);
+  assert(!strcmp(key->type, "ssh-rsa"));
 
-  if (key->algo != b->algo)
+  if (strcmp(key->type, b->type))
     return 0;
 
   struct assh_sign_rsa_key_s *k = (void*)key;
@@ -275,6 +270,7 @@ static ASSH_KEY_LOAD_FCN(assh_sign_rsa_key_load)
   ASSH_ERR_RET(assh_alloc(c, size, ASSH_ALLOC_KEY, (void**)key));
   struct assh_sign_rsa_key_s *k = (void*)*key;
 
+  k->key.type = "ssh-rsa";
   k->key.f_output = assh_sign_rsa_key_output;
   k->key.f_validate = assh_sign_rsa_key_validate;
   k->key.f_cmp = assh_sign_rsa_key_cmp;
@@ -315,8 +311,6 @@ static ASSH_KEY_LOAD_FCN(assh_sign_rsa_key_load)
     assh_bignum_print(stderr, "rsa key d", k->dn);
 #endif
 
-  k->digest_id = RSA_DIGEST_SHA1;
-
   return ASSH_OK;
 
  err_num:
@@ -330,10 +324,15 @@ static ASSH_KEY_LOAD_FCN(assh_sign_rsa_key_load)
 
 /************************************************************ rsa sign algo */
 
-static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate)
+static ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_sign_rsa_generate(struct assh_context_s *c, const struct assh_key_s *key, size_t data_count,
+                       const uint8_t * const data[], size_t const data_len[],
+                       uint8_t *sign, size_t *sign_len, enum assh_rsa_digest_e digest_id)
 {
   struct assh_sign_rsa_key_s *k = (void*)key;
   assh_error_t err;
+
+  assert(!strcmp(key->type, "ssh-rsa"));
 
   /* check availability of the private key */
   ASSH_CHK_RET(k->dn == NULL, ASSH_ERR_MISSING_KEY);
@@ -352,7 +351,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate)
   ASSH_CHK_RET(*sign_len < len, ASSH_ERR_OUTPUT_OVERFLOW);
   *sign_len = len;
 
-  const struct assh_rsa_digest_s *digest = assh_rsa_digests + k->digest_id;
+  const struct assh_rsa_digest_s *digest = assh_rsa_digests + digest_id;
   ASSH_CHK_RET(digest->algo == NULL, ASSH_ERR_NOTSUP);
 
   /* build encoded message buffer */
@@ -421,10 +420,16 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate)
   return err;
 }
 
-static ASSH_SIGN_VERIFY_FCN(assh_sign_rsa_verify)
+static ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_sign_rsa_verify(struct assh_context_s *c,
+                     const struct assh_key_s *key, size_t data_count,
+                     const uint8_t * const data[], size_t const data_len[],
+                     const uint8_t *sign, size_t sign_len, uint8_t digest_mask)
 {
   struct assh_sign_rsa_key_s *k = (void*)key;
   assh_error_t err;
+
+  assert(!strcmp(key->type, "ssh-rsa"));
 
   unsigned int n = assh_bignum_bits(k->nn);
 
@@ -489,6 +494,7 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_rsa_verify)
     }
 
   ASSH_CHK_GTO(i == RSA_DIGEST_count, ASSH_ERR_NOTSUP, err_em);
+  ASSH_CHK_GTO(!((digest_mask >> i) & 1), ASSH_ERR_WEAK_ALGORITHM, err_em);
 
   /* compute message hash */
   em += digest->oid_len;
@@ -520,12 +526,148 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_rsa_verify)
   return err;
 }
 
-struct assh_algo_sign_s assh_sign_rsa =
+static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_768)
 {
-  .algo = { .name = "ssh-rsa", .class_ = ASSH_ALGO_SIGN,
-            .need_host_key = 1, .safety = 50, .speed = 60 },
+  if (strcmp(key->type, "ssh-rsa"))
+    return 0;
+  struct assh_sign_rsa_key_s *k = (void*)key;
+  return assh_bignum_bits(k->nn) >= 768;
+}
+
+static ASSH_SIGN_VERIFY_FCN(assh_sign_rsa_verify_sha1_md5)
+{
+  return assh_sign_rsa_verify(c, key, data_count, data, data_len,
+                              sign, sign_len, (1 << RSA_DIGEST_SHA1)
+                              | (1 << RSA_DIGEST_MD5));
+}
+
+static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate_sha1)
+{
+  return assh_sign_rsa_generate(c, key, data_count, data, data_len,
+                                sign, sign_len, RSA_DIGEST_SHA1);
+}
+
+struct assh_algo_sign_s assh_sign_rsa_sha1_md5 =
+{
+  .algo = {
+    .name = "ssh-rsa", .variant = "sha1, md5, 768+ bits keys",
+    .class_ = ASSH_ALGO_SIGN,
+    .priority = 2, .safety = 15, .speed = 40,
+    .f_suitable_key = assh_sign_rsa_suitable_key_768,
+  },
+  .key_type = "ssh-rsa",
   .f_key_load = assh_sign_rsa_key_load,
-  .f_generate = assh_sign_rsa_generate,
-  .f_verify = assh_sign_rsa_verify,
+  .f_generate = assh_sign_rsa_generate_sha1,
+  .f_verify = assh_sign_rsa_verify_sha1_md5,
+};
+
+
+
+static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_1024)
+{
+  if (strcmp(key->type, "ssh-rsa"))
+    return 0;
+  struct assh_sign_rsa_key_s *k = (void*)key;
+  return assh_bignum_bits(k->nn) >= 1024;
+}
+
+static ASSH_SIGN_VERIFY_FCN(assh_sign_rsa_verify_sha1)
+{
+  return assh_sign_rsa_verify(c, key, data_count, data, data_len,
+                              sign, sign_len, (1 << RSA_DIGEST_SHA1));
+}
+
+struct assh_algo_sign_s assh_sign_rsa_sha1 =
+{
+  .algo = {
+    .name = "ssh-rsa",  .variant = "sha1, 1024+ bits keys",
+    .class_ = ASSH_ALGO_SIGN,
+    .priority = 1, .safety = 20, .speed = 40,
+    .f_suitable_key = assh_sign_rsa_suitable_key_1024,
+  },
+  .key_type = "ssh-rsa",
+  .f_key_load = assh_sign_rsa_key_load,
+  .f_generate = assh_sign_rsa_generate_sha1,
+  .f_verify = assh_sign_rsa_verify_sha1,
+};
+
+
+
+static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_2048)
+{
+  if (strcmp(key->type, "ssh-rsa"))
+    return 0;
+  struct assh_sign_rsa_key_s *k = (void*)key;
+  return assh_bignum_bits(k->nn) >= 2048;
+}
+
+struct assh_algo_sign_s assh_sign_rsa_sha1_2048 =
+{
+  .algo = {
+    .name = "ssh-rsa", .variant = "sha1, 2048+ bits keys",
+    .class_ = ASSH_ALGO_SIGN,
+    .priority = 0, .safety = 25, .speed = 30,
+    .f_suitable_key = assh_sign_rsa_suitable_key_2048,
+  },
+  .key_type = "ssh-rsa",
+  .f_key_load = assh_sign_rsa_key_load,
+  .f_generate = assh_sign_rsa_generate_sha1,
+  .f_verify = assh_sign_rsa_verify_sha1,
+};
+
+
+
+static ASSH_SIGN_VERIFY_FCN(assh_sign_rsa_verify_sha256)
+{
+  return assh_sign_rsa_verify(c, key, data_count, data, data_len,
+                              sign, sign_len, (1 << RSA_DIGEST_SHA256));
+}
+
+static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate_sha256)
+{
+  return assh_sign_rsa_generate(c, key, data_count, data, data_len,
+                                sign, sign_len, RSA_DIGEST_SHA256);
+}
+
+struct assh_algo_sign_s assh_sign_rsa_sha256 =
+{
+  .algo = {
+    .name = "rsa2048-sha256@libassh.org",
+    .class_ = ASSH_ALGO_SIGN,
+    .safety = 40, .speed = 30,
+    .f_suitable_key = assh_sign_rsa_suitable_key_2048,
+  },
+  .key_type = "ssh-rsa",
+  .f_key_load = assh_sign_rsa_key_load,
+  .f_generate = assh_sign_rsa_generate_sha256,
+  .f_verify = assh_sign_rsa_verify_sha256,
+};
+
+
+
+static ASSH_SIGN_VERIFY_FCN(assh_sign_rsa_verify_sha512)
+{
+  return assh_sign_rsa_verify(c, key, data_count, data, data_len,
+                              sign, sign_len, (1 << RSA_DIGEST_SHA512));
+}
+
+static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate_sha512)
+{
+  return assh_sign_rsa_generate(c, key, data_count, data, data_len,
+                                sign, sign_len, RSA_DIGEST_SHA512);
+}
+
+struct assh_algo_sign_s assh_sign_rsa_sha512 =
+{
+  .algo = {
+    .name = "rsa2048-sha512@libassh.org",
+    .class_ = ASSH_ALGO_SIGN,
+    .safety = 40, .speed = 30,
+    .f_suitable_key = assh_sign_rsa_suitable_key_2048,
+  },
+  .key_type = "ssh-rsa",
+  .f_key_load = assh_sign_rsa_key_load,
+  .f_generate = assh_sign_rsa_generate_sha512,
+  .f_verify = assh_sign_rsa_verify_sha512,
 };
 

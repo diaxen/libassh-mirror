@@ -203,10 +203,16 @@ assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t inerr)
     case ASSH_ERR_NO_MORE_SERVICE:
       reason = SSH_DISCONNECT_BY_APPLICATION;
       break;
+    case ASSH_ERR_WEAK_ALGORITHM:
+      desc = "weak key or algorithm parameters";
+      reason = SSH_DISCONNECT_RESERVED;
+      break;
     }
 
   if (!(inerr & ASSH_ERRSV_DISCONNECT))
     return inerr;
+
+  ASSH_DEBUG("disconnect packet reason: %u (%s)\n", reason, desc);
 
   struct assh_packet_s *pout;
   size_t sz = 0;

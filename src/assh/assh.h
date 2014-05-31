@@ -51,6 +51,7 @@ struct assh_request_s;
 struct assh_bignum_s;
 struct assh_key_s;
 struct assh_kex_keys_s;
+struct assh_algo_s;
 struct assh_algo_kex_s;
 struct assh_hash_s;
 struct assh_prng_s;
@@ -153,6 +154,8 @@ enum assh_error_e
   ASSH_ERR_NO_MORE_SERVICE         = 0x117,
   /** The session is closed. */
   ASSH_ERR_CLOSED                  = 0x118,
+  /** Algorithm or key security level is below defined threshold. */
+  ASSH_ERR_WEAK_ALGORITHM          = 0x119,
 };
 
 /** @This extracts the @ref assh_error_e part of an error code
@@ -174,7 +177,7 @@ typedef int assh_error_t;
 #define ASSH_PCK_POOL_SIZE (ASSH_PCK_POOL_MAX - ASSH_PCK_POOL_MIN)
 
 /** Size of the context registered algorithms pointer array */
-#define ASSH_MAX_ALGORITHMS 40
+#define ASSH_MAX_ALGORITHMS 64
 /** Size of the context registered services pointer array */
 #define ASSH_MAX_SERVICES 4
 

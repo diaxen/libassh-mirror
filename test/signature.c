@@ -12,15 +12,16 @@
 
 struct algo_s
 {
-  const char *name;
   const struct assh_algo_sign_s *algo;
   const uint8_t *key;
   size_t key_len;
 };
 
 struct algo_s algos[] = {
-  { "ssh-dss", &assh_sign_dss, dsa_sign_key, sizeof(dsa_sign_key) },
-  { "ssh-rsa", &assh_sign_rsa, rsa_sign_key, sizeof(rsa_sign_key) },
+  { &assh_sign_dss,          dsa_sign_key, sizeof(dsa_sign_key) },
+  { &assh_sign_rsa_sha1_md5, rsa_sign_key, sizeof(rsa_sign_key) },
+  { &assh_sign_rsa_sha256,   rsa_sign_key, sizeof(rsa_sign_key) },
+  { &assh_sign_rsa_sha512,   rsa_sign_key, sizeof(rsa_sign_key) },
   { NULL },
 };
 
@@ -48,12 +49,12 @@ int main(int argc, char **argv)
       const struct assh_algo_sign_s *a = algos[i].algo;
       struct assh_key_s *key;
 
-      fprintf(stderr, "\n%s sign/verify: ", algos[i].name);
+      fprintf(stderr, "\n%s sign/verify: ", a->algo.name);
 
       uint8_t key_blob[algos[i].key_len];
       memcpy(key_blob, algos[i].key, sizeof(key_blob));
 
-      ASSH_ERR_RET(assh_key_load(&context, &key, algos[i].name,
+      ASSH_ERR_RET(assh_key_load(&context, &key, a->algo.name,
                                  key_blob, sizeof(key_blob),
                                  ASSH_KEY_FMT_PV_PEM_ASN1));
 
@@ -113,7 +114,7 @@ int main(int argc, char **argv)
 
       assh_key_drop(&context, &key);
 
-      fprintf(stderr, "\n%s key load/validate: ", algos[i].name);
+      fprintf(stderr, "\n%s key load/validate: ", a->algo.name);
 
       /* test key loading and validation */
       int j;
@@ -141,7 +142,7 @@ int main(int argc, char **argv)
 	    }
 
 	  fprintf(stderr, "l");
-	  err = assh_key_load(&context, &key, algos[i].name,
+	  err = assh_key_load(&context, &key, a->algo.name,
 			      key_blob, sizeof(key_blob),
 			      ASSH_KEY_FMT_PV_PEM_ASN1);
 

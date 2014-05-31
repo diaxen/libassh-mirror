@@ -34,7 +34,7 @@ static ASSH_KEY_CLEANUP_FCN(assh_sign_none_key_cleanup)
 
 static ASSH_KEY_OUTPUT_FCN(assh_sign_none_key_output)
 {
-  assert((void*)key->algo == (void*)&assh_sign_none);
+  assert(!strcmp(key->type, "none"));
 
   *blob_len = 0;
   return ASSH_OK;
@@ -57,6 +57,7 @@ static ASSH_KEY_LOAD_FCN(assh_sign_none_key_load)
   ASSH_ERR_RET(assh_alloc(c, sizeof(**key), ASSH_ALLOC_KEY, (void**)key));
   struct assh_key_s *k = *key;
 
+  k->type = "none";
   k->f_output = assh_sign_none_key_output;
   k->f_validate = assh_sign_none_key_validate;
   k->f_cmp = assh_sign_none_key_cmp;
@@ -79,8 +80,10 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_none_verify)
 
 struct assh_algo_sign_s assh_sign_none =
 {
-  .algo = { .name = "none@libassh.org", .class_ = ASSH_ALGO_SIGN,
-            .need_host_key = 0, .safety = 0, .speed = 99 },
+  .algo = {
+    .name = "none@libassh.org", .class_ = ASSH_ALGO_SIGN,
+    .safety = 0, .speed = 99,
+  },
   .f_key_load = assh_sign_none_key_load,
   .f_generate = assh_sign_none_generate,
   .f_verify = assh_sign_none_verify,
