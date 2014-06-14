@@ -34,8 +34,15 @@ typedef ASSH_MAC_INIT_FCN(assh_mac_init_t);
 
 #define ASSH_MAC_COMPUTE_FCN(n) \
   ASSH_WARN_UNUSED_RESULT assh_error_t (n)(void *ctx_, uint32_t seq, \
-                                           const uint8_t *data, size_t len, uint8_t *mac)
+                                           const uint8_t *data, size_t len, \
+                                           uint8_t *mac)
 typedef ASSH_MAC_COMPUTE_FCN(assh_mac_compute_t);
+
+#define ASSH_MAC_VERIFY_FCN(n) \
+  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(void *ctx_, uint32_t seq, \
+                                           const uint8_t *data, size_t len, \
+                                           const uint8_t *mac)
+typedef ASSH_MAC_VERIFY_FCN(assh_mac_verify_t);
 
 #define ASSH_MAC_CLEANUP_FCN(n) void (n)(struct assh_context_s *c, void *ctx_)
 typedef ASSH_MAC_CLEANUP_FCN(assh_mac_cleanup_t);
@@ -48,6 +55,7 @@ struct assh_algo_mac_s
   size_t mac_size;
   assh_mac_init_t *f_init;
   assh_mac_compute_t *f_compute;
+  assh_mac_verify_t *f_verify;
   assh_mac_cleanup_t *f_cleanup;
 };
 

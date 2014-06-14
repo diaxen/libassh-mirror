@@ -168,6 +168,9 @@ assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t inerr)
 #endif
       break;
     case ASSH_ERR_MAC:
+#ifdef CONFIG_ASSH_VERBOSE_ERROR
+      desc = "mac error";
+#endif
       reason = SSH_DISCONNECT_MAC_ERROR;
       break;
     case ASSH_ERR_CRYPTO:

@@ -188,7 +188,6 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
       if (k != NULL)
 	{
 	  mac_len = k->mac->mac_size;
-	  uint8_t mac[mac_len];
 
 	  /* decipher */
 	  ASSH_ERR_RET(k->cipher->f_process(
@@ -196,11 +195,10 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 	      p->data_size - bsize - mac_len) | ASSH_ERRSV_DISCONNECT);
 
 	  /* compute and compare MAC */
-	  ASSH_ERR_RET(k->mac->f_compute(k->mac_ctx, s->in_seq, p->data,
-			 p->data_size - mac_len, mac) | ASSH_ERRSV_DISCONNECT);
-
-	  ASSH_CHK_RET(assh_memcmp(mac, p->data + p->data_size - mac_len, mac_len),
-		       ASSH_ERR_MAC | ASSH_ERRSV_DISCONNECT);
+	  ASSH_ERR_RET(k->mac->f_verify(k->mac_ctx, s->in_seq, p->data,
+					p->data_size - mac_len,
+					p->data + p->data_size - mac_len)
+		       | ASSH_ERRSV_DISCONNECT);
 
 #warning FIXME decompress
 	}

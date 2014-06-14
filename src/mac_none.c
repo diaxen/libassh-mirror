@@ -40,6 +40,11 @@ static ASSH_MAC_COMPUTE_FCN(assh_hmac_none_compute)
   return ASSH_OK;
 }
 
+static ASSH_MAC_VERIFY_FCN(assh_hmac_none_verify)
+{
+  return ASSH_OK;
+}
+
 struct assh_algo_mac_s assh_hmac_none = 
 {
   .algo = { .name = "none", .class_ = ASSH_ALGO_MAC,
@@ -49,6 +54,7 @@ struct assh_algo_mac_s assh_hmac_none =
   .mac_size = 0,
   .f_init = assh_hmac_none_init,
   .f_compute = assh_hmac_none_compute,
+  .f_verify = assh_hmac_none_verify,
   .f_cleanup = assh_hmac_none_cleanup,
 };
 
