@@ -69,5 +69,9 @@ extern struct assh_algo_mac_s assh_hmac_sha1_96;
 extern struct assh_algo_mac_s assh_hmac_sha256;
 extern struct assh_algo_mac_s assh_hmac_sha512;
 
+#ifdef CONFIG_ASSH_USE_GCRYPT_HASH
+extern struct assh_algo_mac_s assh_hmac_ripemd160;
+#endif
+
 #endif
 

@@ -87,7 +87,7 @@ assh_cipher_gcrypt_init(const struct assh_algo_cipher_s *cipher,
   return err;
 }
 
-static ASSH_CIPHER_PROCESS_FCN(assh_gcrypt_process)
+static ASSH_CIPHER_PROCESS_FCN(assh_cipher_gcrypt_process)
 {
   assh_error_t err;
   struct assh_cipher_gcrypt_context_s *ctx = ctx_;
@@ -102,7 +102,7 @@ static ASSH_CIPHER_PROCESS_FCN(assh_gcrypt_process)
   return ASSH_OK;
 }
 
-static ASSH_CIPHER_CLEANUP_FCN(assh_gcrypt_cleanup)
+static ASSH_CIPHER_CLEANUP_FCN(assh_cipher_gcrypt_cleanup)
 {
   struct assh_cipher_gcrypt_context_s *ctx = ctx_;
   gcry_cipher_close(ctx->hd);
@@ -111,7 +111,7 @@ static ASSH_CIPHER_CLEANUP_FCN(assh_gcrypt_cleanup)
 #define ASSH_GCRYPT_CIPHER(id_, name_, algo_, mode_, bsize_, ksize_, saf_, spd_, is_stream_) \
 extern struct assh_algo_cipher_s assh_cipher_##id_;			\
 									\
-static ASSH_CIPHER_INIT_FCN(assh_gcrypt_##id_##_init)			\
+static ASSH_CIPHER_INIT_FCN(assh_cipher_gcrypt_##id_##_init)		\
 {									\
   return assh_cipher_gcrypt_init(&assh_cipher_##id_, ctx_, key, iv,	\
 				 algo_, mode_, encrypt);		\
@@ -124,9 +124,9 @@ struct assh_algo_cipher_s assh_cipher_##id_ =				\
   .block_size = bsize_,							\
   .key_size = ksize_,							\
   .is_stream = is_stream_,						\
-  .f_init = assh_gcrypt_##id_##_init,					\
-  .f_process = assh_gcrypt_process,					\
-  .f_cleanup = assh_gcrypt_cleanup,					\
+  .f_init = assh_cipher_gcrypt_##id_##_init,				\
+  .f_process = assh_cipher_gcrypt_process,				\
+  .f_cleanup = assh_cipher_gcrypt_cleanup,				\
 };
 
 ASSH_GCRYPT_CIPHER(arc4,           "arcfour",        GCRY_CIPHER_ARCFOUR,    GCRY_CIPHER_MODE_STREAM, 1,  16, 5,  80, 1);
