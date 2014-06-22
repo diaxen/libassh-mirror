@@ -164,7 +164,8 @@ void assh_kex_keys_cleanup(struct assh_session_s *s,
                            struct assh_kex_keys_s *keys);
 
 /** @internal @see assh_kex_init_t */
-#define ASSH_KEX_INIT_FCN(n) assh_error_t (n)(struct assh_session_s *s)
+#define ASSH_KEX_INIT_FCN(n) assh_error_t (n)(struct assh_session_s *s, \
+                                              size_t cipher_key_size)
 /** @internal This function is called when the key exchange is
     initiated. It may allocate a private context and store it in the
     @ref assh_session_s::kex_pv field. */
@@ -233,10 +234,31 @@ struct assh_algo_kex_s
   assh_kex_process_t *f_process;
 };
 
+extern struct assh_algo_kex_s assh_kex_none;
+
 extern struct assh_algo_kex_s assh_kex_dh_group1_sha1;
 extern struct assh_algo_kex_s assh_kex_dh_group14_sha1;
 extern struct assh_algo_kex_s assh_kex_curve25519_sha256;
-extern struct assh_algo_kex_s assh_kex_none;
+
+/** diffie-hellman-group-exchange-sha1, favors group size of n*n/12
+    bits and allows groups size of n*n/16 bits where n is the size of
+    the symmetric cipher key. */
+extern struct assh_algo_kex_s assh_kex_dh_gex_sha1;
+
+/** diffie-hellman-group-exchange-sha256, favors group size of n*n/12
+    bits and allows groups size of n*n/16 bits where n is the size of
+    the symmetric cipher key. */
+extern struct assh_algo_kex_s assh_kex_dh_gex_sha256_12;
+
+/** diffie-hellman-group-exchange-sha256, favors group size of n*n/8
+    bits and allows groups size of n*n/12 bits where n is the size of
+    the symmetric cipher key. */
+extern struct assh_algo_kex_s assh_kex_dh_gex_sha256_8;
+
+/** diffie-hellman-group-exchange-sha256, favors group size of n*n/4
+    bits and allows groups size of n*n/8 bits where n is the size of
+    the symmetric cipher key. */
+extern struct assh_algo_kex_s assh_kex_dh_gex_sha256_4;
 
 #endif
 

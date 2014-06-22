@@ -335,8 +335,10 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
     + mac_out->ctx_size + cmp_out->ctx_size, ASSH_ALLOC_KEY, (void**)&kout)
 	       | ASSH_ERRSV_DISCONNECT, err_kin);
 
+  size_t key_size = ASSH_MAX(cipher_in->key_size, cipher_out->key_size) * 8;
+
   /* initialize key exchange algorithm */
-  ASSH_ERR_GTO(kex->f_init(s) | ASSH_ERRSV_DISCONNECT, err_kout);
+  ASSH_ERR_GTO(kex->f_init(s, key_size) | ASSH_ERRSV_DISCONNECT, err_kout);
 
   s->kex = kex;
   s->host_sign_algo = sign;

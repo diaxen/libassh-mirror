@@ -30,6 +30,7 @@
 #include <assh/assh_event.h>
 #include <assh/assh_alloc.h>
 #include <assh/assh_hash.h>
+#include <assh/assh_cipher.h>
 
 #include <string.h>
 #include <stdlib.h>
@@ -64,13 +65,14 @@ struct assh_kex_dh_private_s
 #ifdef CONFIG_ASSH_SERVER
     struct {
       struct assh_bignum_s *fn;
+      size_t exp_n;
       uint8_t *e_str;
     };
 #endif
 #ifdef CONFIG_ASSH_CLIENT
     struct {
       struct assh_bignum_s *en;
-      struct assh_bignum_s *kn;
+      struct assh_bignum_s *xn;
       struct assh_key_s *host_key;
       uint8_t *f_str;
       struct assh_packet_s *pck;
@@ -90,8 +92,8 @@ static assh_error_t assh_kex_dh_client_send_expmod(struct assh_session_s *s)
   enum bytecode_args_e
   {
     G_mpint, P_mpint,
-    E, K,
-    G, P, T,
+    E, X,
+    G, P
   };
 
   assh_bignum_op_t bytecode[] = {
@@ -99,24 +101,22 @@ static assh_error_t assh_kex_dh_client_send_expmod(struct assh_session_s *s)
     ASSH_BIGNUM_BC_MOVE(        P,      P_mpint         ),
 
     /* generate private exponent in range [ group bits, p - 2 ] */
-    ASSH_BIGNUM_BC_RAND(        K,      ASSH_PRNG_QUALITY_EPHEMERAL_KEY),
-    ASSH_BIGNUM_BC_UINT(        T,      DH_MAX_GRSIZE + 1  ),
-    ASSH_BIGNUM_BC_SUB(         T,      P,      T       ),
-    ASSH_BIGNUM_BC_DIV(         K,      T,      T       ), /* % (p - 1 - group bits) */
-    ASSH_BIGNUM_BC_UINT(        T,      DH_MAX_GRSIZE   ),
-    ASSH_BIGNUM_BC_ADD(         K,      K,      T       ), /* + group bits */
+    ASSH_BIGNUM_BC_RAND(        X,      ASSH_PRNG_QUALITY_EPHEMERAL_KEY),
+    ASSH_BIGNUM_BC_UINT(        E,      DH_MAX_GRSIZE   ),
+    ASSH_BIGNUM_BC_CMPLT(       E,      X               ),
+    ASSH_BIGNUM_BC_CMPLT(       X,      P               ),
 
     /* compute dh public key */
     ASSH_BIGNUM_BC_SETMOD(      P                       ),
-    ASSH_BIGNUM_BC_EXPMOD(      E,      G,      K       ),
+    ASSH_BIGNUM_BC_EXPMOD(      E,      G,      X       ),
 
     ASSH_BIGNUM_BC_END(),
   };
 
-  ASSH_ERR_RET(assh_bignum_bytecode(c, bytecode, "MMNNTTT",
+  ASSH_ERR_RET(assh_bignum_bytecode(c, bytecode, "MMNNTT",
                                     /* M */ gr->generator, gr->prime,
-                                    /* N */ pv->en, pv->kn,
-                                    /* T */ gr->size, gr->size, gr->size));
+                                    /* N */ pv->en, pv->xn,
+                                    /* T */ gr->size, gr->size));
 
   /* send a packet containing e */
   struct assh_packet_s *p;
@@ -177,9 +177,9 @@ static ASSH_EVENT_DONE_FCN(assh_kex_dh_host_key_lookup_done)
 
   enum bytecode_args_e
   {
-    G_mpint, P_mpint, F_mpint,
-    K,
-    G, P, F, T
+    G_mpint, P_mpint, F_mpint, K_mpint,
+    X,
+    G, P, F, T, K
   };
 
   assh_bignum_op_t bytecode[] = {
@@ -190,33 +190,35 @@ static ASSH_EVENT_DONE_FCN(assh_kex_dh_host_key_lookup_done)
     /* check server public exponent */
     ASSH_BIGNUM_BC_UINT(        T,      2               ),
     ASSH_BIGNUM_BC_CMPLTEQ(     T,      F               ), /* f >= 2 */
-
     ASSH_BIGNUM_BC_SUB(         T,      P,      T       ),
     ASSH_BIGNUM_BC_CMPLTEQ(     F,      T               ), /* f <= p-2 */
 
     /* compute shared secret */
     ASSH_BIGNUM_BC_SETMOD(      P                       ),
-    ASSH_BIGNUM_BC_EXPMOD(      T,      F,      K       ),
+    ASSH_BIGNUM_BC_EXPMOD(      T,      F,      X       ),
     ASSH_BIGNUM_BC_MOVE(        K,      T               ),
+
+    /* check shared secret range */
+    ASSH_BIGNUM_BC_UINT(        T,      2               ),
+    ASSH_BIGNUM_BC_CMPLTEQ(     T,      K               ), /* k >= 2 */
+    ASSH_BIGNUM_BC_SUB(         T,      P,      T       ),
+    ASSH_BIGNUM_BC_CMPLTEQ(     K,      T               ), /* k <= p-2 */
+
+    ASSH_BIGNUM_BC_MOVE(        K_mpint,        K       ),
 
     ASSH_BIGNUM_BC_END(),
   };
 
-  ASSH_ERR_RET(assh_bignum_bytecode(s->ctx, bytecode, "MMMNTTTT",
-                                    /* M */ gr->generator, gr->prime, f_str,
-                                    /* N */ pv->kn,
-                                    /* T */ gr->size, gr->size, gr->size, gr->size));
+  size_t n = gr->size;
 
-#ifdef CONFIG_ASSH_DEBUG_KEX
-  assh_bignum_print(stderr, "K", pv->kn);
-#endif
-
-  pv->f_str = f_str;
-
-  ASSH_SCRATCH_ALLOC(s->ctx, uint8_t, secret, assh_packet_mpint_size(gr->size),
+  ASSH_SCRATCH_ALLOC(s->ctx, uint8_t, secret, assh_packet_mpint_size(n),
                      ASSH_ERRSV_CONTINUE, err_);
 
-  ASSH_ERR_GTO(assh_bignum_to_mpint(pv->kn, secret), err_secret);
+  ASSH_ERR_GTO(assh_bignum_bytecode(s->ctx, bytecode, "MMMMNTTTTT",
+                                    /* M */ gr->generator, gr->prime, f_str, secret,
+                                    /* N */ pv->xn, /* T */ n, n, n, n, n), err_secret);
+
+  pv->f_str = f_str;
 
   ASSH_ERR_GTO(assh_kex_client_hash(s, &assh_kex_dh_client_hash,
                                     &assh_hash_sha1, pv->host_key,
@@ -309,8 +311,6 @@ static assh_error_t assh_kex_dh_server_wait_e(struct assh_session_s *s,
   ASSH_SCRATCH_ALLOC(c, uint8_t, secret, gr->size,
                      ASSH_ERRSV_CONTINUE, err_);
 
-  ASSH_BIGNUM_ALLOC(c, fn, gr->size, ASSH_ERRSV_DISCONNECT, err_secret);
-
   enum bytecode_args_e
   {
     G_mpint, P_mpint, E_mpint, K_mpint,
@@ -326,17 +326,14 @@ static assh_error_t assh_kex_dh_server_wait_e(struct assh_session_s *s,
     /* check client public key */
     ASSH_BIGNUM_BC_UINT(        T,      2               ),
     ASSH_BIGNUM_BC_CMPLTEQ(     T,      E               ), /* f >= 2 */
-
     ASSH_BIGNUM_BC_SUB(         T,      P,      T       ),
     ASSH_BIGNUM_BC_CMPLTEQ(     E,      T               ), /* f <= p-2 */
 
-    /* generate private exponent in range [ group bits, p - 2 ] */
+    /* generate private exponent */
     ASSH_BIGNUM_BC_RAND(        X,      ASSH_PRNG_QUALITY_EPHEMERAL_KEY),
-    ASSH_BIGNUM_BC_UINT(        T,      DH_MAX_GRSIZE + 1  ),
-    ASSH_BIGNUM_BC_SUB(         T,      P,      T       ),
-    ASSH_BIGNUM_BC_DIV(         X,      T,      T       ), /* % (p - 1 - group bits) */
     ASSH_BIGNUM_BC_UINT(        T,      DH_MAX_GRSIZE   ),
-    ASSH_BIGNUM_BC_ADD(         X,      X,      T       ), /* + group bits */
+    ASSH_BIGNUM_BC_CMPLT(       T,      X               ),
+    ASSH_BIGNUM_BC_CMPLT(       X,      P               ),
 
     /* compute dh public key */
     ASSH_BIGNUM_BC_SETMOD(      P                       ),
@@ -344,27 +341,31 @@ static assh_error_t assh_kex_dh_server_wait_e(struct assh_session_s *s,
 
     /* compute shared secret */
     ASSH_BIGNUM_BC_EXPMOD(      K,      E,      X       ),
+
+    /* check shared secret range */
+    ASSH_BIGNUM_BC_UINT(        T,      2               ),
+    ASSH_BIGNUM_BC_CMPLTEQ(     T,      K               ), /* k >= 2 */
+    ASSH_BIGNUM_BC_SUB(         T,      P,      T       ),
+    ASSH_BIGNUM_BC_CMPLTEQ(     K,      T               ), /* k <= p-2 */
+
     ASSH_BIGNUM_BC_MOVE(        K_mpint, K              ),
 
     ASSH_BIGNUM_BC_END(),
   };
 
   ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "MMMMNTTTTTT",
-             /* M */ gr->generator, gr->prime, e_str, secret, /* N */ fn,
+             /* M */ gr->generator, gr->prime, e_str, secret, /* N */ pv->fn,
              /* T */ gr->size, gr->size, gr->size,
-                     gr->size, gr->size, gr->size), err_fn);
+                     pv->exp_n, gr->size, gr->size), err_secret);
 
   pv->e_str = e_str;
-  pv->fn = fn;
 
   /* compute exchange hash and send reply */
   ASSH_ERR_GTO(assh_kex_server_hash(s, &assh_kex_dh_server_hash,
-       assh_packet_mpint_size(gr->size), &assh_hash_sha1, secret), err_fn);
+       assh_packet_mpint_size(gr->size), &assh_hash_sha1, secret), err_secret);
 
   err = ASSH_OK;
 
- err_fn:
-  ASSH_BIGNUM_FREE(c, fn);
  err_secret:
   ASSH_SCRATCH_FREE(c, secret);
  err_:
@@ -414,6 +415,7 @@ static ASSH_KEX_PROCESS_FCN(assh_kex_dh_process)
 }
 
 static assh_error_t assh_kex_dh_init(struct assh_session_s *s,
+                                     size_t cipher_key_size,
                                      const struct assh_kex_dh_group_s *group)
 {
   assh_error_t err;
@@ -422,17 +424,21 @@ static assh_error_t assh_kex_dh_init(struct assh_session_s *s,
   size_t pvsize = sizeof(*pv);
   enum assh_kex_dh_state_e state;
 
+  size_t exp_n = cipher_key_size * 2;
+
   switch (s->ctx->type)
     {
 #ifdef CONFIG_ASSH_CLIENT
-    case ASSH_CLIENT:
+    case ASSH_CLIENT: {
       state = ASSH_KEX_DH_CLIENT_INIT;
-      pvsize += /* en */ + bnl /* kn */ + bnl;
+      pvsize += /* en */ + bnl /* xn */ + assh_bignum_sizeof(exp_n);
       break;
+    }
 #endif
 #ifdef CONFIG_ASSH_SERVER
     case ASSH_SERVER:
       state = ASSH_KEX_DH_SERVER_WAIT_E;
+      pvsize += /* fn */ + bnl;
       break;
 #endif
     default:
@@ -447,18 +453,28 @@ static assh_error_t assh_kex_dh_init(struct assh_session_s *s,
   pv->group = group;
   pv->state = state;
 
-#ifdef CONFIG_ASSH_CLIENT
-  if (s->ctx->type == ASSH_CLIENT)
+  switch (s->ctx->type)
     {
-      pv->kn = (struct assh_bignum_s*)(pv + 1);
-      pv->en = (struct assh_bignum_s*)((uint8_t*)pv->kn + bnl);
+#ifdef CONFIG_ASSH_CLIENT
+    case ASSH_CLIENT:
+      pv->en = (struct assh_bignum_s*)(pv + 1);
+      pv->xn = (struct assh_bignum_s*)((uint8_t*)pv->en + bnl);
       pv->host_key = NULL;
       pv->pck = NULL;
 
-      assh_bignum_init(s->ctx, pv->kn, group->size);
       assh_bignum_init(s->ctx, pv->en, group->size);
-    }
+      assh_bignum_init(s->ctx, pv->xn, exp_n);
+      break;
 #endif
+
+#ifdef CONFIG_ASSH_SERVER
+    case ASSH_SERVER:
+      pv->fn = (struct assh_bignum_s*)(pv + 1);
+      pv->exp_n = exp_n;
+      assh_bignum_init(s->ctx, pv->fn, group->size);
+      break;
+#endif
+    }
 
   return ASSH_OK;
 }
@@ -467,15 +483,23 @@ static ASSH_KEX_CLEANUP_FCN(assh_kex_dh_cleanup)
 {
   struct assh_kex_dh_private_s *pv = s->kex_pv;
 
-#ifdef CONFIG_ASSH_CLIENT
-  if (s->ctx->type == ASSH_CLIENT)
+  switch (s->ctx->type)
     {
+#ifdef CONFIG_ASSH_CLIENT
+    case ASSH_CLIENT:
       assh_bignum_cleanup(s->ctx, pv->en);
-      assh_bignum_cleanup(s->ctx, pv->kn);
+      assh_bignum_cleanup(s->ctx, pv->xn);
       assh_key_flush(s->ctx, &pv->host_key);
       assh_packet_release(pv->pck);
-    }
+      break;
 #endif
+
+#ifdef CONFIG_ASSH_SERVER
+    case ASSH_SERVER:
+      assh_bignum_cleanup(s->ctx, pv->fn);
+      break;
+#endif
+    }
 
   assh_free(s->ctx, s->kex_pv, ASSH_ALLOC_KEY);
   s->kex_pv = NULL;
@@ -498,12 +522,13 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_group1_sha1_init)
       "\x49\x28\x66\x51\xec\xe6\x53\x81\xff\xff\xff\xff\xff\xff\xff\xff"
     };
 
-  return assh_kex_dh_init(s, &group);
+  return assh_kex_dh_init(s, cipher_key_size, &group);
 }
 
 struct assh_algo_kex_s assh_kex_dh_group1_sha1 =
 {
-  .algo = { .name = "diffie-hellman-group1-sha1", .class_ = ASSH_ALGO_KEX, .safety = 30, .speed = 50 },
+  .algo = { .name = "diffie-hellman-group1-sha1",
+            .class_ = ASSH_ALGO_KEX, .safety = 10, .speed = 40 },
   .f_init = assh_kex_dh_group1_sha1_init,
   .f_cleanup = assh_kex_dh_cleanup,
   .f_process = assh_kex_dh_process,
@@ -534,12 +559,13 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_group14_sha1_init)
       "\x15\x72\x8e\x5a\x8a\xac\xaa\x68\xff\xff\xff\xff\xff\xff\xff\xff"
     };
 
-  return assh_kex_dh_init(s, &group);
+  return assh_kex_dh_init(s, cipher_key_size, &group);
 }
 
 struct assh_algo_kex_s assh_kex_dh_group14_sha1 =
 {
-  .algo = { .name = "diffie-hellman-group14-sha1", .class_ = ASSH_ALGO_KEX, .safety = 60, .speed = 20 },
+  .algo = { .name = "diffie-hellman-group14-sha1",
+            .class_ = ASSH_ALGO_KEX, .safety = 20, .speed = 30 },
   .f_init = assh_kex_dh_group14_sha1_init,
   .f_cleanup = assh_kex_dh_cleanup,
   .f_process = assh_kex_dh_process,

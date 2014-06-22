@@ -124,6 +124,11 @@ assh_error_t assh_algo_register_default(struct assh_context_s *c, unsigned int s
 			&assh_kex_curve25519_sha256,
 			&assh_kex_dh_group1_sha1,
 			&assh_kex_dh_group14_sha1,
+//			&assh_kex_dh_gex_sha1,
+//			&assh_kex_dh_gex_sha256,
+//			&assh_kex_dh_gex_sha256_2048,
+//			&assh_kex_dh_gex_sha256_4096,
+//			&assh_kex_dh_gex_sha256_6144,
 			/* sign_dss.c */
 			&assh_sign_dss,
 		        &assh_sign_dsa2048_sha224,
