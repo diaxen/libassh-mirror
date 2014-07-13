@@ -29,6 +29,7 @@
 #include <assh/assh_kex.h>
 #include <assh/assh_prng.h>
 #include <assh/assh_alloc.h>
+#include <assh/assh_bignum.h>
 
 #include <stdlib.h>
 
@@ -116,6 +117,8 @@ void assh_context_init(struct assh_context_s *c,
 #ifdef CONFIG_ASSH_SERVER
   c->srvs_count = 0;
 #endif
+
+  c->bignum = &assh_bignum_gcrypt;
 }
 
 static void assh_pck_pool_cleanup(struct assh_context_s *c)

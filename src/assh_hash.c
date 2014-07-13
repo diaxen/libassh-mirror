@@ -41,14 +41,17 @@ void assh_hash_string(void *ctx_, assh_hash_update_t *update, const uint8_t *str
 }
 
 assh_error_t assh_hash_bignum(struct assh_context_s *ctx, void *ctx_,
-			      assh_hash_update_t *update, const struct assh_bignum_s *bn)
+			      assh_hash_update_t *update,
+                              const struct assh_bignum_s *bn)
 {
   assh_error_t err;
-  size_t l = assh_bignum_mpint_size(bn);
+  size_t l = assh_bignum_size_of_num(ASSH_BIGNUM_MPINT, bn);
 
   ASSH_SCRATCH_ALLOC(ctx, uint8_t, s, l, ASSH_ERRSV_CONTINUE, err);
 
-  ASSH_ERR_GTO(assh_bignum_to_mpint(bn, s), err_alloc);
+  ASSH_ERR_GTO(assh_bignum_convert(bn->ctx,
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MPINT, bn, s), err_alloc);
+
   update(ctx_, s, assh_load_u32(s) + 4);
 
   err = ASSH_OK;

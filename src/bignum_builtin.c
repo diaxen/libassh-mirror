@@ -471,7 +471,7 @@ assh_bignum_modinv_euclidean(assh_bnword_t * __restrict__ u,
 {
   assh_error_t err;
 
-#define ASSH_MODINV_SCRATCH(len) (len * 3)
+#define ASSH_INV_SCRATCH(len) (len * 3)
 
   assh_bnword_t *r = scratch;
   assh_bnword_t *p = scratch + a_len;
@@ -497,7 +497,7 @@ assh_bignum_modinv_euclidean(assh_bnword_t * __restrict__ u,
       unsigned int az, al, bz, bl, da, sa;
       assh_bnword_t at, bt, q;
 
-#ifdef CONFIG_ASSH_DEBUG_BIGNUM_MODINV
+#ifdef CONFIG_ASSH_DEBUG_BIGNUM_INV
       fprintf(stderr, "\n");
       assh_bignum_print_raw(stderr, "r", xr, r_len);
       assh_bignum_print_raw(stderr, "p", xp, p_len);
@@ -512,7 +512,7 @@ assh_bignum_modinv_euclidean(assh_bnword_t * __restrict__ u,
 
       q = assh_bignum_div_factor(at, bt, al - bl, &sa, &da);
 
-#ifdef CONFIG_ASSH_DEBUG_BIGNUM_MODINV
+#ifdef CONFIG_ASSH_DEBUG_BIGNUM_INV
       fprintf(stderr, "plen=%u rlen=%u a_len=%u al=%u bl=%u da=%u sa=%u q=%X\n",
               p_len, r_len, a_len, al, bl, da, sa, q);
 #endif
@@ -527,7 +527,7 @@ assh_bignum_modinv_euclidean(assh_bnword_t * __restrict__ u,
 
       if (assh_bignum_cmp_raw(xr, r_len, xp, p_len) > 0)
 	{
-#ifdef CONFIG_ASSH_DEBUG_BIGNUM_MODINV
+#ifdef CONFIG_ASSH_DEBUG_BIGNUM_INV
 	  fprintf(stderr, "swap\n");
 #endif
 	  ASSH_SWAP(r_len, p_len);
@@ -550,7 +550,7 @@ assh_error_t assh_bignum_modinv(struct assh_bignum_s *u,
   ASSH_CHK_RET(a->l > m->l, ASSH_ERR_OUTPUT_OVERFLOW);
   ASSH_CHK_RET(u->l < a->l, ASSH_ERR_OUTPUT_OVERFLOW);
 
-  ASSH_SCRATCH_ALLOC(m->ctx, assh_bnword_t, scratch, ASSH_MODINV_SCRATCH(m->l),
+  ASSH_SCRATCH_ALLOC(m->ctx, assh_bnword_t, scratch, ASSH_INV_SCRATCH(m->l),
 		     ASSH_ERRSV_CONTINUE, err);
 
   ASSH_ERR_GTO(assh_bignum_modinv_euclidean(u->n, u->l, m->n, m->l,

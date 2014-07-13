@@ -37,11 +37,12 @@ static const char *hex_gn = "b3085510021f999049a9e7cd3872ce9958186b5007e7adaf252
 static const char *hex_yn = "b32fbec03175791df08c3f861c81df7de7e0cba7f1c4f7269bb12d6c628784fb742e66ed315754dfe38b5984e94d372537f655cb3ea4767c878cbd2d783ee662";
 static const char *hex_xn = "6b2cd935d0192d54e2c942b574c80102c8f8ef67";
 static const char *hex_kn = "79577ddcaafddc038b865b19f8eb1ada8a2838c6";
-static const char *hex_m  =  "0164b8a914cd2a5e74c4f7ff082c4d97f1edf880";
+static const char *hex_m  = "0164b8a914cd2a5e74c4f7ff082c4d97f1edf880";
+static const char *hex_r  = "9b77f7054c81531c4e46a4692fbfe0f77f7ebff2";
 
 assh_error_t dsa_generate(struct assh_context_s *c,
-                          struct assh_bignum_s *rn,
-                          struct assh_bignum_s *sn)
+			  struct assh_bignum_s *rn,
+			  struct assh_bignum_s *sn)
 {
   assh_error_t err;
 
@@ -54,54 +55,80 @@ assh_error_t dsa_generate(struct assh_context_s *c,
     /* temporary numbers from input strings */
     P, Q, G, Y, X, K, M,
     /* temporary numbers */
-    R1, R2, R3
+    R1, R2, R3,
+    /* bit size */
+    N, L
   };
 
   assh_bignum_op_t bytecode[] = {
-    ASSH_BIGNUM_BC_MOVE(        P,      P_hex           ),
-    ASSH_BIGNUM_BC_MOVE(        Q,      Q_hex           ),
-    ASSH_BIGNUM_BC_MOVE(        G,      G_hex           ),
-    ASSH_BIGNUM_BC_MOVE(        K,      K_hex           ),
-    ASSH_BIGNUM_BC_MOVE(        M,      M_hex           ),
-    ASSH_BIGNUM_BC_MOVE(        X,      X_hex           ),
+
+    ASSH_BOP_SIZE(	P,	L			),
+    ASSH_BOP_MOVE(      P,      P_hex			),
+
+    ASSH_BOP_SIZE(	Q,	N			),
+    ASSH_BOP_MOVE(      Q,      Q_hex			),
+
+    ASSH_BOP_SIZE(	G,	L			),
+    ASSH_BOP_MOVE(      G,      G_hex			),
+
+    ASSH_BOP_SIZE(	Y,	L			),
+    ASSH_BOP_MOVE(      Y,      Y_hex			),
+
+    ASSH_BOP_SIZE(	X,	N			),
+    ASSH_BOP_MOVE(      X,      X_hex			),
+
+    ASSH_BOP_SIZE(	K,	N			),
+    ASSH_BOP_MOVE(      K,      K_hex			),
+
+    ASSH_BOP_SIZE(	M,	N			),
+    ASSH_BOP_MOVE(      M,      M_hex			),
+
+    ASSH_BOP_SIZE(	R1,	N			),
+    ASSH_BOP_SIZE(	R2,	N			),
+    ASSH_BOP_SIZE(	R3,	L			),
+
+    ASSH_BOP_SIZE(	R,	N			),
+    ASSH_BOP_SIZE(	S,	N			),
 
     /* g^k mod p */
-    ASSH_BIGNUM_BC_SETMOD(      P                       ),
-    ASSH_BIGNUM_BC_EXPMOD(      R3,     G,      K       ),
+    ASSH_BOP_EXPM(      R3,     G,      K,	P       ),
 
     /* r = (g^k mod p) mod q */
-    ASSH_BIGNUM_BC_DIV(         R3,     Q,      Q       ),
-    ASSH_BIGNUM_BC_MOVE(        R,      R3              ),
+    ASSH_BOP_MOD(       R,      R3,      Q		),
 
     /* (x * r) mod q */
-    ASSH_BIGNUM_BC_SETMOD(      Q                       ),
-    ASSH_BIGNUM_BC_MULMOD(      R1,     X,      R       ),
+    ASSH_BOP_MULM(      R1,     X,      R,	Q	),
 
     /* sha(m) + (x * r) */
-    ASSH_BIGNUM_BC_ADD(         R2,     M,      R1      ),
+    ASSH_BOP_ADDM(      R2,     M,      R1,	Q       ),
 
     /* k^-1 */
-    ASSH_BIGNUM_BC_MODINV(      R1,     K,      Q       ),
+    ASSH_BOP_INV(       R1,     K,      Q		),
 
     /* s = k^-1 * (sha(m) + (x * r)) mod q */
-    ASSH_BIGNUM_BC_MULMOD(      S,      R1,     R2      ),
-    ASSH_BIGNUM_BC_END(),
+    ASSH_BOP_MULM(      S,      R1,     R2,	Q       ),
+
+    ASSH_BOP_PRINT(	R,	0			),
+    ASSH_BOP_PRINT(	S,	1			),
+
+    ASSH_BOP_END(),
   };
 
   ASSH_ERR_RET(assh_bignum_bytecode(c, bytecode,
-              /* format */  /* hex */ "HHHHHHH" /* r, s */ "NN" /* temps: */ "TTTTTTT" "TTT",
-              /* char* */   hex_pn, hex_qn, hex_gn, hex_yn, hex_xn, hex_kn, hex_m ,
-              /* bignum* */ rn, sn,
-              /* size */    /* p, q, g, y, x, k, m */ l, n, l, l, n, n, n,
-              /* size */    /* r1, r2, r3 */ n, n + 1, l));
+	      /* hex */ "HHHHHHH"
+	      /* r, s */ "NN" /* temps: */ "TTTTTTTTTT"
+	      /* sizes */ "ss",
+
+	      /* char* */   hex_pn, hex_qn, hex_gn, hex_yn, hex_xn, hex_kn, hex_m ,
+	      /* bignums */ rn, sn, /* bit sizes */ n, l));
 
   return ASSH_OK;
 }
 
 assh_error_t dsa_verify(struct assh_context_s *c,
-                        struct assh_bignum_s *rn,
-                        struct assh_bignum_s *sn,
-                        struct assh_bignum_s *vn)
+			struct assh_bignum_s *rn,
+			struct assh_bignum_s *sn,
+			struct assh_bignum_s *vn)
 {
   assh_error_t err;
 
@@ -116,51 +143,69 @@ assh_error_t dsa_verify(struct assh_context_s *c,
     /* temporary numbers from input strings */
     P, Q, G, Y, M,
     /* temporary numbers */
-    W, U1, V1, U2, V2
+    W, U1, V1, U2, V2,
+    /* bit size */
+    N, L
   };
 
   assh_bignum_op_t bytecode[] = {
-    ASSH_BIGNUM_BC_MOVE(        P,      P_hex           ),
-    ASSH_BIGNUM_BC_MOVE(        Q,      Q_hex           ),
-    ASSH_BIGNUM_BC_MOVE(        G,      G_hex           ),
-    ASSH_BIGNUM_BC_MOVE(        Y,      Y_hex           ),
-    ASSH_BIGNUM_BC_MOVE(        M,      M_hex           ),
+    ASSH_BOP_SIZE(	P,	L			),
+    ASSH_BOP_MOVE(      P,      P_hex			),
 
-    ASSH_BIGNUM_BC_MODINV(      W,      S,      Q       ),
+    ASSH_BOP_SIZE(	Q,	N			),
+    ASSH_BOP_MOVE(      Q,      Q_hex			),
+
+    ASSH_BOP_SIZE(	G,	L			),
+    ASSH_BOP_MOVE(      G,      G_hex			),
+
+    ASSH_BOP_SIZE(	Y,	L			),
+    ASSH_BOP_MOVE(      Y,      Y_hex			),
+
+    ASSH_BOP_SIZE(	M,	N			),
+    ASSH_BOP_MOVE(      M,      M_hex			),
+
+    ASSH_BOP_SIZE(	V,	N			),
+
+    ASSH_BOP_SIZE(	W,	N			),
+    ASSH_BOP_SIZE(	U1,	N			),
+    ASSH_BOP_SIZE(	V1,	L			),
+    ASSH_BOP_SIZE(	U2,	N			),
+    ASSH_BOP_SIZE(	V2,	L			),
+
+    ASSH_BOP_INV(       W,      S,      Q		),
 
     /* (sha(m) * w) mod q */
-    ASSH_BIGNUM_BC_SETMOD(      Q                       ),
-    ASSH_BIGNUM_BC_MULMOD(      U1,     M,      W       ),
+    ASSH_BOP_MULM(      U1,     M,      W,	Q       ),
 
     /* g^u1 */
-    ASSH_BIGNUM_BC_SETMOD(      P                       ),
-    ASSH_BIGNUM_BC_EXPMOD(      V1,     G,      U1      ),
+    ASSH_BOP_EXPM(      V1,     G,      U1,	P	),
 
     /* r * w mod q */
-    ASSH_BIGNUM_BC_SETMOD(      Q                       ),
-    ASSH_BIGNUM_BC_MULMOD(      U2,     R,      W       ),
+    ASSH_BOP_MULM(      U2,     R,      W,	Q       ),
 
     /* y^u2 */
-    ASSH_BIGNUM_BC_SETMOD(      P                       ),
-    ASSH_BIGNUM_BC_EXPMOD(      V2,     Y,      U2      ),
+    ASSH_BOP_EXPM(      V2,     Y,      U2,	P	),
 
     /* (g^u1 * y^u2) mod p */
-    ASSH_BIGNUM_BC_MULMOD(      Y,      V1,     V2      ),
+    ASSH_BOP_MULM(      Y,      V1,     V2,	P	),
 
     /* v = (g^u1 * y^u2) mod p mod q */
-    ASSH_BIGNUM_BC_DIV(         Y,      Q,      Q       ),
-    ASSH_BIGNUM_BC_MOVE(        V,      Y               ),
+    ASSH_BOP_MOD(       V,      Y,      Q		),
 
-    ASSH_BIGNUM_BC_CMPEQ(       V,      R               ),
-    ASSH_BIGNUM_BC_END(),
+    ASSH_BOP_PRINT(	R,	2			),
+    ASSH_BOP_PRINT(	V,	3			),
+    ASSH_BOP_CMPEQ(     V,      R			),
+
+    ASSH_BOP_END(),
   };
 
   ASSH_ERR_RET(assh_bignum_bytecode(c, bytecode,
-              /* format */  /* hex */ "HHHHH" /* r, s, v */ "NNN" /* temps: */ "TTTTT" "TTTTT",
-              /* char* */   hex_pn, hex_qn, hex_gn, hex_yn, hex_m ,
-              /* bignum* */ rn, sn, vn,
-              /* size */    /* p, q, g, y, m */ l, n, l, l, n,
-              /* size */    /* w, u1, v1, u2, v2 */ n, n, l, n, l));
+	      /* hex */ "HHHHH"
+	      /* r, s, v */ "NNN" /* temps: */ "TTTTTTTTTT"
+              /* sizes */ "ss",
+
+	      /* char* */   hex_pn, hex_qn, hex_gn, hex_yn, hex_m ,
+	      /* bignums */ rn, sn, vn, /* bit sizes */ n, l));
 
   return ASSH_OK;
 }
@@ -177,26 +222,45 @@ int main()
 
   assh_context_init(&context, ASSH_SERVER);
 
-  ASSH_BIGNUM_ALLOC(&context, rn, n, ASSH_ERRSV_CONTINUE, err_);
-  ASSH_BIGNUM_ALLOC(&context, sn, n, ASSH_ERRSV_CONTINUE, err_);
+  struct assh_bignum_s rn;
+  struct assh_bignum_s sn;
 
-  dsa_generate(&context, rn, sn);
+  assh_bignum_init(&context, &rn, n);
+  assh_bignum_init(&context, &sn, n);
 
-  assh_bignum_print(stderr, "r", rn);
-  assh_bignum_print(stderr, "s", sn);
+  dsa_generate(&context, &rn, &sn);
 
-  ASSH_BIGNUM_ALLOC(&context, vn, n, ASSH_ERRSV_CONTINUE, err_);
+  struct assh_bignum_s vn;
 
-  dsa_verify(&context, rn, sn, vn);
+  assh_bignum_init(&context, &vn, n);
 
-  assh_bignum_print(stderr, "v", vn);
+  dsa_verify(&context, &rn, &sn, &vn);
 
-  ASSH_ERR_RET(assh_bignum_cmp(vn, rn) ? ASSH_ERR_BAD_DATA : 0);
+  /* check V against constant R */
+  enum bytecode_args_e
+  {
+    R_hex, R, V, N
+  };
 
-  ASSH_ERR_RET(assh_bignum_from_hex(rn, NULL, "9b77f7054c81531c4e46a4692fbfe0f77f7ebff2", n / 4));
-  ASSH_ERR_RET(assh_bignum_cmp(vn, rn) ? ASSH_ERR_BAD_DATA : 0);
+  assh_bignum_op_t bytecode[] = {
+    ASSH_BOP_SIZE(	V,	N			),
+
+    ASSH_BOP_SIZE(	R,	N			),
+    ASSH_BOP_MOVE(      R,      R_hex			),
+
+    ASSH_BOP_CMPEQ(     V,      R			),
+
+    ASSH_BOP_END(),
+  };
+
+  ASSH_ERR_RET(assh_bignum_bytecode(&context, bytecode, "HTNs",
+				    hex_r, &vn, n));
+
+  assh_bignum_release(&context, &rn);
+  assh_bignum_release(&context, &sn);
+
+  assh_bignum_release(&context, &vn);
 
  err_:
   return 0;
 }
-

@@ -276,22 +276,18 @@ void
 assh_packet_shrink_string(struct assh_packet_s *p, uint8_t *str,
                           size_t new_len);
 
+/** @internal This function update the size of the packet using the
+    size header of the string. The string must be the last allocated
+    thing in the packet when this function is called. */
+void assh_packet_string_resized(struct assh_packet_s *p, uint8_t *str);
+
 /** @internal This function allocates a string in a packet and writes
-    the given big number in mpint representation as string
-    content. The @ref assh_bignum_mpint_size function can be used to
-    find the amount of space needed to store the number. */
+    the given big number in mpint representation as string content. A
+    storage size large enough to store the number may be passed to the
+    function or 0 if it is not known. */
 assh_error_t ASSH_WARN_UNUSED_RESULT
 assh_packet_add_mpint(struct assh_packet_s *p,
                       const struct assh_bignum_s *bn);
-
-/** @internal This function returns the bytes size of the mpint
-    representation of a big number of given bits size. The returned
-    size may be 1 byte larger than needed depending on the actual
-    value of the number. */
-static inline size_t assh_packet_mpint_size(size_t bits)
-{
-  return 4 + 1 + (bits / 8);
-}
 
 /** @internal This function checks that an array is well inside a
     buffer. If no error is returned, the @tt next parameter is set to

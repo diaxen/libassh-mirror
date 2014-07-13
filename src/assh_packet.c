@@ -140,14 +140,15 @@ assh_error_t assh_packet_add_mpint(struct assh_packet_s *p,
                                    const struct assh_bignum_s *bn)
 {
   assh_error_t err;
+  size_t l = assh_bignum_size_of_num(ASSH_BIGNUM_MPINT, bn);
 
-  size_t l = assh_bignum_mpint_size(bn);
   uint8_t *s;
-
   ASSH_ERR_RET(assh_packet_add_array(p, l, &s));
-  ASSH_ERR_RET(assh_bignum_to_mpint(bn, s));
 
-  p->data_size -= (l - 4) - assh_load_u32(s);
+  ASSH_ERR_RET(assh_bignum_convert(bn->ctx,
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MPINT, bn, s));
+
+  p->data_size -= l - assh_load_u32(s) - 4;
   return ASSH_OK;
 }
 
@@ -253,6 +254,13 @@ assh_packet_shrink_string(struct assh_packet_s *p, uint8_t *str,
   assert(olen >= new_len);
   assh_store_u32(str - 4, new_len);
   p->data_size -= olen - new_len;
+}
+
+void
+assh_packet_string_resized(struct assh_packet_s *p, uint8_t *str)
+{
+  size_t len = assh_load_u32(str - 4);
+  p->data_size = str - p->data + len;
 }
 
 assh_error_t

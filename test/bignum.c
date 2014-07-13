@@ -23,6 +23,7 @@
 
 
 #include <assh/assh_bignum.h>
+#include <assh/assh_packet.h>
 #include <assh/assh_context.h>
 #include <assh/assh_prng.h>
 
@@ -50,28 +51,99 @@ assh_error_t test_shift()
 {
   assh_error_t err;
 
-  ASSH_BIGNUM_ALLOC(&context, a, 256, ASSH_ERRSV_CONTINUE, err_);
-  ASSH_BIGNUM_ALLOC(&context, r, 256, ASSH_ERRSV_CONTINUE, err_);
+  enum bytecode_args_e
+  {
+    A, B, C, S
+  };
 
-  ASSH_ERR_RET(assh_bignum_rand(&context, a, ASSH_PRNG_QUALITY_WEAK));
-  assh_bignum_print(stderr, "shift", a);
+  static const assh_bignum_op_t bytecode[] = {
+    ASSH_BOP_SIZE(      A,      S       ),
+    ASSH_BOP_SIZE(      B,      S       ),
 
-  ASSH_ERR_GTO(assh_bignum_rshift(r, a, 32), err_);
-  assh_bignum_print(stderr, "rshift 32", r);
+    ASSH_BOP_RAND(      A,      ASSH_PRNG_QUALITY_WEAK  ),
+  //ASSH_BOP_PRINT(     A,      'A'),
 
-  ASSH_ERR_GTO(assh_bignum_rshift(r, a, 16), err_);
-  assh_bignum_print(stderr, "rshift 16", r);
+    ASSH_BOP_SHR(       B,      A,      C),
+  //ASSH_BOP_PRINT(     B,      'B'),
 
-  ASSH_ERR_GTO(assh_bignum_rshift(r, a, 1), err_);
-  assh_bignum_print(stderr, "rshift 1", r);
+    ASSH_BOP_SHL(       A,      B,      C),
+  //ASSH_BOP_PRINT(     A,      'A'),
 
+    ASSH_BOP_END(),
+  };
+
+  ASSH_ERR_GTO(assh_bignum_bytecode(&context, bytecode, "TTss",
+                                    (size_t)32, (size_t)256), err_);
+
+  fprintf(stderr, "s");
   return 0;
 
  err_:
   fprintf(stderr, "Shift error\n");
-  assh_bignum_print(stderr, "a", a);
-  assh_bignum_print(stderr, "r", r);
   abort();
+}
+
+assh_error_t test_cmp(void)
+{
+
+  enum bytecode_args_e
+  {
+    X_hex, Y_hex, X, Y, S
+  };
+
+  assh_bignum_op_t bytecode1[] = {
+    ASSH_BOP_SIZE(	X,	S			),
+    ASSH_BOP_MOVE(	X,	X_hex			),
+
+    ASSH_BOP_SIZE(	Y,	S			),
+    ASSH_BOP_MOVE(	Y,	Y_hex			),
+
+    ASSH_BOP_CMPNE(     X,      Y			),
+    ASSH_BOP_CMPLT(     X,      Y			),
+
+    ASSH_BOP_UINT(      X,      16                      ),
+    ASSH_BOP_CMPEQ(     X,      Y			),
+    ASSH_BOP_CMPLTEQ(   X,      Y			),
+    ASSH_BOP_CMPLTEQ(   Y,      X			),
+
+    ASSH_BOP_END(),
+  };
+
+  if (assh_bignum_bytecode(&context, bytecode1, "HHTTs", "1", "10", (size_t)64))
+    abort();
+
+  assh_bignum_op_t bytecode2[] = {
+    ASSH_BOP_SIZE(	X,	S			),
+    ASSH_BOP_MOVE(	X,	X_hex			),
+
+    ASSH_BOP_SIZE(	Y,	S			),
+    ASSH_BOP_MOVE(	Y,	Y_hex			),
+
+    ASSH_BOP_CMPEQ(     X,      Y			),
+
+    ASSH_BOP_END(),
+  };
+
+  if (!assh_bignum_bytecode(&context, bytecode2, "HHTTs", "1", "10", (size_t)64))
+    abort();
+
+  assh_bignum_op_t bytecode3[] = {
+    ASSH_BOP_SIZE(	X,	S			),
+    ASSH_BOP_MOVE(	X,	X_hex			),
+
+    ASSH_BOP_SIZE(	Y,	S			),
+    ASSH_BOP_MOVE(	Y,	Y_hex			),
+
+    ASSH_BOP_CMPLT(     Y,      X			),
+
+    ASSH_BOP_END(),
+  };
+
+  if (!assh_bignum_bytecode(&context, bytecode3, "HHTTs", "1", "10", (size_t)64))
+    abort();
+
+  fprintf(stderr, "c");
+  return ASSH_OK;
 }
 
 assh_error_t test_add_sub(unsigned int count)
@@ -81,37 +153,56 @@ assh_error_t test_add_sub(unsigned int count)
 
   for (i = 0; i < count; i++)
     {
-      size_t la = rand() % 255 + 1;
-      size_t lb = rand() % 255 + 1;
-      size_t lr = ASSH_MAX(la, lb) + 1;
+      enum bytecode_args_e
+      {
+        A, B, C, D, S, L
+      };
 
-      ASSH_BIGNUM_ALLOC(&context, a, la, ASSH_ERRSV_CONTINUE, err_);
-      ASSH_BIGNUM_ALLOC(&context, b, lb, ASSH_ERRSV_CONTINUE, err_);
-      ASSH_BIGNUM_ALLOC(&context, r, lr, ASSH_ERRSV_CONTINUE, err_);
+      static const assh_bignum_op_t bytecode[] = {
+        ASSH_BOP_SIZE(  A,      S                       ),
+        ASSH_BOP_SIZE(  B,      S                       ),
+        ASSH_BOP_SIZE(  C,      S                       ),
 
-      ASSH_ERR_RET(assh_bignum_rand(&context, a, ASSH_PRNG_QUALITY_WEAK));
-      ASSH_ERR_RET(assh_bignum_rand(&context, b, ASSH_PRNG_QUALITY_WEAK));
+        ASSH_BOP_RAND(  A,      ASSH_PRNG_QUALITY_WEAK  ),
+        ASSH_BOP_RAND(  B,      ASSH_PRNG_QUALITY_WEAK  ),
+        ASSH_BOP_SHR(   A,      A,      L               ),
+        ASSH_BOP_SHR(   B,      B,      L               ),
 
-      ASSH_ERR_GTO(assh_bignum_rshift(a, a, assh_bignum_bits(a) - la), err_);
-      ASSH_ERR_GTO(assh_bignum_rshift(b, b, assh_bignum_bits(b) - lb), err_);
+        ASSH_BOP_MOVE(  C,      B                       ),
+        ASSH_BOP_CMPEQ( C,      B                       ),
 
-      ASSH_ERR_GTO(assh_bignum_add(r, a, b), err_);
+      //ASSH_BOP_PRINT( A,      'A'                     ),
+      //ASSH_BOP_PRINT( B,      'A'                     ),
 
-      ASSH_ERR_GTO(assh_bignum_sub(r, r, b), err_);
+        ASSH_BOP_ADD(   B,      B,      A               ),
+      //ASSH_BOP_PRINT( B,      'B'                     ),
+        ASSH_BOP_CMPNE( C,      B                       ),
 
-      if (assh_bignum_cmp(r, a))
-        {
-        err_:
-          fprintf(stderr, "Add/sub error on iteration #%u\n", i);
-          assh_bignum_print(stderr, "a", a);
-          assh_bignum_print(stderr, "b", b);
-          assh_bignum_print(stderr, "r", r);
-          abort();
-        }
+        ASSH_BOP_SUB(   B,      B,      A               ),
+      //ASSH_BOP_PRINT( B,      'B'                     ),
+      //ASSH_BOP_PRINT( C,      'C'                     ),
+        ASSH_BOP_CMPEQ( C,      B                       ),
 
-      ASSH_BIGNUM_FREE(&context, a);
-      ASSH_BIGNUM_FREE(&context, b);
-      ASSH_BIGNUM_FREE(&context, r);
+        ASSH_BOP_MOVE(  B,      A                       ),
+        ASSH_BOP_ADD(   B,      A,      B               ),
+        ASSH_BOP_ADD(   B,      B,      A               ),
+        ASSH_BOP_ADD(   B,      A,      B               ),
+        ASSH_BOP_ADD(   B,      B,      A               ),
+
+        ASSH_BOP_SIZEM( D,      S,      0,      2       ),
+        ASSH_BOP_UINT(  C,      5                       ),
+        ASSH_BOP_MUL(   D,      A,      C               ),
+      //ASSH_BOP_PRINT( C,      'C'                     ),
+      //ASSH_BOP_PRINT( D,      'D'                     ),
+      //ASSH_BOP_PRINT( B,      'B'                     ),
+
+        ASSH_BOP_CMPEQ( D,      B                       ),
+
+        ASSH_BOP_END(),
+      };
+
+      ASSH_ERR_RET(assh_bignum_bytecode(&context, bytecode, "TTTTss",
+                                        (size_t)256, (size_t)8));
     }
 
   fprintf(stderr, "a");
@@ -123,48 +214,86 @@ assh_error_t test_div(unsigned int count)
   assh_error_t err;
   int i;
 
-  ASSH_BIGNUM_ALLOC(&context, a, 256, ASSH_ERRSV_CONTINUE, err_);
-  ASSH_BIGNUM_ALLOC(&context, b, 256, ASSH_ERRSV_CONTINUE, err_);
-  ASSH_BIGNUM_ALLOC(&context, c, 256, ASSH_ERRSV_CONTINUE, err_);
-  ASSH_BIGNUM_ALLOC(&context, r, 256, ASSH_ERRSV_CONTINUE, err_);
-  ASSH_BIGNUM_ALLOC(&context, d, 256, ASSH_ERRSV_CONTINUE, err_);
-  ASSH_BIGNUM_ALLOC(&context, e, 512, ASSH_ERRSV_CONTINUE, err_);
-
   for (i = 0; i < count; i++)
     {
-      ASSH_ERR_RET(assh_bignum_rand(&context, b, ASSH_PRNG_QUALITY_WEAK));
-      ASSH_ERR_RET(assh_bignum_rand(&context, c, ASSH_PRNG_QUALITY_WEAK));
+      enum bytecode_args_e
+      {
+        A, B, C, D, E, S
+      };
 
-      ASSH_ERR_RET(assh_bignum_rshift(a, b, rand() % 255));
+      static const assh_bignum_op_t bytecode[] = {
+        ASSH_BOP_SIZE(  A,      S                       ),
+        ASSH_BOP_SIZE(  B,      S                       ),
+        ASSH_BOP_SIZE(  C,      S                       ),
+        ASSH_BOP_SIZE(  D,      S                       ),
+        ASSH_BOP_SIZEM( E,      S,      0,      2       ),
 
-      if (assh_bignum_div(r, d, c, a) == ASSH_OK)
-	{
-	  ASSH_ERR_RET(assh_bignum_mul(e, d, a));
-	  ASSH_ERR_RET(assh_bignum_add(e, e, r));
+        ASSH_BOP_RAND(  A,      ASSH_PRNG_QUALITY_WEAK  ),
+        ASSH_BOP_RAND(  B,      ASSH_PRNG_QUALITY_WEAK  ),
 
-	  if (assh_bignum_cmp(e, c) != 0)
-	    {
-	      fprintf(stderr, "Div error on iteration #%u\n", i);
-	      assh_bignum_print(stderr, "c ", c);
-	      assh_bignum_print(stderr, "a ", a);
-	      assh_bignum_print(stderr, "mod ", r);
-	      assh_bignum_print(stderr, "div ", d);
-	      assh_bignum_print(stderr, "e ", e);
-            err_:
-	      abort();
-	    }
-	}
+        ASSH_BOP_DIVMOD(C,      D,      A,      B       ),
+
+        ASSH_BOP_MUL(   E,      B,      C               ),
+        ASSH_BOP_ADD(   E,      E,      D               ),
+
+        ASSH_BOP_CMPEQ( E,      A                       ),
+
+        ASSH_BOP_END(),
+      };
+
+      ASSH_ERR_RET(assh_bignum_bytecode(&context, bytecode, "TTTTTs", (size_t)256));
     }
 
   fprintf(stderr, "d");
+  return ASSH_OK;
+}
 
-  ASSH_BIGNUM_FREE(&context, a);
-  ASSH_BIGNUM_FREE(&context, b);
-  ASSH_BIGNUM_FREE(&context, c);
-  ASSH_BIGNUM_FREE(&context, r);
-  ASSH_BIGNUM_FREE(&context, d);
-  ASSH_BIGNUM_FREE(&context, e);
+assh_error_t test_convert(unsigned int count)
+{
+  assh_error_t err;
+  int i;
 
+  for (i = 0; i < count; i++)
+    {
+      enum bytecode_args_e
+      {
+        A, B, L,
+        A_mpint, B_mpint
+      };
+
+      size_t s = 1 + rand() % 64;
+
+      uint8_t mpa[s+4];
+      uint8_t mpb[s+4];
+
+      memset(mpa + 4, rand() & 127, s);
+
+      if (mpa[4] == 0)
+        s = 0;
+      assh_store_u32(mpa, s);
+      assh_store_u32(mpb, s);
+
+      static const assh_bignum_op_t bytecode[] = {
+      //ASSH_BOP_PRINT( A,      'A'                     ),
+
+        ASSH_BOP_SIZE(  A,      A_mpint                 ),
+      //ASSH_BOP_PRINT( A,      'A'                     ),
+
+        ASSH_BOP_MOVE(  A,      A_mpint                 ),
+      //ASSH_BOP_PRINT( A,      'A'                     ),
+
+        ASSH_BOP_MOVE(  B_mpint,        A               ),
+
+        ASSH_BOP_END(),
+      };
+
+      ASSH_ERR_RET(assh_bignum_bytecode(&context, bytecode, "TTsMM",
+                                        (size_t)256, mpa, mpb));
+
+      ASSH_CHK_RET(memcmp(mpa, mpb, s+4), ASSH_ERR_BAD_DATA);
+    }
+
+  fprintf(stderr, "c");
   return ASSH_OK;
 }
 
@@ -174,53 +303,44 @@ assh_error_t test_modinv(unsigned int count)
   assh_error_t err;
   int i;
 
-  ASSH_BIGNUM_ALLOC(&context, a, 1024+128, ASSH_ERRSV_CONTINUE, err_);
-  ASSH_BIGNUM_ALLOC(&context, b, 1024+128, ASSH_ERRSV_CONTINUE, err_);
-  ASSH_BIGNUM_ALLOC(&context, c, 1024+128, ASSH_ERRSV_CONTINUE, err_);
-  ASSH_BIGNUM_ALLOC(&context, d, 2048+256, ASSH_ERRSV_CONTINUE, err_);
-  ASSH_BIGNUM_ALLOC(&context, r, 2048+256, ASSH_ERRSV_CONTINUE, err_);
-
-  ASSH_ERR_RET(assh_bignum_from_mpint(a, NULL, prime));
-
   for (i = 0; i < count; i++)
     {
-      ASSH_ERR_RET(assh_bignum_rand(&context, c, ASSH_PRNG_QUALITY_WEAK));
-      ASSH_ERR_RET(assh_bignum_rshift(b, c, 129 + rand() % 900));
+      enum bytecode_args_e
+      {
+        P, B, C, D, S, P_mpint
+      };
 
-      ASSH_ERR_RET(assh_bignum_modinv((c), (b), (a)));
+      static const assh_bignum_op_t bytecode[] = {
 
-      int cmp = assh_bignum_cmp((c), (a));
-      err = (cmp <= 0);
+        ASSH_BOP_SIZE(  P,      P_mpint                 ),
+        ASSH_BOP_MOVE(  P,      P_mpint                 ),
 
-      ASSH_ERR_RET(assh_bignum_mul(d, b, c));
+        ASSH_BOP_SIZE(  B,      S                       ),
+        ASSH_BOP_SIZE(  C,      P                       ),
+        ASSH_BOP_SIZE(  D,      P                       ),
 
-      ASSH_ERR_RET(assh_bignum_div(r, NULL, d, a));
+        ASSH_BOP_RAND(  B,      ASSH_PRNG_QUALITY_WEAK  ),
 
-      /* check (b * u) % a == 1 */
-      err |= assh_bignum_cmp_uint(r, 1);
+        ASSH_BOP_INV(   C,      B,      P               ),
+        ASSH_BOP_CMPLT( C,      P                       ),
 
-      if (err)
-	{
-	  fprintf(stderr, "Modinv error on iteration #%u\n", i);
-	  assh_bignum_print(stderr, "a", a);
-	  assh_bignum_print(stderr, "b", b);
-	  assh_bignum_print(stderr, "u", c);
-	  assh_bignum_print(stderr, "one", r);
-        err_:
-	  abort();
-	}
+        ASSH_BOP_MULM(  D,      B,      C,      P       ),
+
+        ASSH_BOP_UINT(  P,      1                       ),
+        ASSH_BOP_CMPEQ( P,      D                       ),
+
+        ASSH_BOP_END(),
+      };
+
+      ASSH_ERR_RET(assh_bignum_bytecode(&context, bytecode, "TTTTsM",
+                              (size_t)(rand() % 900 + 100), prime));
+
     }
 
   fprintf(stderr, "i");
-
-  ASSH_BIGNUM_FREE(&context, a);
-  ASSH_BIGNUM_FREE(&context, b);
-  ASSH_BIGNUM_FREE(&context, c);
-  ASSH_BIGNUM_FREE(&context, d);
-  ASSH_BIGNUM_FREE(&context, r);
-
   return ASSH_OK;
 }
+
 
 /* test expmod. uses div, mul, modinv */
 assh_error_t test_expmod(unsigned int count)
@@ -228,70 +348,53 @@ assh_error_t test_expmod(unsigned int count)
   assh_error_t err;
   int i;
 
-  ASSH_BIGNUM_ALLOC(&context, p, 1024, ASSH_ERRSV_CONTINUE, err_);
-  ASSH_BIGNUM_ALLOC(&context, a, 1024, ASSH_ERRSV_CONTINUE, err_);
-  ASSH_BIGNUM_ALLOC(&context, ia, 1024, ASSH_ERRSV_CONTINUE, err_);
-  ASSH_BIGNUM_ALLOC(&context, x, 1024, ASSH_ERRSV_CONTINUE, err_);
-  ASSH_BIGNUM_ALLOC(&context, e, 1024, ASSH_ERRSV_CONTINUE, err_);
-  ASSH_BIGNUM_ALLOC(&context, r1, 1024, ASSH_ERRSV_CONTINUE, err_);
-  ASSH_BIGNUM_ALLOC(&context, r2, 1024, ASSH_ERRSV_CONTINUE, err_);
-  ASSH_BIGNUM_ALLOC(&context, r3, 1024, ASSH_ERRSV_CONTINUE, err_);
-  ASSH_BIGNUM_ALLOC(&context, r4, 1024, ASSH_ERRSV_CONTINUE, err_);
-  ASSH_BIGNUM_ALLOC(&context, r5, 1024, ASSH_ERRSV_CONTINUE, err_);
-
-  /* prime */
-
-  ASSH_ERR_RET(assh_bignum_from_mpint(p, NULL, prime));
-
-  /* a modulo prime */
-  ASSH_ERR_RET(assh_bignum_rand(&context, a, ASSH_PRNG_QUALITY_WEAK));
-  ASSH_ERR_RET(assh_bignum_div(a, NULL, a, p));
-
-  /* a^-1 modulo prime */
-  ASSH_ERR_RET(assh_bignum_modinv(ia, a, p));
-
   for (i = 0; i < count; i++)
     {
-      ASSH_ERR_RET(assh_bignum_rand(&context, x, ASSH_PRNG_QUALITY_WEAK));
-      ASSH_ERR_RET(assh_bignum_rand(&context, e, ASSH_PRNG_QUALITY_WEAK));
 
-      // check ((((a * x) % p)^e) % p) * ((inv(a)^e) % p) == x^e % p
-      ASSH_ERR_RET(assh_bignum_mulmod(r3, a, x, p));
-      ASSH_ERR_RET(assh_bignum_expmod(r2, r3, e, p));
-      ASSH_ERR_RET(assh_bignum_expmod(r1, ia, e, p));
-      ASSH_ERR_RET(assh_bignum_mulmod(r4, r1, r2, p));
-      ASSH_ERR_RET(assh_bignum_expmod(r5, x, e, p));
+      enum bytecode_args_e
+      {
+        P, A, IA, X, E, R1, R2, R3, R4, R5, P_mpint
+      };
 
-      if (assh_bignum_cmp(r4, r5))
-	{
-	  fprintf(stderr, "Expmod error on iteration #%u\n", i);
-	  assh_bignum_print(stderr, "p",  p);
-	  assh_bignum_print(stderr, "a",  a);
-	  assh_bignum_print(stderr, "ia", ia);
-	  assh_bignum_print(stderr, "x",  x);
-	  assh_bignum_print(stderr, "e",  e);
-	  assh_bignum_print(stderr, "r1", r1);
-	  assh_bignum_print(stderr, "r2", r2);
-	  assh_bignum_print(stderr, "r3", r3);
-	  assh_bignum_print(stderr, "r4", r4);
-	  assh_bignum_print(stderr, "r5", r5);
-        err_:
-	  abort();
-	}
+      static const assh_bignum_op_t bytecode[] = {
+        ASSH_BOP_SIZE(  P,      P_mpint                 ),
+        ASSH_BOP_MOVE(  P,      P_mpint                 ),
+
+        ASSH_BOP_SIZE(  A,      P                       ),
+        ASSH_BOP_SIZE(  IA,     P                       ),
+        ASSH_BOP_SIZE(  X,      P                       ),
+        ASSH_BOP_SIZE(  E,      P                       ),
+        ASSH_BOP_SIZE(  R1,     P                       ),
+        ASSH_BOP_SIZE(  R2,     P                       ),
+        ASSH_BOP_SIZE(  R3,     P                       ),
+        ASSH_BOP_SIZE(  R4,     P                       ),
+        ASSH_BOP_SIZE(  R5,     P                       ),
+
+        ASSH_BOP_RAND(  A,      ASSH_PRNG_QUALITY_WEAK  ),
+        ASSH_BOP_MOD(   A,      A,      P               ),
+        ASSH_BOP_RAND(  E,      ASSH_PRNG_QUALITY_WEAK  ),
+        ASSH_BOP_RAND(  X,      ASSH_PRNG_QUALITY_WEAK  ),
+        ASSH_BOP_INV(   IA,     A,      P               ),
+
+        /* ((((a * x) % p)^e) % p) * ((inv(a)^e) % p) == x^e % p */
+        ASSH_BOP_MULM(  R3,     A,      X,      P       ),
+        ASSH_BOP_EXPM(  R2,     R3,     E,      P       ),
+        ASSH_BOP_EXPM(  R1,     IA,     E,      P       ),
+        ASSH_BOP_MULM(  R4,     R1,     R2,     P       ),
+        ASSH_BOP_EXPM(  R5,     X,      E,      P       ),
+
+        ASSH_BOP_PRINT( R4,     'R4'                    ),
+       ASSH_BOP_PRINT( R5,     'R5'                    ),
+        ASSH_BOP_CMPEQ( R4,     R5                      ),
+
+        ASSH_BOP_END(),
+      };
+
+      ASSH_ERR_RET(assh_bignum_bytecode(&context, bytecode,
+                                        "TTTTTTTTTTM", prime));
     }
 
   fprintf(stderr, "e");
-
-  ASSH_BIGNUM_FREE(&context, p);
-  ASSH_BIGNUM_FREE(&context, a);
-  ASSH_BIGNUM_FREE(&context, x);
-  ASSH_BIGNUM_FREE(&context, e);
-  ASSH_BIGNUM_FREE(&context, r1);
-  ASSH_BIGNUM_FREE(&context, r2);
-  ASSH_BIGNUM_FREE(&context, r3);
-  ASSH_BIGNUM_FREE(&context, r4);
-  ASSH_BIGNUM_FREE(&context, r5);
-
   return ASSH_OK;
 }
 
@@ -308,6 +411,7 @@ int main(int argc, char **argv)
   ASSH_ERR_RET(assh_context_prng(&context, NULL));
 
   test_shift();
+  test_cmp();
 
   int i, count = 10;
   if (argc > 1)
@@ -315,12 +419,14 @@ int main(int argc, char **argv)
 
   for (i = 0; count <= 0 || i < count; i++)
     {
-      ASSH_ERR_RET(test_add_sub(0x10000));
-      ASSH_ERR_RET(test_div(0x1000));
+      ASSH_ERR_RET(test_add_sub(0x100));
+      ASSH_ERR_RET(test_div(0x100));
+      ASSH_ERR_RET(test_convert(0x100));
       ASSH_ERR_RET(test_modinv(0x100));
-      ASSH_ERR_RET(test_expmod(0x1));
+      ASSH_ERR_RET(test_expmod(0x10));
     }
 
+  fprintf(stderr, "\nDone\n");
   return 0;
 }
 

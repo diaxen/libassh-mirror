@@ -87,11 +87,12 @@ typedef ASSH_KEY_VALIDATE_FCN(assh_key_validate_t);
 typedef ASSH_KEY_OUTPUT_FCN(assh_key_output_t);
 
 
-/** This function compares two keys and returns a positive value if
-    the keys are equals. If the @tt pub parameter is set, only the
-    public part of the keys are compared. */
+/** This function compares two keys and returns true if the keys are
+    equals. If the @tt pub parameter is set, only the public part of
+    the keys are compared. */
 #define ASSH_KEY_CMP_FCN(n) ASSH_WARN_UNUSED_RESULT assh_bool_t (n)     \
-  (struct assh_key_s *key,                                              \
+  (struct assh_context_s *c,                                            \
+   struct assh_key_s *key,                                              \
    struct assh_key_s *b, assh_bool_t pub)
 
 typedef ASSH_KEY_CMP_FCN(assh_key_cmp_t);
@@ -156,9 +157,10 @@ assh_key_load(struct assh_context_s *c, struct assh_key_s **key,
     pub parameter is set, only the public part of the key are taken
     into account. */
 static inline assh_bool_t
-assh_key_cmp(struct assh_key_s *key, struct assh_key_s *b, assh_bool_t pub)
+assh_key_cmp(struct assh_context_s *c, struct assh_key_s *key,
+	     struct assh_key_s *b, assh_bool_t pub)
 {
-  return key->f_cmp(key, b, pub);
+  return key->f_cmp(c, key, b, pub);
 }
 
 /** @internal This function releases all the keys on the linked list

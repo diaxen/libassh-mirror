@@ -312,6 +312,9 @@ typedef ASSH_ALLOCATOR(assh_allocator_t);
 #define ASSH_MIN(a, b) ({ typeof(a) __a = (a); typeof(b) __b = (b); __a < __b ? __a : __b; })
 #define ASSH_SWAP(a, b) do { typeof(a) __a = (a); typeof(b) __b = (b); (a) = __b; (b) = __a; } while(0)
 
+#define assh_clz8(x) (__builtin_clz((uint8_t)(x)) + 8 - sizeof(int) * 8)
+#define assh_align8(x) ((((x) - 1) | 7) + 1)
+
 #ifdef __GNUC__
 #define ASSH_WARN_UNUSED_RESULT __attribute__((warn_unused_result))
 #else

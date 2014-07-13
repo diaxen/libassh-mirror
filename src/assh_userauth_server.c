@@ -401,7 +401,7 @@ static assh_error_t assh_userauth_server_req_pubkey(struct assh_session_s *s,
 
   /* test if the key has been previously found in the list of authorized user keys. */
   assh_bool_t new_key = (pv->pubkey_state == ASSH_USERAUTH_PUBKEY_NONE ||
-                         !assh_key_cmp(pub_key, pv->pub_key, 1));
+                         !assh_key_cmp(s->ctx, pub_key, pv->pub_key, 1));
 
   if (new_key)
     {

@@ -671,6 +671,8 @@ assh_kex_server_hash(struct assh_session_s *s,
 		(4 + ks_len) + kex_len + (4 + sign_len), &pout)
 	       | ASSH_ERRSV_DISCONNECT);
 
+  ASSH_DEBUG("kslen1: %u\n", ks_len);
+
   /* append public host key to packet. */
   uint8_t *ks_str;
   ASSH_ASSERT(assh_packet_add_string(pout, ks_len, &ks_str));
@@ -678,6 +680,7 @@ assh_kex_server_hash(struct assh_session_s *s,
 		ASSH_KEY_FMT_PUB_RFC4253_6_6)
 	       | ASSH_ERRSV_DISCONNECT, err_p);
 
+  ASSH_DEBUG("kslen2: %u\n", ks_len);
   assh_packet_shrink_string(pout, ks_str, ks_len);
 
   /* compute the exchange hash H */

@@ -89,6 +89,8 @@ struct assh_context_s
   const struct assh_service_s *srvs[ASSH_MAX_SERVICES];
   /** Number of registered services */
   unsigned int srvs_count;
+
+  const struct assh_bignum_algo_s *bignum;
 };
 
 void assh_context_init(struct assh_context_s *ctx,
