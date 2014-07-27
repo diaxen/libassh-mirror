@@ -85,6 +85,13 @@ assh_gcrypt_bignum_rand(struct assh_context_s *c, struct assh_bignum_s *bn,
     }
 }
 
+static void assh_bignum_gcrypt_lsb(uint8_t *data, size_t size)
+{
+  size_t i;
+  for (i = 0; i < size / 2; i++)
+    ASSH_SWAP(data[i], data[size - i - 1]);
+}
+
 static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_gcrypt_convert)
 {
   assh_error_t err;
@@ -120,6 +127,7 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_gcrypt_convert)
           ASSH_CHK_RET(gcry_mpi_print(GCRYMPI_FMT_SSH, dst, s + 5, NULL, srcn->n),
                        ASSH_ERR_NUM_OVERFLOW);
           break;
+        case ASSH_BIGNUM_LSB_RAW:
         case ASSH_BIGNUM_MSB_RAW:
           ASSH_CHK_RET(gcry_mpi_print(GCRYMPI_FMT_USG, dst, s, &z, srcn->n),
                        ASSH_ERR_NUM_OVERFLOW);
@@ -135,6 +143,10 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_gcrypt_convert)
           memmove(dst + d, dst, z);
           memset(dst, 0, d);
         }
+
+      /* reverse byte order */
+      if (dstfmt == ASSH_BIGNUM_LSB_RAW)
+        assh_bignum_gcrypt_lsb(dst, s);
     }
   else
     {
@@ -142,7 +154,8 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_gcrypt_convert)
       assert(dstn->ctx == c);
       size_t s, n, b;
 
-      if (srcfmt == ASSH_BIGNUM_MSB_RAW)
+      if (srcfmt == ASSH_BIGNUM_MSB_RAW ||
+          srcfmt == ASSH_BIGNUM_LSB_RAW)
         {
           b = dstn->bits;
           n = s = assh_align8(b) / 8;
@@ -173,6 +186,24 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_gcrypt_convert)
                                      asn1 + s - n, n, NULL),
                        ASSH_ERR_NUM_OVERFLOW);
           break;
+        }
+
+        case ASSH_BIGNUM_LSB_RAW: {
+          ASSH_SCRATCH_ALLOC(c, uint8_t, lsb, s,
+                             ASSH_ERRSV_CONTINUE, err_lsb);
+          memcpy(lsb, src, s);
+          assh_bignum_gcrypt_lsb(lsb, s);
+          ASSH_CHK_GTO(gcry_mpi_scan((gcry_mpi_t*)&dstn->n, GCRYMPI_FMT_USG,
+                                     lsb, s, NULL),
+                       ASSH_ERR_NUM_OVERFLOW, err_lsb_scan);          
+
+          ASSH_SCRATCH_FREE(c, lsb);
+          break;
+
+         err_lsb_scan:
+          ASSH_SCRATCH_FREE(c, lsb);
+         err_lsb:
+          return err;
         }
 
         case ASSH_BIGNUM_MSB_RAW: {

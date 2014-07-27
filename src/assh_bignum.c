@@ -44,6 +44,7 @@ size_t assh_bignum_size_of_bits(enum assh_bignum_fmt_e fmt, size_t bits)
       l = /* size header */ 4 + /* data */ n;
       break;
     case ASSH_BIGNUM_MSB_RAW:
+    case ASSH_BIGNUM_LSB_RAW:
       l = n;
       break;
     case ASSH_BIGNUM_ASN1:
@@ -150,6 +151,18 @@ assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
       b = n * 8;
       if (n)
         b -= assh_clz8(asn1[0]);
+      break;
+    }
+
+    case ASSH_BIGNUM_LSB_RAW: {
+      assert(size != NULL);
+      const uint8_t *raw = data;
+      n = l = *size;
+      while (n > 0 && raw[n - 1] == 0)
+        n--;
+      b = n * 8;
+      if (b)
+        b -= assh_clz8(raw[n - 1]);
       break;
     }
 

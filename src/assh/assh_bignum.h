@@ -67,8 +67,10 @@ enum assh_bignum_fmt_e
   ASSH_BIGNUM_ASN1    = 'A',
   /** RAW MSB data embedded in a SSH string */
   ASSH_BIGNUM_STRING  = 'S',
-  /** RAW MSB data without header */
+  /** RAW MSB first data without header */
   ASSH_BIGNUM_MSB_RAW = 'D',
+  /** RAW LSB first data without header */
+  ASSH_BIGNUM_LSB_RAW = 'd',
   /** NUL terminated hexadecimal representation */
   ASSH_BIGNUM_HEX     = 'H',
   /** NUL terminated decimal string representation */
