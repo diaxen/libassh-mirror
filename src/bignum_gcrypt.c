@@ -469,6 +469,36 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           break;
         }
 
+        case ASSH_BIGNUM_OP_MLADSWAP: {
+          struct assh_bignum_s *src1 = args[ob];
+          struct assh_bignum_s *src2 = args[oc];
+          struct assh_bignum_mlad_s *mlad = args[od];
+
+          uint16_t bit = mlad->count - 1;
+          uint8_t b;
+          if (!mlad->msbit_1st)
+            bit ^= 7;
+          if (mlad->msbyte_1st)
+            b = (mlad->data[0] >> (bit & 7)) & 1;
+          else
+            b = (mlad->data[bit / 8] >> (bit & 7)) & 1;
+          if (b)
+            gcry_mpi_swap(src1->n, src2->n);
+          break;
+        }
+
+        case ASSH_BIGNUM_OP_MLADLOOP: {
+          struct assh_bignum_mlad_s *mlad = args[od];
+          uint16_t bit = --mlad->count;
+          if (bit)
+            {
+              if (mlad->msbyte_1st && (bit & 7) == 0)
+                mlad->data++;
+              pc -= oc;
+            }
+          break;
+        }
+
         case ASSH_BIGNUM_OP_PRINT: {
           struct assh_bignum_s *src = args[od];
           char id[5];

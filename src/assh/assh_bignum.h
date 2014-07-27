@@ -79,6 +79,8 @@ enum assh_bignum_fmt_e
   ASSH_BIGNUM_INT     = 'i',
   /** intptr_t value interpreted as a bit size. */
   ASSH_BIGNUM_SIZE    = 's',
+  /** montgomery ladder object (@ref assh_bignum_mlad_s) */
+  ASSH_BIGNUM_MLAD    = 'L',
 };
 
 /** @This represents a big number in native format. The number object
@@ -90,6 +92,16 @@ struct assh_bignum_s
   size_t bits;
   /** pointer to native big number data */
   void *n;
+};
+
+/** @This contains a montgomery ladder state which can be used during
+    bytecode execution */
+struct assh_bignum_mlad_s
+{
+  const uint8_t *data;
+  uint16_t count;
+  assh_bool_t msbit_1st:1;
+  assh_bool_t msbyte_1st:1;
 };
 
 /** @internal @see assh_bignum_bytecode_t */
@@ -271,6 +283,8 @@ enum assh_bignum_opcode_e
     ASSH_BIGNUM_OP_RAND,
     ASSH_BIGNUM_OP_CMP,
     ASSH_BIGNUM_OP_UINT,
+    ASSH_BIGNUM_OP_MLADSWAP,
+    ASSH_BIGNUM_OP_MLADLOOP,
     ASSH_BIGNUM_OP_PRINT,
   };
 
@@ -279,7 +293,8 @@ enum assh_bignum_opcode_e
     "sub", "mul", "div", "gcd",                 \
     "expm", "inv", "shr", "shl",                \
     "and", "or", "not", "mask",                 \
-    "rand", "cmp", "uint", "print"              \
+    "rand", "cmp", "uint",                      \
+    "mladswap", "mladloop", "print"             \
 }
 
 #define ASSH_BOP_NOREG  63
@@ -403,6 +418,21 @@ enum assh_bignum_opcode_e
     unsigned integer constant. */
 #define ASSH_BOP_UINT(dst, value) \
   ASSH_BOP_FMT2(ASSH_BIGNUM_OP_UINT, value, dst)
+
+/** This instruction performs a conditional swap between two values
+    depending on the current state of the the @ref assh_bignum_mlad_s
+    struct argument. It is useful to implement a montgomery ladder.
+    @see #ASSH_BOP_MLADLOOP */
+#define ASSH_BOP_MLADSWAP(src1, src2, mlad)               \
+  ASSH_BOP_FMT3(ASSH_BIGNUM_OP_MLADSWAP, src1, src2, mlad)
+
+/** This instruction conditionally jump backward depending on the
+    current state of the the @ref assh_bignum_mlad_s struct argument
+    and advances the @ref assh_bignum_mlad_s state to the next bit. It
+    is useful to implement a montgomery ladder.
+    @see #ASSH_BOP_MLADSWAP */
+#define ASSH_BOP_MLADLOOP(rel, mlad)                    \
+  ASSH_BOP_FMT2(ASSH_BIGNUM_OP_MLADLOOP, rel, mlad)
 
 /** This instruction print a big number argument for debugging
     purpose. The id argument is a 16 bits ASCII constant. */
