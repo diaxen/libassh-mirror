@@ -180,14 +180,14 @@ static ASSH_HASH_FINAL_FCN(assh_sha1_final)
   assh_store_u64(count, ctx->count);
 
   c = 0200;
-  assh_sha1_update(ctx, &c, 1);
+  assh_sha1_update(hctx, &c, 1);
   while ((ctx->count & 504) != 448)
     {
       c = 0000;
-      assh_sha1_update(ctx, &c, 1);
+      assh_sha1_update(hctx, &c, 1);
     }
 
-  assh_sha1_update(ctx, count, 8);
+  assh_sha1_update(hctx, count, 8);
   for (i = 0; i < 20; i++)
     hash[i] = (uint8_t)((ctx->state[i >> 2] >> ((3 - (i & 3)) * 8) ) & 0xff);
 }

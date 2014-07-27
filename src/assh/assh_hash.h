@@ -36,7 +36,7 @@ struct assh_hash_ctx_s
 
 /** @internal @see assh_hash_init_t */
 #define ASSH_HASH_INIT_FCN(n) \
-  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_context_s *ctx, \
+  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_context_s *c, \
                                            struct assh_hash_ctx_s *hctx)
 /** @internal This function initializes an hash algorithm context. A
     call to this function must be paired with a call to @ref assh_hash_final_t. */
@@ -108,6 +108,13 @@ static inline void
 assh_hash_final(struct assh_hash_ctx_s *hctx, uint8_t *hash)
 {
   hctx->algo->f_final(hctx, hash);
+}
+
+static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_hash_copy(struct assh_hash_ctx_s *hctx_dst,
+               struct assh_hash_ctx_s *hctx_src)
+{
+  return hctx_src->algo->f_copy(hctx_dst, hctx_src);  
 }
 
 static inline ASSH_WARN_UNUSED_RESULT assh_error_t

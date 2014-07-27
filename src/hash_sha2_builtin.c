@@ -340,7 +340,7 @@ static ASSH_HASH_INIT_FCN(assh_sha224_init)
 
 static ASSH_HASH_COPY_FCN(assh_sha224_copy)
 {
-  memcpy(ctx_dst_, ctx_src_, sizeof(struct assh_hash_sha256_context_s));
+  memcpy(hctx_dst, hctx_src, sizeof(struct assh_hash_sha256_context_s));
 
   return ASSH_OK;
 }
@@ -378,7 +378,7 @@ const struct assh_hash_algo_s assh_hash_sha224 =
 
 static ASSH_HASH_INIT_FCN(assh_sha256_init)
 {
-  struct assh_hash_sha256_context_s *ctx = ctx_;
+  struct assh_hash_sha256_context_s *ctx = (void*)hctx;
   uint_fast8_t i;
 
   ctx->count = 0;
@@ -396,19 +396,19 @@ static ASSH_HASH_INIT_FCN(assh_sha256_init)
 
 static ASSH_HASH_COPY_FCN(assh_sha256_copy)
 {
-  memcpy(ctx_dst_, ctx_src_, sizeof(struct assh_hash_sha256_context_s));
+  memcpy(hctx_dst, hctx_src, sizeof(struct assh_hash_sha256_context_s));
 
   return ASSH_OK;
 }
 
 static ASSH_HASH_UPDATE_FCN(assh_sha256_update)
 {
-  assh_sha256_update_(ctx_, data, len);
+  assh_sha256_update_((void*)hctx, data, len);
 }
 
 static ASSH_HASH_FINAL_FCN(assh_sha256_final)
 {
-  struct assh_hash_sha256_context_s *ctx = ctx_;
+  struct assh_hash_sha256_context_s *ctx = (void*)hctx;
   uint_fast8_t i;
 
   assh_sha256_final_(ctx);
@@ -433,7 +433,7 @@ const struct assh_hash_algo_s assh_hash_sha256 =
 
 static ASSH_HASH_INIT_FCN(assh_sha384_init)
 {
-  struct assh_hash_sha512_context_s *ctx = ctx_;
+  struct assh_hash_sha512_context_s *ctx = (void*)hctx;
   uint_fast8_t i;
 
   ctx->count = 0;
@@ -451,19 +451,19 @@ static ASSH_HASH_INIT_FCN(assh_sha384_init)
 
 static ASSH_HASH_COPY_FCN(assh_sha384_copy)
 {
-  memcpy(ctx_dst_, ctx_src_, sizeof(struct assh_hash_sha512_context_s));
+  memcpy(hctx_dst, hctx_src, sizeof(struct assh_hash_sha512_context_s));
 
   return ASSH_OK;
 }
 
 static ASSH_HASH_UPDATE_FCN(assh_sha384_update)
 {
-  assh_sha512_update_(ctx_, data, len);
+  assh_sha512_update_((void*)hctx, data, len);
 }
 
 static ASSH_HASH_FINAL_FCN(assh_sha384_final)
 {
-  struct assh_hash_sha512_context_s *ctx = ctx_;
+  struct assh_hash_sha512_context_s *ctx = (void*)hctx;
   uint_fast8_t i;
 
   assh_sha512_final_(ctx);
@@ -488,7 +488,7 @@ const struct assh_hash_algo_s assh_hash_sha384 =
 
 static ASSH_HASH_INIT_FCN(assh_sha512_init)
 {
-  struct assh_hash_sha512_context_s *ctx = ctx_;
+  struct assh_hash_sha512_context_s *ctx = (void*)hctx;
   uint_fast8_t i;
 
   ctx->count = 0;
@@ -506,19 +506,19 @@ static ASSH_HASH_INIT_FCN(assh_sha512_init)
 
 static ASSH_HASH_COPY_FCN(assh_sha512_copy)
 {
-  memcpy(ctx_dst_, ctx_src_, sizeof(struct assh_hash_sha512_context_s));
+  memcpy(hctx_dst, hctx_src, sizeof(struct assh_hash_sha512_context_s));
 
   return ASSH_OK;
 }
 
 static ASSH_HASH_UPDATE_FCN(assh_sha512_update)
 {
-  assh_sha512_update_(ctx_, data, len);
+  assh_sha512_update_((void*)hctx, data, len);
 }
 
 static ASSH_HASH_FINAL_FCN(assh_sha512_final)
 {
-  struct assh_hash_sha512_context_s *ctx = ctx_;
+  struct assh_hash_sha512_context_s *ctx = (void*)hctx;
   uint_fast8_t i;
 
   assh_sha512_final_(ctx);

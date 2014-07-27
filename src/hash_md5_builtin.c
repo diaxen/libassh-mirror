@@ -43,7 +43,7 @@ ASSH_FIRST_FIELD_ASSERT(assh_hash_md5_context_s, ctx);
 
 static ASSH_HASH_INIT_FCN(assh_md5_init)
 {
-  struct assh_hash_md5_context_s *ctx = (void*)ctx;
+  struct assh_hash_md5_context_s *ctx = (void*)hctx;
 
   ctx->count = 0;
   ctx->state[0] = 0x67452301;
@@ -56,7 +56,7 @@ static ASSH_HASH_INIT_FCN(assh_md5_init)
 
 static ASSH_HASH_COPY_FCN(assh_md5_copy)
 {
-  memcpy(ctx_dst_, ctx_src_, sizeof(struct assh_hash_md5_context_s));
+  memcpy(hctx_dst, hctx_src, sizeof(struct assh_hash_md5_context_s));
 
   return ASSH_OK;
 }
@@ -187,14 +187,14 @@ static ASSH_HASH_FINAL_FCN(assh_md5_final)
   const uint8_t *pad = assh_md5_padding;
   while (padlen > 16)
     {
-      assh_md5_update(ctx, pad, 16);
+      assh_md5_update(hctx, pad, 16);
       pad = assh_md5_padding + 1;
       padlen -= 16;
     }
-  assh_md5_update(ctx, pad, padlen);
+  assh_md5_update(hctx, pad, padlen);
 
 
-  assh_md5_update(ctx, count, 8);
+  assh_md5_update(hctx, count, 8);
 
   if (hash != NULL)
       for (i = 0; i < 4; i++)

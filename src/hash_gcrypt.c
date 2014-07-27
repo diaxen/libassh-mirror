@@ -39,6 +39,7 @@ static ASSH_HASH_COPY_FCN(assh_gcrypt_hash_copy)
   struct assh_hash_gcrypt_context_s *dst = (void*)hctx_dst;
   assh_error_t err;
 
+  dst->ctx = src->ctx;
   ASSH_CHK_RET(gcry_md_copy(&dst->hd, src->hd),
 	       ASSH_ERR_CRYPTO);
 

@@ -90,29 +90,29 @@ main(int argc, char **argv)
       uint_fast16_t j;
       for (j = 0; j <= BUFSIZE; j++)
 	{
-	  if (algo->f_init(&context, ctx))
+	  if (assh_hash_init(&context, ctx, algo))
 	    {
 	      err++;
 	      break;
 	    }
-	  algo->f_update(ctx, buf, j);
+	  assh_hash_update(ctx, buf, j);
 
 	  if (j == BUFSIZE / 2)
 	    {
-	      if (algo->f_copy(ctx2, ctx))
+	      if (assh_hash_copy(ctx2, ctx))
 		{
 		  err++;
-		  algo->f_final(ctx, NULL);
+		  assh_hash_final(ctx, NULL);
 		  break;
 		}
-	      algo->f_final(ctx, NULL);
+	      assh_hash_final(ctx, NULL);
 	      void *tmp = ctx;
 	      ctx = ctx2;
 	      ctx2 = tmp;
 	    }
 
-	  algo->f_update(ctx, buf, j);
-	  algo->f_final(ctx, buf);
+	  assh_hash_update(ctx, buf, j);
+	  assh_hash_final(ctx, buf);
 	}
 
       free(ctx);
