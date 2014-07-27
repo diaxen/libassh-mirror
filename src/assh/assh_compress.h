@@ -49,6 +49,8 @@ struct assh_algo_compress_s
   assh_compress_cleanup_t *f_cleanup;
 };
 
+ASSH_FIRST_FIELD_ASSERT(assh_algo_compress_s, algo);
+
 extern struct assh_algo_compress_s assh_compress_none;
 extern struct assh_algo_compress_s assh_compress_zlib;
 

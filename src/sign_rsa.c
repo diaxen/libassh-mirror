@@ -60,7 +60,7 @@ struct assh_rsa_digest_s
   uint_fast8_t oid_len;
   const char *oid;
 
-  const struct assh_hash_s *algo;
+  const struct assh_hash_algo_s *algo;
 };
 
 static const struct assh_rsa_digest_s assh_rsa_digests[RSA_DIGEST_count] =
@@ -334,9 +334,13 @@ static ASSH_KEY_LOAD_FCN(assh_sign_rsa_key_load)
 /************************************************************ rsa sign algo */
 
 static ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_sign_rsa_generate(struct assh_context_s *c, const struct assh_key_s *key, size_t data_count,
-                       const uint8_t * const data[], size_t const data_len[],
-                       uint8_t *sign, size_t *sign_len, enum assh_rsa_digest_e digest_id)
+assh_sign_rsa_generate(struct assh_context_s *c,
+                       const struct assh_key_s *key,
+                       size_t data_count,
+                       const uint8_t * const data[],
+                       size_t const data_len[],
+                       uint8_t *sign, size_t *sign_len,
+                       enum assh_rsa_digest_e digest_id)
 {
   struct assh_sign_rsa_key_s *k = (void*)key;
   assh_error_t err;
@@ -385,10 +389,11 @@ assh_sign_rsa_generate(struct assh_context_s *c, const struct assh_key_s *key, s
 
   uint_fast16_t i;
   void *hash_ctx = scratch;
-  digest->algo->f_init(hash_ctx);
+
+  ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, digest->algo), err_scratch);
   for (i = 0; i < data_count; i++)
-    digest->algo->f_update(hash_ctx, data[i], data_len[i]);
-  digest->algo->f_final(hash_ctx, em);
+    assh_hash_update(hash_ctx, data[i], data_len[i]);
+  assh_hash_final(hash_ctx, em);
 
   /* build signature blob */
   memcpy(sign, assh_rsa_id, assh_rsa_id_len);
@@ -515,10 +520,10 @@ assh_sign_rsa_verify(struct assh_context_s *c,
 
   uint8_t *hash = hash_ctx + digest->algo->ctx_size;
 
-  digest->algo->f_init(hash_ctx);
+  ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, digest->algo), err_hash);
   for (i = 0; i < data_count; i++)
-    digest->algo->f_update(hash_ctx, data[i], data_len[i]);
-  digest->algo->f_final(hash_ctx, hash);
+    assh_hash_update(hash_ctx, data[i], data_len[i]);
+  assh_hash_final(hash_ctx, hash);
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
   assh_hexdump("rsa verify hash", hash, digest->algo->hash_size);

@@ -73,6 +73,8 @@ struct assh_request_s
   void *pv;
 };
 
+ASSH_FIRST_FIELD_ASSERT(assh_request_s, qentry);
+
 /** @This specifies channel status */
 enum assh_channel_status_e
 {
@@ -134,6 +136,9 @@ struct assh_channel_s
   uint32_t rwin_left;           //< remote window bytes left
   uint32_t lwin_left;           //< local window bytes left
 };
+
+ASSH_FIRST_FIELD_ASSERT(assh_channel_s, qentry);
+ASSH_FIRST_FIELD_ASSERT(assh_channel_s, mentry);
 
 /** @This specifies standard values for channel open failure reason
     code as defined in rfc4254 section 5.1 */

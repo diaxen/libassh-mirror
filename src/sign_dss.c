@@ -355,7 +355,7 @@ static ASSH_KEY_LOAD_FCN(assh_sign_dss_key_load)
 /************************************************************ dss sign algo */
 
 static assh_error_t
-assh_sign_dss_hash_algo(const struct assh_hash_s **algo, unsigned int n)
+assh_sign_dss_hash_algo(const struct assh_hash_algo_s **algo, unsigned int n)
 {
   assh_error_t err;
 
@@ -391,7 +391,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
   /* check/return signature length */
   size_t len = assh_dss_id_len + 4 + n * 2 / 8;
 
-  const struct assh_hash_s *algo;
+  const struct assh_hash_algo_s *algo;
   ASSH_ERR_RET(assh_sign_dss_hash_algo(&algo, n));
   assert(algo->hash_size == n / 8);
 
@@ -421,21 +421,21 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
   unsigned int i;
 
   /* message hash */
-  ASSH_ERR_GTO(algo->f_init(hash_ctx), err_scratch);
+  ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, algo), err_scratch);
   for (i = 0; i < data_count; i++)
-    algo->f_update(hash_ctx, data[i], data_len[i]);
-  algo->f_final(hash_ctx, msgh);
+    assh_hash_update(hash_ctx, data[i], data_len[i]);
+  assh_hash_final(hash_ctx, msgh);
 
   /* Do not use the prng output directly as the DSA nonce in order to
      avoid leaking key bits in case of a weak prng. Random data is
      hashed with the private key and the message data. */
   ASSH_ERR_GTO(c->prng->f_get(c, nonce, n / 8, ASSH_PRNG_QUALITY_NONCE), err_scratch);
-  ASSH_ERR_GTO(algo->f_init(hash_ctx), err_scratch);
-  algo->f_update(hash_ctx, nonce, n / 8);
+  ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, algo), err_scratch);
+  assh_hash_update(hash_ctx, nonce, n / 8);
   for (i = 0; i < data_count; i++)
-    algo->f_update(hash_ctx, data[i], data_len[i]);
-  ASSH_ERR_GTO(assh_hash_bignum(c, hash_ctx, algo->f_update, &k->xn), err_hash);
-  algo->f_final(hash_ctx, nonce);
+    assh_hash_update(hash_ctx, data[i], data_len[i]);
+  ASSH_ERR_GTO(assh_hash_bignum(c, hash_ctx, &k->xn), err_hash);
+  assh_hash_final(hash_ctx, nonce);
 
   enum bytecode_args_e
   {
@@ -493,7 +493,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
   return ASSH_OK;
 
  err_hash:
-  algo->f_final(hash_ctx, NULL);
+  assh_hash_final(hash_ctx, NULL);
  err_scratch:
   ASSH_SCRATCH_FREE(c, scratch);
  err_:
@@ -512,7 +512,7 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_dss_verify)
 
   ASSH_CHK_RET(memcmp(sign, assh_dss_id, assh_dss_id_len), ASSH_ERR_BAD_DATA);
 
-  const struct assh_hash_s *algo;
+  const struct assh_hash_algo_s *algo;
   ASSH_ERR_RET(assh_sign_dss_hash_algo(&algo, n));
 
   /* check signature blob size */
@@ -529,10 +529,10 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_dss_verify)
   uint8_t *msgh = scratch + algo->ctx_size;
   unsigned int i;
 
-  ASSH_ERR_GTO(algo->f_init(hash_ctx), err_scratch);
+  ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, algo), err_scratch);
   for (i = 0; i < data_count; i++)
-    algo->f_update(hash_ctx, data[i], data_len[i]);
-  algo->f_final(hash_ctx, msgh);
+    assh_hash_update(hash_ctx, data[i], data_len[i]);
+  assh_hash_final(hash_ctx, msgh);
 
   enum bytecode_args_e
   {

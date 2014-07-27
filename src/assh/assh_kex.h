@@ -92,18 +92,15 @@ assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p);
 
 #ifdef CONFIG_ASSH_CLIENT
 
-#define ASSH_KEX_CLIENT_HASH(n) \
-  ASSH_WARN_UNUSED_RESULT assh_error_t (n) (struct assh_session_s *s,   \
-                                            const struct assh_hash_s *hash_algo, \
-                                            void *hash_ctx)
-
-typedef ASSH_KEX_CLIENT_HASH(assh_kex_client_hash_t);
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_kex_client_hash1(struct assh_session_s *s,
+                      struct assh_hash_ctx_s *hash_ctx,
+                      const uint8_t *k_str);
 
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_kex_client_hash(struct assh_session_s *s, assh_kex_client_hash_t *fcn,
-                     const struct assh_hash_s *hash_algo,
-                     struct assh_key_s *host_key, const uint8_t *secret_str,
-                     const uint8_t *host_key_str, const uint8_t *host_sign_str);
+assh_kex_client_hash2(struct assh_session_s *s, struct assh_hash_ctx_s *hash_ctx,
+                      struct assh_key_s *host_key, const uint8_t *secret_str,
+                      const uint8_t *h_str);
 
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_kex_client_get_key(struct assh_session_s *s, struct assh_key_s **key,
@@ -114,17 +111,32 @@ assh_kex_client_get_key(struct assh_session_s *s, struct assh_key_s **key,
 
 #ifdef CONFIG_ASSH_SERVER
 
-#define ASSH_KEX_SERVER_HASH(n) \
-  ASSH_WARN_UNUSED_RESULT assh_error_t (n) (struct assh_session_s *s, \
-                                            const struct assh_hash_s *hash_algo, \
-                                            void *hash_ctx, struct assh_packet_s *pout)
+/** This helper function allocate a @ref SSH_MSG_KEXDH_REPLY key
+    exchange packet, add public host key fields and update the hash
+    context with various values including the host key.
 
-typedef ASSH_KEX_SERVER_HASH(assh_kex_server_hash_t);
+    More fields may be added to the packet and hashed before calling
+    the @ref assh_kex_server_hash2 function.
+*/
+assh_error_t
+assh_kex_server_hash1(struct assh_session_s *s, size_t kex_len,
+                      struct assh_hash_ctx_s *hash_ctx,
+                      struct assh_packet_s **pout, size_t *sign_len,
+                      const struct assh_key_s **host_key);
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_kex_server_hash(struct assh_session_s *s, assh_kex_server_hash_t *fnc,
-                     size_t kex_len, const struct assh_hash_s *hash_algo,
-                     const uint8_t *secret_str);
+/** This helper function hash the secret key then add the signature to
+    the @ref SSH_MSG_KEXDH_REPLY packet and finally call @ref
+    assh_kex_new_keys. 
+
+    @see assh_kex_server_hash1
+*/
+assh_error_t
+assh_kex_server_hash2(struct assh_session_s *s,
+                      struct assh_hash_ctx_s *hash_ctx,
+                      struct assh_packet_s *pout, size_t sign_len,
+                      const struct assh_key_s *host_key,
+                      const uint8_t *secret_str);
+
 #endif
 
 /**
@@ -140,7 +152,8 @@ assh_kex_server_hash(struct assh_session_s *s, assh_kex_server_hash_t *fnc,
 */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_kex_new_keys(struct assh_session_s *s,
-                  const struct assh_hash_s *hash_algo, const uint8_t *ex_hash,
+                  const struct assh_hash_algo_s *hash_algo,
+                  const uint8_t *ex_hash,
                   const uint8_t *secret_str);
 
 /**

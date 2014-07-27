@@ -35,10 +35,13 @@
 
 struct assh_hash_sha1_context_s
 {
+  struct assh_hash_ctx_s ctx;
   uint32_t state[5];
   uint64_t count;
   uint8_t buffer[64];
 };
+
+ASSH_FIRST_FIELD_ASSERT(assh_hash_sha1_context_s, ctx);
 
 static inline uint32_t rol(uint32_t value, unsigned int bits)
 {
@@ -115,14 +118,14 @@ static void assh_sha1_transform(uint32_t state[5], const uint8_t buffer[64])
 
 static ASSH_HASH_INIT_FCN(assh_sha1_init)
 {
-  struct assh_hash_sha1_context_s *ctx = ctx_;
+  struct assh_hash_sha1_context_s *ctx = (void*)hctx;
 
   /* SHA1 initialization constants */
   ctx->state[0] = 0x67452301;
-  ctx->state[1] = 0xEFCDAB89;
-  ctx->state[2] = 0x98BADCFE;
+  ctx->state[1] = 0xefcdab89;
+  ctx->state[2] = 0x98badcfe;
   ctx->state[3] = 0x10325476;
-  ctx->state[4] = 0xC3D2E1F0;
+  ctx->state[4] = 0xc3d2e1f0;
   ctx->count = 0;
 
   return ASSH_OK;
@@ -130,14 +133,14 @@ static ASSH_HASH_INIT_FCN(assh_sha1_init)
 
 static ASSH_HASH_COPY_FCN(assh_sha1_copy)
 {
-  memcpy(ctx_dst_, ctx_src_, sizeof(struct assh_hash_sha1_context_s));
+  memcpy(hctx_dst, hctx_src, sizeof(struct assh_hash_sha1_context_s));
 
   return ASSH_OK;
 }
 
 static ASSH_HASH_UPDATE_FCN(assh_sha1_update)
 {
-  struct assh_hash_sha1_context_s *ctx = ctx_;
+  struct assh_hash_sha1_context_s *ctx = (void*)hctx;
   const uint8_t *data_ = data;
   uint32_t i, j;
 
@@ -166,7 +169,7 @@ static ASSH_HASH_UPDATE_FCN(assh_sha1_update)
 
 static ASSH_HASH_FINAL_FCN(assh_sha1_final)
 {
-  struct assh_hash_sha1_context_s *ctx = ctx_;
+  struct assh_hash_sha1_context_s *ctx = (void*)hctx;
   unsigned int i;
   uint8_t count[8];
   uint8_t c;
@@ -189,7 +192,7 @@ static ASSH_HASH_FINAL_FCN(assh_sha1_final)
     hash[i] = (uint8_t)((ctx->state[i >> 2] >> ((3 - (i & 3)) * 8) ) & 0xff);
 }
 
-const struct assh_hash_s assh_hash_sha1 = 
+const struct assh_hash_algo_s assh_hash_sha1 = 
 {
   .name = "sha1",
   .ctx_size = sizeof(struct assh_hash_sha1_context_s),

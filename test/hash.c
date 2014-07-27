@@ -23,6 +23,7 @@
 
 #include <assh/assh.h>
 #include <assh/assh_hash.h>
+#include <assh/assh_context.h>
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -37,7 +38,7 @@
 
 struct hash_test_s
 {
-  const struct assh_hash_s *algo;
+  const struct assh_hash_algo_s *algo;
   const char *out;
 };
 
@@ -64,15 +65,19 @@ main(int argc, char **argv)
 {
   uint_fast8_t err = 0;
 
+  struct assh_context_s context;
+
 #ifdef CONFIG_ASSH_USE_GCRYPT
   if (!gcry_check_version(GCRYPT_VERSION))
     return -1;
 #endif
 
+  assh_context_init(&context, ASSH_SERVER);
+
   uint_fast8_t i;
   for (i = 0; tests[i].algo != NULL; i++)
     {
-      const struct assh_hash_s *algo = tests[i].algo;
+      const struct assh_hash_algo_s *algo = tests[i].algo;
 
       uint8_t buf[BUFSIZE];
       memset(buf, 42, sizeof(buf));
@@ -85,7 +90,7 @@ main(int argc, char **argv)
       uint_fast16_t j;
       for (j = 0; j <= BUFSIZE; j++)
 	{
-	  if (algo->f_init(ctx))
+	  if (algo->f_init(&context, ctx))
 	    {
 	      err++;
 	      break;

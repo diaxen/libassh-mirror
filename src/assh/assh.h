@@ -53,7 +53,8 @@ struct assh_key_s;
 struct assh_kex_keys_s;
 struct assh_algo_s;
 struct assh_algo_kex_s;
-struct assh_hash_s;
+struct assh_hash_algo_s;
+struct assh_hash_ctx_s;
 struct assh_prng_s;
 struct assh_algo_cipher_s;
 struct assh_algo_mac_s;
@@ -320,6 +321,10 @@ typedef ASSH_ALLOCATOR(assh_allocator_t);
 #else
 #define ASSH_WARN_UNUSED_RESULT
 #endif
+
+#define ASSH_FIRST_FIELD_ASSERT(struct_name, field)                   \
+  typedef int field##_must_be_the_first_field_in_struct_##struct_name \
+  [-(int)offsetof(struct struct_name, field)];
 
 #endif
 

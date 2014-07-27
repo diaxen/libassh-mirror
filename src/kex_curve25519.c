@@ -139,16 +139,6 @@ static assh_error_t assh_kex_25519_client_send_pubkey(struct assh_session_s *s)
   return err;
 }
 
-static ASSH_KEX_CLIENT_HASH(assh_kex_25519_client_hash)
-{
-  struct assh_kex_25519_private_s *pv = s->kex_pv;
-
-  assh_hash_bytes_as_string(hash_ctx, hash_algo->f_update, pv->pubkey, sizeof(pv->pubkey));
-  assh_hash_string(hash_ctx, hash_algo->f_update, pv->qs_str);
-
-  return ASSH_OK;
-}
-
 static ASSH_EVENT_DONE_FCN(assh_kex_25519_host_key_lookup_done)
 {
   struct assh_kex_25519_private_s *pv = s->kex_pv;
@@ -194,7 +184,15 @@ static ASSH_EVENT_DONE_FCN(assh_kex_25519_host_key_lookup_done)
 
   /* compute exchange hash and send reply */
   pv->qs_str = qs_str;
-  ASSH_ERR_GTO(assh_kex_client_hash(s, &assh_kex_25519_client_hash,
+  ASSH_ERR_GTO(assh_kex_client_hash1(s, &assh_kex_25519_client_hash,
+                                    &assh_hash_sha256, pv->host_key,
+                                    secret_str, ks_str, h_str)
+               | ASSH_ERRSV_DISCONNECT, err_sc);
+
+  assh_hash_bytes_as_string(hash_ctx, hash_algo->f_update, pv->pubkey, sizeof(pv->pubkey));
+  assh_hash_string(hash_ctx, hash_algo->f_update, pv->qs_str);
+
+  ASSH_ERR_GTO(assh_kex_client_hash2(s, &assh_kex_25519_client_hash,
                                     &assh_hash_sha256, pv->host_key,
                                     secret_str, ks_str, h_str)
                | ASSH_ERRSV_DISCONNECT, err_sc);
@@ -251,21 +249,6 @@ static assh_error_t assh_kex_25519_client_wait_reply(struct assh_session_s *s,
 
 
 #ifdef CONFIG_ASSH_SERVER
-static ASSH_KEX_SERVER_HASH(assh_kex_25519_server_hash)
-{
-  struct assh_kex_25519_private_s *pv = s->kex_pv;
-
-  /* append server ephemeral public key to packet. */
-  uint8_t *qs_str;
-  ASSH_ASSERT(assh_packet_add_string(pout, sizeof(assh_25519key_t), &qs_str));
-  memcpy(qs_str, pv->pubkey, sizeof(assh_25519key_t));
-
-  /* hash both ephemeral public keys */
-  assh_hash_string(hash_ctx, hash_algo->f_update, pv->qc_str);
-  assh_hash_string(hash_ctx, hash_algo->f_update, qs_str - 4);
-
-  return ASSH_OK;
-}
 
 static assh_error_t assh_kex_25519_server_wait_pubkey(struct assh_session_s *s,
                                                       struct assh_packet_s *p)
@@ -312,7 +295,19 @@ static assh_error_t assh_kex_25519_server_wait_pubkey(struct assh_session_s *s,
 
   /* compute exchange hash and send reply */
   pv->qc_str = qc_str;
-  ASSH_ERR_GTO(assh_kex_server_hash(s, &assh_kex_25519_server_hash,
+  ASSH_ERR_GTO(assh_kex_server_hash1(s, 
+                        /* room for qs_str */ 4 + sizeof(assh_25519num_t),
+                        &assh_hash_sha256, secret_str), err_sc);
+
+  uint8_t *qs_str;
+  ASSH_ASSERT(assh_packet_add_string(pout, sizeof(assh_25519key_t), &qs_str));
+  memcpy(qs_str, pv->pubkey, sizeof(assh_25519key_t));
+
+  /* hash both ephemeral public keys */
+  assh_hash_string(hash_ctx, hash_algo->f_update, pv->qc_str);
+  assh_hash_string(hash_ctx, hash_algo->f_update, qs_str - 4);
+
+  ASSH_ERR_GTO(assh_kex_server_hash2(s, &assh_kex_25519_server_hash,
                         /* room for qs_str */ 4 + sizeof(assh_25519num_t),
                         &assh_hash_sha256, secret_str), err_sc);
 

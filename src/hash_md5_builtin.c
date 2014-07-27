@@ -33,14 +33,17 @@
 
 struct assh_hash_md5_context_s
 {
+  struct assh_hash_ctx_s ctx;
   uint32_t state[4];
   uint64_t count;
   uint8_t buffer[MD5_BLOCK_LENGTH];
 };
 
+ASSH_FIRST_FIELD_ASSERT(assh_hash_md5_context_s, ctx);
+
 static ASSH_HASH_INIT_FCN(assh_md5_init)
 {
-  struct assh_hash_md5_context_s *ctx = ctx_;
+  struct assh_hash_md5_context_s *ctx = (void*)ctx;
 
   ctx->count = 0;
   ctx->state[0] = 0x67452301;
@@ -128,7 +131,7 @@ assh_md5_transform(uint32_t state[4], const uint8_t block[MD5_BLOCK_LENGTH])
 
 static ASSH_HASH_UPDATE_FCN(assh_md5_update)
 {
-  struct assh_hash_md5_context_s *ctx = ctx_;
+  struct assh_hash_md5_context_s *ctx = (void*)hctx;
   size_t have, need;
 
   have = (ctx->count / 8) % MD5_BLOCK_LENGTH;
@@ -166,7 +169,7 @@ static const uint8_t assh_md5_padding[16 + 1] = { 0x80 };
 
 static ASSH_HASH_FINAL_FCN(assh_md5_final)
 {
-  struct assh_hash_md5_context_s *ctx = ctx_;
+  struct assh_hash_md5_context_s *ctx = (void*)hctx;
 
   uint8_t count[8];
   size_t padlen;
@@ -198,7 +201,7 @@ static ASSH_HASH_FINAL_FCN(assh_md5_final)
 	assh_store_u32le(hash + i * 4, ctx->state[i]);
 }
 
-const struct assh_hash_s assh_hash_md5 = 
+const struct assh_hash_algo_s assh_hash_md5 = 
 {
   .name = "md5",
   .ctx_size = sizeof(struct assh_hash_md5_context_s),

@@ -31,7 +31,7 @@
 
 struct assh_hmac_context_s
 {
-  const struct assh_hash_s *hash;
+  const struct assh_hash_algo_s *hash;
   const struct assh_algo_mac_s *mac;
   void *hash_co;
   void *hash_ci;
@@ -43,7 +43,7 @@ struct assh_hmac_context_s
 static assh_error_t
 assh_hmac_init(struct assh_context_s *c, const struct assh_algo_mac_s *mac,
                struct assh_hmac_context_s *ctx,
-               const uint8_t *key, const struct assh_hash_s *hash)
+               const uint8_t *key, const struct assh_hash_algo_s *hash)
 {
   assh_error_t err;
   uint_fast16_t i;

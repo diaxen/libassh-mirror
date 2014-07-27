@@ -66,6 +66,8 @@ struct assh_packet_s
   };
 };
 
+ASSH_FIRST_FIELD_ASSERT(assh_packet_s, entry);
+
 /** @internal @This specifies the standard values for ssh message ids. */
 enum assh_ssh_msg_e
 {

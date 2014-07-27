@@ -582,7 +582,7 @@ static ASSH_KEX_PROCESS_FCN(assh_kex_dh_gex_process)
 }
 
 static assh_error_t assh_kex_dh_gex_init(struct assh_session_s *s,
-                                         const struct assh_hash_s *hash,
+                                         const struct assh_hash_algo_s *hash,
                                          size_t cipher_key_size,
                                          uint_fast8_t ldiv, uint_fast8_t hdiv)
 {

@@ -67,7 +67,7 @@ struct assh_session_s
   enum assh_transport_state_e tr_st;
 
   /** Key exchange algorithm. This pointer is setup when the @ref
-      assh_kex_got_init select a new key exchange algorithm. */
+      assh_kex_got_init function select a new key exchange algorithm. */
   const struct assh_algo_kex_s *kex;
   /** Key exchange private context used during key exchange
       only. Freed on sessions cleanup if not @tt NULL. */
