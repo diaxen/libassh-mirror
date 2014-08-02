@@ -111,7 +111,7 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_gcrypt_convert)
         case ASSH_BIGNUM_NATIVE:
         case ASSH_BIGNUM_TEMP:
           assert(dstn->ctx == c);
-          ASSH_CHK_RET(dstn->bits < srcn->bits, ASSH_ERR_NUM_OVERFLOW);
+          ASSH_CHK_RET(dstn->bits < gcry_mpi_get_nbits(srcn->n), ASSH_ERR_NUM_OVERFLOW);
           gcry_mpi_release(dstn->n);
           dstn->n = gcry_mpi_snew(dstn->bits);
           ASSH_CHK_RET(dstn->n == NULL, ASSH_ERR_MEM);
@@ -527,6 +527,15 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
                 mlad->data++;
               pc -= oc;
             }
+          break;
+        }
+
+        case ASSH_BIGNUM_OP_PRTEST: {
+          struct assh_bignum_s *src = args[od];
+          ASSH_CHK_GTO(gcry_mpi_cmp_ui(src->n, 2) <= 0,
+                       ASSH_ERR_NUM_COMPARE_FAILED, err_sc);
+          ASSH_CHK_GTO(gcry_prime_check(src->n, 0),
+                       ASSH_ERR_NUM_COMPARE_FAILED, err_sc);
           break;
         }
 

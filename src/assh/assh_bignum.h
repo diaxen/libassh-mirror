@@ -162,6 +162,10 @@ typedef ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_bytecode_t);
     for the bits size of the native big number involved in the
     conversion, as returned by the @ref assh_bignum_size_of_bits
     function.
+
+    When converting between two native big numbers, the current bits
+    size of the source might be larger than the size of the destination
+    provided that the actual value is fitting.
 */
 typedef ASSH_BIGNUM_CONVERT_FCN(assh_bignum_convert_t);
 
@@ -287,6 +291,7 @@ enum assh_bignum_opcode_e
     ASSH_BIGNUM_OP_UINT,
     ASSH_BIGNUM_OP_MLADSWAP,
     ASSH_BIGNUM_OP_MLADLOOP,
+    ASSH_BIGNUM_OP_PRTEST,
     ASSH_BIGNUM_OP_PRINT,
   };
 
@@ -296,7 +301,7 @@ enum assh_bignum_opcode_e
     "expm", "inv", "shr", "shl",                \
     "and", "or", "not", "mask",                 \
     "rand", "cmp", "uint",                      \
-    "mladswap", "mladloop", "print"             \
+    "mladswap", "mladloop", "prtest", "print"   \
 }
 
 #define ASSH_BOP_NOREG  63
@@ -386,11 +391,11 @@ enum assh_bignum_opcode_e
 #define ASSH_BOP_INV_C(dst, src1, src2)              \
   ASSH_BOP_FMT3(ASSH_BIGNUM_OP_INV, dst, src1, src2)
 
-/** This instruction computes @tt {dst = shift right(src1, src2)} */
+/** This instruction computes @tt {dst = shift_right(src1, src2)} */
 #define ASSH_BOP_SHR(dst, src, amount)                 \
   ASSH_BOP_FMT3(ASSH_BIGNUM_OP_SHR, dst, src, amount)
 
-/** This instruction computes @tt {dst = shift left(src1, src2)} */
+/** This instruction computes @tt {dst = shift_left(src1, src2)} */
 #define ASSH_BOP_SHL(dst, src, amount)                 \
   ASSH_BOP_FMT3(ASSH_BIGNUM_OP_SHL, dst, src, amount)
 
@@ -435,6 +440,10 @@ enum assh_bignum_opcode_e
     @see #ASSH_BOP_MLADSWAP */
 #define ASSH_BOP_MLADLOOP(rel, mlad)                    \
   ASSH_BOP_FMT2(ASSH_BIGNUM_OP_MLADLOOP, rel, mlad)
+
+/** This instruction checks that the number is a prime greater than 2. */
+#define ASSH_BOP_PRTEST(src) \
+  ASSH_BOP_FMT1(ASSH_BIGNUM_OP_PRTEST, src)
 
 /** This instruction print a big number argument for debugging
     purpose. The id argument is a 16 bits ASCII constant. */
