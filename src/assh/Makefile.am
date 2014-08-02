@@ -19,7 +19,7 @@ DISTCLEANFILES = assh_config.h
 nodist_pkginclude_HEADERS = assh_config.h
 
 pkgincludedir = $(includedir)/assh
-pkginclude_HEADERS = assh.h assh_algo.h assh_bignum.h assh_25519num.h	\
+pkginclude_HEADERS = assh.h assh_algo.h assh_bignum.h 			\
 	assh_cipher.h assh_compress.h assh_map.h			\
 	assh_context.h assh_event.h assh_hash.h assh_kex.h assh_key.h	\
 	assh_mac.h assh_packet.h assh_prng.h assh_queue.h		\

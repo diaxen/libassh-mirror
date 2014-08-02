@@ -32,10 +32,104 @@
 #include <assh/assh_alloc.h>
 #include <assh/assh_hash.h>
 
-#include <assh/assh_25519num.h>
+#include <assh/assh_bignum.h>
 
 #include <string.h>
 #include <stdlib.h>
+
+assh_error_t assh_montgomery_point_mul(const uint8_t *result,
+                                       const uint8_t *basepoint,
+                                       const uint8_t *scalar)
+{
+  assh_error_t err;
+
+  ASSH_CHK_RET((scalar[0] & 0x07) != 0x00 ||
+	       (scalar[31] & 0x80) != 0x00, ASSH_ERR_NUM_OVERFLOW);
+
+  /* 2^255-19 */
+  static const uint8_t *p_str = (const uint8_t*)"\x00\x00\x00\x20"
+    "\x7f\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff"
+    "\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xed";
+
+  /* 121666 */
+  static const uint8_t *c_str = (const uint8_t*)"\x00\x00\x00\x03"
+    "\x01\xdb\x42";
+
+  struct assh_bignum_mlad_s mlad = {
+    .data = scalar,
+    .count = 255,
+    .msbyte_1st = 0,
+    .msbit_1st = 1,
+  };
+
+  enum {
+    R_raw, BP_raw, P_mpint, C_mpint,
+    X1, X2, Z2, X3, Z3, T0, T1, C, P,
+    S, L
+  };
+
+  static const assh_bignum_op_t bytecode[] = {
+
+    ASSH_BOP_SIZE(      P,      P_mpint                 ),
+    ASSH_BOP_SIZE(      X1,     P                       ),
+    ASSH_BOP_SIZE(      X2,     P                       ),
+    ASSH_BOP_SIZE(      Z2,     P                       ),
+    ASSH_BOP_SIZE(      X3,     P                       ),
+    ASSH_BOP_SIZE(      Z3,     P                       ),
+    ASSH_BOP_SIZE(      T0,     P                       ),
+    ASSH_BOP_SIZE(      T1,     P                       ),
+    ASSH_BOP_SIZE(      C,      P                       ),
+
+    ASSH_BOP_MOVE(      P,      P_mpint                 ),
+    ASSH_BOP_MOVE(      C,      C_mpint                 ),
+
+    ASSH_BOP_MOVE(      X1,     BP_raw                  ),
+
+    ASSH_BOP_UINT(      X2,     1                       ),
+    ASSH_BOP_UINT(      Z2,     0                       ),
+    ASSH_BOP_MOVE(      X3,     X1                      ),
+    ASSH_BOP_UINT(      Z3,     1                       ),
+
+    ASSH_BOP_SUBM(	T0,	X3,	Z3,	P	),
+    ASSH_BOP_SUBM(	T1,	X2,	Z2,	P	),
+    ASSH_BOP_ADDM(	X2,	X2,	Z2,	P	),
+    ASSH_BOP_ADDM(	Z2,	X3,	Z3,	P	),
+    ASSH_BOP_MULM(	Z3,	T0,	X2,	P	),
+    ASSH_BOP_MULM(	Z2,	Z2,	T1,	P	),
+    ASSH_BOP_MULM( 	T0,	T1,	T1,	P	),
+    ASSH_BOP_MULM( 	T1,	X2,	X2,	P	),
+    ASSH_BOP_ADDM(	X3,	Z3,	Z2,	P	),
+    ASSH_BOP_SUBM(	Z2,	Z3,	Z2,	P	),
+    ASSH_BOP_MULM(	X2,	T1,	T0,	P	),
+    ASSH_BOP_SUBM(      T1,	T1,	T0,	P	),
+    ASSH_BOP_MULM( 	Z2,	Z2,	Z2,	P	),
+    ASSH_BOP_MULM(	Z3,	T1,	C,      P	),
+    ASSH_BOP_MULM( 	X3,	X3,	X3,	P	),
+    ASSH_BOP_ADDM(	T0,	T0,	Z3,	P	),
+    ASSH_BOP_MULM(	Z3,	X1,	Z2,	P	),
+    ASSH_BOP_MULM(	Z2,	T1,	T0,	P	),
+
+    ASSH_BOP_MLADSWAP(  X2,     X3,     L               ),
+    ASSH_BOP_MLADSWAP(  Z2,     Z3,     L               ),
+
+    ASSH_BOP_MLADLOOP(  21,             L               ),
+
+    ASSH_BOP_INV_C(     Z2,     Z2,             P       ),
+    ASSH_BOP_MULM(      T0,     X2,     Z2,     P       ),
+
+    ASSH_BOP_MOVE(      R_raw,  T0                      ),
+
+    ASSH_BOP_END(),
+  };
+
+  struct assh_context_s context;
+  assh_context_init(&context, ASSH_SERVER);
+
+  ASSH_ERR_RET(assh_bignum_bytecode(&context, bytecode, "ddMMTTTTTTTTTsL",
+                 result, basepoint, p_str, c_str, (size_t)256, &mlad));
+
+  return ASSH_OK;
+}
 
 
 enum assh_kex_25519_state_e
@@ -50,6 +144,8 @@ enum assh_kex_25519_state_e
 #endif
 };
 
+typedef uint8_t assh_25519key_t[32];
+
 struct assh_kex_25519_private_s
 {
   enum assh_kex_25519_state_e state;
@@ -58,8 +154,6 @@ struct assh_kex_25519_private_s
   struct assh_key_s *host_key;
   struct assh_packet_s *pck;
 #endif
-  uint8_t *qs_str;
-  uint8_t *qc_str;
 
   assh_25519key_t pvkey;
   assh_25519key_t pubkey;
@@ -74,10 +168,9 @@ static void assh_kex_25519_pv_adjust(assh_25519key_t private)
 
 #define ASSH_KEX_25519_SECRET_BUFSIZE (5 + sizeof(assh_25519key_t))
 
-uint8_t *assh_kex_25519_secret_to_mpint(uint8_t *buf, const assh_25519num_t num)
+uint8_t *assh_kex_25519_secret_to_mpint(uint8_t *buf)
 {
   uint8_t *secret_str = buf;
-  assh_25519num_to_data(buf + 5, num);
 
   /* the shared secret must be a positive mpint, we have to insert a
      null byte if the sign bit is set in the current msb. */
@@ -95,7 +188,7 @@ uint8_t *assh_kex_25519_secret_to_mpint(uint8_t *buf, const assh_25519num_t num)
   return secret_str;
 }
 
-static const assh_25519num_t curve25519_basepoint = { 9 };
+static const assh_25519key_t curve25519_basepoint = { 9 };
 
 #ifdef CONFIG_ASSH_CLIENT
 static assh_error_t assh_kex_25519_client_send_pubkey(struct assh_session_s *s)
@@ -110,18 +203,7 @@ static assh_error_t assh_kex_25519_client_send_pubkey(struct assh_session_s *s)
 
   assh_kex_25519_pv_adjust(pv->pvkey);
 
-  struct scratch_s
-  {
-    assh_25519num_t pub;
-  };
-
-  ASSH_SCRATCH_ALLOC(c, struct scratch_s, scratch, sizeof(struct scratch_s),
-		     ASSH_ERRSV_CONTINUE, err_);
-
-  ASSH_ASSERT(assh_25519num_point_mul(scratch->pub, curve25519_basepoint, pv->pvkey));
-  assh_25519num_to_data(pv->pubkey, scratch->pub);
-
-  ASSH_SCRATCH_FREE(c, scratch);
+  ASSH_ERR_RET(assh_montgomery_point_mul(pv->pubkey, curve25519_basepoint, pv->pvkey));
 
   /* send a packet containing the public key */
   struct assh_packet_s *p;
@@ -134,9 +216,7 @@ static assh_error_t assh_kex_25519_client_send_pubkey(struct assh_session_s *s)
 
   assh_transport_push(s, p);
 
-  err = ASSH_OK;
- err_:
-  return err;
+  return ASSH_OK;
 }
 
 static ASSH_EVENT_DONE_FCN(assh_kex_25519_host_key_lookup_done)
@@ -166,35 +246,30 @@ static ASSH_EVENT_DONE_FCN(assh_kex_25519_host_key_lookup_done)
 	       | ASSH_ERRSV_DISCONNECT);
 
   /* compute shared secret */
-  struct scratch_s
-  {
-    assh_25519num_t pub, secret;
-    uint8_t secret_buf[ASSH_KEX_25519_SECRET_BUFSIZE];
-  };
-
-  ASSH_SCRATCH_ALLOC(s->ctx, struct scratch_s, scratch, sizeof(struct scratch_s),
+  ASSH_SCRATCH_ALLOC(s->ctx, uint8_t, scratch,
+                     assh_hash_sha256.ctx_size
+                     + ASSH_KEX_25519_SECRET_BUFSIZE,
 		     ASSH_ERRSV_CONTINUE, err_);
 
-  assh_25519num_from_data(scratch->pub, qs_str + 4);
-  ASSH_ERR_GTO(assh_25519num_point_mul(scratch->secret,
-                           scratch->pub, pv->pvkey), err_sc);
+  void *hash_ctx = scratch;
+  uint8_t *secret_buf = scratch + assh_hash_sha256.ctx_size;
 
-  uint8_t *secret_str = assh_kex_25519_secret_to_mpint(scratch->secret_buf,
-                                                       scratch->secret);
+  ASSH_ERR_GTO(assh_montgomery_point_mul(secret_buf + 5,
+                           qs_str + 4, pv->pvkey), err_sc);
+
+  uint8_t *secret = assh_kex_25519_secret_to_mpint(secret_buf);
+
+  ASSH_ERR_GTO(assh_hash_init(s->ctx, hash_ctx, &assh_hash_sha256), err_sc);
 
   /* compute exchange hash and send reply */
-  pv->qs_str = qs_str;
-  ASSH_ERR_GTO(assh_kex_client_hash1(s, &assh_kex_25519_client_hash,
-                                    &assh_hash_sha256, pv->host_key,
-                                    secret_str, ks_str, h_str)
+  ASSH_ERR_GTO(assh_kex_client_hash1(s, hash_ctx, ks_str)
                | ASSH_ERRSV_DISCONNECT, err_sc);
 
-  assh_hash_bytes_as_string(hash_ctx, hash_algo->f_update, pv->pubkey, sizeof(pv->pubkey));
-  assh_hash_string(hash_ctx, hash_algo->f_update, pv->qs_str);
+  assh_hash_bytes_as_string(hash_ctx, pv->pubkey, sizeof(pv->pubkey));
+  assh_hash_string(hash_ctx, qs_str);
 
-  ASSH_ERR_GTO(assh_kex_client_hash2(s, &assh_kex_25519_client_hash,
-                                    &assh_hash_sha256, pv->host_key,
-                                    secret_str, ks_str, h_str)
+  ASSH_ERR_GTO(assh_kex_client_hash2(s, hash_ctx, pv->host_key,
+                                    secret, h_str)
                | ASSH_ERRSV_DISCONNECT, err_sc);
 
   ASSH_SCRATCH_FREE(s->ctx, scratch);
@@ -217,7 +292,6 @@ static assh_error_t assh_kex_25519_client_wait_reply(struct assh_session_s *s,
                                                      struct assh_event_s *e)
 {
   struct assh_kex_25519_private_s *pv = s->kex_pv;
-  struct assh_context_s *c = s->ctx;
   assh_error_t err;
 
   ASSH_CHK_RET(p->head.msg != SSH_MSG_KEX_ECDH_REPLY, ASSH_ERR_PROTOCOL
@@ -274,45 +348,51 @@ static assh_error_t assh_kex_25519_server_wait_pubkey(struct assh_session_s *s,
 
   assh_kex_25519_pv_adjust(pv->pvkey);
 
-  struct scratch_s
-  {
-    assh_25519num_t pub, secret;
-    uint8_t secret_buf[ASSH_KEX_25519_SECRET_BUFSIZE];
-  };
-
-  ASSH_SCRATCH_ALLOC(c, struct scratch_s, scratch, sizeof(struct scratch_s),
+  ASSH_SCRATCH_ALLOC(s->ctx, uint8_t, scratch,
+                     assh_hash_sha256.ctx_size
+                     + ASSH_KEX_25519_SECRET_BUFSIZE,
 		     ASSH_ERRSV_CONTINUE, err_);
 
-  ASSH_ASSERT(assh_25519num_point_mul(scratch->pub, curve25519_basepoint, pv->pvkey));
-  assh_25519num_to_data(pv->pubkey, scratch->pub);
+  void *hash_ctx = scratch;
+  uint8_t *secret_buf = scratch + assh_hash_sha256.ctx_size;
+
+  ASSH_ERR_GTO(assh_montgomery_point_mul(pv->pubkey,
+                 curve25519_basepoint, pv->pvkey), err_sc);
 
   /* compute shared secret */
-  assh_25519num_from_data(scratch->pub, qc_str + 4);
-  ASSH_ERR_GTO(assh_25519num_point_mul(scratch->secret, scratch->pub, pv->pvkey), err_sc);
+  ASSH_ERR_GTO(assh_montgomery_point_mul(secret_buf + 5,
+                 qc_str + 4, pv->pvkey), err_sc);
 
-  uint8_t *secret_str = assh_kex_25519_secret_to_mpint(scratch->secret_buf,
-                                                       scratch->secret);
+  uint8_t *secret = assh_kex_25519_secret_to_mpint(secret_buf);
+
+  ASSH_ERR_GTO(assh_hash_init(s->ctx, hash_ctx, &assh_hash_sha256), err_sc);
 
   /* compute exchange hash and send reply */
-  pv->qc_str = qc_str;
+  struct assh_packet_s *pout;
+  const struct assh_key_s *hk;
+  size_t slen;
+
   ASSH_ERR_GTO(assh_kex_server_hash1(s, 
-                        /* room for qs_str */ 4 + sizeof(assh_25519num_t),
-                        &assh_hash_sha256, secret_str), err_sc);
+                 /* room for qs_str */ 4 + sizeof(assh_25519key_t),
+                 hash_ctx, &pout, &slen, &hk), err_sc);
 
   uint8_t *qs_str;
   ASSH_ASSERT(assh_packet_add_string(pout, sizeof(assh_25519key_t), &qs_str));
   memcpy(qs_str, pv->pubkey, sizeof(assh_25519key_t));
 
   /* hash both ephemeral public keys */
-  assh_hash_string(hash_ctx, hash_algo->f_update, pv->qc_str);
-  assh_hash_string(hash_ctx, hash_algo->f_update, qs_str - 4);
+  assh_hash_string(hash_ctx, qc_str);
+  assh_hash_string(hash_ctx, qs_str - 4);
 
-  ASSH_ERR_GTO(assh_kex_server_hash2(s, &assh_kex_25519_server_hash,
-                        /* room for qs_str */ 4 + sizeof(assh_25519num_t),
-                        &assh_hash_sha256, secret_str), err_sc);
+  ASSH_ERR_GTO(assh_kex_server_hash2(s, hash_ctx, pout, slen, hk, secret), err_p);
 
-  err = ASSH_OK;
+  assh_transport_push(s, pout);
+  ASSH_SCRATCH_FREE(c, scratch);
 
+  return ASSH_OK;
+
+ err_p:
+  assh_packet_release(pout);
  err_sc:
   ASSH_SCRATCH_FREE(c, scratch);
  err_:
