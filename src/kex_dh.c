@@ -542,7 +542,7 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_group1_sha1_init)
   return assh_kex_dh_init(s, cipher_key_size, &group);
 }
 
-struct assh_algo_kex_s assh_kex_dh_group1_sha1 =
+const struct assh_algo_kex_s assh_kex_dh_group1_sha1 =
 {
   .algo = { .name = "diffie-hellman-group1-sha1",
             .class_ = ASSH_ALGO_KEX, .safety = 10, .speed = 40 },
@@ -579,7 +579,7 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_group14_sha1_init)
   return assh_kex_dh_init(s, cipher_key_size, &group);
 }
 
-struct assh_algo_kex_s assh_kex_dh_group14_sha1 =
+const struct assh_algo_kex_s assh_kex_dh_group14_sha1 =
 {
   .algo = { .name = "diffie-hellman-group14-sha1",
             .class_ = ASSH_ALGO_KEX, .safety = 20, .speed = 30 },

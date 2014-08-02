@@ -60,7 +60,7 @@ static ASSH_KEX_INIT_FCN(assh_kex_none_init)
   return ASSH_OK;
 }
 
-struct assh_algo_kex_s assh_kex_none =
+const struct assh_algo_kex_s assh_kex_none =
 {
   .algo = { .name = "none@libassh.org", .class_ = ASSH_ALGO_KEX,
             .safety = 0, .speed = 99 },
