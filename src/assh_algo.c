@@ -139,8 +139,8 @@ assh_error_t assh_algo_register_default(struct assh_context_s *c, unsigned int s
 			&assh_sign_rsa_sha1_md5,
 			&assh_sign_rsa_sha1,
 			&assh_sign_rsa_sha1_2048,
-			&assh_sign_rsa_sha256,
-			&assh_sign_rsa_sha512,
+			&assh_sign_rsa_sha256_2048,
+			&assh_sign_rsa_sha256_3072,
 #ifndef CONFIG_ASSH_USE_GCRYPT_CIPHERS
 			/* cipher_arc4_builting.c */
 			&assh_cipher_arc4,

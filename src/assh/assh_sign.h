@@ -87,25 +87,25 @@ extern struct assh_algo_sign_s assh_sign_dsa2048_sha256;
 /** Use SHA256 and a dsa key with L >= 3072 and N = 256. */
 extern struct assh_algo_sign_s assh_sign_dsa3072_sha256;
 
-/** Accept sha1 and md5 RSA signatures, generate sha1 signatures.
+/** Accept sha* and md5 RSA signatures, generate sha1 signatures.
     Reject keys with modulus size less than 768 bits. */
 extern struct assh_algo_sign_s assh_sign_rsa_sha1_md5;
 
-/** Accept sha1 RSA signatures, generate sha1 signatures,
+/** Accept sha* RSA signatures, generate sha1 signatures,
     Reject keys with modulus size less than 1024 bits. */
 extern struct assh_algo_sign_s assh_sign_rsa_sha1;
 
-/** Accept sha1 RSA signatures, generate sha1 signatures. 
+/** Accept sha* RSA signatures, generate sha1 signatures. 
     Reject keys with modulus size less than 2048 bits. */
 extern struct assh_algo_sign_s assh_sign_rsa_sha1_2048;
 
-/** Accept sha256 RSA signatures, generate sha256 signatures. 
+/** Accept sha2, RSA signatures, generate sha256 signatures. 
     Reject keys with modulus size less than 2048 bits. */
-extern struct assh_algo_sign_s assh_sign_rsa_sha256;
+extern struct assh_algo_sign_s assh_sign_rsa_sha256_2048;
 
-/** Accept sha512 RSA signatures, generate sha512 signatures. 
-    Reject keys with modulus size less than 2048 bits. */
-extern struct assh_algo_sign_s assh_sign_rsa_sha512;
+/** Accept sha2 RSA signatures, generate sha256 signatures. 
+    Reject keys with modulus size less than 3072 bits. */
+extern struct assh_algo_sign_s assh_sign_rsa_sha256_3072;
 
 #endif
 

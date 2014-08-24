@@ -20,8 +20,7 @@ struct algo_s
 struct algo_s algos[] = {
   { &assh_sign_dss,          dsa_sign_key, sizeof(dsa_sign_key) },
   { &assh_sign_rsa_sha1_md5, rsa_sign_key, sizeof(rsa_sign_key) },
-  { &assh_sign_rsa_sha256,   rsa_sign_key, sizeof(rsa_sign_key) },
-  { &assh_sign_rsa_sha512,   rsa_sign_key, sizeof(rsa_sign_key) },
+  { &assh_sign_rsa_sha256_2048, rsa_sign_key, sizeof(rsa_sign_key) },
   { NULL },
 };
 

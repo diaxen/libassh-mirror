@@ -554,7 +554,10 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_rsa_verify_sha1_md5)
 {
   return assh_sign_rsa_verify(c, key, data_count, data, data_len,
                               sign, sign_len, (1 << RSA_DIGEST_SHA1)
-                              | (1 << RSA_DIGEST_MD5));
+                              | (1 << RSA_DIGEST_MD5)
+                              | (1 << RSA_DIGEST_SHA256)
+                              | (1 << RSA_DIGEST_SHA384)
+                              | (1 << RSA_DIGEST_SHA512));
 }
 
 static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate_sha1)
@@ -566,7 +569,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate_sha1)
 struct assh_algo_sign_s assh_sign_rsa_sha1_md5 =
 {
   .algo = {
-    .name = "ssh-rsa", .variant = "sha1, md5, 768+ bits keys",
+    .name = "ssh-rsa", .variant = "sha*, md5, 768+ bits keys",
     .class_ = ASSH_ALGO_SIGN,
     .priority = 2, .safety = 15, .speed = 40,
     .f_suitable_key = assh_sign_rsa_suitable_key_768,
@@ -590,13 +593,16 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_1024)
 static ASSH_SIGN_VERIFY_FCN(assh_sign_rsa_verify_sha1)
 {
   return assh_sign_rsa_verify(c, key, data_count, data, data_len,
-                              sign, sign_len, (1 << RSA_DIGEST_SHA1));
+                              sign, sign_len, (1 << RSA_DIGEST_SHA1)
+                              | (1 << RSA_DIGEST_SHA256)
+                              | (1 << RSA_DIGEST_SHA384)
+                              | (1 << RSA_DIGEST_SHA512));
 }
 
 struct assh_algo_sign_s assh_sign_rsa_sha1 =
 {
   .algo = {
-    .name = "ssh-rsa",  .variant = "sha1, 1024+ bits keys",
+    .name = "ssh-rsa",  .variant = "sha*, 1024+ bits keys",
     .class_ = ASSH_ALGO_SIGN,
     .priority = 1, .safety = 20, .speed = 40,
     .f_suitable_key = assh_sign_rsa_suitable_key_1024,
@@ -636,7 +642,9 @@ struct assh_algo_sign_s assh_sign_rsa_sha1_2048 =
 static ASSH_SIGN_VERIFY_FCN(assh_sign_rsa_verify_sha256)
 {
   return assh_sign_rsa_verify(c, key, data_count, data, data_len,
-                              sign, sign_len, (1 << RSA_DIGEST_SHA256));
+                              sign, sign_len, (1 << RSA_DIGEST_SHA256)
+                              | (1 << RSA_DIGEST_SHA384)
+                              | (1 << RSA_DIGEST_SHA512));
 }
 
 static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate_sha256)
@@ -645,7 +653,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate_sha256)
                                 sign, sign_len, RSA_DIGEST_SHA256);
 }
 
-struct assh_algo_sign_s assh_sign_rsa_sha256 =
+struct assh_algo_sign_s assh_sign_rsa_sha256_2048 =
 {
   .algo = {
     .name = "rsa2048-sha256@libassh.org",
@@ -661,29 +669,25 @@ struct assh_algo_sign_s assh_sign_rsa_sha256 =
 
 
 
-static ASSH_SIGN_VERIFY_FCN(assh_sign_rsa_verify_sha512)
+static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_3072)
 {
-  return assh_sign_rsa_verify(c, key, data_count, data, data_len,
-                              sign, sign_len, (1 << RSA_DIGEST_SHA512));
+  if (strcmp(key->type, "ssh-rsa"))
+    return 0;
+  struct assh_sign_rsa_key_s *k = (void*)key;
+  return assh_bignum_bits(&k->nn) >= 3072;
 }
 
-static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate_sha512)
-{
-  return assh_sign_rsa_generate(c, key, data_count, data, data_len,
-                                sign, sign_len, RSA_DIGEST_SHA512);
-}
-
-struct assh_algo_sign_s assh_sign_rsa_sha512 =
+struct assh_algo_sign_s assh_sign_rsa_sha256_3072 =
 {
   .algo = {
-    .name = "rsa2048-sha512@libassh.org",
+    .name = "rsa3072-sha256@libassh.org",
     .class_ = ASSH_ALGO_SIGN,
-    .safety = 40, .speed = 30,
-    .f_suitable_key = assh_sign_rsa_suitable_key_2048,
+    .safety = 50, .speed = 20,
+    .f_suitable_key = assh_sign_rsa_suitable_key_3072,
   },
   .key_type = "ssh-rsa",
   .f_key_load = assh_sign_rsa_key_load,
-  .f_generate = assh_sign_rsa_generate_sha512,
-  .f_verify = assh_sign_rsa_verify_sha512,
+  .f_generate = assh_sign_rsa_generate_sha256,
+  .f_verify = assh_sign_rsa_verify_sha256,
 };
 
