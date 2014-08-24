@@ -122,7 +122,8 @@ assh_error_t
 assh_kex_server_hash1(struct assh_session_s *s, size_t kex_len,
                       struct assh_hash_ctx_s *hash_ctx,
                       struct assh_packet_s **pout, size_t *sign_len,
-                      const struct assh_key_s **host_key);
+                      const struct assh_key_s **host_key,
+                      enum assh_ssh_msg_e msg);
 
 /** This helper function hash the secret key then add the signature to
     the @ref SSH_MSG_KEXDH_REPLY packet and finally call @ref
@@ -258,22 +259,22 @@ extern const struct assh_algo_kex_s assh_kex_m511_sha256;
 /** diffie-hellman-group-exchange-sha1, favors group size of n*n/12
     bits and allows groups size of n*n/16 bits where n is the size of
     the symmetric cipher key. */
-extern struct assh_algo_kex_s assh_kex_dh_gex_sha1;
+extern const struct assh_algo_kex_s assh_kex_dh_gex_sha1;
 
 /** diffie-hellman-group-exchange-sha256, favors group size of n*n/12
     bits and allows groups size of n*n/16 bits where n is the size of
     the symmetric cipher key. */
-extern struct assh_algo_kex_s assh_kex_dh_gex_sha256_12;
+extern const struct assh_algo_kex_s assh_kex_dh_gex_sha256_12;
 
 /** diffie-hellman-group-exchange-sha256, favors group size of n*n/8
     bits and allows groups size of n*n/12 bits where n is the size of
     the symmetric cipher key. */
-extern struct assh_algo_kex_s assh_kex_dh_gex_sha256_8;
+extern const struct assh_algo_kex_s assh_kex_dh_gex_sha256_8;
 
 /** diffie-hellman-group-exchange-sha256, favors group size of n*n/4
     bits and allows groups size of n*n/8 bits where n is the size of
     the symmetric cipher key. */
-extern struct assh_algo_kex_s assh_kex_dh_gex_sha256_4;
+extern const struct assh_algo_kex_s assh_kex_dh_gex_sha256_4;
 
 #endif
 

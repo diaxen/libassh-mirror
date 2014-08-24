@@ -404,7 +404,8 @@ static assh_error_t assh_kex_ecdhmt_server_wait_pubkey(struct assh_session_s *s,
 
   ASSH_ERR_GTO(assh_kex_server_hash1(s, 
                  /* room for qs_str */ 4 + pv->size,
-                 hash_ctx, &pout, &slen, &hk), err_sc);
+                 hash_ctx, &pout, &slen, &hk,
+                 SSH_MSG_KEX_ECDH_REPLY), err_sc);
 
   uint8_t *qs_str;
   ASSH_ASSERT(assh_packet_add_string(pout, pv->size, &qs_str));

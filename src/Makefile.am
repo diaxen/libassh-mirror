@@ -23,14 +23,12 @@ libassh_la_SOURCES = assh_context.c assh_session.c assh_packet.c	\
 	assh_event.c assh_transport.c assh_kex.c assh_hash.c		\
 	assh_algo.c assh_key.c assh_service.c assh_map.c assh_bignum.c	\
 	assh_connection.c assh_userauth_client.c assh_userauth_server.c	\
-	kex_none.c kex_dh.c kex_ecdh_montgomery.c			\
+	kex_none.c kex_dh.c kex_dh_gex.c kex_ecdh_montgomery.c		\
 	cipher_none.c							\
 	mac_none.c							\
 	sign_dss.c sign_rsa.c sign_none.c				\
 	compress_none.c							\
 	helper_key.c helper_fd.c
-
-# kex_dh_gex.c
 
 if COND_gcrypt_hash
 libassh_la_SOURCES +=   hash_gcrypt.c mac_gcrypt.c

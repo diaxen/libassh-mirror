@@ -650,7 +650,8 @@ assh_error_t
 assh_kex_server_hash1(struct assh_session_s *s, size_t kex_len,
                       struct assh_hash_ctx_s *hash_ctx,
                       struct assh_packet_s **pout, size_t *sign_len,
-                      const struct assh_key_s **host_key)
+                      const struct assh_key_s **host_key,
+                      enum assh_ssh_msg_e msg)
 {
   assh_error_t err;
   struct assh_context_s *c = s->ctx;
@@ -673,7 +674,7 @@ assh_kex_server_hash1(struct assh_session_s *s, size_t kex_len,
   ASSH_ERR_RET(sign_algo->f_generate(c, hk, 0, NULL, NULL, NULL, sign_len)
 	       | ASSH_ERRSV_DISCONNECT);
 
-  ASSH_ERR_RET(assh_packet_alloc(c, SSH_MSG_KEX_DH_REPLY,
+  ASSH_ERR_RET(assh_packet_alloc(c, msg,
 		(4 + ks_len) + kex_len + (4 + *sign_len), pout)
 	       | ASSH_ERRSV_DISCONNECT);
 
