@@ -18,33 +18,47 @@ AUTOMAKE_OPTIONS = serial-tests
 
 AM_CPPFLAGS = -I$(top_builddir)/src/assh
 
-noinst_PROGRAMS = bignum hash dsa connection signature
-TESTS = bignum hash dsa connection signature
+noinst_PROGRAMS =
+TESTS =
 
 ############################## hash tests
 
+noinst_PROGRAMS += hash
+TESTS += hash
 hash_SOURCES = hash.c
 hash_LDADD = $(top_builddir)/src/libassh.la
 hash_CFLAGS = -I$(top_srcdir)/src
 
 ############################## protocol tests
 
+if COND_server
+if COND_client
+noinst_PROGRAMS += connection
+TESTS += connection
 connection_SOURCES = connection.c
 connection_LDADD = $(top_builddir)/src/libassh.la
 connection_CFLAGS = -I$(top_srcdir)/src
+endif
+endif
 
 ############################## bignum tests
 
+noinst_PROGRAMS += bignum
+TESTS += bignum
 bignum_SOURCES = bignum.c
 bignum_LDADD = $(top_builddir)/src/libassh.la
 bignum_CFLAGS = -I$(top_srcdir)/src
 
+noinst_PROGRAMS += dsa
+TESTS += dsa
 dsa_SOURCES = dsa.c
 dsa_LDADD = $(top_builddir)/src/libassh.la
 dsa_CFLAGS = -I$(top_srcdir)/src
 
 ############################## signature tests
 
+noinst_PROGRAMS += signature
+TESTS += signature
 signature_SOURCES = signature.c
 signature_LDADD = $(top_builddir)/src/libassh.la
 signature_CFLAGS = -I$(top_srcdir)/src

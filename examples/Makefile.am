@@ -16,14 +16,19 @@
 
 AM_CPPFLAGS = -I$(top_builddir)/src/assh
 
-noinst_PROGRAMS = client server
+noinst_PROGRAMS =
 
+if COND_client
 client_SOURCES = client.c
 client_LDADD = $(top_builddir)/src/libassh.la
 client_CFLAGS = -I$(top_srcdir)/src
+noinst_PROGRAMS += client
+endif
 
+if COND_server
 server_SOURCES = server.c
 server_LDADD = $(top_builddir)/src/libassh.la
 server_CFLAGS = -I$(top_srcdir)/src
-
+noinst_PROGRAMS += server
+endif
 

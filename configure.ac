@@ -34,6 +34,12 @@ AC_CHECK_HEADERS(assert.h, AC_DEFINE([HAVE_ASSERT_H]))
 AC_C_CONST
 AC_C_INLINE
 
+AC_ARG_ENABLE(server, AC_HELP_STRING(--disable-server, [Disable SSH server support]),
+		       enable_server=$enableval, enable_server=yes)
+
+AC_ARG_ENABLE(client, AC_HELP_STRING(--disable-client, [Disable SSH client support]),
+		       enable_client=$enableval, enable_client=yes)
+
 AC_ARG_ENABLE(gcrypt, AC_HELP_STRING(--disable-gcrypt, [Disable use of gcrypt support]),
 		       enable_gcrypt=$enableval, enable_gcrypt=yes)
 
@@ -88,20 +94,27 @@ else
 fi
 
 
+AM_CONDITIONAL(COND_server,  [test x$enable_server = xyes])
+AM_CONDITIONAL(COND_client,  [test x$enable_client = xyes])
+
 AM_CONDITIONAL(COND_gcrypt_bignum,  [test x$enable_gcrypt_bignum = xyes])
 AM_CONDITIONAL(COND_gcrypt_hash,    [test x$enable_gcrypt_hash = xyes])
 AM_CONDITIONAL(COND_gcrypt_prng,    [test x$enable_gcrypt_prng = xyes])
 AM_CONDITIONAL(COND_gcrypt_ciphers, [test x$enable_gcrypt_ciphers = xyes])
 
-AC_DEFINE([CONFIG_ASSH_SERVER], [], [SSH server support])
-AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_PUBLICKEY], [], [SSH server authentication: public key support])
-AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_PASSWORD], [], [SSH server authentication: password support])
-#AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_NONE], [], [SSH server authentication: bypassed, grant access directly])
+if test x$enable_server = xyes ; then
+   AC_DEFINE([CONFIG_ASSH_SERVER], [], [SSH server support])
+   AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_PUBLICKEY], [], [SSH server authentication: public key support])
+   AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_PASSWORD], [], [SSH server authentication: password support])
+   #AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_NONE], [], [SSH server authentication: bypassed, grant access directly])
+fi
 
-AC_DEFINE([CONFIG_ASSH_CLIENT], [], [SSH client support])
-AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY], [], [SSH client authentication: public key support])
-AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_PASSWORD], [], [SSH client authentication: password support])
-AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_USE_PKOK], [], [SSH client authentication: public key signature is not sent directly])
+if test x$enable_client = xyes ; then
+   AC_DEFINE([CONFIG_ASSH_CLIENT], [], [SSH client support])
+   AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY], [], [SSH client authentication: public key support])
+   AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_PASSWORD], [], [SSH client authentication: password support])
+   AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_USE_PKOK], [], [SSH client authentication: public key signature is not sent directly])
+fi
 
 AC_DEFINE([CONFIG_ASSH_AUTH_USERNAME_LEN], [32], [SSH authentication max username length])
 AC_DEFINE([CONFIG_ASSH_AUTH_PASSWORD_LEN], [32], [SSH authentication max password length])
