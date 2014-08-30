@@ -105,22 +105,21 @@ typedef ASSH_KEY_CMP_FCN(assh_key_cmp_t);
 
 typedef ASSH_KEY_CLEANUP_FCN(assh_key_cleanup_t);
 
-
-#define ASSH_KEY_FINGERPRINT_SIZE 32
-
-/** SSH key structure */
-struct assh_key_s
+struct assh_algo_key_s
 {
   const char *type;
-  struct assh_key_s *next;
-
-  unsigned int fp_len;
-  uint8_t fp[ASSH_KEY_FINGERPRINT_SIZE];
-
+  assh_key_load_t *f_load;
   assh_key_output_t *f_output;
   assh_key_validate_t *f_validate;
   assh_key_cmp_t *f_cmp;
   assh_key_cleanup_t *f_cleanup;
+};
+
+/** SSH key structure */
+struct assh_key_s
+{
+  struct assh_key_s *next;
+  const struct assh_algo_key_s *algo;
 };
 
 /** @internal This function loads a key using the specified algorithm. */
@@ -160,7 +159,7 @@ static inline assh_bool_t
 assh_key_cmp(struct assh_context_s *c, struct assh_key_s *key,
 	     struct assh_key_s *b, assh_bool_t pub)
 {
-  return key->f_cmp(c, key, b, pub);
+  return key->algo->f_cmp(c, key, b, pub);
 }
 
 /** @internal This function releases all the keys on the linked list
@@ -176,7 +175,7 @@ assh_key_drop(struct assh_context_s *c, struct assh_key_s **head);
 static inline ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_key_validate(struct assh_context_s *c, const struct assh_key_s *key)
 {
-  return key->f_validate(c, key);
+  return key->algo->f_validate(c, key);
 }
 
 #endif

@@ -40,7 +40,7 @@ assh_error_t assh_key_load3(struct assh_context_s *c, struct assh_key_s **key,
     {
     case ASSH_ALGO_SIGN:
       ASSH_ERR_RET(((struct assh_algo_sign_s*)algo)
-		   ->f_key_load(c, blob, blob_len, &k, format));
+		   ->key->f_load(c, blob, blob_len, &k, format));
       break;
 
     default:
@@ -72,6 +72,7 @@ assh_error_t assh_key_load2(struct assh_context_s *c, struct assh_key_s **key,
   ASSH_CHK_RET(algo_name == NULL, ASSH_NOT_FOUND | ASSH_ERRSV_CONTINUE);
 
 #warning load keys should use key type string instead of algo name?
+  /* use an array of key algorithms ? */
 
   ASSH_CHK_RET(assh_algo_by_name(c, ASSH_ALGO_SIGN, algo_name, algo_name_len, &algo)
                != ASSH_OK, ASSH_ERR_MISSING_KEY);
@@ -84,7 +85,7 @@ void assh_key_drop(struct assh_context_s *c, struct assh_key_s **head)
 {
   struct assh_key_s *k = *head;
   *head = k->next;
-  k->f_cleanup(c, k);
+  k->algo->f_cleanup(c, k);
 }
 
 void assh_key_flush(struct assh_context_s *c, struct assh_key_s **head)

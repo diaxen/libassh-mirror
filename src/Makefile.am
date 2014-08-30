@@ -26,6 +26,7 @@ libassh_la_SOURCES = assh_context.c assh_session.c assh_packet.c	\
 	kex_none.c kex_dh.c kex_dh_gex.c kex_ecdh_montgomery.c		\
 	cipher_none.c							\
 	mac_none.c							\
+	key_dsa.c key_rsa.c						\
 	sign_dss.c sign_rsa.c sign_none.c				\
 	compress_none.c							\
 	helper_key.c helper_fd.c

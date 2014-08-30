@@ -24,13 +24,12 @@
 #include <assh/assh_packet.h>
 #include <assh/assh_bignum.h>
 #include <assh/assh_sign.h>
+#include <assh/key_rsa.h>
 #include <assh/assh_hash.h>
 #include <assh/assh_prng.h>
 #include <assh/assh_alloc.h>
 
 #include <string.h>
-
-/************************************************************ rsa key */
 
 enum assh_rsa_digest_e
 {
@@ -41,17 +40,6 @@ enum assh_rsa_digest_e
   RSA_DIGEST_SHA384,
   RSA_DIGEST_SHA512,
   RSA_DIGEST_count,
-};
-
-struct assh_sign_rsa_key_s
-{
-  struct assh_key_s key;
-
-  /* RSA modulus */
-  struct assh_bignum_s nn;
-  /* RSA exponents */
-  struct assh_bignum_s en;
-  struct assh_bignum_s dn;
 };
 
 struct assh_rsa_digest_s
@@ -80,259 +68,6 @@ static const struct assh_rsa_digest_s assh_rsa_digests[RSA_DIGEST_count] =
     &assh_hash_sha512 },
 };
 
-static const char *assh_rsa_id = "\x00\x00\x00\x07ssh-rsa";
-static const size_t assh_rsa_id_len = 4 + 7;
-
-static ASSH_KEY_CLEANUP_FCN(assh_sign_rsa_key_cleanup)
-{
-  struct assh_sign_rsa_key_s *k = (void*)key;
-
-  assh_bignum_release(c, &k->nn);
-  assh_bignum_release(c, &k->en);
-  assh_bignum_release(c, &k->dn);
-  assh_free(c, k, ASSH_ALLOC_KEY);
-}
-
-static ASSH_KEY_OUTPUT_FCN(assh_sign_rsa_key_output)
-{
-  struct assh_sign_rsa_key_s *k = (void*)key;
-  assh_error_t err;
-
-  struct assh_bignum_s *bn_[4] = { &k->en, &k->nn, NULL, NULL };
-
-  switch (format)
-    {
-    case ASSH_KEY_FMT_PUB_RFC4253_6_6: {
-      /* add algo identifier */
-      size_t l = assh_rsa_id_len;
-      if (blob != NULL)
-        {
-          ASSH_CHK_RET(assh_rsa_id_len > *blob_len, ASSH_ERR_OUTPUT_OVERFLOW);
-          memcpy(blob, assh_rsa_id, assh_rsa_id_len);
-          *blob_len -= assh_rsa_id_len;
-          blob += assh_rsa_id_len;
-        }
-
-      /* add key integers */
-      struct assh_bignum_s **bn = bn_;
-      for (bn = bn_; *bn != NULL; bn++)
-        {
-          size_t s = assh_bignum_size_of_num(ASSH_BIGNUM_MPINT, *bn);
-          if (blob != NULL)
-            {
-              ASSH_CHK_RET(s > *blob_len, ASSH_ERR_OUTPUT_OVERFLOW);
-              ASSH_ERR_RET(assh_bignum_convert(c, ASSH_BIGNUM_NATIVE,
-                             ASSH_BIGNUM_MPINT, *bn, blob));
-              s = assh_load_u32(blob) + 4;
-              *blob_len -= s;
-              blob += s;
-            }
-          l += s;
-        }
-      *blob_len = l;
-      return ASSH_OK;
-    }
-
-#if 0
-    case ASSH_KEY_FMT_PV_PEM_ASN1: {
-      ASSH_CHK_RET(assh_bignum_isempty(&k->xn), ASSH_ERR_NOTSUP);
-      bn_[4] = k->xn;
-      return ASSH_OK;
-    }
-#endif
-
-    default:
-      ASSH_ERR_RET(ASSH_ERR_NOTSUP);
-    }
-
-  return ASSH_OK;
-}
-
-static ASSH_KEY_CMP_FCN(assh_sign_rsa_key_cmp)
-{
-  assert(!strcmp(key->type, "ssh-rsa"));
-
-  if (strcmp(key->type, b->type))
-    return 0;
-
-  struct assh_sign_rsa_key_s *k = (void*)key;
-  struct assh_sign_rsa_key_s *l = (void*)b;
-
-  enum bytecode_args_e
-  {
-    N0, N1, E0, E1, D0, D1
-  };
-
-  static const assh_bignum_op_t *bc, bytecode[] = {
-    ASSH_BOP_CMPEQ(     D1,     D0       ),
-    ASSH_BOP_CMPEQ(     E1,     E0       ),
-    ASSH_BOP_CMPEQ(     N1,     N0       ),
-    ASSH_BOP_END(),
-  };
-
-  bc = bytecode;
-
-  if (pub)
-    {
-      /* skip compare of D */
-      bc++;
-    }
-  else
-    {
-      if (assh_bignum_isempty(&k->dn) != 
-          assh_bignum_isempty(&l->dn))
-        return 0;
-      if (assh_bignum_isempty(&l->dn))
-        bc++;
-    }
-
-  return assh_bignum_bytecode(c, bc, "NNNNNNNN",
-    &k->nn, &l->nn, &k->en, &l->en, &k->dn, &l->dn) == 0;
-}
-
-static ASSH_KEY_VALIDATE_FCN(assh_sign_rsa_key_validate)
-{
-#if 0
-  struct assh_sign_rsa_key_s *k = (void*)key;
-  assh_error_t err = ASSH_OK;
-
-  unsigned int n = assh_bignum_bits(&k->nn);
-
-  /* check key size */
-  if (n < 768 || n > 8192 || n % 8)
-    return ASSH_OK;
-
-  enum bytecode_args_e
-  {
-    E
-  };
-
-  assh_bignum_op_t bytecode[] = {
-    ASSH_BOP_END(),
-  };
-
-  err = assh_bignum_bytecode(c, bytecode, "NNNNTT");
-
-  if (err != ASSH_ERR_NUM_COMPARE_FAILED)
-    ASSH_ERR_RET(err);
-#endif
-#warning rsa key validate
-
-  return ASSH_OK;
-}
-
-static inline unsigned int
-assh_sign_rsa_mpint_strip(uint8_t *num, unsigned int len)
-{
-  /* discard null MSB */
-  if (len && num[0] == 0)
-    len--;
-  return len * 8;
-}
-
-static ASSH_KEY_LOAD_FCN(assh_sign_rsa_key_load)
-{
-  assh_error_t err;
-
-  unsigned int n_len, e_len, d_len;
-  uint8_t *n_str, *e_str, *d_str;
-
-  /* parse the key blob */
-  switch (format)
-    {
-    case ASSH_KEY_FMT_PUB_RFC4253_6_6: {
-
-      ASSH_CHK_RET(blob_len < assh_rsa_id_len, ASSH_ERR_INPUT_OVERFLOW);
-      ASSH_CHK_RET(memcmp(assh_rsa_id, blob, assh_rsa_id_len), ASSH_ERR_BAD_DATA);
-
-      e_str = (uint8_t*)blob + assh_rsa_id_len;
-      ASSH_ERR_RET(assh_check_string(blob, blob_len, e_str, &n_str));
-      e_len = assh_sign_rsa_mpint_strip(e_str + 4, assh_load_u32(e_str));
-
-      ASSH_ERR_RET(assh_check_string(blob, blob_len, n_str, NULL));
-      n_len = assh_sign_rsa_mpint_strip(n_str + 4, assh_load_u32(n_str));
-
-      d_len = 0;
-      d_str = NULL;
-      break;
-    }
-
-    case ASSH_KEY_FMT_PV_PEM_ASN1: {
-      uint8_t *seq, *seq_end, *p_str, *version, *val;
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, blob, &seq, &seq_end));
-      /* sequence type */
-      ASSH_CHK_RET(blob[0] != 0x30, ASSH_ERR_BAD_DATA);
-
-      /* skip first value */
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, seq, &version, &n_str));
-
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, n_str, &val, &e_str));
-      n_len = assh_sign_rsa_mpint_strip(val, e_str - val);
-
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, e_str, &val, &d_str));
-      e_len = assh_sign_rsa_mpint_strip(val, d_str - val);
-
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, d_str, &val, &p_str));
-      d_len = assh_sign_rsa_mpint_strip(val, p_str - val);
-      break;
-    }
-
-    default:
-      ASSH_ERR_RET(ASSH_ERR_NOTSUP);
-    }
-
-  /* allocate key structure */
-  ASSH_CHK_RET(n_len < 768 || n_len > 8192, ASSH_ERR_NOTSUP);
-  ASSH_CHK_RET(e_len < 1 || e_len > 32, ASSH_ERR_NOTSUP);
-  ASSH_CHK_RET(d_str != NULL && (d_len < 768 || d_len > 8192), ASSH_ERR_NOTSUP);
-
-  ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_sign_rsa_key_s), ASSH_ALLOC_KEY, (void**)key));
-  struct assh_sign_rsa_key_s *k = (void*)*key;
-
-  k->key.type = "ssh-rsa";
-  k->key.f_output = assh_sign_rsa_key_output;
-  k->key.f_validate = assh_sign_rsa_key_validate;
-  k->key.f_cmp = assh_sign_rsa_key_cmp;
-  k->key.f_cleanup = assh_sign_rsa_key_cleanup;
-
-  /* init numbers */
-  assh_bignum_init(c, &k->nn, n_len);
-  assh_bignum_init(c, &k->en, e_len);
-  assh_bignum_init(c, &k->dn, d_len);
-
-  /* convert numbers from blob representation */
-  switch (format)
-    {
-    case ASSH_KEY_FMT_PUB_RFC4253_6_6:
-      ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
-                                       n_str, &k->nn), err_num);
-      ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
-                                       e_str, &k->en), err_num);
-      break;
-
-    case ASSH_KEY_FMT_PV_PEM_ASN1:
-      ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE,
-                                       n_str, &k->nn), err_num);
-      ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE,
-                                       e_str, &k->en), err_num);
-      ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE,
-                                       d_str, &k->dn), err_num);
-    default:
-      break;
-    }
-
-  return ASSH_OK;
-
- err_num:
-  assh_bignum_release(c, &k->nn);
-  assh_bignum_release(c, &k->en);
-  assh_bignum_release(c, &k->dn);
-  assh_free(c, k, ASSH_ALLOC_KEY);
-  return err;
-}
-
-/************************************************************ rsa sign algo */
-
 static ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_sign_rsa_generate(struct assh_context_s *c,
                        const struct assh_key_s *key,
@@ -342,10 +77,10 @@ assh_sign_rsa_generate(struct assh_context_s *c,
                        uint8_t *sign, size_t *sign_len,
                        enum assh_rsa_digest_e digest_id)
 {
-  struct assh_sign_rsa_key_s *k = (void*)key;
+  struct assh_key_rsa_s *k = (void*)key;
   assh_error_t err;
 
-  assert(!strcmp(key->type, "ssh-rsa"));
+  assert(key->algo == &assh_key_rsa);
 
   /* check availability of the private key */
   ASSH_CHK_RET(assh_bignum_isempty(&k->dn), ASSH_ERR_MISSING_KEY);
@@ -441,10 +176,10 @@ assh_sign_rsa_verify(struct assh_context_s *c,
                      const uint8_t * const data[], size_t const data_len[],
                      const uint8_t *sign, size_t sign_len, uint8_t digest_mask)
 {
-  struct assh_sign_rsa_key_s *k = (void*)key;
+  struct assh_key_rsa_s *k = (void*)key;
   assh_error_t err;
 
-  assert(!strcmp(key->type, "ssh-rsa"));
+  assert(key->algo == &assh_key_rsa);
 
   unsigned int n = assh_bignum_bits(&k->nn);
 
@@ -544,9 +279,9 @@ assh_sign_rsa_verify(struct assh_context_s *c,
 
 static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_768)
 {
-  if (strcmp(key->type, "ssh-rsa"))
+  if (key->algo != &assh_key_rsa)
     return 0;
-  struct assh_sign_rsa_key_s *k = (void*)key;
+  struct assh_key_rsa_s *k = (void*)key;
   return assh_bignum_bits(&k->nn) >= 768;
 }
 
@@ -574,8 +309,7 @@ struct assh_algo_sign_s assh_sign_rsa_sha1_md5 =
     .priority = 2, .safety = 15, .speed = 40,
     .f_suitable_key = assh_sign_rsa_suitable_key_768,
   },
-  .key_type = "ssh-rsa",
-  .f_key_load = assh_sign_rsa_key_load,
+  .key = &assh_key_rsa,
   .f_generate = assh_sign_rsa_generate_sha1,
   .f_verify = assh_sign_rsa_verify_sha1_md5,
 };
@@ -584,9 +318,9 @@ struct assh_algo_sign_s assh_sign_rsa_sha1_md5 =
 
 static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_1024)
 {
-  if (strcmp(key->type, "ssh-rsa"))
+  if (key->algo != &assh_key_rsa)
     return 0;
-  struct assh_sign_rsa_key_s *k = (void*)key;
+  struct assh_key_rsa_s *k = (void*)key;
   return assh_bignum_bits(&k->nn) >= 1024;
 }
 
@@ -607,8 +341,7 @@ struct assh_algo_sign_s assh_sign_rsa_sha1 =
     .priority = 1, .safety = 20, .speed = 40,
     .f_suitable_key = assh_sign_rsa_suitable_key_1024,
   },
-  .key_type = "ssh-rsa",
-  .f_key_load = assh_sign_rsa_key_load,
+  .key = &assh_key_rsa,
   .f_generate = assh_sign_rsa_generate_sha1,
   .f_verify = assh_sign_rsa_verify_sha1,
 };
@@ -617,9 +350,9 @@ struct assh_algo_sign_s assh_sign_rsa_sha1 =
 
 static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_2048)
 {
-  if (strcmp(key->type, "ssh-rsa"))
+  if (key->algo != &assh_key_rsa)
     return 0;
-  struct assh_sign_rsa_key_s *k = (void*)key;
+  struct assh_key_rsa_s *k = (void*)key;
   return assh_bignum_bits(&k->nn) >= 2048;
 }
 
@@ -631,8 +364,7 @@ struct assh_algo_sign_s assh_sign_rsa_sha1_2048 =
     .priority = 0, .safety = 25, .speed = 30,
     .f_suitable_key = assh_sign_rsa_suitable_key_2048,
   },
-  .key_type = "ssh-rsa",
-  .f_key_load = assh_sign_rsa_key_load,
+  .key = &assh_key_rsa,
   .f_generate = assh_sign_rsa_generate_sha1,
   .f_verify = assh_sign_rsa_verify_sha1,
 };
@@ -661,8 +393,7 @@ struct assh_algo_sign_s assh_sign_rsa_sha256_2048 =
     .safety = 40, .speed = 30,
     .f_suitable_key = assh_sign_rsa_suitable_key_2048,
   },
-  .key_type = "ssh-rsa",
-  .f_key_load = assh_sign_rsa_key_load,
+  .key = &assh_key_rsa,
   .f_generate = assh_sign_rsa_generate_sha256,
   .f_verify = assh_sign_rsa_verify_sha256,
 };
@@ -671,9 +402,9 @@ struct assh_algo_sign_s assh_sign_rsa_sha256_2048 =
 
 static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_3072)
 {
-  if (strcmp(key->type, "ssh-rsa"))
+  if (key->algo != &assh_key_rsa)
     return 0;
-  struct assh_sign_rsa_key_s *k = (void*)key;
+  struct assh_key_rsa_s *k = (void*)key;
   return assh_bignum_bits(&k->nn) >= 3072;
 }
 
@@ -685,8 +416,7 @@ struct assh_algo_sign_s assh_sign_rsa_sha256_3072 =
     .safety = 50, .speed = 20,
     .f_suitable_key = assh_sign_rsa_suitable_key_3072,
   },
-  .key_type = "ssh-rsa",
-  .f_key_load = assh_sign_rsa_key_load,
+  .key = &assh_key_rsa,
   .f_generate = assh_sign_rsa_generate_sha256,
   .f_verify = assh_sign_rsa_verify_sha256,
 };

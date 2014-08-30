@@ -27,44 +27,54 @@
 
 #include <assert.h>
 
-static ASSH_KEY_CLEANUP_FCN(assh_sign_none_key_cleanup)
+extern const struct assh_algo_key_s assh_key_none;
+
+static ASSH_KEY_CLEANUP_FCN(assh_key_none_cleanup)
 {
   assh_free(c, key, ASSH_ALLOC_KEY);
 }
 
-static ASSH_KEY_OUTPUT_FCN(assh_sign_none_key_output)
+static ASSH_KEY_OUTPUT_FCN(assh_key_none_output)
 {
-  assert(!strcmp(key->type, "none"));
+  assert(key->algo == &assh_key_none);
 
   *blob_len = 0;
   return ASSH_OK;
 }
 
-static ASSH_KEY_CMP_FCN(assh_sign_none_key_cmp)
+static ASSH_KEY_CMP_FCN(assh_key_none_cmp)
 {
+  assert(key->algo == &assh_key_none);
   return 1;
 }
 
-static ASSH_KEY_VALIDATE_FCN(assh_sign_none_key_validate)
+static ASSH_KEY_VALIDATE_FCN(assh_key_none_validate)
 {
+  assert(key->algo == &assh_key_none);
   return ASSH_OK;
 }
 
-static ASSH_KEY_LOAD_FCN(assh_sign_none_key_load)
+static ASSH_KEY_LOAD_FCN(assh_key_none_load)
 {
   assh_error_t err;
 
   ASSH_ERR_RET(assh_alloc(c, sizeof(**key), ASSH_ALLOC_KEY, (void**)key));
   struct assh_key_s *k = *key;
 
-  k->type = "none";
-  k->f_output = assh_sign_none_key_output;
-  k->f_validate = assh_sign_none_key_validate;
-  k->f_cmp = assh_sign_none_key_cmp;
-  k->f_cleanup = assh_sign_none_key_cleanup;
+  k->algo = &assh_key_none;
 
   return ASSH_OK;
 }
+
+const struct assh_algo_key_s assh_key_none =
+{
+  .type = "none",
+  .f_output = assh_key_none_output,
+  .f_validate = assh_key_none_validate,
+  .f_cmp = assh_key_none_cmp,
+  .f_load = assh_key_none_load,
+  .f_cleanup = assh_key_none_cleanup,
+};
 
 static ASSH_SIGN_GENERATE_FCN(assh_sign_none_generate)
 {
@@ -84,7 +94,7 @@ struct assh_algo_sign_s assh_sign_none =
     .name = "none@libassh.org", .class_ = ASSH_ALGO_SIGN,
     .safety = 0, .speed = 99,
   },
-  .f_key_load = assh_sign_none_key_load,
+  .key = &assh_key_none,
   .f_generate = assh_sign_none_generate,
   .f_verify = assh_sign_none_verify,
 };

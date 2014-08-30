@@ -67,8 +67,7 @@ typedef ASSH_SIGN_VERIFY_FCN(assh_sign_verify_t);
 struct assh_algo_sign_s
 {
   struct assh_algo_s algo;
-  const char *key_type;
-  assh_key_load_t *f_key_load;
+  const struct assh_algo_key_s *key;
   assh_sign_generate_t *f_generate;
   assh_sign_verify_t *f_verify;
 };
