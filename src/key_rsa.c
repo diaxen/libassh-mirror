@@ -101,9 +101,9 @@ static ASSH_KEY_CMP_FCN(assh_key_rsa_cmp)
   };
 
   static const assh_bignum_op_t *bc, bytecode[] = {
-    ASSH_BOP_CMPEQ(     D1,     D0       ),
-    ASSH_BOP_CMPEQ(     E1,     E0       ),
-    ASSH_BOP_CMPEQ(     N1,     N0       ),
+    ASSH_BOP_CMPEQ(     D1,     D0,	0       ),
+    ASSH_BOP_CMPEQ(     E1,     E0,	0       ),
+    ASSH_BOP_CMPEQ(     N1,     N0,	0       ),
     ASSH_BOP_END(),
   };
 
@@ -144,7 +144,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_rsa_validate)
     E
   };
 
-  assh_bignum_op_t bytecode[] = {
+  static const assh_bignum_op_t bytecode[] = {
     ASSH_BOP_END(),
   };
 

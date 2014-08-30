@@ -253,7 +253,7 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_dss_verify)
     /* v = (g^u1 * y^u2) mod p mod q */
     ASSH_BOP_MOD(       V,      V,      Q               ),
 
-    ASSH_BOP_CMPEQ(     V,      R                       ),
+    ASSH_BOP_CMPEQ(     V,      R,      0               ),
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
     ASSH_BOP_PRINT(     V,      'V'                     ),

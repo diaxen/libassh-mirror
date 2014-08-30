@@ -60,14 +60,15 @@ assh_error_t test_shift()
     ASSH_BOP_SIZE(      A,      S       ),
     ASSH_BOP_SIZE(      B,      S       ),
 
-    ASSH_BOP_RAND(      A,      ASSH_PRNG_QUALITY_WEAK  ),
+    ASSH_BOP_RAND(      A,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
+                                ASSH_PRNG_QUALITY_WEAK  ),
   //ASSH_BOP_PRINT(     A,      'A'),
 
-    ASSH_BOP_SHR(       B,      A,      C),
-  //ASSH_BOP_PRINT(     B,      'B'),
+    ASSH_BOP_SHR(       B,      A,      0,      C),
+  ASSH_BOP_PRINT(     B,      'B'),
 
-    ASSH_BOP_SHL(       A,      B,      C),
-  //ASSH_BOP_PRINT(     A,      'A'),
+    ASSH_BOP_SHL(       A,      B,      0,      C),
+  ASSH_BOP_PRINT(     A,      'A'),
 
     ASSH_BOP_END(),
   };
@@ -98,13 +99,13 @@ assh_error_t test_cmp(void)
     ASSH_BOP_SIZE(	Y,	S			),
     ASSH_BOP_MOVE(	Y,	Y_hex			),
 
-    ASSH_BOP_CMPNE(     X,      Y			),
-    ASSH_BOP_CMPLT(     X,      Y			),
+    ASSH_BOP_CMPNE(     X,      Y,      0		),
+    ASSH_BOP_CMPLT(     X,      Y,      0		),
 
     ASSH_BOP_UINT(      X,      16                      ),
-    ASSH_BOP_CMPEQ(     X,      Y			),
-    ASSH_BOP_CMPLTEQ(   X,      Y			),
-    ASSH_BOP_CMPLTEQ(   Y,      X			),
+    ASSH_BOP_CMPEQ(     X,      Y,      0		),
+    ASSH_BOP_CMPLTEQ(   X,      Y,      0		),
+    ASSH_BOP_CMPLTEQ(   Y,      X,      0		),
 
     ASSH_BOP_END(),
   };
@@ -119,7 +120,7 @@ assh_error_t test_cmp(void)
     ASSH_BOP_SIZE(	Y,	S			),
     ASSH_BOP_MOVE(	Y,	Y_hex			),
 
-    ASSH_BOP_CMPEQ(     X,      Y			),
+    ASSH_BOP_CMPEQ(     X,      Y,      0		),
 
     ASSH_BOP_END(),
   };
@@ -134,7 +135,7 @@ assh_error_t test_cmp(void)
     ASSH_BOP_SIZE(	Y,	S			),
     ASSH_BOP_MOVE(	Y,	Y_hex			),
 
-    ASSH_BOP_CMPLT(     Y,      X			),
+    ASSH_BOP_CMPLT(     Y,      X,      0		),
 
     ASSH_BOP_END(),
   };
@@ -163,25 +164,27 @@ assh_error_t test_add_sub(unsigned int count)
         ASSH_BOP_SIZE(  B,      S                       ),
         ASSH_BOP_SIZE(  C,      S                       ),
 
-        ASSH_BOP_RAND(  A,      ASSH_PRNG_QUALITY_WEAK  ),
-        ASSH_BOP_RAND(  B,      ASSH_PRNG_QUALITY_WEAK  ),
-        ASSH_BOP_SHR(   A,      A,      L               ),
-        ASSH_BOP_SHR(   B,      B,      L               ),
+        ASSH_BOP_RAND(  A,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
+                                ASSH_PRNG_QUALITY_WEAK  ),
+        ASSH_BOP_RAND(  B,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
+                                ASSH_PRNG_QUALITY_WEAK  ),
+        ASSH_BOP_SHR(   A,      A,      0,      L       ),
+        ASSH_BOP_SHR(   B,      B,      0,      L       ),
 
         ASSH_BOP_MOVE(  C,      B                       ),
-        ASSH_BOP_CMPEQ( C,      B                       ),
+        ASSH_BOP_CMPEQ( C,      B,      0               ),
 
       //ASSH_BOP_PRINT( A,      'A'                     ),
       //ASSH_BOP_PRINT( B,      'A'                     ),
 
         ASSH_BOP_ADD(   B,      B,      A               ),
       //ASSH_BOP_PRINT( B,      'B'                     ),
-        ASSH_BOP_CMPNE( C,      B                       ),
+        ASSH_BOP_CMPNE( C,      B,      0               ),
 
         ASSH_BOP_SUB(   B,      B,      A               ),
       //ASSH_BOP_PRINT( B,      'B'                     ),
       //ASSH_BOP_PRINT( C,      'C'                     ),
-        ASSH_BOP_CMPEQ( C,      B                       ),
+        ASSH_BOP_CMPEQ( C,      B,      0               ),
 
         ASSH_BOP_MOVE(  B,      A                       ),
         ASSH_BOP_ADD(   B,      A,      B               ),
@@ -196,7 +199,7 @@ assh_error_t test_add_sub(unsigned int count)
       //ASSH_BOP_PRINT( D,      'D'                     ),
       //ASSH_BOP_PRINT( B,      'B'                     ),
 
-        ASSH_BOP_CMPEQ( D,      B                       ),
+        ASSH_BOP_CMPEQ( D,      B,      0               ),
 
         ASSH_BOP_END(),
       };
@@ -228,15 +231,17 @@ assh_error_t test_div(unsigned int count)
         ASSH_BOP_SIZE(  D,      S                       ),
         ASSH_BOP_SIZEM( E,      S,      0,      2       ),
 
-        ASSH_BOP_RAND(  A,      ASSH_PRNG_QUALITY_WEAK  ),
-        ASSH_BOP_RAND(  B,      ASSH_PRNG_QUALITY_WEAK  ),
+        ASSH_BOP_RAND(  A,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
+                                ASSH_PRNG_QUALITY_WEAK  ),
+        ASSH_BOP_RAND(  B,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
+                                ASSH_PRNG_QUALITY_WEAK  ),
 
         ASSH_BOP_DIVMOD(C,      D,      A,      B       ),
 
         ASSH_BOP_MUL(   E,      B,      C               ),
         ASSH_BOP_ADD(   E,      E,      D               ),
 
-        ASSH_BOP_CMPEQ( E,      A                       ),
+        ASSH_BOP_CMPEQ( E,      A,      0               ),
 
         ASSH_BOP_END(),
       };
@@ -319,15 +324,16 @@ assh_error_t test_modinv(unsigned int count)
         ASSH_BOP_SIZE(  C,      P                       ),
         ASSH_BOP_SIZE(  D,      P                       ),
 
-        ASSH_BOP_RAND(  B,      ASSH_PRNG_QUALITY_WEAK  ),
+        ASSH_BOP_RAND(  B,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
+                                ASSH_PRNG_QUALITY_WEAK  ),
 
         ASSH_BOP_INV(   C,      B,      P               ),
-        ASSH_BOP_CMPLT( C,      P                       ),
+        ASSH_BOP_CMPLT( C,      P,      0               ),
 
         ASSH_BOP_MULM(  D,      B,      C,      P       ),
 
         ASSH_BOP_UINT(  P,      1                       ),
-        ASSH_BOP_CMPEQ( P,      D                       ),
+        ASSH_BOP_CMPEQ( P,      D,      0               ),
 
         ASSH_BOP_END(),
       };
@@ -370,10 +376,13 @@ assh_error_t test_expmod(unsigned int count)
         ASSH_BOP_SIZE(  R4,     P                       ),
         ASSH_BOP_SIZE(  R5,     P                       ),
 
-        ASSH_BOP_RAND(  A,      ASSH_PRNG_QUALITY_WEAK  ),
+        ASSH_BOP_RAND(  A,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
+                                ASSH_PRNG_QUALITY_WEAK  ),
         ASSH_BOP_MOD(   A,      A,      P               ),
-        ASSH_BOP_RAND(  E,      ASSH_PRNG_QUALITY_WEAK  ),
-        ASSH_BOP_RAND(  X,      ASSH_PRNG_QUALITY_WEAK  ),
+        ASSH_BOP_RAND(  E,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
+                                ASSH_PRNG_QUALITY_WEAK  ),
+        ASSH_BOP_RAND(  X,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
+                                ASSH_PRNG_QUALITY_WEAK  ),
         ASSH_BOP_INV(   IA,     A,      P               ),
 
         /* ((((a * x) % p)^e) % p) * ((inv(a)^e) % p) == x^e % p */
@@ -383,9 +392,9 @@ assh_error_t test_expmod(unsigned int count)
         ASSH_BOP_MULM(  R4,     R1,     R2,     P       ),
         ASSH_BOP_EXPM(  R5,     X,      E,      P       ),
 
-        ASSH_BOP_PRINT( R4,     'R4'                    ),
-       ASSH_BOP_PRINT( R5,     'R5'                    ),
-        ASSH_BOP_CMPEQ( R4,     R5                      ),
+     // ASSH_BOP_PRINT( R4,     'R4'                    ),
+     // ASSH_BOP_PRINT( R5,     'R5'                    ),
+        ASSH_BOP_CMPEQ( R4,     R5,     0               ),
 
         ASSH_BOP_END(),
       };

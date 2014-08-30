@@ -31,12 +31,20 @@
 
 static ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_gcrypt_bignum_rand(struct assh_context_s *c, struct assh_bignum_s *bn,
+                        struct assh_bignum_s *min, struct assh_bignum_s *max,
                         enum assh_prng_quality_e quality)
 {
   assh_error_t err;
 
   assert(bn->ctx == c);
   ASSH_CHK_RET(c->prng == NULL, ASSH_ERR_MISSING_ALGO);
+
+  size_t bits = bn->bits;
+
+  if (max != NULL)
+    bits = ASSH_MIN(bits, gcry_mpi_get_nbits(max->n));
+
+  size_t n = assh_align8(bn->bits);
 
   if (c->prng == &assh_prng_gcrypt)
     {
@@ -57,32 +65,63 @@ assh_gcrypt_bignum_rand(struct assh_context_s *c, struct assh_bignum_s *bn,
 	}
 
       if (bn->n == NULL)
-        bn->n = gcry_mpi_snew(bn->bits);
-      gcry_mpi_randomize(bn->n, bn->bits, level);
+        bn->n = gcry_mpi_snew(n);
 
-      return ASSH_OK;
+      gcry_mpi_randomize(bn->n, n, level);
+      gcry_mpi_rshift(bn->n, bn->n, n - bits);
+
+      gcry_mpi_t t = NULL;
+
+      while ((min != NULL && gcry_mpi_cmp(bn->n, min->n) <= 0) ||
+             (max != NULL && gcry_mpi_cmp(bn->n, max->n) >= 0))
+        {
+          if (t == NULL)
+            t = gcry_mpi_snew(8);
+
+          gcry_mpi_rshift(bn->n, bn->n, 8);
+          gcry_mpi_randomize(t, 8, level);
+          if (bits >= 8)
+            gcry_mpi_lshift(t, t, bits - 8);
+          else
+            gcry_mpi_rshift(t, t, 8 - bits);
+          gcry_mpi_add(bn->n, bn->n, t);
+
+          ASSH_DEBUG("rand loop\n");
+        }
+
+      gcry_mpi_release(t);
+
+      err = ASSH_OK;
     }
   else
     {
-      size_t n = ((bn->bits - 1) | 7) + 1;
       ASSH_SCRATCH_ALLOC(c, uint8_t, rnd, n / 8, ASSH_ERRSV_CONTINUE, err_);
 
       ASSH_ERR_GTO(c->prng->f_get(c, rnd, n / 8, quality), err_sc);
 
-      gcry_mpi_release(bn->n);
-      bn->n = NULL;
-      ASSH_CHK_RET(gcry_mpi_scan((gcry_mpi_t*)&bn->n,
-                                 GCRYMPI_FMT_USG, rnd, n / 8, NULL), ASSH_ERR_CRYPTO);
+      while (1)
+        {
+          gcry_mpi_release(bn->n);
+          bn->n = NULL;
+          ASSH_CHK_GTO(gcry_mpi_scan((gcry_mpi_t*)&bn->n,
+                 GCRYMPI_FMT_USG, rnd, n / 8, NULL), ASSH_ERR_CRYPTO, err_sc);
+          gcry_mpi_rshift(bn->n, bn->n, n - bits);
 
-      gcry_mpi_rshift(bn->n, bn->n, n - bn->bits);
+          if ((min == NULL || gcry_mpi_cmp(bn->n, min->n) > 0) &&
+              (max == NULL || gcry_mpi_cmp(bn->n, max->n) < 0))
+            break;
+
+          memmove(rnd + 1, rnd, n / 8 - 1);
+          ASSH_ERR_GTO(c->prng->f_get(c, rnd, 1, quality), err_sc);
+        }
 
       err = ASSH_OK;
     err_sc:
       ASSH_SCRATCH_FREE(c, rnd);
     err_:;
-
-      return err;
     }
+
+  return err;
 }
 
 static void assh_bignum_gcrypt_lsb(uint8_t *data, size_t size)
@@ -253,6 +292,24 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_gcrypt_convert)
   return ASSH_OK;
 }
 
+struct assh_gcrypt_prime_s
+{
+  gcry_mpi_t min;
+  gcry_mpi_t max;
+};
+
+static int assh_gcrypt_prime_chk(void *arg, int mode,
+                                 gcry_mpi_t candidate)
+{
+  struct assh_gcrypt_prime_s *p = arg;
+
+  if (p->min != NULL && gcry_mpi_cmp(candidate, p->min) <= 0)
+    return 0;
+  if (p->max != NULL && gcry_mpi_cmp(candidate, p->max) >= 0)
+    return 0;
+  return 1;
+}
+
 static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
 {
   uint_fast8_t flen, tlen = 0;
@@ -316,7 +373,8 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           ASSH_ERR_GTO(assh_bignum_size_of_data(format[ob], args[ob],
                                                 NULL, NULL, &b), err_sc);
           struct assh_bignum_s *dst = args[oa];
-          dst->bits = b * (intptr_t)od + (intptr_t)(int8_t)oc;
+          dst->bits = ((od >= 32) ? (b << (od - 32))
+                    : (b >> (32 - od))) + (intptr_t)(int8_t)oc;
           break;
         }
 
@@ -440,11 +498,14 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
 
         case ASSH_BIGNUM_OP_SHR:
         case ASSH_BIGNUM_OP_SHL: {
-          struct assh_bignum_s *dst = args[ob];
-          struct assh_bignum_s *src = args[oc];
-          size_t b;
-          ASSH_ERR_GTO(assh_bignum_size_of_data(format[od], args[od],
-                                                NULL, NULL, &b), err_sc);
+          struct assh_bignum_s *dst = args[oa];
+          struct assh_bignum_s *src = args[ob];
+          size_t b = 0;
+          if (od != ASSH_BOP_NOREG)
+            {
+              ASSH_ERR_GTO(assh_bignum_size_of_data(format[od], args[od],
+                                                    NULL, NULL, &b), err_sc);
+            }
           if (dst->n == NULL)
             {
               dst->n = gcry_mpi_snew(dst->bits);
@@ -453,10 +514,10 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           switch (op)
             {
             case ASSH_BIGNUM_OP_SHR:
-              gcry_mpi_rshift(dst->n, src->n, b);
+              gcry_mpi_rshift(dst->n, src->n, b + oc - 128);
               break;
             case ASSH_BIGNUM_OP_SHL:
-              gcry_mpi_lshift(dst->n, src->n, b);
+              gcry_mpi_lshift(dst->n, src->n, b + oc - 128);
               break;
             default:
               abort();
@@ -465,31 +526,38 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
         }
 
         case ASSH_BIGNUM_OP_RAND: {
-          ASSH_ERR_GTO(assh_gcrypt_bignum_rand(c, args[oc], od), err_sc);
+          ASSH_ERR_GTO(assh_gcrypt_bignum_rand(c, args[oa],
+                         ob == ASSH_BOP_NOREG ? NULL : args[ob],
+                         oc == ASSH_BOP_NOREG ? NULL : args[oc],
+                         od), err_sc);
           break;
         }
 
         case ASSH_BIGNUM_OP_CMP: {
-          struct assh_bignum_s *src1 = args[ob];
-          struct assh_bignum_s *src2 = args[oc];
+          struct assh_bignum_s *src1 = args[oa];
+          struct assh_bignum_s *src2 = args[ob];
           ASSH_CHK_GTO(src1->n == NULL || src2->n == NULL,
                        ASSH_ERR_NUM_COMPARE_FAILED, err_sc);
           int r = gcry_mpi_cmp(src1->n, src2->n);
           switch (od)
             {
             case 0:             /* cmpeq */
-              ASSH_CHK_GTO(r != 0, ASSH_ERR_NUM_COMPARE_FAILED, err_sc);
+              r = r != 0;
               break;
             case 1:             /* cmpne */
-              ASSH_CHK_GTO(r == 0, ASSH_ERR_NUM_COMPARE_FAILED, err_sc);
+              r = r == 0;
               break;
             case 2:             /* cmplt */
-              ASSH_CHK_GTO(r >= 0, ASSH_ERR_NUM_COMPARE_FAILED, err_sc);
+              r = r >= 0;
               break;
             case 3:             /* cmplteq */
-              ASSH_CHK_GTO(r > 0, ASSH_ERR_NUM_COMPARE_FAILED, err_sc);
+              r = r > 0;
               break;
             }
+          if (r)
+            ASSH_CHK_GTO(oc == 128, ASSH_ERR_NUM_COMPARE_FAILED, err_sc);
+          else
+            pc += oc - 128;
           break;
         }
 
@@ -530,12 +598,41 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           break;
         }
 
-        case ASSH_BIGNUM_OP_PRTEST: {
+        case ASSH_BIGNUM_OP_PRIME: {
+          struct assh_bignum_s *dst = args[ob];
+          struct assh_gcrypt_prime_s pchk = { NULL, NULL };
+          size_t bits = dst->bits;
+          if (oc != ASSH_BOP_NOREG)
+            {
+              struct assh_bignum_s *min = args[oc];
+              pchk.min = min->n;
+              assert(min->bits == dst->bits);
+            }
+          if (od != ASSH_BOP_NOREG)
+            {
+              struct assh_bignum_s *max = args[od];
+              pchk.max = max->n;
+              assert(max->bits == dst->bits);
+              bits = gcry_mpi_get_nbits(pchk.max);
+            }
+          if (dst->n)
+            gcry_mpi_release(dst->n);
+ 
+         /* FIXME call gcry_random_add_bytes here */
+          ASSH_CHK_GTO(gcry_prime_generate((struct gcry_mpi **)&dst->n,
+                         bits, 0, NULL, assh_gcrypt_prime_chk,
+                         &pchk, GCRY_STRONG_RANDOM, 0),
+                       ASSH_ERR_CRYPTO, err_sc);
+          break;
+        }
+
+        case ASSH_BIGNUM_OP_ISPRIM: {
           struct assh_bignum_s *src = args[od];
-          ASSH_CHK_GTO(gcry_mpi_cmp_ui(src->n, 2) <= 0,
-                       ASSH_ERR_NUM_COMPARE_FAILED, err_sc);
-          ASSH_CHK_GTO(gcry_prime_check(src->n, 0),
-                       ASSH_ERR_NUM_COMPARE_FAILED, err_sc);
+          if (ob ^ (gcry_mpi_cmp_ui(src->n, 2) <= 0 ||
+                    gcry_prime_check(src->n, 0)))
+            pc += oc - 128;
+          else
+            ASSH_CHK_GTO(oc == 128, ASSH_ERR_NUM_OVERFLOW, err_sc);
           break;
         }
 

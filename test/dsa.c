@@ -92,19 +92,14 @@ assh_error_t dsa_generate(struct assh_context_s *c,
 
     /* g^k mod p */
     ASSH_BOP_EXPM(      R3,     G,      K,	P       ),
-
     /* r = (g^k mod p) mod q */
     ASSH_BOP_MOD(       R,      R3,      Q		),
-
     /* (x * r) mod q */
     ASSH_BOP_MULM(      R1,     X,      R,	Q	),
-
     /* sha(m) + (x * r) */
     ASSH_BOP_ADDM(      R2,     M,      R1,	Q       ),
-
     /* k^-1 */
     ASSH_BOP_INV(       R1,     K,      Q		),
-
     /* s = k^-1 * (sha(m) + (x * r)) mod q */
     ASSH_BOP_MULM(      S,      R1,     R2,	Q       ),
 
@@ -176,25 +171,20 @@ assh_error_t dsa_verify(struct assh_context_s *c,
 
     /* (sha(m) * w) mod q */
     ASSH_BOP_MULM(      U1,     M,      W,	Q       ),
-
     /* g^u1 */
     ASSH_BOP_EXPM(      V1,     G,      U1,	P	),
-
     /* r * w mod q */
     ASSH_BOP_MULM(      U2,     R,      W,	Q       ),
-
     /* y^u2 */
     ASSH_BOP_EXPM(      V2,     Y,      U2,	P	),
-
     /* (g^u1 * y^u2) mod p */
     ASSH_BOP_MULM(      Y,      V1,     V2,	P	),
-
     /* v = (g^u1 * y^u2) mod p mod q */
     ASSH_BOP_MOD(       V,      Y,      Q		),
 
     ASSH_BOP_PRINT(	R,	2			),
     ASSH_BOP_PRINT(	V,	3			),
-    ASSH_BOP_CMPEQ(     V,      R			),
+    ASSH_BOP_CMPEQ(     V,      R,	0		),
 
     ASSH_BOP_END(),
   };
@@ -248,7 +238,7 @@ int main()
     ASSH_BOP_SIZE(	R,	N			),
     ASSH_BOP_MOVE(      R,      R_hex			),
 
-    ASSH_BOP_CMPEQ(     V,      R			),
+    ASSH_BOP_CMPEQ(     V,      R,	0		),
 
     ASSH_BOP_END(),
   };

@@ -101,11 +101,11 @@ static ASSH_KEY_CMP_FCN(assh_key_dsa_cmp)
   };
 
   static const assh_bignum_op_t *bc, bytecode[] = {
-    ASSH_BOP_CMPEQ(     X1,     X0       ),
-    ASSH_BOP_CMPEQ(     P1,     P0       ),
-    ASSH_BOP_CMPEQ(     Q1,     Q0       ),
-    ASSH_BOP_CMPEQ(     G1,     G0       ),
-    ASSH_BOP_CMPEQ(     Y1,     Y0       ),
+    ASSH_BOP_CMPEQ(     X1,     X0,	0       ),
+    ASSH_BOP_CMPEQ(     P1,     P0,	0       ),
+    ASSH_BOP_CMPEQ(     Q1,     Q0,	0       ),
+    ASSH_BOP_CMPEQ(     G1,     G0,	0       ),
+    ASSH_BOP_CMPEQ(     Y1,     Y0,	0       ),
     ASSH_BOP_END(),
   };
 
@@ -158,21 +158,21 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
     ASSH_BOP_UINT(      T1,     1                       ),
 
     /* check generator range */
-    ASSH_BOP_CMPLT(     T1,     G                       ), /* g > 1 */
-    ASSH_BOP_CMPLT(     G,      P                       ), /* g < p */
+    ASSH_BOP_CMPLT(     T1,     G,      0 /* g > 1 */   ),
+    ASSH_BOP_CMPLT(     G,      P,      0 /* g < p */   ),
 
     /* check generator order in the group */
     ASSH_BOP_EXPM(      T2,     G,      Q,      P       ),
-    ASSH_BOP_CMPEQ(     T1,     T2                      ),
+    ASSH_BOP_CMPEQ(     T1,     T2,     0               ),
 
     /* check public key range */
-    ASSH_BOP_CMPLT(     T1,     Y                       ), /* y > 1 */
+    ASSH_BOP_CMPLT(     T1,     Y,      0  /* y > 1 */  ),
     ASSH_BOP_SUB(       T2,     P,      T1              ),
-    ASSH_BOP_CMPLT(     Y,      T2                      ), /* y < p-1 */
+    ASSH_BOP_CMPLT(     Y,      T2,     0 /* y < p-1 */ ),
 
     /* check public key order in the group */
     ASSH_BOP_EXPM(      T2,     Y,      Q,      P       ),
-    ASSH_BOP_CMPEQ(     T1,     T2                      ),
+    ASSH_BOP_CMPEQ(     T1,     T2,     0               ),
 
     ASSH_BOP_END(),
   };
@@ -191,8 +191,8 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
       static const assh_bignum_op_t bytecode2[] = {
 
         ASSH_BOP_SIZE(  T1,     P                       ),
-        ASSH_BOP_EXPM(  T1,     G,      X,      P       ),
-        ASSH_BOP_CMPEQ( T1,     Y                       ),
+        ASSH_BOP_EXPM_C(T1,     G,      X,      P       ),
+        ASSH_BOP_CMPEQ( T1,     Y,      0               ),
 
         ASSH_BOP_END(),
       };

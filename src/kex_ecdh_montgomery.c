@@ -123,7 +123,7 @@ assh_montgomery_point_mul(struct assh_session_s *s, const uint8_t *result,
 
     ASSH_BOP_MOVE(      X1,     BP_raw                  ),
     ASSH_BOP_UINT(      T0,     1                       ),
-    ASSH_BOP_CMPLT(     T0,     X1                      ),
+    ASSH_BOP_CMPLT(     T0,     X1,      0              ),
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
     ASSH_BOP_PRINT(     P,     'P'                      ),

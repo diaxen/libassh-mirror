@@ -291,7 +291,8 @@ enum assh_bignum_opcode_e
     ASSH_BIGNUM_OP_UINT,
     ASSH_BIGNUM_OP_MLADSWAP,
     ASSH_BIGNUM_OP_MLADLOOP,
-    ASSH_BIGNUM_OP_PRTEST,
+    ASSH_BIGNUM_OP_PRIME,
+    ASSH_BIGNUM_OP_ISPRIM,
     ASSH_BIGNUM_OP_PRINT,
   };
 
@@ -301,7 +302,7 @@ enum assh_bignum_opcode_e
     "expm", "inv", "shr", "shl",                \
     "and", "or", "not", "mask",                 \
     "rand", "cmp", "uint",                      \
-    "mladswap", "mladloop", "prtest", "print"   \
+      "mladswap", "mladloop", "prime", "isprim", "print" \
 }
 
 #define ASSH_BOP_NOREG  63
@@ -321,13 +322,12 @@ enum assh_bignum_opcode_e
     type @ref ASSH_BIGNUM_SIZE, the bit size of the source value is
     used. */
 #define ASSH_BOP_SIZE(dst, src) \
-  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_SIZE, dst, src, 0, 1)
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_SIZE, dst, src, 0, 32)
 
 /** This instruction has the same behavior as the @ref #ASSH_BOP_SIZE
-    instruction with additional constants multiplied and added to the
-    source size value. */
-#define ASSH_BOP_SIZEM(dst, src, cadd, cmul)         \
-  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_SIZE, dst, src, cadd, cmul)
+    instruction with shift and offset of the source size value. */
+#define ASSH_BOP_SIZEM(dst, src, cadd, cshift)         \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_SIZE, dst, src, cadd, cshift + 32)
 
 /** This instruction computes @tt {dst = (src1 + src2) % mod}. The
     bit size of the destination number must be at least
@@ -391,35 +391,36 @@ enum assh_bignum_opcode_e
 #define ASSH_BOP_INV_C(dst, src1, src2)              \
   ASSH_BOP_FMT3(ASSH_BIGNUM_OP_INV, dst, src1, src2)
 
-/** This instruction computes @tt {dst = shift_right(src1, src2)} */
-#define ASSH_BOP_SHR(dst, src, amount)                 \
-  ASSH_BOP_FMT3(ASSH_BIGNUM_OP_SHR, dst, src, amount)
+/** This instruction computes @tt {dst = shift_right(src1, val +
+    size(src2))}. @tt val must be in range [-128,+127] and @tt src2
+    can be ASSH_BOP_NOREG. */
+#define ASSH_BOP_SHR(dst, src, val, src2)              \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_SHR, dst, src, 128 + (val), src2)
 
-/** This instruction computes @tt {dst = shift_left(src1, src2)} */
-#define ASSH_BOP_SHL(dst, src, amount)                 \
-  ASSH_BOP_FMT3(ASSH_BIGNUM_OP_SHL, dst, src, amount)
+/** This instruction is similar to @xref #ASSH_BOP_SHR. */
+#define ASSH_BOP_SHL(dst, src, val, src2)              \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_SHL, dst, src, 128 + (val), src2)
 
 /** This instruction initializes a big number with random data.
     The quality operand is of type @ref assh_prng_quality_e. */
-#define ASSH_BOP_RAND(dst, quality)                        \
-  ASSH_BOP_FMT2(ASSH_BIGNUM_OP_RAND, dst, quality)
+#define ASSH_BOP_RAND(dst, min, max, quality)          \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_RAND, dst, min, max, quality)
 
-/** This instruction makes the @ref assh_bignum_bytecode function
-    return an error if the two number are not equal. */
-#define ASSH_BOP_CMPEQ(src1, src2)                      \
-  ASSH_BOP_FMT3(ASSH_BIGNUM_OP_CMP, src1, src2, 0)
-/** This instruction makes the @ref assh_bignum_bytecode function
-    return an error if the two number are equal. */
-#define ASSH_BOP_CMPNE(src1, src2)                      \
-  ASSH_BOP_FMT3(ASSH_BIGNUM_OP_CMP, src1, src2, 1)
-/** This instruction makes the @ref assh_bignum_bytecode function
-    return an error if the first number is less than the second. */
-#define ASSH_BOP_CMPLT(src1, src2)                      \
-  ASSH_BOP_FMT3(ASSH_BIGNUM_OP_CMP, src1, src2, 2)
-/** This instruction makes the @ref assh_bignum_bytecode function
-    return an error if the first number is less than or equal to the second. */
-#define ASSH_BOP_CMPLTEQ(src1, src2)                    \
-  ASSH_BOP_FMT3(ASSH_BIGNUM_OP_CMP, src1, src2, 3)
+/** This instruction changes the program counter if the two numbers
+    are equal. The bytecode execution is aborted with the @ref
+    ASSH_ERR_NUM_COMPARE_FAILED error if the condition is false and the
+    value of @tt pcdiff is 0. */
+#define ASSH_BOP_CMPEQ(src1, src2, pcdiff)                    \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CMP, src1, src2, 128 + pcdiff, 0)
+/** Same behavior as @ref #ASSH_BOP_CMPEQ. */
+#define ASSH_BOP_CMPNE(src1, src2, pcdiff)                    \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CMP, src1, src2, 128 + pcdiff, 1)
+/** Same behavior as @ref #ASSH_BOP_CMPEQ. */
+#define ASSH_BOP_CMPLT(src1, src2, pcdiff)                    \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CMP, src1, src2, 128 + pcdiff, 2)
+/** Same behavior as @ref #ASSH_BOP_CMPEQ. */
+#define ASSH_BOP_CMPLTEQ(src1, src2, pcdiff)                  \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CMP, src1, src2, 128 + pcdiff, 3)
 
 /** This instruction initializes a big number from a 20 bits
     unsigned integer constant. */
@@ -441,9 +442,23 @@ enum assh_bignum_opcode_e
 #define ASSH_BOP_MLADLOOP(rel, mlad)                    \
   ASSH_BOP_FMT2(ASSH_BIGNUM_OP_MLADLOOP, rel, mlad)
 
-/** This instruction checks that the number is a prime greater than 2. */
-#define ASSH_BOP_PRTEST(src) \
-  ASSH_BOP_FMT1(ASSH_BIGNUM_OP_PRTEST, src)
+/** This instruction generates a prime number in range (min, max). If
+    @tt min is @tt ASSH_BOP_NOREG, no lower bound is used. If @tt max
+    is @tt ASSH_BOP_NOREG, the most significant bit of the destination
+    will be set. */
+#define ASSH_BOP_PRIME(dst, min, max)                 \
+  ASSH_BOP_FMT3(ASSH_BIGNUM_OP_PRIME, dst, min, max)
+
+/** This instruction changes the program counter if the number is
+    a prime greater than 2. The bytecode execution is aborted with the
+    @ref ASSH_ERR_NUM_OVERFLOW error if the number is not prime and
+    the value of @tt pcdiff is 0. */
+#define ASSH_BOP_ISPRIM(src, pcdiff)                                   \
+  ASSH_BOP_FMT3(ASSH_BIGNUM_OP_ISPRIM, 1, pcdiff + 128, src)
+
+/** @see #ASSH_BOP_ISPRIM */
+#define ASSH_BOP_ISNTPRIM(src, pcdiff)                                   \
+  ASSH_BOP_FMT3(ASSH_BIGNUM_OP_ISPRIM, 0, pcdiff + 128, src)
 
 /** This instruction print a big number argument for debugging
     purpose. The id argument is a 16 bits ASCII constant. */
