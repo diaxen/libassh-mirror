@@ -127,6 +127,67 @@ static ASSH_KEY_CMP_FCN(assh_key_rsa_cmp)
     &k->nn, &l->nn, &k->en, &l->en, &k->dn, &l->dn) == 0;
 }
 
+static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
+{
+  assh_error_t err;
+
+  ASSH_CHK_RET(bits < 1024, ASSH_ERR_NOTSUP);
+
+  struct assh_key_rsa_s *k;
+
+  ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_key_rsa_s),
+                          ASSH_ALLOC_KEY, (void**)&k));
+
+  k->key.algo = &assh_key_rsa;
+
+  /* init numbers */
+  assh_bignum_init(c, &k->nn, bits);
+  assh_bignum_init(c, &k->dn, bits);
+  assh_bignum_init(c, &k->en, 17);
+
+  enum bytecode_args_e
+  {
+    N, D, E,
+    P, Q, T0, T1
+  };
+
+  static const assh_bignum_op_t bytecode[] = {
+
+    ASSH_BOP_SIZEM(     P,      N,      0,      -1      ),
+    ASSH_BOP_SIZEM(     Q,      N,      0,      -1      ),
+    ASSH_BOP_SIZE(      T0,     P                       ),
+    ASSH_BOP_SIZE(      T1,     N                       ),
+
+    /* generate 2 prime numbers with the 2 most significant bits set */
+    ASSH_BOP_UINT(      T0,     3                       ),
+    ASSH_BOP_SHL(       T0,     T0,     -2,     P       ),
+    ASSH_BOP_PRIME(     P,      T0,     ASSH_BOP_NOREG  ),
+    ASSH_BOP_PRIME(     Q,      T0,     ASSH_BOP_NOREG  ),
+    ASSH_BOP_CMPNE(     P,      Q,      0 /* sanity check */ ),
+
+    ASSH_BOP_MUL(       N,      P,      Q               ),
+
+    ASSH_BOP_UINT(      T0,     1                       ),
+    ASSH_BOP_SUB(       P,      P,      T0              ),
+    ASSH_BOP_SUB(       Q,      Q,      T0              ),
+    ASSH_BOP_MUL(       T1,     P,      Q               ),
+
+    ASSH_BOP_UINT(      E,      65537                   ),
+    ASSH_BOP_INV(       D,      E,      T1              ),
+
+    ASSH_BOP_END(),
+  };
+
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "NNNTTTT",
+                        &k->nn, &k->dn, &k->en), err_key);
+
+  *key = &k->key;
+  return ASSH_OK;
+ err_key:
+  assh_free(c, k, ASSH_ALLOC_KEY);
+  return err;
+}
+
 static ASSH_KEY_VALIDATE_FCN(assh_key_rsa_validate)
 {
 #if 0
@@ -223,8 +284,10 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
   ASSH_CHK_RET(e_len < 1 || e_len > 32, ASSH_ERR_NOTSUP);
   ASSH_CHK_RET(d_str != NULL && (d_len < 768 || d_len > 8192), ASSH_ERR_NOTSUP);
 
-  ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_key_rsa_s), ASSH_ALLOC_KEY, (void**)key));
-  struct assh_key_rsa_s *k = (void*)*key;
+  struct assh_key_rsa_s *k;
+
+  ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_key_rsa_s),
+                          ASSH_ALLOC_KEY, (void**)&k));
 
   k->key.algo = &assh_key_rsa;
 
@@ -254,6 +317,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
       break;
     }
 
+  *key = &k->key;
   return ASSH_OK;
 
  err_num:
@@ -278,6 +342,7 @@ const struct assh_algo_key_s assh_key_rsa =
 {
   .type = "ssh-rsa",
   .f_output = assh_key_rsa_output,
+  .f_create = assh_key_rsa_create,
   .f_validate = assh_key_rsa_validate,
   .f_cmp = assh_key_rsa_cmp,
   .f_load = assh_key_rsa_load,

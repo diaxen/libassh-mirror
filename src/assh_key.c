@@ -36,16 +36,8 @@ assh_error_t assh_key_load3(struct assh_context_s *c, struct assh_key_s **key,
   assh_error_t err;
   struct assh_key_s *k;
 
-  switch (algo->class_)
-    {
-    case ASSH_ALGO_SIGN:
-      ASSH_ERR_RET(((struct assh_algo_sign_s*)algo)
-		   ->key->f_load(c, blob, blob_len, &k, format));
-      break;
-
-    default:
-      ASSH_ERR_RET(ASSH_ERR_NOTSUP | ASSH_ERRSV_CONTINUE);
-    }
+  ASSH_CHK_RET(algo->key == NULL, ASSH_ERR_MISSING_ALGO);
+  ASSH_ERR_RET(algo->key->f_load(c, blob, blob_len, &k, format));
 
   k->next = *key;
   *key = k;
@@ -75,8 +67,24 @@ assh_error_t assh_key_load2(struct assh_context_s *c, struct assh_key_s **key,
   /* use an array of key algorithms ? */
 
   ASSH_CHK_RET(assh_algo_by_name(c, ASSH_ALGO_SIGN, algo_name, algo_name_len, &algo)
-               != ASSH_OK, ASSH_ERR_MISSING_KEY);
+               != ASSH_OK, ASSH_ERR_MISSING_ALGO);
   ASSH_ERR_RET(assh_key_load3(c, key, algo, blob, blob_len, format));
+
+  return ASSH_OK;
+}
+
+assh_error_t
+assh_key_create(struct assh_context_s *c, size_t bits,
+                const char *algo_name, struct assh_key_s **key)
+{
+  assh_error_t err;
+  const struct assh_algo_s *algo;
+  size_t len = strlen(algo_name);
+
+  ASSH_CHK_RET(assh_algo_by_name(c, ASSH_ALGO_SIGN, algo_name, len, &algo)
+               != ASSH_OK, ASSH_ERR_MISSING_ALGO);
+
+  ASSH_ERR_RET(algo->key->f_create(c, bits, key));
 
   return ASSH_OK;
 }
@@ -84,6 +92,8 @@ assh_error_t assh_key_load2(struct assh_context_s *c, struct assh_key_s **key,
 void assh_key_drop(struct assh_context_s *c, struct assh_key_s **head)
 {
   struct assh_key_s *k = *head;
+  if (k == NULL)
+    return;
   *head = k->next;
   k->algo->f_cleanup(c, k);
 }

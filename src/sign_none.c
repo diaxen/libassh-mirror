@@ -93,8 +93,8 @@ struct assh_algo_sign_s assh_sign_none =
   .algo = {
     .name = "none@libassh.org", .class_ = ASSH_ALGO_SIGN,
     .safety = 0, .speed = 99,
+    .key = &assh_key_none,
   },
-  .key = &assh_key_none,
   .f_generate = assh_sign_none_generate,
   .f_verify = assh_sign_none_verify,
 };

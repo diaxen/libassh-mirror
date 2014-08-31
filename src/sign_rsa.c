@@ -308,8 +308,8 @@ struct assh_algo_sign_s assh_sign_rsa_sha1_md5 =
     .class_ = ASSH_ALGO_SIGN,
     .priority = 2, .safety = 15, .speed = 40,
     .f_suitable_key = assh_sign_rsa_suitable_key_768,
+    .key = &assh_key_rsa,
   },
-  .key = &assh_key_rsa,
   .f_generate = assh_sign_rsa_generate_sha1,
   .f_verify = assh_sign_rsa_verify_sha1_md5,
 };
@@ -340,8 +340,8 @@ struct assh_algo_sign_s assh_sign_rsa_sha1 =
     .class_ = ASSH_ALGO_SIGN,
     .priority = 1, .safety = 20, .speed = 40,
     .f_suitable_key = assh_sign_rsa_suitable_key_1024,
+    .key = &assh_key_rsa,
   },
-  .key = &assh_key_rsa,
   .f_generate = assh_sign_rsa_generate_sha1,
   .f_verify = assh_sign_rsa_verify_sha1,
 };
@@ -363,8 +363,8 @@ struct assh_algo_sign_s assh_sign_rsa_sha1_2048 =
     .class_ = ASSH_ALGO_SIGN,
     .priority = 0, .safety = 25, .speed = 30,
     .f_suitable_key = assh_sign_rsa_suitable_key_2048,
+    .key = &assh_key_rsa,
   },
-  .key = &assh_key_rsa,
   .f_generate = assh_sign_rsa_generate_sha1,
   .f_verify = assh_sign_rsa_verify_sha1,
 };
@@ -392,8 +392,8 @@ struct assh_algo_sign_s assh_sign_rsa_sha256_2048 =
     .class_ = ASSH_ALGO_SIGN,
     .safety = 40, .speed = 30,
     .f_suitable_key = assh_sign_rsa_suitable_key_2048,
+    .key = &assh_key_rsa,
   },
-  .key = &assh_key_rsa,
   .f_generate = assh_sign_rsa_generate_sha256,
   .f_verify = assh_sign_rsa_verify_sha256,
 };
@@ -415,8 +415,8 @@ struct assh_algo_sign_s assh_sign_rsa_sha256_3072 =
     .class_ = ASSH_ALGO_SIGN,
     .safety = 50, .speed = 20,
     .f_suitable_key = assh_sign_rsa_suitable_key_3072,
+    .key = &assh_key_rsa,
   },
-  .key = &assh_key_rsa,
   .f_generate = assh_sign_rsa_generate_sha256,
   .f_verify = assh_sign_rsa_verify_sha256,
 };

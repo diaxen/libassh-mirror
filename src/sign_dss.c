@@ -289,8 +289,8 @@ struct assh_algo_sign_s assh_sign_dss =
     .name = "ssh-dss", .class_ = ASSH_ALGO_SIGN,
     .safety = 20, .speed = 40,
     .f_suitable_key = assh_sign_dss_suitable_key,
+    .key = &assh_key_dsa,
   },
-  .key = &assh_key_dsa,
   .f_generate = assh_sign_dss_generate,
   .f_verify = assh_sign_dss_verify,
 };
@@ -310,8 +310,8 @@ struct assh_algo_sign_s assh_sign_dsa2048_sha224 =
     .name = "dsa2048-sha224@libassh.org", .class_ = ASSH_ALGO_SIGN,
     .safety = 35, .speed = 30,
     .f_suitable_key = assh_sign_dss_suitable_key_2048_224,
+    .key = &assh_key_dsa,
   },
-  .key = &assh_key_dsa,
   .f_generate = assh_sign_dss_generate,
   .f_verify = assh_sign_dss_verify,
 };
@@ -331,8 +331,8 @@ struct assh_algo_sign_s assh_sign_dsa2048_sha256 =
     .name = "dsa2048-sha256@libassh.org", .class_ = ASSH_ALGO_SIGN,
     .safety = 40, .speed = 30,
     .f_suitable_key = assh_sign_dss_suitable_key_2048_256,
+    .key = &assh_key_dsa,
   },
-  .key = &assh_key_dsa,
   .f_generate = assh_sign_dss_generate,
   .f_verify = assh_sign_dss_verify,
 };
@@ -352,8 +352,8 @@ struct assh_algo_sign_s assh_sign_dsa3072_sha256 =
     .name = "dsa3072-sha256@libassh.org", .class_ = ASSH_ALGO_SIGN,
     .safety = 50, .speed = 30,
     .f_suitable_key = assh_sign_dss_suitable_key_3072_256,
+    .key = &assh_key_dsa,
   },
-  .key = &assh_key_dsa,
   .f_generate = assh_sign_dss_generate,
   .f_verify = assh_sign_dss_verify,
 };

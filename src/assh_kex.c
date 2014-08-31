@@ -647,6 +647,23 @@ assh_kex_client_hash2(struct assh_session_s *s,
 
 #ifdef CONFIG_ASSH_SERVER
 assh_error_t
+assh_kex_server_host_key(struct assh_session_s *s,
+                         const struct assh_key_s **host_key)
+{
+  assh_error_t err;
+  struct assh_context_s *c = s->ctx;
+  const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
+  const struct assh_key_s *hk = c->host_keys;
+
+  while (hk != NULL && !assh_algo_suitable_key(&sign_algo->algo, hk))
+    hk = hk->next;
+  ASSH_CHK_RET(hk == NULL, ASSH_ERR_MISSING_KEY);
+  *host_key = hk;
+
+  return ASSH_OK;
+}
+
+assh_error_t
 assh_kex_server_hash1(struct assh_session_s *s, size_t kex_len,
                       struct assh_hash_ctx_s *hash_ctx,
                       struct assh_packet_s **pout, size_t *sign_len,
@@ -659,11 +676,8 @@ assh_kex_server_hash1(struct assh_session_s *s, size_t kex_len,
   /* look for an host key pair which can be used with the selected algorithm. */
   const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
 
-  const struct assh_key_s *hk = c->host_keys;
-  while (hk != NULL && !assh_algo_suitable_key(&sign_algo->algo, hk))
-    hk = hk->next;
-  ASSH_CHK_RET(hk == NULL, ASSH_ERR_MISSING_KEY | ASSH_ERRSV_DISCONNECT);
-  *host_key = hk;
+  ASSH_ERR_RET(assh_kex_server_host_key(s, host_key) | ASSH_ERRSV_DISCONNECT);
+  const struct assh_key_s *hk = *host_key;
 
   /* alloc reply packet */
   size_t ks_len;

@@ -58,6 +58,11 @@ struct assh_key_s;
 
 typedef ASSH_KEY_LOAD_FCN(assh_key_load_t);
 
+/** @internal This function creates a new key of specified bits size. */
+#define ASSH_KEY_CREATE_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t (n) \
+  (struct assh_context_s *c, size_t bits, struct assh_key_s **key)
+
+typedef ASSH_KEY_CREATE_FCN(assh_key_create_t);
 
 /** @internal This function checks the key validity. */
 #define ASSH_KEY_VALIDATE_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t (n) \
@@ -109,6 +114,7 @@ struct assh_algo_key_s
 {
   const char *type;
   assh_key_load_t *f_load;
+  assh_key_create_t *f_create;
   assh_key_output_t *f_output;
   assh_key_validate_t *f_validate;
   assh_key_cmp_t *f_cmp;
@@ -151,6 +157,10 @@ assh_key_load(struct assh_context_s *c, struct assh_key_s **key,
                         algo_name != NULL ? strlen(algo_name) : 0,
                         blob, blob_len, format);
 }
+
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_key_create(struct assh_context_s *c, size_t bits,
+                const char *algo_name, struct assh_key_s **key);
 
 /** @This function returns true if both keys are equals. If the @tt
     pub parameter is set, only the public part of the key are taken

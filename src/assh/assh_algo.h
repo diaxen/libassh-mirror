@@ -57,8 +57,13 @@ struct assh_algo_s
   const char *name;
   const char *variant;
   enum assh_algo_class_e class_;
-  int_fast16_t safety;          //< safety factor in range [0, 99]
-  int_fast16_t speed;           //< speed factor in range [0, 99]
+  /** safety factor in range [0, 99] */
+  int_fast16_t safety;
+  /** speed factor in range [0, 99] */
+  int_fast16_t speed;
+
+  const struct assh_algo_key_s *key;
+
   /** The function must return true is the passed key can be used to
       with the algorithm. This pointer must be @tt NULL if the
       algorithm does not require an @ref assh_key_s object to run. */

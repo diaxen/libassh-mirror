@@ -25,6 +25,7 @@
 #include <assh/assh_bignum.h>
 #include <assh/assh_packet.h>
 #include <assh/assh_alloc.h>
+#include <assh/assh_prng.h>
 
 #include <string.h>
 
@@ -127,6 +128,79 @@ static ASSH_KEY_CMP_FCN(assh_key_dsa_cmp)
 
   return assh_bignum_bytecode(c, bc, "NNNNNNNN",
     &k->pn, &l->pn, &k->qn, &l->qn, &k->gn, &l->gn, &k->yn, &l->yn) == 0;
+}
+
+static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
+{
+  assh_error_t err;
+
+  ASSH_CHK_RET(bits < 1024, ASSH_ERR_NOTSUP);
+
+  size_t l = bits;
+  size_t n = l > 1024 ? 256 : 160;
+
+  struct assh_key_dsa_s *k;
+
+  ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_key_dsa_s),
+                          ASSH_ALLOC_KEY, (void**)&k));
+
+  k->key.algo = &assh_key_dsa;
+
+  /* init numbers */
+  assh_bignum_init(c, &k->pn, l);
+  assh_bignum_init(c, &k->qn, n);
+  assh_bignum_init(c, &k->gn, l);
+  assh_bignum_init(c, &k->yn, l);
+  assh_bignum_init(c, &k->xn, n);
+
+  enum bytecode_args_e
+  {
+    P, Q, G, Y, X,
+    T0, T1, H, S
+  };
+
+  static const assh_bignum_op_t bytecode[] = {
+
+    ASSH_BOP_SIZE(      T0,     S                               ),
+    ASSH_BOP_SIZE(      T1,     P                               ),
+
+    /* generate DSA parameters */
+    ASSH_BOP_PRIME(     Q,      ASSH_BOP_NOREG, ASSH_BOP_NOREG  ),
+
+    ASSH_BOP_UINT(      T1,     1                               ),
+
+    ASSH_BOP_RAND(      T0,     ASSH_BOP_NOREG, ASSH_BOP_NOREG,
+                        ASSH_PRNG_QUALITY_EPHEMERAL_KEY ),
+    ASSH_BOP_MUL(       P,      T0,     Q                       ),
+    ASSH_BOP_ADD(       P,      P,      T1                      ),
+
+    ASSH_BOP_ADD(       T0,     T0,     T1 /* T0 = (p-1)/q */   ),
+    ASSH_BOP_ADD(       P,      P,      Q                       ),
+    ASSH_BOP_ISNTPRIM(  P,      -3                              ),
+
+#warning FIXME range
+    ASSH_BOP_RAND(      H,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
+                        ASSH_PRNG_QUALITY_WEAK          ),
+    ASSH_BOP_EXPM(      G,      H,      T0,     P               ),
+    ASSH_BOP_CMPEQ(     G,      T1,     -3                      ),
+
+    /* generate key pair */
+#warning FIXME range
+    ASSH_BOP_RAND(      X,      ASSH_BOP_NOREG, Q,
+                        ASSH_PRNG_QUALITY_LONGTERM_KEY  ),
+    ASSH_BOP_EXPM(      Y,      G,      X,      P               ),
+
+    ASSH_BOP_END(),
+  };
+
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "NNNNNTTTs",
+                 &k->pn, &k->qn, &k->gn, &k->yn, &k->xn, l - n), err_key);
+
+  *key = &k->key;
+  return ASSH_OK;
+ err_key:
+  assh_free(c, k, ASSH_ALLOC_KEY);
+  return err;
 }
 
 static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
@@ -259,9 +333,10 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
   ASSH_CHK_RET(l < 1024 || n < 160 || l % 8 || n % 8, ASSH_ERR_BAD_DATA);
   ASSH_CHK_RET(l > 4096 || n > 256, ASSH_ERR_NOTSUP);
 
-  ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_key_dsa_s),
-                          ASSH_ALLOC_KEY, (void**)key));
   struct assh_key_dsa_s *k = (void*)*key;
+
+  ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_key_dsa_s),
+                          ASSH_ALLOC_KEY, (void**)&k));
 
   k->key.algo = &assh_key_dsa;
 
@@ -301,6 +376,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
       break;
     }
 
+  *key = &k->key;
   return ASSH_OK;
 
  err_xn:
@@ -329,6 +405,7 @@ const struct assh_algo_key_s assh_key_dsa =
 {
   .type = "ssh-dss",
   .f_output = assh_key_dsa_output,
+  .f_create = assh_key_dsa_create,
   .f_validate = assh_key_dsa_validate,
   .f_cmp = assh_key_dsa_cmp,
   .f_load = assh_key_dsa_load,

@@ -135,31 +135,28 @@ assh_error_t assh_algo_register_default(struct assh_context_s *c, unsigned int s
 		        &assh_sign_dsa2048_sha224,
 		        &assh_sign_dsa2048_sha256,
 		        &assh_sign_dsa3072_sha256,
-			/* sign_rsa.c */
 			&assh_sign_rsa_sha1_md5,
 			&assh_sign_rsa_sha1,
 			&assh_sign_rsa_sha1_2048,
 			&assh_sign_rsa_sha256_2048,
 			&assh_sign_rsa_sha256_3072,
 #ifndef CONFIG_ASSH_USE_GCRYPT_CIPHERS
-			/* cipher_arc4_builting.c */
+			/* ciphers */
 			&assh_cipher_arc4,
 			&assh_cipher_arc4_128,
 			&assh_cipher_arc4_256,
 #endif
-			/* mac_md5.c */
+			/* mac */
 			&assh_hmac_md5,
 			&assh_hmac_md5_96,
-			/* mac_sha1.c */
 			&assh_hmac_sha1,
 			&assh_hmac_sha1_96,
-			/* mac_sha2.c */
 			&assh_hmac_sha256,
 			&assh_hmac_sha512,
 #ifdef CONFIG_ASSH_USE_GCRYPT_HASH
 			&assh_hmac_ripemd160,
 #endif
-			/* compress_none.c */
+			/* compress */
 			&assh_compress_none,
 				     NULL));
 
