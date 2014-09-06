@@ -103,15 +103,11 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
     assh_hash_update(hash_ctx, data[i], data_len[i]);
   assh_hash_final(hash_ctx, msgh);
 
-  /* Do not use the prng output directly as the DSA nonce in order to
-     avoid leaking key bits in case of a weak prng. Random data is
-     hashed with the private key and the message data. */
-  ASSH_ERR_GTO(c->prng->f_get(c, nonce, n / 8, ASSH_PRNG_QUALITY_NONCE), err_scratch);
+  /* Do not rely on prng, avoid leaking key bits.
+     Use hash(key|hash(data)) as nonce. */
   ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, algo), err_scratch);
-  assh_hash_update(hash_ctx, nonce, n / 8);
-  for (i = 0; i < data_count; i++)
-    assh_hash_update(hash_ctx, data[i], data_len[i]);
   ASSH_ERR_GTO(assh_hash_bignum(c, hash_ctx, &k->xn), err_hash);
+  assh_hash_update(hash_ctx, msgh, n / 8);
   assh_hash_final(hash_ctx, nonce);
 
   enum bytecode_args_e
