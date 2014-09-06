@@ -120,17 +120,19 @@ assh_error_t assh_algo_register_default(struct assh_context_s *c, unsigned int s
 #endif
 
   ASSH_ERR_RET(assh_algo_register_va(c, safety, min_safety,
-			/* kex_dh.c */
-			&assh_kex_curve25519_sha256,
-			&assh_kex_m383_sha256,
-			&assh_kex_m511_sha256,
-			&assh_kex_dh_group1_sha1,
-			&assh_kex_dh_group14_sha1,
-			&assh_kex_dh_gex_sha1,
-			&assh_kex_dh_gex_sha256_12,
-			&assh_kex_dh_gex_sha256_8,
-			&assh_kex_dh_gex_sha256_4,
-			/* sign_dss.c */
+			/* kex */
+//			&assh_kex_curve25519_sha256,
+//			&assh_kex_m383_sha256,
+//			&assh_kex_m511_sha256,
+//			&assh_kex_dh_group1_sha1,
+//			&assh_kex_dh_group14_sha1,
+//			&assh_kex_dh_gex_sha1,
+//			&assh_kex_dh_gex_sha256_12,
+//			&assh_kex_dh_gex_sha256_8,
+//			&assh_kex_dh_gex_sha256_4,
+			&assh_kex_rsa1024_sha1,
+			&assh_kex_rsa2048_sha256,
+			/* sign */
 			&assh_sign_dss,
 		        &assh_sign_dsa2048_sha224,
 		        &assh_sign_dsa2048_sha256,

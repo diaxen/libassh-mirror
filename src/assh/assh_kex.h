@@ -280,5 +280,11 @@ extern const struct assh_algo_kex_s assh_kex_dh_gex_sha256_8;
     the symmetric cipher key. */
 extern const struct assh_algo_kex_s assh_kex_dh_gex_sha256_4;
 
+/** RSA based key exchange as defined in rfc4432, 1024 bits key, sha1 hash */
+extern const struct assh_algo_kex_s assh_kex_rsa1024_sha1;
+
+/** RSA based key exchange as defined in rfc4432, 2048 bits key, sha256 hash */
+extern const struct assh_algo_kex_s assh_kex_rsa2048_sha256;
+
 #endif
 

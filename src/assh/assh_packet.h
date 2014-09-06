@@ -95,6 +95,10 @@ enum assh_ssh_msg_e
   SSH_MSG_KEX_DH_GEX_REPLY          =  33,
   SSH_MSG_KEX_DH_GEX_REQUEST        =  34,
 
+  SSH_MSG_KEXRSA_PUBKEY             =  30,
+  SSH_MSG_KEXRSA_SECRET             =  31,
+  SSH_MSG_KEXRSA_DONE               =  32,
+
   /* SSH-USERAUTH */
   SSH_MSG_USERAUTH_REQUEST          =  50,
   SSH_MSG_USERAUTH_FAILURE          =  51,
