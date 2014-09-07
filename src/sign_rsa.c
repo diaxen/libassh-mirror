@@ -301,7 +301,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate_sha1)
                                 sign, sign_len, RSA_DIGEST_SHA1);
 }
 
-struct assh_algo_sign_s assh_sign_rsa_sha1_md5 =
+const struct assh_algo_sign_s assh_sign_rsa_sha1_md5 =
 {
   .algo = {
     .name = "ssh-rsa", .variant = "sha*, md5, 768+ bits keys",
@@ -333,7 +333,7 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_rsa_verify_sha1)
                               | (1 << RSA_DIGEST_SHA512));
 }
 
-struct assh_algo_sign_s assh_sign_rsa_sha1 =
+const struct assh_algo_sign_s assh_sign_rsa_sha1 =
 {
   .algo = {
     .name = "ssh-rsa",  .variant = "sha*, 1024+ bits keys",
@@ -356,7 +356,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_2048)
   return assh_bignum_bits(&k->nn) >= 2048;
 }
 
-struct assh_algo_sign_s assh_sign_rsa_sha1_2048 =
+const struct assh_algo_sign_s assh_sign_rsa_sha1_2048 =
 {
   .algo = {
     .name = "ssh-rsa", .variant = "sha1, 2048+ bits keys",
@@ -385,7 +385,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate_sha256)
                                 sign, sign_len, RSA_DIGEST_SHA256);
 }
 
-struct assh_algo_sign_s assh_sign_rsa_sha256_2048 =
+const struct assh_algo_sign_s assh_sign_rsa_sha256_2048 =
 {
   .algo = {
     .name = "rsa2048-sha256@libassh.org",
@@ -408,7 +408,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_3072)
   return assh_bignum_bits(&k->nn) >= 3072;
 }
 
-struct assh_algo_sign_s assh_sign_rsa_sha256_3072 =
+const struct assh_algo_sign_s assh_sign_rsa_sha256_3072 =
 {
   .algo = {
     .name = "rsa3072-sha256@libassh.org",

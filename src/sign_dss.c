@@ -279,7 +279,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dss_suitable_key)
          assh_bignum_bits(&k->pn) == 1024;
 }
 
-struct assh_algo_sign_s assh_sign_dss =
+const struct assh_algo_sign_s assh_sign_dss =
 {
   .algo = {
     .name = "ssh-dss", .class_ = ASSH_ALGO_SIGN,
@@ -300,7 +300,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dss_suitable_key_2048_224)
          assh_bignum_bits(&k->pn) >= 2048;
 }
 
-struct assh_algo_sign_s assh_sign_dsa2048_sha224 =
+const struct assh_algo_sign_s assh_sign_dsa2048_sha224 =
 {
   .algo = {
     .name = "dsa2048-sha224@libassh.org", .class_ = ASSH_ALGO_SIGN,
@@ -321,7 +321,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dss_suitable_key_2048_256)
          assh_bignum_bits(&k->pn) >= 2048;
 }
 
-struct assh_algo_sign_s assh_sign_dsa2048_sha256 =
+const struct assh_algo_sign_s assh_sign_dsa2048_sha256 =
 {
   .algo = {
     .name = "dsa2048-sha256@libassh.org", .class_ = ASSH_ALGO_SIGN,
@@ -342,7 +342,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dss_suitable_key_3072_256)
          assh_bignum_bits(&k->pn) >= 3072;
 }
 
-struct assh_algo_sign_s assh_sign_dsa3072_sha256 =
+const struct assh_algo_sign_s assh_sign_dsa3072_sha256 =
 {
   .algo = {
     .name = "dsa3072-sha256@libassh.org", .class_ = ASSH_ALGO_SIGN,

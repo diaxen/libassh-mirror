@@ -88,7 +88,7 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_none_verify)
   return ASSH_OK;
 }
 
-struct assh_algo_sign_s assh_sign_none =
+const struct assh_algo_sign_s assh_sign_none =
 {
   .algo = {
     .name = "none@libassh.org", .class_ = ASSH_ALGO_SIGN,

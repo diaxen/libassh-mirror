@@ -71,39 +71,39 @@ struct assh_algo_sign_s
   assh_sign_verify_t *f_verify;
 };
 
-extern struct assh_algo_sign_s assh_sign_none;
+extern const struct assh_algo_sign_s assh_sign_none;
 
 /** Use SHA1 and a dsa key with L = 1024 and N = 160. */
-extern struct assh_algo_sign_s assh_sign_dss;
+extern const struct assh_algo_sign_s assh_sign_dss;
 
 /** Use SHA224 and a dsa key with L >= 2048 and N = 224. */
-extern struct assh_algo_sign_s assh_sign_dsa2048_sha224;
+extern const struct assh_algo_sign_s assh_sign_dsa2048_sha224;
 
 /** Use SHA256 and a dsa key with L >= 2048 and N = 256. */
-extern struct assh_algo_sign_s assh_sign_dsa2048_sha256;
+extern const struct assh_algo_sign_s assh_sign_dsa2048_sha256;
 
 /** Use SHA256 and a dsa key with L >= 3072 and N = 256. */
-extern struct assh_algo_sign_s assh_sign_dsa3072_sha256;
+extern const struct assh_algo_sign_s assh_sign_dsa3072_sha256;
 
 /** Accept sha* and md5 RSA signatures, generate sha1 signatures.
     Reject keys with modulus size less than 768 bits. */
-extern struct assh_algo_sign_s assh_sign_rsa_sha1_md5;
+extern const struct assh_algo_sign_s assh_sign_rsa_sha1_md5;
 
 /** Accept sha* RSA signatures, generate sha1 signatures,
     Reject keys with modulus size less than 1024 bits. */
-extern struct assh_algo_sign_s assh_sign_rsa_sha1;
+extern const struct assh_algo_sign_s assh_sign_rsa_sha1;
 
 /** Accept sha* RSA signatures, generate sha1 signatures. 
     Reject keys with modulus size less than 2048 bits. */
-extern struct assh_algo_sign_s assh_sign_rsa_sha1_2048;
+extern const struct assh_algo_sign_s assh_sign_rsa_sha1_2048;
 
 /** Accept sha2, RSA signatures, generate sha256 signatures. 
     Reject keys with modulus size less than 2048 bits. */
-extern struct assh_algo_sign_s assh_sign_rsa_sha256_2048;
+extern const struct assh_algo_sign_s assh_sign_rsa_sha256_2048;
 
 /** Accept sha2 RSA signatures, generate sha256 signatures. 
     Reject keys with modulus size less than 3072 bits. */
-extern struct assh_algo_sign_s assh_sign_rsa_sha256_3072;
+extern const struct assh_algo_sign_s assh_sign_rsa_sha256_3072;
 
 #endif
 
