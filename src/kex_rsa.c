@@ -21,6 +21,10 @@
 
 */
 
+/*
+  This file implements rfc4432
+*/
+
 #include <assh/assh_kex.h>
 #include <assh/assh_session.h>
 #include <assh/assh_packet.h>
@@ -178,7 +182,9 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
   assh_store_u32(secret, slen - 4);
   secret[4] &= 0x7f & (0xff >> ((8 - sbits) & 7));
 
+#ifdef CONFIG_ASSH_DEBUG_KEX
   assh_hexdump("secret", secret, slen);
+#endif
 
   /* encode secret using OAEP */
 
@@ -195,14 +201,18 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
   m[-1] = 0x01;
   memcpy(m, secret, slen);
 
+#ifdef CONFIG_ASSH_DEBUG_KEX
   assh_hexdump("e", em, elen);
+#endif
 
   ASSH_ERR_GTO(assh_kex_rsa_mgf1(c, pv->hash,
 	         em + 1, hlen, db, elen - hlen - 1), err_tkey);
   ASSH_ERR_GTO(assh_kex_rsa_mgf1(c, pv->hash,
                  db, elen - hlen - 1, em + 1, hlen), err_tkey);
 
+#ifdef CONFIG_ASSH_DEBUG_KEX
   assh_hexdump("em", em, elen);
+#endif
 
   /* encrypt encoded secret using the transient RSA key */
 
@@ -228,7 +238,9 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
   ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "DNNTT",
                 em, &t_key->nn, &t_key->en), err_tkey);
 
+#ifdef CONFIG_ASSH_DEBUG_KEX
   assh_hexdump("emc", em, elen);
+#endif
 
   /* send packet with encrypted secret */
   struct assh_packet_s *pout;
@@ -339,7 +351,8 @@ static assh_error_t assh_kex_rsa_server_send_pubkey(struct assh_session_s *s)
   const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
 
   const struct assh_key_s *hk;
-  ASSH_ERR_RET(assh_kex_server_host_key(s, &hk) | ASSH_ERRSV_DISCONNECT);
+  ASSH_ERR_RET(assh_key_lookup(c, &hk, &s->host_sign_algo->algo)
+               | ASSH_ERRSV_DISCONNECT);
   pv->host_key = hk;
 
   /* alloc reply packet */
@@ -349,7 +362,7 @@ static assh_error_t assh_kex_rsa_server_send_pubkey(struct assh_session_s *s)
 	       | ASSH_ERRSV_DISCONNECT);
 
   size_t t_len;
-  ASSH_ERR_RET(hk->algo->f_output(c, pv->t_key, NULL, &t_len,
+  ASSH_ERR_RET(pv->t_key->algo->f_output(c, pv->t_key, NULL, &t_len,
 	         ASSH_KEY_FMT_PUB_RFC4253_6_6)
 	       | ASSH_ERRSV_DISCONNECT);
 
@@ -369,7 +382,7 @@ static assh_error_t assh_kex_rsa_server_send_pubkey(struct assh_session_s *s)
 
   uint8_t *t_str;
   ASSH_ASSERT(assh_packet_add_string(pout, t_len, &t_str));
-  ASSH_ERR_GTO(hk->algo->f_output(c, pv->t_key, t_str, &t_len,
+  ASSH_ERR_GTO(pv->t_key->algo->f_output(c, pv->t_key, t_str, &t_len,
 		ASSH_KEY_FMT_PUB_RFC4253_6_6)
 	       | ASSH_ERRSV_DISCONNECT, err_p);
 
@@ -430,7 +443,9 @@ static assh_error_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
 
   uint8_t *em = e_str + 4;
 
+#ifdef CONFIG_ASSH_DEBUG_KEX
   assh_hexdump("emc", em, elen);
+#endif
 
   enum bytecode_args_e
   {
@@ -454,7 +469,9 @@ static assh_error_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
   ASSH_ERR_RET(assh_bignum_bytecode(c, bytecode, "DNNTT",
                  em, &t_key->nn, &t_key->dn));
 
+#ifdef CONFIG_ASSH_DEBUG_KEX
   assh_hexdump("em", em, elen);
+#endif
 
   /* em[0] should be 0 here. We do not check in order to prevent a
      padding oracle attack */
@@ -466,7 +483,9 @@ static assh_error_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
   ASSH_ERR_RET(assh_kex_rsa_mgf1(c, pv->hash,
 	         em + 1, hlen, db, elen - hlen - 1));
 
+#ifdef CONFIG_ASSH_DEBUG_KEX
   assh_hexdump("e", em, elen);
+#endif
 
   ASSH_CHK_RET(assh_memcmp(db, pv->lhash, hlen), ASSH_ERR_BAD_DATA
 	       | ASSH_ERRSV_DISCONNECT);
@@ -553,18 +572,20 @@ static ASSH_KEX_PROCESS_FCN(assh_kex_rsa_process)
 
 static assh_error_t assh_kex_rsa_init(struct assh_session_s *s,
 				      size_t cipher_key_size, size_t minklen,
+				      const struct assh_algo_s *algo,
 				      const struct assh_hash_algo_s *hash,
 				      const uint8_t *lhash)
 {
+  struct assh_context_s *c = s->ctx;
   assh_error_t err;
   struct assh_kex_rsa_private_s *pv;
 
   size_t exp_n = cipher_key_size * 2;
 
-  ASSH_ERR_RET(assh_alloc(s->ctx, sizeof(*pv), ASSH_ALLOC_INTERNAL, (void**)&pv)
+  ASSH_ERR_RET(assh_alloc(c, sizeof(*pv), ASSH_ALLOC_INTERNAL, (void**)&pv)
 	       | ASSH_ERRSV_DISCONNECT);
 
-  switch (s->ctx->type)
+  switch (c->type)
     {
 #ifdef CONFIG_ASSH_CLIENT
     case ASSH_CLIENT: {
@@ -574,7 +595,12 @@ static assh_error_t assh_kex_rsa_init(struct assh_session_s *s,
 #endif
 #ifdef CONFIG_ASSH_SERVER
     case ASSH_SERVER:
-      ASSH_ERR_RET(assh_key_create(s->ctx, minklen, "ssh-rsa", &pv->t_key));
+      if (assh_key_lookup(c, &pv->t_key, algo))
+	{
+	  ASSH_ERR_GTO(assh_key_create(c, &c->keys, minklen, &assh_key_rsa,
+		       ASSH_ALGO_KEX) | ASSH_ERRSV_DISCONNECT, err);
+	  pv->t_key = c->keys;
+	}
       pv->state = ASSH_KEX_RSA_SERVER_SEND_PUBKEY;
       break;
 #endif
@@ -587,7 +613,7 @@ static assh_error_t assh_kex_rsa_init(struct assh_session_s *s,
   pv->lhash = lhash;
   pv->minklen = minklen;
 
-  switch (s->ctx->type)
+  switch (c->type)
     {
 #ifdef CONFIG_ASSH_CLIENT
     case ASSH_CLIENT:
@@ -606,6 +632,12 @@ static assh_error_t assh_kex_rsa_init(struct assh_session_s *s,
     }
 
   return ASSH_OK;
+
+#ifdef CONFIG_ASSH_SERVER
+ err:
+  assh_free(c, pv, ASSH_ALLOC_INTERNAL);
+  return err;
+#endif
 }
 
 static ASSH_KEX_CLEANUP_FCN(assh_kex_rsa_cleanup)
@@ -624,7 +656,6 @@ static ASSH_KEX_CLEANUP_FCN(assh_kex_rsa_cleanup)
 
 #ifdef CONFIG_ASSH_SERVER
     case ASSH_SERVER:
-      assh_key_drop(s->ctx, &pv->t_key);
       assh_free(s->ctx, pv->hash_ctx, ASSH_ALLOC_KEY);
       break;
 #endif
@@ -639,15 +670,29 @@ static ASSH_KEX_CLEANUP_FCN(assh_kex_rsa_cleanup)
 
 static ASSH_KEX_INIT_FCN(assh_kex_rsa1024_sha1_init)
 {
-  return assh_kex_rsa_init(s, cipher_key_size, 1024, &assh_hash_sha1,
+  return assh_kex_rsa_init(s, cipher_key_size, 1024,
+    &assh_kex_rsa1024_sha1.algo, &assh_hash_sha1,
     (const uint8_t*)"\xda\x39\xa3\xee\x5e\x6b\x4b\x0d\x32\x55"
 		    "\xbf\xef\x95\x60\x18\x90\xaf\xd8\x07\x09");
 }
 
+static ASSH_ALGO_SUITABLE_KEY_FCN(assh_kex_rsa1024_suitable_key)
+{
+  if (key == NULL)
+    return 0;
+  if (key->algo != &assh_key_rsa)
+    return 0;
+  struct assh_key_rsa_s *k = (void*)key;
+  return assh_bignum_bits(&k->nn) >= 1024;
+}
+
 const struct assh_algo_kex_s assh_kex_rsa1024_sha1 =
 {
-  .algo = { .name = "rsa1024-sha1",
-            .class_ = ASSH_ALGO_KEX, .safety = 10, .speed = 30 },
+  .algo = {
+    .name = "rsa1024-sha1",
+    .class_ = ASSH_ALGO_KEX, .safety = 10, .speed = 30,
+    .f_suitable_key = assh_kex_rsa1024_suitable_key,
+  },
   .f_init = assh_kex_rsa1024_sha1_init,
   .f_cleanup = assh_kex_rsa_cleanup,
   .f_process = assh_kex_rsa_process,
@@ -655,16 +700,30 @@ const struct assh_algo_kex_s assh_kex_rsa1024_sha1 =
 
 static ASSH_KEX_INIT_FCN(assh_kex_rsa2048_sha256_init)
 {
-  return assh_kex_rsa_init(s, cipher_key_size, 2048, &assh_hash_sha256,
+  return assh_kex_rsa_init(s, cipher_key_size, 2048,
+    &assh_kex_rsa2048_sha256.algo, &assh_hash_sha256,
     (const uint8_t*)"\xe3\xb0\xc4\x42\x98\xfc\x1c\x14\x9a\xfb\xf4\xc8"
 		    "\x99\x6f\xb9\x24\x27\xae\x41\xe4\x64\x9b\x93\x4c"
 		    "\xa4\x95\x99\x1b\x78\x52\xb8\x55");
 }
 
+static ASSH_ALGO_SUITABLE_KEY_FCN(assh_kex_rsa2048_suitable_key)
+{
+  if (key == NULL)
+    return 0;
+  if (key->algo != &assh_key_rsa)
+    return 0;
+  struct assh_key_rsa_s *k = (void*)key;
+  return assh_bignum_bits(&k->nn) >= 2048;
+}
+
 const struct assh_algo_kex_s assh_kex_rsa2048_sha256 =
 {
-  .algo = { .name = "rsa2048-sha256",
-            .class_ = ASSH_ALGO_KEX, .safety = 20, .speed = 20 },
+  .algo = {
+    .name = "rsa2048-sha256",
+    .class_ = ASSH_ALGO_KEX, .safety = 20, .speed = 20,
+    .f_suitable_key = assh_kex_rsa2048_suitable_key,
+  },
   .f_init = assh_kex_rsa2048_sha256_init,
   .f_cleanup = assh_kex_rsa_cleanup,
   .f_process = assh_kex_rsa_process,

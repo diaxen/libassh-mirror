@@ -387,12 +387,12 @@ static assh_error_t assh_userauth_server_req_pubkey(struct assh_session_s *s,
   struct assh_key_s *pub_key = NULL;
 
   /* load the public key from the client provided blob */
-  ASSH_ERR_RET(assh_key_load3(s->ctx, &pub_key, algo,
-                              pub_blob + 4, sign - pub_blob - 4,
-                              ASSH_KEY_FMT_PUB_RFC4253_6_6) | ASSH_ERRSV_DISCONNECT);
+  ASSH_ERR_RET(assh_key_load(s->ctx, &pub_key, algo->key, ASSH_ALGO_SIGN,
+                 ASSH_KEY_FMT_PUB_RFC4253_6_6, pub_blob + 4,
+                 sign - pub_blob - 4) | ASSH_ERRSV_DISCONNECT);
 
   /* check if the key can be used by the algorithm */
-  if (!assh_algo_suitable_key(algo, pub_key))
+  if (!assh_algo_suitable_key(s->ctx, algo, pub_key))
     {
       assh_key_drop(s->ctx, &pub_key);
       ASSH_ERR_RET(assh_userauth_server_failure(s) | ASSH_ERRSV_DISCONNECT);

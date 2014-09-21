@@ -27,8 +27,6 @@
 
 #include <assert.h>
 
-extern const struct assh_algo_key_s assh_key_none;
-
 static ASSH_KEY_CLEANUP_FCN(assh_key_none_cleanup)
 {
   assh_free(c, key, ASSH_ALLOC_KEY);
@@ -66,6 +64,18 @@ static ASSH_KEY_LOAD_FCN(assh_key_none_load)
   return ASSH_OK;
 }
 
+static ASSH_KEY_CREATE_FCN(assh_key_none_create)
+{
+  assh_error_t err;
+
+  ASSH_ERR_RET(assh_alloc(c, sizeof(**key), ASSH_ALLOC_KEY, (void**)key));
+  struct assh_key_s *k = *key;
+
+  k->algo = &assh_key_none;
+
+  return ASSH_OK;
+}
+
 const struct assh_algo_key_s assh_key_none =
 {
   .type = "none",
@@ -73,6 +83,7 @@ const struct assh_algo_key_s assh_key_none =
   .f_validate = assh_key_none_validate,
   .f_cmp = assh_key_none_cmp,
   .f_load = assh_key_none_load,
+  .f_create = assh_key_none_create,
   .f_cleanup = assh_key_none_cleanup,
 };
 
@@ -88,11 +99,19 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_none_verify)
   return ASSH_OK;
 }
 
+static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_none_suitable_key)
+{
+  if (key == NULL)
+    return c->type == ASSH_SERVER;
+  return key->algo == &assh_key_none;
+}
+
 const struct assh_algo_sign_s assh_sign_none =
 {
   .algo = {
     .name = "none@libassh.org", .class_ = ASSH_ALGO_SIGN,
     .safety = 0, .speed = 99,
+    .f_suitable_key = assh_sign_none_suitable_key,
     .key = &assh_key_none,
   },
   .f_generate = assh_sign_none_generate,

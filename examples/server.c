@@ -33,6 +33,9 @@
 #include <assh/helper_fd.h>
 #include <assh/helper_key.h>
 
+#include <assh/key_rsa.h>
+#include <assh/key_dsa.h>
+
 #ifdef CONFIG_ASSH_USE_GCRYPT
 # include <gcrypt.h>
 #endif
@@ -83,15 +86,15 @@ int main()
     return -1;
 
   /** register algorithms */
-  if (assh_algo_register_default(&context, 99, 25) != ASSH_OK)
+  if (assh_algo_register_default(&context, 99, 10) != ASSH_OK)
     return -1;
 
   /** load host key */
-  if (assh_load_hostkey_filename(&context, "ssh-dss", "dsa_host_key",
+  if (assh_load_hostkey_filename(&context, &assh_key_dsa, ASSH_ALGO_SIGN, "dsa_host_key",
 				 ASSH_KEY_FMT_PV_RFC2440_PEM_ASN1) != ASSH_OK)
     fprintf(stderr, "unable to load dsa key\n");
 
-  if (assh_load_hostkey_filename(&context, "ssh-rsa", "rsa_host_key",
+  if (assh_load_hostkey_filename(&context, &assh_key_rsa, ASSH_ALGO_SIGN, "rsa_host_key",
 				 ASSH_KEY_FMT_PV_RFC2440_PEM_ASN1) != ASSH_OK)
     fprintf(stderr, "unable to load rsa key\n");
 

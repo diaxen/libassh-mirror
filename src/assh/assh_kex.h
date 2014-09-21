@@ -111,10 +111,6 @@ assh_kex_client_get_key(struct assh_session_s *s, struct assh_key_s **key,
 
 #ifdef CONFIG_ASSH_SERVER
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_kex_server_host_key(struct assh_session_s *s,
-                         const struct assh_key_s **host_key);
-
 /** This helper function allocate a @ref SSH_MSG_KEXDH_REPLY key
     exchange packet, add public host key fields and update the hash
     context with various values including the host key.

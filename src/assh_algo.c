@@ -71,7 +71,7 @@ assh_error_t assh_algo_register_va(struct assh_context_s *c, unsigned int safety
   ASSH_CHK_RET(safety > 99, ASSH_ERR_BAD_ARG);
 
   /* sort algorithms by class and safety/speed factor */
-  int i, j, k;
+  int_fast16_t i, j, k;
   for (i = 0; i < c->algos_count; i++)
     {
       const struct assh_algo_s *a = c->algos[i];
@@ -121,15 +121,15 @@ assh_error_t assh_algo_register_default(struct assh_context_s *c, unsigned int s
 
   ASSH_ERR_RET(assh_algo_register_va(c, safety, min_safety,
 			/* kex */
-//			&assh_kex_curve25519_sha256,
-//			&assh_kex_m383_sha256,
-//			&assh_kex_m511_sha256,
-//			&assh_kex_dh_group1_sha1,
-//			&assh_kex_dh_group14_sha1,
-//			&assh_kex_dh_gex_sha1,
-//			&assh_kex_dh_gex_sha256_12,
-//			&assh_kex_dh_gex_sha256_8,
-//			&assh_kex_dh_gex_sha256_4,
+			&assh_kex_curve25519_sha256,
+			&assh_kex_m383_sha256,
+			&assh_kex_m511_sha256,
+			&assh_kex_dh_group1_sha1,
+			&assh_kex_dh_group14_sha1,
+			&assh_kex_dh_gex_sha1,
+			&assh_kex_dh_gex_sha256_12,
+			&assh_kex_dh_gex_sha256_8,
+			&assh_kex_dh_gex_sha256_4,
 			&assh_kex_rsa1024_sha1,
 			&assh_kex_rsa2048_sha256,
 			/* sign */
@@ -190,7 +190,6 @@ assh_error_t assh_algo_by_name(struct assh_context_s *c,
 }
 
 assh_error_t assh_algo_by_key(struct assh_context_s *c,
-			      enum assh_algo_class_e class_,
 			      const struct assh_key_s *key, uint_fast16_t *pos,
 			      const struct assh_algo_s **algo)
 {
@@ -201,9 +200,9 @@ assh_error_t assh_algo_by_key(struct assh_context_s *c,
     {
       a = c->algos[i];
 
-      if (a->class_ == class_ &&
+      if (a->class_ == key->class_ &&
           a->f_suitable_key != NULL &&
-	  a->f_suitable_key(a, key))
+	  a->f_suitable_key(c, a, key))
 	break;
     }
 
@@ -214,5 +213,18 @@ assh_error_t assh_algo_by_key(struct assh_context_s *c,
     *pos = i;
   *algo = a;
   return ASSH_OK;
+}
+
+assh_bool_t
+assh_algo_suitable_key(struct assh_context_s *c,
+                       const struct assh_algo_s *algo,
+                       const struct assh_key_s *key)
+{
+  if (algo->f_suitable_key == NULL)
+    return 0;
+  if (key != NULL &&
+      key->class_ != algo->class_)
+    return 0;
+  return algo->f_suitable_key(c, algo, key);
 }
 

@@ -79,17 +79,10 @@ assh_error_t assh_kex_send_init(struct assh_session_s *s)
           if (a->class_ != j)
             break;
 
-#ifdef CONFIG_ASSH_SERVER
           /* check host key availability for this algorithm */
-          if (s->ctx->type == ASSH_SERVER && assh_algo_needs_key(a))
-            {
-              struct assh_key_s *k = s->ctx->host_keys;
-              while (k != NULL && !assh_algo_suitable_key(a, k))
-                k = k->next;
-              if (k == NULL)
-                continue;
-            }
-#endif
+          if (assh_algo_suitable_key(s->ctx, a, NULL) &&
+              assh_key_lookup(s->ctx, NULL, a) != ASSH_OK)
+            continue;
 
           /* append name to the list */
           uint8_t *tail;
@@ -168,18 +161,14 @@ assh_kex_server_algos(struct assh_context_s *c, uint8_t *lists[9],
 
           /* lookup in registered algorithms */
           const struct assh_algo_s *a;
-          if (assh_algo_by_name(c, assh_kex_algos_classes[i], start, n - start, &a) != ASSH_OK)
+          if (assh_algo_by_name(c, assh_kex_algos_classes[i],
+                                start, n - start, &a) != ASSH_OK)
             goto next;
 
           /* check algorithm key availability */
-          if (assh_algo_needs_key(a))
-            {
-              struct assh_key_s *k = c->host_keys;
-              while (k != NULL && !assh_algo_suitable_key(a, k))
-                k = k->next;
-              if (k == NULL)
-                goto next;
-            }
+          if (assh_algo_suitable_key(c, a, NULL) &&
+              assh_key_lookup(c, NULL, a) != ASSH_OK)
+            goto next;
 
           algos[i] = a;
           goto done;
@@ -574,12 +563,13 @@ assh_kex_client_get_key(struct assh_session_s *s,
   /* load key and verify signature */
   const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
 
-  ASSH_ERR_RET(assh_key_load3(s->ctx, host_key, &sign_algo->algo, ks_str + 4,
-                 assh_load_u32(ks_str), ASSH_KEY_FMT_PUB_RFC4253_6_6)
+  ASSH_ERR_RET(assh_key_load(s->ctx, host_key, sign_algo->algo.key, ASSH_ALGO_SIGN,
+                             ASSH_KEY_FMT_PUB_RFC4253_6_6, ks_str + 4,
+                             assh_load_u32(ks_str))
                | ASSH_ERRSV_DISCONNECT);
 
   /* check if the key can be used by the algorithm */
-  ASSH_CHK_GTO(!assh_algo_suitable_key(&sign_algo->algo, *host_key),
+  ASSH_CHK_GTO(!assh_algo_suitable_key(s->ctx, &sign_algo->algo, *host_key),
                ASSH_ERR_WEAK_ALGORITHM | ASSH_ERRSV_DISCONNECT, err_hk);
 
   /* Return an host key lookup event */
@@ -647,23 +637,6 @@ assh_kex_client_hash2(struct assh_session_s *s,
 
 #ifdef CONFIG_ASSH_SERVER
 assh_error_t
-assh_kex_server_host_key(struct assh_session_s *s,
-                         const struct assh_key_s **host_key)
-{
-  assh_error_t err;
-  struct assh_context_s *c = s->ctx;
-  const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
-  const struct assh_key_s *hk = c->host_keys;
-
-  while (hk != NULL && !assh_algo_suitable_key(&sign_algo->algo, hk))
-    hk = hk->next;
-  ASSH_CHK_RET(hk == NULL, ASSH_ERR_MISSING_KEY);
-  *host_key = hk;
-
-  return ASSH_OK;
-}
-
-assh_error_t
 assh_kex_server_hash1(struct assh_session_s *s, size_t kex_len,
                       struct assh_hash_ctx_s *hash_ctx,
                       struct assh_packet_s **pout, size_t *sign_len,
@@ -676,7 +649,8 @@ assh_kex_server_hash1(struct assh_session_s *s, size_t kex_len,
   /* look for an host key pair which can be used with the selected algorithm. */
   const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
 
-  ASSH_ERR_RET(assh_kex_server_host_key(s, host_key) | ASSH_ERRSV_DISCONNECT);
+  ASSH_ERR_RET(assh_key_lookup(c, host_key, &s->host_sign_algo->algo)
+               | ASSH_ERRSV_DISCONNECT);
   const struct assh_key_s *hk = *host_key;
 
   /* alloc reply packet */

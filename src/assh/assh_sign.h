@@ -71,6 +71,8 @@ struct assh_algo_sign_s
   assh_sign_verify_t *f_verify;
 };
 
+extern const struct assh_algo_key_s assh_key_none;
+
 extern const struct assh_algo_sign_s assh_sign_none;
 
 /** Use SHA1 and a dsa key with L = 1024 and N = 160. */

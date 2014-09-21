@@ -69,6 +69,7 @@ typedef char assh_bool_t;
 enum assh_key_format_e;
 enum assh_alloc_type_e;
 enum assh_ssh_msg_e;
+enum assh_algo_class_e;
 
 /** @This specify the error severity and must be used along with error
     code constants (@ref assh_error_e).

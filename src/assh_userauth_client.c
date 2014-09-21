@@ -333,8 +333,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_methods_done)
     {
       /* check usable keys */
       pv->algo_idx = 0;
-      if (assh_algo_by_key(s->ctx, ASSH_ALGO_SIGN, k,
-                           &pv->algo_idx, &pv->algo) == ASSH_OK)
+      if (assh_algo_by_key(s->ctx, k, &pv->algo_idx, &pv->algo) == ASSH_OK)
         {
           /* insert provided keys in internal list */
           struct assh_key_s *next = k->next;
@@ -395,7 +394,7 @@ static assh_error_t assh_userauth_client_failure(struct assh_session_s *s,
       /* try next algorithm usable with the same key */
       pv->algo_idx++;
       while (pv->pub_keys != NULL &&
-             assh_algo_by_key(s->ctx, ASSH_ALGO_SIGN, pv->pub_keys,
+             assh_algo_by_key(s->ctx, pv->pub_keys,
                               &pv->algo_idx, &pv->algo) != ASSH_OK)
         {
           /* drop used key */

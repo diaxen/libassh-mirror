@@ -96,9 +96,7 @@ void assh_context_init(struct assh_context_s *c,
   c->f_alloc = assh_default_allocator;
 
   c->prng = NULL;
-#ifdef CONFIG_ASSH_SERVER
-  c->host_keys = NULL;
-#endif
+  c->keys = NULL;
 
   c->algos_count = 0;
 
@@ -149,9 +147,7 @@ void assh_context_cleanup(struct assh_context_s *c)
 
   assh_pck_pool_cleanup(c);
 
-#ifdef CONFIG_ASSH_SERVER
-  assh_key_flush(c, &c->host_keys);
-#endif
+  assh_key_flush(c, &c->keys);
 
   if (c->prng != NULL)
     c->prng->f_cleanup(c);
@@ -188,18 +184,5 @@ assh_error_t assh_context_prng(struct assh_context_s *c,
   ASSH_ERR_RET(prng->f_init(c));
 
   return ASSH_OK;
-}
-
-assh_error_t assh_context_hostkeys(struct assh_context_s *c, const char *algo,
-				   const uint8_t *blob, size_t blob_len,
-				   enum assh_key_format_e format)
-{
-  assh_error_t err;
-#ifdef CONFIG_ASSH_SERVER
-  ASSH_ERR_RET(assh_key_load(c, &c->host_keys, algo, blob, blob_len, format));
-  return ASSH_OK;
-#else
-  ASSH_ERR_RET(ASSH_ERR_NOTSUP);
-#endif
 }
 

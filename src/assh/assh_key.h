@@ -24,7 +24,7 @@
 #ifndef ASSH_KEY_H_
 #define ASSH_KEY_H_
 
-#include "assh.h"
+#include "assh_algo.h"
 
 #include <string.h>
 
@@ -124,43 +124,28 @@ struct assh_algo_key_s
 /** SSH key structure */
 struct assh_key_s
 {
+  /* next key in list */
   struct assh_key_s *next;
+
+  /* functions operating on this key */
   const struct assh_algo_key_s *algo;
+
+  /* class of algorithm the key is intended to use with */
+  enum assh_algo_class_e class_;
 };
 
-/** @internal This function loads a key using the specified algorithm. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_key_load3(struct assh_context_s *c, struct assh_key_s **key,
-               const struct assh_algo_s *algo,
-               const uint8_t *blob, size_t blob_len,
-               enum assh_key_format_e format);
-
-/** This function loads a key using the specified algorithm name.
-
-    The @tt algo_name parameter may be @tt NULL provided that the
-    requested key format allows guessing the algorithm associated to
-    the key. @see assh_key_load */
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_key_load2(struct assh_context_s *c, struct assh_key_s **key,
-               const char *algo_name, size_t algo_name_len,
-               const uint8_t *blob, size_t blob_len,
-               enum assh_key_format_e format);
-
-/** This function is similar to @ref assh_key_load2. The @tt algo_name
-    parameter is a @tt NUL terminated string. */
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_key_load(struct assh_context_s *c, struct assh_key_s **key,
-              const char *algo_name, const uint8_t *blob, size_t blob_len,
-              enum assh_key_format_e format)
-{
-  return assh_key_load2(c, key, algo_name,
-                        algo_name != NULL ? strlen(algo_name) : 0,
-                        blob, blob_len, format);
-}
+              const struct assh_algo_key_s *algo,
+              enum assh_algo_class_e intent,
+              enum assh_key_format_e format,
+              const uint8_t *blob, size_t blob_len);
 
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_key_create(struct assh_context_s *c, size_t bits,
-                const char *algo_name, struct assh_key_s **key);
+assh_key_create(struct assh_context_s *c,
+                struct assh_key_s **key, size_t bits,
+                const struct assh_algo_key_s *algo,
+                enum assh_algo_class_e intent);
 
 /** @This function returns true if both keys are equals. If the @tt
     pub parameter is set, only the public part of the key are taken
@@ -187,6 +172,11 @@ assh_key_validate(struct assh_context_s *c, const struct assh_key_s *key)
 {
   return key->algo->f_validate(c, key);
 }
+
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_key_lookup(struct assh_context_s *c,
+                const struct assh_key_s **key,
+                const struct assh_algo_s *algo);
 
 #endif
 

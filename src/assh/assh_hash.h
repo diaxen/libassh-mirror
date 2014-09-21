@@ -104,6 +104,7 @@ assh_hash_update(struct assh_hash_ctx_s *hctx, const void *data, size_t len)
   return hctx->algo->f_update(hctx, data, len);
 }
 
+#warning add cleanup function instead of NULL final
 static inline void
 assh_hash_final(struct assh_hash_ctx_s *hctx, uint8_t *hash)
 {

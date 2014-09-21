@@ -272,6 +272,8 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_dss_verify)
 
 static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dss_suitable_key)
 {
+  if (key == NULL)
+    return c->type == ASSH_SERVER;
   if (key->algo != &assh_key_dsa)
     return 0;
   struct assh_key_dsa_s *k = (void*)key;
@@ -293,6 +295,8 @@ const struct assh_algo_sign_s assh_sign_dss =
 
 static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dss_suitable_key_2048_224)
 {
+  if (key == NULL)
+    return c->type == ASSH_SERVER;
   if (key->algo != &assh_key_dsa)
     return 0;
   struct assh_key_dsa_s *k = (void*)key;
@@ -314,6 +318,8 @@ const struct assh_algo_sign_s assh_sign_dsa2048_sha224 =
 
 static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dss_suitable_key_2048_256)
 {
+  if (key == NULL)
+    return c->type == ASSH_SERVER;
   if (key->algo != &assh_key_dsa)
     return 0;
   struct assh_key_dsa_s *k = (void*)key;
@@ -335,6 +341,8 @@ const struct assh_algo_sign_s assh_sign_dsa2048_sha256 =
 
 static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dss_suitable_key_3072_256)
 {
+  if (key == NULL)
+    return c->type == ASSH_SERVER;
   if (key->algo != &assh_key_dsa)
     return 0;
   struct assh_key_dsa_s *k = (void*)key;

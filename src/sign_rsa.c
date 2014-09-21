@@ -279,6 +279,8 @@ assh_sign_rsa_verify(struct assh_context_s *c,
 
 static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_768)
 {
+  if (key == NULL)
+    return c->type == ASSH_SERVER;
   if (key->algo != &assh_key_rsa)
     return 0;
   struct assh_key_rsa_s *k = (void*)key;
@@ -318,6 +320,8 @@ const struct assh_algo_sign_s assh_sign_rsa_sha1_md5 =
 
 static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_1024)
 {
+  if (key == NULL)
+    return c->type == ASSH_SERVER;
   if (key->algo != &assh_key_rsa)
     return 0;
   struct assh_key_rsa_s *k = (void*)key;
@@ -350,6 +354,8 @@ const struct assh_algo_sign_s assh_sign_rsa_sha1 =
 
 static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_2048)
 {
+  if (key == NULL)
+    return c->type == ASSH_SERVER;
   if (key->algo != &assh_key_rsa)
     return 0;
   struct assh_key_rsa_s *k = (void*)key;
@@ -402,6 +408,8 @@ const struct assh_algo_sign_s assh_sign_rsa_sha256_2048 =
 
 static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_3072)
 {
+  if (key == NULL)
+    return c->type == ASSH_SERVER;
   if (key->algo != &assh_key_rsa)
     return 0;
   struct assh_key_rsa_s *k = (void*)key;

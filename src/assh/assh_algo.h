@@ -26,10 +26,16 @@
 
 #include "assh.h"
 
+/** @see assh_algo_suitable_key_t */
 #define ASSH_ALGO_SUITABLE_KEY_FCN(n) assh_bool_t (n)    \
-  (const struct assh_algo_s *algo,                       \
+  (struct assh_context_s *c,                             \
+   const struct assh_algo_s *algo,                       \
    const struct assh_key_s *key)
 
+/** @This must return true if the provided key can be used with the
+    algorithm. When the @tt key parameter is @tt NULL, the return
+    value must instead indicate if the algorithm needs a key when used
+    as part of the key exchange. */
 typedef ASSH_ALGO_SUITABLE_KEY_FCN(assh_algo_suitable_key_t);
 
 enum assh_algo_class_e
@@ -54,21 +60,26 @@ enum assh_algo_class_e
  */
 struct assh_algo_s
 {
+  /** ssh algorithm identifier, used during key exchange */
   const char *name;
+
+  /** variant description string, used when multiple declarations of
+      the same algorithm name exist. */
   const char *variant;
+
+  /** type of algorithm */
   enum assh_algo_class_e class_;
+
   /** safety factor in range [0, 99] */
   int_fast16_t safety;
   /** speed factor in range [0, 99] */
   int_fast16_t speed;
 
+  /** pointer to key operations, may be @tt NULL. */
   const struct assh_algo_key_s *key;
 
-  /** The function must return true is the passed key can be used to
-      with the algorithm. This pointer must be @tt NULL if the
-      algorithm does not require an @ref assh_key_s object to run. */
+  /** may be @tt NULL if the algorithm does not need a key. */
   assh_algo_suitable_key_t *f_suitable_key;
-
   /** used to choose between entries with the same name */
   int_fast8_t priority;
 };
@@ -93,6 +104,7 @@ ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_register_va(struct assh_context_s *c, unsigned int safety,
 		      unsigned int min_safety, ...);
 
+/** Find a registered algorithm with matching class and name. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_by_name(struct assh_context_s *c,
 		  enum assh_algo_class_e class_, const char *name,
@@ -104,31 +116,22 @@ assh_algo_by_name(struct assh_context_s *c,
     of the matching entry. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_by_key(struct assh_context_s *c,
-                 enum assh_algo_class_e class_,
                  const struct assh_key_s *key, uint_fast16_t *pos,
                  const struct assh_algo_s **algo);
 
-/** Return true if the algorithm can use the given key. */
-static inline assh_bool_t
-assh_algo_suitable_key(const struct assh_algo_s *algo,
-                       const struct assh_key_s *key)
-{
-  return algo->f_suitable_key != NULL
-    && algo->f_suitable_key(algo, key);
-}
+/** @This returns true if the provided key can be used with the
+    algorithm and has been loaded or created for that purpose.
 
-/** Return true if the algorithm needs a key to be used. */
-static inline assh_bool_t
-assh_algo_needs_key(const struct assh_algo_s *algo)
-{
-  return algo->f_suitable_key != NULL;
-}
+    When the @tt key parameter is @tt NULL, the return value indicates
+    if the algorithm needs a key when used during a key exchange. */
+assh_bool_t
+assh_algo_suitable_key(struct assh_context_s *c,
+                       const struct assh_algo_s *algo,
+                       const struct assh_key_s *key);
 
-/**
-   This function registers the default set of available algorithms
-   depending on the library configuration. It relies on the @ref
-   assh_algo_register_va function.
-*/
+/** @This registers the default set of available algorithms depending
+    on the library configuration. It relies on the @ref
+    assh_algo_register_va function. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_register_default(struct assh_context_s *c, unsigned int safety,
 			   unsigned int min_safety);

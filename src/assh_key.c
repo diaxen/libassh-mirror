@@ -25,66 +25,83 @@
 #include <assh/assh_sign.h>
 #include <assh/assh_algo.h>
 #include <assh/assh_packet.h>
+#include <assh/assh_context.h>
 
 #include <string.h>
 
-assh_error_t assh_key_load3(struct assh_context_s *c, struct assh_key_s **key,
-                            const struct assh_algo_s *algo,
-                            const uint8_t *blob, size_t blob_len,
-                            enum assh_key_format_e format)
+static const struct assh_algo_key_s *
+assh_key_algo_guess(struct assh_context_s *c,
+                    enum assh_key_format_e format,
+                    const uint8_t *blob, size_t blob_len,
+                    enum assh_algo_class_e intent)
+{
+  const struct assh_algo_key_s *algo;
+
+  switch (format)
+    {
+    case ASSH_KEY_FMT_PUB_RFC4253_6_6: {
+      uint8_t *end;
+      if (assh_check_string(blob, blob_len, blob, &end))
+        return NULL;
+      const char *name = (const char*)blob + 4;
+      size_t name_len = end - blob - 4;
+      uint_fast16_t i;
+
+      for (i = 0; ; i++)
+        {
+          if (i == c->algos_count)
+            return NULL;
+          algo = c->algos[i]->key;
+          if (algo != NULL && c->algos[i]->class_ != intent &&
+              !strncmp(algo->type, name, name_len) &&
+              !algo->type[name_len])
+            return algo;
+        }
+      return NULL;
+    }
+     
+    default:
+      return NULL;
+    }
+}
+
+assh_error_t assh_key_load(struct assh_context_s *c, struct assh_key_s **key,
+                           const struct assh_algo_key_s *algo,
+                           enum assh_algo_class_e intent,
+                           enum assh_key_format_e format,
+                           const uint8_t *blob, size_t blob_len)
 {
   assh_error_t err;
+
+  if (algo == NULL)
+    algo = assh_key_algo_guess(c, format, blob, blob_len, intent);
+  ASSH_CHK_RET(algo == NULL, ASSH_ERR_MISSING_ALGO);
+
   struct assh_key_s *k;
 
-  ASSH_CHK_RET(algo->key == NULL, ASSH_ERR_MISSING_ALGO);
-  ASSH_ERR_RET(algo->key->f_load(c, blob, blob_len, &k, format));
+  ASSH_ERR_RET(algo->f_load(c, blob, blob_len, &k, format));
 
+  k->class_ = intent;
   k->next = *key;
   *key = k;
 
   return ASSH_OK;
 }
 
-assh_error_t assh_key_load2(struct assh_context_s *c, struct assh_key_s **key,
-                            const char *algo_name, size_t algo_name_len,
-                            const uint8_t *blob, size_t blob_len,
-                            enum assh_key_format_e format)
-{
-  assh_error_t err;
-  const struct assh_algo_s *algo;
-
-  /* guess algorithm name from key blob */
-  if (algo_name == NULL && format == ASSH_KEY_FMT_PUB_RFC4253_6_6)
-    {
-      uint8_t *end;
-      ASSH_ERR_RET(assh_check_string(blob, blob_len, blob, &end));
-      algo_name = (const char*)blob + 4;
-      algo_name_len = end - blob - 4;
-    }
-  ASSH_CHK_RET(algo_name == NULL, ASSH_NOT_FOUND | ASSH_ERRSV_CONTINUE);
-
-#warning load keys should use key type string instead of algo name?
-  /* use an array of key algorithms ? */
-
-  ASSH_CHK_RET(assh_algo_by_name(c, ASSH_ALGO_SIGN, algo_name, algo_name_len, &algo)
-               != ASSH_OK, ASSH_ERR_MISSING_ALGO);
-  ASSH_ERR_RET(assh_key_load3(c, key, algo, blob, blob_len, format));
-
-  return ASSH_OK;
-}
-
 assh_error_t
-assh_key_create(struct assh_context_s *c, size_t bits,
-                const char *algo_name, struct assh_key_s **key)
+assh_key_create(struct assh_context_s *c,
+                struct assh_key_s **key, size_t bits,
+                const struct assh_algo_key_s *algo,
+                enum assh_algo_class_e intent)
 {
   assh_error_t err;
-  const struct assh_algo_s *algo;
-  size_t len = strlen(algo_name);
+  struct assh_key_s *k;
 
-  ASSH_CHK_RET(assh_algo_by_name(c, ASSH_ALGO_SIGN, algo_name, len, &algo)
-               != ASSH_OK, ASSH_ERR_MISSING_ALGO);
+  ASSH_ERR_RET(algo->f_create(c, bits, &k));
 
-  ASSH_ERR_RET(algo->key->f_create(c, bits, key));
+  k->class_ = intent;
+  k->next = *key;
+  *key = k;
 
   return ASSH_OK;
 }
@@ -102,5 +119,23 @@ void assh_key_flush(struct assh_context_s *c, struct assh_key_s **head)
 {
   while (*head != NULL)
     assh_key_drop(c, head);
+}
+
+assh_error_t
+assh_key_lookup(struct assh_context_s *c,
+                const struct assh_key_s **key,
+                const struct assh_algo_s *algo)
+{
+  const struct assh_key_s *k = c->keys;
+
+  while (k != NULL && !assh_algo_suitable_key(c, algo, k))
+    k = k->next;
+  if (k == NULL)
+    return ASSH_NOT_FOUND;
+
+  if (key != NULL)
+    *key = k;
+
+  return ASSH_OK;
 }
 

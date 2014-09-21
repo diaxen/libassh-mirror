@@ -65,10 +65,8 @@ struct assh_context_s
       ASSH_EVENT_PRNG_FEED event.  */
   int prng_entropy;
 
-#ifdef CONFIG_ASSH_SERVER
-  /** head of host keys list */
-  struct assh_key_s *host_keys;
-#endif
+  /** head of keys list */
+  struct assh_key_s *keys;
 
   /** maximum allocated size in a single bucket. */
   size_t pck_pool_max_bsize;
@@ -116,12 +114,6 @@ void assh_context_allocator(struct assh_context_s *c,
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_context_prng(struct assh_context_s *s,
 		  const struct assh_prng_s *prng);
-
-/** This function registers new host keys. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_context_hostkeys(struct assh_context_s *c, const char *algo,
-                      const uint8_t *blob, size_t blob_len,
-                      enum assh_key_format_e format);
 
 #endif
 

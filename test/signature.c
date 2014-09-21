@@ -53,9 +53,9 @@ int main(int argc, char **argv)
       uint8_t key_blob[algos[i].key_len];
       memcpy(key_blob, algos[i].key, sizeof(key_blob));
 
-      ASSH_ERR_RET(assh_key_load(&context, &key, a->algo.name,
-                                 key_blob, sizeof(key_blob),
-                                 ASSH_KEY_FMT_PV_PEM_ASN1));
+      ASSH_ERR_RET(assh_key_load(&context, &key, a->algo.key, ASSH_ALGO_SIGN,
+				 ASSH_KEY_FMT_PV_PEM_ASN1,
+                                 key_blob, sizeof(key_blob)));
 
       int size;
       for (size = TEST_SIZE; size != 0; )
@@ -141,9 +141,9 @@ int main(int argc, char **argv)
 	    }
 
 	  fprintf(stderr, "l");
-	  err = assh_key_load(&context, &key, a->algo.name,
-			      key_blob, sizeof(key_blob),
-			      ASSH_KEY_FMT_PV_PEM_ASN1);
+	  err = assh_key_load(&context, &key, a->algo.key, ASSH_ALGO_SIGN,
+			      ASSH_KEY_FMT_PV_PEM_ASN1,
+			      key_blob, sizeof(key_blob));
 
 	  if (!bad)
 	    assert(err == ASSH_OK);

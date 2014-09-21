@@ -30,6 +30,8 @@
 #include <assh/helper_fd.h>
 #include <assh/assh_event.h>
 #include <assh/assh_algo.h>
+#include <assh/key_rsa.h>
+#include <assh/key_dsa.h>
 
 #ifdef CONFIG_ASSH_USE_GCRYPT
 # include <gcrypt.h>
@@ -74,7 +76,7 @@ int main(int argc, char **argv)
   if (assh_service_register_default(&context) != ASSH_OK)
     return -1;
 
-  if (assh_algo_register_default(&context, 99, 20) != ASSH_OK)
+  if (assh_algo_register_default(&context, 99, 10) != ASSH_OK)
     return -1;
 
   struct assh_session_s session;
@@ -125,14 +127,25 @@ int main(int argc, char **argv)
         }
 
         case ASSH_EVENT_USERAUTH_CLIENT_METHODS: {
-          if (event.userauth_client.methods.pub_keys)
-            assh_load_key_filename(&context, &event.userauth_client.methods.pub_keys,
-                                   "ssh-dss", "/home/test/.ssh/id_dsa", ASSH_KEY_FMT_PV_RFC2440_PEM_ASN1);
+          if (event.userauth_client.methods.use_pub_key)
+            {
+              if (assh_load_key_filename(&context, &event.userauth_client.methods.pub_keys,
+                                         &assh_key_dsa, ASSH_ALGO_SIGN, "dsa_user_key",
+                                         ASSH_KEY_FMT_PV_RFC2440_PEM_ASN1) != ASSH_OK)
+                fprintf(stderr, "unable to load user dsa key\n");
 
-#if 0
-          if (event.userauth_client.methods.password)
-            event.userauth_client_methods.password = "test";
-#endif
+              if (assh_load_key_filename(&context, &event.userauth_client.methods.pub_keys,
+                                         &assh_key_rsa, ASSH_ALGO_SIGN, "rsa_user_key",
+                                         ASSH_KEY_FMT_PV_RFC2440_PEM_ASN1) != ASSH_OK)
+                fprintf(stderr, "unable to load user rsa key\n");
+            }
+
+          if (event.userauth_client.methods.use_password) 
+            {
+              fprintf(stderr, "password input\n");
+              event.userauth_client.methods.password.str = "test";
+              event.userauth_client.methods.password.len = 4;
+            }
           break;
         }
 
