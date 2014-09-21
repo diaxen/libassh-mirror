@@ -33,11 +33,18 @@ hash_CFLAGS = -I$(top_srcdir)/src
 
 if COND_server
 if COND_client
+
 noinst_PROGRAMS += connection
 TESTS += connection
 connection_SOURCES = connection.c
 connection_LDADD = $(top_builddir)/src/libassh.la
 connection_CFLAGS = -I$(top_srcdir)/src
+
+noinst_PROGRAMS += kex
+TESTS += kex
+kex_SOURCES = kex.c
+kex_LDADD = $(top_builddir)/src/libassh.la
+kex_CFLAGS = -I$(top_srcdir)/src
 endif
 endif
 

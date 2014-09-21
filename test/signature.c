@@ -4,7 +4,7 @@
 #include <assh/assh_prng.h>
 
 #include <stdint.h>
-#include "signature_keys.h"
+#include "keys.h"
 
 #ifdef CONFIG_ASSH_USE_GCRYPT
 # include <gcrypt.h>
@@ -18,9 +18,9 @@ struct algo_s
 };
 
 struct algo_s algos[] = {
-  { &assh_sign_dss,          dsa_sign_key, sizeof(dsa_sign_key) },
-  { &assh_sign_rsa_sha1_md5, rsa_sign_key, sizeof(rsa_sign_key) },
-  { &assh_sign_rsa_sha256_2048, rsa_sign_key, sizeof(rsa_sign_key) },
+  { &assh_sign_dss,             dsa1024_key, sizeof(dsa1024_key) },
+  { &assh_sign_rsa_sha1_md5,    rsa1024_key, sizeof(rsa1024_key) },
+  { &assh_sign_rsa_sha256_2048, rsa2048_key, sizeof(rsa2048_key) },
   { NULL },
 };
 
