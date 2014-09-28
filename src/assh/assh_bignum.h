@@ -156,7 +156,10 @@ typedef ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_bytecode_t);
     When converting to a native big number from a number in @ref
     ASSH_BIGNUM_STRING, @ref ASSH_BIGNUM_ASN1 or @ref
     ASSH_BIGNUM_MPINT format, the source number must have a properly
-    initialized size header.
+    initialized size header. When converting from a source number in
+    @ref ASSH_BIGNUM_MSB_RAW or @ref ASSH_BIGNUM_LSB_RAW format, the
+    bit size of the destination number is used; leading bits in the
+    most significant byte of the source are ignored.
 
     In all other cases, the buffer size is expected to be appropriate
     for the bits size of the native big number involved in the
@@ -269,40 +272,43 @@ assh_bignum_release(struct assh_context_s *c,
 }
 
 enum assh_bignum_opcode_e
-  {
-    ASSH_BIGNUM_OP_END,
-    ASSH_BIGNUM_OP_MOVE,
-    ASSH_BIGNUM_OP_SIZE,
-    ASSH_BIGNUM_OP_ADD,
-    ASSH_BIGNUM_OP_SUB,
-    ASSH_BIGNUM_OP_MUL,
-    ASSH_BIGNUM_OP_DIV,
-    ASSH_BIGNUM_OP_GCD,
-    ASSH_BIGNUM_OP_EXPM,
-    ASSH_BIGNUM_OP_INV,
-    ASSH_BIGNUM_OP_SHR,
-    ASSH_BIGNUM_OP_SHL,
-    ASSH_BIGNUM_OP_AND,
-    ASSH_BIGNUM_OP_OR,
-    ASSH_BIGNUM_OP_NOT,
-    ASSH_BIGNUM_OP_MASK,
-    ASSH_BIGNUM_OP_RAND,
-    ASSH_BIGNUM_OP_CMP,
-    ASSH_BIGNUM_OP_UINT,
-    ASSH_BIGNUM_OP_MLADSWAP,
-    ASSH_BIGNUM_OP_MLADLOOP,
-    ASSH_BIGNUM_OP_PRIME,
-    ASSH_BIGNUM_OP_ISPRIM,
-    ASSH_BIGNUM_OP_PRINT,
-  };
+{
+  ASSH_BIGNUM_OP_END,
+  ASSH_BIGNUM_OP_MOVE,
+  ASSH_BIGNUM_OP_SIZER,
+  ASSH_BIGNUM_OP_SIZE,
+  ASSH_BIGNUM_OP_ADD,
+  ASSH_BIGNUM_OP_SUB,
+  ASSH_BIGNUM_OP_MUL,
+  ASSH_BIGNUM_OP_DIV,
+  ASSH_BIGNUM_OP_GCD,
+  ASSH_BIGNUM_OP_EXPM,
+  ASSH_BIGNUM_OP_INV,
+  ASSH_BIGNUM_OP_SHR,
+  ASSH_BIGNUM_OP_SHL,
+  ASSH_BIGNUM_OP_AND,
+  ASSH_BIGNUM_OP_OR,
+  ASSH_BIGNUM_OP_NOT,
+  ASSH_BIGNUM_OP_MASK,
+  ASSH_BIGNUM_OP_RAND,
+  ASSH_BIGNUM_OP_CMP,
+  ASSH_BIGNUM_OP_UINT,
+  ASSH_BIGNUM_OP_MLADJMP,
+  ASSH_BIGNUM_OP_MLADSWAP,
+  ASSH_BIGNUM_OP_MLADLOOP,
+  ASSH_BIGNUM_OP_PRIME,
+  ASSH_BIGNUM_OP_ISPRIM,
+  ASSH_BIGNUM_OP_PRINT,
+};
 
 #define ASSH_BIGNUM_OP_NAMES {                  \
-    "end", "move", "size", "add",               \
+    "end", "move", "sizer", "size", "add",      \
     "sub", "mul", "div", "gcd",                 \
     "expm", "inv", "shr", "shl",                \
     "and", "or", "not", "mask",                 \
     "rand", "cmp", "uint",                      \
-      "mladswap", "mladloop", "prime", "isprim", "print" \
+    "mladjmp", "mladswap", "mladloop", "prime", \
+    "isprim", "print"                           \
 }
 
 #define ASSH_BOP_NOREG  63
@@ -328,6 +334,11 @@ enum assh_bignum_opcode_e
     instruction with shift and offset of the source size value. */
 #define ASSH_BOP_SIZEM(dst, src, cadd, cshift)         \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_SIZE, dst, src, cadd, cshift + 32)
+
+/** This instruction sets the size of multiple registers between @tt
+    dst1 and @tt dst2. */
+#define ASSH_BOP_SIZER(dst1, dst2, src)                      \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_SIZER, dst1, src, dst2, 0)
 
 /** This instruction computes @tt {dst = (src1 + src2) % mod}. The
     bit size of the destination number must be at least
@@ -427,8 +438,16 @@ enum assh_bignum_opcode_e
 #define ASSH_BOP_UINT(dst, value) \
   ASSH_BOP_FMT2(ASSH_BIGNUM_OP_UINT, value, dst)
 
+/** This instruction performs a conditional jump between two values
+    depending on the current state of the @ref assh_bignum_mlad_s
+    struct argument. It is useful to implement a fast variant of the
+    ladder algorithm when constant time execution is not required.
+    @see #ASSH_BOP_MLADLOOP */
+#define ASSH_BOP_MLADJMP(src1, src2, mlad)               \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_MLADJMP, src1, src2, 128 + pcdiff, mlad)
+
 /** This instruction performs a conditional swap between two values
-    depending on the current state of the the @ref assh_bignum_mlad_s
+    depending on the current state of the @ref assh_bignum_mlad_s
     struct argument. It is useful to implement a montgomery ladder.
     @see #ASSH_BOP_MLADLOOP */
 #define ASSH_BOP_MLADSWAP(src1, src2, mlad)               \

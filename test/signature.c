@@ -3,6 +3,7 @@
 #include <assh/assh_context.h>
 #include <assh/assh_prng.h>
 
+#include <stdio.h>
 #include <stdint.h>
 #include "keys.h"
 

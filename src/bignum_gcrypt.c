@@ -235,6 +235,7 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_gcrypt_convert)
           ASSH_CHK_GTO(gcry_mpi_scan((gcry_mpi_t*)&dstn->n, GCRYMPI_FMT_USG,
                                      lsb, s, NULL),
                        ASSH_ERR_NUM_OVERFLOW, err_lsb_scan);          
+          gcry_mpi_clear_highbit((gcry_mpi_t)dstn->n, b);
 
           ASSH_SCRATCH_FREE(c, lsb);
           break;
@@ -249,6 +250,7 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_gcrypt_convert)
           ASSH_CHK_RET(gcry_mpi_scan((gcry_mpi_t*)&dstn->n, GCRYMPI_FMT_USG,
                                      src, s, NULL),
                        ASSH_ERR_NUM_OVERFLOW);
+          gcry_mpi_clear_highbit((gcry_mpi_t)dstn->n, b);
           break;
         }
 
@@ -310,6 +312,20 @@ static int assh_gcrypt_prime_chk(void *arg, int mode,
   return 1;
 }
 
+/* test current ladder bit */
+static assh_bool_t
+assh_bignum_gcrypt_mlad(struct assh_bignum_mlad_s *mlad)
+{
+  uint16_t bit = mlad->count - 1;
+
+  if (!mlad->msbit_1st)
+    bit ^= 7;
+  if (mlad->msbyte_1st)
+    return (mlad->data[0] >> (bit & 7)) & 1;
+  else
+    return (mlad->data[bit / 8] >> (bit & 7)) & 1;
+}
+
 static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
 {
   uint_fast8_t flen, tlen = 0;
@@ -368,13 +384,23 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
                                              args[od], args[oc]), err_sc);
           break;
 
+        case ASSH_BIGNUM_OP_SIZER:
         case ASSH_BIGNUM_OP_SIZE: {
-          size_t b;
+          size_t b, i;
           ASSH_ERR_GTO(assh_bignum_size_of_data(format[ob], args[ob],
                                                 NULL, NULL, &b), err_sc);
-          struct assh_bignum_s *dst = args[oa];
-          dst->bits = ((od >= 32) ? (b << (od - 32))
-                    : (b >> (32 - od))) + (intptr_t)(int8_t)oc;
+          if (op == ASSH_BIGNUM_OP_SIZE)
+            {
+              struct assh_bignum_s *dst = args[oa];
+              dst->bits = ((od >= 32) ? (b << (od - 32))
+                           : (b >> (32 - od))) + (intptr_t)(int8_t)oc;
+            }
+          else
+            for (i = oa; i <= oc; i++) 
+              {
+                struct assh_bignum_s *dst = args[i];
+                dst->bits = b;
+              }
           break;
         }
 
@@ -568,20 +594,20 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           break;
         }
 
+        case ASSH_BIGNUM_OP_MLADJMP: {
+          struct assh_bignum_s *src1 = args[oa];
+          struct assh_bignum_s *src2 = args[ob];
+
+          if (assh_bignum_gcrypt_mlad(args[od]))
+            pc += oc - 128;
+          break;
+        }
+
         case ASSH_BIGNUM_OP_MLADSWAP: {
           struct assh_bignum_s *src1 = args[ob];
           struct assh_bignum_s *src2 = args[oc];
-          struct assh_bignum_mlad_s *mlad = args[od];
 
-          uint16_t bit = mlad->count - 1;
-          uint8_t b;
-          if (!mlad->msbit_1st)
-            bit ^= 7;
-          if (mlad->msbyte_1st)
-            b = (mlad->data[0] >> (bit & 7)) & 1;
-          else
-            b = (mlad->data[bit / 8] >> (bit & 7)) & 1;
-          if (b)
+          if (assh_bignum_gcrypt_mlad(args[od]))
             gcry_mpi_swap(src1->n, src2->n);
           break;
         }
