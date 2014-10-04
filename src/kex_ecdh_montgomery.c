@@ -185,10 +185,7 @@ assh_montgomery_point_mul(struct assh_session_s *s, const uint8_t *result,
     ASSH_BOP_END(),
   };
 
-  struct assh_context_s context;
-  assh_context_init(&context, ASSH_SERVER);
-
-  ASSH_ERR_RET(assh_bignum_bytecode(&context, bytecode, "ddMMTTTTTTTTTsL",
+  ASSH_ERR_RET(assh_bignum_bytecode(s->ctx, bytecode, "ddMMTTTTTTTTTsL",
           result, basepoint, curve->prime, curve->a24, curve->bits, &mlad));
 
   return ASSH_OK;
@@ -536,13 +533,13 @@ static ASSH_KEX_INIT_FCN(assh_kex_curve25519_init)
   /* y^2=x^3+486662x^2+x */
   static const struct assh_montgomery_curve_s curve25519 =
     {
-      /* 2^255-19 */
+      /* 2^255-19 mpint */
       .prime = (const uint8_t*)"\x00\x00\x00\x20"
         "\x7f\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff"
         "\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xed",
-      /* 121666 */
+      /* 121666 mpint */
       .a24 = (const uint8_t*)"\x00\x00\x00\x03" "\x01\xdb\x42",
-      /* 9 */
+      /* 9 raw */
       .basepoint = (const uint8_t*)
         "\x09\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
         "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
@@ -567,14 +564,14 @@ static ASSH_KEX_INIT_FCN(assh_kex_m383_init)
   /* y^2=x^3+2065150x^2+x */
   static const struct assh_montgomery_curve_s m383 =
     {
-      /* 2^383-187 */
+      /* 2^383-187 mpint */
       .prime = (const uint8_t*)"\x00\x00\x00\x30"
         "\x7f\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff"
         "\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff"
         "\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x45",
-      /* 516288 */
+      /* 516288 mpint */
       .a24 = (const uint8_t*)"\x00\x00\x00\x03" "\x07\xe0\xc0",
-      /* 12 */
+      /* 12 raw */
       .basepoint = (const uint8_t*)
         "\x0c\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
         "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -582,12 +579,12 @@ static ASSH_KEX_INIT_FCN(assh_kex_m383_init)
       .cofactor = 8,
       .bits = 383,
     };
-  return assh_kex_ecdhmt_init(s, &m383, &assh_hash_sha256);
+  return assh_kex_ecdhmt_init(s, &m383, &assh_hash_sha384);
 }
 
-const struct assh_algo_kex_s assh_kex_m383_sha256 =
+const struct assh_algo_kex_s assh_kex_m383_sha384 =
 {
-  .algo = { .name = "m383-sha256@libassh.org",
+  .algo = { .name = "m383-sha384@libassh.org",
 	    .class_ = ASSH_ALGO_KEX, .safety = 70, .speed = 80 },
   .f_init = assh_kex_m383_init,
   .f_cleanup = assh_kex_ecdhmt_cleanup,
@@ -599,15 +596,15 @@ static ASSH_KEX_INIT_FCN(assh_kex_m511_init)
   /* y^2 = x^3+530438x^2+x */
   static const struct assh_montgomery_curve_s m511 =
     {
-      /* 2^511-187 */
+      /* 2^511-187 mpint */
       .prime = (const uint8_t*)"\x00\x00\x00\x40"
         "\x7f\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff"
         "\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff"
         "\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff"
         "\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x45",
-      /* 132610 */
+      /* 132610 mpint */
       .a24 = (const uint8_t*)"\x00\x00\x00\x03" "\x02\x06\x02",
-      /* 5 */
+      /* 5 raw */
       .basepoint = (const uint8_t*)
         "\x05\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
         "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -616,12 +613,12 @@ static ASSH_KEX_INIT_FCN(assh_kex_m511_init)
       .cofactor = 8,
       .bits = 511,
     };
-  return assh_kex_ecdhmt_init(s, &m511, &assh_hash_sha256);
+  return assh_kex_ecdhmt_init(s, &m511, &assh_hash_sha512);
 }
 
-const struct assh_algo_kex_s assh_kex_m511_sha256 =
+const struct assh_algo_kex_s assh_kex_m511_sha512 =
 {
-  .algo = { .name = "m511-sha256@libassh.org",
+  .algo = { .name = "m511-sha512@libassh.org",
 	    .class_ = ASSH_ALGO_KEX, .safety = 90, .speed = 70 },
   .f_init = assh_kex_m511_init,
   .f_cleanup = assh_kex_ecdhmt_cleanup,

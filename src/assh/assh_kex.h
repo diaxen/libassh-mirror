@@ -253,8 +253,8 @@ extern const struct assh_algo_kex_s assh_kex_none;
 extern const struct assh_algo_kex_s assh_kex_dh_group1_sha1;
 extern const struct assh_algo_kex_s assh_kex_dh_group14_sha1;
 extern const struct assh_algo_kex_s assh_kex_curve25519_sha256;
-extern const struct assh_algo_kex_s assh_kex_m383_sha256;
-extern const struct assh_algo_kex_s assh_kex_m511_sha256;
+extern const struct assh_algo_kex_s assh_kex_m383_sha384;
+extern const struct assh_algo_kex_s assh_kex_m511_sha512;
 
 /** diffie-hellman-group-exchange-sha1, favors group size of n*n/12
     bits and allows groups size of n*n/16 bits where n is the size of

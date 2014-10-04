@@ -62,6 +62,8 @@ static const struct algo_with_key_s kex_list[] =
   {
     { &assh_kex_none,              NULL, NULL, 0 },
     { &assh_kex_curve25519_sha256, NULL, NULL, 0 },
+    { &assh_kex_m383_sha384,       NULL, NULL, 0 },
+    { &assh_kex_m511_sha512,       NULL, NULL, 0 },
     { &assh_kex_dh_group1_sha1,	   NULL, NULL, 0 },
     { &assh_kex_dh_group14_sha1,   NULL, NULL, 0 },
     { &assh_kex_dh_gex_sha1,	   NULL, NULL, 0 },
