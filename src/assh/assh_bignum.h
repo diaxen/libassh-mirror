@@ -36,6 +36,7 @@
       xxxxxx    xxxxxxxxxxxxxxxxxxxxxxxxxx
 
       op(6)          c(20)           d(6)
+
       xxxxxx  xxxxxxxxxxxxxxxxxxxx  xxxxxx
 
       op(6)     b(12)       c(8)     d(6)
@@ -292,6 +293,8 @@ enum assh_bignum_opcode_e
   ASSH_BIGNUM_OP_MASK,
   ASSH_BIGNUM_OP_RAND,
   ASSH_BIGNUM_OP_CMP,
+  ASSH_BIGNUM_OP_TESTC,
+  ASSH_BIGNUM_OP_TESTS,
   ASSH_BIGNUM_OP_UINT,
   ASSH_BIGNUM_OP_MLADJMP,
   ASSH_BIGNUM_OP_MLADSWAP,
@@ -306,7 +309,7 @@ enum assh_bignum_opcode_e
     "sub", "mul", "div", "gcd",                 \
     "expm", "inv", "shr", "shl",                \
     "and", "or", "not", "mask",                 \
-    "rand", "cmp", "uint",                      \
+    "rand", "cmp", "testc", "tests", "uint",    \
     "mladjmp", "mladswap", "mladloop", "prime", \
     "isprim", "print"                           \
 }
@@ -433,6 +436,15 @@ enum assh_bignum_opcode_e
 #define ASSH_BOP_CMPLTEQ(src1, src2, pcdiff)                  \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CMP, src1, src2, 128 + pcdiff, 3)
 
+#define ASSH_BOP_JMP(pcdiff)                  \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CMP, 0, 0, 128 + pcdiff, 0)
+
+#define ASSH_BOP_TESTC(src1, val, src2, pcdiff)                          \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_TESTC, src1, val, 128 + pcdiff, src2)
+
+#define ASSH_BOP_TESTS(src1, val, src2, pcdiff)                          \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_TESTS, src1, val, 128 + pcdiff, src2)
+
 /** This instruction initializes a big number from a 20 bits
     unsigned integer constant. */
 #define ASSH_BOP_UINT(dst, value) \
@@ -443,8 +455,8 @@ enum assh_bignum_opcode_e
     struct argument. It is useful to implement a fast variant of the
     ladder algorithm when constant time execution is not required.
     @see #ASSH_BOP_MLADLOOP */
-#define ASSH_BOP_MLADJMP(src1, src2, mlad)               \
-  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_MLADJMP, src1, src2, 128 + pcdiff, mlad)
+#define ASSH_BOP_MLADJMP(mlad, pcdiff)                                 \
+  ASSH_BOP_FMT2(ASSH_BIGNUM_OP_MLADJMP, 128 + pcdiff, mlad)
 
 /** This instruction performs a conditional swap between two values
     depending on the current state of the @ref assh_bignum_mlad_s

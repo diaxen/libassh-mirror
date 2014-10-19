@@ -176,7 +176,7 @@ static assh_error_t assh_kex_dh_gex_client_wait_group(struct assh_session_s *s,
   {
     G_mpint, P_mpint, E_mpint,
     G, P, E, X, G_n,
-    T1, T2,
+    T1, T2, Q
   };
 
   static const assh_bignum_op_t bytecode[] = {
@@ -186,6 +186,7 @@ static assh_error_t assh_kex_dh_gex_client_wait_group(struct assh_session_s *s,
     ASSH_BOP_SIZE(      G,      G_n               	),
     ASSH_BOP_SIZE(      T1,     G_n               	),
     ASSH_BOP_SIZE(      T2,     G_n               	),
+    ASSH_BOP_SIZE(      Q,      G_n               	),
 
     ASSH_BOP_MOVE(      G,      G_mpint                 ),
     ASSH_BOP_MOVE(      P,      P_mpint                 ),
@@ -195,22 +196,32 @@ static assh_error_t assh_kex_dh_gex_client_wait_group(struct assh_session_s *s,
     ASSH_BOP_PRINT(     P,      'P'                     ),
 #endif
 
-#if 0
-    /* FIXME check safe prime? */
-    /* FIXME use a cache of safe primes? */
+    ASSH_BOP_UINT(      T1,     1                       ),
+#if 1
     /* check P is a safe prime */
-    ASSH_BOP_PRTEST(    P                             	), 
-    ASSH_BOP_SUB(       T2,     P,      T1      	),
-    ASSH_BOP_RSHIFT(    T2,     T2,      1      	),
-    ASSH_BOP_PRTEST(    T2                      	), 
+    ASSH_BOP_TESTS(     P,      1,      G_n,    0       ),
+    ASSH_BOP_ISPRIM(    P,      0                       ),
+    ASSH_BOP_SUB(       T2,     P,      T1              ),
+    ASSH_BOP_SHR(       Q,      T2,     1, ASSH_BOP_NOREG	),
+    ASSH_BOP_ISPRIM(    Q,      0                       ),
+#endif
 
-    /* check generator range */
-    ASSH_BOP_CMPLT(     T1,     G                       ), /* g > 1 */
-    ASSH_BOP_CMPLT(     G,      P                       ), /* g < p */
+#warning FIXME generator checking
+#if 0
+    /* check generator order */
+    ASSH_BOP_UINT(      T2,     2                       ),
+    ASSH_BOP_CMPEQ(     T2,     G,      4               ), /* g == 2 is ok */
 
-    /* check generator order in the group */
-    ASSH_BOP_EXPM(      T2,     G,      Q,    P         ),
-    ASSH_BOP_CMPEQ(     T1,     T2                      ),
+    ASSH_BOP_MULM(      T2,     G,      G,      P       ),
+    ASSH_BOP_CMPNE(     T1,     T2,     0               ), /* g^2 != 1 */
+
+    ASSH_BOP_EXPM(      T2,     G,      Q,      P       ),
+    ASSH_BOP_CMPEQ(     T1,     T2,     0               ), /* g^q == 1 */
+
+#else
+    ASSH_BOP_CMPLT(     T1,     G,      0               ), /* g > 1 */
+    ASSH_BOP_SUB(       T2,     P,      T1              ),
+    ASSH_BOP_CMPLT(     G,      T2,     0               ), /* g < p - 1 */
 #endif
 
     /* generate private exponent */
@@ -226,7 +237,7 @@ static assh_error_t assh_kex_dh_gex_client_wait_group(struct assh_session_s *s,
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(s->ctx, bytecode, "MMMNNNNsTT",
+  ASSH_ERR_GTO(assh_bignum_bytecode(s->ctx, bytecode, "MMMNNNNsTTT",
                                     /* M */ g_str, p_str, e_str,
                                     /* N */ &pv->gn, &pv->pn, &pv->en, &pv->xn,
                                     /* S */ n), err_p);

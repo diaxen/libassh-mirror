@@ -560,11 +560,15 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
         }
 
         case ASSH_BIGNUM_OP_CMP: {
-          struct assh_bignum_s *src1 = args[oa];
-          struct assh_bignum_s *src2 = args[ob];
-          ASSH_CHK_GTO(src1->n == NULL || src2->n == NULL,
-                       ASSH_ERR_NUM_COMPARE_FAILED, err_sc);
-          int r = gcry_mpi_cmp(src1->n, src2->n);
+          int r = 0;
+          if (ob != oa)
+            {
+              struct assh_bignum_s *src1 = args[oa];
+              struct assh_bignum_s *src2 = args[ob];
+              ASSH_CHK_GTO(src1->n == NULL || src2->n == NULL,
+                           ASSH_ERR_NUM_COMPARE_FAILED, err_sc);
+              r = gcry_mpi_cmp(src1->n, src2->n);
+            }
           switch (od)
             {
             case 0:             /* cmpeq */
@@ -587,6 +591,23 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           break;
         }
 
+        case ASSH_BIGNUM_OP_TESTS:
+        case ASSH_BIGNUM_OP_TESTC: {
+          struct assh_bignum_s *src1 = args[oa];
+          size_t b = ob;
+          if (od != ASSH_BOP_NOREG)
+            {
+              ASSH_ERR_GTO(assh_bignum_size_of_data(format[od], args[od],
+                                                    NULL, NULL, &b), err_sc);
+              b -= ob;
+            }
+          if (!gcry_mpi_test_bit(src1->n, b) ^ (op == ASSH_BIGNUM_OP_TESTC))
+            ASSH_CHK_GTO(oc == 128, ASSH_ERR_NUM_COMPARE_FAILED, err_sc);
+          else
+            pc += oc - 128;
+          break;
+        }
+
         case ASSH_BIGNUM_OP_UINT: {
           struct assh_bignum_s *dst = args[od];
           dst->n = gcry_mpi_set_ui(dst->n, value);
@@ -595,9 +616,6 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
         }
 
         case ASSH_BIGNUM_OP_MLADJMP: {
-          struct assh_bignum_s *src1 = args[oa];
-          struct assh_bignum_s *src2 = args[ob];
-
           if (assh_bignum_gcrypt_mlad(args[od]))
             pc += oc - 128;
           break;
