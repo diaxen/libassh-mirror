@@ -36,6 +36,12 @@ enum assh_key_format_e
   /** public key in rfc4253, section 6.6 binary format. */
   ASSH_KEY_FMT_PUB_RFC4253_6_6,
 
+  /** keys openssh-key-v1 base64 format */
+  ASSH_KEY_FMT_OPENSSH_V1,
+  /** keys blob openssh-key-v1 binary format */
+  ASSH_KEY_FMT_OPENSSH_V1_BLOB,
+  /** private key used inside openssh-key-v1 binary format */
+  ASSH_KEY_FMT_PV_OPENSSH_V1_KEY,
   /** private key in rfc2440 like, base64 ascii format with PEM Asn1 inside. */
   ASSH_KEY_FMT_PV_RFC2440_PEM_ASN1,
   /** private key in PEM Asn1 DER binary format. */

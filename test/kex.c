@@ -35,6 +35,7 @@
 
 #include <assh/key_rsa.h>
 #include <assh/key_dsa.h>
+#include <assh/key_ed25519.h>
 
 #include "leaks_check.h"
 #include "fifo.h"
@@ -62,8 +63,8 @@ static const struct algo_with_key_s kex_list[] =
   {
     { &assh_kex_none,              NULL, NULL, 0 },
     { &assh_kex_curve25519_sha256, NULL, NULL, 0 },
-    { &assh_kex_m383_sha384,       NULL, NULL, 0 },
-    { &assh_kex_m511_sha512,       NULL, NULL, 0 },
+    { &assh_kex_m383_sha384,	   NULL, NULL, 0 },
+    { &assh_kex_m511_sha512,	   NULL, NULL, 0 },
     { &assh_kex_dh_group1_sha1,	   NULL, NULL, 0 },
     { &assh_kex_dh_group14_sha1,   NULL, NULL, 0 },
     { &assh_kex_dh_gex_sha1,	   NULL, NULL, 0 },
@@ -76,16 +77,17 @@ static const struct algo_with_key_s kex_list[] =
 
 static const struct algo_with_key_s sign_list[] =
   {
-    { &assh_sign_none,              &assh_key_none, NULL, 0 },
-    { &assh_sign_dss,               &assh_key_dsa, dsa1024_key, sizeof(dsa1024_key) },
+    { &assh_sign_none,              &assh_key_none, "\0", 0 },
+    { &assh_sign_dss,               &assh_key_dsa, dsa1024_key, sizeof(dsa1024_key) - 1 },
     //    { &assh_sign_dsa2048_sha224,    &assh_key_dsa, dsa2048_key, sizeof(dsa2048_key) },
-    { &assh_sign_dsa2048_sha256,    &assh_key_dsa, dsa2048_key, sizeof(dsa2048_key) },
-    { &assh_sign_dsa3072_sha256,    &assh_key_dsa, dsa3072_key, sizeof(dsa3072_key) },
-    { &assh_sign_rsa_sha1_md5,      &assh_key_rsa, rsa1024_key, sizeof(rsa1024_key) },
-    { &assh_sign_rsa_sha1,          &assh_key_rsa, rsa1024_key, sizeof(rsa1024_key) },
-    { &assh_sign_rsa_sha1_2048,     &assh_key_rsa, rsa2048_key, sizeof(rsa2048_key) },
-    { &assh_sign_rsa_sha256_2048,   &assh_key_rsa, rsa2048_key, sizeof(rsa2048_key) },
-    { &assh_sign_rsa_sha256_3072,   &assh_key_rsa, rsa3072_key, sizeof(rsa3072_key) },
+    { &assh_sign_dsa2048_sha256,    &assh_key_dsa, dsa2048_key, sizeof(dsa2048_key) - 1 },
+    { &assh_sign_dsa3072_sha256,    &assh_key_dsa, dsa3072_key, sizeof(dsa3072_key) - 1 },
+    { &assh_sign_rsa_sha1_md5,      &assh_key_rsa, rsa1024_key, sizeof(rsa1024_key) - 1 },
+    { &assh_sign_rsa_sha1,          &assh_key_rsa, rsa1024_key, sizeof(rsa1024_key) - 1 },
+    { &assh_sign_rsa_sha1_2048,     &assh_key_rsa, rsa2048_key, sizeof(rsa2048_key) - 1 },
+    { &assh_sign_rsa_sha256_2048,   &assh_key_rsa, rsa2048_key, sizeof(rsa2048_key) - 1 },
+    { &assh_sign_rsa_sha256_3072,   &assh_key_rsa, rsa3072_key, sizeof(rsa3072_key) - 1 },
+    { &assh_sign_ed25519,           &assh_key_ed25519, ed25519_key, sizeof(ed25519_key) - 1 },
     { NULL }
   };
 
@@ -147,14 +149,14 @@ int test(const struct assh_algo_kex_s *kex,
 
       if (i == 0 && sign_key->key_algo != NULL)
 	if (assh_key_load(c, &c->keys,
-			  sign_key->key_algo, ASSH_ALGO_SIGN, ASSH_KEY_FMT_PV_PEM_ASN1,
-			  sign_key->key_blob, sign_key->key_size))
+			  sign_key->key_algo, ASSH_ALGO_SIGN, sign_key->key_blob[0],
+			  sign_key->key_blob + 1, sign_key->key_size))
 	  return -1;
 
       if (i == 0 && kex_key->key_algo != NULL)
 	if (assh_key_load(c, &c->keys,
-			  kex_key->key_algo, ASSH_ALGO_KEX, ASSH_KEY_FMT_PV_PEM_ASN1,
-			  kex_key->key_blob, kex_key->key_size))
+			  kex_key->key_algo, ASSH_ALGO_KEX, kex_key->key_blob[0],
+			  kex_key->key_blob + 1, kex_key->key_size))
 	  return -1;
 
       if (assh_session_init(c, &session[i]) != ASSH_OK)

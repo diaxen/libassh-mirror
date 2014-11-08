@@ -192,13 +192,14 @@ assh_error_t assh_load_key_file(struct assh_context_s *c,
       format = ASSH_KEY_FMT_PV_PEM_ASN1;
       break;
 
-    case ASSH_KEY_FMT_PUB_RFC4253_6_6:
-    case ASSH_KEY_FMT_PV_PEM_ASN1:
-      blob_len = fread(blob, blob_len, 1, file);
+    case ASSH_KEY_FMT_OPENSSH_V1:
+      assh_load_rfc4716(file, blob, &blob_len);
+      format = ASSH_KEY_FMT_OPENSSH_V1_BLOB;
       break;
 
     default:
-      ASSH_ERR_RET(ASSH_ERR_NOTSUP);
+      blob_len = fread(blob, 1, blob_len, file);
+      break;
     }
 
   ASSH_ERR_RET(assh_key_load(c, head, algo, intent, format, blob, blob_len));

@@ -23,7 +23,9 @@
 
 /*
   Implement ECDH using montgomery elliptic curves from:
-    IETF draft-ladd-safecurves-04.txt
+   - Curve25519: new Diffie-Hellman speed records.
+   - A note on high-security general-purpose elliptic curves
+   - IETF draft-ladd-safecurves-04.txt
 
   SSH key exchange protocol from:
     curve25519-sha256_libssh.org.txt
@@ -41,6 +43,8 @@
 #include <assh/assh_hash.h>
 
 #include <assh/assh_bignum.h>
+
+#include "ecc_bop.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -107,23 +111,13 @@ assh_montgomery_point_mul(struct assh_session_s *s, const uint8_t *result,
 
   static const assh_bignum_op_t bytecode[] = {
 
-    ASSH_BOP_SIZE(      P,      S                       ),
-    ASSH_BOP_SIZE(      X1,     P                       ),
-    ASSH_BOP_SIZE(      X2,     P                       ),
-    ASSH_BOP_SIZE(      Z2,     P                       ),
-    ASSH_BOP_SIZE(      X3,     P                       ),
-    ASSH_BOP_SIZE(      Z3,     P                       ),
-    ASSH_BOP_SIZE(      T0,     P                       ),
-    ASSH_BOP_SIZE(      T1,     P                       ),
-    ASSH_BOP_SIZE(      A24,    P                       ),
+    ASSH_BOP_SIZER(     X1,     P,      S               ),
 
     /* init */
     ASSH_BOP_MOVE(      P,      P_mpint                 ),
     ASSH_BOP_MOVE(      A24,    A24_mpint               ),
 
     ASSH_BOP_MOVE(      X1,     BP_raw                  ),
-    ASSH_BOP_UINT(      T0,     1                       ),
-    ASSH_BOP_CMPLT(     T0,     X1,      0              ),
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
     ASSH_BOP_PRINT(     P,     'P'                      ),
@@ -135,41 +129,9 @@ assh_montgomery_point_mul(struct assh_session_s *s, const uint8_t *result,
     ASSH_BOP_MOVE(      X3,     X1                      ),
     ASSH_BOP_UINT(      Z3,     1                       ),
 
-    /* point addition */
-
-    /* D = X3 - Z3        */
-    ASSH_BOP_SUBM(	T0,	X3,	Z3,	P	),
-    /* B = X2 - Z2        */
-    ASSH_BOP_SUBM(	T1,	X2,	Z2,	P	),
-    /* A = X2 + Z2        */
-    ASSH_BOP_ADDM(	X2,	X2,	Z2,	P	),
-    /* C = X3 + Z3        */
-    ASSH_BOP_ADDM(	Z2,	X3,	Z3,	P	),
-    /* DA = D*A           */
-    ASSH_BOP_MULM(	Z3,	T0,	X2,	P	),
-    /* CB = C*B           */
-    ASSH_BOP_MULM(	Z2,	Z2,	T1,	P	),
-    /* BB = B^2           */
-    ASSH_BOP_MULM( 	T0,	T1,	T1,	P	),
-    /* AA = A^2           */
-    ASSH_BOP_MULM( 	T1,	X2,	X2,	P	),
-    /* X5 = Z1*(DA+CB)^2  */
-    ASSH_BOP_ADDM(	X3,	Z3,	Z2,	P	),
-    ASSH_BOP_MULM( 	X3,	X3,	X3,	P	),
-    /* Z5 = X1*(DA-CB)^2  */
-    ASSH_BOP_SUBM(	Z2,	Z3,	Z2,	P	),
-    ASSH_BOP_MULM( 	Z2,	Z2,	Z2,	P	),
-    /* X4 = AA*BB         */
-    ASSH_BOP_MULM(	X2,	T1,	T0,	P	),
-    /* E = AA - BB        */
-    ASSH_BOP_SUBM(      T1,	T1,	T0,	P	),
-    /* Z4 = E*(BB+a24*E)  */
-    ASSH_BOP_MULM(	Z3,	T1,	A24,    P	),
-    ASSH_BOP_ADDM(	T0,	T0,	Z3,	P	),
-    ASSH_BOP_MULM(	Z3,	X1,	Z2,	P	),
-    ASSH_BOP_MULM(	Z2,	T1,	T0,	P	),
-
     /* montgomery ladder */
+    ASSH_BOP_MONTGOMERY_SADD(X1, X2, X3, Z2, Z3, T0, T1, A24, P),
+
     ASSH_BOP_MLADSWAP(  X2,     X3,     L               ),
     ASSH_BOP_MLADSWAP(  Z2,     Z3,     L               ),
     ASSH_BOP_MLADLOOP(  21,             L               ),
@@ -180,6 +142,11 @@ assh_montgomery_point_mul(struct assh_session_s *s, const uint8_t *result,
 #ifdef CONFIG_ASSH_DEBUG_KEX
     ASSH_BOP_PRINT(     T0,     'R'                     ),
 #endif
+
+    /* check contributory behavior */
+    ASSH_BOP_UINT(      T1,     0                       ),
+    ASSH_BOP_CMPNE(     T1,     T0,      0              ),
+
     ASSH_BOP_MOVE(      R_raw,  T0                      ),
 
     ASSH_BOP_END(),

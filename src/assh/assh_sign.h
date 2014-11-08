@@ -107,5 +107,7 @@ extern const struct assh_algo_sign_s assh_sign_rsa_sha256_2048;
     Reject keys with modulus size less than 3072 bits. */
 extern const struct assh_algo_sign_s assh_sign_rsa_sha256_3072;
 
+extern const struct assh_algo_sign_s assh_sign_ed25519;
+
 #endif
 
