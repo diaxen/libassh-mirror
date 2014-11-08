@@ -5,7 +5,10 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <time.h>
+
 #include "keys.h"
+#include "prng_weak.h"
 
 #ifdef CONFIG_ASSH_USE_GCRYPT
 # include <gcrypt.h>
@@ -93,12 +96,11 @@ assh_error_t test_const()
       uint8_t key_blob[algos[i].key_len];
       memcpy(key_blob, algos[i].key, sizeof(key_blob));
 
+      fprintf(stderr, "L");
       ASSH_ERR_RET(assh_key_load(&context, &key, a->algo.key, ASSH_ALGO_SIGN,
 		 key_blob[0], key_blob + 1, sizeof(key_blob) - 1));
 
       size_t sign_len;
-
-      fprintf(stderr, "c");
 
       uint8_t data[11 + 27 + 33];
       const uint8_t * ptr[3] = { data, data + 11, data + 11 + 27 };
@@ -106,6 +108,7 @@ assh_error_t test_const()
       for (j = 0; j < sizeof(data); j++)
 	data[j] = j;
 
+      fprintf(stderr, "g");
       ASSH_ERR_RET(a->f_generate(&context, key, 3, ptr, sz, NULL, &sign_len));
 
       if (sign_len != algos[i].sign_len)
@@ -125,11 +128,13 @@ assh_error_t test_const()
 	  abort();
 	}
 
+      fprintf(stderr, "v");
       if (a->f_verify(&context, key, 3, ptr, sz, sign, sign_len))
 	abort();
 
       data[rand() % sizeof(data)]++;
 
+      fprintf(stderr, "V");
       if (!a->f_verify(&context, key, 3, ptr, sz, sign, sign_len))
 	abort();
     }
@@ -153,17 +158,21 @@ assh_error_t test_loop()
       memcpy(key_blob, algos[i].key, sizeof(key_blob));
 
       if (!algos[i].gen_key)
-	ASSH_ERR_RET(assh_key_load(&context, &key, a->algo.key, ASSH_ALGO_SIGN,
-	               key_blob[0], key_blob + 1, sizeof(key_blob) - 1));
+	{
+	  fprintf(stderr, "L");
+	  ASSH_ERR_RET(assh_key_load(&context, &key, a->algo.key, ASSH_ALGO_SIGN,
+	                 key_blob[0], key_blob + 1, sizeof(key_blob) - 1));
+	}
 
       int size;
       for (size = TEST_SIZE; size != 0; )
 	{
-	  fprintf(stderr, "N");
-
 	  if (algos[i].gen_key)
-	    ASSH_ERR_RET(assh_key_create(&context, &key, algos[i].kbits,
-	                  a->algo.key, ASSH_ALGO_SIGN));
+	    {
+              fprintf(stderr, "N");
+	      ASSH_ERR_RET(assh_key_create(&context, &key, algos[i].kbits,
+	                    a->algo.key, ASSH_ALGO_SIGN));
+            }
 
 	  size--;
 	  uint8_t data[size];
@@ -226,7 +235,7 @@ assh_error_t test_loop()
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
 	      fprintf(stderr, "Mangling data byte %u, previous=0x%02x, new=0x%02x\n",
-		      r1, data[r1], data[r1] ^ r2);
+	                r1, data[r1], data[r1] ^ r2);
 #endif
 	      data[r1] ^= r2;
 
@@ -265,8 +274,8 @@ assh_error_t test_loop()
 	      if (!r2)
 		r2++;
 #ifdef CONFIG_ASSH_DEBUG_SIGN
-          fprintf(stderr, "Mangling key byte %u, previous=0x%02x, new=0x%02x\n",
-                    r1, key_blob[r1], key_blob[r1] ^ r2);
+	      fprintf(stderr, "Mangling key byte %u, previous=0x%02x, new=0x%02x\n",
+                        r1, key_blob[r1], key_blob[r1] ^ r2);
 #endif
 	      key_blob[r1] ^= r2;
 	      fprintf(stderr, "B");
@@ -309,8 +318,15 @@ int main(int argc, char **argv)
     return -1;
 #endif
 
+  assh_context_init(&context, ASSH_SERVER);
+  ASSH_ERR_RET(assh_context_prng(&context, &assh_prng_weak));
+
   for (i = 0; algos[i].algo; i++)
     ASSH_ERR_RET(assh_algo_register_va(&context, 0, 0, algos[i].algo, NULL));
+
+  int t = time(0);
+  srand(t);
+  fprintf(stderr, "\nSeed: %u\n", t);
 
   if (test_const())
     return 1;

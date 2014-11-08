@@ -70,3 +70,8 @@ signature_SOURCES = signature.c
 signature_LDADD = $(top_builddir)/src/libassh.la
 signature_CFLAGS = -I$(top_srcdir)/src
 
+EXTRA_DIST = \
+fifo.h \
+keys.h \
+leaks_check.h \
+prng_weak.h
