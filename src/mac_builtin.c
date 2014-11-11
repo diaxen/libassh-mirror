@@ -48,6 +48,7 @@ assh_hmac_init(struct assh_context_s *c, const struct assh_algo_mac_s *mac,
   assh_error_t err;
   uint_fast16_t i;
 
+  assert(hash->hash_size != 0);
   assert(mac->mac_size <= hash->hash_size);
   assert(mac->key_size <= hash->block_size);
 
@@ -84,7 +85,7 @@ assh_hmac_init(struct assh_context_s *c, const struct assh_algo_mac_s *mac,
   return ASSH_OK;
 
  err_ci:
-  assh_hash_final(ctx->hash_ci, NULL);
+  assh_hash_cleanup(ctx->hash_ci);
  err_sc:
   ASSH_SCRATCH_FREE(c, kx);  
  err_ctx:
@@ -96,8 +97,10 @@ static ASSH_MAC_CLEANUP_FCN(assh_hmac_cleanup)
 {
   struct assh_hmac_context_s *ctx = ctx_;
 
-  assh_hash_final(ctx->hash_ci, NULL);
-  assh_hash_final(ctx->hash_co, NULL);
+  assh_hash_cleanup(ctx->hash_ci);
+  assh_hash_cleanup(ctx->hash_co);
+
+  assh_free(c, ctx->hash_co, ASSH_ALLOC_KEY);
 }
 
 static ASSH_MAC_COMPUTE_FCN(assh_hmac_compute)
@@ -110,20 +113,22 @@ static ASSH_MAC_COMPUTE_FCN(assh_hmac_compute)
   assh_store_u32(be_seq, seq);
   assh_hash_update(ctx->hash_ci_t, be_seq, 4);
   assh_hash_update(ctx->hash_ci_t, data, len);
-  assh_hash_final(ctx->hash_ci_t, ctx->buf);
+  assh_hash_final(ctx->hash_ci_t, ctx->buf, ctx->hash->hash_size);
+  assh_hash_cleanup(ctx->hash_ci_t);
 
   ASSH_ERR_RET(ctx->hash->f_copy(ctx->hash_co_t, ctx->hash_co));
   assh_hash_update(ctx->hash_co_t, ctx->buf, ctx->hash->hash_size);
 
   if (ctx->mac->mac_size < ctx->hash->hash_size)
     {
-      assh_hash_final(ctx->hash_co_t, ctx->buf);
+      assh_hash_final(ctx->hash_co_t, ctx->buf, ctx->hash->hash_size);
       memcpy(mac, ctx->buf, ctx->mac->mac_size);
     }
   else
     {
-      assh_hash_final(ctx->hash_co_t, mac);
+      assh_hash_final(ctx->hash_co_t, mac, ctx->hash->hash_size);
     }
+  assh_hash_cleanup(ctx->hash_co_t);
 
   return ASSH_OK;
 }

@@ -230,13 +230,12 @@ static ASSH_EVENT_DONE_FCN(assh_kex_dh_host_key_lookup_done)
                         pv->host_key, secret, h_str)
                | ASSH_ERRSV_DISCONNECT, err_hash);
 
-  ASSH_SCRATCH_FREE(s->ctx, scratch);
+  ASSH_ERR_GTO(assh_kex_end(s, 1) | ASSH_ERRSV_DISCONNECT, err_hash);
 
-  ASSH_ERR_RET(assh_kex_end(s, 1) | ASSH_ERRSV_DISCONNECT);
-  return ASSH_OK;
+  err = ASSH_OK;
 
  err_hash:
-  assh_hash_final(hash_ctx, NULL);
+  assh_hash_cleanup(hash_ctx);
  err_scratch:
   ASSH_SCRATCH_FREE(s->ctx, scratch);
  err_:
@@ -376,16 +375,16 @@ static assh_error_t assh_kex_dh_server_wait_e(struct assh_session_s *s,
                  slen, hk, secret), err_p);
 
   assh_transport_push(s, pout);
-  ASSH_SCRATCH_FREE(c, scratch);
 
-  ASSH_ERR_RET(assh_kex_end(s, 1) | ASSH_ERRSV_DISCONNECT);
+  ASSH_ERR_GTO(assh_kex_end(s, 1) | ASSH_ERRSV_DISCONNECT, err_hash);
 
-  return ASSH_OK;
+  err = ASSH_OK;
+  goto err_hash;
 
  err_p:
   assh_packet_release(pout);
  err_hash:
-  assh_hash_final(hash_ctx, NULL);
+  assh_hash_cleanup(hash_ctx);
  err_scratch:
   ASSH_SCRATCH_FREE(c, scratch);
  err_:

@@ -41,6 +41,10 @@ struct assh_hash_sha1_context_s
   uint8_t buffer[64];
 };
 
+static ASSH_HASH_CLEANUP_FCN(assh_sha1_cleanup)
+{
+}
+
 ASSH_FIRST_FIELD_ASSERT(assh_hash_sha1_context_s, ctx);
 
 static inline uint32_t rol(uint32_t value, unsigned int bits)
@@ -170,6 +174,9 @@ static ASSH_HASH_UPDATE_FCN(assh_sha1_update)
 static ASSH_HASH_FINAL_FCN(assh_sha1_final)
 {
   struct assh_hash_sha1_context_s *ctx = (void*)hctx;
+
+  assert(len == 20);
+
   unsigned int i;
   uint8_t count[8];
   uint8_t c;
@@ -202,5 +209,6 @@ const struct assh_hash_algo_s assh_hash_sha1 =
   .f_copy = assh_sha1_copy,
   .f_update = assh_sha1_update,
   .f_final = assh_sha1_final,
+  .f_cleanup = assh_sha1_cleanup,
 };
 

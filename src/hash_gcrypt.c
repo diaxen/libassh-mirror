@@ -53,6 +53,13 @@ static ASSH_HASH_UPDATE_FCN(assh_gcrypt_hash_update)
   gcry_md_write(gctx->hd, data, len);
 }
 
+static ASSH_HASH_CLEANUP_FCN(assh_gcrypt_hash_cleanup)
+{
+  struct assh_hash_gcrypt_context_s *gctx = (void*)hctx;
+
+  gcry_md_close(gctx->hd);
+}
+
 #define ASSH_GCRYPT_HASH(id_, algo_, hsize_, bsize_)                    \
                                                                         \
 static ASSH_HASH_INIT_FCN(assh_gcrypt_hash_##id_##_init)                \
@@ -70,10 +77,10 @@ static ASSH_HASH_FINAL_FCN(assh_gcrypt_hash_##id_##_final)              \
 {                                                                       \
   struct assh_hash_gcrypt_context_s *gctx = (void*)hctx;                \
                                                                         \
+  assert(len == hsize_);                                                \
+                                                                        \
   if (hash != NULL)                                                     \
     memcpy(hash, gcry_md_read(gctx->hd, 0), hsize_);                    \
-                                                                        \
-  gcry_md_close(gctx->hd);                                              \
 }                                                                       \
                                                                         \
 const struct assh_hash_algo_s assh_hash_##id_ =                         \
@@ -86,6 +93,7 @@ const struct assh_hash_algo_s assh_hash_##id_ =                         \
   .f_copy = assh_gcrypt_hash_copy,                                      \
   .f_update = assh_gcrypt_hash_update,                                  \
   .f_final = assh_gcrypt_hash_##id_##_final,                            \
+  .f_cleanup = assh_gcrypt_hash_cleanup,                                \
 };
 
 ASSH_GCRYPT_HASH(md5, GCRY_MD_MD5, 16, 64);

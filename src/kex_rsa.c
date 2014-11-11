@@ -89,6 +89,8 @@ static assh_error_t assh_kex_rsa_mgf1(struct assh_context_s *c,
   size_t j, k;
   uint8_t cnt[4];
 
+  assert(algo->hash_size != 0);
+
   ASSH_SCRATCH_ALLOC(c, uint8_t, scratch,
                      algo->ctx_size * 2 + algo->hash_size,
                      ASSH_ERRSV_CONTINUE, err_);
@@ -105,14 +107,16 @@ static assh_error_t assh_kex_rsa_mgf1(struct assh_context_s *c,
       ASSH_ERR_GTO(assh_hash_copy(hash_ctx2, hash_ctx1), err_hash);
       assh_store_u32(cnt, i++);
       assh_hash_update(hash_ctx2, cnt, 4);
-      assh_hash_final(hash_ctx2, tmp);
+      assh_hash_final(hash_ctx2, tmp, algo->hash_size);
+      assh_hash_cleanup(hash_ctx2);
       for (k = 0; k < algo->hash_size; k++)
 	out[j + k] ^= tmp[k];
     }
 
   assh_store_u32(cnt, i++);
   assh_hash_update(hash_ctx1, cnt, 4);
-  assh_hash_final(hash_ctx1, tmp);
+  assh_hash_final(hash_ctx1, tmp, algo->hash_size);
+  assh_hash_cleanup(hash_ctx1);
   for (k = 0; k < outlen - j; k++)
     out[j + k] ^= tmp[k];
 
@@ -120,7 +124,7 @@ static assh_error_t assh_kex_rsa_mgf1(struct assh_context_s *c,
   return ASSH_OK;
 
  err_hash:
-  assh_hash_final(hash_ctx1, NULL);
+  assh_hash_cleanup(hash_ctx1);
  err_scratch:
   ASSH_SCRATCH_FREE(c, scratch);
  err_:
@@ -326,13 +330,12 @@ static assh_error_t assh_kex_rsa_client_wait_sign(struct assh_session_s *s,
                         pv->host_key, pv->secret, h_str)
                | ASSH_ERRSV_DISCONNECT, err_hash);
 
-  ASSH_SCRATCH_FREE(s->ctx, scratch);
+  ASSH_ERR_GTO(assh_kex_end(s, 1) | ASSH_ERRSV_DISCONNECT, err_hash);
 
-  ASSH_ERR_RET(assh_kex_end(s, 1) | ASSH_ERRSV_DISCONNECT);
-  return ASSH_OK;
+  err = ASSH_OK;
 
  err_hash:
-  assh_hash_final(hash_ctx, NULL);
+  assh_hash_cleanup(hash_ctx);
  err_scratch:
   ASSH_SCRATCH_FREE(s->ctx, scratch);
  err_:
@@ -656,7 +659,11 @@ static ASSH_KEX_CLEANUP_FCN(assh_kex_rsa_cleanup)
 
 #ifdef CONFIG_ASSH_SERVER
     case ASSH_SERVER:
-      assh_free(s->ctx, pv->hash_ctx, ASSH_ALLOC_KEY);
+      if (pv->hash_ctx != NULL)
+	{
+	  assh_hash_cleanup(pv->hash_ctx);
+	  assh_free(s->ctx, pv->hash_ctx, ASSH_ALLOC_KEY);
+	}
       break;
 #endif
 

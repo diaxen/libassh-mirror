@@ -37,7 +37,8 @@ struct assh_hash_ctx_s
 /** @internal @see assh_hash_init_t */
 #define ASSH_HASH_INIT_FCN(n) \
   ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_context_s *c, \
-                                           struct assh_hash_ctx_s *hctx)
+                                           struct assh_hash_ctx_s *hctx, \
+                                           const struct assh_hash_algo_s *algo)
 /** @internal This function initializes an hash algorithm context. A
     call to this function must be paired with a call to @ref assh_hash_final_t. */
 typedef ASSH_HASH_INIT_FCN(assh_hash_init_t);
@@ -58,23 +59,30 @@ typedef ASSH_HASH_UPDATE_FCN(assh_hash_update_t);
 
 /** @internal @see assh_hash_final_t */
 #define ASSH_HASH_FINAL_FCN(n) \
-  void (n)(struct assh_hash_ctx_s *hctx, uint8_t *hash)
-/** @internal This function writes the hash result and releases
-    resources allocated by the @ref assh_hash_init_t and
-    assh_hash_copy_t functions. If the @tt hash parameter is NULL, the
-    hash result is discarded. */
+  void (n)(struct assh_hash_ctx_s *hctx, uint8_t *hash, size_t len)
+/** @internal This function writes the hash result. */
 typedef ASSH_HASH_FINAL_FCN(assh_hash_final_t);
+
+/** @internal @see assh_hash_cleanup_t */
+#define ASSH_HASH_CLEANUP_FCN(n) \
+  void (n)(struct assh_hash_ctx_s *hctx)
+/** @internal This function releases resources allocated by the @ref
+    assh_hash_init_t or assh_hash_copy_t function. */
+typedef ASSH_HASH_CLEANUP_FCN(assh_hash_cleanup_t);
 
 struct assh_hash_algo_s
 {
   const char *name;
-  size_t ctx_size;
-  size_t hash_size;
-  size_t block_size;
   assh_hash_init_t *f_init;
   assh_hash_copy_t *f_copy;
   assh_hash_update_t *f_update;
   assh_hash_final_t *f_final;
+  assh_hash_cleanup_t *f_cleanup;
+  /** size of hash function context structure */
+  size_t ctx_size;
+  /** hash function output size, 0 for variable size output */
+  size_t hash_size;
+  size_t block_size;
 };
 
 /** This function hashes a ssh string. The string must contain a valid
@@ -87,7 +95,8 @@ void assh_hash_string(struct assh_hash_ctx_s *hctx, const uint8_t *str);
 void assh_hash_bytes_as_string(struct assh_hash_ctx_s *hctx,
                                const uint8_t *bytes, size_t len);
 
-/** This function convert the big number to the ssh mpint representation and hash the result. */
+/** This function convert the big number to the ssh mpint
+    representation and hash the result. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_hash_bignum(struct assh_context_s *ctx,
                  struct assh_hash_ctx_s *hctx,
@@ -104,11 +113,18 @@ assh_hash_update(struct assh_hash_ctx_s *hctx, const void *data, size_t len)
   return hctx->algo->f_update(hctx, data, len);
 }
 
-#warning add cleanup function instead of NULL final
+/** @This can be called multiple times when the hash algorithm has a
+    variable length output. */
 static inline void
-assh_hash_final(struct assh_hash_ctx_s *hctx, uint8_t *hash)
+assh_hash_final(struct assh_hash_ctx_s *hctx, uint8_t *hash, size_t len)
 {
-  hctx->algo->f_final(hctx, hash);
+  hctx->algo->f_final(hctx, hash, len);
+}
+
+static inline void
+assh_hash_cleanup(struct assh_hash_ctx_s *hctx)
+{
+  hctx->algo->f_cleanup(hctx);
 }
 
 static inline ASSH_WARN_UNUSED_RESULT assh_error_t
@@ -118,17 +134,20 @@ assh_hash_copy(struct assh_hash_ctx_s *hctx_dst,
   return hctx_src->algo->f_copy(hctx_dst, hctx_src);  
 }
 
+/** @This initialize a hash algorithm context. */
 static inline ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_hash_init(struct assh_context_s *c,
                struct assh_hash_ctx_s *hctx,
                const struct assh_hash_algo_s *algo)
 {
   hctx->algo = algo;
-  return algo->f_init(c, hctx);
+  return algo->f_init(c, hctx, algo);
 }
 
 extern const struct assh_hash_algo_s assh_hash_md5;
+
 extern const struct assh_hash_algo_s assh_hash_sha1;
+
 extern const struct assh_hash_algo_s assh_hash_sha224;
 extern const struct assh_hash_algo_s assh_hash_sha256;
 extern const struct assh_hash_algo_s assh_hash_sha384;

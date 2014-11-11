@@ -128,7 +128,8 @@ assh_sign_rsa_generate(struct assh_context_s *c,
   ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, digest->algo), err_scratch);
   for (i = 0; i < data_count; i++)
     assh_hash_update(hash_ctx, data[i], data_len[i]);
-  assh_hash_final(hash_ctx, em);
+  assh_hash_final(hash_ctx, em, digest->algo->hash_size);
+  assh_hash_cleanup(hash_ctx);
 
   /* build signature blob */
   memcpy(sign, assh_rsa_id, assh_rsa_id_len);
@@ -258,7 +259,8 @@ assh_sign_rsa_verify(struct assh_context_s *c,
   ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, digest->algo), err_hash);
   for (i = 0; i < data_count; i++)
     assh_hash_update(hash_ctx, data[i], data_len[i]);
-  assh_hash_final(hash_ctx, hash);
+  assh_hash_final(hash_ctx, hash, digest->algo->hash_size);
+  assh_hash_cleanup(hash_ctx);
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
   assh_hexdump("rsa verify hash", hash, digest->algo->hash_size);

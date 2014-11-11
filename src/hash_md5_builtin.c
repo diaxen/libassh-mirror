@@ -39,6 +39,10 @@ struct assh_hash_md5_context_s
   uint8_t buffer[MD5_BLOCK_LENGTH];
 };
 
+static ASSH_HASH_CLEANUP_FCN(assh_md5_cleanup)
+{
+}
+
 ASSH_FIRST_FIELD_ASSERT(assh_hash_md5_context_s, ctx);
 
 static ASSH_HASH_INIT_FCN(assh_md5_init)
@@ -171,6 +175,8 @@ static ASSH_HASH_FINAL_FCN(assh_md5_final)
 {
   struct assh_hash_md5_context_s *ctx = (void*)hctx;
 
+  assert(len == 16);
+
   uint8_t count[8];
   size_t padlen;
   int i;
@@ -211,5 +217,6 @@ const struct assh_hash_algo_s assh_hash_md5 =
   .f_copy = assh_md5_copy,
   .f_update = assh_md5_update,
   .f_final = assh_md5_final,
+  .f_cleanup = assh_md5_cleanup,
 };
 

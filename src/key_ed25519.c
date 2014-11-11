@@ -131,7 +131,8 @@ static ASSH_KEY_CREATE_FCN(assh_key_ed25519_create)
 
   ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, algo), err_scratch);
   assh_hash_update(hash_ctx, k->s, n);
-  assh_hash_final(hash_ctx, sc->h + n);
+  assh_hash_final(hash_ctx, sc->h + n, n * 2);
+  assh_hash_cleanup(hash_ctx);
 
   assh_edward_adjust(curve, sc->h + n);
 

@@ -46,6 +46,10 @@ struct assh_hash_sha256_context_s
 
 ASSH_FIRST_FIELD_ASSERT(assh_hash_sha256_context_s, ctx);
 
+static ASSH_HASH_CLEANUP_FCN(assh_sha2_cleanup)
+{
+}
+
 /*
  *  FIPS-180-2 compliant SHA2 implementation
  *  based on PUBLIC DOMAIN sha256 by Christophe Devine
@@ -355,6 +359,8 @@ static ASSH_HASH_FINAL_FCN(assh_sha224_final)
   struct assh_hash_sha256_context_s *ctx = (void*)hctx;
   uint_fast8_t i;
 
+  assert(len == 28);
+
   assh_sha256_final_(ctx);
 
   if (hash != NULL)
@@ -372,6 +378,7 @@ const struct assh_hash_algo_s assh_hash_sha224 =
   .f_copy = assh_sha224_copy,
   .f_update = assh_sha224_update,
   .f_final = assh_sha224_final,
+  .f_cleanup = assh_sha2_cleanup,
 };
 
 
@@ -411,6 +418,8 @@ static ASSH_HASH_FINAL_FCN(assh_sha256_final)
   struct assh_hash_sha256_context_s *ctx = (void*)hctx;
   uint_fast8_t i;
 
+  assert(len == 32);
+
   assh_sha256_final_(ctx);
 
   if (hash != NULL)
@@ -428,6 +437,7 @@ const struct assh_hash_algo_s assh_hash_sha256 =
   .f_copy = assh_sha256_copy,
   .f_update = assh_sha256_update,
   .f_final = assh_sha256_final,
+  .f_cleanup = assh_sha2_cleanup,
 };
 
 
@@ -466,6 +476,8 @@ static ASSH_HASH_FINAL_FCN(assh_sha384_final)
   struct assh_hash_sha512_context_s *ctx = (void*)hctx;
   uint_fast8_t i;
 
+  assert(len == 48);
+
   assh_sha512_final_(ctx);
 
   if (hash != NULL)
@@ -483,6 +495,7 @@ const struct assh_hash_algo_s assh_hash_sha384 =
   .f_copy = assh_sha384_copy,
   .f_update = assh_sha384_update,
   .f_final = assh_sha384_final,
+  .f_cleanup = assh_sha2_cleanup,
 };
 
 
@@ -521,6 +534,8 @@ static ASSH_HASH_FINAL_FCN(assh_sha512_final)
   struct assh_hash_sha512_context_s *ctx = (void*)hctx;
   uint_fast8_t i;
 
+  assert(len == 64);
+
   assh_sha512_final_(ctx);
 
   if (hash != NULL)
@@ -538,4 +553,5 @@ const struct assh_hash_algo_s assh_hash_sha512 =
   .f_copy = assh_sha512_copy,
   .f_update = assh_sha512_update,
   .f_final = assh_sha512_final,
+  .f_cleanup = assh_sha2_cleanup,
 };

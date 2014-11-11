@@ -238,10 +238,18 @@ static inline uint32_t assh_load_u32le(const uint8_t *s)
     order from a non-aligned location. */
 static inline uint64_t assh_load_u64(const uint8_t *s)
 {
-  return (uint64_t)s[7]         + ((uint64_t)s[6] << 8) +
+  return ((uint64_t)s[7] << 0)  + ((uint64_t)s[6] << 8) +
          ((uint64_t)s[5] << 16) + ((uint64_t)s[4] << 24) +
          ((uint64_t)s[3] << 32) + ((uint64_t)s[2] << 40) +
          ((uint64_t)s[1] << 48) + ((uint64_t)s[0] << 56);
+}
+
+static inline uint64_t assh_load_u64le(const uint8_t *s)
+{
+  return ((uint64_t)s[0] << 0)  + ((uint64_t)s[1] << 8) +
+         ((uint64_t)s[2] << 16) + ((uint64_t)s[3] << 24) +
+         ((uint64_t)s[4] << 32) + ((uint64_t)s[5] << 40) +
+         ((uint64_t)s[6] << 48) + ((uint64_t)s[7] << 56);
 }
 
 /** @internal This function allocates an array of bytes in a packet

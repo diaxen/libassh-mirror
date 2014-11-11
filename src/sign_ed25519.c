@@ -111,7 +111,8 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_ed25519_generate)
 
   ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, algo), err_scratch);
   assh_hash_update(hash_ctx, k->s, n);
-  assh_hash_final(hash_ctx, sc->h);
+  assh_hash_final(hash_ctx, sc->h, n * 2);
+  assh_hash_cleanup(hash_ctx);
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
   assh_hexdump("h", sc->h, 64);
@@ -125,7 +126,8 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_ed25519_generate)
   assh_hash_update(hash_ctx, sc->h + n, n);
   for (i = 0; i < data_count; i++)
     assh_hash_update(hash_ctx, data[i], data_len[i]);
-  assh_hash_final(hash_ctx, sc->r);
+  assh_hash_final(hash_ctx, sc->r, n * 2);
+  assh_hash_cleanup(hash_ctx);
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
   assh_hexdump("r", sc->r, 64);
@@ -208,7 +210,8 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_ed25519_generate)
   assh_hash_update(hash_ctx, k->p, n);
   for (i = 0; i < data_count; i++)
     assh_hash_update(hash_ctx, data[i], data_len[i]);
-  assh_hash_final(hash_ctx, sc->hram);
+  assh_hash_final(hash_ctx, sc->hram, n * 2);
+  assh_hash_cleanup(hash_ctx);
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
   assh_hexdump("hram", sc->hram, 64);
@@ -216,7 +219,8 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_ed25519_generate)
 
   ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, algo), err_scratch);
   assh_hash_update(hash_ctx, k->s, n);
-  assh_hash_final(hash_ctx, sc->az);
+  assh_hash_final(hash_ctx, sc->az, n * 2);
+  assh_hash_cleanup(hash_ctx);
 
   assh_edward_adjust(curve, sc->az);
 
@@ -256,8 +260,6 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_ed25519_generate)
   ASSH_SCRATCH_FREE(c, sc);
   return ASSH_OK;
 
- err_hash:
-  assh_hash_final(hash_ctx, NULL);
  err_scratch:
   ASSH_SCRATCH_FREE(c, sc);
  err_:
@@ -302,7 +304,8 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_ed25519_verify)
   assh_hash_update(hash_ctx, k->p, n);
   for (i = 0; i < data_count; i++)
     assh_hash_update(hash_ctx, data[i], data_len[i]);
-  assh_hash_final(hash_ctx, sc->hram);
+  assh_hash_final(hash_ctx, sc->hram, n * 2);
+  assh_hash_cleanup(hash_ctx);
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
   assh_hexdump("pub", k->p, n);

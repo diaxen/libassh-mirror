@@ -358,7 +358,8 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
 }
 
 /* derive cipher/mac/iv key from shared secret */
-static assh_error_t assh_kex_new_key(struct assh_session_s *s, void *hash_ctx,
+static assh_error_t assh_kex_new_key(struct assh_session_s *s,
+                                     struct assh_hash_ctx_s *hash_ctx,
                                      const struct assh_hash_algo_s *hash_algo,
                                      const uint8_t *ex_hash, const uint8_t *secret_str,
                                      char c, uint8_t *key, size_t key_size)
@@ -370,34 +371,36 @@ static assh_error_t assh_kex_new_key(struct assh_session_s *s, void *hash_ctx,
 
   assert(key_size <= ASSH_MAX_SYMKEY_SIZE);
 
-  /* setup session id */
-  if (s->session_id_len == 0)
-    memcpy(s->session_id, ex_hash, s->session_id_len = hash_algo->hash_size);
-
   /* derive key */
+  size_t hash_size = hash_algo->hash_size ? hash_algo->hash_size : key_size;
   ASSH_ERR_GTO(assh_hash_init(s->ctx, hash_ctx, hash_algo), err_scratch);
 
+  /* setup session id */
+  if (s->session_id_len == 0)
+    memcpy(s->session_id, ex_hash, s->session_id_len = hash_size);
+
   assh_hash_update(hash_ctx, secret_str, assh_load_u32(secret_str) + 4);
-  assh_hash_update(hash_ctx, ex_hash, hash_algo->hash_size);
+  assh_hash_update(hash_ctx, ex_hash, hash_size);
   assh_hash_update(hash_ctx, &c, 1);
   assh_hash_update(hash_ctx, s->session_id, s->session_id_len);
 
-  assh_hash_final(hash_ctx, buf);
+  assh_hash_final(hash_ctx, buf, hash_size);
+  assh_hash_cleanup(hash_ctx);
 
-  /* further enlarge derived key */
+  /* further enlarge derived key if needed */
   size_t size;
-  for (size = hash_algo->hash_size; size < key_size;
-       size += hash_algo->hash_size)
+  for (size = hash_size; size < key_size; size += hash_size)
     {
-      assert(size + hash_algo->hash_size
+      assert(size + hash_size
 	     <= ASSH_MAX_SYMKEY_SIZE + ASSH_MAX_HASH_SIZE);
 
       ASSH_ERR_GTO(assh_hash_init(s->ctx, hash_ctx, hash_algo), err_scratch);
       assh_hash_update(hash_ctx, secret_str, assh_load_u32(secret_str) + 4);
-      assh_hash_update(hash_ctx, ex_hash, hash_algo->hash_size);
+      assh_hash_update(hash_ctx, ex_hash, hash_size);
       assh_hash_update(hash_ctx, buf, size);
 
-      assh_hash_final(hash_ctx, buf + size);
+      assh_hash_final(hash_ctx, buf + size, hash_size);
+      assh_hash_cleanup(hash_ctx);
     }
 
   memcpy(key, buf, key_size);
@@ -615,11 +618,14 @@ assh_kex_client_hash2(struct assh_session_s *s,
 
   assh_hash_string(hash_ctx, secret_str);
 
-  uint8_t ex_hash[ASSH_MAX_HASH_SIZE];
-  assh_hash_final(hash_ctx, ex_hash);
+  size_t hash_size = hash_ctx->algo->hash_size;
+  assert(hash_size);
+
+  uint8_t ex_hash[hash_size];
+  assh_hash_final(hash_ctx, ex_hash, hash_size);
 
   const uint8_t *sign_ptrs[1] = { ex_hash };
-  size_t sign_sizes[1] = { hash_ctx->algo->hash_size };
+  size_t sign_sizes[1] = { hash_size };
 
   const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
 
@@ -701,11 +707,14 @@ assh_kex_server_hash2(struct assh_session_s *s,
 
   assh_hash_string(hash_ctx, secret_str);
 
-  uint8_t ex_hash[ASSH_MAX_HASH_SIZE];
-  assh_hash_final(hash_ctx, ex_hash);
+  size_t hash_size = hash_ctx->algo->hash_size;
+  assert(hash_size);
+
+  uint8_t ex_hash[hash_size];
+  assh_hash_final(hash_ctx, ex_hash, hash_size);
 
   const uint8_t *sign_ptrs[1] = { ex_hash };
-  size_t sign_sizes[1] = { hash_ctx->algo->hash_size };
+  size_t sign_sizes[1] = { hash_size };
 
   /* append the signature */
   uint8_t *sign;

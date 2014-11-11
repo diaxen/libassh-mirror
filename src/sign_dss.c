@@ -70,7 +70,6 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
 
   const struct assh_hash_algo_s *algo;
   ASSH_ERR_RET(assh_sign_dss_hash_algo(&algo, n));
-  assert(algo->hash_size == n / 8);
 
   if (sign == NULL)
     {
@@ -101,14 +100,16 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
   ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, algo), err_scratch);
   for (i = 0; i < data_count; i++)
     assh_hash_update(hash_ctx, data[i], data_len[i]);
-  assh_hash_final(hash_ctx, msgh);
+  assh_hash_final(hash_ctx, msgh, n / 8);
+  assh_hash_cleanup(hash_ctx);
 
   /* Do not rely on prng, avoid leaking key bits.
      Use hash(key|hash(data)) as nonce. */
   ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, algo), err_scratch);
   ASSH_ERR_GTO(assh_hash_bignum(c, hash_ctx, &k->xn), err_hash);
   assh_hash_update(hash_ctx, msgh, n / 8);
-  assh_hash_final(hash_ctx, nonce);
+  assh_hash_final(hash_ctx, nonce, n / 8);
+  assh_hash_cleanup(hash_ctx);
 
   enum bytecode_args_e
   {
@@ -166,7 +167,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
   return ASSH_OK;
 
  err_hash:
-  assh_hash_final(hash_ctx, NULL);
+  assh_hash_cleanup(hash_ctx);
  err_scratch:
   ASSH_SCRATCH_FREE(c, scratch);
  err_:
@@ -205,7 +206,8 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_dss_verify)
   ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, algo), err_scratch);
   for (i = 0; i < data_count; i++)
     assh_hash_update(hash_ctx, data[i], data_len[i]);
-  assh_hash_final(hash_ctx, msgh);
+  assh_hash_final(hash_ctx, msgh, n / 8);
+  assh_hash_cleanup(hash_ctx);
 
   enum bytecode_args_e
   {
