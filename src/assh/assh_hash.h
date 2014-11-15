@@ -153,5 +153,12 @@ extern const struct assh_hash_algo_s assh_hash_sha256;
 extern const struct assh_hash_algo_s assh_hash_sha384;
 extern const struct assh_hash_algo_s assh_hash_sha512;
 
+extern const struct assh_hash_algo_s assh_hash_sha3_224;
+extern const struct assh_hash_algo_s assh_hash_sha3_256;
+extern const struct assh_hash_algo_s assh_hash_sha3_384;
+extern const struct assh_hash_algo_s assh_hash_sha3_512;
+extern const struct assh_hash_algo_s assh_hash_shake_128;
+extern const struct assh_hash_algo_s assh_hash_shake_256;
+
 #endif
 
