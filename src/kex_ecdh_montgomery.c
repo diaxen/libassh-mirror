@@ -28,7 +28,7 @@
    - IETF draft-ladd-safecurves-04.txt
 
   SSH key exchange protocol from:
-    curve25519-sha256_libssh.org.txt
+    - curve25519-sha256_libssh.org.txt
 */
 
 #include <assh/assh_kex.h>
@@ -236,6 +236,9 @@ static ASSH_EVENT_DONE_FCN(assh_kex_ecdhmt_host_key_lookup_done)
   ASSH_ERR_RET(assh_packet_check_string(p, h_str, NULL)
 	       | ASSH_ERRSV_DISCONNECT);
 
+  ASSH_CHK_RET(assh_load_u32(qs_str) != pv->size,
+               ASSH_ERR_BAD_DATA | ASSH_ERRSV_DISCONNECT);
+
   /* compute shared secret */
   ASSH_SCRATCH_ALLOC(s->ctx, uint8_t, scratch,
                      pv->hash->ctx_size + 5 + pv->size,
@@ -281,8 +284,8 @@ static ASSH_EVENT_DONE_FCN(assh_kex_ecdhmt_host_key_lookup_done)
 }
 
 static assh_error_t assh_kex_ecdhmt_client_wait_reply(struct assh_session_s *s,
-                                                     struct assh_packet_s *p,
-                                                     struct assh_event_s *e)
+                                                      struct assh_packet_s *p,
+                                                      struct assh_event_s *e)
 {
   struct assh_kex_ecdhmt_private_s *pv = s->kex_pv;
   assh_error_t err;
@@ -318,7 +321,7 @@ static assh_error_t assh_kex_ecdhmt_client_wait_reply(struct assh_session_s *s,
 #ifdef CONFIG_ASSH_SERVER
 
 static assh_error_t assh_kex_ecdhmt_server_wait_pubkey(struct assh_session_s *s,
-                                                      struct assh_packet_s *p)
+                                                       struct assh_packet_s *p)
 {
   struct assh_kex_ecdhmt_private_s *pv = s->kex_pv;
   struct assh_context_s *c = s->ctx;
@@ -457,8 +460,8 @@ static ASSH_KEX_CLEANUP_FCN(assh_kex_ecdhmt_cleanup)
 
 static assh_error_t
 assh_kex_ecdhmt_init(struct assh_session_s *s,
-                              const struct assh_montgomery_curve_s *curve,
-                              const struct assh_hash_algo_s *hash)
+                     const struct assh_montgomery_curve_s *curve,
+                     const struct assh_hash_algo_s *hash)
 {
   assh_error_t err;
 

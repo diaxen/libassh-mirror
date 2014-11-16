@@ -157,8 +157,8 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
   /* load transient RSA key */
   struct assh_key_s *t_key_ = NULL;
 
-  ASSH_ERR_RET(assh_key_rsa.f_load(c, t_str + 4,
-       assh_load_u32(t_str), &t_key_, ASSH_KEY_FMT_PUB_RFC4253_6_6)
+  ASSH_ERR_RET(assh_key_load(c, &t_key_, &assh_key_rsa, ASSH_ALGO_ANY,
+    ASSH_KEY_FMT_PUB_RFC4253_6_6, t_str + 4, assh_load_u32(t_str))
                | ASSH_ERRSV_DISCONNECT);
 
   struct assh_key_rsa_s *t_key = (void*)t_key_;

@@ -35,7 +35,7 @@
 
 #include <assh/key_rsa.h>
 #include <assh/key_dsa.h>
-#include <assh/key_ed25519.h>
+#include <assh/key_eddsa.h>
 
 #include "leaks_check.h"
 #include "fifo.h"

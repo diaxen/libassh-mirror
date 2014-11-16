@@ -58,6 +58,7 @@ struct assh_key_s;
 */
 #define ASSH_KEY_LOAD_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t (n)   \
   (struct assh_context_s *c,                                            \
+   const struct assh_algo_key_s *algo,                                  \
    const uint8_t *blob, size_t blob_len,                                \
    struct assh_key_s **key,                                             \
    enum assh_key_format_e format)
@@ -66,7 +67,9 @@ typedef ASSH_KEY_LOAD_FCN(assh_key_load_t);
 
 /** @internal This function creates a new key of specified bits size. */
 #define ASSH_KEY_CREATE_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t (n) \
-  (struct assh_context_s *c, size_t bits, struct assh_key_s **key)
+  (struct assh_context_s *c,                                            \
+   const struct assh_algo_key_s *algo,                                  \
+   size_t bits, struct assh_key_s **key)
 
 typedef ASSH_KEY_CREATE_FCN(assh_key_create_t);
 

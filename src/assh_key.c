@@ -79,7 +79,7 @@ assh_error_t assh_key_load(struct assh_context_s *c, struct assh_key_s **key,
 
   struct assh_key_s *k;
 
-  ASSH_ERR_RET(algo->f_load(c, blob, blob_len, &k, format));
+  ASSH_ERR_RET(algo->f_load(c, algo, blob, blob_len, &k, format));
 
   k->class_ = intent;
   k->next = *key;
@@ -97,7 +97,7 @@ assh_key_create(struct assh_context_s *c,
   assh_error_t err;
   struct assh_key_s *k;
 
-  ASSH_ERR_RET(algo->f_create(c, bits, &k));
+  ASSH_ERR_RET(algo->f_create(c, algo, bits, &k));
 
   k->class_ = intent;
   k->next = *key;

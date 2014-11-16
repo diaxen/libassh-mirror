@@ -21,42 +21,48 @@
 
 */
 
-#ifndef ASSH_KEY_ED25519_H_
-#define ASSH_KEY_ED25519_H_
+#ifndef ASSH_KEY_EDDSA_H_
+#define ASSH_KEY_EDDSA_H_
 
 #include <assh/assh_key.h>
 #include <assh/assh_bignum.h>
 
+/** @internal @em {a*x^2+y^2 = 1+d*x^2y^2} */
 struct assh_edward_curve_s
 {
   const uint8_t *p;
-  const uint8_t *l;
-  const uint8_t *bx;
-  const uint8_t *by;
+  const uint8_t *l; /* order */
+  const uint8_t *bx; /* basepoint x */
+  const uint8_t *by; /* basepoint y */
   const uint8_t *a;
   const uint8_t *d;
-  const uint8_t *i;
+  const uint8_t *i; /* sqrt(-1), used when p%8 == 5 */
   size_t bits;
   uint_fast8_t cofactor;
 };
 
-struct assh_key_ed25519_s
+struct assh_key_eddsa_s
 {
   struct assh_key_s key;
 
+  const struct assh_edward_curve_s *curve;
+  const struct assh_hash_algo_s *hash;
+
   assh_bool_t private;
-  uint8_t s[32];
-  uint8_t p[32];
+
+  /** public + secret key data */
+  uint8_t data[0];
 };
 
-ASSH_FIRST_FIELD_ASSERT(assh_key_ed25519_s, key);
+ASSH_FIRST_FIELD_ASSERT(assh_key_eddsa_s, key);
 
 extern const struct assh_algo_key_s assh_key_ed25519;
+extern const struct assh_algo_key_s assh_key_eddsa_e382;
+extern const struct assh_algo_key_s assh_key_eddsa_e521;
 
 extern const struct assh_edward_curve_s assh_ed25519_curve;
-
-static const char *assh_ed25519_id = "\x00\x00\x00\x0bssh-ed25519";
-static const size_t assh_ed25519_id_len = 4 + 11;
+extern const struct assh_edward_curve_s assh_e382_curve;
+extern const struct assh_edward_curve_s assh_e521_curve;
 
 static inline void
 assh_edward_adjust(const struct assh_edward_curve_s *curve, uint8_t *blob)

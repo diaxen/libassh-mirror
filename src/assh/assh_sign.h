@@ -109,5 +109,9 @@ extern const struct assh_algo_sign_s assh_sign_rsa_sha256_3072;
 
 extern const struct assh_algo_sign_s assh_sign_ed25519;
 
+extern const struct assh_algo_sign_s assh_sign_eddsa_e382;
+
+extern const struct assh_algo_sign_s assh_sign_eddsa_e521;
+
 #endif
 

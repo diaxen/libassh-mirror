@@ -52,6 +52,7 @@ assh_error_t assh_kex_send_init(struct assh_session_s *s)
 {
   assh_error_t err;
 
+#warning size of kex init packet
   struct assh_packet_s *p;
   ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_KEXINIT, 2048, &p)
 	       | ASSH_ERRSV_DISCONNECT);
