@@ -97,6 +97,7 @@ void assh_context_init(struct assh_context_s *c,
 
   c->prng = NULL;
   c->keys = NULL;
+  c->kex_init_size = 0;
 
   c->algos_count = 0;
 

@@ -394,7 +394,7 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 
       assh_bool_t newkey = p->head.msg == SSH_MSG_NEWKEYS;
 
-      /* compute MAC and encipher packet */
+      /* compute MAC and encrypt packet */
       if (k != NULL)
 	{
 	  ASSH_ERR_RET(k->mac->f_compute(k->mac_ctx, s->out_seq, p->data,

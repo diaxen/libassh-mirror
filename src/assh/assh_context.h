@@ -68,6 +68,10 @@ struct assh_context_s
   /** head of keys list */
   struct assh_key_s *keys;
 
+  /** estimated size of the kex init packet, computed when new
+      algorithm are registered. */
+  size_t kex_init_size;
+
   /** maximum allocated size in a single bucket. */
   size_t pck_pool_max_bsize;
   /** maximum allocated size. */

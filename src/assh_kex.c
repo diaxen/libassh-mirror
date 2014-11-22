@@ -51,19 +51,19 @@ static const enum assh_algo_class_e assh_kex_algos_classes[8] = {
 assh_error_t assh_kex_send_init(struct assh_session_s *s)
 {
   assh_error_t err;
+  struct assh_context_s *c = s->ctx;
 
-#warning size of kex init packet
   struct assh_packet_s *p;
-  ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_KEXINIT, 2048, &p)
-	       | ASSH_ERRSV_DISCONNECT);
+  ASSH_ERR_RET(assh_packet_alloc(c, SSH_MSG_KEXINIT,
+                 c->kex_init_size, &p) | ASSH_ERRSV_DISCONNECT);
 
   uint8_t *cookie;
   ASSH_ERR_GTO(assh_packet_add_array(p, 16, &cookie), err_pck);
-  ASSH_ERR_GTO(s->ctx->prng->f_get(s->ctx, cookie,
+  ASSH_ERR_GTO(c->prng->f_get(c, cookie,
 		  16, ASSH_PRNG_QUALITY_NONCE)
 	       | ASSH_ERRSV_DISCONNECT, err_pck);
 
-  unsigned int ac = s->ctx->algos_count;
+  unsigned int ac = c->algos_count;
 
   /* lists of algorithms */
   unsigned int i = 0, j;
@@ -76,13 +76,13 @@ assh_error_t assh_kex_send_init(struct assh_session_s *s)
 
       for (; i < ac; i++)
         {
-          const struct assh_algo_s *a = s->ctx->algos[i];
+          const struct assh_algo_s *a = c->algos[i];
           if (a->class_ != j)
             break;
 
           /* check host key availability for this algorithm */
-          if (assh_algo_suitable_key(s->ctx, a, NULL) &&
-              assh_key_lookup(s->ctx, NULL, a) != ASSH_OK)
+          if (assh_algo_suitable_key(c, a, NULL) &&
+              assh_key_lookup(c, NULL, a) != ASSH_OK)
             continue;
 
           /* append name to the list */
@@ -116,18 +116,21 @@ assh_error_t assh_kex_send_init(struct assh_session_s *s)
 
   ASSH_ERR_GTO(assh_packet_add_array(p, 5, &x)
 	       | ASSH_ERRSV_DISCONNECT, err_pck);
+
+  /* fkpf + reserved */
   memset(x, 0, 5);
 
   /* keep a copy of our KEX_INIT packet, will be needed for hashing */
   assert(s->kex_init_local == NULL);
-  struct assh_packet_s *c;
-  ASSH_ERR_GTO(assh_packet_dup(p, &c)
+
+  struct assh_packet_s *pc;
+  ASSH_ERR_GTO(assh_packet_dup(p, &pc)
 	       | ASSH_ERRSV_DISCONNECT, err_pck);
-  s->kex_init_local = c;
+  s->kex_init_local = pc;
 
   /* setup packet len and padding fields of the copy */
-  assh_store_u32(c->data, c->data_size - 4);
-  c->head.pad_len = 0;
+  assh_store_u32(pc->data, pc->data_size - 4);
+  pc->head.pad_len = 0;
 
   s->kex_init_sent = 1;
   assh_transport_push(s, p);
@@ -247,7 +250,6 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
   assh_error_t err;
 
   uint8_t *lists[11];
-
   unsigned int i;
 
   /* get pointers to the 10 name-lists while checking bounds */

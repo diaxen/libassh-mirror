@@ -107,6 +107,37 @@ assh_error_t assh_algo_register_va(struct assh_context_s *c, unsigned int safety
     next:;
     }
 
+  /* estimate size of the kex init packet */
+  size_t kex_init_size = /* random cookie */ 16;
+  enum assh_algo_class_e last = ASSH_ALGO_ANY;
+  for (i = 0; i < c->algos_count; i++)
+    {
+      const struct assh_algo_s *a = c->algos[i];
+      size_t l = 0;
+
+      if (a->class_ == last)
+	l++;	/* strlen(",") */
+      else
+	l += 4;	/* string header */
+      l += strlen(a->name);
+      switch (a->class_)
+	{
+	case ASSH_ALGO_KEX:
+	case ASSH_ALGO_SIGN:
+	  kex_init_size += l;
+	  break;
+	case ASSH_ALGO_CIPHER:
+	case ASSH_ALGO_MAC:
+	case ASSH_ALGO_COMPRESS:
+	  kex_init_size += l * 2;
+	default:
+	  break;
+        }
+      last = a->class_;
+    }
+  kex_init_size += /* empty languages */ 4 * 2 + /* fkpf */ 1 + /* reserved */ 4;
+  c->kex_init_size = kex_init_size;
+
   return err;
 }
 
