@@ -77,7 +77,7 @@ assh_sign_rsa_generate(struct assh_context_s *c,
                        uint8_t *sign, size_t *sign_len,
                        enum assh_rsa_digest_e digest_id)
 {
-  struct assh_key_rsa_s *k = (void*)key;
+  const struct assh_key_rsa_s *k = (const void*)key;
   assh_error_t err;
 
   assert(key->algo == &assh_key_rsa);
@@ -88,7 +88,7 @@ assh_sign_rsa_generate(struct assh_context_s *c,
   unsigned int n = assh_bignum_bits(&k->nn);
 
   /* check/return signature length */
-  size_t len = assh_rsa_id_len + 4 + n / 8;
+  size_t len = ASSH_RSA_ID_LEN + 4 + n / 8;
 
   if (sign == NULL)
     {
@@ -132,9 +132,9 @@ assh_sign_rsa_generate(struct assh_context_s *c,
   assh_hash_cleanup(hash_ctx);
 
   /* build signature blob */
-  memcpy(sign, assh_rsa_id, assh_rsa_id_len);
-  assh_store_u32(sign + assh_rsa_id_len, n / 8);
-  uint8_t *c_str = sign + assh_rsa_id_len + 4;
+  memcpy(sign, ASSH_RSA_ID, ASSH_RSA_ID_LEN);
+  assh_store_u32(sign + ASSH_RSA_ID_LEN, n / 8);
+  uint8_t *c_str = sign + ASSH_RSA_ID_LEN + 4;
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
   assh_hexdump("rsa generate em", em_buf, n / 8);
@@ -177,18 +177,18 @@ assh_sign_rsa_verify(struct assh_context_s *c,
                      const uint8_t * const data[], size_t const data_len[],
                      const uint8_t *sign, size_t sign_len, uint8_t digest_mask)
 {
-  struct assh_key_rsa_s *k = (void*)key;
+  const struct assh_key_rsa_s *k = (const void*)key;
   assh_error_t err;
 
   assert(key->algo == &assh_key_rsa);
 
   unsigned int n = assh_bignum_bits(&k->nn);
 
-  ASSH_CHK_RET(sign_len != assh_rsa_id_len + 4 + n / 8, ASSH_ERR_INPUT_OVERFLOW);
+  ASSH_CHK_RET(sign_len != ASSH_RSA_ID_LEN + 4 + n / 8, ASSH_ERR_INPUT_OVERFLOW);
 
-  ASSH_CHK_RET(memcmp(sign, assh_rsa_id, assh_rsa_id_len), ASSH_ERR_BAD_DATA);
+  ASSH_CHK_RET(memcmp(sign, ASSH_RSA_ID, ASSH_RSA_ID_LEN), ASSH_ERR_BAD_DATA);
 
-  uint8_t *c_str = (uint8_t*)sign + assh_rsa_id_len;
+  uint8_t *c_str = (uint8_t*)sign + ASSH_RSA_ID_LEN;
   ASSH_CHK_RET(assh_load_u32(c_str) != n / 8, ASSH_ERR_INPUT_OVERFLOW);
 
   ASSH_SCRATCH_ALLOC(c, uint8_t, em_buf, n / 8, ASSH_ERRSV_CONTINUE, err_);
@@ -285,7 +285,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_768)
     return c->type == ASSH_SERVER;
   if (key->algo != &assh_key_rsa)
     return 0;
-  struct assh_key_rsa_s *k = (void*)key;
+  const struct assh_key_rsa_s *k = (const void*)key;
   return assh_bignum_bits(&k->nn) >= 768;
 }
 
@@ -326,7 +326,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_1024)
     return c->type == ASSH_SERVER;
   if (key->algo != &assh_key_rsa)
     return 0;
-  struct assh_key_rsa_s *k = (void*)key;
+  const struct assh_key_rsa_s *k = (const void*)key;
   return assh_bignum_bits(&k->nn) >= 1024;
 }
 
@@ -360,7 +360,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_2048)
     return c->type == ASSH_SERVER;
   if (key->algo != &assh_key_rsa)
     return 0;
-  struct assh_key_rsa_s *k = (void*)key;
+  const struct assh_key_rsa_s *k = (const void*)key;
   return assh_bignum_bits(&k->nn) >= 2048;
 }
 
@@ -414,7 +414,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_3072)
     return c->type == ASSH_SERVER;
   if (key->algo != &assh_key_rsa)
     return 0;
-  struct assh_key_rsa_s *k = (void*)key;
+  const struct assh_key_rsa_s *k = (const void*)key;
   return assh_bignum_bits(&k->nn) >= 3072;
 }
 

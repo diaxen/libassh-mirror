@@ -164,7 +164,7 @@ assh_error_t assh_algo_register_default(struct assh_context_s *c, unsigned int s
 			&assh_kex_rsa1024_sha1,
 			&assh_kex_rsa2048_sha256,
 			/* sign */
-			&assh_sign_dss,
+			&assh_sign_dsa,
 		        &assh_sign_dsa2048_sha224,
 		        &assh_sign_dsa2048_sha256,
 		        &assh_sign_dsa3072_sha256,
@@ -234,7 +234,7 @@ assh_error_t assh_algo_by_key(struct assh_context_s *c,
     {
       a = c->algos[i];
 
-      if (a->class_ == key->class_ &&
+      if (a->class_ == key->role &&
           a->f_suitable_key != NULL &&
 	  a->f_suitable_key(c, a, key))
 	break;
@@ -257,7 +257,7 @@ assh_algo_suitable_key(struct assh_context_s *c,
   if (algo->f_suitable_key == NULL)
     return 0;
   if (key != NULL &&
-      key->class_ != algo->class_)
+      key->role != algo->class_)
     return 0;
   return algo->f_suitable_key(c, algo, key);
 }

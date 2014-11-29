@@ -253,13 +253,13 @@ assh_bignum_init(struct assh_context_s *c,
 
 /** @This returns the number of bits of a big number. */
 static inline size_t
-assh_bignum_bits(struct assh_bignum_s  *bn)
+assh_bignum_bits(const struct assh_bignum_s  *bn)
 {
   return bn->bits;
 }
 
 static inline assh_bool_t
-assh_bignum_isempty(struct assh_bignum_s  *bn)
+assh_bignum_isempty(const struct assh_bignum_s  *bn)
 {
   return bn->n == NULL;
 }
@@ -287,10 +287,6 @@ enum assh_bignum_opcode_e
   ASSH_BIGNUM_OP_INV,
   ASSH_BIGNUM_OP_SHR,
   ASSH_BIGNUM_OP_SHL,
-  ASSH_BIGNUM_OP_AND,
-  ASSH_BIGNUM_OP_OR,
-  ASSH_BIGNUM_OP_NOT,
-  ASSH_BIGNUM_OP_MASK,
   ASSH_BIGNUM_OP_RAND,
   ASSH_BIGNUM_OP_CMP,
   ASSH_BIGNUM_OP_TESTC,
@@ -308,7 +304,6 @@ enum assh_bignum_opcode_e
     "end", "move", "sizer", "size", "add",      \
     "sub", "mul", "div", "gcd",                 \
     "expm", "inv", "shr", "shl",                \
-    "and", "or", "not", "mask",                 \
     "rand", "cmp", "testc", "tests", "uint",    \
     "mladjmp", "mladswap", "mladloop", "prime", \
     "isprim", "print"                           \

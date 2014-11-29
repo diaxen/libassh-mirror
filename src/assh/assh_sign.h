@@ -76,7 +76,7 @@ extern const struct assh_algo_key_s assh_key_none;
 extern const struct assh_algo_sign_s assh_sign_none;
 
 /** Use SHA1 and a dsa key with L = 1024 and N = 160. */
-extern const struct assh_algo_sign_s assh_sign_dss;
+extern const struct assh_algo_sign_s assh_sign_dsa;
 
 /** Use SHA224 and a dsa key with L >= 2048 and N = 224. */
 extern const struct assh_algo_sign_s assh_sign_dsa2048_sha224;

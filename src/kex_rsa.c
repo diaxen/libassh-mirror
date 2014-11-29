@@ -61,12 +61,12 @@ struct assh_kex_rsa_private_s
 
   size_t minklen;
   const uint8_t *lhash;
-  struct assh_key_s *host_key;
+  const struct assh_key_s *host_key;
 
   union {
 #ifdef CONFIG_ASSH_SERVER
     struct {
-      struct assh_key_s *t_key;
+      const struct assh_key_s *t_key;
       void *hash_ctx;
     };
 #endif
@@ -155,13 +155,13 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
   ASSH_ASSERT(assh_packet_check_string(p, ks_str, &t_str));
 
   /* load transient RSA key */
-  struct assh_key_s *t_key_ = NULL;
+  const struct assh_key_s *t_key_ = NULL;
 
   ASSH_ERR_RET(assh_key_load(c, &t_key_, &assh_key_rsa, ASSH_ALGO_ANY,
     ASSH_KEY_FMT_PUB_RFC4253_6_6, t_str + 4, assh_load_u32(t_str))
                | ASSH_ERRSV_DISCONNECT);
 
-  struct assh_key_rsa_s *t_key = (void*)t_key_;
+  const struct assh_key_rsa_s *t_key = (const void*)t_key_;
 
   size_t kbits = assh_bignum_bits(&t_key->nn);
 
@@ -263,7 +263,6 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
 
  err_tkey:
   assh_key_drop(c, &t_key_);
- err_:
   return err;
 }
 
@@ -351,7 +350,6 @@ static assh_error_t assh_kex_rsa_server_send_pubkey(struct assh_session_s *s)
   struct assh_kex_rsa_private_s *pv = s->kex_pv;
 
   /* look for an host key pair which can be used with the selected algorithm. */
-  const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
 
   const struct assh_key_s *hk;
   ASSH_ERR_RET(assh_key_lookup(c, &hk, &s->host_sign_algo->algo)
@@ -432,13 +430,11 @@ static assh_error_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
 
   assh_hash_string(pv->hash_ctx, e_str);
 
-  struct assh_key_rsa_s *t_key = (void*)pv->t_key;
+  const struct assh_key_rsa_s *t_key = (const void*)pv->t_key;
 
   size_t kbits = assh_bignum_bits(&t_key->nn);
 
   size_t hlen = pv->hash->hash_size;
-  size_t sbits = kbits - 2 * hlen * 8 - 49;
-  size_t slen = assh_align8(sbits) / 8;
   size_t elen = assh_align8(kbits) / 8;
 
   ASSH_CHK_RET(assh_load_u32(e_str) != elen, ASSH_ERR_BAD_DATA
@@ -524,7 +520,6 @@ static assh_error_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
   return ASSH_OK;
  err_p:
   assh_packet_release(pout);
- err_:
   return err;
 }
 #endif
@@ -582,8 +577,6 @@ static assh_error_t assh_kex_rsa_init(struct assh_session_s *s,
   struct assh_context_s *c = s->ctx;
   assh_error_t err;
   struct assh_kex_rsa_private_s *pv;
-
-  size_t exp_n = cipher_key_size * 2;
 
   ASSH_ERR_RET(assh_alloc(c, sizeof(*pv), ASSH_ALLOC_INTERNAL, (void**)&pv)
 	       | ASSH_ERRSV_DISCONNECT);
@@ -689,7 +682,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_kex_rsa1024_suitable_key)
     return 0;
   if (key->algo != &assh_key_rsa)
     return 0;
-  struct assh_key_rsa_s *k = (void*)key;
+  const struct assh_key_rsa_s *k = (const void*)key;
   return assh_bignum_bits(&k->nn) >= 1024;
 }
 
@@ -720,7 +713,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_kex_rsa2048_suitable_key)
     return 0;
   if (key->algo != &assh_key_rsa)
     return 0;
-  struct assh_key_rsa_s *k = (void*)key;
+  const struct assh_key_rsa_s *k = (const void*)key;
   return assh_bignum_bits(&k->nn) >= 2048;
 }
 

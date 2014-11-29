@@ -78,7 +78,7 @@ struct assh_event_userauth_client_methods_s
   ASSH_EV_CONST assh_bool_t  use_password; //< input
   ASSH_EV_CONST assh_bool_t  use_pub_key;  //< input
   struct assh_buffer_s       password;     //< output
-  struct assh_key_s          *pub_keys;    //< output
+  const struct assh_key_s    *pub_keys;    //< output
 };
 
 /** @This contains all client side user authentication related events */

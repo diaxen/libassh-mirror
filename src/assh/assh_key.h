@@ -106,8 +106,8 @@ typedef ASSH_KEY_OUTPUT_FCN(assh_key_output_t);
     the keys are compared. */
 #define ASSH_KEY_CMP_FCN(n) ASSH_WARN_UNUSED_RESULT assh_bool_t (n)     \
   (struct assh_context_s *c,                                            \
-   struct assh_key_s *key,                                              \
-   struct assh_key_s *b, assh_bool_t pub)
+   const struct assh_key_s *key,                                        \
+   const struct assh_key_s *b, assh_bool_t pub)
 
 typedef ASSH_KEY_CMP_FCN(assh_key_cmp_t);
 
@@ -134,50 +134,65 @@ struct assh_algo_key_s
 struct assh_key_s
 {
   /* next key in list */
-  struct assh_key_s *next;
+  const struct assh_key_s *next;
 
   /* functions operating on this key */
   const struct assh_algo_key_s *algo;
 
   /* class of algorithm the key is intended to use with */
-  enum assh_algo_class_e class_;
+  enum assh_algo_class_e role;
 };
 
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_key_load(struct assh_context_s *c, struct assh_key_s **key,
+assh_key_load(struct assh_context_s *c,
+              const struct assh_key_s **key,
               const struct assh_algo_key_s *algo,
-              enum assh_algo_class_e intent,
+              enum assh_algo_class_e role,
               enum assh_key_format_e format,
               const uint8_t *blob, size_t blob_len);
 
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_key_create(struct assh_context_s *c,
-                struct assh_key_s **key, size_t bits,
+                const struct assh_key_s **key, size_t bits,
                 const struct assh_algo_key_s *algo,
-                enum assh_algo_class_e intent);
+                enum assh_algo_class_e role);
 
 /** @This function returns true if both keys are equals. If the @tt
     pub parameter is set, only the public part of the key are taken
     into account. */
-static inline assh_bool_t
-assh_key_cmp(struct assh_context_s *c, struct assh_key_s *key,
-	     struct assh_key_s *b, assh_bool_t pub)
+static inline ASSH_WARN_UNUSED_RESULT assh_bool_t
+assh_key_cmp(struct assh_context_s *c, const struct assh_key_s *key,
+	     const struct assh_key_s *b, assh_bool_t pub)
 {
   return key->algo->f_cmp(c, key, b, pub);
 }
 
-/** @internal This function releases all the keys on the linked list
+/** @internal @This releases the first key on the linked list. */
+void assh_key_drop(struct assh_context_s *c,
+                   const struct assh_key_s **head);
+
+/** @internal @This releases all the keys on the linked list
     and clears the list. */
-void
-assh_key_flush(struct assh_context_s *c, struct assh_key_s **head);
+static inline void
+assh_key_flush(struct assh_context_s *c,
+               const struct assh_key_s **head)
+{
+  while (*head != NULL)
+    assh_key_drop(c, head);
+}
 
-/** @internal This function releases the first key on the linked list. */
-void
-assh_key_drop(struct assh_context_s *c, struct assh_key_s **head);
+static inline void
+assh_key_insert(const struct assh_key_s **head,
+                const struct assh_key_s *key)
+{
+  ((struct assh_key_s *)key)->next = *head;
+  *head = key;
+}
 
-/** This function checks the key validity. */
+/** @This checks the validity of the key. */
 static inline ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_key_validate(struct assh_context_s *c, const struct assh_key_s *key)
+assh_key_validate(struct assh_context_s *c,
+                  const struct assh_key_s *key)
 {
   return key->algo->f_validate(c, key);
 }

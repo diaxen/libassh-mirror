@@ -99,11 +99,11 @@ assh_kex_client_hash1(struct assh_session_s *s,
 
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_kex_client_hash2(struct assh_session_s *s, struct assh_hash_ctx_s *hash_ctx,
-                      struct assh_key_s *host_key, const uint8_t *secret_str,
+                      const struct assh_key_s *host_key, const uint8_t *secret_str,
                       const uint8_t *h_str);
 
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_kex_client_get_key(struct assh_session_s *s, struct assh_key_s **key,
+assh_kex_client_get_key(struct assh_session_s *s, const struct assh_key_s **key,
                         const uint8_t *ks_str, struct assh_event_s *e,
                         assh_error_t (*done)(struct assh_session_s *s,
                                              struct assh_event_s *e), void *pv);

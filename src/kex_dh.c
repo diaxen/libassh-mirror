@@ -72,7 +72,7 @@ struct assh_kex_dh_private_s
     struct {
       struct assh_bignum_s en;
       struct assh_bignum_s xn;
-      struct assh_key_s *host_key;
+      const struct assh_key_s *host_key;
       struct assh_packet_s *pck;
     };
 #endif
@@ -193,9 +193,9 @@ static ASSH_EVENT_DONE_FCN(assh_kex_dh_host_key_lookup_done)
 
     /* check server public exponent */
     ASSH_BOP_UINT(      T,      2			),
-    ASSH_BOP_CMPLTEQ(   T,      F,      0		), /* f >= 2 */
-    ASSH_BOP_SUB(       T,      P,      T		),
-    ASSH_BOP_CMPLTEQ(   F,      T,      0		), /* f <= p-2 */
+    ASSH_BOP_CMPLTEQ(   T,      F,      0 /* f >= 2 */	), 
+    ASSH_BOP_SUB(       T,      P,      T       	),
+    ASSH_BOP_CMPLTEQ(   F,      T,      0 /* f <= p-2 */), 
 
     /* compute shared secret */
     ASSH_BOP_EXPM(      T,      F,      X,      P	),
@@ -203,9 +203,9 @@ static ASSH_EVENT_DONE_FCN(assh_kex_dh_host_key_lookup_done)
 
     /* check shared secret range */
     ASSH_BOP_UINT(      T,      2			),
-    ASSH_BOP_CMPLTEQ(   T,      K,      0		), /* k >= 2 */
-    ASSH_BOP_SUB(       T,      P,      T		),
-    ASSH_BOP_CMPLTEQ(   K,      T,      0		), /* k <= p-2 */
+    ASSH_BOP_CMPLTEQ(   T,      K,      0 /* k >= 2 */	),
+    ASSH_BOP_SUB(       T,      P,      T       	),
+    ASSH_BOP_CMPLTEQ(   K,      T,      0 /* k <= p-2 */),
 
     ASSH_BOP_MOVE(      K_mpint,        K		),
 
@@ -334,9 +334,9 @@ static assh_error_t assh_kex_dh_server_wait_e(struct assh_session_s *s,
 
     /* check client public key */
     ASSH_BOP_UINT(      T,      2               	),
-    ASSH_BOP_CMPLTEQ(   T,      E,      0              	), /* f >= 2 */
-    ASSH_BOP_SUB(       T,      P,      T       	),
-    ASSH_BOP_CMPLTEQ(   E,      T,      0              	), /* f <= p-2 */
+    ASSH_BOP_CMPLTEQ(   T,      E,      0 /* f >= 2 */  ), 
+    ASSH_BOP_SUB(       T,      P,      T               ),
+    ASSH_BOP_CMPLTEQ(   E,      T,      0 /* f <= p-2 */), 
 
     /* generate private exponent */
     ASSH_BOP_UINT(      T,      DH_MAX_GRSIZE   	),
@@ -351,9 +351,9 @@ static assh_error_t assh_kex_dh_server_wait_e(struct assh_session_s *s,
 
     /* check shared secret range */
     ASSH_BOP_UINT(      T,      2               	),
-    ASSH_BOP_CMPLTEQ(   T,      K,      0              	), /* k >= 2 */
+    ASSH_BOP_CMPLTEQ(   T,      K,      0 /* k >= 2 */	),
     ASSH_BOP_SUB(       T,      P,      T       	),
-    ASSH_BOP_CMPLTEQ(   K,      T,      0              	), /* k <= p-2 */
+    ASSH_BOP_CMPLTEQ(   K,      T,      0 /* k <= p-2 */),
 
     ASSH_BOP_MOVE(      K_mpint,        K		),
     ASSH_BOP_MOVE(      F_mpint,        F		),

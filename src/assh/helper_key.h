@@ -35,9 +35,9 @@
     binary key blob. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_load_key_file(struct assh_context_s *c,
-		   struct assh_key_s **head,
+		   const struct assh_key_s **head,
 		   const struct assh_algo_key_s *algo,	
-		   enum assh_algo_class_e intent,
+		   enum assh_algo_class_e role,
 		   FILE *file, enum assh_key_format_e format);
 
 /** @This loads a key from a file name and inserts
@@ -45,9 +45,9 @@ assh_load_key_file(struct assh_context_s *c,
     assh_key_loads_file. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_load_key_filename(struct assh_context_s *c,
-		       struct assh_key_s **head,
+		       const struct assh_key_s **head,
 		       const struct assh_algo_key_s *algo,
-		       enum assh_algo_class_e intent,
+		       enum assh_algo_class_e role,
 		       const char *filename,
 		       enum assh_key_format_e format);
 
@@ -56,7 +56,7 @@ assh_load_key_filename(struct assh_context_s *c,
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_load_hostkey_file(struct assh_context_s *c,
 		       const struct assh_algo_key_s *algo,
-		       enum assh_algo_class_e intent,
+		       enum assh_algo_class_e role,
 		       FILE *file,
 		       enum assh_key_format_e format);
 
@@ -65,7 +65,7 @@ assh_load_hostkey_file(struct assh_context_s *c,
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_load_hostkey_filename(struct assh_context_s *c,
 			   const struct assh_algo_key_s *algo,
-			   enum assh_algo_class_e intent,
+			   enum assh_algo_class_e role,
 			   const char *filename,
 			   enum assh_key_format_e format);
 

@@ -83,7 +83,7 @@ struct assh_userauth_context_s
 
 #ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
   enum assh_userauth_pubkey_state_e pubkey_state;
-  struct assh_key_s *pub_key;
+  const struct assh_key_s *pub_key;
   struct assh_algo_sign_s *algo;
   struct assh_packet_s *sign_pck;
   uint8_t *sign;
@@ -384,7 +384,7 @@ static assh_error_t assh_userauth_server_req_pubkey(struct assh_session_s *s,
       return ASSH_OK;
     }
 
-  struct assh_key_s *pub_key = NULL;
+  const struct assh_key_s *pub_key = NULL;
 
   /* load the public key from the client provided blob */
   ASSH_ERR_RET(assh_key_load(s->ctx, &pub_key, algo->key, ASSH_ALGO_SIGN,

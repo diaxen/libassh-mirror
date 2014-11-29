@@ -1,4 +1,6 @@
 
+#include <stdlib.h>
+
 static ASSH_PRNG_INIT_FCN(assh_prng_weak_init)
 {
   c->prng_entropy = 0;

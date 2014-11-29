@@ -262,7 +262,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_eddsa_validate)
 
 static assh_error_t
 assh_key_eddsa_load(struct assh_context_s *c,
-                    struct assh_algo_key_s *algo,
+                    const struct assh_algo_key_s *algo,
                     const uint8_t *blob, size_t blob_len,
                     struct assh_key_s **key,
                     enum assh_key_format_e format,

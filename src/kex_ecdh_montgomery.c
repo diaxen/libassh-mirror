@@ -77,7 +77,7 @@ struct assh_kex_ecdhmt_private_s
   enum assh_kex_ecdhmt_state_e state;
 
 #ifdef CONFIG_ASSH_CLIENT
-  struct assh_key_s *host_key;
+  const struct assh_key_s *host_key;
   struct assh_packet_s *pck;
 #endif
 

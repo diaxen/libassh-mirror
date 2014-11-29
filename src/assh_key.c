@@ -33,7 +33,7 @@ static const struct assh_algo_key_s *
 assh_key_algo_guess(struct assh_context_s *c,
                     enum assh_key_format_e format,
                     const uint8_t *blob, size_t blob_len,
-                    enum assh_algo_class_e intent)
+                    enum assh_algo_class_e role)
 {
   const struct assh_algo_key_s *algo;
 
@@ -52,7 +52,7 @@ assh_key_algo_guess(struct assh_context_s *c,
           if (i == c->algos_count)
             return NULL;
           algo = c->algos[i]->key;
-          if (algo != NULL && c->algos[i]->class_ != intent &&
+          if (algo != NULL && c->algos[i]->class_ != role &&
               !strncmp(algo->type, name, name_len) &&
               !algo->type[name_len])
             return algo;
@@ -65,23 +65,24 @@ assh_key_algo_guess(struct assh_context_s *c,
     }
 }
 
-assh_error_t assh_key_load(struct assh_context_s *c, struct assh_key_s **key,
+assh_error_t assh_key_load(struct assh_context_s *c,
+                           const struct assh_key_s **key,
                            const struct assh_algo_key_s *algo,
-                           enum assh_algo_class_e intent,
+                           enum assh_algo_class_e role,
                            enum assh_key_format_e format,
                            const uint8_t *blob, size_t blob_len)
 {
   assh_error_t err;
 
   if (algo == NULL)
-    algo = assh_key_algo_guess(c, format, blob, blob_len, intent);
+    algo = assh_key_algo_guess(c, format, blob, blob_len, role);
   ASSH_CHK_RET(algo == NULL, ASSH_ERR_MISSING_ALGO);
 
   struct assh_key_s *k;
 
   ASSH_ERR_RET(algo->f_load(c, algo, blob, blob_len, &k, format));
 
-  k->class_ = intent;
+  k->role = role;
   k->next = *key;
   *key = k;
 
@@ -90,35 +91,30 @@ assh_error_t assh_key_load(struct assh_context_s *c, struct assh_key_s **key,
 
 assh_error_t
 assh_key_create(struct assh_context_s *c,
-                struct assh_key_s **key, size_t bits,
+                const struct assh_key_s **key, size_t bits,
                 const struct assh_algo_key_s *algo,
-                enum assh_algo_class_e intent)
+                enum assh_algo_class_e role)
 {
   assh_error_t err;
   struct assh_key_s *k;
 
   ASSH_ERR_RET(algo->f_create(c, algo, bits, &k));
 
-  k->class_ = intent;
+  k->role = role;
   k->next = *key;
   *key = k;
 
   return ASSH_OK;
 }
 
-void assh_key_drop(struct assh_context_s *c, struct assh_key_s **head)
+void assh_key_drop(struct assh_context_s *c,
+                   const struct assh_key_s **head)
 {
-  struct assh_key_s *k = *head;
+  const struct assh_key_s *k = *head;
   if (k == NULL)
     return;
   *head = k->next;
-  k->algo->f_cleanup(c, k);
-}
-
-void assh_key_flush(struct assh_context_s *c, struct assh_key_s **head)
-{
-  while (*head != NULL)
-    assh_key_drop(c, head);
+  k->algo->f_cleanup(c, (struct assh_key_s *)k);
 }
 
 assh_error_t

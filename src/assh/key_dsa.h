@@ -47,8 +47,8 @@ ASSH_FIRST_FIELD_ASSERT(assh_key_dsa_s, key);
 
 extern const struct assh_algo_key_s assh_key_dsa;
 
-static const char *assh_dss_id = "\x00\x00\x00\x07ssh-dss";
-static const size_t assh_dss_id_len = 4 + 7;
+#define ASSH_DSA_ID     "\x00\x00\x00\x07ssh-dss"
+#define ASSH_DSA_ID_LEN (sizeof(ASSH_DSA_ID) - 1)
 
 #endif
 

@@ -95,7 +95,7 @@ struct assh_kex_dh_gex_private_s
       struct assh_bignum_s gn;
       struct assh_bignum_s en;
       struct assh_bignum_s xn;
-      struct assh_key_s *host_key;
+      const struct assh_key_s *host_key;
       struct assh_packet_s *pck;
     };
 #endif
@@ -175,18 +175,13 @@ static assh_error_t assh_kex_dh_gex_client_wait_group(struct assh_session_s *s,
   enum bytecode_args_e
   {
     G_mpint, P_mpint, E_mpint,
-    G, P, E, X, G_n,
-    T1, T2, Q
+    G, P, E, X,
+    T1, T2, Q, G_n,
   };
 
   static const assh_bignum_op_t bytecode[] = {
 
-    ASSH_BOP_SIZE(      E,      G_n               	),
-    ASSH_BOP_SIZE(      P,      G_n               	),
-    ASSH_BOP_SIZE(      G,      G_n               	),
-    ASSH_BOP_SIZE(      T1,     G_n               	),
-    ASSH_BOP_SIZE(      T2,     G_n               	),
-    ASSH_BOP_SIZE(      Q,      G_n               	),
+    ASSH_BOP_SIZER(     G,      Q,      G_n            	),
 
     ASSH_BOP_MOVE(      G,      G_mpint                 ),
     ASSH_BOP_MOVE(      P,      P_mpint                 ),
@@ -196,33 +191,20 @@ static assh_error_t assh_kex_dh_gex_client_wait_group(struct assh_session_s *s,
     ASSH_BOP_PRINT(     P,      'P'                     ),
 #endif
 
+    /* check prime */
     ASSH_BOP_UINT(      T1,     1                       ),
-#if 1
-    /* check P is a safe prime */
     ASSH_BOP_TESTS(     P,      1,      G_n,    0       ),
+#if 1
     ASSH_BOP_ISPRIM(    P,      0                       ),
     ASSH_BOP_SUB(       T2,     P,      T1              ),
     ASSH_BOP_SHR(       Q,      T2,     1, ASSH_BOP_NOREG	),
     ASSH_BOP_ISPRIM(    Q,      0                       ),
 #endif
 
-#warning FIXME generator checking
-#if 0
-    /* check generator order */
-    ASSH_BOP_UINT(      T2,     2                       ),
-    ASSH_BOP_CMPEQ(     T2,     G,      4               ), /* g == 2 is ok */
-
-    ASSH_BOP_MULM(      T2,     G,      G,      P       ),
-    ASSH_BOP_CMPNE(     T1,     T2,     0               ), /* g^2 != 1 */
-
-    ASSH_BOP_EXPM(      T2,     G,      Q,      P       ),
-    ASSH_BOP_CMPEQ(     T1,     T2,     0               ), /* g^q == 1 */
-
-#else
+    /* check generator */
     ASSH_BOP_CMPLT(     T1,     G,      0               ), /* g > 1 */
     ASSH_BOP_SUB(       T2,     P,      T1              ),
     ASSH_BOP_CMPLT(     G,      T2,     0               ), /* g < p - 1 */
-#endif
 
     /* generate private exponent */
     ASSH_BOP_UINT(      T1,     DH_MAX_GRSIZE           ),
@@ -237,7 +219,7 @@ static assh_error_t assh_kex_dh_gex_client_wait_group(struct assh_session_s *s,
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(s->ctx, bytecode, "MMMNNNNsTTT",
+  ASSH_ERR_GTO(assh_bignum_bytecode(s->ctx, bytecode, "MMMNNNNTTTs",
                                     /* M */ g_str, p_str, e_str,
                                     /* N */ &pv->gn, &pv->pn, &pv->en, &pv->xn,
                                     /* S */ n), err_p);
@@ -299,40 +281,37 @@ static ASSH_EVENT_DONE_FCN(assh_kex_dh_gex_host_key_lookup_done)
   static const assh_bignum_op_t bytecode[] = {
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
-    ASSH_BOP_PRINT(     G,      'G'             ),
-    ASSH_BOP_PRINT(     P,      'P'             ),
+    ASSH_BOP_PRINT(     G,      'G'             	),
+    ASSH_BOP_PRINT(     P,      'P'             	),
 #endif
 
-    ASSH_BOP_SIZE(      F,      P               ),
-    ASSH_BOP_SIZE(      T,      P               ),
-    ASSH_BOP_SIZE(      K,      P               ),
+    ASSH_BOP_SIZER(     F,      K,      P       	),
 
-    ASSH_BOP_MOVE(      F,      F_mpint         ),
-
-    /* check server public exponent */
-    ASSH_BOP_UINT(      T,      2               ),
-    ASSH_BOP_CMPLTEQ(   T,      F,      0       ), /* f >= 2 */
-    ASSH_BOP_SUB(       T,      P,      T       ),
+    ASSH_BOP_MOVE(      F,      F_mpint         	),
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
-    ASSH_BOP_PRINT(     F,      'F'             ),
-    ASSH_BOP_PRINT(     T,      'T'             ),
-    ASSH_BOP_PRINT(     X,      'X'             ),
+    ASSH_BOP_PRINT(     F,      'F'             	),
+    ASSH_BOP_PRINT(     T,      'T'             	),
+    ASSH_BOP_PRINT(     X,      'X'             	),
 #endif
 
-    ASSH_BOP_CMPLTEQ(   F,      T,      0       ), /* f <= p-2 */
+    /* check server public exponent */
+    ASSH_BOP_UINT(      T,      2               	),
+    ASSH_BOP_CMPLTEQ(   T,      F,      0 /* f >= 2 */	), 
+    ASSH_BOP_SUB(       T,      P,      T       	),
+    ASSH_BOP_CMPLTEQ(   F,      T,      0 /* f <= p-2 */), 
 
     /* compute shared secret */
     ASSH_BOP_EXPM_C(    T,      F,      X,      P       ),
-    ASSH_BOP_MOVE(      K,      T               ),
+    ASSH_BOP_MOVE(      K,      T               	),
 
     /* check shared secret range */
-    ASSH_BOP_UINT(      T,      2               ),
-    ASSH_BOP_CMPLTEQ(   T,      K,      0       ), /* k >= 2 */
-    ASSH_BOP_SUB(       T,      P,      T       ),
-    ASSH_BOP_CMPLTEQ(   K,      T,      0       ), /* k <= p-2 */
+    ASSH_BOP_UINT(      T,      2               	),
+    ASSH_BOP_CMPLTEQ(   T,      K,      0 /* k >= 2 */	),
+    ASSH_BOP_SUB(       T,      P,      T       	),
+    ASSH_BOP_CMPLTEQ(   K,      T,      0 /* k <= p-2 */),
 
-    ASSH_BOP_MOVE(      K_mpint,        K       ),
+    ASSH_BOP_MOVE(      K_mpint,        K       	),
 
     ASSH_BOP_END(),
   };
@@ -584,16 +563,13 @@ static assh_error_t assh_kex_dh_gex_server_wait_e(struct assh_session_s *s,
   {
     E_mpint, F_mpint, K_mpint,
     P, X_n,
-    F, E, X, K, T
+    X, F, E, K, T
   };
 
   static const assh_bignum_op_t bytecode[] = {
 
-    ASSH_BOP_SIZE(      E,      P                       ),
-    ASSH_BOP_SIZE(      F,      P                       ),
     ASSH_BOP_SIZE(      X,      X_n                     ),
-    ASSH_BOP_SIZE(      K,      P                       ),
-    ASSH_BOP_SIZE(      T,      P                       ),
+    ASSH_BOP_SIZER(     F,      T,      P               ),
 
     ASSH_BOP_MOVE(      E,      E_mpint                 ),
 

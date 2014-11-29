@@ -40,13 +40,13 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_rsa_output)
     {
     case ASSH_KEY_FMT_PUB_RFC4253_6_6: {
       /* add algo identifier */
-      size_t l = assh_rsa_id_len;
+      size_t l = ASSH_RSA_ID_LEN;
       if (blob != NULL)
         {
-          ASSH_CHK_RET(assh_rsa_id_len > *blob_len, ASSH_ERR_OUTPUT_OVERFLOW);
-          memcpy(blob, assh_rsa_id, assh_rsa_id_len);
-          *blob_len -= assh_rsa_id_len;
-          blob += assh_rsa_id_len;
+          ASSH_CHK_RET(ASSH_RSA_ID_LEN > *blob_len, ASSH_ERR_OUTPUT_OVERFLOW);
+          memcpy(blob, ASSH_RSA_ID, ASSH_RSA_ID_LEN);
+          *blob_len -= ASSH_RSA_ID_LEN;
+          blob += ASSH_RSA_ID_LEN;
         }
 
       /* add key integers */
@@ -240,10 +240,10 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
     {
     case ASSH_KEY_FMT_PUB_RFC4253_6_6: {
 
-      ASSH_CHK_RET(blob_len < assh_rsa_id_len, ASSH_ERR_INPUT_OVERFLOW);
-      ASSH_CHK_RET(memcmp(assh_rsa_id, blob, assh_rsa_id_len), ASSH_ERR_BAD_DATA);
+      ASSH_CHK_RET(blob_len < ASSH_RSA_ID_LEN, ASSH_ERR_INPUT_OVERFLOW);
+      ASSH_CHK_RET(memcmp(ASSH_RSA_ID, blob, ASSH_RSA_ID_LEN), ASSH_ERR_BAD_DATA);
 
-      e_str = (uint8_t*)blob + assh_rsa_id_len;
+      e_str = (uint8_t*)blob + ASSH_RSA_ID_LEN;
       ASSH_ERR_RET(assh_check_string(blob, blob_len, e_str, &n_str));
       e_len = assh_rsa_mpint_strip(e_str + 4, assh_load_u32(e_str));
 

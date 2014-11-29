@@ -27,7 +27,7 @@ struct algo_s
 
 struct algo_s algos[] = {
 
-  { &assh_sign_dss,             dsa1024_key, 0, 1024, sizeof(dsa1024_key),
+  { &assh_sign_dsa,             dsa1024_key, 0, 1024, sizeof(dsa1024_key),
     55,  (const uint8_t *)
     "\x00\x00\x00\x07\x73\x73\x68\x2d\x64\x73\x73\x00\x00\x00\x28\x45"
     "\x81\x9e\x72\x7d\x7a\x34\xe1\xd6\x66\x6c\xc3\xe4\x65\xb8\x77\xa6"
@@ -117,7 +117,7 @@ assh_error_t test_const()
   for (i = 0; algos[i].algo; i++)
     {
       const struct assh_algo_sign_s *a = algos[i].algo;
-      struct assh_key_s *key;
+      const struct assh_key_s *key;
 
       fprintf(stderr, "\n%s const sign/verify: ", a->algo.name);
 
@@ -178,7 +178,7 @@ assh_error_t test_loop()
   for (i = 0; algos[i].algo; i++)
     {
       const struct assh_algo_sign_s *a = algos[i].algo;
-      struct assh_key_s *key;
+      const struct assh_key_s *key;
 
       fprintf(stderr, "\n%s sign/verify: ", a->algo.name);
 
@@ -282,7 +282,7 @@ assh_error_t test_loop()
   for (i = 0; algos[i].algo; i++)
     {
       const struct assh_algo_sign_s *a = algos[i].algo;
-      struct assh_key_s *key;
+      const struct assh_key_s *key;
 
       fprintf(stderr, "\n%s key load/validate: ", a->algo.name);
 

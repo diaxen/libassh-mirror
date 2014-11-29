@@ -113,9 +113,7 @@ void assh_context_init(struct assh_context_s *c,
   c->pck_pool_max_bsize = c->pck_pool_max_size / ASSH_PCK_POOL_SIZE;
   c->pck_pool_size = 0;
 
-#ifdef CONFIG_ASSH_SERVER
   c->srvs_count = 0;
-#endif
 
   c->bignum = &assh_bignum_gcrypt;
 }

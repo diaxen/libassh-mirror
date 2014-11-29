@@ -233,7 +233,7 @@ int main()
 	      err = assh_event_done(&session, &event);
 
 	      if (perr == ASSH_OK)  /* send output data */
-		assh_channel_data_send(dt_e->ch, size);
+		err = assh_channel_data_send(dt_e->ch, size);
 	      break;
 	    }
 

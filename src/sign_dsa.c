@@ -32,7 +32,7 @@
 #include <string.h>
 
 static assh_error_t
-assh_sign_dss_hash_algo(const struct assh_hash_algo_s **algo, unsigned int n)
+assh_sign_dsa_hash_algo(const struct assh_hash_algo_s **algo, unsigned int n)
 {
   assh_error_t err;
 
@@ -54,9 +54,9 @@ assh_sign_dss_hash_algo(const struct assh_hash_algo_s **algo, unsigned int n)
   return ASSH_OK;
 }
 
-static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
+static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
 {
-  struct assh_key_dsa_s *k = (void*)key;
+  const struct assh_key_dsa_s *k = (const void*)key;
   assh_error_t err;
 
   /* check availability of the private key */
@@ -66,10 +66,10 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
   unsigned int n = assh_bignum_bits(&k->qn);
 
   /* check/return signature length */
-  size_t len = assh_dss_id_len + 4 + n * 2 / 8;
+  size_t len = ASSH_DSA_ID_LEN + 4 + n * 2 / 8;
 
   const struct assh_hash_algo_s *algo;
-  ASSH_ERR_RET(assh_sign_dss_hash_algo(&algo, n));
+  ASSH_ERR_RET(assh_sign_dsa_hash_algo(&algo, n));
 
   if (sign == NULL)
     {
@@ -80,9 +80,9 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
   ASSH_CHK_RET(*sign_len < len, ASSH_ERR_OUTPUT_OVERFLOW);
   *sign_len = len;
 
-  memcpy(sign, assh_dss_id, assh_dss_id_len);
-  assh_store_u32(sign + assh_dss_id_len, n * 2 / 8);
-  uint8_t *r_str = sign + assh_dss_id_len + 4;
+  memcpy(sign, ASSH_DSA_ID, ASSH_DSA_ID_LEN);
+  assh_store_u32(sign + ASSH_DSA_ID_LEN, n * 2 / 8);
+  uint8_t *r_str = sign + ASSH_DSA_ID_LEN + 4;
   uint8_t *s_str = r_str + n / 8;
 
   ASSH_SCRATCH_ALLOC(c, uint8_t, scratch,
@@ -174,23 +174,23 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dss_generate)
   return err;
 }
 
-static ASSH_SIGN_VERIFY_FCN(assh_sign_dss_verify)
+static ASSH_SIGN_VERIFY_FCN(assh_sign_dsa_verify)
 {
-  struct assh_key_dsa_s *k = (void*)key;
+  const struct assh_key_dsa_s *k = (const void*)key;
   assh_error_t err;
 
   //  unsigned int l = assh_bignum_bits(&k->pn);
   unsigned int n = assh_bignum_bits(&k->qn);
 
-  ASSH_CHK_RET(sign_len != assh_dss_id_len + 4 + n * 2 / 8, ASSH_ERR_INPUT_OVERFLOW);
+  ASSH_CHK_RET(sign_len != ASSH_DSA_ID_LEN + 4 + n * 2 / 8, ASSH_ERR_INPUT_OVERFLOW);
 
-  ASSH_CHK_RET(memcmp(sign, assh_dss_id, assh_dss_id_len), ASSH_ERR_BAD_DATA);
+  ASSH_CHK_RET(memcmp(sign, ASSH_DSA_ID, ASSH_DSA_ID_LEN), ASSH_ERR_BAD_DATA);
 
   const struct assh_hash_algo_s *algo;
-  ASSH_ERR_RET(assh_sign_dss_hash_algo(&algo, n));
+  ASSH_ERR_RET(assh_sign_dsa_hash_algo(&algo, n));
 
   /* check signature blob size */
-  uint8_t *rs_str = (uint8_t*)sign + assh_dss_id_len;
+  uint8_t *rs_str = (uint8_t*)sign + ASSH_DSA_ID_LEN;
   ASSH_CHK_RET(assh_load_u32(rs_str) != n * 2 / 8, ASSH_ERR_INPUT_OVERFLOW);
 
   ASSH_SCRATCH_ALLOC(c, uint8_t, scratch,
@@ -251,18 +251,18 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_dss_verify)
     /* v = (g^u1 * y^u2) mod p mod q */
     ASSH_BOP_MOD(       V,      V,      Q               ),
 
-    ASSH_BOP_CMPEQ(     V,      R,      0               ),
-
 #ifdef CONFIG_ASSH_DEBUG_SIGN
     ASSH_BOP_PRINT(     V,      'V'                     ),
 #endif
+
+    ASSH_BOP_CMPEQ(     V,      R,      0               ),
 
     ASSH_BOP_END(),
   };
 
   ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "DDDNNNNTTTTTTTTT",
-                                    /* D */ rs_str + 4, rs_str + 4 + n / 8, msgh,
-                                    /* N */ &k->pn, &k->qn, &k->gn, &k->yn), err_scratch);
+                 /* D */ rs_str + 4, rs_str + 4 + n / 8, msgh,
+                 /* N */ &k->pn, &k->qn, &k->gn, &k->yn), err_scratch);
 
   err = ASSH_OK;
 
@@ -272,36 +272,36 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_dss_verify)
   return err;
 }
 
-static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dss_suitable_key)
+static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key)
 {
   if (key == NULL)
     return c->type == ASSH_SERVER;
   if (key->algo != &assh_key_dsa)
     return 0;
-  struct assh_key_dsa_s *k = (void*)key;
+  const struct assh_key_dsa_s *k = (const void*)key;
   return assh_bignum_bits(&k->qn) == 160 &&
          assh_bignum_bits(&k->pn) == 1024;
 }
 
-const struct assh_algo_sign_s assh_sign_dss =
+const struct assh_algo_sign_s assh_sign_dsa =
 {
   .algo = {
     .name = "ssh-dss", .class_ = ASSH_ALGO_SIGN,
     .safety = 20, .speed = 40,
-    .f_suitable_key = assh_sign_dss_suitable_key,
+    .f_suitable_key = assh_sign_dsa_suitable_key,
     .key = &assh_key_dsa,
   },
-  .f_generate = assh_sign_dss_generate,
-  .f_verify = assh_sign_dss_verify,
+  .f_generate = assh_sign_dsa_generate,
+  .f_verify = assh_sign_dsa_verify,
 };
 
-static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dss_suitable_key_2048_224)
+static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key_2048_224)
 {
   if (key == NULL)
     return c->type == ASSH_SERVER;
   if (key->algo != &assh_key_dsa)
     return 0;
-  struct assh_key_dsa_s *k = (void*)key;
+  const struct assh_key_dsa_s *k = (const void*)key;
   return assh_bignum_bits(&k->qn) == 224 &&
          assh_bignum_bits(&k->pn) >= 2048;
 }
@@ -311,20 +311,20 @@ const struct assh_algo_sign_s assh_sign_dsa2048_sha224 =
   .algo = {
     .name = "dsa2048-sha224@libassh.org", .class_ = ASSH_ALGO_SIGN,
     .safety = 35, .speed = 30,
-    .f_suitable_key = assh_sign_dss_suitable_key_2048_224,
+    .f_suitable_key = assh_sign_dsa_suitable_key_2048_224,
     .key = &assh_key_dsa,
   },
-  .f_generate = assh_sign_dss_generate,
-  .f_verify = assh_sign_dss_verify,
+  .f_generate = assh_sign_dsa_generate,
+  .f_verify = assh_sign_dsa_verify,
 };
 
-static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dss_suitable_key_2048_256)
+static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key_2048_256)
 {
   if (key == NULL)
     return c->type == ASSH_SERVER;
   if (key->algo != &assh_key_dsa)
     return 0;
-  struct assh_key_dsa_s *k = (void*)key;
+  const struct assh_key_dsa_s *k = (const void*)key;
   return assh_bignum_bits(&k->qn) == 256 &&
          assh_bignum_bits(&k->pn) >= 2048;
 }
@@ -334,20 +334,20 @@ const struct assh_algo_sign_s assh_sign_dsa2048_sha256 =
   .algo = {
     .name = "dsa2048-sha256@libassh.org", .class_ = ASSH_ALGO_SIGN,
     .safety = 40, .speed = 30,
-    .f_suitable_key = assh_sign_dss_suitable_key_2048_256,
+    .f_suitable_key = assh_sign_dsa_suitable_key_2048_256,
     .key = &assh_key_dsa,
   },
-  .f_generate = assh_sign_dss_generate,
-  .f_verify = assh_sign_dss_verify,
+  .f_generate = assh_sign_dsa_generate,
+  .f_verify = assh_sign_dsa_verify,
 };
 
-static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dss_suitable_key_3072_256)
+static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key_3072_256)
 {
   if (key == NULL)
     return c->type == ASSH_SERVER;
   if (key->algo != &assh_key_dsa)
     return 0;
-  struct assh_key_dsa_s *k = (void*)key;
+  const struct assh_key_dsa_s *k = (const void*)key;
   return assh_bignum_bits(&k->qn) == 256 &&
          assh_bignum_bits(&k->pn) >= 3072;
 }
@@ -357,10 +357,10 @@ const struct assh_algo_sign_s assh_sign_dsa3072_sha256 =
   .algo = {
     .name = "dsa3072-sha256@libassh.org", .class_ = ASSH_ALGO_SIGN,
     .safety = 50, .speed = 30,
-    .f_suitable_key = assh_sign_dss_suitable_key_3072_256,
+    .f_suitable_key = assh_sign_dsa_suitable_key_3072_256,
     .key = &assh_key_dsa,
   },
-  .f_generate = assh_sign_dss_generate,
-  .f_verify = assh_sign_dss_verify,
+  .f_generate = assh_sign_dsa_generate,
+  .f_verify = assh_sign_dsa_verify,
 };
 

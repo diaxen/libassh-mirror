@@ -66,7 +66,7 @@ struct assh_context_s
   int prng_entropy;
 
   /** head of keys list */
-  struct assh_key_s *keys;
+  const struct assh_key_s *keys;
 
   /** estimated size of the kex init packet, computed when new
       algorithm are registered. */
@@ -85,12 +85,12 @@ struct assh_context_s
   /** Registered algorithms */
   const struct assh_algo_s *algos[ASSH_MAX_ALGORITHMS];
   /** Number of registered algorithms */
-  unsigned int algos_count;
+  size_t algos_count;
 
   /** Registered services supported by the server. */
   const struct assh_service_s *srvs[ASSH_MAX_SERVICES];
   /** Number of registered services */
-  unsigned int srvs_count;
+  size_t srvs_count;
 
   const struct assh_bignum_algo_s *bignum;
 };

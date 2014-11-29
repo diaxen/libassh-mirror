@@ -31,6 +31,7 @@
 #include <assh/assh_compress.h>
 #include <assh/assh_transport.h>
 #include <assh/assh_connection.h>
+#include <assh/assh_service.h>
 #include <assh/assh_event.h>
 
 #include <assh/key_rsa.h>
@@ -77,8 +78,8 @@ static const struct algo_with_key_s kex_list[] =
 
 static const struct algo_with_key_s sign_list[] =
   {
-    { &assh_sign_none,              &assh_key_none, "\0", 0 },
-    { &assh_sign_dss,               &assh_key_dsa, dsa1024_key, sizeof(dsa1024_key) - 1 },
+    { &assh_sign_none,              &assh_key_none, (const uint8_t*)"\0", 0 },
+    { &assh_sign_dsa,               &assh_key_dsa, dsa1024_key, sizeof(dsa1024_key) - 1 },
     //    { &assh_sign_dsa2048_sha224,    &assh_key_dsa, dsa2048_key, sizeof(dsa2048_key) },
     { &assh_sign_dsa2048_sha256,    &assh_key_dsa, dsa2048_key, sizeof(dsa2048_key) - 1 },
     { &assh_sign_dsa3072_sha256,    &assh_key_dsa, dsa3072_key, sizeof(dsa3072_key) - 1 },

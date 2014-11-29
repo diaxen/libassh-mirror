@@ -35,7 +35,7 @@
 
 static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
 {
-  struct assh_key_eddsa_s *k = (void*)key;
+  const struct assh_key_eddsa_s *k = (const void*)key;
   assh_error_t err;
 
   const struct assh_edward_curve_s *curve = k->curve;
@@ -58,7 +58,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
   ASSH_CHK_RET(*sign_len < len, ASSH_ERR_OUTPUT_OVERFLOW);
   *sign_len = len;
 
-  assh_store_u32(sign, tlen);  
+  assh_store_u32(sign, tlen);
   memcpy(sign + 4, k->key.algo->type, tlen);
   assh_store_u32(sign + 4 + tlen, 2 * n);
   uint8_t *r_str = sign + 4 + tlen + 4;
@@ -89,7 +89,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
   assh_hexdump("h", h, 2 * n);
 #endif
 
-  /* a is h[0,31] */
+  /* a is h[0,n-1] */
   assh_edward_adjust(curve, h);
 
   /* r */
@@ -113,15 +113,20 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
 
   {
     enum {
-      BX_mpint, BY_mpint, A_mpint, P_mpint, D_mpint, L, Size, /* in */
-      RX_raw, RY_raw,                                      /* out */
-      P, A, D, T0, T1,                                     /* temp */
-      RX, RY, RZ,  BX, BY, BZ,  PX, PY, PZ,  QX, QY, QZ
+      /* in */
+      BX_mpint, BY_mpint, A_mpint, P_mpint, D_mpint,
+      L, P_n,
+      /* out */
+      RX_raw, RY_raw,
+      /* temp */
+      P, A, D, T0, T1,
+      RX, RY, RZ,  BX, BY, BZ,
+      PX, PY, PZ,  QX, QY, QZ
     };
 
     static const assh_bignum_op_t bytecode1[] = {
 
-      ASSH_BOP_SIZER(     P,      QZ,     Size            ),
+      ASSH_BOP_SIZER(     P,      QZ,     P_n            ),
 
       /* init */
       ASSH_BOP_MOVE(      P,      P_mpint                 ),
@@ -201,14 +206,14 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
 
   {
     enum {
-      L_mpint, H_raw, AZ_raw, R_raw, S_raw, Size,
+      L_mpint, H_raw, AZ_raw, R_raw, S_raw, P_n,
       AZ, L, S, H, R
     };
 
     static const assh_bignum_op_t bytecode2[] = {
 
-      ASSH_BOP_SIZER(     AZ,     S,      Size            ),
-      ASSH_BOP_SIZEM(     H,      Size,   0,      1       ),
+      ASSH_BOP_SIZER(     AZ,     S,      P_n            ),
+      ASSH_BOP_SIZEM(     H,      P_n,   0,      1       ),
       ASSH_BOP_SIZE(      R,      H                       ),
 
       ASSH_BOP_MOVE(      L,      L_mpint                 ),
@@ -239,7 +244,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
 
 static ASSH_SIGN_VERIFY_FCN(assh_sign_eddsa_verify)
 {
-  struct assh_key_eddsa_s *k = (void*)key;
+  const struct assh_key_eddsa_s *k = (const void*)key;
   assh_error_t err;
 
   const struct assh_edward_curve_s *curve = k->curve;
@@ -300,18 +305,19 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_eddsa_verify)
 
   enum {
     /* in */
-    BX_mpint, BY_mpint, A_mpint, P_mpint, D_mpint, I_mpint, L1, L2, Size,
-    KY_raw, KX_mpint,
+    BX_mpint, BY_mpint, A_mpint, P_mpint, D_mpint, I_mpint,
+    L1, L2, P_n, KY_raw, KX_mpint,
     /* out */
     RX_raw, RY_raw,
     /* temp */
     P, A, D, T0, T1,
-    RX, RY, RZ,  BX, BY, BZ,  PX, PY, PZ,  QX, QY, QZ, U = PY, V = PZ,
+    RX, RY, RZ,  BX, BY, BZ,  PX, PY, PZ,
+    QX, QY, QZ, U = PY, V = PZ,
   };
 
   static const assh_bignum_op_t bytecode[] = {
 
-    ASSH_BOP_SIZER(     P,      QZ,     Size            ),
+    ASSH_BOP_SIZER(     P,      QZ,     P_n            ),
 
     ASSH_BOP_MOVE(      P,      P_mpint                 ),
     ASSH_BOP_MOVE(      A,      A_mpint                 ),
@@ -492,7 +498,7 @@ const struct assh_algo_sign_s assh_sign_ed25519 =
 {
   .algo = {
     .name = "ssh-ed25519", .class_ = ASSH_ALGO_SIGN,
-    .safety = 50, .speed = 40,
+    .safety = 50, .speed = 90,
     .f_suitable_key = assh_sign_ed25519_suitable_key,
     .key = &assh_key_ed25519,
   },
@@ -512,7 +518,7 @@ const struct assh_algo_sign_s assh_sign_eddsa_e382 =
 {
   .algo = {
     .name = "eddsa-e382-shake256@libassh.org", .class_ = ASSH_ALGO_SIGN,
-    .safety = 70, .speed = 30,
+    .safety = 70, .speed = 80,
     .f_suitable_key = assh_sign_eddsa_e382_suitable_key,
     .key = &assh_key_eddsa_e382,
   },
@@ -532,7 +538,7 @@ const struct assh_algo_sign_s assh_sign_eddsa_e521 =
 {
   .algo = {
     .name = "eddsa-e521-shake256@libassh.org", .class_ = ASSH_ALGO_SIGN,
-    .safety = 70, .speed = 30,
+    .safety = 90, .speed = 70,
     .f_suitable_key = assh_sign_eddsa_e521_suitable_key,
     .key = &assh_key_eddsa_e521,
   },

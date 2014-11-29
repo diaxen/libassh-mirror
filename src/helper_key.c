@@ -24,6 +24,7 @@
 #include <assh/helper_key.h>
 #include <assh/assh_context.h>
 #include <assh/assh_packet.h>
+#include <assh/assh_alloc.h>
 
 #include <string.h>
 #include <stdio.h>
@@ -171,14 +172,16 @@ static assh_error_t assh_load_rfc4716(FILE *file, uint8_t *kdata, size_t *klen)
 }
 
 assh_error_t assh_load_key_file(struct assh_context_s *c,
-				struct assh_key_s **head,
+				const struct assh_key_s **head,
 				const struct assh_algo_key_s *algo,
-				enum assh_algo_class_e intent,
+				enum assh_algo_class_e role,
 				FILE *file, enum assh_key_format_e format)
 {
   assh_error_t err;
-  uint8_t blob[4096];
-  size_t blob_len = sizeof(blob);
+  size_t blob_len = 4096;
+
+  ASSH_SCRATCH_ALLOC(c, uint8_t, blob, blob_len,
+                     ASSH_ERRSV_CONTINUE, err_);
 
   switch (format)
     {
@@ -202,15 +205,20 @@ assh_error_t assh_load_key_file(struct assh_context_s *c,
       break;
     }
 
-  ASSH_ERR_RET(assh_key_load(c, head, algo, intent, format, blob, blob_len));
+  ASSH_ERR_GTO(assh_key_load(c, head, algo, role, format, blob, blob_len), err_sc);
 
-  return ASSH_OK;
+  err = ASSH_OK;
+
+ err_sc:
+  ASSH_SCRATCH_FREE(c, blob);
+ err_:
+  return err;
 }
 
 assh_error_t assh_load_key_filename(struct assh_context_s *c,
-				    struct assh_key_s **head,
+				    const struct assh_key_s **head,
 				    const struct assh_algo_key_s *algo,
-				    enum assh_algo_class_e intent,
+				    enum assh_algo_class_e role,
 				    const char *filename,
 				    enum assh_key_format_e format)
 {
@@ -219,7 +227,7 @@ assh_error_t assh_load_key_filename(struct assh_context_s *c,
   FILE *file = fopen(filename, "r");
   ASSH_CHK_RET(file == NULL, ASSH_ERR_IO);
 
-  ASSH_ERR_GTO(assh_load_key_file(c, head, algo, intent, file, format), err_);
+  ASSH_ERR_GTO(assh_load_key_file(c, head, algo, role, file, format), err_);
 
  err_:
   fclose(file);
@@ -228,26 +236,26 @@ assh_error_t assh_load_key_filename(struct assh_context_s *c,
 
 assh_error_t assh_load_hostkey_file(struct assh_context_s *c,
 				    const struct assh_algo_key_s *algo,
-				    enum assh_algo_class_e intent,
+				    enum assh_algo_class_e role,
 				    FILE *file,
 				    enum assh_key_format_e format)
 {
 #ifdef CONFIG_ASSH_SERVER
   if (c->type == ASSH_SERVER)
-    return assh_load_key_file(c, &c->keys, algo, intent, file, format);
+    return assh_load_key_file(c, &c->keys, algo, role, file, format);
 #endif
   return ASSH_ERR_NOTSUP;
 }
 
 assh_error_t assh_load_hostkey_filename(struct assh_context_s *c,
 					const struct assh_algo_key_s *algo,
-					enum assh_algo_class_e intent,
+					enum assh_algo_class_e role,
 					const char *filename,
 					enum assh_key_format_e format)
 {
 #ifdef CONFIG_ASSH_SERVER
   if (c->type == ASSH_SERVER)
-    return assh_load_key_filename(c, &c->keys, algo, intent, filename, format);
+    return assh_load_key_filename(c, &c->keys, algo, role, filename, format);
 #endif
   return ASSH_ERR_NOTSUP;
 }

@@ -42,8 +42,8 @@ ASSH_FIRST_FIELD_ASSERT(assh_key_rsa_s, key);
 
 extern const struct assh_algo_key_s assh_key_rsa;
 
-static const char *assh_rsa_id = "\x00\x00\x00\x07ssh-rsa";
-static const size_t assh_rsa_id_len = 4 + 7;
+#define ASSH_RSA_ID     "\x00\x00\x00\x07ssh-rsa"
+#define ASSH_RSA_ID_LEN (sizeof(ASSH_RSA_ID) - 1)
 
 #endif
 
