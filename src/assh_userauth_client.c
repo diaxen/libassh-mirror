@@ -333,15 +333,15 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_methods_done)
     {
       /* check usable keys */
       pv->algo_idx = 0;
+      const struct assh_key_s *next = k->next;
+
+      /* insert provided keys in internal list */
       if (assh_algo_by_key(s->ctx, k, &pv->algo_idx, &pv->algo) == ASSH_OK)
-        {
-          /* insert provided keys in internal list */
-          const struct assh_key_s *next = k->next;
-          assh_key_insert(&pv->pub_keys, k);
-          k = next;
-        }
+        assh_key_insert(&pv->pub_keys, k);
       else
         assh_key_drop(s->ctx, &k);
+
+      k = next;
     }
 
   if (pv->pub_keys != NULL)
