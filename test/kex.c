@@ -96,6 +96,8 @@ static const struct assh_algo_cipher_s *cipher_list[] =
   {
     &assh_cipher_none,
     &assh_cipher_arc4,
+    &assh_cipher_aes128_cbc,
+    &assh_cipher_aes256_ctr,
     NULL
   };
 

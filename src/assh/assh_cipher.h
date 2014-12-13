@@ -29,12 +29,12 @@
 
 #define ASSH_CIPHER_INIT_FCN(n) \
   ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_context_s *c, void *ctx_, \
-                                           const uint8_t *key, const uint8_t *iv, assh_bool_t encrypt)
+                                           const uint8_t *key, const uint8_t *iv, \
+                                           assh_bool_t encrypt)
 typedef ASSH_CIPHER_INIT_FCN(assh_cipher_init_t);
 
 #define ASSH_CIPHER_PROCESS_FCN(n) \
-  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(void *ctx_, uint8_t *iv,     \
-                                           uint8_t *data, size_t len)
+  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(void *ctx_, uint8_t *data, size_t len)
 typedef ASSH_CIPHER_PROCESS_FCN(assh_cipher_process_t);
 
 #define ASSH_CIPHER_CLEANUP_FCN(n) \
@@ -84,13 +84,6 @@ extern struct assh_algo_cipher_s assh_cipher_cast128_ctr;
 
 extern struct assh_algo_cipher_s assh_cipher_blowfish_cbc;
 extern struct assh_algo_cipher_s assh_cipher_blowfish_ctr;
-
-extern struct assh_algo_cipher_s assh_cipher_aes128_cbc;
-extern struct assh_algo_cipher_s assh_cipher_aes192_cbc;
-extern struct assh_algo_cipher_s assh_cipher_aes256_cbc;
-extern struct assh_algo_cipher_s assh_cipher_aes128_ctr;
-extern struct assh_algo_cipher_s assh_cipher_aes192_ctr;
-extern struct assh_algo_cipher_s assh_cipher_aes256_ctr;
 
 extern struct assh_algo_cipher_s assh_cipher_twofish128_cbc;
 extern struct assh_algo_cipher_s assh_cipher_twofish256_cbc;

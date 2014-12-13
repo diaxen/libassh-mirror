@@ -52,7 +52,7 @@ endif
 if COND_gcrypt_ciphers
 libassh_la_SOURCES +=	cipher_gcrypt.c
 else
-libassh_la_SOURCES +=	cipher_arc4_builtin.c 
+libassh_la_SOURCES +=	cipher_arc4_builtin.c cipher_aes_builtin.c
 endif
 
 

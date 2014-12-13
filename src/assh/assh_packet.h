@@ -252,6 +252,13 @@ static inline uint64_t assh_load_u64le(const uint8_t *s)
          ((uint64_t)s[6] << 48) + ((uint64_t)s[7] << 56);
 }
 
+static inline uint32_t assh_swap_u32(uint32_t x)
+{
+  x = (x << 16) | (x >> 16);
+  x = ((x & 0x00ff00ff) << 8) | ((x & 0xff00ff00) >> 8);
+  return x;
+}
+
 /** @internal This function allocates an array of bytes in a packet
     and returns a pointer to the array. If there is not enough space
     left in the packet, an error is returned. */

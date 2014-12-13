@@ -139,7 +139,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 
       /* decipher */
       if (k != NULL)
-	ASSH_ERR_RET(k->cipher->f_process(k->cipher_ctx, k->iv,
+	ASSH_ERR_RET(k->cipher->f_process(k->cipher_ctx,
 			  s->stream_in_pck_head, bsize) | ASSH_ERRSV_DISCONNECT);
 
       /* compute various length values */
@@ -191,9 +191,18 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 
 	  /* decipher */
 	  ASSH_ERR_RET(k->cipher->f_process(
-              k->cipher_ctx, k->iv, p->data + bsize,
+              k->cipher_ctx, p->data + bsize,
 	      p->data_size - bsize - mac_len) | ASSH_ERRSV_DISCONNECT);
+	}
 
+#ifdef CONFIG_ASSH_DEBUG_PROTOCOL
+      ASSH_DEBUG("incoming packet: session=%p tr_st=%i, size=%zu, msg=%u\n",
+		 s, s->tr_st, p->data_size, p->head.msg);
+      assh_hexdump("in packet", p->data, p->data_size);
+#endif
+
+      if (k != NULL)
+	{
 	  /* compute and compare MAC */
 	  ASSH_ERR_RET(k->mac->f_verify(k->mac_ctx, s->in_seq, p->data,
 					p->data_size - mac_len,
@@ -202,12 +211,6 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 
 #warning FIXME decompress
 	}
-
-#ifdef CONFIG_ASSH_DEBUG_PROTOCOL
-      ASSH_DEBUG("incoming packet: session=%p tr_st=%i, size=%zu, msg=%u\n",
-		 s, s->tr_st, p->data_size, p->head.msg);
-      assh_hexdump("in packet", p->data, p->data_size);
-#endif
 
       s->kex_bytes += p->data_size;
 
@@ -400,7 +403,7 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 	  ASSH_ERR_RET(k->mac->f_compute(k->mac_ctx, s->out_seq, p->data,
 			 p->data_size - mac_len, mac_ptr) | ASSH_ERRSV_FIN);
 
-	  ASSH_ERR_RET(k->cipher->f_process(k->cipher_ctx, k->iv, p->data,
+	  ASSH_ERR_RET(k->cipher->f_process(k->cipher_ctx, p->data,
 			    p->data_size - mac_len) | ASSH_ERRSV_FIN);
 	}
 

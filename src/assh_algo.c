@@ -181,6 +181,12 @@ assh_error_t assh_algo_register_default(struct assh_context_s *c, unsigned int s
 			&assh_cipher_arc4,
 			&assh_cipher_arc4_128,
 			&assh_cipher_arc4_256,
+			&assh_cipher_aes128_cbc,
+			&assh_cipher_aes192_cbc,
+			&assh_cipher_aes256_cbc,
+		        &assh_cipher_aes128_ctr,
+			&assh_cipher_aes192_ctr,
+			&assh_cipher_aes256_ctr,
 #endif
 			/* mac */
 			&assh_hmac_md5,
