@@ -19,7 +19,8 @@ struct algo_s
   const struct assh_algo_sign_s *algo;
   const uint8_t *key;
   int gen_key;
-  size_t kbits;
+  size_t kbits_min;
+  size_t kbits_max;
   size_t key_len;
   size_t sign_len;
   const uint8_t *sign;
@@ -27,14 +28,14 @@ struct algo_s
 
 struct algo_s algos[] = {
 
-  { &assh_sign_dsa,             dsa1024_key, 0, 1024, sizeof(dsa1024_key),
+  { &assh_sign_dsa,             dsa1024_key, 1, 1024, 4096, sizeof(dsa1024_key),
     55,  (const uint8_t *)
     "\x00\x00\x00\x07\x73\x73\x68\x2d\x64\x73\x73\x00\x00\x00\x28\x45"
     "\x81\x9e\x72\x7d\x7a\x34\xe1\xd6\x66\x6c\xc3\xe4\x65\xb8\x77\xa6"
     "\x37\x99\xc5\x66\x9f\x6e\x69\x07\x62\x21\x5c\x8c\x50\xe6\xe9\x18"
     "\x1d\x78\xba\x84\xe1\x27\x00" },
 
-  { &assh_sign_rsa_sha1_md5,    rsa1024_key, 1, 1024, sizeof(rsa1024_key),
+  { &assh_sign_rsa_sha1_md5,    rsa1024_key, 1, 1024, 1024, sizeof(rsa1024_key),
     143, (const uint8_t *)
     "\x00\x00\x00\x07\x73\x73\x68\x2d\x72\x73\x61\x00\x00\x00\x80\x4d"
     "\x18\xf5\xdf\xea\x0c\x3e\x15\xa0\x75\x50\x8b\x4f\x56\xa3\x3d\x6e"
@@ -47,7 +48,7 @@ struct algo_s algos[] = {
     "\x31\x8a\x44\x94\x4a\x53\x49\x8d\x2f\xd1\x38\x48\x30\x20\xae"
     "\x00\x00\x00\x07\x73\x73\x68\x2d" },
 
-  { &assh_sign_rsa_sha256_2048, rsa2048_key, 0, 2048, sizeof(rsa2048_key),
+  { &assh_sign_rsa_sha256_2048, rsa2048_key, 0, 1024, 2048, sizeof(rsa2048_key),
     271, (const uint8_t *)
     "\x00\x00\x00\x07\x73\x73\x68\x2d\x72\x73\x61\x00\x00\x01\x00\x13"
     "\x54\xee\x4b\x3d\xf3\x7a\x81\xa0\x0f\x65\x8e\xc3\x91\x67\x46\x57"
@@ -67,7 +68,7 @@ struct algo_s algos[] = {
     "\xfb\xd5\x06\x1c\xd3\xb1\x8f\xd8\x05\xcc\x5d\xcb\xe9\x9b\x32\x75"
     "\xed\x72\xb4\xb4\xb1\xb9\xe1\xa3\x99\xb2\x09\xef\xed\x1a\x91" },
 
-  { &assh_sign_ed25519,         ed25519_key, 1, 255, sizeof(ed25519_key),
+  { &assh_sign_ed25519,         ed25519_key, 1, 255, 255, sizeof(ed25519_key),
     4 + 11 + 4 + 2 * 32, (const uint8_t *)
     "\x00\x00\x00\x0b\x73\x73\x68\x2d\x65\x64\x32\x35\x35\x31\x39\x00"
     "\x00\x00\x40\xde\xd8\x65\x27\x76\xb7\x37\x8e\x1d\xed\x4a\x87\xef"
@@ -76,7 +77,7 @@ struct algo_s algos[] = {
     "\x41\xe9\x03\x46\x63\x9f\xe6\x25\xef\xc5\xcd\x8b\x92\xd8\xa5\x67"
     "\x0a\xe6\x05" },
 
-  { &assh_sign_eddsa_e382,      eddsa_e382_key, 1, 382, sizeof(eddsa_e382_key),
+  { &assh_sign_eddsa_e382,      eddsa_e382_key, 1, 382, 382, sizeof(eddsa_e382_key),
     4 + 31 + 4 + 2 * 48, (const uint8_t *)
     "\x00\x00\x00\x1f\x65\x64\x64\x73\x61\x2d\x65\x33\x38\x32\x2d\x73"
     "\x68\x61\x6b\x65\x32\x35\x36\x40\x6c\x69\x62\x61\x73\x73\x68\x2e"
@@ -88,7 +89,7 @@ struct algo_s algos[] = {
     "\xf8\x16\x45\x7a\x41\xc6\x92\x9f\x8c\xe5\xdb\x1d\xae\x6b\x39\x53"
     "\xce\x33\xe4\x13\xb0\x34\x06" },
 
-  { &assh_sign_eddsa_e521,      eddsa_e521_key, 1, 521, sizeof(eddsa_e521_key),
+  { &assh_sign_eddsa_e521,      eddsa_e521_key, 1, 521, 521, sizeof(eddsa_e521_key),
     4 + 31 + 4 + 2 * 66, (const uint8_t *)
     "\x00\x00\x00\x1f\x65\x64\x64\x73\x61\x2d\x65\x35\x32\x31\x2d\x73"
     "\x68\x61\x6b\x65\x32\x35\x36\x40\x6c\x69\x62\x61\x73\x73\x68\x2e"
@@ -165,6 +166,8 @@ assh_error_t test_const()
       fprintf(stderr, "V");
       if (!a->f_verify(&context, key, 3, ptr, sz, sign, sign_len))
 	abort();
+
+      assh_key_drop(&context, &key);
     }
 
   return ASSH_OK;
@@ -190,6 +193,7 @@ assh_error_t test_loop()
 	  fprintf(stderr, "L");
 	  ASSH_ERR_RET(assh_key_load(&context, &key, a->algo.key, ASSH_ALGO_SIGN,
 	                 key_blob[0], key_blob + 1, sizeof(key_blob) - 1));
+	  ASSH_ERR_RET(assh_key_validate(&context, key));
 	}
 
       int size;
@@ -197,9 +201,13 @@ assh_error_t test_loop()
 	{
 	  if (algos[i].gen_key)
 	    {
+	      size_t kbits = algos[i].kbits_min + rand()
+                           % (algos[i].kbits_max - algos[i].kbits_min + 1);
               fprintf(stderr, "N");
-	      ASSH_ERR_RET(assh_key_create(&context, &key, algos[i].kbits,
+	      ASSH_ERR_RET(assh_key_create(&context, &key, kbits,
 	                    a->algo.key, ASSH_ALGO_SIGN));
+              fprintf(stderr, "C");
+	      ASSH_ERR_RET(assh_key_validate(&context, key));
             }
 
 	  size--;
@@ -319,18 +327,18 @@ assh_error_t test_loop()
 
 	  if (!bad)
 	    assert(err == ASSH_OK);
-	  else if (err != ASSH_OK)
-	    continue;
+	  else if (err == ASSH_OK)
+	    {
+	      fprintf(stderr, "C");
 
-	  fprintf(stderr, "V");
+	      err = assh_key_validate(&context, key);
 
-	  err = assh_key_validate(&context, key);
+	      assert(bad || (err == ASSH_OK));
+	      //	  assert(!bad || (err != ASSH_OK));
 
-	  assert(bad || (err == ASSH_OK));
-	  //	  assert(!bad || (err != ASSH_OK));
-
-          assh_key_drop(&context, &key);
-        }
+	      assh_key_drop(&context, &key);
+	    }
+	}
     }
 
   return ASSH_OK;
@@ -361,6 +369,8 @@ int main(int argc, char **argv)
 
   if (test_loop())
     return 1;
+
+  assh_context_cleanup(&context);
 
   fprintf(stderr, "\nDone.\n");
   return 0;

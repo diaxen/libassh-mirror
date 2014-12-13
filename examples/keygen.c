@@ -22,6 +22,7 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <assh/assh_context.h>
 
@@ -33,15 +34,27 @@
 # include <gcrypt.h>
 #endif
 
-int main()
+int main(int argc, char *argv[])
 {
-  struct assh_key_s *key;
+#ifdef CONFIG_ASSH_USE_GCRYPT
+  if (!gcry_check_version(GCRYPT_VERSION))
+    return -1;
+#endif
+
+  size_t bits = 0;
+  if (argc > 1)
+    bits = atoi(argv[1]);
+
+  const struct assh_key_s *key;
 
   struct assh_context_s context;
   assh_context_init(&context, ASSH_SERVER);
   assh_context_prng(&context, NULL);
 
-  if (assh_key_create(&context, &key, 0, &assh_key_eddsa_e521, ASSH_ALGO_ANY))
+  if (assh_key_create(&context, &key, bits, &assh_key_dsa, ASSH_ALGO_ANY))
+    abort();
+
+  if (assh_key_validate(&context, key))
     abort();
 
   size_t len;
@@ -54,7 +67,7 @@ int main()
   if (key->algo->f_output(&context, key, blob, &len, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY))
     abort();
 
-  FILE *f = fopen("e521_host_key", "wb");
+  FILE *f = fopen("dsa_key", "wb");
   fwrite(blob, len, 1, f);
   fclose(f);
 }

@@ -36,7 +36,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_dsa_output)
 
   assert(key->algo == &assh_key_dsa);
 
-  struct assh_bignum_s *bn_[6] = { &k->pn, &k->qn, &k->gn, &k->yn, NULL, NULL };
+  struct assh_bignum_s *bn_[6] = { &k->pn, &k->qn, &k->gn, &k->yn, &k->xn };
 
   switch (format)
     {
@@ -52,15 +52,16 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_dsa_output)
         }
 
       /* add key integers */
-      struct assh_bignum_s **bn = bn_;
-      for (bn = bn_; *bn != NULL; bn++)
+      uint_fast8_t i;
+      for (i = 0; i < 4; i++)
         {
-          size_t s = assh_bignum_size_of_num(ASSH_BIGNUM_MPINT, *bn);
+          struct assh_bignum_s *bn = bn_[i];
+          size_t s = assh_bignum_size_of_num(ASSH_BIGNUM_MPINT, bn);
           if (blob != NULL)
             {
               ASSH_CHK_RET(s > *blob_len, ASSH_ERR_OUTPUT_OVERFLOW);
               ASSH_ERR_RET(assh_bignum_convert(c, ASSH_BIGNUM_NATIVE,
-                             ASSH_BIGNUM_MPINT, *bn, blob));
+                             ASSH_BIGNUM_MPINT, bn, blob));
               s = assh_load_u32(blob) + 4;
               *blob_len -= s;
               blob += s;
@@ -71,10 +72,22 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_dsa_output)
       return ASSH_OK;
     }
 
+#warning dsa key output
 #if 0
     case ASSH_KEY_FMT_PV_PEM_ASN1: {
       ASSH_CHK_RET(assh_bignum_isempty(&k->xn), ASSH_ERR_NOTSUP);
-      bn_[4] = k->xn;
+      uint_fast8_t i;
+      for (i = 0; i < 5; i++)
+        {
+          struct assh_bignum_s *bn = bn_[i];
+          size_t s = assh_bignum_size_of_num(ASSH_BIGNUM_ASN1, bn);
+          if (blob != NULL)
+            {
+              ASSH_CHK_RET(s > *blob_len, ASSH_ERR_OUTPUT_OVERFLOW);
+              ASSH_ERR_RET(assh_bignum_convert(c, ASSH_BIGNUM_NATIVE,
+                             ASSH_BIGNUM_MPINT, bn, blob));
+            }
+        }
       return ASSH_OK;
     }
 #endif
@@ -134,10 +147,80 @@ static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
 {
   assh_error_t err;
 
-  ASSH_CHK_RET(bits < 1024, ASSH_ERR_NOTSUP);
+  ASSH_CHK_RET(bits < 1024 || bits > 4096, ASSH_ERR_NOTSUP);
 
-  size_t l = bits;
-  size_t n = l > 1024 ? 256 : 160;
+  /* DSA domain parameters used are:
+       q = 2^N - e,
+       p = 2^L - (2^L-1) % q - q * f
+       g = 2^((p-1)/q) % p
+     with small e and f
+  */
+
+  size_t l = assh_align8(bits);
+  size_t n;
+  uint16_t e;
+
+  if (l == 1024)
+    {
+      n = 160;
+      e = 47;
+    }
+  else if (l < 2048)
+    {
+      n = 224;
+      e = 63;
+    }
+  else
+    {
+      n = 256;
+      e = 189;
+    }
+
+  static const uint16_t f[385] = {
+    /* N = 160, e = 47, L = 1024 */
+      504,
+    /* N = 224, e = 63, L in (1024, 2048) */
+      684,    40,  3124,  1198,   190,  1416,  1044,   348,   414,  1410,
+      935,   987,   196,   294,   564,   636,   832,  1552,   240,   856,
+     1402,    22,  1504,   766,   412,   666,   646,   156,  3162,  1066,
+      682,  2202,    22,   174,   984,   550,   285,   879,    15,   537,
+     1420,  1044,  1990,   462,   880,   232,   280,   280,   574,   118,
+       40,   274,   538,   630,  1692,   870,   490,   178,  2004,   168,
+      552,  1014,   282,   156,   286,  1586,  1404,  1423,  1012,   582,
+     3768,   718,   372,  1558,  1374,  2884,  1246,  1318,   696,   744,
+       28,   936,  1318,   252,   814,   994,   942,     6,   466,   336,
+     6145,   515,   989,  2198,  1159,  2191,  1288,  3880,   144,  1696,
+     2076,   318,    16,   586,   234,  1440,   804,  3070,  1156,   996,
+     1380,   840,  1960,   780,   316,  1020,   766,   328,   925,   856,
+      337,  2773,  2250,  1189,  2506,   264,   136,
+    /* N = 256, e = 189, L in [2048, 4096] */
+      387,  4774,  3472,    22,   346,    72,  1090,  1474,  3820,   490,
+     4372,  2380,   366,   300,   420,  5922,  2592,  1312,   154,  3592,
+     1012,  2170,   330,  3556,  2436,  4214,   910,   807,    83,   103,
+     9558,  3551,   531,   232,  1558,  1936,  3238,   346,  4960,  1066,
+     2206,    18,   688,  3408,   240,  2706,  1200,  1908,  3126,  2578,
+     1446,   990,   750,    12,  3790,   388,  1052,   268,  1090,  1168,
+     2853,   495,  2887,  1355,    45,  2530,  1386,   714,  2520,  1810,
+     3072,  1054,  5226,  4684,  1522,     4,   696,   114,    94,  3474,
+      324,    66,  1882,  4392,   694,  5014,  1914,  1192,   528,    66,
+     2033,  1290,  2165,  2151,  3205,   284,   855,   912,   702,  3136,
+     2020,   598,  4152,  4782,  4500,   796,  3550,   226,  1932,  5386,
+     3192,  1510,  1248,  3190,  1962,  8992,  4302,  3558,  3775,  1133,
+      267,  1637,   879,    77,    31,   211,  2761,  1948,  2061,  1950,
+      394,   444, 10120,  3076,  4974,  4926,  2320,  1960,   904,  3196,
+     1924,  1096,   714,   396,   334,  5334,   126,   582,   996,   288,
+      554,   138,  6254,    84,  1262,  4023,  9740,   871,  1420,   846,
+     1045,   318,  1146,  7282,  2380,  1432,   598,   256,  3012,   136,
+      796,  1792,  4728,  9432,   340,    18,  1020,  1036,   136,     0,
+       22,  2934,   182,  6380,  4978,  1805,  5852,  1722,  1575,   492,
+      927,  1635,  5205,  2470,    82,   396,  3606,  5422,   862,   352,
+     4734,    46, 12180,   370,  1942,   816,  1396,  7414,  5370,  9264,
+      270,  3829,  3102,    73,  5152,   872,  2085,  3492,  2902,   261,
+      713,  4105,  1555,     9,  2623,  7960,  1170,  3862, 15172,  7560,
+      268,   138,  2208,  3906,   280,   456,  1260,   408,  1206,  3012,
+     3160,   556,  3582,  1207,  3996,   289,  2278,   481,  1924,  1468,
+     3483,     6,  2683,  1459,  4055,  1504,    69, 
+  };
 
   struct assh_key_dsa_s *k;
 
@@ -156,48 +239,70 @@ static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
   enum bytecode_args_e
   {
     P, Q, G, Y, X,
-    T0, T1, H, S
+    E_x, F_x,
+    T0, T1, T2,
   };
 
   static const assh_bignum_op_t bytecode[] = {
 
-    ASSH_BOP_SIZE(      T0,     S                               ),
-    ASSH_BOP_SIZE(      T1,     P                               ),
+    ASSH_BOP_SIZEM(     T0,     Q,      1,      1       ),
+    ASSH_BOP_SIZEM(     T1,     P,      1,      1       ),
+    ASSH_BOP_SIZE(      T2,     P                       ),
 
-    /* generate DSA parameters */
-    ASSH_BOP_PRIME(     Q,      ASSH_BOP_NOREG, ASSH_BOP_NOREG  ),
+    /* compute DSA parameters */
+    ASSH_BOP_UINT(      T0,     1                       ),
+    ASSH_BOP_SHL(       T0,     T0,     0,      Q       ),
+    ASSH_BOP_MOVE(      Q,      E_x                     ),
+    ASSH_BOP_SUB(       T0,     T0,     Q               ),
+    ASSH_BOP_MOVE(      Q,      T0                      ),
 
-    ASSH_BOP_UINT(      T1,     1                               ),
+    ASSH_BOP_UINT(      T1,     1                       ),
+    ASSH_BOP_SHL(       T1,     T1,     0,      P       ),
+    ASSH_BOP_UINT(      T2,     1                       ),
+    ASSH_BOP_SUB(       T1,     T1,     T2              ),
+    ASSH_BOP_MOVE(      P,      T1                      ),
 
-    ASSH_BOP_RAND(      T0,     ASSH_BOP_NOREG, ASSH_BOP_NOREG,
-                        ASSH_PRNG_QUALITY_EPHEMERAL_KEY ),
-    ASSH_BOP_MUL(       P,      T0,     Q                       ),
-    ASSH_BOP_ADD(       P,      P,      T1                      ),
+    ASSH_BOP_MOVE(      T2,     F_x                     ),
+    ASSH_BOP_MULM(      T2,     Q,      T2,     P       ),
+    ASSH_BOP_SUB(       P,      P,      T2              ),
 
-    ASSH_BOP_ADD(       T0,     T0,     T1 /* T0 = (p-1)/q */   ),
-    ASSH_BOP_ADD(       P,      P,      Q                       ),
-    ASSH_BOP_ISNTPRIM(  P,      -3                              ),
+    ASSH_BOP_MOD(       T2,     T1,     Q               ),
+    ASSH_BOP_SUB(       P,      P,      T2              ),
 
-#warning FIXME range
-    ASSH_BOP_RAND(      H,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
-                        ASSH_PRNG_QUALITY_WEAK          ),
-    ASSH_BOP_EXPM(      G,      H,      T0,     P               ),
-    ASSH_BOP_CMPEQ(     G,      T1,     -3                      ),
+    ASSH_BOP_DIV(       T2,     P,      Q               ),
+
+    ASSH_BOP_UINT(      T0,     1                       ),
+    ASSH_BOP_ADD(       P,      P,      T0              ),
+
+    ASSH_BOP_UINT(      G,      2                       ),
+    ASSH_BOP_EXPM(      G,      G,      T2,     P       ),
+
+#ifdef CONFIG_ASSH_DEBUG_SIGN
+    ASSH_BOP_PRINT(     P,      'P'                     ),
+    ASSH_BOP_PRINT(     Q,      'Q'                     ),
+    ASSH_BOP_PRINT(     G,      'G'                     ),
+#endif
 
     /* generate key pair */
-#warning FIXME range
-    ASSH_BOP_RAND(      X,      ASSH_BOP_NOREG, Q,
+    ASSH_BOP_RAND(      X,      T0,     Q,
                         ASSH_PRNG_QUALITY_LONGTERM_KEY  ),
-    ASSH_BOP_EXPM(      Y,      G,      X,      P               ),
+    ASSH_BOP_EXPM_C(    Y,      G,      X,      P       ),
+
+#ifdef CONFIG_ASSH_DEBUG_SIGN
+    ASSH_BOP_PRINT(     Y,      'Y'                     ),
+    ASSH_BOP_PRINT(     X,      'X'                     ),
+#endif
 
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "NNNNNTTTs",
-                 &k->pn, &k->qn, &k->gn, &k->yn, &k->xn, l - n), err_key);
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "NNNNNiiTTT",
+                 &k->pn, &k->qn, &k->gn, &k->yn, &k->xn,
+                 (uintptr_t)e, (uintptr_t)f[(l-1024)/8]), err_key);
 
   *key = &k->key;
   return ASSH_OK;
+
  err_key:
   assh_free(c, k, ASSH_ALLOC_KEY);
   return err;
@@ -217,8 +322,8 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
   unsigned int n = assh_bignum_bits(&k->qn);
 
   /* check key size */
-  if (l < 1024 || n < 160 || l > 4096 || n > 256 || l % 8 || n % 8)
-    return ASSH_OK;
+  ASSH_CHK_RET(l < 1024 || n < 160 || l > 4096 || n > 256 || l % 8 || n % 8,
+               ASSH_ERR_BAD_DATA);
 
   enum bytecode_args_e
   {
@@ -226,10 +331,21 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
   };
 
   static const assh_bignum_op_t bytecode1[] = {
-    ASSH_BOP_SIZE(      T1,     P                       ),
-    ASSH_BOP_SIZE(      T2,     P                       ),
+    ASSH_BOP_SIZER(     T1,     T2,     P               ),
 
+    /* check q prime */
+    ASSH_BOP_TESTS(     Q,      1,      Q,      0       ),
+    ASSH_BOP_ISPRIM(    Q,      0                       ),
+
+    /* check p prime */
+    ASSH_BOP_TESTS(     P,      1,      P,      0       ),
+    ASSH_BOP_ISPRIM(    P,      0                       ),
+
+    /* check (p-1)%q < 1 */
     ASSH_BOP_UINT(      T1,     1                       ),
+    ASSH_BOP_SUB(       T2,     P,      T1              ),
+    ASSH_BOP_MOD(       T2,     T2,     Q               ),
+    ASSH_BOP_CMPLT(     T2,     T1,     0               ),
 
     /* check generator range */
     ASSH_BOP_CMPLT(     T1,     G,      0 /* g > 1 */   ),
@@ -252,7 +368,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
   };
 
   ASSH_ERR_RET(assh_bignum_bytecode(c, bytecode1, "NNNNTT",
-                                    &k->pn, &k->qn, &k->gn, &k->yn));
+                             &k->pn, &k->qn, &k->gn, &k->yn));
 
   /* check that the private part match the public part of the key */
   if (!assh_bignum_isempty(&k->xn))
