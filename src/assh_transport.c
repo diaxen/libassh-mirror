@@ -57,14 +57,11 @@ void assh_transport_push(struct assh_session_s *s,
     case ASSH_TR_KEX_WAIT:
     case ASSH_TR_KEX_RUNNING:
     case ASSH_TR_NEWKEY:
+    case ASSH_TR_SERVICE_KEX:
       if (!kex_msg)
 	q = &s->alt_queue;
-      assh_queue_push_back(q, &p->entry);
-      break;
 
     case ASSH_TR_SERVICE:
-      if (!kex_msg && s->kex_init_sent)
-	q = &s->alt_queue;
       assh_queue_push_back(q, &p->entry);
       break;
 
@@ -459,7 +456,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 {
   assh_error_t err = ASSH_OK;
   enum assh_ssh_msg_e msg = SSH_MSG_INVALID;
-  struct assh_packet_s *p = s->tr_st <= ASSH_TR_SERVICE ? s->in_pck : NULL;
+  struct assh_packet_s *p = s->tr_st < ASSH_TR_FIN ? s->in_pck : NULL;
 
   if (p != NULL)
     {
@@ -536,6 +533,11 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
       p = NULL;
       msg = 0;
 
+    /* service is running, key re-exchange initiated */
+    case ASSH_TR_SERVICE_KEX:
+      if (msg == SSH_MSG_KEXINIT)
+	goto kex_init;
+
     /* service is running or have to be started */
     case ASSH_TR_SERVICE:
       switch (msg)
@@ -543,8 +545,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
         /* received a rekeying request, reply and switch to ASSH_TR_KEX_RUNNING */
 	case SSH_MSG_KEXINIT:
 	  ASSH_CHK_RET(s->new_keys_out != NULL, ASSH_ERR_PROTOCOL | ASSH_ERRSV_FIN);
-	  if (!s->kex_init_sent)
-	    ASSH_ERR_RET(assh_kex_send_init(s) | ASSH_ERRSV_DISCONNECT);
+	  ASSH_ERR_RET(assh_kex_send_init(s) | ASSH_ERRSV_DISCONNECT);
 	  goto kex_init;
 
 	/* handle a service request packet */

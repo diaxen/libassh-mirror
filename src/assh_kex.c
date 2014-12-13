@@ -132,7 +132,6 @@ assh_error_t assh_kex_send_init(struct assh_session_s *s)
   assh_store_u32(pc->data, pc->data_size - 4);
   pc->head.pad_len = 0;
 
-  s->kex_init_sent = 1;
   assh_transport_push(s, p);
   return ASSH_OK;
 
@@ -769,7 +768,6 @@ assh_error_t assh_kex_end(struct assh_session_s *s, assh_bool_t accept)
   ASSH_CHK_RET(!accept, ASSH_ERR_KEX_FAILED | ASSH_ERRSV_DISCONNECT);
 
   s->kex_bytes = 0;
-  s->kex_init_sent = 0;
 
   /* next state is wait for NEWKEY packet */
   assh_transport_state(s, ASSH_TR_NEWKEY);

@@ -49,7 +49,6 @@ assh_error_t assh_session_init(struct assh_context_s *c,
   s->kex_pv = NULL;
   s->kex_bytes = 0;
   s->kex_max_bytes = ASSH_REKEX_THRESHOLD;
-  s->kex_init_sent = 0;
 
 #ifdef CONFIG_ASSH_CLIENT
   s->srv_rq = NULL;

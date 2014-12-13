@@ -34,6 +34,7 @@ enum assh_transport_state_e
   ASSH_TR_KEX_RUNNING,      //< Both KEX_INIT packet were sent, the key exchange is taking place.
   ASSH_TR_NEWKEY,           //< The key exchange is over and a @ref SSH_MSG_NEWKEYS packet is expected.
   ASSH_TR_SERVICE,          //< No key exchange is running, service packets are allowed.
+  ASSH_TR_SERVICE_KEX,      //< Key re-exchange packet sent but not received, service packets are allowed.
   ASSH_TR_FIN,              //< Do not exchange packets with the remote side anymore. Report last events.
   ASSH_TR_CLOSED,           //< Session closed, no more event will be reported.
 };
@@ -63,21 +64,20 @@ struct assh_session_s
 {
   struct assh_context_s *ctx;
 
-  /** Key exchange current state. */
+  /** Current state of the transport layer. */
   enum assh_transport_state_e tr_st;
 
   /** Key exchange algorithm. This pointer is setup when the @ref
       assh_kex_got_init function select a new key exchange algorithm. */
   const struct assh_algo_kex_s *kex;
-  /** Key exchange private context used during key exchange
-      only. Freed on sessions cleanup if not @tt NULL. */
+  /** Key exchange private context used during key exchange only. */
   void *kex_pv;
 
   /** Pointer to the last key exechange packet sent by client. Valid
-      during key exechange. Freed on sessions cleanup if not @tt NULL. */
+      during key exechange. */
   struct assh_packet_s *kex_init_local;
   /** Pointer to the last key exechange packet sent by client. Valid
-      during key exechange. Freed on sessions cleanup if not @tt NULL. */
+      during key exechange. */
   struct assh_packet_s *kex_init_remote;
 
   /** amount of data transfered since last kex */
@@ -86,10 +86,7 @@ struct assh_session_s
   /** kex re-exchange threshold */
   uint32_t kex_max_bytes;
 
-  /** this flag is set when a key re-exchange init packet has been sent */
-  assh_bool_t kex_init_sent;
-
-  /** this flag indicates if we have to skip the first kex packet from
+  /** This flag indicates if we have to skip the first kex packet from
       the remote side. */
   assh_bool_t kex_bad_guess;
 
@@ -103,7 +100,7 @@ struct assh_session_s
   /** Size of the ident string sent by the remote host. */
   int ident_len;
 
-  /** host keys signature algorithm */
+  /** Host keys signature algorithm */
   const struct assh_algo_sign_s *host_sign_algo;
 
 #ifdef CONFIG_ASSH_CLIENT
