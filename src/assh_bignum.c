@@ -56,10 +56,6 @@ size_t assh_bignum_size_of_bits(enum assh_bignum_fmt_e fmt, size_t bits)
     case ASSH_BIGNUM_HEX:
       l = n * 2;
       break;
-    case ASSH_BIGNUM_INTPTR:
-      ASSH_CHK_RET(bits >= sizeof(intptr_t) * 8, ASSH_ERR_INPUT_OVERFLOW);
-      l = sizeof(intptr_t*);
-      break;
     case ASSH_BIGNUM_INT:
       ASSH_CHK_RET(bits >= sizeof(intptr_t) * 8, ASSH_ERR_INPUT_OVERFLOW);
       l = sizeof(intptr_t);
@@ -119,8 +115,16 @@ assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
       const uint8_t *mpint = data;
       n = assh_load_u32(mpint);
       l = n + 4;
-      if (n > 0 && mpint[4] == 0)
-        mpint++, n--;
+      if (n > 0)
+        {
+          ASSH_CHK_RET(mpint[4] & 0x80, ASSH_ERR_NUM_OVERFLOW);
+          if (mpint[4] == 0)
+            {
+              mpint++, n--;
+              ASSH_CHK_RET(n == 0, ASSH_ERR_BAD_DATA);
+              ASSH_CHK_RET((mpint[4] & 0x80) == 0, ASSH_ERR_BAD_DATA);
+            }
+        }
       ASSH_CHK_RET(n > 0 && mpint[4] == 0, ASSH_ERR_BAD_DATA);
       b = n * 8;
       if (n)
@@ -144,6 +148,7 @@ assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
       const uint8_t *asn1 = data;
       ASSH_CHK_RET(*asn1 != 0x02, ASSH_ERR_BAD_DATA);
       assh_asn1_size(asn1, &l, &n);
+#warning reject negative numbers as in mpint?
       asn1 += l;
       l += n;
       while (n > 0 && asn1[0] == 0)
@@ -190,8 +195,7 @@ assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
       break;
     }
 
-    case ASSH_BIGNUM_INT:
-    case ASSH_BIGNUM_INTPTR: {
+    case ASSH_BIGNUM_INT: {
       n = l = sizeof(intptr_t);
       b = l * 8;
       break;

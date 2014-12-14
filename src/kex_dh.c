@@ -494,8 +494,8 @@ static ASSH_KEX_CLEANUP_FCN(assh_kex_dh_cleanup)
     {
 #ifdef CONFIG_ASSH_CLIENT
     case ASSH_CLIENT:
-      assh_bignum_release(s->ctx, &pv->en);
-      assh_bignum_release(s->ctx, &pv->xn);
+      assh_bignum_release(&pv->en);
+      assh_bignum_release(&pv->xn);
       assh_key_flush(s->ctx, &pv->host_key);
       assh_packet_release(pv->pck);
       break;

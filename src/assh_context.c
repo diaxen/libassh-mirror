@@ -115,7 +115,11 @@ void assh_context_init(struct assh_context_s *c,
 
   c->srvs_count = 0;
 
+#ifdef CONFIG_ASSH_USE_GCRYPT_BIGNUM
   c->bignum = &assh_bignum_gcrypt;
+#else
+  c->bignum = &assh_bignum_builtin;
+#endif
 }
 
 static void assh_pck_pool_cleanup(struct assh_context_s *c)

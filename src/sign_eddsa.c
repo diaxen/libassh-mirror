@@ -287,7 +287,7 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_eddsa_verify)
 #endif
 
   /* key X sign bit as mpint */
-  uint8_t kx[5] = { 0, 0, 0, 1, kp[n-1] >> 7 };
+  uint8_t kx[5] = { 0, 0, 0, kp[n-1] >> 7, 1 };
 
   struct assh_bignum_mlad_s mlad1 = {
     .data = hram,

@@ -496,11 +496,11 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
   return ASSH_OK;
 
  err_xn:
-  assh_bignum_release(c, &k->xn);
-  assh_bignum_release(c, &k->yn);
-  assh_bignum_release(c, &k->gn);
-  assh_bignum_release(c, &k->qn);
-  assh_bignum_release(c, &k->pn);
+  assh_bignum_release(&k->xn);
+  assh_bignum_release(&k->yn);
+  assh_bignum_release(&k->gn);
+  assh_bignum_release(&k->qn);
+  assh_bignum_release(&k->pn);
   assh_free(c, k, ASSH_ALLOC_KEY);
   return err;
 }
@@ -509,11 +509,11 @@ static ASSH_KEY_CLEANUP_FCN(assh_key_dsa_cleanup)
 {
   struct assh_key_dsa_s *k = (void*)key;
 
-  assh_bignum_release(c, &k->xn);
-  assh_bignum_release(c, &k->yn);
-  assh_bignum_release(c, &k->gn);
-  assh_bignum_release(c, &k->qn);
-  assh_bignum_release(c, &k->pn);
+  assh_bignum_release(&k->xn);
+  assh_bignum_release(&k->yn);
+  assh_bignum_release(&k->gn);
+  assh_bignum_release(&k->qn);
+  assh_bignum_release(&k->pn);
   assh_free(c, k, ASSH_ALLOC_KEY);
 }
 

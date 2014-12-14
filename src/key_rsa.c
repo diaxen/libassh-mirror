@@ -321,9 +321,9 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
   return ASSH_OK;
 
  err_num:
-  assh_bignum_release(c, &k->nn);
-  assh_bignum_release(c, &k->en);
-  assh_bignum_release(c, &k->dn);
+  assh_bignum_release(&k->nn);
+  assh_bignum_release(&k->en);
+  assh_bignum_release(&k->dn);
   assh_free(c, k, ASSH_ALLOC_KEY);
   return err;
 }
@@ -332,9 +332,9 @@ static ASSH_KEY_CLEANUP_FCN(assh_key_rsa_cleanup)
 {
   struct assh_key_rsa_s *k = (void*)key;
 
-  assh_bignum_release(c, &k->nn);
-  assh_bignum_release(c, &k->en);
-  assh_bignum_release(c, &k->dn);
+  assh_bignum_release(&k->nn);
+  assh_bignum_release(&k->en);
+  assh_bignum_release(&k->dn);
   assh_free(c, k, ASSH_ALLOC_KEY);
 }
 

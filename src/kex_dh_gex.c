@@ -194,7 +194,7 @@ static assh_error_t assh_kex_dh_gex_client_wait_group(struct assh_session_s *s,
     /* check prime */
     ASSH_BOP_UINT(      T1,     1                       ),
     ASSH_BOP_TESTS(     P,      1,      G_n,    0       ),
-#if 1
+#if 0
     ASSH_BOP_ISPRIM(    P,      0                       ),
     ASSH_BOP_SUB(       T2,     P,      T1              ),
     ASSH_BOP_SHR(       Q,      T2,     1, ASSH_BOP_NOREG	),
@@ -788,15 +788,15 @@ static ASSH_KEX_CLEANUP_FCN(assh_kex_dh_gex_cleanup)
 {
   struct assh_kex_dh_gex_private_s *pv = s->kex_pv;
 
-  assh_bignum_release(s->ctx, &pv->pn);
+  assh_bignum_release(&pv->pn);
 
   switch (s->ctx->type)
     {
 #ifdef CONFIG_ASSH_CLIENT
     case ASSH_CLIENT:
-      assh_bignum_release(s->ctx, &pv->en);
-      assh_bignum_release(s->ctx, &pv->xn);
-      assh_bignum_release(s->ctx, &pv->gn);
+      assh_bignum_release(&pv->en);
+      assh_bignum_release(&pv->xn);
+      assh_bignum_release(&pv->gn);
       assh_key_flush(s->ctx, &pv->host_key);
       assh_packet_release(pv->pck);
       break;

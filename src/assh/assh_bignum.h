@@ -21,6 +21,10 @@
 
 */
 
+/**
+   @file @internal
+   @short Interface of the pluggable big number engine
+*/
 
 #ifndef ASSH_BIGNUM_H_
 #define ASSH_BIGNUM_H_
@@ -76,8 +80,6 @@ enum assh_bignum_fmt_e
   ASSH_BIGNUM_HEX     = 'H',
   /** NUL terminated decimal string representation */
   ASSH_BIGNUM_DEC     = 'd',
-  /** pointer to intptr_t value */
-  ASSH_BIGNUM_INTPTR  = 'I',
   /** intptr_t value interpreted as an integer value. */
   ASSH_BIGNUM_INT     = 'i',
   /** intptr_t value interpreted as a bit size. */
@@ -169,7 +171,7 @@ typedef ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_bytecode_t);
 
     When converting between two native big numbers, the current bits
     size of the source might be larger than the size of the destination
-    provided that the actual value is fitting.
+    provided that the actual value fits in the destination.
 */
 typedef ASSH_BIGNUM_CONVERT_FCN(assh_bignum_convert_t);
 
@@ -266,10 +268,11 @@ assh_bignum_isempty(const struct assh_bignum_s  *bn)
 
 /** Convenience wrapper for @ref assh_bignum_release_t */
 static inline void
-assh_bignum_release(struct assh_context_s *c,
-                    struct assh_bignum_s  *bn)
+assh_bignum_release(struct assh_bignum_s  *bn)
 {
-  c->bignum->f_release(bn);
+  if (bn->ctx)
+    bn->ctx->bignum->f_release(bn);
+  bn->ctx = NULL;
 }
 
 enum assh_bignum_opcode_e
@@ -315,8 +318,8 @@ enum assh_bignum_opcode_e
 #define ASSH_BOP_END() \
   ASSH_BOP_FMT3(ASSH_BIGNUM_OP_END, 0, 0, 0)
 
-/** This instruction moves and converts values in various formats. 
-    It is implemented by calling @ref assh_bignum_convert_t. */
+/** This instruction moves and converts values in various formats. It
+    is implemented by calling @ref assh_bignum_convert_t. */
 #define ASSH_BOP_MOVE(dst, src) \
   ASSH_BOP_FMT2(ASSH_BIGNUM_OP_MOVE, dst, src)
 
@@ -402,23 +405,26 @@ enum assh_bignum_opcode_e
 
 /** This instruction computes @tt {dst = shift_right(src1, val +
     size(src2))}. @tt val must be in range [-128,+127] and @tt src2
-    can be ASSH_BOP_NOREG. */
+    can be @ref #ASSH_BOP_NOREG. */
 #define ASSH_BOP_SHR(dst, src, val, src2)              \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_SHR, dst, src, 128 + (val), src2)
 
-/** This instruction is similar to @xref #ASSH_BOP_SHR. */
+/** This instruction is similar to @ref #ASSH_BOP_SHR. */
 #define ASSH_BOP_SHL(dst, src, val, src2)              \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_SHL, dst, src, 128 + (val), src2)
 
-/** This instruction initializes a big number with random data.
-    The quality operand is of type @ref assh_prng_quality_e. */
+/** This instruction initializes a big number with random data. A new
+    value is generated until it does fall in the specified range. The
+    @tt min and @tt max bounds can be @ref #ASSH_BOP_NOREG . The
+    quality operand is of type @ref assh_prng_quality_e. */
 #define ASSH_BOP_RAND(dst, min, max, quality)          \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_RAND, dst, min, max, quality)
 
 /** This instruction changes the program counter if the two numbers
     are equal. The bytecode execution is aborted with the @ref
-    ASSH_ERR_NUM_COMPARE_FAILED error if the condition is false and the
-    value of @tt pcdiff is 0. */
+    ASSH_ERR_NUM_COMPARE_FAILED error if the condition is false and
+    the value of @tt pcdiff is 0. It can be used with numbers of
+    different bit length. */
 #define ASSH_BOP_CMPEQ(src1, src2, pcdiff)                    \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CMP, src1, src2, 128 + pcdiff, 0)
 /** Same behavior as @ref #ASSH_BOP_CMPEQ. */
@@ -492,6 +498,7 @@ enum assh_bignum_opcode_e
   ASSH_BOP_FMT2(ASSH_BIGNUM_OP_PRINT, id, src)
 
 extern const struct assh_bignum_algo_s assh_bignum_gcrypt;
+extern const struct assh_bignum_algo_s assh_bignum_builtin;
 
 #endif
 

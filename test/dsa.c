@@ -246,10 +246,10 @@ int main()
   ASSH_ERR_RET(assh_bignum_bytecode(&context, bytecode, "HTNs",
 				    hex_r, &vn, n));
 
-  assh_bignum_release(&context, &rn);
-  assh_bignum_release(&context, &sn);
+  assh_bignum_release(&rn);
+  assh_bignum_release(&sn);
 
-  assh_bignum_release(&context, &vn);
+  assh_bignum_release(&vn);
 
  err_:
   return 0;

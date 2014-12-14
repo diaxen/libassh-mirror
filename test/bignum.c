@@ -47,6 +47,167 @@ static const uint8_t *prime = (const uint8_t*)"\x00\x00\x00\x81"
 
 struct assh_context_s context;
 
+#define ABORT() do {                                            \
+    fprintf(stderr, "%s:%u:%s\n",                               \
+            __FILE__, __LINE__, __func__);                      \
+    abort();                                                    \
+  } while (0)
+
+assh_error_t test_convert()
+{
+  assh_error_t err;
+  struct assh_bignum_s n, m;
+  uint8_t buf[32];
+
+  assh_bignum_init(&context, &n, 128);
+
+  /********************/
+  memset(buf, 0xaa, sizeof(buf));
+  if (assh_bignum_convert(&context,
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x01\x55", &n))
+    ABORT();
+
+  if (assh_bignum_convert(&context,
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MPINT, &n, buf))
+    ABORT();
+
+  if (memcmp(buf, "\x00\x00\x00\x01\x55\xaa", 6))
+    ABORT();
+
+  if (!assh_bignum_convert(&context,
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x01\x85", &n))
+    ABORT();
+
+  if (!assh_bignum_convert(&context,
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x01\x00", &n))
+    ABORT();
+
+  if (!assh_bignum_convert(&context,
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x02\x00\x00", &n))
+    ABORT();
+
+  if (!assh_bignum_convert(&context,
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x02\x00\x10", &n))
+    ABORT();
+
+  /********************/
+  if (assh_bignum_convert(&context,
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x11\x00\xf0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", &n))
+    ABORT();
+
+  if (!assh_bignum_convert(&context,
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x11\x01\xf0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", &n))
+    ABORT();
+
+  assh_bignum_release(&n);
+  assh_bignum_init(&context, &n, 125);
+
+  if (!assh_bignum_convert(&context,
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x11\x00\xf0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", &n))
+    ABORT();
+  if (!assh_bignum_convert(&context,
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x10\x20\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", &n))
+    ABORT();
+
+  assh_bignum_release(&n);
+  assh_bignum_init(&context, &n, 117);
+
+  if (assh_bignum_convert(&context,
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x0f\x10\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00\x04", &n))
+    ABORT();
+  memset(buf, 0xaa, sizeof(buf));
+  if (assh_bignum_convert(&context,
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MPINT, &n, buf))
+    ABORT();
+  if (memcmp(buf, "\x00\x00\x00\x0f\x10\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00\x04\xaa", 20))
+    ABORT();
+
+
+  if (assh_bignum_convert(&context,
+    ASSH_BIGNUM_MSB_RAW, ASSH_BIGNUM_NATIVE, "\x90\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00\x04", &n))
+    ABORT();
+  memset(buf, 0xaa, sizeof(buf));
+  if (assh_bignum_convert(&context,
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MPINT, &n, buf))
+    ABORT();
+  if (memcmp(buf, "\x00\x00\x00\x0f\x10\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00\x04\xaa", 20))
+    ABORT();
+
+
+  if (assh_bignum_convert(&context,
+    ASSH_BIGNUM_LSB_RAW, ASSH_BIGNUM_NATIVE, "\x04\x00\x00\x00\x03\x00\x00\x00\x02\x00\x00\x00\x01\x00\x10", &n))
+    ABORT();
+  memset(buf, 0xaa, sizeof(buf));
+  if (assh_bignum_convert(&context,
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MPINT, &n, buf))
+    ABORT();
+  if (memcmp(buf, "\x00\x00\x00\x0f\x10\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00\x04\xaa", 20))
+    ABORT();
+
+  memset(buf, 0xaa, sizeof(buf));
+  if (assh_bignum_convert(&context,
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_LSB_RAW, &n, buf))
+    ABORT();
+  if (memcmp(buf, "\x04\x00\x00\x00\x03\x00\x00\x00\x02\x00\x00\x00\x01\x00\x10\xaa", 16))
+    ABORT();
+
+  memset(buf, 0xaa, sizeof(buf));
+  if (assh_bignum_convert(&context,
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MSB_RAW, &n, buf))
+    ABORT();
+  if (memcmp(buf, "\x10\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00\x04\xaa", 16))
+    ABORT();
+
+  /* value to large */
+  assh_bignum_init(&context, &m, 64);
+  if (!assh_bignum_convert(&context,
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_NATIVE, &n, &m))
+    ABORT();
+
+  if (assh_bignum_convert(&context,
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x09\x01\xf0\x00\x00\x00\xf0\x00\x00\x00", &n))
+    ABORT();
+  if (!assh_bignum_convert(&context,
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_NATIVE, &n, &m))
+    ABORT();
+
+  if (assh_bignum_convert(&context,
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x09\x00\xf0\x00\x00\x00\xf0\x00\x00\x00", &n))
+    ABORT();
+  if (assh_bignum_convert(&context,
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_NATIVE, &n, &m))
+    ABORT();
+
+  assh_bignum_release(&m);
+  assh_bignum_init(&context, &m, 60);
+
+  if (!assh_bignum_convert(&context,
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_NATIVE, &n, &m))
+    ABORT();
+
+  if (assh_bignum_convert(&context,
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x08\x0f\x00\x00\x00\xf0\x00\x00\x00", &n))
+    ABORT();
+  if (assh_bignum_convert(&context,
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_NATIVE, &n, &m))
+    ABORT();
+  memset(buf, 0xaa, sizeof(buf));
+  if (assh_bignum_convert(&context,
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MPINT, &n, buf))
+    ABORT();
+  if (memcmp(buf, "\x00\x00\x00\x08\x0f\x00\x00\x00\xf0\x00\x00\x00\xaa", 9))
+    ABORT();
+
+  /********************/
+
+  fprintf(stderr, "v");
+  return ASSH_OK;
+
+ err_:
+  fprintf(stderr, "Convert error\n");
+  ABORT();
+}
+
 assh_error_t test_shift()
 {
   assh_error_t err;
@@ -64,24 +225,27 @@ assh_error_t test_shift()
                                 ASSH_PRNG_QUALITY_WEAK  ),
   //ASSH_BOP_PRINT(     A,      'A'),
 
+#warning shift checks
+  ASSH_BOP_PRINT(     A,      'x'),
     ASSH_BOP_SHR(       B,      A,      0,      C),
-  ASSH_BOP_PRINT(     B,      'B'),
+  ASSH_BOP_PRINT(     B,      'r'),
 
+  ASSH_BOP_PRINT(     B,      'x'),
     ASSH_BOP_SHL(       A,      B,      0,      C),
-  ASSH_BOP_PRINT(     A,      'A'),
+  ASSH_BOP_PRINT(     A,      'l'),
 
     ASSH_BOP_END(),
   };
 
   ASSH_ERR_GTO(assh_bignum_bytecode(&context, bytecode, "TTss",
-                                    (size_t)32, (size_t)256), err_);
+                                    (size_t)69, (size_t)256), err_);
 
   fprintf(stderr, "s");
   return 0;
 
  err_:
   fprintf(stderr, "Shift error\n");
-  abort();
+  ABORT();
 }
 
 assh_error_t test_cmp(void)
@@ -110,8 +274,9 @@ assh_error_t test_cmp(void)
     ASSH_BOP_END(),
   };
 
-  if (assh_bignum_bytecode(&context, bytecode1, "HHTTs", "1", "10", (size_t)64))
-    abort();
+  if (assh_bignum_bytecode(&context, bytecode1, "MMTTs", "\x00\x00\x00\x01\x01",
+                           "\x00\x00\x00\x01\x10", (size_t)64))
+    ABORT();
 
   assh_bignum_op_t bytecode2[] = {
     ASSH_BOP_SIZE(	X,	S			),
@@ -126,7 +291,7 @@ assh_error_t test_cmp(void)
   };
 
   if (!assh_bignum_bytecode(&context, bytecode2, "HHTTs", "1", "10", (size_t)64))
-    abort();
+    ABORT();
 
   assh_bignum_op_t bytecode3[] = {
     ASSH_BOP_SIZE(	X,	S			),
@@ -141,7 +306,7 @@ assh_error_t test_cmp(void)
   };
 
   if (!assh_bignum_bytecode(&context, bytecode3, "HHTTs", "1", "10", (size_t)64))
-    abort();
+    ABORT();
 
   fprintf(stderr, "c");
   return ASSH_OK;
@@ -158,6 +323,9 @@ assh_error_t test_add_sub(unsigned int count)
       {
         A, B, C, D, S, L
       };
+
+      size_t s = 27 + rand() % 100;
+      size_t l = 1 + rand() % 12;
 
       static const assh_bignum_op_t bytecode[] = {
         ASSH_BOP_SIZE(  A,      S                       ),
@@ -204,8 +372,7 @@ assh_error_t test_add_sub(unsigned int count)
         ASSH_BOP_END(),
       };
 
-      ASSH_ERR_RET(assh_bignum_bytecode(&context, bytecode, "TTTTss",
-                                        (size_t)256, (size_t)8));
+      ASSH_ERR_RET(assh_bignum_bytecode(&context, bytecode, "TTTTss", s, l));
     }
 
   fprintf(stderr, "a");
@@ -253,7 +420,7 @@ assh_error_t test_div(unsigned int count)
   return ASSH_OK;
 }
 
-assh_error_t test_convert(unsigned int count)
+assh_error_t test_move(unsigned int count)
 {
   assh_error_t err;
   int i;
@@ -419,6 +586,7 @@ int main(int argc, char **argv)
   assh_context_init(&context, ASSH_SERVER);
   ASSH_ERR_RET(assh_context_prng(&context, NULL));
 
+  test_convert();
   test_shift();
   test_cmp();
 
@@ -430,7 +598,7 @@ int main(int argc, char **argv)
     {
       ASSH_ERR_RET(test_add_sub(0x100));
       ASSH_ERR_RET(test_div(0x100));
-      ASSH_ERR_RET(test_convert(0x100));
+      ASSH_ERR_RET(test_move(0x100));
       ASSH_ERR_RET(test_modinv(0x100));
       ASSH_ERR_RET(test_expmod(0x10));
     }
