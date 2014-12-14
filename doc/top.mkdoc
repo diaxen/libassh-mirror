@@ -10,15 +10,34 @@
 @c @include modules.mkdoc
 
 @parse {
-assh/assh_algo.h assh/assh_bignum.h assh/assh_cipher.h
-assh/assh_compress.h assh/assh_config.h assh/assh_context.h
-assh/assh_event.h assh/assh.h assh/assh_hash.h assh/assh_kex.h
-assh/assh_key.h assh/assh_mac.h assh/assh_map.h assh/assh_packet.h
-assh/assh_prng.h assh/assh_queue.h assh/assh_service.h
-assh/assh_session.h assh/assh_sign.h assh/assh_transport.h
-assh/hash_sha1.h assh/helper_fd.h assh/helper_key.h
-assh/srv_connection.h assh/srv_userauth_client.h
-assh/srv_userauth_server.h
+assh/assh.h
+assh/assh_algo.h
+assh/assh_alloc.h
+assh/assh_bignum.h
+assh/assh_cipher.h
+assh/assh_compress.h
+assh/assh_connection.h
+assh/assh_context.h
+assh/assh_event.h
+assh/assh_hash.h
+assh/assh_kex.h
+assh/assh_key.h
+assh/assh_mac.h
+assh/assh_map.h
+assh/assh_packet.h
+assh/assh_prng.h
+assh/assh_queue.h
+assh/assh_service.h
+assh/assh_session.h
+assh/assh_sign.h
+assh/assh_transport.h
+assh/assh_userauth_client.h
+assh/assh_userauth_server.h
+assh/helper_fd.h
+assh/helper_key.h
+assh/key_dsa.h
+assh/key_eddsa.h
+assh/key_rsa.h
 }
 
 @insert title

@@ -21,6 +21,13 @@
 
 */
 
+/**
+   @file
+   @short Main context structure and related functions
+
+   The library main context structure hold stuff common to multiple
+   sessions. This includes registered algorithms and host keys.
+*/
 
 #ifndef ASSH_CONTEXT_H_
 #define ASSH_CONTEXT_H_
@@ -35,6 +42,9 @@ enum assh_context_type_e
   ASSH_CLIENT_SERVER,
 };
 
+/** @internal @This is the packet pool allocator bucket
+    structure. Freed packets are inserted in the linked list of the
+    bucket associated with their size. */
 struct assh_packet_pool_s
 {
   struct assh_packet_s *pck;
@@ -42,14 +52,16 @@ struct assh_packet_pool_s
   size_t size;
 };
 
+/** @internalmembers @This is the library main context structure. */
 struct assh_context_s
 {
+  /** Number of initialized sessions attached to this context. */
   unsigned int session_count;
 
   /** Client/server context type. */
   enum assh_context_type_e type;
 
-  /** Memory allocator */
+  /** Memory allocator function */
   assh_allocator_t *f_alloc;
   /** Memory allocator private data */
   void *alloc_pv;
@@ -57,29 +69,29 @@ struct assh_context_s
   /** Pseudo random number generator */
   const struct assh_prng_s *prng;
   /** Pseudo random number generator private data, allocated by the
-      @ref assh_prng_s::f_init function and freed by @ref
-      assh_prng_s::f_cleanup. */
+      @ref assh_prng_init_t function and freed by @ref
+      assh_prng_cleanup_t. */
   void *prng_ctx;
   /** Current amount of entropy in the prng pool. a negative value
       will make the @ref assh_event_get function return an @ref
       ASSH_EVENT_PRNG_FEED event.  */
   int prng_entropy;
 
-  /** head of keys list */
+  /** Head of loaded keys list */
   const struct assh_key_s *keys;
 
-  /** estimated size of the kex init packet, computed when new
+  /** Estimated size of the kex init packet, computed when new
       algorithm are registered. */
   size_t kex_init_size;
 
-  /** maximum allocated size in a single bucket. */
+  /** Packet pool maximum allocated size in a single bucket. */
   size_t pck_pool_max_bsize;
-  /** maximum allocated size. */
+  /** Packet pool maximum allocated size. */
   size_t pck_pool_max_size;
-  /** allocated size. */
+  /** Packet pool current allocated size. */
   size_t pck_pool_size;
 
-  /** Pool of spare packets by size. */
+  /** Packet pool buckets of spare packets by size. */
   struct assh_packet_pool_s pool[ASSH_PCK_POOL_SIZE];
 
   /** Registered algorithms */
@@ -87,34 +99,38 @@ struct assh_context_s
   /** Number of registered algorithms */
   size_t algos_count;
 
-  /** Registered services supported by the server. */
+  /** Registered services. */
   const struct assh_service_s *srvs[ASSH_MAX_SERVICES];
   /** Number of registered services */
   size_t srvs_count;
 
+  /** Big number engine */
   const struct assh_bignum_algo_s *bignum;
 };
 
+/** @This initializes a context for use as a client or server. */
 void assh_context_init(struct assh_context_s *ctx,
                        enum assh_context_type_e type);
 
+/** @This releases resources associated with a context. All existing
+    @ref assh_session_s objects must have been released when calling
+    this function. */
 void assh_context_cleanup(struct assh_context_s *ctx);
 
-/** This function setups the memory allocator to use for this
-    session. The default memory allocator uses the libc realloc
-    function. */
+/** @This sets the memory allocator used by the context. The
+    default memory allocator uses the C library @tt realloc function. */
 void assh_context_allocator(struct assh_context_s *c,
 			    assh_allocator_t *alloc,
 			    void *alloc_pv);
 
-/** This function setups the pseudo-random number generator to use for
+/** @This setups the pseudo-random number generator for use with
     this context. If an other prng has already been setup, it will be
-    properly released.
+    released.
 
     If this function is called with @tt NULL as @tt prng parameter and
     no prng has already been registered, a default prng is setup.
-    This is performed when calling the @ref assh_session_init function.
-*/
+    This is performed automatically when calling the @ref
+    assh_session_init function. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_context_prng(struct assh_context_s *s,
 		  const struct assh_prng_s *prng);

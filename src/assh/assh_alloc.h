@@ -21,12 +21,18 @@
 
 */
 
+/**
+   @file @internal
+   @short Pluggable memory allocation functions used by the library
+*/
+
 #ifndef ASSH_ALLOC_H_
 #define ASSH_ALLOC_H_
 
 #include "assh_context.h"
 
-/** This specifies the type of data to be stored in the allocated memory. */
+/** @internal @This specifies the type of data to be stored in the
+    allocated memory. */
 enum assh_alloc_type_e
 {
   /** General purpose allocation in non-secur memory. */
@@ -41,6 +47,7 @@ enum assh_alloc_type_e
   ASSH_ALLOC_PACKET,
 };
 
+/** @internal @This allocates memory. */
 static inline ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_alloc(struct assh_context_s *c, size_t size,
 	   enum assh_alloc_type_e type, void **result)
@@ -49,6 +56,7 @@ assh_alloc(struct assh_context_s *c, size_t size,
   return c->f_alloc(c, result, size, type);
 }
 
+/** @internal @This reallocates memory. */
 static inline ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_realloc(struct assh_context_s *c, void **ptr, size_t size,
 	     enum assh_alloc_type_e type)
@@ -56,6 +64,7 @@ assh_realloc(struct assh_context_s *c, void **ptr, size_t size,
   return c->f_alloc(c, ptr, size, type);
 }
 
+/** @internal @This releases memory. */
 static inline void assh_free(struct assh_context_s *c, void *ptr,
 			     enum assh_alloc_type_e type)
 {
@@ -67,10 +76,21 @@ static inline void assh_free(struct assh_context_s *c, void *ptr,
 
 # include <alloca.h>
 
+/** @internal @This allocates memory not used after current function
+    return.
+
+    Depending on the value of @ref #CONFIG_ASSH_ALLOCA, this macro
+    either relies on the @ref alloca function or calls the @ref
+    assh_alloc function using the @ref ASSH_ALLOC_SCRATCH type.
+
+    @see #ASSH_SCRATCH_FREE.
+*/
 # define ASSH_SCRATCH_ALLOC(context, type, name, size, sv, lbl)		\
   size_t name##_size = (size) * sizeof(type);				\
   type *name = (type*)alloca(name##_size);
 
+/** @internal @This releases memory allocated by @ref
+    #ASSH_SCRATCH_ALLOC. */
 # define ASSH_SCRATCH_FREE(context, name) \
   memset(name, 0, name##_size);
 

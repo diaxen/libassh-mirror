@@ -21,24 +21,38 @@
 
 */
 
+/**
+   @file
+   @short Session context structure and related functions
+*/
+
 #ifndef ASSH_SESSION_H_
 #define ASSH_SESSION_H_
 
 #include "assh.h"
 
-/** This specifies the current status of an ssh session. */
+/** @internal @This specifies the transport status of an ssh session. */
 enum assh_transport_state_e
 {
-  ASSH_TR_KEX_INIT,         //< send a KEX_INIT packet then go to ASSH_TR_KEX_WAIT
-  ASSH_TR_KEX_WAIT,         //< We wait for a KEX_INIT packet.
-  ASSH_TR_KEX_RUNNING,      //< Both KEX_INIT packet were sent, the key exchange is taking place.
-  ASSH_TR_NEWKEY,           //< The key exchange is over and a @ref SSH_MSG_NEWKEYS packet is expected.
-  ASSH_TR_SERVICE,          //< No key exchange is running, service packets are allowed.
-  ASSH_TR_SERVICE_KEX,      //< Key re-exchange packet sent but not received, service packets are allowed.
-  ASSH_TR_FIN,              //< Do not exchange packets with the remote side anymore. Report last events.
-  ASSH_TR_CLOSED,           //< Session closed, no more event will be reported.
+  /** send a @ref SSH_MSG_KEXINIT packet then go to @ref ASSH_TR_KEX_WAIT */
+  ASSH_TR_KEX_INIT,
+  /** We wait for a @ref SSH_MSG_KEXINIT packet. */
+  ASSH_TR_KEX_WAIT,
+  /** Both @ref SSH_MSG_KEXINIT packet were sent, the key exchange is taking place. */
+  ASSH_TR_KEX_RUNNING,
+  /** The key exchange is over and a @ref SSH_MSG_NEWKEYS packet is expected. */
+  ASSH_TR_NEWKEY,
+  /** No key exchange is running, service packets are allowed. */
+  ASSH_TR_SERVICE,
+  /** Key re-exchange packet sent but not received, service packets are allowed. */
+  ASSH_TR_SERVICE_KEX,
+  /** Do not exchange packets with the remote side anymore. Report last events. */
+  ASSH_TR_FIN,
+  /** Session closed, no more event will be reported. */
+  ASSH_TR_CLOSED,
 };
 
+/** @internal @This specifies state of the input stream parser */
 enum assh_stream_in_state_e
 {
   ASSH_TR_IN_IDENT,
@@ -49,6 +63,7 @@ enum assh_stream_in_state_e
   ASSH_TR_IN_PAYLOAD_DONE,
 };
 
+/** @internal @This specifies state of the output stream generator */
 enum assh_stream_out_state_e
 {
   ASSH_TR_OUT_IDENT,
@@ -60,8 +75,10 @@ enum assh_stream_out_state_e
   ASSH_TR_OUT_PACKETS_DONE,
 };
 
+/** @internalmembers @This is the session context structure. */
 struct assh_session_s
 {
+  /** Pointer to associated main context. */
   struct assh_context_s *ctx;
 
   /** Current state of the transport layer. */
@@ -114,7 +131,7 @@ struct assh_session_s
   /** Current service private data. */
   void *srv_pv;
 
-  /** User defined private pointer */
+  /** User private pointer */
   void *pv;
 
   /****************** ssh output stream state */
@@ -163,6 +180,21 @@ struct assh_session_s
   uint32_t in_seq;
 };
 
+/** @This set the user private pointer of the session. */
+static inline void
+assh_session_set_pv(struct assh_session_s *ctx,
+                    void *private)
+{
+  ctx->pv = private;
+}
+
+/** @This get the user private pointer of the session. */
+static inline void *
+assh_session_get_pv(struct assh_session_s *ctx)
+{
+  return ctx->pv;
+}
+
 /** @internal This changes the current transport state */
 static inline void assh_transport_state(struct assh_session_s *s,
                                         enum assh_transport_state_e st)
@@ -173,28 +205,16 @@ static inline void assh_transport_state(struct assh_session_s *s,
   s->tr_st = st;
 }
 
-/** This function initialize a new ssh session object. */
+/** @This initializes a new ssh session object. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_session_init(struct assh_context_s *c,
 		  struct assh_session_s *s);
 
-/** This function sets the value of the session private pointer. */
-static inline void assh_session_set_pv(struct assh_session_s *s, void *pv)
-{
-  s->pv = pv;
-}
-
-/** This function returns the value of the session private pointer. */
-static inline void *assh_session_pv(const struct assh_session_s *s)
-{
-  return s->pv;
-}
-
-/** This function cleanup a ssh session object. */
+/** @This cleanups a ssh session object. */
 void assh_session_cleanup(struct assh_session_s *s);
 
-/** This change the session state according to the provided error code
-    and associated severity level.
+/** @internal This changes the session state according to the provided
+    error code and associated severity level.
 
     This function returns the original error code but the error
     severity level may be increased. This function is responsible for
@@ -205,8 +225,7 @@ void assh_session_cleanup(struct assh_session_s *s);
     also called from other functions of the public API which can
     modify the session state.
 
-    @see assh_error_e @see
-    assh_error_severity_e
+    @see assh_error_e @see assh_error_severity_e
 */
 assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t err);
 

@@ -21,6 +21,10 @@
 
 */
 
+/**
+   @file
+   @short SSH hashing pluggable module interface
+*/
 
 #ifndef ASSH_HASH_H_
 #define ASSH_HASH_H_
@@ -29,6 +33,7 @@
 
 struct assh_hash_algo_s;
 
+/** @internal @This is the base structure for hash contexts */
 struct assh_hash_ctx_s
 {
   const struct assh_hash_algo_s *algo;
@@ -39,37 +44,46 @@ struct assh_hash_ctx_s
   ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_context_s *c, \
                                            struct assh_hash_ctx_s *hctx, \
                                            const struct assh_hash_algo_s *algo)
-/** @internal This function initializes an hash algorithm context. A
-    call to this function must be paired with a call to @ref assh_hash_final_t. */
+
+/** @internal @This defines the function type for the hash initialization
+    operation of the hash module interface. @see assh_hash_init */
 typedef ASSH_HASH_INIT_FCN(assh_hash_init_t);
 
 /** @internal @see assh_hash_copy_t */
 #define ASSH_HASH_COPY_FCN(n) \
   ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_hash_ctx_s *hctx_dst, \
                                            const struct assh_hash_ctx_s *hctx_src)
-/** @internal This function creates a copy of the hash algorithm context. A
-    call to this function must be paired with a call to @ref assh_hash_final_t. */
+
+/** @internal @This defines the function type for the hash context copy
+    operation of the hash module interface. @see assh_hash_copy. */
 typedef ASSH_HASH_COPY_FCN(assh_hash_copy_t);
 
 /** @internal @see assh_hash_update_t */
 #define ASSH_HASH_UPDATE_FCN(n) \
   void (n)(struct assh_hash_ctx_s *hctx, const void *data, size_t len)
-/** @internal This function updates the hash context with new input data. */
+
+/** @internal @This defines the function type for the hash update
+    operation of the hash module interface. @see assh_hash_update */
 typedef ASSH_HASH_UPDATE_FCN(assh_hash_update_t);
 
 /** @internal @see assh_hash_final_t */
 #define ASSH_HASH_FINAL_FCN(n) \
   void (n)(struct assh_hash_ctx_s *hctx, uint8_t *hash, size_t len)
-/** @internal This function writes the hash result. */
+
+/** @internal @This defines the function type for the hash output
+    operation of the hash module interface. @see assh_hash_final */
 typedef ASSH_HASH_FINAL_FCN(assh_hash_final_t);
 
 /** @internal @see assh_hash_cleanup_t */
 #define ASSH_HASH_CLEANUP_FCN(n) \
   void (n)(struct assh_hash_ctx_s *hctx)
-/** @internal This function releases resources allocated by the @ref
-    assh_hash_init_t or assh_hash_copy_t function. */
+
+/** @internal @This defines the function type for the hash context cleanup
+    operation of the hash module interface. @see assh_hash_cleanup */
 typedef ASSH_HASH_CLEANUP_FCN(assh_hash_cleanup_t);
 
+/** @internal @This is the hash algorithms descriptor
+    structure. */
 struct assh_hash_algo_s
 {
   const char *name;
@@ -78,63 +92,41 @@ struct assh_hash_algo_s
   assh_hash_update_t *f_update;
   assh_hash_final_t *f_final;
   assh_hash_cleanup_t *f_cleanup;
-  /** size of hash function context structure */
+  /** Size of the context structure needed to initialize the algorithm. */
   size_t ctx_size;
-  /** hash function output size, 0 for variable size output */
+  /** Hash function output size, 0 for variable size output. */
   size_t hash_size;
+  /** Hash algorithm block size. */
   size_t block_size;
 };
 
-/** This function hashes a ssh string. The string must contain a valid
-    32 bits size header; not check is performed by this function. */
+/** @internal @This hashes a ssh string. The string must contain a
+    valid 32 bits size header. No bound checking is performed by this
+    function. */
 void assh_hash_string(struct assh_hash_ctx_s *hctx, const uint8_t *str);
 
-/** This function hashes an array of bytes as if it was stored as a
+/** @internal @This hashes an array of bytes as if it was stored as a
     ssh string. This means that a 32 bits headers with the array
     length is first generated and hashed. */
 void assh_hash_bytes_as_string(struct assh_hash_ctx_s *hctx,
                                const uint8_t *bytes, size_t len);
 
-/** This function convert the big number to the ssh mpint
-    representation and hash the result. */
+/** @internal @This convert the big number to the ssh mpint
+    representation and hash the resulting buffer. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_hash_bignum(struct assh_context_s *ctx,
                  struct assh_hash_ctx_s *hctx,
                  const struct assh_bignum_s *bn);
 
-/** This function hash the packet payload. The packet must contain a valid
-    32 bits size header; not check is performed by this function. */
+/** @internal @This hash the packet payload. The packet must contain a
+    valid 32 bits size header; not check is performed by this
+    function. */
 void assh_hash_payload_as_string(struct assh_hash_ctx_s *hctx,
                                  const struct assh_packet_s *p);
 
-static inline void
-assh_hash_update(struct assh_hash_ctx_s *hctx, const void *data, size_t len)
-{
-  return hctx->algo->f_update(hctx, data, len);
-}
-
-/** @This can be called multiple times when the hash algorithm has a
-    variable length output. */
-static inline void
-assh_hash_final(struct assh_hash_ctx_s *hctx, uint8_t *hash, size_t len)
-{
-  hctx->algo->f_final(hctx, hash, len);
-}
-
-static inline void
-assh_hash_cleanup(struct assh_hash_ctx_s *hctx)
-{
-  hctx->algo->f_cleanup(hctx);
-}
-
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_hash_copy(struct assh_hash_ctx_s *hctx_dst,
-               struct assh_hash_ctx_s *hctx_src)
-{
-  return hctx_src->algo->f_copy(hctx_dst, hctx_src);  
-}
-
-/** @This initialize a hash algorithm context. */
+/** @internal @This initializes an hash algorithm context. The @tt
+    hctx argument must points to a buffer allocated in secure memory
+    of size given by @ref assh_algo_hash_s::ctx_size. */
 static inline ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_hash_init(struct assh_context_s *c,
                struct assh_hash_ctx_s *hctx,
@@ -144,6 +136,41 @@ assh_hash_init(struct assh_context_s *c,
   return algo->f_init(c, hctx, algo);
 }
 
+/** @internal @This creates a copy of the hash algorithm context. The
+    new context must be released as if it was created by @ref
+    assh_hash_init. */
+static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_hash_copy(struct assh_hash_ctx_s *hctx_dst,
+               struct assh_hash_ctx_s *hctx_src)
+{
+  return hctx_src->algo->f_copy(hctx_dst, hctx_src);  
+}
+
+/** @internal @This updates the hash context with new input data. */
+static inline void
+assh_hash_update(struct assh_hash_ctx_s *hctx, const void *data, size_t len)
+{
+  return hctx->algo->f_update(hctx, data, len);
+}
+
+/** @internal @This produce the hash output. It can be called multiple
+    times when the hash algorithm has a variable length output. */
+static inline void
+assh_hash_final(struct assh_hash_ctx_s *hctx, uint8_t *hash, size_t len)
+{
+  hctx->algo->f_final(hctx, hash, len);
+}
+
+/** @internal @This releases resources allocated by the @ref
+    assh_hash_init and @ref assh_hash_copy functions.  @see
+    assh_hash_cleanup. */
+static inline void
+assh_hash_cleanup(struct assh_hash_ctx_s *hctx)
+{
+  hctx->algo->f_cleanup(hctx);
+}
+
+/** @multiple @This is an hash algorithm implementation descriptor. */
 extern const struct assh_hash_algo_s assh_hash_md5;
 
 extern const struct assh_hash_algo_s assh_hash_sha1;

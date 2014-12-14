@@ -21,11 +21,17 @@
 
 */
 
+/**
+   @file
+   @short library event structure and related functions
+*/
+
 #ifndef ASSH_EVENT_H_
 #define ASSH_EVENT_H_
 
 #include "assh.h"
 
+/** @This specifies event types. */
 enum assh_event_id_e
 {
   /** @internal This event id is not valid and can be used to mark
@@ -83,14 +89,16 @@ enum assh_event_id_e
 /** @This is called when the event has been processed */
 typedef ASSH_EVENT_DONE_FCN(assh_event_done_t);
 
+/** @This hold an event returned by the library. */
 struct assh_event_s
 {
-  /** Event id */
+  /** Id of the event. */
   enum assh_event_id_e id;
 
-  /** Pointer to the event acknowledge function, if any. */
+  /** @internal Pointer to the event acknowledge function, if any. */
   assh_event_done_t *f_done;
-  /** Private data for the event acknowledge function. */
+
+  /** @internal Private data for the event acknowledge function. */
   void *done_pv;
 
   union {
@@ -162,19 +170,21 @@ ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_event_done(struct assh_session_s *s,
                 struct assh_event_s *e);
 
-/** @see assh_event_hndl_func_t */
+/** @internal @see assh_event_hndl_func_t */
 #define ASSH_EVENT_HANDLER_FCN(n) \
   ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_session_s *s,    \
                                            struct assh_event_s *e,	\
 					   void *ctx)
-/** @This is called to handle the event after a call to @ref
+
+/** @internal @This is called to handle the event after a call to @ref
     assh_event_get and before calling @ref assh_event_done. This
     function may return @ref ASSH_NO_DATA to indicate that it did not
     handled the event, making the @ref assh_event_table_run function
     report the event as if there was no registered handler. */
 typedef ASSH_EVENT_HANDLER_FCN(assh_event_hndl_func_t);
 
-/** @This stores the event handling function along with its private context. */
+/** @internal @This stores the event handling function along with its
+    private context. */
 struct assh_event_hndl_s
 {
   assh_event_hndl_func_t   *f_handler;
@@ -202,8 +212,7 @@ void assh_event_table_register(struct assh_event_hndl_table_s *t,
 
     When an event is handled by one of the registered function, the
     @ref assh_event_done function is called and the process is started
-    again.
- */
+    again. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_event_table_run(struct assh_session_s *s,
 		     struct assh_event_hndl_table_s *t,

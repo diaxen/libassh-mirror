@@ -22,7 +22,7 @@
 
 @macro _compound_details id
 
-  @foreach mid {visible typedef,enum,struct,function,variable,macro} {@id@} {1}
+  @foreach mid {visible typedef,enum,struct,union,function,variable,macro} {@id@} {1}
     @section {} {@mid@}
       @invoke {@mid@} _member_doc
     @end section
@@ -34,8 +34,9 @@
 
 @macro _compound_doc id
 
-  @c short member doc with link to detailed description
-  @insert {@id@} decl_short_desc @exref {Description} {More}
+  @section e {Description}
+    @insert {@id@} decl_inline_doc
+  @end section
 
   @ifsymtype {@id@} {module}
     @section e {Related headers}
@@ -43,26 +44,19 @@
     @end section
   @end if
 
-  @ifsymtype {@id@} {header}
-    @section e {Header inclusion}
-      @c @insert {@id@} {D} inclusion_diagram
-
-      @c @section e {Included files}
+  @ifnopt hide_internal
+    @ifsymtype {@id@} {header}
+      @section e {Header inclusion}
         @insert {@id@} include_list
-      @c @end section
-
+      @end section
       @c @section e {Including files}
       @c  @insert {@id@} included_by_list
       @c @end section
-    @end section
+    @end if
   @end if
 
   @section e {Members}
     @insert {@id@} compound_member_list
-  @end section
-
-  @section e {Description}
-    @insert {@id@} decl_inline_doc
   @end section
 
 @end macro

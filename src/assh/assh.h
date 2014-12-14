@@ -21,6 +21,11 @@
 
 */
 
+/**
+   @file @internal
+   @short Some constants and forward declarations of structures
+*/
+
 #ifndef ASSH_H_
 #define ASSH_H_
 
@@ -40,6 +45,7 @@
 
 /* make event fields written by the library read-only for user. */
 #ifndef ASSH_EV_CONST
+/** @internal */
 # define ASSH_EV_CONST const
 #endif
 
@@ -59,17 +65,23 @@ struct assh_prng_s;
 struct assh_algo_cipher_s;
 struct assh_algo_mac_s;
 struct assh_algo_sign_s;
+struct assh_algo_key_s;
 struct assh_event_s;
 struct assh_service_s;
 struct assh_event_hndl_table_s;
 struct assh_event_s;
 
-typedef char assh_bool_t;
 
 enum assh_key_format_e;
 enum assh_alloc_type_e;
 enum assh_ssh_msg_e;
 enum assh_algo_class_e;
+
+/** boolean type */
+typedef char assh_bool_t;
+
+/** error code type */
+typedef int assh_error_t;
 
 /** @This specify the error severity and must be used along with error
     code constants (@ref assh_error_e).
@@ -169,45 +181,46 @@ enum assh_error_e
 
 #define ASSH_ASSERT(expr) do { assh_error_t _e_ = (expr); assert((_e_ & 0xfff) == ASSH_OK); } while(0)
 
-typedef int assh_error_t;
-
-/** Log2 of smallest packet size bucket in the packet allocator pool. */
+/** @internal Log2 of smallest packet size bucket in the packet
+    allocator pool. */
 #define ASSH_PCK_POOL_MIN 6
-/** Log2 of largest packet size bucket in the packet allocator pool. */
+/** @internal Log2 of largest packet size bucket in the packet
+    allocator pool. */
 #define ASSH_PCK_POOL_MAX 16
-/** Number of buckets in the packet allocator pool */
+/** @internal Number of buckets in the packet allocator pool */
 #define ASSH_PCK_POOL_SIZE (ASSH_PCK_POOL_MAX - ASSH_PCK_POOL_MIN)
 
-/** Size of the context registered algorithms pointer array */
+/** @internal Size of the context registered algorithms pointer array */
 #define ASSH_MAX_ALGORITHMS 64
-/** Size of the context registered services pointer array */
+
+/** @internal Size of the context registered services pointer array */
 #define ASSH_MAX_SERVICES 4
 
-/** Maximum size of hash algorithms output in bytes. */
+/** @internal Maximum size of hash algorithms output in bytes. */
 #define ASSH_MAX_HASH_SIZE 64
 
-/** Maximum size of cipher algorithms keys in bytes. */
+/** @internal Maximum size of cipher algorithms keys in bytes. */
 #define ASSH_MAX_EKEY_SIZE 64
 
-/** Maximum size of mac algorithms keys in bytes. */
+/** @internal Maximum size of mac algorithms keys in bytes. */
 #define ASSH_MAX_IKEY_SIZE 64
 
-/** Maximum cipher block size in bytes. */
-#define ASSH_MAX_BLOCK_SIZE 16    /* must be >= 16 */
+/** @internal Maximum cipher block size in bytes. must be >= 16. */
+#define ASSH_MAX_BLOCK_SIZE 16
 
-/** Maximum size of cipher/mac keys or iv in bytes. */
+/** @internal Maximum size of cipher/mac keys or iv in bytes. */
 #define ASSH_MAX_SYMKEY_SIZE 64
 
-/** Maximum mac output size in bytes. */
+/** @internal Maximum mac output size in bytes. */
 #define ASSH_MAX_MAC_SIZE 64
 
-/** Maximum size of incoming packet length, including header and mac. */
+/** @internal Maximum size of incoming packet length, including header and mac. */
 #define ASSH_MAX_PCK_LEN 35000
 
-/** Default key re-echange threshold in bytes */
+/** @internal Default key re-echange threshold in bytes */
 #define ASSH_REKEX_THRESHOLD (1 << 31)
 
-/** Maximum size of packet payload */
+/** @internal Maximum size of packet payload */
 #define ASSH_MAX_PCK_PAYLOAD_SIZE \
   (ASSH_MAX_PCK_LEN - /* sizeof(struct assh_packet_head_s) */ 6 \
    - ASSH_MAX_MAC_SIZE - ASSH_MAX_BLOCK_SIZE)
@@ -233,6 +246,7 @@ typedef int assh_error_t;
     }									\
   } while (0)
 
+/** @internal */
 # define ASSH_ERR_RET(expr)						\
   do {									\
     err = (expr);							\
@@ -251,7 +265,10 @@ typedef int assh_error_t;
 
 #endif
 
+/** @internal */
 # define ASSH_CHK_GTO(cond, err, label) ASSH_ERR_GTO(cond ? err : 0, label) 
+
+/** @internal */
 # define ASSH_CHK_RET(cond, err) ASSH_ERR_RET(cond ? err : 0) 
 
 #define ASSH_DEBUG(...) fprintf(stderr, "assh_debug: " __VA_ARGS__)
@@ -277,6 +294,7 @@ static inline void assh_hexdump(const char *name, const void *data, unsigned int
   fputc('\n', stderr);
 }
 
+/** @This holds a pointer and a size value used as a string or buffer  */
 struct assh_buffer_s
 {
   union {
@@ -289,32 +307,42 @@ struct assh_buffer_s
   };
 };
 
+/** @internal Link list entry */
 struct assh_queue_entry_s
 {
   struct assh_queue_entry_s *next, *prev;
 };
 
+/** @internal Link list head */
 struct assh_queue_s
 {
   struct assh_queue_entry_s head;
   int count;
 };
 
+/** @internal SSH implementation identification string */
 #define ASSH_IDENT "SSH-2.0-LIBASSH\r\n"
 
-enum assh_alloc_type_e;
-
-/** This macro specifies the prototype of a memory allocator function. */
+/** @internal This macro specifies the prototype of a memory allocator function. */
 #define ASSH_ALLOCATOR(n) assh_error_t (n)(struct assh_context_s *c, void **ptr, \
 					   size_t size, enum assh_alloc_type_e type)
-/** @see #ASSH_ALLOCATOR */
+
+/** Memory allocator function type, same behavior as standard @tt realloc. */
 typedef ASSH_ALLOCATOR(assh_allocator_t);
 
+/** @internal */
 #define ASSH_MAX(a, b) ({ typeof(a) __a = (a); typeof(b) __b = (b); __a > __b ? __a : __b; })
+
+/** @internal */
 #define ASSH_MIN(a, b) ({ typeof(a) __a = (a); typeof(b) __b = (b); __a < __b ? __a : __b; })
+
+/** @internal */
 #define ASSH_SWAP(a, b) do { typeof(a) __a = (a); typeof(b) __b = (b); (a) = __b; (b) = __a; } while(0)
 
+/** @internal */
 #define assh_clz8(x) (__builtin_clz((uint8_t)(x)) + 8 - sizeof(int) * 8)
+
+/** @internal */
 #define assh_align8(x) ((((x) - 1) | 7) + 1)
 
 #ifdef __GNUC__
@@ -323,7 +351,9 @@ typedef ASSH_ALLOCATOR(assh_allocator_t);
 #define ASSH_WARN_UNUSED_RESULT
 #endif
 
+/** @internal @hidecontent */
 #define ASSH_FIRST_FIELD_ASSERT(struct_name, field)                   \
+  /** @hidden */                                                      \
   typedef int field##_must_be_the_first_field_in_struct_##struct_name \
   [-(int)offsetof(struct struct_name, field)];
 
