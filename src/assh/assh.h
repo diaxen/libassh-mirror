@@ -33,8 +33,6 @@
 #include <stdint.h>
 #include <assert.h>
 
-#include <stdio.h>     // DEBUG
-
 #ifdef HAVE_CONFIG_H
 # include "assh_config.h"
 #endif
@@ -179,8 +177,6 @@ enum assh_error_e
     code returned by a function. This consists of ored flag values. */
 #define ASSH_ERR_SEVERITY(code) ((code) & 0xf000)
 
-#define ASSH_ASSERT(expr) do { assh_error_t _e_ = (expr); assert((_e_ & 0xfff) == ASSH_OK); } while(0)
-
 /** @internal Log2 of smallest packet size bucket in the packet
     allocator pool. */
 #define ASSH_PCK_POOL_MIN 6
@@ -225,11 +221,37 @@ enum assh_error_e
   (ASSH_MAX_PCK_LEN - /* sizeof(struct assh_packet_head_s) */ 6 \
    - ASSH_MAX_MAC_SIZE - ASSH_MAX_BLOCK_SIZE)
 
-#if 0
-# define ASSH_ERR_GTO(expr, label) do { if ((err = (expr) & 0x100)) goto label; err &= 0xff; } while (0)
-# define ASSH_ERR_RET(expr) do { if ((err = (expr) & 0x100)) return err; err &= 0xff; } while (0)
+
+/** @internal */
+#define ASSH_ASSERT(expr) do { assh_error_t _e_ = (expr); assert((_e_ & 0xfff) == ASSH_OK); } while(0)
+
+#ifndef CONFIG_ASSH_DEBUG
+
+/** @internal */
+#define ASSH_DEBUG(...)
+
+/** @internal */
+static inline void
+assh_hexdump(const char *name, const void *data, unsigned int len)
+{
+}
+
+/** @internal */
+# define ASSH_ERR_GTO(expr, label) do { if ((err = (expr)) & 0x100) goto label; err &= 0xff; } while (0)
+/** @internal */
+# define ASSH_ERR_RET(expr) do { if ((err = (expr)) & 0x100) return err; err &= 0xff; } while (0)
+
 #else
 
+#include <stdio.h>
+
+/** @internal */
+#define ASSH_DEBUG(...) fprintf(stderr, "assh_debug: " __VA_ARGS__)
+
+/** @internal */
+void assh_hexdump(const char *name, const void *data, unsigned int len);
+
+/** @internal */
 # define ASSH_ERR_GTO(expr, label)					\
   do {									\
     err = (expr);							\
@@ -270,29 +292,6 @@ enum assh_error_e
 
 /** @internal */
 # define ASSH_CHK_RET(cond, err) ASSH_ERR_RET(cond ? err : 0) 
-
-#define ASSH_DEBUG(...) fprintf(stderr, "assh_debug: " __VA_ARGS__)
-
-#include <stdio.h>
-static inline void assh_hexdump(const char *name, const void *data, unsigned int len)
-{
-  int i, j;
-  const uint8_t *data_ = data;
-  const int width = 32;
-
-  fprintf(stderr, "--- %s (%u bytes) ---\n", name, len);
-  for (i = 0; i < len; i += width)
-    {
-      for (j = 0; j < width && i + j < len; j++)
-        fprintf(stderr, "%02x ", data_[i + j]);
-      for (; j < width; j++)
-        fputs("   ", stderr);
-      for (j = 0; j < width && i + j < len; j++)
-        fprintf(stderr, "%c", (unsigned)data_[i + j] - 32 < 96 ? data_[i + j] : '.');
-      fputc('\n', stderr);
-    }
-  fputc('\n', stderr);
-}
 
 /** @This holds a pointer and a size value used as a string or buffer  */
 struct assh_buffer_s
