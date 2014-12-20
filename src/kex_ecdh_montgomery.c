@@ -454,7 +454,7 @@ static ASSH_KEX_CLEANUP_FCN(assh_kex_ecdhmt_cleanup)
     }
 #endif
 
-  assh_free(s->ctx, s->kex_pv, ASSH_ALLOC_KEY);
+  assh_free(s->ctx, s->kex_pv, ASSH_ALLOC_SECUR);
   s->kex_pv = NULL;
 }
 
@@ -469,7 +469,7 @@ assh_kex_ecdhmt_init(struct assh_session_s *s,
 
   struct assh_kex_ecdhmt_private_s *pv;
   ASSH_ERR_RET(assh_alloc(s->ctx, sizeof(*pv) + l * 2,
-                          ASSH_ALLOC_KEY, (void**)&pv)
+                          ASSH_ALLOC_SECUR, (void**)&pv)
 	       | ASSH_ERRSV_DISCONNECT);
 
   s->kex_pv = pv;

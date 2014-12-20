@@ -54,7 +54,7 @@ assh_hmac_init(struct assh_context_s *c, const struct assh_algo_mac_s *mac,
 
   ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_hmac_context_s)
                           + hash->ctx_size * 4 + /* buf */ hash->hash_size,
-                          ASSH_ALLOC_KEY, &ctx->hash_co));
+                          ASSH_ALLOC_SECUR, &ctx->hash_co));
 
   ctx->hash = hash;
   ctx->mac = mac;
@@ -89,7 +89,7 @@ assh_hmac_init(struct assh_context_s *c, const struct assh_algo_mac_s *mac,
  err_sc:
   ASSH_SCRATCH_FREE(c, kx);  
  err_ctx:
-  assh_free(c, ctx->hash_co, ASSH_ALLOC_KEY);
+  assh_free(c, ctx->hash_co, ASSH_ALLOC_SECUR);
   return err;
 }
 
@@ -100,7 +100,7 @@ static ASSH_MAC_CLEANUP_FCN(assh_hmac_cleanup)
   assh_hash_cleanup(ctx->hash_ci);
   assh_hash_cleanup(ctx->hash_co);
 
-  assh_free(c, ctx->hash_co, ASSH_ALLOC_KEY);
+  assh_free(c, ctx->hash_co, ASSH_ALLOC_SECUR);
 }
 
 static ASSH_MAC_COMPUTE_FCN(assh_hmac_compute)

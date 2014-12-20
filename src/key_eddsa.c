@@ -138,7 +138,7 @@ assh_key_eddsa_create(struct assh_context_s *c,
   size_t n = assh_align8(curve->bits) / 8;
 
   ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_key_eddsa_s) + 2 * n,
-                          ASSH_ALLOC_KEY, (void**)&k));
+                          ASSH_ALLOC_SECUR, (void**)&k));
 
   k->key.algo = algo;
   k->curve = curve;
@@ -243,7 +243,7 @@ assh_key_eddsa_create(struct assh_context_s *c,
  err_scratch:
   ASSH_SCRATCH_FREE(c, sc);
  err_key:
-  assh_free(c, k, ASSH_ALLOC_KEY);
+  assh_free(c, k, ASSH_ALLOC_SECUR);
   return err;
 }
 
@@ -283,7 +283,7 @@ assh_key_eddsa_load(struct assh_context_s *c,
     case ASSH_KEY_FMT_PUB_RFC4253_6_6: {
       size_t len = 4 + tlen + 4 + n;
       ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_key_eddsa_s) + n,
-                              ASSH_ALLOC_KEY, (void**)&k));
+                              ASSH_ALLOC_SECUR, (void**)&k));
 
       k->private = 0;
       ASSH_CHK_GTO(blob_len < len, ASSH_ERR_INPUT_OVERFLOW, err_key);
@@ -298,7 +298,7 @@ assh_key_eddsa_load(struct assh_context_s *c,
     case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY: {
       size_t len = 4 + tlen + 4 + n + 4 + 2 * n;
       ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_key_eddsa_s) + 2 * n,
-                              ASSH_ALLOC_KEY, (void**)&k));
+                              ASSH_ALLOC_SECUR, (void**)&k));
 
       k->private = 1;
       ASSH_CHK_GTO(blob_len < len, ASSH_ERR_INPUT_OVERFLOW, err_key);
@@ -326,7 +326,7 @@ assh_key_eddsa_load(struct assh_context_s *c,
   return ASSH_OK;
 
  err_key:
-  assh_free(c, k, ASSH_ALLOC_KEY);
+  assh_free(c, k, ASSH_ALLOC_SECUR);
   return err;
 }
 
@@ -334,7 +334,7 @@ static ASSH_KEY_CLEANUP_FCN(assh_key_eddsa_cleanup)
 {
   struct assh_key_eddsa_s *k = (void*)key;
 
-  assh_free(c, k, ASSH_ALLOC_KEY);
+  assh_free(c, k, ASSH_ALLOC_SECUR);
 }
 
 const struct assh_edward_curve_s assh_ed25519_curve = 

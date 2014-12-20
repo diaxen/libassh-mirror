@@ -318,12 +318,12 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
   /* alloacte input and output keys and associated cipher/mac/compress contexts */
   struct assh_kex_keys_s *kin;
   ASSH_ERR_RET(assh_alloc(s->ctx, sizeof(*kin) + cipher_in->ctx_size
-    + mac_in->ctx_size + cmp_in->ctx_size, ASSH_ALLOC_KEY, (void**)&kin)
+    + mac_in->ctx_size + cmp_in->ctx_size, ASSH_ALLOC_SECUR, (void**)&kin)
 	       | ASSH_ERRSV_DISCONNECT);
 
   struct assh_kex_keys_s *kout;
   ASSH_ERR_GTO(assh_alloc(s->ctx, sizeof(*kout) + cipher_out->ctx_size
-    + mac_out->ctx_size + cmp_out->ctx_size, ASSH_ALLOC_KEY, (void**)&kout)
+    + mac_out->ctx_size + cmp_out->ctx_size, ASSH_ALLOC_SECUR, (void**)&kout)
 	       | ASSH_ERRSV_DISCONNECT, err_kin);
 
   size_t key_size = ASSH_MAX(cipher_in->key_size, cipher_out->key_size) * 8;
@@ -353,9 +353,9 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
   return ASSH_OK;
 
  err_kout:
-  assh_free(s->ctx, kout, ASSH_ALLOC_KEY);
+  assh_free(s->ctx, kout, ASSH_ALLOC_SECUR);
  err_kin:
-  assh_free(s->ctx, kin, ASSH_ALLOC_KEY);
+  assh_free(s->ctx, kin, ASSH_ALLOC_SECUR);
   return err;
 }
 
@@ -747,7 +747,7 @@ void assh_kex_keys_cleanup(struct assh_session_s *s, struct assh_kex_keys_s *key
   if (keys->cmp_ctx != NULL)
     keys->cmp->f_cleanup(s->ctx, keys->cmp_ctx);
 
-  assh_free(s->ctx, keys, ASSH_ALLOC_KEY);
+  assh_free(s->ctx, keys, ASSH_ALLOC_SECUR);
 }
 
 assh_error_t assh_kex_end(struct assh_session_s *s, assh_bool_t accept)

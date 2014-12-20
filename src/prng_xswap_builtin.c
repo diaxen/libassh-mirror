@@ -111,7 +111,7 @@ static ASSH_PRNG_INIT_FCN(assh_prng_xswap_init)
 {
   assh_error_t err;
 
-  ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_prng_ctx_s), ASSH_ALLOC_KEY, &c->prng_ctx));
+  ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_prng_ctx_s), ASSH_ALLOC_SECUR, &c->prng_ctx));
   struct assh_prng_ctx_s *ctx = c->prng_ctx;
 
   c->prng_entropy = 0;
@@ -173,7 +173,7 @@ static ASSH_PRNG_FEED_FCN(assh_prng_xswap_feed)
 static ASSH_PRNG_CLEANUP_FCN(assh_prng_xswap_cleanup)
 {
   struct assh_prng_ctx_s *ctx = c->prng_ctx;
-  assh_free(c, ctx, ASSH_ALLOC_KEY);
+  assh_free(c, ctx, ASSH_ALLOC_SECUR);
 }
 
 const struct assh_prng_s assh_prng_xswap = 

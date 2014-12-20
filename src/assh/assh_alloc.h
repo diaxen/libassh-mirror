@@ -41,7 +41,7 @@ enum assh_alloc_type_e
       function call. */
   ASSH_ALLOC_SCRATCH,
   /** Cryptographic allocation in secur memory. */
-  ASSH_ALLOC_KEY,
+  ASSH_ALLOC_SECUR,
   /** SSH packet allocation. Used to store enciphered and clear text
       packets. */
   ASSH_ALLOC_PACKET,
@@ -92,7 +92,7 @@ static inline void assh_free(struct assh_context_s *c, void *ptr,
 /** @internal @This releases memory allocated by @ref
     #ASSH_SCRATCH_ALLOC. */
 # define ASSH_SCRATCH_FREE(context, name) \
-  memset(name, 0, name##_size);
+  do { memset(name, 0, name##_size) } while (0)
 
 #else
 

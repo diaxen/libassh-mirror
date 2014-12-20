@@ -69,7 +69,7 @@ struct assh_service_s;
 struct assh_event_hndl_table_s;
 struct assh_event_s;
 
-
+enum assh_alloc_type_e;
 enum assh_key_format_e;
 enum assh_alloc_type_e;
 enum assh_ssh_msg_e;

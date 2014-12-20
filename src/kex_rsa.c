@@ -174,7 +174,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
 
   size_t elen = assh_align8(kbits) / 8;
 
-  ASSH_ERR_GTO(assh_alloc(c, slen + 4 + elen, ASSH_ALLOC_KEY,
+  ASSH_ERR_GTO(assh_alloc(c, slen + 4 + elen, ASSH_ALLOC_SECUR,
 			  (void**)&pv->secret), err_tkey);
 
   uint8_t *secret = pv->secret;
@@ -390,7 +390,7 @@ static assh_error_t assh_kex_rsa_server_send_pubkey(struct assh_session_s *s)
   assh_packet_shrink_string(pout, t_str, t_len);
 
   /* prepare H hash */
-  ASSH_ERR_GTO(assh_alloc(c, pv->hash->ctx_size, ASSH_ALLOC_KEY,
+  ASSH_ERR_GTO(assh_alloc(c, pv->hash->ctx_size, ASSH_ALLOC_SECUR,
 			  (void**)&pv->hash_ctx), err_p);
 
   ASSH_ERR_GTO(assh_hash_init(s->ctx, pv->hash_ctx, pv->hash), err_p);
@@ -646,7 +646,7 @@ static ASSH_KEX_CLEANUP_FCN(assh_kex_rsa_cleanup)
     case ASSH_CLIENT:
       assh_key_flush(s->ctx, &pv->host_key);
       assh_packet_release(pv->pck);
-      assh_free(s->ctx, pv->secret, ASSH_ALLOC_KEY);
+      assh_free(s->ctx, pv->secret, ASSH_ALLOC_SECUR);
       break;
 #endif
 
@@ -655,7 +655,7 @@ static ASSH_KEX_CLEANUP_FCN(assh_kex_rsa_cleanup)
       if (pv->hash_ctx != NULL)
 	{
 	  assh_hash_cleanup(pv->hash_ctx);
-	  assh_free(s->ctx, pv->hash_ctx, ASSH_ALLOC_KEY);
+	  assh_free(s->ctx, pv->hash_ctx, ASSH_ALLOC_SECUR);
 	}
       break;
 #endif

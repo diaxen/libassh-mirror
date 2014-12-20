@@ -55,7 +55,7 @@ static ASSH_ALLOCATOR(assh_default_allocator)
 	case ASSH_ALLOC_PACKET:
 	  *ptr = gcry_malloc(size);
 	  break;
-	case ASSH_ALLOC_KEY:
+	case ASSH_ALLOC_SECUR:
 	case ASSH_ALLOC_SCRATCH:
 	  *ptr = gcry_malloc_secure(size);
 	  break;

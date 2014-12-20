@@ -136,7 +136,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
   struct assh_key_rsa_s *k;
 
   ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_key_rsa_s),
-                          ASSH_ALLOC_KEY, (void**)&k));
+                          ASSH_ALLOC_SECUR, (void**)&k));
 
   k->key.algo = &assh_key_rsa;
 
@@ -184,7 +184,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
   *key = &k->key;
   return ASSH_OK;
  err_key:
-  assh_free(c, k, ASSH_ALLOC_KEY);
+  assh_free(c, k, ASSH_ALLOC_SECUR);
   return err;
 }
 
@@ -287,7 +287,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
   struct assh_key_rsa_s *k;
 
   ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_key_rsa_s),
-                          ASSH_ALLOC_KEY, (void**)&k));
+                          ASSH_ALLOC_SECUR, (void**)&k));
 
   k->key.algo = &assh_key_rsa;
 
@@ -324,7 +324,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
   assh_bignum_release(&k->nn);
   assh_bignum_release(&k->en);
   assh_bignum_release(&k->dn);
-  assh_free(c, k, ASSH_ALLOC_KEY);
+  assh_free(c, k, ASSH_ALLOC_SECUR);
   return err;
 }
 
@@ -335,7 +335,7 @@ static ASSH_KEY_CLEANUP_FCN(assh_key_rsa_cleanup)
   assh_bignum_release(&k->nn);
   assh_bignum_release(&k->en);
   assh_bignum_release(&k->dn);
-  assh_free(c, k, ASSH_ALLOC_KEY);
+  assh_free(c, k, ASSH_ALLOC_SECUR);
 }
 
 const struct assh_algo_key_s assh_key_rsa =

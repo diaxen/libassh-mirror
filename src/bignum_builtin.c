@@ -1136,7 +1136,7 @@ assh_bignum_realloc(struct assh_context_s *c,
   if (bn->n != NULL)
     return ASSH_OK;
   return assh_realloc(c, &bn->n, assh_bignum_words(bn->bits) *
-                      sizeof(assh_bnword_t), ASSH_ALLOC_KEY);
+                      sizeof(assh_bnword_t), ASSH_ALLOC_SECUR);
 }
 
 static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_builtin_convert)
@@ -1464,13 +1464,13 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
  err_sc:;
   for (i = 0; i < tlen; i++)
     if (tmp[i].n != NULL)
-      assh_free(c, tmp[i].n, ASSH_ALLOC_KEY);
+      assh_free(c, tmp[i].n, ASSH_ALLOC_SECUR);
   return err;
 }
 
 static ASSH_BIGNUM_RELEASE_FCN(assh_bignum_builtin_release)
 {
-  assh_free(bn->ctx, bn->n, ASSH_ALLOC_KEY);
+  assh_free(bn->ctx, bn->n, ASSH_ALLOC_SECUR);
 }
 
 const struct assh_bignum_algo_s assh_bignum_builtin =

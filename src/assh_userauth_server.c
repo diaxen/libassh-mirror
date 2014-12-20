@@ -96,7 +96,7 @@ static ASSH_SERVICE_INIT_FCN(assh_userauth_server_init)
   struct assh_userauth_context_s *pv;
 
   ASSH_ERR_RET(assh_alloc(s->ctx, sizeof(*pv),
-                ASSH_ALLOC_KEY, (void**)&pv));
+                ASSH_ALLOC_SECUR, (void**)&pv));
 
   s->srv = &assh_service_userauth_server;
   s->srv_pv = pv;
@@ -136,7 +136,7 @@ static ASSH_SERVICE_CLEANUP_FCN(assh_userauth_server_cleanup)
 
   assh_userauth_server_flush_state(s);
 
-  assh_free(s->ctx, pv, ASSH_ALLOC_KEY);
+  assh_free(s->ctx, pv, ASSH_ALLOC_SECUR);
 
   s->srv_pv = NULL;
   s->srv = NULL;

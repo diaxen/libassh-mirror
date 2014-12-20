@@ -81,7 +81,7 @@ static ASSH_SERVICE_INIT_FCN(assh_userauth_client_init)
   ASSH_CHK_RET(s->srv_index >= s->ctx->srvs_count, ASSH_ERR_SERVICE_NA);
 
   ASSH_ERR_RET(assh_alloc(s->ctx, sizeof(*pv),
-                    ASSH_ALLOC_KEY, (void**)&pv));
+                    ASSH_ALLOC_SECUR, (void**)&pv));
 
   pv->state = ASSH_USERAUTH_INIT;
 
