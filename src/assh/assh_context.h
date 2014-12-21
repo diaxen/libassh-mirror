@@ -106,6 +106,9 @@ struct assh_context_s
 
   /** Big number engine */
   const struct assh_bignum_algo_s *bignum;
+
+  /** User private data */
+  void *pv;
 };
 
 /** @This initializes a context for use as a client or server. */
@@ -116,6 +119,21 @@ void assh_context_init(struct assh_context_s *ctx,
     @ref assh_session_s objects must have been released when calling
     this function. */
 void assh_context_cleanup(struct assh_context_s *ctx);
+
+/** @This set the user private pointer of the context. */
+static inline void
+assh_context_set_pv(struct assh_context_s *ctx,
+                    void *private)
+{
+  ctx->pv = private;
+}
+
+/** @This get the user private pointer of the context. */
+static inline void *
+assh_context_get_pv(struct assh_context_s *ctx)
+{
+  return ctx->pv;
+}
 
 /** @This sets the memory allocator used by the context. The
     default memory allocator uses the C library @tt realloc function. */
