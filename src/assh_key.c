@@ -29,13 +29,13 @@
 
 #include <string.h>
 
-static const struct assh_algo_key_s *
+static const struct assh_key_ops_s *
 assh_key_algo_guess(struct assh_context_s *c,
                     enum assh_key_format_e format,
                     const uint8_t *blob, size_t blob_len,
                     enum assh_algo_class_e role)
 {
-  const struct assh_algo_key_s *algo;
+  const struct assh_key_ops_s *algo;
 
   switch (format)
     {
@@ -67,7 +67,7 @@ assh_key_algo_guess(struct assh_context_s *c,
 
 assh_error_t assh_key_load(struct assh_context_s *c,
                            const struct assh_key_s **key,
-                           const struct assh_algo_key_s *algo,
+                           const struct assh_key_ops_s *algo,
                            enum assh_algo_class_e role,
                            enum assh_key_format_e format,
                            const uint8_t *blob, size_t blob_len)
@@ -92,7 +92,7 @@ assh_error_t assh_key_load(struct assh_context_s *c,
 assh_error_t
 assh_key_create(struct assh_context_s *c,
                 const struct assh_key_s **key, size_t bits,
-                const struct assh_algo_key_s *algo,
+                const struct assh_key_ops_s *algo,
                 enum assh_algo_class_e role)
 {
   assh_error_t err;

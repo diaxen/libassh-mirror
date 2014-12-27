@@ -76,7 +76,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_none_create)
   return ASSH_OK;
 }
 
-const struct assh_algo_key_s assh_key_none =
+const struct assh_key_ops_s assh_key_none =
 {
   .type = "none",
   .f_output = assh_key_none_output,

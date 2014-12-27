@@ -40,7 +40,7 @@ struct assh_key_rsa_s
 
 ASSH_FIRST_FIELD_ASSERT(assh_key_rsa_s, key);
 
-extern const struct assh_algo_key_s assh_key_rsa;
+extern const struct assh_key_ops_s assh_key_rsa;
 
 #define ASSH_RSA_ID     "\x00\x00\x00\x07ssh-rsa"
 #define ASSH_RSA_ID_LEN (sizeof(ASSH_RSA_ID) - 1)

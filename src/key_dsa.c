@@ -517,7 +517,7 @@ static ASSH_KEY_CLEANUP_FCN(assh_key_dsa_cleanup)
   assh_free(c, k, ASSH_ALLOC_SECUR);
 }
 
-const struct assh_algo_key_s assh_key_dsa =
+const struct assh_key_ops_s assh_key_dsa =
 {
   .type = "ssh-dss",
   .f_output = assh_key_dsa_output,

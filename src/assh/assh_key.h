@@ -58,7 +58,7 @@ struct assh_key_s;
 */
 #define ASSH_KEY_LOAD_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t (n)   \
   (struct assh_context_s *c,                                            \
-   const struct assh_algo_key_s *algo,                                  \
+   const struct assh_key_ops_s *algo,                                   \
    const uint8_t *blob, size_t blob_len,                                \
    struct assh_key_s **key,                                             \
    enum assh_key_format_e format)
@@ -68,7 +68,7 @@ typedef ASSH_KEY_LOAD_FCN(assh_key_load_t);
 /** @internal This function creates a new key of specified bits size. */
 #define ASSH_KEY_CREATE_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t (n) \
   (struct assh_context_s *c,                                            \
-   const struct assh_algo_key_s *algo,                                  \
+   const struct assh_key_ops_s *algo,                                  \
    size_t bits, struct assh_key_s **key)
 
 typedef ASSH_KEY_CREATE_FCN(assh_key_create_t);
@@ -119,7 +119,7 @@ typedef ASSH_KEY_CMP_FCN(assh_key_cmp_t);
 
 typedef ASSH_KEY_CLEANUP_FCN(assh_key_cleanup_t);
 
-struct assh_algo_key_s
+struct assh_key_ops_s
 {
   const char *type;
   assh_key_load_t *f_load;
@@ -137,7 +137,7 @@ struct assh_key_s
   const struct assh_key_s *next;
 
   /* functions operating on this key */
-  const struct assh_algo_key_s *algo;
+  const struct assh_key_ops_s *algo;
 
   /* class of algorithm the key is intended to use with */
   enum assh_algo_class_e role;
@@ -146,7 +146,7 @@ struct assh_key_s
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_key_load(struct assh_context_s *c,
               const struct assh_key_s **key,
-              const struct assh_algo_key_s *algo,
+              const struct assh_key_ops_s *algo,
               enum assh_algo_class_e role,
               enum assh_key_format_e format,
               const uint8_t *blob, size_t blob_len);
@@ -154,7 +154,7 @@ assh_key_load(struct assh_context_s *c,
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_key_create(struct assh_context_s *c,
                 const struct assh_key_s **key, size_t bits,
-                const struct assh_algo_key_s *algo,
+                const struct assh_key_ops_s *algo,
                 enum assh_algo_class_e role);
 
 /** @This function returns true if both keys are equals. If the @tt

@@ -63,7 +63,7 @@ struct assh_prng_s;
 struct assh_algo_cipher_s;
 struct assh_algo_mac_s;
 struct assh_algo_sign_s;
-struct assh_algo_key_s;
+struct assh_key_ops_s;
 struct assh_event_s;
 struct assh_service_s;
 struct assh_event_hndl_table_s;

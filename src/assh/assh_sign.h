@@ -71,7 +71,7 @@ struct assh_algo_sign_s
   assh_sign_verify_t *f_verify;
 };
 
-extern const struct assh_algo_key_s assh_key_none;
+extern const struct assh_key_ops_s assh_key_none;
 
 extern const struct assh_algo_sign_s assh_sign_none;
 

@@ -56,9 +56,9 @@ struct assh_key_eddsa_s
 
 ASSH_FIRST_FIELD_ASSERT(assh_key_eddsa_s, key);
 
-extern const struct assh_algo_key_s assh_key_ed25519;
-extern const struct assh_algo_key_s assh_key_eddsa_e382;
-extern const struct assh_algo_key_s assh_key_eddsa_e521;
+extern const struct assh_key_ops_s assh_key_ed25519;
+extern const struct assh_key_ops_s assh_key_eddsa_e382;
+extern const struct assh_key_ops_s assh_key_eddsa_e521;
 
 extern const struct assh_edward_curve_s assh_ed25519_curve;
 extern const struct assh_edward_curve_s assh_e382_curve;

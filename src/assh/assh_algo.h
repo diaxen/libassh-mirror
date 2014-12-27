@@ -74,7 +74,7 @@ struct assh_algo_s
   /** speed factor in range [0, 99] */
   int_fast16_t speed;
   /** Pointer to associated key operations, may be @tt NULL. */
-  const struct assh_algo_key_s *key;
+  const struct assh_key_ops_s *key;
   /** Test if a key can be used with the algorithm, may be @tt NULL. */
   assh_algo_suitable_key_t *f_suitable_key;
   /** used to choose between entries with the same name */

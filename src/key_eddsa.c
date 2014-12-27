@@ -127,7 +127,7 @@ static ASSH_KEY_CMP_FCN(assh_key_eddsa_cmp)
 
 static assh_error_t
 assh_key_eddsa_create(struct assh_context_s *c,
-                      const struct assh_algo_key_s *algo,
+                      const struct assh_key_ops_s *algo,
                       struct assh_key_s **key,
                       const struct assh_edward_curve_s *curve,
                       const struct assh_hash_algo_s *hash)
@@ -262,7 +262,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_eddsa_validate)
 
 static assh_error_t
 assh_key_eddsa_load(struct assh_context_s *c,
-                    const struct assh_algo_key_s *algo,
+                    const struct assh_key_ops_s *algo,
                     const uint8_t *blob, size_t blob_len,
                     struct assh_key_s **key,
                     enum assh_key_format_e format,
@@ -375,7 +375,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_ed25519_create)
   return assh_key_eddsa_create(c, algo, key, &assh_ed25519_curve, &assh_hash_sha512);
 }
 
-const struct assh_algo_key_s assh_key_ed25519 =
+const struct assh_key_ops_s assh_key_ed25519 =
 {
   .type = "ssh-ed25519",
   .f_output = assh_key_eddsa_output,
@@ -423,7 +423,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_eddsa_e382_create)
                                &assh_e382_curve, &assh_hash_shake_256);
 }
 
-const struct assh_algo_key_s assh_key_eddsa_e382 =
+const struct assh_key_ops_s assh_key_eddsa_e382 =
 {
   .type = "eddsa-e382-shake256@libassh.org",
   .f_output = assh_key_eddsa_output,
@@ -479,7 +479,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_eddsa_e521_create)
                                &assh_e521_curve, &assh_hash_shake_256);
 }
 
-const struct assh_algo_key_s assh_key_eddsa_e521 =
+const struct assh_key_ops_s assh_key_eddsa_e521 =
 {
   .type = "eddsa-e521-shake256@libassh.org",
   .f_output = assh_key_eddsa_output,
