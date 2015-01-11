@@ -89,6 +89,13 @@ enum assh_event_id_e
 /** @This is called when the event has been processed */
 typedef ASSH_EVENT_DONE_FCN(assh_event_done_t);
 
+union assh_event_transport_u;
+union assh_event_prng_u;
+union assh_event_kex_u;
+union assh_event_userauth_client_u;
+union assh_event_userauth_server_u;
+union assh_event_connection_u;
+
 /** @This hold an event returned by the library. */
 struct assh_event_s
 {
