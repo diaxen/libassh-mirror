@@ -236,7 +236,6 @@ struct assh_kex_keys_s
   void *mac_ctx;
   const struct assh_algo_compress_s *cmp;
   void *cmp_ctx;
-  uint8_t iv[ASSH_MAX_BLOCK_SIZE];
 };
 
 /**
