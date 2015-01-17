@@ -71,7 +71,7 @@ struct assh_context_s
   /** Pseudo random number generator private data, allocated by the
       @ref assh_prng_init_t function and freed by @ref
       assh_prng_cleanup_t. */
-  void *prng_ctx;
+  void *prng_pv;
   /** Current amount of entropy in the prng pool. a negative value
       will make the @ref assh_event_get function return an @ref
       ASSH_EVENT_PRNG_FEED event.  */

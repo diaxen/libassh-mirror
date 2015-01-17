@@ -50,7 +50,7 @@
                      Out
   */
 
-struct assh_prng_ctx_s
+struct assh_prng_pv_s
 {
   uint32_t s[8];
   uint8_t buf[16];
@@ -74,7 +74,7 @@ static void xtea_cipher(const uint32_t key[4], uint32_t *v0_,
   *v1_ = v1;
 }
 
-static void assh_prng_xswap_round(struct assh_prng_ctx_s *ctx)
+static void assh_prng_xswap_round(struct assh_prng_pv_s *ctx)
 {
   const uint32_t *s = ctx->s;
   uint32_t s0 = s[0];
@@ -111,8 +111,8 @@ static ASSH_PRNG_INIT_FCN(assh_prng_xswap_init)
 {
   assh_error_t err;
 
-  ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_prng_ctx_s), ASSH_ALLOC_SECUR, &c->prng_ctx));
-  struct assh_prng_ctx_s *ctx = c->prng_ctx;
+  ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_prng_pv_s), ASSH_ALLOC_SECUR, &c->prng_pv));
+  struct assh_prng_pv_s *ctx = c->prng_pv;
 
   c->prng_entropy = 0;
   memset(ctx, 0, sizeof(*ctx));
@@ -122,7 +122,7 @@ static ASSH_PRNG_INIT_FCN(assh_prng_xswap_init)
 
 static ASSH_PRNG_GET_FCN(assh_prng_xswap_get)
 {
-  struct assh_prng_ctx_s *ctx = c->prng_ctx;
+  struct assh_prng_pv_s *ctx = c->prng_pv;
 
   if (quality == ASSH_PRNG_QUALITY_WEAK)
     {
@@ -147,7 +147,7 @@ static ASSH_PRNG_GET_FCN(assh_prng_xswap_get)
 
 static ASSH_PRNG_FEED_FCN(assh_prng_xswap_feed)
 {
-  struct assh_prng_ctx_s *ctx = c->prng_ctx;
+  struct assh_prng_pv_s *ctx = c->prng_pv;
   uint8_t *buf = ctx->buf;
 
   c->prng_entropy += rdata_len;
@@ -172,7 +172,7 @@ static ASSH_PRNG_FEED_FCN(assh_prng_xswap_feed)
 
 static ASSH_PRNG_CLEANUP_FCN(assh_prng_xswap_cleanup)
 {
-  struct assh_prng_ctx_s *ctx = c->prng_ctx;
+  struct assh_prng_pv_s *ctx = c->prng_pv;
   assh_free(c, ctx, ASSH_ALLOC_SECUR);
 }
 
