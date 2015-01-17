@@ -70,8 +70,9 @@ struct assh_algo_compress_s
 
 ASSH_FIRST_FIELD_ASSERT(assh_algo_compress_s, algo);
 
-extern struct assh_algo_compress_s assh_compress_none;
-extern struct assh_algo_compress_s assh_compress_zlib;
+extern const struct assh_algo_compress_s assh_compress_none;
+extern const struct assh_algo_compress_s assh_compress_zlib;
+extern const struct assh_algo_compress_s assh_compress_zlib_openssh;
 
 #endif
 
