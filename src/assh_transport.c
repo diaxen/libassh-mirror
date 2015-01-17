@@ -473,7 +473,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 
 	case SSH_MSG_DEBUG:
 	case SSH_MSG_IGNORE:
-	  goto end;
+	  goto done;
 	default:
 	  break;
 	}
@@ -490,7 +490,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
     /* wait for initial kex init packet during session init */
     case ASSH_TR_KEX_WAIT:
       if (msg == SSH_MSG_INVALID)
-	goto end;
+	goto done;
       ASSH_CHK_RET(msg != SSH_MSG_KEXINIT, ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
     kex_init:
       ASSH_ERR_RET(assh_kex_got_init(s, p) | ASSH_ERRSV_DISCONNECT);
@@ -511,12 +511,12 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 	ASSH_ERR_RET(s->kex->f_process(s, p, e) | ASSH_ERRSV_DISCONNECT);
       else
 	s->kex_bad_guess = 0;
-      goto end;
+      goto done;
 
     /* kex exchange is over, NEWKEYS packet expected */
     case ASSH_TR_NEWKEY:
       if (msg == SSH_MSG_INVALID)
-	goto end;
+	goto done;
       ASSH_CHK_RET(msg != SSH_MSG_NEWKEYS, ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
 
       /* release the old input cipher/mac context and install the new one */
@@ -529,16 +529,13 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
       assh_queue_concat(&s->out_queue, &s->alt_queue);
 
       /* switch to service running state */
-      assh_transport_state(s, ASSH_TR_SERVICE);
       p = NULL;
       msg = 0;
 
-    /* service is running, key re-exchange initiated */
-    case ASSH_TR_SERVICE_KEX:
-      if (msg == SSH_MSG_KEXINIT)
-	goto kex_init;
+      assh_transport_state(s, ASSH_TR_SERVICE);
 
     /* service is running or have to be started */
+    service:
     case ASSH_TR_SERVICE:
       switch (msg)
 	{
@@ -580,6 +577,12 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 	}
       break;
 
+    /* service is running, key re-exchange initiated */
+    case ASSH_TR_SERVICE_KEX:
+      if (msg == SSH_MSG_KEXINIT)
+	goto kex_init;
+      goto service;
+
     case ASSH_TR_FIN:
       if (s->srv == NULL)
 	return ASSH_OK;
@@ -596,7 +599,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
       if (s->ctx->type == ASSH_CLIENT && s->srv_rq == NULL)
 	ASSH_ERR_RET(assh_service_send_request(s) | ASSH_ERRSV_DISCONNECT);
 #endif
-      goto end;
+      goto done;
     }
 
   do {
@@ -607,7 +610,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
   if (err == ASSH_NO_DATA)
     return ASSH_OK;
 
- end:
+ done:
   assh_packet_release(s->in_pck);
   s->in_pck = NULL;
   ASSH_ERR_RET(err | ASSH_ERRSV_DISCONNECT);
