@@ -109,7 +109,7 @@ static ASSH_CIPHER_CLEANUP_FCN(assh_cipher_gcrypt_cleanup)
 }
 
 #define ASSH_GCRYPT_CIPHER(id_, name_, algo_, mode_, bsize_, ksize_, saf_, spd_, is_stream_) \
-extern struct assh_algo_cipher_s assh_cipher_##id_;			\
+extern const struct assh_algo_cipher_s assh_cipher_##id_;		\
 									\
 static ASSH_CIPHER_INIT_FCN(assh_cipher_gcrypt_##id_##_init)		\
 {									\
@@ -117,7 +117,7 @@ static ASSH_CIPHER_INIT_FCN(assh_cipher_gcrypt_##id_##_init)		\
 				 algo_, mode_, encrypt);		\
 }									\
 									\
-struct assh_algo_cipher_s assh_cipher_##id_ =				\
+const struct assh_algo_cipher_s assh_cipher_##id_ =			\
 {									\
   .algo = { .name = name_, .class_ = ASSH_ALGO_CIPHER, .safety = saf_, .speed = spd_ }, \
   .ctx_size = sizeof(struct assh_cipher_gcrypt_context_s),		\

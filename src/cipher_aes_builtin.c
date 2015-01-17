@@ -368,7 +368,7 @@ static ASSH_CIPHER_CLEANUP_FCN(assh_aes_cleanup)
 {
 }
 
-struct assh_algo_cipher_s assh_cipher_aes128_cbc =
+const struct assh_algo_cipher_s assh_cipher_aes128_cbc =
 {
   .algo = { .name = "aes128-cbc", .class_ = ASSH_ALGO_CIPHER,
 	    .safety = 40, .speed = 70 },
@@ -381,7 +381,7 @@ struct assh_algo_cipher_s assh_cipher_aes128_cbc =
   .f_cleanup = assh_aes_cleanup,
 };
 
-struct assh_algo_cipher_s assh_cipher_aes192_cbc =
+const struct assh_algo_cipher_s assh_cipher_aes192_cbc =
 {
   .algo = { .name = "aes192-cbc", .class_ = ASSH_ALGO_CIPHER,
 	    .safety = 50, .speed = 65 },
@@ -394,7 +394,7 @@ struct assh_algo_cipher_s assh_cipher_aes192_cbc =
   .f_cleanup = assh_aes_cleanup,
 };
 
-struct assh_algo_cipher_s assh_cipher_aes256_cbc =
+const struct assh_algo_cipher_s assh_cipher_aes256_cbc =
 {
   .algo = { .name = "aes256-cbc", .class_ = ASSH_ALGO_CIPHER,
 	    .safety = 60, .speed = 60 },
@@ -407,7 +407,7 @@ struct assh_algo_cipher_s assh_cipher_aes256_cbc =
   .f_cleanup = assh_aes_cleanup,
 };
 
-struct assh_algo_cipher_s assh_cipher_aes128_ctr =
+const struct assh_algo_cipher_s assh_cipher_aes128_ctr =
 {
   .algo = { .name = "aes128-ctr", .class_ = ASSH_ALGO_CIPHER,
 	    .safety = 41, .speed = 70 },
@@ -420,7 +420,7 @@ struct assh_algo_cipher_s assh_cipher_aes128_ctr =
   .f_cleanup = assh_aes_cleanup,
 };
 
-struct assh_algo_cipher_s assh_cipher_aes192_ctr =
+const struct assh_algo_cipher_s assh_cipher_aes192_ctr =
 {
   .algo = { .name = "aes192-ctr", .class_ = ASSH_ALGO_CIPHER,
 	    .safety = 51, .speed = 65 },
@@ -433,7 +433,7 @@ struct assh_algo_cipher_s assh_cipher_aes192_ctr =
   .f_cleanup = assh_aes_cleanup,
 };
 
-struct assh_algo_cipher_s assh_cipher_aes256_ctr =
+const struct assh_algo_cipher_s assh_cipher_aes256_ctr =
 {
   .algo = { .name = "aes256-ctr", .class_ = ASSH_ALGO_CIPHER,
 	    .safety = 61, .speed = 60 },

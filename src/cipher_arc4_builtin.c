@@ -101,7 +101,7 @@ static ASSH_CIPHER_CLEANUP_FCN(assh_arc4_cleanup)
 {
 }
 
-struct assh_algo_cipher_s assh_cipher_arc4 =
+const struct assh_algo_cipher_s assh_cipher_arc4 =
 {
   .algo = { .name = "arcfour", .class_ = ASSH_ALGO_CIPHER, .safety = 5, .speed = 80 },
   .ctx_size = sizeof(struct assh_cipher_arc4_context_s),
@@ -113,7 +113,7 @@ struct assh_algo_cipher_s assh_cipher_arc4 =
   .f_cleanup = assh_arc4_cleanup,
 };
 
-struct assh_algo_cipher_s assh_cipher_arc4_128 =
+const struct assh_algo_cipher_s assh_cipher_arc4_128 =
 {
   .algo = { .name = "arcfour128", .class_ = ASSH_ALGO_CIPHER, .safety = 10, .speed = 80 },
   .ctx_size = sizeof(struct assh_cipher_arc4_context_s),
@@ -125,7 +125,7 @@ struct assh_algo_cipher_s assh_cipher_arc4_128 =
   .f_cleanup = assh_arc4_cleanup,
 };
 
-struct assh_algo_cipher_s assh_cipher_arc4_256 =
+const struct assh_algo_cipher_s assh_cipher_arc4_256 =
 {
   .algo = { .name = "arcfour256", .class_ = ASSH_ALGO_CIPHER, .safety = 15, .speed = 80 },
   .ctx_size = sizeof(struct assh_cipher_arc4_context_s),

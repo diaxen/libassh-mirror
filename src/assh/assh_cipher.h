@@ -80,19 +80,20 @@ struct assh_algo_cipher_s
 
 ASSH_FIRST_FIELD_ASSERT(assh_algo_cipher_s, algo);
 
-extern struct assh_algo_cipher_s assh_cipher_none;
+/** Dummy cipher algorithm. */
+extern const struct assh_algo_cipher_s assh_cipher_none;
 
 /** @multiple @This is a cipher algorithm implementation descriptor. */
-extern struct assh_algo_cipher_s assh_cipher_arc4;
-extern struct assh_algo_cipher_s assh_cipher_arc4_128;
-extern struct assh_algo_cipher_s assh_cipher_arc4_256;
+extern const struct assh_algo_cipher_s assh_cipher_arc4;
+extern const struct assh_algo_cipher_s assh_cipher_arc4_128;
+extern const struct assh_algo_cipher_s assh_cipher_arc4_256;
 
-extern struct assh_algo_cipher_s assh_cipher_aes128_cbc;
-extern struct assh_algo_cipher_s assh_cipher_aes192_cbc;
-extern struct assh_algo_cipher_s assh_cipher_aes256_cbc;
-extern struct assh_algo_cipher_s assh_cipher_aes128_ctr;
-extern struct assh_algo_cipher_s assh_cipher_aes192_ctr;
-extern struct assh_algo_cipher_s assh_cipher_aes256_ctr;
+extern const struct assh_algo_cipher_s assh_cipher_aes128_cbc;
+extern const struct assh_algo_cipher_s assh_cipher_aes192_cbc;
+extern const struct assh_algo_cipher_s assh_cipher_aes256_cbc;
+extern const struct assh_algo_cipher_s assh_cipher_aes128_ctr;
+extern const struct assh_algo_cipher_s assh_cipher_aes192_ctr;
+extern const struct assh_algo_cipher_s assh_cipher_aes256_ctr;
 
 #ifdef CONFIG_ASSH_USE_GCRYPT_CIPHERS
 
@@ -103,26 +104,26 @@ assh_cipher_register_gcrypt(struct assh_context_s *c, unsigned int safety,
 			    unsigned int min_safety);
 
 /** @multiple @This is a cipher algorithm implementation descriptor. */
-extern struct assh_algo_cipher_s assh_cipher_tdes_cbc;
-extern struct assh_algo_cipher_s assh_cipher_tdes_ctr;
+extern const struct assh_algo_cipher_s assh_cipher_tdes_cbc;
+extern const struct assh_algo_cipher_s assh_cipher_tdes_ctr;
 
-extern struct assh_algo_cipher_s assh_cipher_cast128_cbc;
-extern struct assh_algo_cipher_s assh_cipher_cast128_ctr;
+extern const struct assh_algo_cipher_s assh_cipher_cast128_cbc;
+extern const struct assh_algo_cipher_s assh_cipher_cast128_ctr;
 
-extern struct assh_algo_cipher_s assh_cipher_blowfish_cbc;
-extern struct assh_algo_cipher_s assh_cipher_blowfish_ctr;
+extern const struct assh_algo_cipher_s assh_cipher_blowfish_cbc;
+extern const struct assh_algo_cipher_s assh_cipher_blowfish_ctr;
 
-extern struct assh_algo_cipher_s assh_cipher_twofish128_cbc;
-extern struct assh_algo_cipher_s assh_cipher_twofish256_cbc;
-extern struct assh_algo_cipher_s assh_cipher_twofish128_ctr;
-extern struct assh_algo_cipher_s assh_cipher_twofish256_ctr;
+extern const struct assh_algo_cipher_s assh_cipher_twofish128_cbc;
+extern const struct assh_algo_cipher_s assh_cipher_twofish256_cbc;
+extern const struct assh_algo_cipher_s assh_cipher_twofish128_ctr;
+extern const struct assh_algo_cipher_s assh_cipher_twofish256_ctr;
 
-extern struct assh_algo_cipher_s assh_cipher_serpent128_cbc;
-extern struct assh_algo_cipher_s assh_cipher_serpent192_cbc;
-extern struct assh_algo_cipher_s assh_cipher_serpent256_cbc;
-extern struct assh_algo_cipher_s assh_cipher_serpent128_ctr;
-extern struct assh_algo_cipher_s assh_cipher_serpent192_ctr;
-extern struct assh_algo_cipher_s assh_cipher_serpent256_ctr;
+extern const struct assh_algo_cipher_s assh_cipher_serpent128_cbc;
+extern const struct assh_algo_cipher_s assh_cipher_serpent192_cbc;
+extern const struct assh_algo_cipher_s assh_cipher_serpent256_cbc;
+extern const struct assh_algo_cipher_s assh_cipher_serpent128_ctr;
+extern const struct assh_algo_cipher_s assh_cipher_serpent192_ctr;
+extern const struct assh_algo_cipher_s assh_cipher_serpent256_ctr;
 #endif
 #endif
 
