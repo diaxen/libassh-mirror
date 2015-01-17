@@ -45,7 +45,7 @@ static ASSH_MAC_VERIFY_FCN(assh_hmac_none_verify)
   return ASSH_OK;
 }
 
-struct assh_algo_mac_s assh_hmac_none = 
+const struct assh_algo_mac_s assh_hmac_none = 
 {
   .algo = { .name = "none", .class_ = ASSH_ALGO_MAC,
             .safety = 0, .speed = 99 },

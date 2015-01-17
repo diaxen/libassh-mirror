@@ -151,7 +151,7 @@ static ASSH_MAC_INIT_FCN(assh_hmac_md5_init)
   return assh_hmac_init(c, &assh_hmac_md5, ctx_, key, &assh_hash_md5);
 }
 
-struct assh_algo_mac_s assh_hmac_md5 = 
+const struct assh_algo_mac_s assh_hmac_md5 = 
 {
   .algo = { .name = "hmac-md5", .class_ = ASSH_ALGO_MAC,
             .safety = 30, .speed = 70 },
@@ -170,7 +170,7 @@ static ASSH_MAC_INIT_FCN(assh_hmac_md5_96_init)
   return assh_hmac_init(c, &assh_hmac_md5_96, ctx_, key, &assh_hash_md5);
 }
 
-struct assh_algo_mac_s assh_hmac_md5_96 = 
+const struct assh_algo_mac_s assh_hmac_md5_96 = 
 {
   .algo = { .name = "hmac-md5-96", .class_ = ASSH_ALGO_MAC,
             .safety = 20, .speed = 75 },
@@ -189,7 +189,7 @@ static ASSH_MAC_INIT_FCN(assh_hmac_sha1_init)
   return assh_hmac_init(c, &assh_hmac_sha1, ctx_, key, &assh_hash_sha1);
 }
 
-struct assh_algo_mac_s assh_hmac_sha1 = 
+const struct assh_algo_mac_s assh_hmac_sha1 = 
 {
   .algo = { .name = "hmac-sha1", .class_ = ASSH_ALGO_MAC,
             .safety = 30, .speed = 70 },
@@ -208,7 +208,7 @@ static ASSH_MAC_INIT_FCN(assh_hmac_sha1_96_init)
   return assh_hmac_init(c, &assh_hmac_sha1_96, ctx_, key, &assh_hash_sha1);
 }
 
-struct assh_algo_mac_s assh_hmac_sha1_96 = 
+const struct assh_algo_mac_s assh_hmac_sha1_96 = 
 {
   .algo = { .name = "hmac-sha1-96", .class_ = ASSH_ALGO_MAC,
             .safety = 20, .speed = 75 },
@@ -227,7 +227,7 @@ static ASSH_MAC_INIT_FCN(assh_hmac_sha256_init)
   return assh_hmac_init(c, &assh_hmac_sha256, ctx_, key, &assh_hash_sha256);
 }
 
-struct assh_algo_mac_s assh_hmac_sha256 = 
+const struct assh_algo_mac_s assh_hmac_sha256 = 
 {
   .algo = { .name = "hmac-sha2-256", .class_ = ASSH_ALGO_MAC,
             .safety = 40, .speed = 60 },
@@ -246,7 +246,7 @@ static ASSH_MAC_INIT_FCN(assh_hmac_sha512_init)
   return assh_hmac_init(c, &assh_hmac_sha512, ctx_, key, &assh_hash_sha512);
 }
 
-struct assh_algo_mac_s assh_hmac_sha512 = 
+const struct assh_algo_mac_s assh_hmac_sha512 = 
 {
   .algo = { .name = "hmac-sha2-512", .class_ = ASSH_ALGO_MAC,
             .safety = 50, .speed = 50 },

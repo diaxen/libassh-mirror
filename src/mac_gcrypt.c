@@ -92,14 +92,14 @@ static assh_error_t assh_hmac_gcrypt_init(const struct assh_algo_mac_s *mac,
 }
 
 #define ASSH_GCRYPT_HMAC(id_, name_, algo_, ksize_, msize_, saf_, spd_) \
-extern struct assh_algo_mac_s assh_hmac_##id_;				\
+extern const struct assh_algo_mac_s assh_hmac_##id_;			\
 									\
 static ASSH_MAC_INIT_FCN(assh_hmac_gcrypt_##id_##_init)			\
 {									\
   return assh_hmac_gcrypt_init(&assh_hmac_##id_, ctx_, key, algo_);	\
 }									\
 									\
-struct assh_algo_mac_s assh_hmac_##id_ =				\
+const struct assh_algo_mac_s assh_hmac_##id_ =				\
 {									\
   .algo = { .name = name_, .class_ = ASSH_ALGO_MAC,			\
 		.safety = saf_, .speed = spd_ },			\
