@@ -87,6 +87,7 @@ if test x$enable_gcrypt = xyes ; then
     ])
   ])
 else
+      enable_gcrypt_hash=no
       enable_gcrypt_bignum=no
       enable_gcrypt_prng=no
       enable_gcrypt_alloc=no
@@ -97,9 +98,10 @@ fi
 AM_CONDITIONAL(COND_server,  [test x$enable_server = xyes])
 AM_CONDITIONAL(COND_client,  [test x$enable_client = xyes])
 
-AM_CONDITIONAL(COND_gcrypt_bignum,  [test x$enable_gcrypt_bignum = xyes])
 AM_CONDITIONAL(COND_gcrypt_hash,    [test x$enable_gcrypt_hash = xyes])
+AM_CONDITIONAL(COND_gcrypt_bignum,  [test x$enable_gcrypt_bignum = xyes])
 AM_CONDITIONAL(COND_gcrypt_prng,    [test x$enable_gcrypt_prng = xyes])
+AM_CONDITIONAL(COND_gcrypt_alloc,   [test x$enable_gcrypt_alloc = xyes])
 AM_CONDITIONAL(COND_gcrypt_ciphers, [test x$enable_gcrypt_ciphers = xyes])
 
 if test x$enable_server = xyes ; then
@@ -119,7 +121,7 @@ fi
 AC_DEFINE([CONFIG_ASSH_AUTH_USERNAME_LEN], [32], [SSH authentication max username length])
 AC_DEFINE([CONFIG_ASSH_AUTH_PASSWORD_LEN], [32], [SSH authentication max password length])
 
-#AC_DEFINE([CONFIG_ASSH_ALLOCA], [32], [Enable storing key related material on stack])
+#AC_DEFINE([CONFIG_ASSH_ALLOCA], [], [Enable storing key related material on stack])
 
 if test "$GCC" = "yes" ; then
     CFLAGS="-Wall $CFLAGS"
