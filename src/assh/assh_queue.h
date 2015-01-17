@@ -26,6 +26,18 @@
 
 #include "assh.h"
 
+/** @internal Link list entry */
+struct assh_queue_entry_s
+{
+  struct assh_queue_entry_s *next, *prev;
+};
+
+/** @internal Link list head */
+struct assh_queue_s
+{
+  struct assh_queue_entry_s head;
+  int count;
+};
 static inline void assh_queue_init(struct assh_queue_s *q)
 {
   q->head.next = q->head.prev = &q->head;

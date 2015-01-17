@@ -26,6 +26,7 @@
 #define ASSH_PACKET_H_
 
 #include "assh.h"
+#include "assh_queue.h"
 
 #include <string.h>
 

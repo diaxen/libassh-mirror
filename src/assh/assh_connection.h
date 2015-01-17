@@ -43,6 +43,7 @@
 
 #include "assh.h"
 #include "assh_map.h"
+#include "assh_queue.h"
 
 /** @This specifies request status */
 enum assh_request_status_e

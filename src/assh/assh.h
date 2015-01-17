@@ -68,6 +68,8 @@ struct assh_event_s;
 struct assh_service_s;
 struct assh_event_hndl_table_s;
 struct assh_event_s;
+struct assh_queue_entry_s;
+struct assh_queue_s;
 
 enum assh_alloc_type_e;
 enum assh_key_format_e;
@@ -304,19 +306,6 @@ struct assh_buffer_s
     size_t size;
     size_t len;
   };
-};
-
-/** @internal Link list entry */
-struct assh_queue_entry_s
-{
-  struct assh_queue_entry_s *next, *prev;
-};
-
-/** @internal Link list head */
-struct assh_queue_s
-{
-  struct assh_queue_entry_s head;
-  int count;
 };
 
 /** @internal SSH implementation identification string */
