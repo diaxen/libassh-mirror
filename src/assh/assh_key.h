@@ -21,6 +21,11 @@
 
 */
 
+/**
+   @file
+   @short SSH keys base structure and related functions
+*/
+
 #ifndef ASSH_KEY_H_
 #define ASSH_KEY_H_
 
@@ -31,31 +36,24 @@
 /** @This specifies the storage formats of SSH keys. */
 enum assh_key_format_e
 {
-  /** public key in rfc4716, base64 ascii format. */
+  /** Public key in rfc4716, base64 ascii format. */
   ASSH_KEY_FMT_PUB_RFC4716,
-  /** public key in rfc4253, section 6.6 binary format. */
+  /** Public key in rfc4253, section 6.6 binary format. */
   ASSH_KEY_FMT_PUB_RFC4253_6_6,
 
-  /** keys openssh-key-v1 base64 format */
+  /** Keys openssh-key-v1 base64 format */
   ASSH_KEY_FMT_OPENSSH_V1,
-  /** keys blob openssh-key-v1 binary format */
+  /** Keys blob openssh-key-v1 binary format */
   ASSH_KEY_FMT_OPENSSH_V1_BLOB,
-  /** private key used inside openssh-key-v1 binary format */
+  /** Private key used inside openssh-key-v1 binary format */
   ASSH_KEY_FMT_PV_OPENSSH_V1_KEY,
-  /** private key in rfc2440 like, base64 ascii format with PEM Asn1 inside. */
+  /** Private key in rfc2440 like, base64 ascii format with PEM Asn1 inside. */
   ASSH_KEY_FMT_PV_RFC2440_PEM_ASN1,
-  /** private key in PEM Asn1 DER binary format. */
+  /** Private key in PEM Asn1 DER binary format. */
   ASSH_KEY_FMT_PV_PEM_ASN1,
 };
 
-struct assh_key_s;
-
-/** @internal This function allocates and intiailizes the key
-    structure from the passed key blob data.
-
-    This function may only support binary key formats; ascii formats
-    are handled by helper functions.
-*/
+/** @internal @see assh_key_load_t */
 #define ASSH_KEY_LOAD_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t (n)   \
   (struct assh_context_s *c,                                            \
    const struct assh_key_ops_s *algo,                                   \
@@ -63,62 +61,63 @@ struct assh_key_s;
    struct assh_key_s **key,                                             \
    enum assh_key_format_e format)
 
+/** @internal @This defines the function type for the key loading
+    operation of the key module interface. @see assh_key_load */
 typedef ASSH_KEY_LOAD_FCN(assh_key_load_t);
 
-/** @internal This function creates a new key of specified bits size. */
+/** @internal @see assh_key_create_t */
 #define ASSH_KEY_CREATE_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t (n) \
   (struct assh_context_s *c,                                            \
    const struct assh_key_ops_s *algo,                                  \
    size_t bits, struct assh_key_s **key)
 
+/** @internal @This defines the function type for the key create
+    operation of the key module interface. @see assh_key_create */
 typedef ASSH_KEY_CREATE_FCN(assh_key_create_t);
 
-/** @internal This function checks the key validity. */
+/** @internal @see assh_key_validate_t */
 #define ASSH_KEY_VALIDATE_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t (n) \
   (struct assh_context_s *c,                                            \
    const struct assh_key_s *key)
 
+/** @internal @This defines the function type for the key validation
+    operation of the key module interface. @see assh_key_validate */
 typedef ASSH_KEY_VALIDATE_FCN(assh_key_validate_t);
 
-
-/** @internal This function write the key in blob representation to
-    the @tt blob buffer. The @tt blob_len parameter indicates the size
-    of the buffer and is updated with the actual size of the blob.
-
-    If the @tt blob parameter is @tt NULL, the function updates the
-    @tt blob_len parmeter with a size value which is greater or equal
-    to what is needed to hold the blob.
-
-    This function may only support the @ref
-    ASSH_KEY_FMT_PUB_RFC4253_6_6 format.
-*/
+/** @internal @see assh_key_output_t */
 #define ASSH_KEY_OUTPUT_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t (n) \
   (struct assh_context_s *c,                                            \
    const struct assh_key_s *key,                                        \
    uint8_t *blob, size_t *blob_len,                                     \
    enum assh_key_format_e format)
 
+/** @internal @This defines the function type for the key output
+    operation of the key module interface. @see assh_key_output */
 typedef ASSH_KEY_OUTPUT_FCN(assh_key_output_t);
 
-
-/** This function compares two keys and returns true if the keys are
-    equals. If the @tt pub parameter is set, only the public part of
-    the keys are compared. */
+/** @internal @see assh_key_cmp_t */
 #define ASSH_KEY_CMP_FCN(n) ASSH_WARN_UNUSED_RESULT assh_bool_t (n)     \
   (struct assh_context_s *c,                                            \
    const struct assh_key_s *key,                                        \
    const struct assh_key_s *b, assh_bool_t pub)
 
+/** @internal @This defines the function type for the key compare
+    operation of the key module interface. @see assh_key_cmp */
 typedef ASSH_KEY_CMP_FCN(assh_key_cmp_t);
 
-
-/** @internal This function must release the resources used by the key. */
+/** @internal @see assh_key_cleanup_t */
 #define ASSH_KEY_CLEANUP_FCN(n) void (n)                                \
   (struct assh_context_s *c,                                            \
    struct assh_key_s *key)
 
+/** @internal @This defines the function type for the key cleanup
+    operation of the key module interface.
+    @see assh_key_drop @see assh_key_flush */
 typedef ASSH_KEY_CLEANUP_FCN(assh_key_cleanup_t);
 
+/** @internal @This is the operations descriptor structure of the SSH
+    key module interface. It defines functions associated to a given
+    type of key. */
 struct assh_key_ops_s
 {
   const char *type;
@@ -130,19 +129,24 @@ struct assh_key_ops_s
   assh_key_cleanup_t *f_cleanup;
 };
 
-/** SSH key structure */
+/** @internalmembers @This is the generic SSH key structure. Other key
+    structures inherit from this type. */
 struct assh_key_s
 {
-  /* next key in list */
+  /* Next key in the list */
   const struct assh_key_s *next;
 
-  /* functions operating on this key */
+  /* Functions operating on this key */
   const struct assh_key_ops_s *algo;
 
-  /* class of algorithm the key is intended to use with */
+  /* Class of algorithm the key is intended to be used with */
   enum assh_algo_class_e role;
 };
 
+/** @internal @This allocates and intiailizes the key structure from
+    the passed key blob data. This function may only support some
+    binary key formats. Ascii formats are handled by helper
+    functions. @see @assh/helper_key.h */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_key_load(struct assh_context_s *c,
               const struct assh_key_s **key,
@@ -151,6 +155,8 @@ assh_key_load(struct assh_context_s *c,
               enum assh_key_format_e format,
               const uint8_t *blob, size_t blob_len);
 
+/** @internal @This creates a new key of specified type and bits
+    size. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_key_create(struct assh_context_s *c,
                 const struct assh_key_s **key, size_t bits,
@@ -158,7 +164,7 @@ assh_key_create(struct assh_context_s *c,
                 enum assh_algo_class_e role);
 
 /** @This function returns true if both keys are equals. If the @tt
-    pub parameter is set, only the public part of the key are taken
+    pub parameter is set, only the public parts of the key are taken
     into account. */
 static inline ASSH_WARN_UNUSED_RESULT assh_bool_t
 assh_key_cmp(struct assh_context_s *c, const struct assh_key_s *key,
@@ -167,12 +173,12 @@ assh_key_cmp(struct assh_context_s *c, const struct assh_key_s *key,
   return key->algo->f_cmp(c, key, b, pub);
 }
 
-/** @internal @This releases the first key on the linked list. */
+/** @This releases the first key on the linked list. */
 void assh_key_drop(struct assh_context_s *c,
                    const struct assh_key_s **head);
 
-/** @internal @This releases all the keys on the linked list
-    and clears the list. */
+/** @This releases all the keys on the linked list
+    and set the list head to @tt NULL. */
 static inline void
 assh_key_flush(struct assh_context_s *c,
                const struct assh_key_s **head)
@@ -181,6 +187,7 @@ assh_key_flush(struct assh_context_s *c,
     assh_key_drop(c, head);
 }
 
+/** @internal @This inserts a key in a list of keys. */
 static inline void
 assh_key_insert(const struct assh_key_s **head,
                 const struct assh_key_s *key)
@@ -197,6 +204,8 @@ assh_key_validate(struct assh_context_s *c,
   return key->algo->f_validate(c, key);
 }
 
+/** @internal @This looks for a key usable with the given algorithm
+    among keys registered on the context. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_key_lookup(struct assh_context_s *c,
                 const struct assh_key_s **key,

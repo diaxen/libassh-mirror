@@ -21,37 +21,64 @@
 
 */
 
+/**
+   @file
+   @short SSH message authentication code module interface
+*/
 
 #ifndef ASSH_MAC_H_
 #define ASSH_MAC_H_
 
 #include "assh_algo.h"
 
-#define ASSH_MAC_INIT_FCN(n) \
-  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_context_s *c,\
+/** @internal @see assh_mac_init_t */
+#define ASSH_MAC_INIT_FCN(n)                                            \
+  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_context_s *c,    \
                                            void *ctx_, const uint8_t *key)
+
+/** @internal @This defines the function type for the mac
+    initialization operation of mac module interface. The @tt
+    ctx_ argument must points to a buffer allocated in secure memory
+    of size given by @ref assh_algo_mac_s::ctx_size. */
 typedef ASSH_MAC_INIT_FCN(assh_mac_init_t);
 
-#define ASSH_MAC_COMPUTE_FCN(n) \
-  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(void *ctx_, uint32_t seq, \
+/** @internal @see assh_mac_compute_t */
+#define ASSH_MAC_COMPUTE_FCN(n)                                         \
+  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(void *ctx_, uint32_t seq,    \
                                            const uint8_t *data, size_t len, \
                                            uint8_t *mac)
+
+/** @internal @This defines the function type for the mac computation
+    operation of the mac module interface. */
 typedef ASSH_MAC_COMPUTE_FCN(assh_mac_compute_t);
 
+/** @internal @see assh_mac_verify_t */
 #define ASSH_MAC_VERIFY_FCN(n) \
   ASSH_WARN_UNUSED_RESULT assh_error_t (n)(void *ctx_, uint32_t seq, \
                                            const uint8_t *data, size_t len, \
                                            const uint8_t *mac)
+
+/** @internal @This defines the function type for the mac checking
+    operation of the mac module interface. */
 typedef ASSH_MAC_VERIFY_FCN(assh_mac_verify_t);
 
+/** @internal @see assh_mac_cleanup_t */
 #define ASSH_MAC_CLEANUP_FCN(n) void (n)(struct assh_context_s *c, void *ctx_)
+
+/** @internal @This defines the function type for the cleanup
+    operation of the mac module interface. */
 typedef ASSH_MAC_CLEANUP_FCN(assh_mac_cleanup_t);
 
+/** @internalmembers @This is the mac algorithm descriptor
+    structure. It can be casted to the @ref assh_algo_s type. */
 struct assh_algo_mac_s
 {
   struct assh_algo_s algo;
+  /** Size of the context structure needed to initialize the algorithm. */
   size_t ctx_size;
+  /** Mac key size in bytes. */
   size_t key_size;
+  /** Authentication tag size. */
   size_t mac_size;
   assh_mac_init_t *f_init;
   assh_mac_compute_t *f_compute;

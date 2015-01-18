@@ -23,7 +23,7 @@
 
 /**
    @file
-   @short SSH algorithms descriptor structure and related functions
+   @short SSH algorithms base descriptor structure and related functions
 */
 
 #ifndef ASSH_ALGO_H_
@@ -37,10 +37,9 @@
    const struct assh_algo_s *algo,                       \
    const struct assh_key_s *key)
 
-/** @internal @This must return true if the provided key can be used
-    with the algorithm. When the @tt key parameter is @tt NULL, the
-    return value must instead indicate if the algorithm needs a key
-    when used as part of the key exchange. @see assh_algo_suitable_key */
+/** @internal @This defines the function type for the key
+    compatibility checking operation common to all the algorithm
+    module interfaces. @see assh_algo_suitable_key */
 typedef ASSH_ALGO_SUITABLE_KEY_FCN(assh_algo_suitable_key_t);
 
 /** @internal @This specifies classes of SSH algorithm */
@@ -129,7 +128,10 @@ assh_algo_by_key(struct assh_context_s *c,
 /** @internal @This returns true if the provided key can be used with
     the algorithm and has been loaded or created for that purpose.
     When the @tt key parameter is @tt NULL, the return value indicates
-    if the algorithm needs a key when used during a key exchange. */
+    if the algorithm needs a key when used during a key exchange.
+
+    This does not check the validity of the key, the @ref
+    assh_key_validate function is provided for that purpose. */
 assh_bool_t
 assh_algo_suitable_key(struct assh_context_s *c,
                        const struct assh_algo_s *algo,

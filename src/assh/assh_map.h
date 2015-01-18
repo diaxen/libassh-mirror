@@ -21,13 +21,21 @@
 
 */
 
+/**
+   @file
+   @short Associative container
+   @internal
+*/
+
 #ifndef ASSH_MAP_H_
 #define ASSH_MAP_H_
 
 #include "assh.h"
 
+/** @internal Associative container key type */
 typedef uint32_t assh_map_id_t;
 
+/** @internal Associative container entry */
 struct assh_map_entry_s
 {
   struct assh_map_entry_s *link[2];
@@ -63,7 +71,7 @@ assh_map_remove_id(struct assh_map_entry_s **root,
   return ASSH_NOT_FOUND;
 }
 
-/* @This iterates over items in the container. */
+/* @internal @This iterates over items in the container. */
 void assh_map_iter(struct assh_map_entry_s *root, void *ctx,
                    void (*iter)(struct assh_map_entry_s *, void *));
 

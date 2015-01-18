@@ -23,7 +23,7 @@
 
 /**
    @file
-   @short SSH cipher pluggable module interface
+   @short SSH cipher module interface
 */
 
 #ifndef ASSH_CIPHER_H_
@@ -60,7 +60,7 @@ typedef ASSH_CIPHER_PROCESS_FCN(assh_cipher_process_t);
 typedef ASSH_CIPHER_CLEANUP_FCN(assh_cipher_cleanup_t);
 
 
-/** @internalmembers @This is the cipher algorithms descriptor
+/** @internalmembers @This is the cipher algorithm descriptor
     structure. It can be casted to the @ref assh_algo_s type. */
 struct assh_algo_cipher_s
 {
