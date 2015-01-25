@@ -174,7 +174,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
   return err;
 }
 
-static ASSH_SIGN_VERIFY_FCN(assh_sign_dsa_verify)
+static ASSH_SIGN_CHECK_FCN(assh_sign_dsa_check)
 {
   const struct assh_key_dsa_s *k = (const void*)key;
   assh_error_t err;
@@ -292,7 +292,7 @@ const struct assh_algo_sign_s assh_sign_dsa =
     .key = &assh_key_dsa,
   },
   .f_generate = assh_sign_dsa_generate,
-  .f_verify = assh_sign_dsa_verify,
+  .f_check = assh_sign_dsa_check,
 };
 
 static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key_2048_224)
@@ -315,7 +315,7 @@ const struct assh_algo_sign_s assh_sign_dsa2048_sha224 =
     .key = &assh_key_dsa,
   },
   .f_generate = assh_sign_dsa_generate,
-  .f_verify = assh_sign_dsa_verify,
+  .f_check = assh_sign_dsa_check,
 };
 
 static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key_2048_256)
@@ -338,7 +338,7 @@ const struct assh_algo_sign_s assh_sign_dsa2048_sha256 =
     .key = &assh_key_dsa,
   },
   .f_generate = assh_sign_dsa_generate,
-  .f_verify = assh_sign_dsa_verify,
+  .f_check = assh_sign_dsa_check,
 };
 
 static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key_3072_256)
@@ -361,6 +361,6 @@ const struct assh_algo_sign_s assh_sign_dsa3072_sha256 =
     .key = &assh_key_dsa,
   },
   .f_generate = assh_sign_dsa_generate,
-  .f_verify = assh_sign_dsa_verify,
+  .f_check = assh_sign_dsa_check,
 };
 

@@ -231,5 +231,8 @@ assh_key_lookup(struct assh_context_s *c,
                 const struct assh_key_s **key,
                 const struct assh_algo_s *algo);
 
+/** Dummy key algorithm */
+extern const struct assh_key_ops_s assh_key_none;
+
 #endif
 

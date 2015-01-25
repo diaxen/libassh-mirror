@@ -242,7 +242,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
   return err;
 }
 
-static ASSH_SIGN_VERIFY_FCN(assh_sign_eddsa_verify)
+static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
 {
   const struct assh_key_eddsa_s *k = (const void*)key;
   assh_error_t err;
@@ -503,7 +503,7 @@ const struct assh_algo_sign_s assh_sign_ed25519 =
     .key = &assh_key_ed25519,
   },
   .f_generate = assh_sign_eddsa_generate,
-  .f_verify = assh_sign_eddsa_verify,
+  .f_check = assh_sign_eddsa_check,
 };
 
 
@@ -523,7 +523,7 @@ const struct assh_algo_sign_s assh_sign_eddsa_e382 =
     .key = &assh_key_eddsa_e382,
   },
   .f_generate = assh_sign_eddsa_generate,
-  .f_verify = assh_sign_eddsa_verify,
+  .f_check = assh_sign_eddsa_check,
 };
 
 
@@ -543,6 +543,5 @@ const struct assh_algo_sign_s assh_sign_eddsa_e521 =
     .key = &assh_key_eddsa_e521,
   },
   .f_generate = assh_sign_eddsa_generate,
-  .f_verify = assh_sign_eddsa_verify,
+  .f_check = assh_sign_eddsa_check,
 };
-

@@ -225,7 +225,7 @@ static assh_error_t assh_userauth_client_req_pubkey_sign(struct assh_session_s *
   assh_error_t err;
 
   size_t sign_len;
-  ASSH_ERR_RET(algo->f_generate(s->ctx, pv->pub_keys, 0,
+  ASSH_ERR_RET(assh_sign_generate(s->ctx, algo, pv->pub_keys, 0,
 		NULL, NULL, NULL, &sign_len) | ASSH_ERRSV_DISCONNECT);
 
   struct assh_packet_s *pout;
@@ -244,7 +244,7 @@ static assh_error_t assh_userauth_client_req_pubkey_sign(struct assh_session_s *
   /* append the signature */
   uint8_t *sign;
   ASSH_ASSERT(assh_packet_add_string(pout, sign_len, &sign));
-  ASSH_ERR_GTO(algo->f_generate(s->ctx, pv->pub_keys,
+  ASSH_ERR_GTO(assh_sign_generate(s->ctx, algo, pv->pub_keys,
                  3, sign_ptrs, sign_sizes, sign, &sign_len)
 	       | ASSH_ERRSV_DISCONNECT, err_packet);
   assh_packet_shrink_string(pout, sign, sign_len);

@@ -261,7 +261,7 @@ static assh_error_t assh_userauth_server_req_password(struct assh_session_s *s,
 
 #ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
 
-static assh_error_t assh_userauth_server_pubkey_verify(struct assh_session_s *s,
+static assh_error_t assh_userauth_server_pubkey_check(struct assh_session_s *s,
                                                        struct assh_packet_s *p,
                                                        uint8_t *sign)
 {
@@ -281,8 +281,8 @@ static assh_error_t assh_userauth_server_pubkey_verify(struct assh_session_s *s,
     { 4,       s->session_id_len, sign - &p->head.msg };
 
   /* check the signature */
-  if (pv->algo->f_verify(s->ctx, pv->pub_key, 3,
-                     sign_ptrs, sign_sizes, sign + 4, end - sign - 4) == ASSH_OK)
+  if (assh_sign_check(s->ctx, pv->algo, pv->pub_key, 3,
+                      sign_ptrs, sign_sizes, sign + 4, end - sign - 4) == ASSH_OK)
     ASSH_ERR_RET(assh_userauth_server_success(s) | ASSH_ERRSV_DISCONNECT);
   else
     ASSH_ERR_RET(assh_userauth_server_failure(s) | ASSH_ERRSV_DISCONNECT);
@@ -346,7 +346,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
         ASSH_ERR_RET(assh_userauth_server_failure(s)
 		     | ASSH_ERRSV_DISCONNECT);
       else
-        ASSH_ERR_RET(assh_userauth_server_pubkey_verify(s, pv->sign_pck, pv->sign)
+        ASSH_ERR_RET(assh_userauth_server_pubkey_check(s, pv->sign_pck, pv->sign)
 		     | ASSH_ERRSV_DISCONNECT);
       return ASSH_OK;
     }
@@ -420,7 +420,7 @@ static assh_error_t assh_userauth_server_req_pubkey(struct assh_session_s *s,
     {
       if (pv->pubkey_state == ASSH_USERAUTH_PUBKEY_FOUND)
         {
-          ASSH_ERR_RET(assh_userauth_server_pubkey_verify(s, p, sign)
+          ASSH_ERR_RET(assh_userauth_server_pubkey_check(s, p, sign)
 		       | ASSH_ERRSV_DISCONNECT);
           return ASSH_OK;
         }

@@ -172,7 +172,7 @@ assh_sign_rsa_generate(struct assh_context_s *c,
 }
 
 static ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_sign_rsa_verify(struct assh_context_s *c,
+assh_sign_rsa_check(struct assh_context_s *c,
                      const struct assh_key_s *key, size_t data_count,
                      const uint8_t * const data[], size_t const data_len[],
                      const uint8_t *sign, size_t sign_len, uint8_t digest_mask)
@@ -218,7 +218,7 @@ assh_sign_rsa_verify(struct assh_context_s *c,
                    /* Nun  */ &k->nn, &k->en), err_em);
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
-  assh_hexdump("rsa verify em", em, n / 8);
+  assh_hexdump("rsa check em", em, n / 8);
 #endif
 
   uint8_t *em_end = em + n / 8;
@@ -263,7 +263,7 @@ assh_sign_rsa_verify(struct assh_context_s *c,
   assh_hash_cleanup(hash_ctx);
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
-  assh_hexdump("rsa verify hash", hash, digest->algo->hash_size);
+  assh_hexdump("rsa check hash", hash, digest->algo->hash_size);
 #endif
 
   ASSH_CHK_GTO(assh_memcmp(hash, em, digest->algo->hash_size),
@@ -289,9 +289,9 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_768)
   return assh_bignum_bits(&k->nn) >= 768;
 }
 
-static ASSH_SIGN_VERIFY_FCN(assh_sign_rsa_verify_sha1_md5)
+static ASSH_SIGN_CHECK_FCN(assh_sign_rsa_check_sha1_md5)
 {
-  return assh_sign_rsa_verify(c, key, data_count, data, data_len,
+  return assh_sign_rsa_check(c, key, data_count, data, data_len,
                               sign, sign_len, (1 << RSA_DIGEST_SHA1)
                               | (1 << RSA_DIGEST_MD5)
                               | (1 << RSA_DIGEST_SHA256)
@@ -315,7 +315,7 @@ const struct assh_algo_sign_s assh_sign_rsa_sha1_md5 =
     .key = &assh_key_rsa,
   },
   .f_generate = assh_sign_rsa_generate_sha1,
-  .f_verify = assh_sign_rsa_verify_sha1_md5,
+  .f_check = assh_sign_rsa_check_sha1_md5,
 };
 
 
@@ -330,9 +330,9 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_1024)
   return assh_bignum_bits(&k->nn) >= 1024;
 }
 
-static ASSH_SIGN_VERIFY_FCN(assh_sign_rsa_verify_sha1)
+static ASSH_SIGN_CHECK_FCN(assh_sign_rsa_check_sha1)
 {
-  return assh_sign_rsa_verify(c, key, data_count, data, data_len,
+  return assh_sign_rsa_check(c, key, data_count, data, data_len,
                               sign, sign_len, (1 << RSA_DIGEST_SHA1)
                               | (1 << RSA_DIGEST_SHA256)
                               | (1 << RSA_DIGEST_SHA384)
@@ -349,7 +349,7 @@ const struct assh_algo_sign_s assh_sign_rsa_sha1 =
     .key = &assh_key_rsa,
   },
   .f_generate = assh_sign_rsa_generate_sha1,
-  .f_verify = assh_sign_rsa_verify_sha1,
+  .f_check = assh_sign_rsa_check_sha1,
 };
 
 
@@ -374,14 +374,14 @@ const struct assh_algo_sign_s assh_sign_rsa_sha1_2048 =
     .key = &assh_key_rsa,
   },
   .f_generate = assh_sign_rsa_generate_sha1,
-  .f_verify = assh_sign_rsa_verify_sha1,
+  .f_check = assh_sign_rsa_check_sha1,
 };
 
 
 
-static ASSH_SIGN_VERIFY_FCN(assh_sign_rsa_verify_sha256)
+static ASSH_SIGN_CHECK_FCN(assh_sign_rsa_check_sha256)
 {
-  return assh_sign_rsa_verify(c, key, data_count, data, data_len,
+  return assh_sign_rsa_check(c, key, data_count, data, data_len,
                               sign, sign_len, (1 << RSA_DIGEST_SHA256)
                               | (1 << RSA_DIGEST_SHA384)
                               | (1 << RSA_DIGEST_SHA512));
@@ -403,7 +403,7 @@ const struct assh_algo_sign_s assh_sign_rsa_sha256_2048 =
     .key = &assh_key_rsa,
   },
   .f_generate = assh_sign_rsa_generate_sha256,
-  .f_verify = assh_sign_rsa_verify_sha256,
+  .f_check = assh_sign_rsa_check_sha256,
 };
 
 
@@ -428,6 +428,6 @@ const struct assh_algo_sign_s assh_sign_rsa_sha256_3072 =
     .key = &assh_key_rsa,
   },
   .f_generate = assh_sign_rsa_generate_sha256,
-  .f_verify = assh_sign_rsa_verify_sha256,
+  .f_check = assh_sign_rsa_check_sha256,
 };
 

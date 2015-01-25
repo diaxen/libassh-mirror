@@ -34,10 +34,35 @@
    const uint8_t * const data[], size_t const data_len[],		\
    uint8_t *sign, size_t *sign_len)
 
-/** @internal This function must compute the signature of the passed
-    data using the provided key and writes it to the @tt sign
-    buffer. The @tt sign_len parameter indicates the size of the
-    buffer and is updated with the actual size of the signature blob.
+/** @internal @This defines the function type for the signature
+    generation operation of the signature module interface.
+    @see assh_sign_generate */
+typedef ASSH_SIGN_GENERATE_FCN(assh_sign_generate_t);
+
+/** @internal @see assh_sign_check_t */
+#define ASSH_SIGN_CHECK_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t (n) \
+  (struct assh_context_s *c,						\
+   const struct assh_key_s *key, size_t data_count,			\
+   const uint8_t * const data[], size_t const data_len[],		\
+   const uint8_t *sign, size_t sign_len)
+
+/** @internal @This defines the function type for the signature
+    checking operation of the signature module interface.
+    @see assh_sign_check */
+typedef ASSH_SIGN_CHECK_FCN(assh_sign_check_t);
+
+
+struct assh_algo_sign_s
+{
+  struct assh_algo_s algo;
+  assh_sign_generate_t *f_generate;
+  assh_sign_check_t *f_check;
+};
+
+/** @internal @This computes the signature of the passed data using
+    the provided key then writes it to the @tt sign buffer. The @tt
+    sign_len parameter indicates the size of the buffer and is updated
+    with the actual size of the signature blob.
 
     The data to sign can be split into multiple buffers. The @tt
     data_count parameter must specify the number of data buffers to use.
@@ -45,33 +70,28 @@
     If the @tt sign parameter is @tt NULL, the function updates the
     @tt sign_len parmeter with a size value which is greater or equal
     to what is needed to hold the signature blob. In this case, the
-    @tt data_* parameters are not used.
- */
-typedef ASSH_SIGN_GENERATE_FCN(assh_sign_generate_t);
-
-#define ASSH_SIGN_VERIFY_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t (n) \
-  (struct assh_context_s *c,						\
-   const struct assh_key_s *key, size_t data_count,			\
-   const uint8_t * const data[], size_t const data_len[],		\
-   const uint8_t *sign, size_t sign_len)
-
-/** @internal This function must verify the signature of the passed
-    data using the provided key.
-
-    The data can be split into multiple buffers. The @tt data_count
-    parameter must specify the number of data buffers used.
- */
-typedef ASSH_SIGN_VERIFY_FCN(assh_sign_verify_t);
-
-
-struct assh_algo_sign_s
+    @tt data_* parameters are not used. */
+static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_sign_generate(struct assh_context_s *c, const struct assh_algo_sign_s *algo,
+                   const struct assh_key_s *key, size_t data_count,
+                   const uint8_t * const data[], size_t const data_len[],
+                   uint8_t *sign, size_t *sign_len)
 {
-  struct assh_algo_s algo;
-  assh_sign_generate_t *f_generate;
-  assh_sign_verify_t *f_verify;
-};
+  return algo->f_generate(c, key, data_count, data, data_len, sign, sign_len);
+}
 
-extern const struct assh_key_ops_s assh_key_none;
+/** @internal @This checks the signature of the passed data using the
+    provided key. The data can be split into multiple buffers. The @tt
+    data_count parameter must specify the number of data buffers used. */
+static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_sign_check(struct assh_context_s *c, const struct assh_algo_sign_s *algo,
+                 const struct assh_key_s *key, size_t data_count,
+                 const uint8_t * const data[], size_t const data_len[],
+                 const uint8_t *sign, size_t sign_len)
+{
+  return algo->f_check(c, key, data_count, data, data_len, sign, sign_len);
+}
+
 
 extern const struct assh_algo_sign_s assh_sign_none;
 

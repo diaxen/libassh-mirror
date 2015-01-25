@@ -138,7 +138,7 @@ assh_error_t test_const()
 	data[j] = j;
 
       fprintf(stderr, "g");
-      ASSH_ERR_RET(a->f_generate(&context, key, 3, ptr, sz, NULL, &sign_len));
+      ASSH_ERR_RET(assh_sign_generate(&context, a, key, 3, ptr, sz, NULL, &sign_len));
 
       if (sign_len != algos[i].sign_len)
 	{
@@ -148,7 +148,7 @@ assh_error_t test_const()
 	}
 
       uint8_t sign[sign_len];
-      ASSH_ERR_RET(a->f_generate(&context, key, 3, ptr, sz, sign, &sign_len));
+      ASSH_ERR_RET(assh_sign_generate(&context, a, key, 3, ptr, sz, sign, &sign_len));
 
       if (memcmp(algos[i].sign, sign, sign_len))
 	{
@@ -158,13 +158,13 @@ assh_error_t test_const()
 	}
 
       fprintf(stderr, "v");
-      if (a->f_verify(&context, key, 3, ptr, sz, sign, sign_len))
+      if (assh_sign_check(&context, a, key, 3, ptr, sz, sign, sign_len))
 	abort();
 
       data[rand() % sizeof(data)]++;
 
       fprintf(stderr, "V");
-      if (!a->f_verify(&context, key, 3, ptr, sz, sign, sign_len))
+      if (!assh_sign_check(&context, a, key, 3, ptr, sz, sign, sign_len))
 	abort();
 
       assh_key_drop(&context, &key);
@@ -234,15 +234,15 @@ assh_error_t test_loop()
 
           fprintf(stderr, "g");
 
-	  ASSH_ERR_RET(a->f_generate(&context, key, c, ptr, sz, NULL, &sign_len));
+	  ASSH_ERR_RET(assh_sign_generate(&context, a, key, c, ptr, sz, NULL, &sign_len));
 	  assert(sign_len > 0);
 
 	  uint8_t sign[sign_len];
-	  ASSH_ERR_RET(a->f_generate(&context, key, c, ptr, sz, sign, &sign_len));
+	  ASSH_ERR_RET(assh_sign_generate(&context, a, key, c, ptr, sz, sign, &sign_len));
 
           fprintf(stderr, "v");
 
-	  err = a->f_verify(&context, key, c, ptr, sz, sign, sign_len);
+	  err = assh_sign_check(&context, a, key, c, ptr, sz, sign, sign_len);
 	  assert(err == ASSH_OK);
 
           unsigned int r1 = rand() % sign_len;
@@ -257,12 +257,12 @@ assh_error_t test_loop()
 
           fprintf(stderr, "V");
 
-	  err = a->f_verify(&context, key, c, ptr, sz, sign, sign_len);
+	  err = assh_sign_check(&context, a, key, c, ptr, sz, sign, sign_len);
 	  assert(err != ASSH_OK);
 
 	  sign[r1] ^= r2;
 
-	  err = a->f_verify(&context, key, c, ptr, sz, sign, sign_len);
+	  err = assh_sign_check(&context, a, key, c, ptr, sz, sign, sign_len);
 	  assert(err == ASSH_OK);
 
 	  if (size)
@@ -275,7 +275,7 @@ assh_error_t test_loop()
 #endif
 	      data[r1] ^= r2;
 
-	      err = a->f_verify(&context, key, c, ptr, sz, sign, sign_len);
+	      err = assh_sign_check(&context, a, key, c, ptr, sz, sign, sign_len);
 	      assert(err != ASSH_OK);
 	    }
 

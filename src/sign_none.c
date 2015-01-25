@@ -94,7 +94,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_none_generate)
   return ASSH_OK;
 }
 
-static ASSH_SIGN_VERIFY_FCN(assh_sign_none_verify)
+static ASSH_SIGN_CHECK_FCN(assh_sign_none_check)
 {
   return ASSH_OK;
 }
@@ -115,6 +115,6 @@ const struct assh_algo_sign_s assh_sign_none =
     .key = &assh_key_none,
   },
   .f_generate = assh_sign_none_generate,
-  .f_verify = assh_sign_none_verify,
+  .f_check = assh_sign_none_check,
 };
 
