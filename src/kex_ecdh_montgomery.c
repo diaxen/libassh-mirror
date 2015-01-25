@@ -465,7 +465,7 @@ assh_kex_ecdhmt_init(struct assh_session_s *s,
 {
   assh_error_t err;
 
-  size_t l = assh_align8(curve->bits) / 8;
+  size_t l = ASSH_ALIGN8(curve->bits) / 8;
 
   struct assh_kex_ecdhmt_private_s *pv;
   ASSH_ERR_RET(assh_alloc(s->ctx, sizeof(*pv) + l * 2,

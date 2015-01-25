@@ -11,6 +11,7 @@
 
 @parse {
 assh/assh.h
+assh/assh_platform.h
 assh/assh_algo.h
 assh/assh_alloc.h
 assh/assh_bignum.h

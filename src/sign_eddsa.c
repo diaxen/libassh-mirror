@@ -44,7 +44,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
   /* check availability of the private key */
   ASSH_CHK_RET(!k->private, ASSH_ERR_MISSING_KEY);
 
-  size_t n = assh_align8(k->curve->bits) / 8;
+  size_t n = ASSH_ALIGN8(k->curve->bits) / 8;
   size_t tlen = strlen(k->key.algo->type);
   size_t len = 4 + tlen + 4 + 2 * n;
 
@@ -250,7 +250,7 @@ static ASSH_SIGN_VERIFY_FCN(assh_sign_eddsa_verify)
   const struct assh_edward_curve_s *curve = k->curve;
   const struct assh_hash_algo_s *hash = k->hash;
 
-  size_t n = assh_align8(k->curve->bits) / 8;
+  size_t n = ASSH_ALIGN8(k->curve->bits) / 8;
   size_t tlen = strlen(k->key.algo->type);
 
   ASSH_CHK_RET(sign_len != 4 + tlen + 4 + 2 * n, ASSH_ERR_INPUT_OVERFLOW);

@@ -74,12 +74,19 @@ static inline int assh_bignum_words(size_t bits)
 
 static inline int assh_clz(assh_bnword_t x)
 {
-  if (sizeof(x) <= sizeof(unsigned int))
-    return __builtin_clz(x) + ASSH_BIGNUM_W - sizeof(unsigned int) * 8;
-  else if (sizeof(x) <= sizeof(unsigned long))
-    return __builtin_clzl(x) + ASSH_BIGNUM_W - sizeof(unsigned long) * 8;
-  else if (sizeof(x) <= sizeof(unsigned long long))
-    return __builtin_clzll(x) + ASSH_BIGNUM_W - sizeof(unsigned long long) * 8;
+  switch (sizeof(x))
+    {
+    case 1:
+      return ASSH_CLZ8(x);
+    case 2:
+      return ASSH_CLZ16(x);
+    case 4:
+      return ASSH_CLZ32(x);
+    case 8:
+      return ASSH_CLZ64(x);
+    }
+
+  abort();
 }
 
 /* This function checks the higher word of the number for overflow. */
@@ -136,7 +143,7 @@ assh_bignum_to_buffer(const struct assh_bignum_s *bn,
                       uint8_t * __restrict__ mpint,
                       enum assh_bignum_fmt_e format)
 {
-  size_t i, l = assh_align8(bn->bits) / 8;
+  size_t i, l = ASSH_ALIGN8(bn->bits) / 8;
   assh_bnword_t *n = bn->n;
   uint8_t *m = mpint;
 
@@ -1177,7 +1184,7 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_builtin_convert)
           srcfmt == ASSH_BIGNUM_LSB_RAW)
         {
           b = dstn->bits;
-          n = l = assh_align8(b) / 8;
+          n = l = ASSH_ALIGN8(b) / 8;
         }
       else
         {

@@ -29,8 +29,8 @@
 #ifndef ASSH_H_
 #define ASSH_H_
 
-#include <stddef.h>
-#include <stdint.h>
+#include "assh_platform.h"
+
 #include <assert.h>
 
 #ifdef HAVE_CONFIG_H
@@ -230,7 +230,7 @@ enum assh_error_e
 #ifndef CONFIG_ASSH_DEBUG
 
 /** @internal */
-#define ASSH_DEBUG(...)
+# define ASSH_DEBUG(...)
 
 /** @internal */
 static inline void
@@ -248,7 +248,7 @@ assh_hexdump(const char *name, const void *data, unsigned int len)
 #include <stdio.h>
 
 /** @internal */
-#define ASSH_DEBUG(...) fprintf(stderr, "assh_debug: " __VA_ARGS__)
+# define ASSH_DEBUG(...) fprintf(stderr, "assh_debug: " __VA_ARGS__)
 
 /** @internal */
 void assh_hexdump(const char *name, const void *data, unsigned int len);
@@ -317,27 +317,6 @@ struct assh_buffer_s
 
 /** Memory allocator function type, same behavior as standard @tt realloc. */
 typedef ASSH_ALLOCATOR(assh_allocator_t);
-
-/** @internal */
-#define ASSH_MAX(a, b) ({ typeof(a) __a = (a); typeof(b) __b = (b); __a > __b ? __a : __b; })
-
-/** @internal */
-#define ASSH_MIN(a, b) ({ typeof(a) __a = (a); typeof(b) __b = (b); __a < __b ? __a : __b; })
-
-/** @internal */
-#define ASSH_SWAP(a, b) do { typeof(a) __a = (a); typeof(b) __b = (b); (a) = __b; (b) = __a; } while(0)
-
-/** @internal */
-#define assh_clz8(x) (__builtin_clz((uint8_t)(x)) + 8 - sizeof(int) * 8)
-
-/** @internal */
-#define assh_align8(x) ((((x) - 1) | 7) + 1)
-
-#ifdef __GNUC__
-#define ASSH_WARN_UNUSED_RESULT __attribute__((warn_unused_result))
-#else
-#define ASSH_WARN_UNUSED_RESULT
-#endif
 
 /** @internal @hidecontent */
 #define ASSH_FIRST_FIELD_ASSERT(struct_name, field)                   \

@@ -170,9 +170,9 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
   /* create shared secret */
   size_t hlen = pv->hash->hash_size;
   size_t sbits = kbits - 2 * hlen * 8 - 49;
-  size_t slen = 4 + assh_align8(sbits) / 8;
+  size_t slen = 4 + ASSH_ALIGN8(sbits) / 8;
 
-  size_t elen = assh_align8(kbits) / 8;
+  size_t elen = ASSH_ALIGN8(kbits) / 8;
 
   ASSH_ERR_GTO(assh_alloc(c, slen + 4 + elen, ASSH_ALLOC_SECUR,
 			  (void**)&pv->secret), err_tkey);
@@ -435,7 +435,7 @@ static assh_error_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
   size_t kbits = assh_bignum_bits(&t_key->nn);
 
   size_t hlen = pv->hash->hash_size;
-  size_t elen = assh_align8(kbits) / 8;
+  size_t elen = ASSH_ALIGN8(kbits) / 8;
 
   ASSH_CHK_RET(assh_load_u32(e_str) != elen, ASSH_ERR_BAD_DATA
 	       | ASSH_ERRSV_DISCONNECT);

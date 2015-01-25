@@ -21,6 +21,7 @@
 
 */
 
+#include <assh/assh.h>
 #include <assh/assh_map.h>
 
 #define ASSH_MAP_W sizeof(item->id) * 8

@@ -444,7 +444,7 @@ static assh_error_t assh_kex_dh_gex_server_wait_size(struct assh_session_s *s,
   min = ASSH_MAX(min, pv->client_n - pv->client_n / 16);
   max = ASSH_MIN(max, pv->client_n + pv->client_n / 8);
 
-  min = assh_align8(min);
+  min = ASSH_ALIGN8(min);
   max -= max % 8;
 
   ASSH_CHK_RET(max < min, ASSH_ERR_WEAK_ALGORITHM | ASSH_ERRSV_DISCONNECT);

@@ -29,7 +29,7 @@
 size_t assh_bignum_size_of_bits(enum assh_bignum_fmt_e fmt, size_t bits)
 {
   assh_error_t err;
-  size_t l, n = assh_align8(bits) / 8; /* bytes size */
+  size_t l, n = ASSH_ALIGN8(bits) / 8; /* bytes size */
 
   switch (fmt)
     {
@@ -107,7 +107,7 @@ assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
       const struct assh_bignum_s *bn = data;
       l = sizeof(struct assh_bignum_s);
       b = bn->bits;
-      n = assh_align8(b) / 8;
+      n = ASSH_ALIGN8(b) / 8;
       break;
     }
 
@@ -128,7 +128,7 @@ assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
       ASSH_CHK_RET(n > 0 && mpint[4] == 0, ASSH_ERR_BAD_DATA);
       b = n * 8;
       if (n)
-        b -= assh_clz8(mpint[4]);
+        b -= ASSH_CLZ8(mpint[4]);
       break;
     }
 
@@ -140,7 +140,7 @@ assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
         str++, n--;
       b = n * 8;
       if (n)
-        b -= assh_clz8(str[0]);
+        b -= ASSH_CLZ8(str[0]);
       break;
     }
 
@@ -155,7 +155,7 @@ assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
         asn1++, n--;
       b = n * 8;
       if (n)
-        b -= assh_clz8(asn1[0]);
+        b -= ASSH_CLZ8(asn1[0]);
       break;
     }
 
@@ -167,7 +167,7 @@ assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
         n--;
       b = n * 8;
       if (b)
-        b -= assh_clz8(raw[n - 1]);
+        b -= ASSH_CLZ8(raw[n - 1]);
       break;
     }
 
@@ -179,7 +179,7 @@ assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
         raw++, n--;
       b = n * 8;
       if (b)
-        b -= assh_clz8(raw[0]);
+        b -= ASSH_CLZ8(raw[0]);
       break;
     }
 
@@ -203,7 +203,7 @@ assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
 
     case ASSH_BIGNUM_SIZE:
       b = (intptr_t)data;
-      n = l = assh_align8(b) / 8;
+      n = l = ASSH_ALIGN8(b) / 8;
       break;
     default:
       ASSH_ERR_RET(ASSH_ERR_BAD_ARG);

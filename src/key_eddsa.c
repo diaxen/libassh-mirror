@@ -37,7 +37,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_eddsa_output)
   struct assh_key_eddsa_s *k = (void*)key;
   assh_error_t err;
 
-  size_t n = assh_align8(k->curve->bits) / 8;
+  size_t n = ASSH_ALIGN8(k->curve->bits) / 8;
   size_t tlen = strlen(k->key.algo->type);
 
   const uint8_t *kp = k->data;
@@ -116,7 +116,7 @@ static ASSH_KEY_CMP_FCN(assh_key_eddsa_cmp)
   struct assh_key_eddsa_s *k = (void*)key;
   struct assh_key_eddsa_s *l = (void*)b;
 
-  size_t n = assh_align8(k->curve->bits) / 8;
+  size_t n = ASSH_ALIGN8(k->curve->bits) / 8;
 
   if (!pub && (!k->private || !l->private ||
        (k->private && assh_memcmp(k->data + n, l->data + n, n))))
@@ -135,7 +135,7 @@ assh_key_eddsa_create(struct assh_context_s *c,
   assh_error_t err;
   struct assh_key_eddsa_s *k;
 
-  size_t n = assh_align8(curve->bits) / 8;
+  size_t n = ASSH_ALIGN8(curve->bits) / 8;
 
   ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_key_eddsa_s) + 2 * n,
                           ASSH_ALLOC_SECUR, (void**)&k));
@@ -274,7 +274,7 @@ assh_key_eddsa_load(struct assh_context_s *c,
   /* allocate key structure */
   struct assh_key_eddsa_s *k;
 
-  size_t n = assh_align8(curve->bits) / 8;
+  size_t n = ASSH_ALIGN8(curve->bits) / 8;
   size_t tlen = strlen(algo->type);
 
   /* parse the key blob */

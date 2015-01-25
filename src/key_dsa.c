@@ -156,7 +156,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
      with small e and f
   */
 
-  size_t l = assh_align8(bits);
+  size_t l = ASSH_ALIGN8(bits);
   size_t n;
   uint16_t e;
 

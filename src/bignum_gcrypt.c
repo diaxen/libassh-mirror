@@ -46,7 +46,7 @@ assh_gcrypt_bignum_rand(struct assh_context_s *c,
   if (max != NULL)
     bits = ASSH_MIN(bits, gcry_mpi_get_nbits(max->n));
 
-  size_t n = assh_align8(bn->bits);
+  size_t n = ASSH_ALIGN8(bn->bits);
 
   if (c->prng == &assh_prng_gcrypt)
     {
@@ -142,7 +142,7 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_gcrypt_convert)
     {
       assert(srcn->ctx == c);
 
-      size_t s = assh_align8(srcn->bits) / 8;
+      size_t s = ASSH_ALIGN8(srcn->bits) / 8;
       size_t z = s;
 
       switch (dstfmt)
@@ -197,7 +197,7 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_gcrypt_convert)
           srcfmt == ASSH_BIGNUM_LSB_RAW)
         {
           b = dstn->bits;
-          n = s = assh_align8(b) / 8;
+          n = s = ASSH_ALIGN8(b) / 8;
         }
       else
         {
