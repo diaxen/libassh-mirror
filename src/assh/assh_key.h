@@ -163,6 +163,26 @@ assh_key_create(struct assh_context_s *c,
                 const struct assh_key_ops_s *algo,
                 enum assh_algo_class_e role);
 
+/** @internal This function write the key in blob representation to
+    the @tt blob buffer. The @tt blob_len parameter indicates the size
+    of the buffer and is updated with the actual size of the key blob.
+
+    If the @tt blob parameter is @tt NULL, the function updates the
+    @tt blob_len parmeter with a size value which is greater or equal
+    to what is needed to hold the blob.
+
+    This function may only support the @ref
+    ASSH_KEY_FMT_PUB_RFC4253_6_6 format.
+*/
+static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_key_output(struct assh_context_s *c,
+                const struct assh_key_s *key,
+                uint8_t *blob, size_t *blob_len,
+                enum assh_key_format_e format)
+{
+  return key->algo->f_output(c, key, blob, blob_len, format);
+}
+
 /** @This function returns true if both keys are equals. If the @tt
     pub parameter is set, only the public parts of the key are taken
     into account. */
