@@ -53,14 +53,14 @@ typedef ASSH_MAC_INIT_FCN(assh_mac_init_t);
 typedef ASSH_MAC_COMPUTE_FCN(assh_mac_compute_t);
 
 /** @internal @see assh_mac_verify_t */
-#define ASSH_MAC_VERIFY_FCN(n) \
+#define ASSH_MAC_CHECK_FCN(n) \
   ASSH_WARN_UNUSED_RESULT assh_error_t (n)(void *ctx_, uint32_t seq, \
                                            const uint8_t *data, size_t len, \
                                            const uint8_t *mac)
 
 /** @internal @This defines the function type for the mac checking
     operation of the mac module interface. */
-typedef ASSH_MAC_VERIFY_FCN(assh_mac_verify_t);
+typedef ASSH_MAC_CHECK_FCN(assh_mac_check_t);
 
 /** @internal @see assh_mac_cleanup_t */
 #define ASSH_MAC_CLEANUP_FCN(n) void (n)(struct assh_context_s *c, void *ctx_)
@@ -80,9 +80,9 @@ struct assh_algo_mac_s
   size_t key_size;
   /** Authentication tag size. */
   size_t mac_size;
-  assh_mac_init_t *f_init;
+  assh_mac_init_t    *f_init;
   assh_mac_compute_t *f_compute;
-  assh_mac_verify_t *f_verify;
+  assh_mac_check_t  *f_check;
   assh_mac_cleanup_t *f_cleanup;
 };
 

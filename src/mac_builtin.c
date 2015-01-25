@@ -133,7 +133,7 @@ static ASSH_MAC_COMPUTE_FCN(assh_hmac_compute)
   return ASSH_OK;
 }
 
-static ASSH_MAC_VERIFY_FCN(assh_hmac_verify)
+static ASSH_MAC_CHECK_FCN(assh_hmac_check)
 {
   struct assh_hmac_context_s *ctx = ctx_;
   assh_error_t err;
@@ -160,7 +160,7 @@ const struct assh_algo_mac_s assh_hmac_md5 =
   .mac_size = 16,
   .f_init = assh_hmac_md5_init,
   .f_compute = assh_hmac_compute,
-  .f_verify = assh_hmac_verify,
+  .f_check = assh_hmac_check,
   .f_cleanup = assh_hmac_cleanup,
 };
 
@@ -179,7 +179,7 @@ const struct assh_algo_mac_s assh_hmac_md5_96 =
   .mac_size = 12,
   .f_init = assh_hmac_md5_96_init,
   .f_compute = assh_hmac_compute,
-  .f_verify = assh_hmac_verify,
+  .f_check = assh_hmac_check,
   .f_cleanup = assh_hmac_cleanup,
 };
 
@@ -198,7 +198,7 @@ const struct assh_algo_mac_s assh_hmac_sha1 =
   .mac_size = 20,
   .f_init = assh_hmac_sha1_init,
   .f_compute = assh_hmac_compute,
-  .f_verify = assh_hmac_verify,
+  .f_check = assh_hmac_check,
   .f_cleanup = assh_hmac_cleanup,
 };
 
@@ -217,7 +217,7 @@ const struct assh_algo_mac_s assh_hmac_sha1_96 =
   .mac_size = 12,
   .f_init = assh_hmac_sha1_96_init,
   .f_compute = assh_hmac_compute,
-  .f_verify = assh_hmac_verify,
+  .f_check = assh_hmac_check,
   .f_cleanup = assh_hmac_cleanup,
 };
 
@@ -236,7 +236,7 @@ const struct assh_algo_mac_s assh_hmac_sha256 =
   .mac_size = 32,
   .f_init = assh_hmac_sha256_init,
   .f_compute = assh_hmac_compute,
-  .f_verify = assh_hmac_verify,
+  .f_check = assh_hmac_check,
   .f_cleanup = assh_hmac_cleanup,
 };
 
@@ -255,7 +255,7 @@ const struct assh_algo_mac_s assh_hmac_sha512 =
   .mac_size = 64,
   .f_init = assh_hmac_sha512_init,
   .f_compute = assh_hmac_compute,
-  .f_verify = assh_hmac_verify,
+  .f_check = assh_hmac_check,
   .f_cleanup = assh_hmac_cleanup,
 };
 

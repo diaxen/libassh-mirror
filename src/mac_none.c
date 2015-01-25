@@ -40,7 +40,7 @@ static ASSH_MAC_COMPUTE_FCN(assh_hmac_none_compute)
   return ASSH_OK;
 }
 
-static ASSH_MAC_VERIFY_FCN(assh_hmac_none_verify)
+static ASSH_MAC_CHECK_FCN(assh_hmac_none_check)
 {
   return ASSH_OK;
 }
@@ -54,7 +54,7 @@ const struct assh_algo_mac_s assh_hmac_none =
   .mac_size = 0,
   .f_init = assh_hmac_none_init,
   .f_compute = assh_hmac_none_compute,
-  .f_verify = assh_hmac_none_verify,
+  .f_check = assh_hmac_none_check,
   .f_cleanup = assh_hmac_none_cleanup,
 };
 

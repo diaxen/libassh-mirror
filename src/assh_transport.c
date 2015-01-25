@@ -201,7 +201,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
       if (k != NULL)
 	{
 	  /* compute and compare MAC */
-	  ASSH_ERR_RET(k->mac->f_verify(k->mac_ctx, s->in_seq, p->data,
+	  ASSH_ERR_RET(k->mac->f_check(k->mac_ctx, s->in_seq, p->data,
 					p->data_size - mac_len,
 					p->data + p->data_size - mac_len)
 		       | ASSH_ERRSV_DISCONNECT);
