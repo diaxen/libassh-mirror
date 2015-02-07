@@ -21,16 +21,22 @@
 
 */
 
+/**
+   @file
+   @short Key support for the Digitial Signature Algorithm
+   @internal
+*/
+
 #ifndef ASSH_KEY_DSA_H_
 #define ASSH_KEY_DSA_H_
 
 #include <assh/assh_key.h>
 #include <assh/assh_bignum.h>
 
+/** @internal DSA key storage */
 struct assh_key_dsa_s
 {
   struct assh_key_s key;
-
   /** public p */
   struct assh_bignum_s pn;
   /** public q */
@@ -39,15 +45,18 @@ struct assh_key_dsa_s
   struct assh_bignum_s gn;
   /** public y */
   struct assh_bignum_s yn;
-  /** private x, may be null */
+  /** private x, may be empty */
   struct assh_bignum_s xn;
 };
 
 ASSH_FIRST_FIELD_ASSERT(assh_key_dsa_s, key);
 
+/** @internal Key operations descriptor for DSA keys */
 extern const struct assh_key_ops_s assh_key_dsa;
 
+/** @internal */
 #define ASSH_DSA_ID     "\x00\x00\x00\x07ssh-dss"
+/** @internal */
 #define ASSH_DSA_ID_LEN (sizeof(ASSH_DSA_ID) - 1)
 
 #endif

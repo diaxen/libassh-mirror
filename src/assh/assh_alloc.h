@@ -80,7 +80,7 @@ static inline void assh_free(struct assh_context_s *c, void *ptr,
     return.
 
     Depending on the value of @ref #CONFIG_ASSH_ALLOCA, this macro
-    either relies on the @ref alloca function or calls the @ref
+    either relies on the @tt alloca function or calls the @ref
     assh_alloc function using the @ref ASSH_ALLOC_SCRATCH type.
 
     @see #ASSH_SCRATCH_FREE.

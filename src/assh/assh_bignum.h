@@ -22,8 +22,13 @@
 */
 
 /**
-   @file @internal
-   @short Interface of the pluggable big number engine
+   @file
+   @short Big number engine module interface
+   @internal
+
+   The big number computations in libassh are expressed using a
+   dedicated bytecode. A big number module is in charge of executing
+   this bytecode.
 */
 
 #ifndef ASSH_BIGNUM_H_
@@ -33,14 +38,16 @@
 
 #include <stdarg.h>
 
-/*
-  Instruction binary formats:
+/** @internal
 
+    @This is the big number bytecode instruction word. The instruction
+    binary formats is as follow:
+
+    @code R
       op(6)               c(26)
       xxxxxx    xxxxxxxxxxxxxxxxxxxxxxxxxx
 
       op(6)          c(20)           d(6)
-
       xxxxxx  xxxxxxxxxxxxxxxxxxxx  xxxxxx
 
       op(6)     b(12)       c(8)     d(6)
@@ -48,22 +55,31 @@
 
       op(6)   a(6)   b(6)    c(8)    d(6)
       xxxxxx xxxxxx xxxxxx xxxxxxxx xxxxxx
-
+    @end code
+    @see #ASSH_BOP_FMT1
+    @see #ASSH_BOP_FMT2
+    @see #ASSH_BOP_FMT3
+    @see #ASSH_BOP_FMT4
 */
 typedef uint32_t assh_bignum_op_t;
 
+/** @internal @This generates bytecode instruction format 4 */
 #define ASSH_BOP_FMT4(op, a, b, c, d) (((op) << 26) | ((a) << 20) | ((b) << 14) | ((c) << 6) | (d))
+/** @internal @This generates bytecode instruction format 3 */
 #define ASSH_BOP_FMT3(op, b, c, d)    (((op) << 26) | ((b) << 14) | ((c) << 6) | (d))
+/** @internal @This generates bytecode instruction format 2 */
 #define ASSH_BOP_FMT2(op, c, d)       (((op) << 26) | ((c) << 6) | (d))
+/** @internal @This generates bytecode instruction format 1 */
 #define ASSH_BOP_FMT1(op, d)          (((op) << 26) | (d))
 
 
 /** @internal @This specifies various storage formats of big numbers. */
 enum assh_bignum_fmt_e
 {
-  /** Native big number representation, stored as a @ref struct assh_bignum_s. */
+  /** Native big number representation, stored as a
+      @ref assh_bignum_s object. */
   ASSH_BIGNUM_NATIVE  = 'N',
-  /** Same representation as @ref ASSH_BIGNUM_NATIVE but used as a
+  /** Same representation as @ref ASSH_BIGNUM_NATIVE, used as a
       temporary value during bytecode execution. */
   ASSH_BIGNUM_TEMP    = 'T',
   /** SSH mpint representation. */
@@ -80,32 +96,39 @@ enum assh_bignum_fmt_e
   ASSH_BIGNUM_HEX     = 'H',
   /** NUL terminated decimal string representation */
   ASSH_BIGNUM_DEC     = 'd',
-  /** intptr_t value interpreted as an integer value. */
+  /** Intptr_t value interpreted as a number value. */
   ASSH_BIGNUM_INT     = 'i',
-  /** intptr_t value interpreted as a bit size. */
+  /** Intptr_t value interpreted as a bit size. */
   ASSH_BIGNUM_SIZE    = 's',
-  /** montgomery ladder object (@ref assh_bignum_mlad_s) */
+  /** Montgomery ladder object. see assh_bignum_mlad_s */
   ASSH_BIGNUM_MLAD    = 'L',
 };
 
-/** @This represents a big number in native format. The number object
-    is empty if no internal representation of the number is currently
-    allocated (@tt n is @tt NULL). */
+/** @internal @This represents a big number in native format. The
+    number object is empty if no internal representation of the number
+    is currently allocated (@ref n is @tt NULL). */
 struct assh_bignum_s
 {
+  /* Associated context */
   struct assh_context_s *ctx;
+  /** Number bits size */
   size_t bits;
-  /** pointer to native big number data */
+  /** Pointer to native big number data */
   void *n;
 };
 
-/** @This contains a montgomery ladder state which can be used during
-    bytecode execution */
+/** @internal @This contains a montgomery ladder state which can be
+    used during bytecode execution.  @see #ASSH_BOP_MLADLOOP @see
+    #ASSH_BOP_MLADSWAP @see #ASSH_BOP_MLADJMP */
 struct assh_bignum_mlad_s
 {
+  /** Input data */
   const uint8_t *data;
+  /** Number of bits in data */
   uint16_t count;
+  /** Set when data are stored most significant bit first in a byte. */
   assh_bool_t msbit_1st:1;
+  /** Set when data are most significant byte first in the buffer. */
   assh_bool_t msbyte_1st:1;
 };
 
@@ -116,31 +139,9 @@ struct assh_bignum_mlad_s
       const assh_bignum_op_t *ops,     \
       const char *format, va_list ap)
 
-/**
-   @internal @This executes big number operations specified by the
-   given bytecode. Operations are performed on arguments and
-   temporaries value as specified by the @tt format argument.
-
-   The format string indicates the types of arguments passed to the
-   function and the number of temporary values. The format string is
-   composed of characters defined in @ref assh_bignum_fmt_e. An extra
-   argument must be passed to the function for each non-temporary
-   entry in the format string.
-
-   The @ref #ASSH_BOP_MOVE instruction can be used to convert between
-   native big numbers (arguments or temporaries) and other types of
-   arguments. Unless specified otherwise, all other instructions are
-   designed to be used on native big numbers only.
-
-   Native big number arguments are passed as pointers to @ref
-   assh_bignum_s objects. The size of big numbers can only be changed
-   by the @ref #ASSH_BOP_SIZE instruction. The destination big
-   number use with other instructions must be large enough to store
-   the result.
-
-   Resources used by temporary numbers are automatically released when
-   the function returns.
-*/
+/** @internal @This defines the function type for the byte code
+    execution operation of the big number module interface. 
+    @see assh_bignum_bytecode */
 typedef ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_bytecode_t);
 
 
@@ -152,39 +153,22 @@ typedef ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_bytecode_t);
       enum assh_bignum_fmt_e dstfmt,      \
       const void *src, void *dst)
 
-/** @This converts between a big number in @ref ASSH_BIGNUM_NATIVE
-    format and a number in an alternate format. The native big number
-    argument points to an @ref assh_bignum_s object.
-
-    When converting to a native big number from a number in @ref
-    ASSH_BIGNUM_STRING, @ref ASSH_BIGNUM_ASN1 or @ref
-    ASSH_BIGNUM_MPINT format, the source number must have a properly
-    initialized size header. When converting from a source number in
-    @ref ASSH_BIGNUM_MSB_RAW or @ref ASSH_BIGNUM_LSB_RAW format, the
-    bit size of the destination number is used; leading bits in the
-    most significant byte of the source are ignored.
-
-    In all other cases, the buffer size is expected to be appropriate
-    for the bits size of the native big number involved in the
-    conversion, as returned by the @ref assh_bignum_size_of_bits
-    function.
-
-    When converting between two native big numbers, the current bits
-    size of the source might be larger than the size of the destination
-    provided that the actual value fits in the destination.
-*/
+/** @internal @This defines the function type for the number
+    conversion operation of the big number module interface.  @see
+    assh_bignum_convert */
 typedef ASSH_BIGNUM_CONVERT_FCN(assh_bignum_convert_t);
 
 
-/** @internal @see assh_bignum_release_fcn_t */
+/** @internal @see assh_bignum_release_t */
 #define ASSH_BIGNUM_RELEASE_FCN(n) \
   void (n)(struct assh_bignum_s *bn)
 
-/** @internal @This releases the internal representation of a big
-    number unless it is already empty. */
+/** @internal @This defines the function type for the release
+    operation of the big number module interface.  @see
+    assh_bignum_release */
 typedef ASSH_BIGNUM_RELEASE_FCN(assh_bignum_release_t);
 
-
+/** @internal @This is the big number engine module interface structure. */
 struct assh_bignum_algo_s
 {
   const char *name;
@@ -193,7 +177,31 @@ struct assh_bignum_algo_s
   assh_bignum_release_t *f_release;
 };
 
-/** Convenience wrapper for @ref assh_bignum_bytecode_t */
+/** @internal @This executes big number operations specified by the
+    given bytecode. Operations are performed on arguments and
+    temporarie values as specified by the @tt format argument.
+
+    The format string indicates the types of arguments passed to the
+    function and the number of temporary values. The format string is
+    composed of characters defined in @ref assh_bignum_fmt_e. An extra
+    argument must be passed to the function for each non-temporary
+    entry in the format string.
+
+    The @ref #ASSH_BOP_MOVE instruction can be used to convert between
+    native big numbers (arguments or temporaries) and other types of
+    arguments. Unless specified otherwise, all other instructions are
+    designed to be used on native big numbers only.
+
+    Native big number arguments are passed as pointers to @ref
+    assh_bignum_s objects. The size of big numbers can only be changed
+    by the @ref #ASSH_BOP_SIZE family of instructions. The destination
+    big number used with other instructions must be large enough to
+    store the result as the number will not be dynamically
+    resized. Working on numbers with a predefined storage size helps
+    with constant time execution.
+
+    Resources used by temporary numbers are automatically released when
+    the function returns. */
 static inline ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_bignum_bytecode(struct assh_context_s *c,
                      const assh_bignum_op_t *ops,
@@ -207,7 +215,26 @@ assh_bignum_bytecode(struct assh_context_s *c,
   return err;
 }
 
-/** Convenience wrapper for @ref assh_bignum_convert_t */
+/** @internal @This converts between a big number in @ref
+    ASSH_BIGNUM_NATIVE format and a number in an alternate format. The
+    native big number argument points to an @ref assh_bignum_s object.
+
+    When converting to a native big number from a number in @ref
+    ASSH_BIGNUM_STRING, @ref ASSH_BIGNUM_ASN1 or @ref
+    ASSH_BIGNUM_MPINT format, the source number must have a properly
+    initialized or checked size header. When converting from a source
+    number in @ref ASSH_BIGNUM_MSB_RAW or @ref ASSH_BIGNUM_LSB_RAW
+    format, the bit size of the destination number is used; leading
+    bits in the most significant byte of the source are ignored.
+
+    In all other cases, the buffer size is expected to be appropriate
+    for the bits size of the native big number involved in the
+    conversion, as returned by the @ref assh_bignum_size_of_bits and
+    @ref assh_bignum_size_of_num functions.
+
+    When converting between two native big numbers, the current bits
+    size of the source might be larger than the size of the destination
+    provided that the actual value fits in the destination. */
 static inline ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_bignum_convert(struct assh_context_s *c,
                     enum assh_bignum_fmt_e src_fmt,
@@ -217,10 +244,12 @@ assh_bignum_convert(struct assh_context_s *c,
   return c->bignum->f_convert(c, src_fmt, dst_fmt, src, dst);
 }
 
-/** @internal @This returns the bytes size needed to store a big number
+/** @internal @This returns the byte size needed to store a big number
     of given bit size using the specified format. */
 size_t assh_bignum_size_of_bits(enum assh_bignum_fmt_e dst_fmt, size_t bits);
 
+/** @internal @This returns the byte size needed to store the given
+    big number object. */
 static inline size_t
 assh_bignum_size_of_num(enum assh_bignum_fmt_e dst_fmt,
                         const struct assh_bignum_s *bn)
@@ -232,41 +261,48 @@ assh_bignum_size_of_num(enum assh_bignum_fmt_e dst_fmt,
     embedded value size in bytes and the bit size of the big number
     value. The @tt fmt parameter indicates the input format of @tt data. No
     bound checking is performed, the buffer size of the input data
-    must have been checked previously.
+    must have been checked previously. Some value checks are performed
+    on the format of the data.
 
     Either @tt size, @tt val_size or @tt bits may be @tt NULL. When
-    the input format is @ref ASSH_BIGNUM_MSB_RAW, the @tt size
-    parameter must be used to pass the bytes size of the buffer. */
+    the input format is either @ref ASSH_BIGNUM_MSB_RAW or
+    @ref ASSH_BIGNUM_LSB_RAW, the @tt size parameter must be used to
+    pass the bytes size of the buffer. */
 assh_error_t ASSH_WARN_UNUSED_RESULT
 assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
                          const void *data, size_t *size,
                          size_t *val_size, size_t *bits);
 
-/** @This initializes the bignum as empty. */
+/** @internal @This initializes a big number object. No buffer is
+    allocated, the big number is left empty. */
 static inline void
 assh_bignum_init(struct assh_context_s *c,
                  struct assh_bignum_s  *bn,
-		 size_t bits)
+                 size_t bits)
 {
   bn->ctx = c;
   bn->bits = bits;
   bn->n = NULL;
 }
 
-/** @This returns the number of bits of a big number. */
+/** @internal @This returns the number of bits of a big number. */
 static inline size_t
 assh_bignum_bits(const struct assh_bignum_s  *bn)
 {
   return bn->bits;
 }
 
+/** @internal @This test if a big number is actually stored in the
+    object or if it's empty. */
 static inline assh_bool_t
 assh_bignum_isempty(const struct assh_bignum_s  *bn)
 {
   return bn->n == NULL;
 }
 
-/** Convenience wrapper for @ref assh_bignum_release_t */
+/** @internal @This releases the internal storage of a bignum. The big
+    number object become empty as if the @ref assh_bignum_init
+    function has just been called. */
 static inline void
 assh_bignum_release(struct assh_bignum_s  *bn)
 {
@@ -275,6 +311,7 @@ assh_bignum_release(struct assh_bignum_s  *bn)
   bn->ctx = NULL;
 }
 
+/** @internal */
 enum assh_bignum_opcode_e
 {
   ASSH_BIGNUM_OP_END,
@@ -303,6 +340,7 @@ enum assh_bignum_opcode_e
   ASSH_BIGNUM_OP_PRINT,
 };
 
+/** @internal */
 #define ASSH_BIGNUM_OP_NAMES {                  \
     "end", "move", "sizer", "size", "add",      \
     "sub", "mul", "div", "gcd",                 \
@@ -312,193 +350,256 @@ enum assh_bignum_opcode_e
     "isprim", "print"                           \
 }
 
+/** @internal Reserved big number bytecode register id. */
 #define ASSH_BOP_NOREG  63
 
-/** This instruction terminates execution of the bytecode */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction terminates execution of the bytecode. */
 #define ASSH_BOP_END() \
   ASSH_BOP_FMT3(ASSH_BIGNUM_OP_END, 0, 0, 0)
 
-/** This instruction moves and converts values in various formats. It
-    is implemented by calling @ref assh_bignum_convert_t. */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction moves and converts values in various
+    formats. It is equivalent to the @ref assh_bignum_convert_t function. */
 #define ASSH_BOP_MOVE(dst, src) \
   ASSH_BOP_FMT2(ASSH_BIGNUM_OP_MOVE, dst, src)
 
-/** This instruction changes the bit size of a number. The initial bit
-    size is set by the @ref assh_bignum_init function and can not be
-    changed by an other instruction. If the source operand is not of
-    type @ref ASSH_BIGNUM_SIZE, the bit size of the source value is
-    used. */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction changes the bit size of a number. It is
+    equivalent to a call to the @ref assh_bignum_init function on the
+    destination, with the source operand being evaluated by a call to
+    @ref assh_bignum_size_of_data. */
 #define ASSH_BOP_SIZE(dst, src) \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_SIZE, dst, src, 0, 32)
 
-/** This instruction has the same behavior as the @ref #ASSH_BOP_SIZE
-    instruction with shift and offset of the source size value. */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction has the same behavior as the @ref
+    #ASSH_BOP_SIZE instruction with shift and offset of the source
+    size value. */
 #define ASSH_BOP_SIZEM(dst, src, cadd, cshift)         \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_SIZE, dst, src, cadd, cshift + 32)
 
-/** This instruction sets the size of multiple registers between @tt
-    dst1 and @tt dst2. */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction has the same behavior as the @ref
+    #ASSH_BOP_SIZE instruction applied to a range of destination
+    registers. */
 #define ASSH_BOP_SIZER(dst1, dst2, src)                      \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_SIZER, dst1, src, dst2, 0)
 
-/** This instruction computes @tt {dst = (src1 + src2) % mod}. The
-    bit size of the destination number must be at least
-    max(bits(src1), bits(src2)). */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction computes @tt {dst = (src1 + src2) %
+    mod}. The bit size of the destination number must be
+    @tt {bits(mod)} or larger. */
 #define ASSH_BOP_ADDM(dst, src1, src2, mod)                     \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_ADD, dst, src1, src2, mod)
 
-/** This instruction computes @tt {dst = (src1 - src2) % mod}. Same
-    behavior as @ref #ASSH_BOP_ADDM. */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction computes @tt {dst = (src1 - src2) %
+    mod}. Same behavior as @ref #ASSH_BOP_ADDM. */
 #define ASSH_BOP_SUBM(dst, src1, src2, mod)                     \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_SUB, dst, src1, src2, mod)
 
-/** This instruction computes @tt {dst = (src1 + src2)}. The bit size
-    of the destination number must be at least bits(mod). */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction computes @tt {dst = (src1 + src2)}. The
+    bit size of the destination number must be @tt {max(bits(src1),
+    bits(src2))} or larger. */
 #define ASSH_BOP_ADD(dst, src1, src2)                           \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_ADD, dst, src1, src2, ASSH_BOP_NOREG)
 
-/** This instruction computes @tt {dst = (src1 - src2) % mod}. Same
-    behavior as @ref #ASSH_BOP_ADD */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction computes @tt {dst = (src1 - src2) %
+    mod}. Same behavior as @ref #ASSH_BOP_ADD */
 #define ASSH_BOP_SUB(dst, src1, src2)                           \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_SUB, dst, src1, src2, ASSH_BOP_NOREG)
 
-/** This instruction computes @tt {dst = (src1 * src2) % mod}. */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction computes @tt {dst = (src1 * src2) %
+    mod}. The bit size of the destination number must be
+    @tt {bits(mod)} or larger. */
 #define ASSH_BOP_MULM(dst, src1, src2, mod)                     \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_MUL, dst, src1, src2, mod)
 
-/** This instruction computes @tt {dst = (src1 * src2)}. */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction computes @tt {dst = (src1 * src2)}. The
+    bit size of the destination number must be @tt {bits(src1) +
+    bits(src2)} or larger.*/
 #define ASSH_BOP_MUL(dst, src1, src2)                     \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_MUL, dst, src1, src2, ASSH_BOP_NOREG)
 
-/** This instruction computes @tt {dst2 = src1 % src2} and @tt{dst1 =
-    src1 / src2}. Either @tt dst1 or @tt dst2 can be @ref #ASSH_BOP_NOREG. */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction computes @tt {dst2 = src1 % src2} and
+    @tt {dst1 = src1 / src2}. @see #ASSH_BOP_MOD  @see #ASSH_BOP_DIV */
 #define ASSH_BOP_DIVMOD(dstq, dstr, src1, src2)                 \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_DIV, dstq, dstr, src1, src2)
 
-/** This instruction computes @tt {dst2 = src1 % src2}. */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction computes @tt {dst2 = src1 % src2}.
+    @see #ASSH_BOP_DIVMOD */
 #define ASSH_BOP_MOD(dst, src1, src2) \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_DIV, ASSH_BOP_NOREG, dst, src1, src2)
 
-/** This instruction computes @tt {dst2 = src1 / src2}. */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction computes @tt {dst2 = src1 / src2}.
+    @see #ASSH_BOP_DIVMOD */
 #define ASSH_BOP_DIV(dst, src1, src2) \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_DIV, dst, ASSH_BOP_NOREG, src1, src2)
 
-/** This instruction computes @tt {dst = gcd(src1, src2)}. */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction computes @tt {dst = gcd(src1, src2)}. */
 #define ASSH_BOP_GCD(dst, src1, src2) \
   ASSH_BOP_FMT3(ASSH_BIGNUM_OP_GCD, dst, src1, src2)
 
-/** This instruction computes @tt {dst = (src1 ** src2) % mod} */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction computes @tt {dst = (src1 ^ src2) % mod}.
+    @see #ASSH_BOP_EXPM_C */
 #define ASSH_BOP_EXPM(dst, src1, src2, mod) \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_EXPM, dst, src1, src2, mod)
 
-/** This instruction computes @tt {dst = (src1 ** src2) % mod}, in constant time */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction computes @tt {dst = (src1 ^ src2) %
+    mod}, in constant time. @see #ASSH_BOP_EXPM */
 #define ASSH_BOP_EXPM_C(dst, src1, src2, mod) \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_EXPM, dst, src1, src2, mod)
 
-/** This instruction computes @tt {dst = invmod(src1, src2)} */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction computes @tt {dst = invmod(src1, src2)}.
+    @see #ASSH_BOP_INV_C */
 #define ASSH_BOP_INV(dst, src1, src2)                \
   ASSH_BOP_FMT3(ASSH_BIGNUM_OP_INV, dst, src1, src2)
 
-/** This instruction computes @tt {dst = invmod(src1, src2)}, in constant time */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction computes @tt {dst = invmod(src1,
+    src2)}, in constant time. @see #ASSH_BOP_INV  */
 #define ASSH_BOP_INV_C(dst, src1, src2)              \
   ASSH_BOP_FMT3(ASSH_BIGNUM_OP_INV, dst, src1, src2)
 
-/** This instruction computes @tt {dst = shift_right(src1, val +
-    size(src2))}. @tt val must be in range [-128,+127] and @tt src2
-    can be @ref #ASSH_BOP_NOREG. */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction computes @tt {dst = shift_right(src1,
+    val + size(src2))}. @tt val must be in range @tt{[-128, +127]} and
+    @tt src2 can be @ref #ASSH_BOP_NOREG. */
 #define ASSH_BOP_SHR(dst, src, val, src2)              \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_SHR, dst, src, 128 + (val), src2)
 
-/** This instruction is similar to @ref #ASSH_BOP_SHR. */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction is similar to @ref #ASSH_BOP_SHR but
+    perform a left shift. */
 #define ASSH_BOP_SHL(dst, src, val, src2)              \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_SHL, dst, src, 128 + (val), src2)
 
-/** This instruction initializes a big number with random data. A new
-    value is generated until it does fall in the specified range. The
-    @tt min and @tt max bounds can be @ref #ASSH_BOP_NOREG . The
-    quality operand is of type @ref assh_prng_quality_e. */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction initializes a big number with random
+    data. A new value is generated until it does fall in the specified
+    range. The @tt min and @tt max bounds can be @ref #ASSH_BOP_NOREG.
+    The quality operand is of type @ref assh_prng_quality_e. */
 #define ASSH_BOP_RAND(dst, min, max, quality)          \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_RAND, dst, min, max, quality)
 
-/** This instruction changes the program counter if the two numbers
-    are equal. The bytecode execution is aborted with the @ref
+/** @mgroup{Bytecode instructions}
+    @internal This instruction changes the program counter if the two
+    numbers are equal. The bytecode execution is aborted with the @ref
     ASSH_ERR_NUM_COMPARE_FAILED error if the condition is false and
     the value of @tt pcdiff is 0. It can be used with numbers of
     different bit length. */
 #define ASSH_BOP_CMPEQ(src1, src2, pcdiff)                    \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CMP, src1, src2, 128 + pcdiff, 0)
-/** Same behavior as @ref #ASSH_BOP_CMPEQ. */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction is similar to @ref #ASSH_BOP_CMPEQ. */
 #define ASSH_BOP_CMPNE(src1, src2, pcdiff)                    \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CMP, src1, src2, 128 + pcdiff, 1)
-/** Same behavior as @ref #ASSH_BOP_CMPEQ. */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction is similar to @ref #ASSH_BOP_CMPEQ. */
 #define ASSH_BOP_CMPLT(src1, src2, pcdiff)                    \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CMP, src1, src2, 128 + pcdiff, 2)
-/** Same behavior as @ref #ASSH_BOP_CMPEQ. */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction is similar to @ref #ASSH_BOP_CMPEQ. */
 #define ASSH_BOP_CMPLTEQ(src1, src2, pcdiff)                  \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CMP, src1, src2, 128 + pcdiff, 3)
 
+/** @mgroup{Bytecode instructions}
+    @internal This instruction jump to a different bytecode location. */
 #define ASSH_BOP_JMP(pcdiff)                  \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CMP, 0, 0, 128 + pcdiff, 0)
 
+/** @mgroup{Bytecode instructions}
+    @internal This instruction tests a bit in @tt src1 and jumps to a
+    different bytecode location if the bit is cleared. When the @tt
+    src2 operand is @ref #ASSH_BOP_NOREG, the tested bit position is
+    @tt{val}. In the other case, the tested bit position is @tt
+    {size(src2) - val)}. @tt val must be in the range @tt{[0, 64]}. */
 #define ASSH_BOP_TESTC(src1, val, src2, pcdiff)                          \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_TESTC, src1, val, 128 + pcdiff, src2)
 
+/** @mgroup{Bytecode instructions}
+    @internal This instruction is similar to @ref #ASSH_BOP_TESTC. */
 #define ASSH_BOP_TESTS(src1, val, src2, pcdiff)                          \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_TESTS, src1, val, 128 + pcdiff, src2)
 
-/** This instruction initializes a big number from a 20 bits
+/** @mgroup{Bytecode instructions}
+    @internal This instruction initializes a big number from a 20 bits
     unsigned integer constant. */
 #define ASSH_BOP_UINT(dst, value) \
   ASSH_BOP_FMT2(ASSH_BIGNUM_OP_UINT, value, dst)
 
-/** This instruction performs a conditional jump between two values
-    depending on the current state of the @ref assh_bignum_mlad_s
-    struct argument. It is useful to implement a fast variant of the
-    ladder algorithm when constant time execution is not required.
-    @see #ASSH_BOP_MLADLOOP */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction performs a conditional jump between two
+    values depending on the current state of the @ref
+    assh_bignum_mlad_s object. It is useful to implement a fast
+    variant of the ladder algorithm when constant time execution is
+    not required.  @see #ASSH_BOP_MLADLOOP @see ASSH_BIGNUM_MLAD */
 #define ASSH_BOP_MLADJMP(mlad, pcdiff)                                 \
   ASSH_BOP_FMT2(ASSH_BIGNUM_OP_MLADJMP, 128 + pcdiff, mlad)
 
-/** This instruction performs a conditional swap between two values
-    depending on the current state of the @ref assh_bignum_mlad_s
-    struct argument. It is useful to implement a montgomery ladder.
-    @see #ASSH_BOP_MLADLOOP */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction performs a conditional swap between two
+    values depending on the current state of the @ref
+    assh_bignum_mlad_s object. It is useful to implement a montgomery
+    ladder.  @see #ASSH_BOP_MLADLOOP @see ASSH_BIGNUM_MLAD */
 #define ASSH_BOP_MLADSWAP(src1, src2, mlad)               \
   ASSH_BOP_FMT3(ASSH_BIGNUM_OP_MLADSWAP, src1, src2, mlad)
 
-/** This instruction conditionally jump backward depending on the
-    current state of the the @ref assh_bignum_mlad_s struct argument
-    and advances the @ref assh_bignum_mlad_s state to the next bit. It
+/** @mgroup{Bytecode instructions}
+    @internal This instruction conditionally jump backward depending
+    on the current state of the @ref assh_bignum_mlad_s object and
+    advances the state of the ladder object to the next data bit. It
     is useful to implement a montgomery ladder.
-    @see #ASSH_BOP_MLADSWAP */
+    @see #ASSH_BOP_MLADSWAP @see ASSH_BIGNUM_MLAD */
 #define ASSH_BOP_MLADLOOP(rel, mlad)                    \
   ASSH_BOP_FMT2(ASSH_BIGNUM_OP_MLADLOOP, rel, mlad)
 
-/** This instruction generates a prime number in range (min, max). If
-    @tt min is @tt ASSH_BOP_NOREG, no lower bound is used. If @tt max
-    is @tt ASSH_BOP_NOREG, the most significant bit of the destination
-    will be set. */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction generates a prime number in the range
+    (min, max). If @tt min is @tt ASSH_BOP_NOREG, no lower bound is
+    used. If @tt max is @tt ASSH_BOP_NOREG, the most significant bit
+    of the destination will be set so that the bit size of the
+    generated number is large. */
 #define ASSH_BOP_PRIME(dst, min, max)                 \
   ASSH_BOP_FMT3(ASSH_BIGNUM_OP_PRIME, dst, min, max)
 
-/** This instruction changes the program counter if the number is
-    a prime greater than 2. The bytecode execution is aborted with the
-    @ref ASSH_ERR_NUM_OVERFLOW error if the number is not prime and
-    the value of @tt pcdiff is 0. */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction changes the program counter if the
+    number is a prime greater than 2. The bytecode execution is
+    aborted with the @ref ASSH_ERR_NUM_OVERFLOW error if the number is
+    not prime and the value of @tt pcdiff is 0. */
 #define ASSH_BOP_ISPRIM(src, pcdiff)                                   \
   ASSH_BOP_FMT3(ASSH_BIGNUM_OP_ISPRIM, 1, pcdiff + 128, src)
 
-/** @see #ASSH_BOP_ISPRIM */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction is similar to @ref #ASSH_BOP_ISPRIM. */
 #define ASSH_BOP_ISNTPRIM(src, pcdiff)                                   \
   ASSH_BOP_FMT3(ASSH_BIGNUM_OP_ISPRIM, 0, pcdiff + 128, src)
 
-/** This instruction print a big number argument for debugging
-    purpose. The id argument is a 16 bits ASCII constant. */
+/** @mgroup{Bytecode instructions}
+    @internal This instruction prints a big number argument for
+    debugging purpose. The id argument is an ASCII integer constant. */
 #define ASSH_BOP_PRINT(src, id) \
   ASSH_BOP_FMT2(ASSH_BIGNUM_OP_PRINT, id, src)
 
+/** @multiple @internal @This is a big number engine implementation
+    descriptor. */
+#ifdef CONFIG_ASSH_USE_GCRYPT_BIGNUM
 extern const struct assh_bignum_algo_s assh_bignum_gcrypt;
+#endif
+
 extern const struct assh_bignum_algo_s assh_bignum_builtin;
 
 #endif
-

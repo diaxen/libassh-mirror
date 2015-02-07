@@ -21,13 +21,20 @@
 
 */
 
+/**
+   @file
+   @short Key support for the EdDSA signature algorithm
+   @internal
+*/
+
 #ifndef ASSH_KEY_EDDSA_H_
 #define ASSH_KEY_EDDSA_H_
 
 #include <assh/assh_key.h>
 #include <assh/assh_bignum.h>
 
-/** @internal @em {a*x^2+y^2 = 1+d*x^2y^2} */
+/** @internal Edward elliptic curve parameters decriptor.
+    @em {a*x^2+y^2 = 1+d*x^2y^2} */
 struct assh_edward_curve_s
 {
   const uint8_t *p;
@@ -41,6 +48,7 @@ struct assh_edward_curve_s
   uint_fast8_t cofactor;
 };
 
+/** @internal EdDSA key storage */
 struct assh_key_eddsa_s
 {
   struct assh_key_s key;
@@ -56,14 +64,17 @@ struct assh_key_eddsa_s
 
 ASSH_FIRST_FIELD_ASSERT(assh_key_eddsa_s, key);
 
+/** @multiple @internal Key operations descriptor for EdDSA keys */
 extern const struct assh_key_ops_s assh_key_ed25519;
 extern const struct assh_key_ops_s assh_key_eddsa_e382;
 extern const struct assh_key_ops_s assh_key_eddsa_e521;
 
+/** @multiple @internal Edward curve parameters */
 extern const struct assh_edward_curve_s assh_ed25519_curve;
 extern const struct assh_edward_curve_s assh_e382_curve;
 extern const struct assh_edward_curve_s assh_e521_curve;
 
+/** @internal Adjust blob for use with edward curvre */
 static inline void
 assh_edward_adjust(const struct assh_edward_curve_s *curve, uint8_t *blob)
 {
@@ -75,6 +86,7 @@ assh_edward_adjust(const struct assh_edward_curve_s *curve, uint8_t *blob)
   blob[j] |= 0x80 >> i;
 }
 
+/** @internal Edward curve point encoding */
 static inline void 
 assh_edward_encode(const struct assh_edward_curve_s *curve,
                    uint8_t y[], const uint8_t x[])

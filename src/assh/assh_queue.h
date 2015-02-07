@@ -21,6 +21,12 @@
 
 */
 
+/**
+   @file
+   @short Linked list container
+   @internal
+*/
+
 #ifndef ASSH_QUEUE_H_
 #define ASSH_QUEUE_H_
 
@@ -38,36 +44,43 @@ struct assh_queue_s
   struct assh_queue_entry_s head;
   int count;
 };
+
+/** @internal */
 static inline void assh_queue_init(struct assh_queue_s *q)
 {
   q->head.next = q->head.prev = &q->head;
   q->count = 0;
 }
 
+/** @internal */
 static inline struct assh_queue_entry_s *
 assh_queue_front(struct assh_queue_s *q)
 {
   return q->head.next == &q->head ? NULL : q->head.next;
 }
 
+/** @internal */
 static inline struct assh_queue_entry_s *
 assh_queue_back(struct assh_queue_s *q)
 {
   return q->head.prev == &q->head ? NULL : q->head.prev;
 }
 
+/** @internal */
 static inline struct assh_queue_entry_s *
 assh_queue_next(struct assh_queue_s *q, struct assh_queue_entry_s *e)
 {
   return e->next == &q->head ? NULL : e->next;
 }
 
+/** @internal */
 static inline struct assh_queue_entry_s *
 assh_queue_prev(struct assh_queue_s *q, struct assh_queue_entry_s *e)
 {
   return e->prev == &q->head ? NULL : e->prev;
 }
 
+/** @internal */
 static inline void assh_queue_remove(struct assh_queue_s *q,
                                      struct assh_queue_entry_s *e)
 {
@@ -76,6 +89,7 @@ static inline void assh_queue_remove(struct assh_queue_s *q,
   q->count--;
 }
 
+/** @internal */
 static inline void assh_queue_push_front(struct assh_queue_s *q,
 					 struct assh_queue_entry_s *b)
 {
@@ -87,6 +101,7 @@ static inline void assh_queue_push_front(struct assh_queue_s *q,
   q->count++;
 }
 
+/** @internal */
 static inline void assh_queue_push_back(struct assh_queue_s *q,
 					struct assh_queue_entry_s *b)
 {
@@ -98,6 +113,7 @@ static inline void assh_queue_push_back(struct assh_queue_s *q,
   q->count++;
 }
 
+/** @internal */
 static inline void assh_queue_concat(struct assh_queue_s *q,
 				     struct assh_queue_s *r)
 {

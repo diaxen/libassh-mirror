@@ -21,6 +21,10 @@
 
 */
 
+/**
+   @file
+   @short SSH signature module interface
+*/
 
 #ifndef ASSH_SIGN_H_
 #define ASSH_SIGN_H_
@@ -28,6 +32,7 @@
 #include "assh_algo.h"
 #include "assh_key.h"
 
+/** @internal @see assh_sign_generate_t */
 #define ASSH_SIGN_GENERATE_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t(n) \
   (struct assh_context_s *c,						\
    const struct assh_key_s *key, size_t data_count,			\
@@ -92,7 +97,7 @@ assh_sign_check(struct assh_context_s *c, const struct assh_algo_sign_s *algo,
   return algo->f_check(c, key, data_count, data, data_len, sign, sign_len);
 }
 
-
+/** Dummy signature algorithm */
 extern const struct assh_algo_sign_s assh_sign_none;
 
 /** Use SHA1 and a dsa key with L = 1024 and N = 160. */
@@ -127,10 +132,22 @@ extern const struct assh_algo_sign_s assh_sign_rsa_sha256_2048;
     Reject keys with modulus size less than 3072 bits. */
 extern const struct assh_algo_sign_s assh_sign_rsa_sha256_3072;
 
+/** The ssh-ed25519 algorithm as implemented by openssh. This offerrs
+    125 bits security and relies on an Edward elliptic curve. 
+
+    See @url {http://safecurves.cr.yp.to/} */
 extern const struct assh_algo_sign_s assh_sign_ed25519;
 
+/** Same algorithm as @ref assh_sign_ed25519 with the stronger E382
+    edward curve and the shake256 hash function.
+
+    See @url {http://safecurves.cr.yp.to/} */
 extern const struct assh_algo_sign_s assh_sign_eddsa_e382;
 
+/** Same algorithm as @ref assh_sign_ed25519 with the stronger E521
+    edward curve and the shake256 hash function.
+
+    See @url {http://safecurves.cr.yp.to/} */
 extern const struct assh_algo_sign_s assh_sign_eddsa_e521;
 
 #endif

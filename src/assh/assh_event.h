@@ -23,7 +23,7 @@
 
 /**
    @file
-   @short library event structure and related functions
+   @short Event reporting structure and related functions
 */
 
 #ifndef ASSH_EVENT_H_
@@ -82,11 +82,13 @@ enum assh_event_id_e
   ASSH_EVENT_COUNT,
 };
 
-/** @see assh_event_done_t */
-#define ASSH_EVENT_DONE_FCN(n) \
+/** @internal @see assh_event_done_t */
+#define ASSH_EVENT_DONE_FCN(n)                                          \
   ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_session_s *s,    \
                                            struct assh_event_s *e)
-/** @This is called when the event has been processed */
+
+/** @internal @This is called when the event has been processed.
+    @see assh_event_done */
 typedef ASSH_EVENT_DONE_FCN(assh_event_done_t);
 
 union assh_event_transport_u;
@@ -155,8 +157,8 @@ struct assh_event_s
        <= sizeof(((struct assh_event_s*)0)->params)) - 1];
 
 /** This function runs the various state machines which implement the
-    ssh protocol and the running service. It returns the next
-    available event.
+    ssh protocol including the currently running service. It then
+    reports the next available event.
 
     The @ref assh_event_done function must be called after each
     successful call to this function, before requesting the next event.
@@ -171,7 +173,7 @@ ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_event_get(struct assh_session_s *s,
                struct assh_event_s *e);
 
-/** This function acknowledges the last event returned by the @ref
+/** @This acknowledges the last event returned by the @ref
     assh_event_get function. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_event_done(struct assh_session_s *s,

@@ -23,7 +23,8 @@
 
 /**
    @file
-   @short SSH hashing pluggable module interface
+   @short Hashing module interface
+   @internal
 */
 
 #ifndef ASSH_HASH_H_
@@ -82,8 +83,7 @@ typedef ASSH_HASH_FINAL_FCN(assh_hash_final_t);
     operation of the hash module interface. @see assh_hash_cleanup */
 typedef ASSH_HASH_CLEANUP_FCN(assh_hash_cleanup_t);
 
-/** @internal @This is the hash algorithms descriptor
-    structure. */
+/** @internal @This is the hashing module interface structure. */
 struct assh_hash_algo_s
 {
   const char *name;
@@ -126,7 +126,7 @@ void assh_hash_payload_as_string(struct assh_hash_ctx_s *hctx,
 
 /** @internal @This initializes an hash algorithm context. The @tt
     hctx argument must points to a buffer allocated in secure memory
-    of size given by @ref assh_algo_hash_s::ctx_size. */
+    of size given by @ref assh_hash_algo_s::ctx_size. */
 static inline ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_hash_init(struct assh_context_s *c,
                struct assh_hash_ctx_s *hctx,
@@ -170,7 +170,8 @@ assh_hash_cleanup(struct assh_hash_ctx_s *hctx)
   hctx->algo->f_cleanup(hctx);
 }
 
-/** @multiple @This is an hash algorithm implementation descriptor. */
+/** @multiple @internal @This is an hash algorithm implementation
+    descriptor. */
 extern const struct assh_hash_algo_s assh_hash_md5;
 
 extern const struct assh_hash_algo_s assh_hash_sha1;

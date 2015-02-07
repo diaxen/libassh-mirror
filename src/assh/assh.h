@@ -22,7 +22,7 @@
 */
 
 /**
-   @file @internal
+   @file
    @short Some constants and forward declarations of structures
 */
 

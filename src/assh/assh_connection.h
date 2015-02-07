@@ -23,7 +23,7 @@
 
 /**
    @file
-   @short Implementation of the ssh-connection service (rfc4254)
+   @short SSH connection service (rfc4254)
 
    This header file defines events and functions which are used
    when the @tt ssh-connection service is running.
@@ -56,7 +56,7 @@ enum assh_request_status_e
   ASSH_REQUEST_ST_REPLY_READY,
 };
 
-/** @hidecontent
+/** @internal
     @This is the @em ssh-connection service request object.
 
     Requests are created either by calling the @ref assh_request
@@ -105,7 +105,7 @@ enum assh_channel_status_e
   ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING,
 };
 
-/** @hidecontent
+/** @internal
     @This is the @em ssh-connection service channel object.
 
     Channels are created either by calling the @ref assh_channel_open
@@ -261,7 +261,7 @@ struct assh_event_connection_start_s
    type and @ref rq_data fields. These buffers will not remain valid
    after the call to @ref assh_event_done.
 
-   The @ref channel field is @tt NULL for global requests.
+   The @ref ch field is @tt NULL for global requests.
 
    If the @ref rq pointer field is not @tt NULL, the remote host
    excepts a reply for this request. In this case, the @ref reply
@@ -338,8 +338,7 @@ assh_request_failed_reply(struct assh_request_s *rq);
 
 /**
    This event is reported for every successful call to the @ref
-   assh_connection_request function with the @tt want_reply parameter
-   set.
+   assh_request function with the @tt want_reply parameter set.
 
    The @ref reply field indicates if the request has been successfully
    acknowledged by the remote host. In this case, some response
@@ -347,7 +346,7 @@ assh_request_failed_reply(struct assh_request_s *rq);
    field may also indicate that the request has failed or that the
    connection or channel associated with the request has been closed.
 
-   The @ref channel field is @tt NULL for global requests.
+   The @ref ch field is @tt NULL for global requests.
 
    The request object is released when the @ref assh_event_done
    function is called.
@@ -421,11 +420,13 @@ assh_request(struct assh_session_s *s,
    assh_event_done function.
 
    If it's not possible to reply to the channel open when calling the
-   @ref assh_event_done function, the @ref ASSH_CONNECTION_REPLY_POSTPONED
-   value must be used instead. In this case, the @ref assh_channel_open_reply
-   function must be called later to send the reply expected by the
-   remote host. Care should be taken not to postpone or accept too many
-   channel open requests in order to avoid resource-exhaustion attacks.
+   @ref assh_event_done function, the @ref
+   ASSH_CONNECTION_REPLY_POSTPONED value must be used instead. In this
+   case, either the @ref assh_channel_open_success_reply or the @ref
+   assh_channel_open_failed_reply function must be called later to
+   send the reply expected by the remote host. Care should be taken
+   not to postpone or accept too many channel open requests in order
+   to avoid resource-exhaustion attacks.
 
    @see ASSH_EVENT_CHANNEL_OPEN
 */
@@ -500,7 +501,7 @@ assh_channel_open_failed_reply(struct assh_channel_s *ch,
 
 /**
    This event is reported for every successful call to the @ref
-   assh_channel_open function. The @ref success field indicates if
+   assh_channel_open function. The @ref reply field indicates if
    the channel open has been confirmed by the remote side.
 
    If the open is successful, some response specific data may be

@@ -23,7 +23,7 @@
 
 /**
    @file
-   @short SSH key exchange pluggable module interface and helpers
+   @short SSH key exchange module interface and helpers
 
    @ifnopt hide_internal
    This headed file defines the interface to use for pluggable
@@ -102,7 +102,7 @@ assh_kex_client_hash1(struct assh_session_s *s,
                       const uint8_t *k_str);
 
 /** @internal This client side helper function can be used in
-    key-exchange modules to the generate exchange hash, verify the
+    key-exchange modules to the generate exchange hash, check the
     associated signature and setup the resulting symmetric keys. 
     @see assh_kex_client_hash2 */
 ASSH_WARN_UNUSED_RESULT assh_error_t
@@ -123,7 +123,7 @@ assh_kex_client_get_key(struct assh_session_s *s, const struct assh_key_s **key,
 #ifdef CONFIG_ASSH_SERVER
 
 /** @internal This server side helper function can be used in
-    key-exchange modules to allocate a @ref SSH_MSG_KEXDH_REPLY key
+    key-exchange modules to allocate a @ref SSH_MSG_KEX_DH_REPLY key
     exchange packet, adds public host key fields and updates the hash
     context with various values including the host key.
 
@@ -139,7 +139,7 @@ assh_kex_server_hash1(struct assh_session_s *s, size_t kex_len,
 
 /** @internal This server side helper function can be used in
     key-exchange modules to hash the secret key then add the signature
-    to the @ref SSH_MSG_KEXDH_REPLY packet and finally call @ref
+    to the @ref SSH_MSG_KEX_DH_REPLY packet and finally call @ref
     assh_kex_new_keys function.
 
     @see assh_kex_server_hash1
@@ -215,9 +215,10 @@ typedef ASSH_KEX_CLEANUP_FCN(assh_kex_cleanup_t);
     the @ref assh_transport_dispatch function when the current state
     of the transport layer is @ref ASSH_TR_KEX_RUNNING.
 
-    The packet argument may be @tt NULL if no packet has been
-    received.  This is the case on the first call to this function
-    after the @ref SSH_MSG_KEXINIT packet has been handled.
+    A packet may be passed to the function for processing by the
+    key-exchange protocol. If no new received packet is available, the
+    parameter is @tt NULL. This is the case on the first call to this
+    function after the key-exchange initialization.
 
     The function may initialize the passed event object, in this case
     the event will be propagated to the caller of the @ref

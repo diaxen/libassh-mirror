@@ -112,9 +112,15 @@
 
 @macro all_compound_sections types scope
 
-  @foreach id name type {@types@} {@scope@} {0}
-    @invoke {@type@} {@id@} {@name@} _compound_section
-  @end foreach
+  @ifnopt hide_internal
+    @foreach id name type {@types@} {@scope@} {0}
+      @invoke {@type@} {@id@} {@name@} _compound_section
+    @end foreach
+  @else
+    @foreach id name type {!internal @types@} {@scope@} {0}
+      @invoke {@type@} {@id@} {@name@} _compound_section
+    @end foreach
+  @end if
 
 @end macro
 

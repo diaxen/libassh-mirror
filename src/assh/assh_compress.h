@@ -23,7 +23,7 @@
 
 /**
    @file
-   @short SSH compression pluggable module interface
+   @short SSH compression module interface
 */
 
 #ifndef ASSH_COMPRESS_H_

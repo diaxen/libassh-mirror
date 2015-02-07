@@ -17,3 +17,10 @@
 SUBDIRS = src examples test
 ACLOCAL_AMFLAGS=-Im4
 
+doc: manual internals
+
+manual:
+	mkdoc -I doc/ -I src/ --conf-file manual.conf
+
+internals:
+	mkdoc -I doc/ -I src/ --conf-file internals.conf

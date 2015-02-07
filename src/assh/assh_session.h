@@ -23,7 +23,7 @@
 
 /**
    @file
-   @short Session context structure and related functions
+   @short Session structure and related functions
 */
 
 #ifndef ASSH_SESSION_H_

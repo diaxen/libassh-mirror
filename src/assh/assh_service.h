@@ -21,36 +21,47 @@
 
 */
 
+/**
+   @file
+   @short SSH service module interface
+*/
+
 #ifndef ASSH_SERVICE_H_
 #define ASSH_SERVICE_H_
 
 #include "assh_context.h"
 
-/** @internal @This defines the prototype of the initialization
-    function of an ssh service. This function is called when a service
-    requested is successful. This function must set the @ref
-    assh_session_s::srv field and may set the @ref
-    assh_session_s::srv_pv field. */
+/** @internal @see assh_service_init_t */
 #define ASSH_SERVICE_INIT_FCN(n) \
   ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_session_s *s)
+
+/** @internal @This defines the function type for the initialization
+    operation of the ssh service module interface. This function is
+    called when a service request is successful. This function must
+    set the @ref assh_session_s::srv field and may set the @ref
+    assh_session_s::srv_pv field as well to store its private data. */
 typedef ASSH_SERVICE_INIT_FCN(assh_service_init_t);
 
-/** @internal @This defines the prototype of the cleanup function of
-    the ssh service. This function is called when the service ends or
-    when the session cleanup occurs if a service has been initialized
-    previously. It must free the resources allocated by the associated
-    initialization function and set the @ref assh_session_s::srv and
-    assh_session_s::srv_pv fields to @tt {NULL}. */
+/** @internal @see assh_service_cleanup_t */
 #define ASSH_SERVICE_CLEANUP_FCN(n) \
   void (n)(struct assh_session_s *s)
+
+/** @internal @This defines the function type for the cleanup
+    operation of the ssh service module interface. This function is
+    called when the service terminates or when the session cleanup
+    occurs. It has to free the resources allocated by the service
+    initialization function and set the @ref assh_session_s::srv and
+    assh_session_s::srv_pv fields to @tt {NULL}. */
 typedef ASSH_SERVICE_CLEANUP_FCN(assh_service_cleanup_t);
 
-/** @internal @This defines the prototype of the service processing
-    function. This function is called from the @ref assh_event_get
-    function.
+/** @internal @This defines the function type for event processing of
+    the ssh service module interface. This function is called from the
+    @ref assh_transport_dispatch function when the current state of
+    the transport layer is @ref ASSH_TR_SERVICE, @ref
+    ASSH_TR_SERVICE_KEX or @ref ASSH_TR_FIN.
 
     A packet may be passed to the function for processing by the
-    running service, if no new received packet is available, the
+    running service. If no new received packet is available, the
     parameter is @tt NULL.
 
     The function may initialize the passed event object, in this case
@@ -59,14 +70,15 @@ typedef ASSH_SERVICE_CLEANUP_FCN(assh_service_cleanup_t);
 
     The function can return the @ref ASSH_NO_DATA value to indicate
     that the provided packet has not been processed and must be
-    provided again on the next call.
-
-    If no event is reported and @ref ASSH_NO_DATA is returned, the
-    function is called again immediately.
+    provided again on the next call. If no event is reported and @ref
+    ASSH_NO_DATA is returned, the function is called again
+    immediately.
 
     This function should check the current state of the transport
-    protocol. @see assh_transport_state_e
-*/
+    layer and report any termination related events when the state is
+    @ref ASSH_TR_FIN. If the function reports no event and return
+    @ref ASSH_OK when the state is @ref ASSH_TR_FIN, the state will
+    change to ASSH_TR_CLOSED and the function will not be called any more. */
 #define ASSH_SERVICE_PROCESS_FCN(n) assh_error_t (n)(struct assh_session_s *s, \
                                                      struct assh_packet_s *p, \
                                                      struct assh_event_s *e)

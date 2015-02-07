@@ -21,6 +21,10 @@
 
 */
 
+/**
+   @file
+   @short SSH keys loaders
+*/
 
 #ifndef ASSH_HELPER_KEY_H_
 #define ASSH_HELPER_KEY_H_
@@ -29,9 +33,9 @@
 
 #include <stdio.h>
 
-/** @This loads a key from a file handler and inserts
-    the key in a linked list. Both binary and text key formats are
-    supported. This function relies on @ref assh_key_load2 to load the
+/** @internal @This loads a key from a file handle and inserts the key
+    in a linked list. Both binary and text key formats are
+    supported. This function relies on @ref assh_key_load to load the
     binary key blob. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_load_key_file(struct assh_context_s *c,
@@ -40,9 +44,9 @@ assh_load_key_file(struct assh_context_s *c,
 		   enum assh_algo_class_e role,
 		   FILE *file, enum assh_key_format_e format);
 
-/** @This loads a key from a file name and inserts
-    the key in a linked list. This function relies on @ref
-    assh_key_loads_file. */
+/** @internal @This loads a key from a file name and inserts the key
+    in a linked list. This function relies on @ref
+    assh_load_key_file. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_load_key_filename(struct assh_context_s *c,
 		       const struct assh_key_s **head,
@@ -51,8 +55,8 @@ assh_load_key_filename(struct assh_context_s *c,
 		       const char *filename,
 		       enum assh_key_format_e format);
 
-/** @This loads a key from a file handler and register the key as an
-    host key for the context. @see assh_load_key_file */
+/** @This loads a key from a file handler and register the key on the
+    library context. @see assh_load_key_file */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_load_hostkey_file(struct assh_context_s *c,
 		       const struct assh_key_ops_s *algo,
@@ -60,8 +64,8 @@ assh_load_hostkey_file(struct assh_context_s *c,
 		       FILE *file,
 		       enum assh_key_format_e format);
 
-/** @This loads a key from a file name and register the key as an
-    host key for the context. @see assh_load_key_filename */
+/** @This loads a key from a file name and register the key on the
+    library context. @see assh_load_key_filename */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_load_hostkey_filename(struct assh_context_s *c,
 			   const struct assh_key_ops_s *algo,

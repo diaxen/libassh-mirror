@@ -56,11 +56,10 @@ struct assh_event_userauth_server_userkey_s
 };
 
 /** This event is reported when the server-side user authentication
-    service is running. The user name and password pair in @ref
-    assh_event_s::userauth_server::password must be checked and the
-    @tt success field must be updated accordingly before calling the
-    @ref assh_event_done function. 
-    @see ASSH_EVENT_USERAUTH_SERVER_PASSWORD */
+    service is running. The user name and password pair must be
+    checked and the @tt success field must be updated accordingly
+    before calling the @ref assh_event_done function.  @see
+    ASSH_EVENT_USERAUTH_SERVER_PASSWORD */
 struct assh_event_userauth_server_password_s
 {
   ASSH_EV_CONST struct assh_buffer_s username;

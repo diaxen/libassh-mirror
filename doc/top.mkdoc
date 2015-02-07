@@ -39,6 +39,7 @@ assh/helper_key.h
 assh/key_dsa.h
 assh/key_eddsa.h
 assh/key_rsa.h
+assh_config.h
 }
 
 @insert title
@@ -70,20 +71,6 @@ assh/key_rsa.h
   @end section
 
 @end section
-
-@section TPe {Modules documentation}
-  @section THe {Modules list}
-    @insert {module} compound_table
-  @end section
-  @insert {module} all_compound_sections
-@end section
-
-@c Use the @index tag and uncomment these lines to add an index
-@c to your document.
-@c
-@c @section TP {Index}
-@c   @insert {main} index
-@c @end section
 
 @section TP {GNU Free Documentation License}
   @include fdl-1.3.mkdoc

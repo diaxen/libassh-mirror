@@ -21,6 +21,10 @@
 
 */
 
+/**
+   @file
+   @short SSH transport layer protocol (rfc4253)
+*/
 
 #ifndef ASSH_TRANSPORT_H_
 #define ASSH_TRANSPORT_H_
@@ -31,21 +35,17 @@
 
 #include "assh.h"
 
-/** The @ref ASSH_EVENT_READ event is returned when more incoming ssh
-    stream data from the remote host is needed to complete the current
-    input packet.
+/** The @ref ASSH_EVENT_READ event is reported in order to gather
+    incoming ssh stream data from the remote host.
 
     The @ref buf field have to be filled with incoming data
     stream. The @ref assh_event_done function must be called once the
     data have been copied to the buffer and the @ref transferred field
-    have been set to 1.
+    have been set to the amount of available data.
 
-    If not enough data is available yet, the event can still be
-    acknowledged by calling the @ref assh_event_done function without
-    setting the @ref transferred field. The buffer will remain valid and
-    will be provided again the next time this event is returned. This
-    allows filling the buffer as more data become available, even
-    after calling @ref assh_event_done.
+    If not enough data is available, it's ok to provide less than
+    requested or even no data. The buffer will be provided again the
+    next time this event is reported.
 */
 struct assh_event_transport_read_s
 {
@@ -53,17 +53,17 @@ struct assh_event_transport_read_s
   size_t                             transferred; //< output
 };
 
-/** The @ref ASSH_EVENT_WRITE event is returned when some ssh stream
+/** The @ref ASSH_EVENT_WRITE event is reported when some ssh stream
     data is available for sending to the remote host. The @ref buf
     field provides a buffer which contain the output data. The @ref
-    assh_event_done function must be called once the output data have
-    been sent.
+    transferred field must be set to the amount of data sent. The @ref
+    assh_event_done function can then be called once the output data
+    have been sent so that the packet buffer is released.
 
-    If no data can be sent yet, the event can still be acknowledged by
-    calling the @ref assh_event_done without setting the @ref
-    transferred field.  The buffer will remain valid and will be
-    provided again the next time this event is returned. This allows
-    sending the buffer even after calling @ref assh_event_done.
+    It's ok to set the @ref transferred field to a value less than the
+    buffer size. If no data at all can be sent, the default value of
+    the field can be left untouched. The buffer will remain valid and
+    will be provided again the next time this event is returned.
 */
 struct assh_event_transport_write_s
 {
@@ -83,27 +83,28 @@ union assh_event_transport_u
 void assh_transport_push(struct assh_session_s *s,
 			 struct assh_packet_s *p);
 
-/** @internal This function dispatches incoming packets depending
-    on packet message id and transport internal state. */
+/** @internal This function executes the transport output FSM code
+    which enciphers packets and builds the output stream. It may
+    report the @ref ASSH_EVENT_READ event. It is called from the @ref
+    assh_event_get function. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_transport_write(struct assh_session_s *s,
                      struct assh_event_s *e);
 
+/** @internal This function executes the transport input FSM code
+    which extracts packets from the stream and decipher them. It may
+    report the @ref ASSH_EVENT_WRITE event. It is called from the @ref
+    assh_event_get function. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_transport_read(struct assh_session_s *s,
                     struct assh_event_s *e);
 
+/** @internal This function dispatches incoming packets depending on
+    packet message id and transport layer state. It is called from the
+    @ref assh_event_get function. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_transport_dispatch(struct assh_session_s *s,
 			struct assh_event_s *e);
 
-/** @internal This function returns the address and size of the buffer
-    which contains the next ssh binary output stream. This function
-    returns @ref ASSH_NO_DATA if no data is available yet. The @ref
-    assh_tr_stream_out_done function must be called once the data has
-    been processed. */
-/** @internal This function returns the address and size of the buffer
-    where the next ssh binary input data must be stored. This function
-    returns @ref ASSH_NO_DATA if no data needs to be read yet. */
 #endif
 

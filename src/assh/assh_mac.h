@@ -37,7 +37,7 @@
                                            void *ctx_, const uint8_t *key)
 
 /** @internal @This defines the function type for the mac
-    initialization operation of mac module interface. The @tt
+    initialization operation of the mac module interface. The @tt
     ctx_ argument must points to a buffer allocated in secure memory
     of size given by @ref assh_algo_mac_s::ctx_size. */
 typedef ASSH_MAC_INIT_FCN(assh_mac_init_t);
@@ -52,7 +52,7 @@ typedef ASSH_MAC_INIT_FCN(assh_mac_init_t);
     operation of the mac module interface. */
 typedef ASSH_MAC_COMPUTE_FCN(assh_mac_compute_t);
 
-/** @internal @see assh_mac_verify_t */
+/** @internal @see assh_mac_check_t */
 #define ASSH_MAC_CHECK_FCN(n) \
   ASSH_WARN_UNUSED_RESULT assh_error_t (n)(void *ctx_, uint32_t seq, \
                                            const uint8_t *data, size_t len, \
