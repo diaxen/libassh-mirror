@@ -35,6 +35,50 @@
 
 #include "assh.h"
 
+/** @internal @This specifies the transport status of an ssh session. */
+enum assh_transport_state_e
+{
+  /** send a @ref SSH_MSG_KEXINIT packet then go to @ref ASSH_TR_KEX_WAIT */
+  ASSH_TR_KEX_INIT,
+  /** We wait for a @ref SSH_MSG_KEXINIT packet. */
+  ASSH_TR_KEX_WAIT,
+  /** Both @ref SSH_MSG_KEXINIT packet were sent, the key exchange is taking place. */
+  ASSH_TR_KEX_RUNNING,
+  /** The key exchange is over and a @ref SSH_MSG_NEWKEYS packet is expected. */
+  ASSH_TR_NEWKEY,
+  /** No key exchange is running, service packets are allowed. */
+  ASSH_TR_SERVICE,
+  /** Key re-exchange packet sent but not received, service packets are allowed. */
+  ASSH_TR_SERVICE_KEX,
+  /** Do not exchange packets with the remote side anymore. Report last events. */
+  ASSH_TR_FIN,
+  /** Session closed, no more event will be reported. */
+  ASSH_TR_CLOSED,
+};
+
+/** @internal @This specifies state of the input stream parser */
+enum assh_stream_in_state_e
+{
+  ASSH_TR_IN_IDENT,
+  ASSH_TR_IN_IDENT_DONE,
+  ASSH_TR_IN_HEAD,
+  ASSH_TR_IN_HEAD_DONE,
+  ASSH_TR_IN_PAYLOAD,
+  ASSH_TR_IN_PAYLOAD_DONE,
+};
+
+/** @internal @This specifies state of the output stream generator */
+enum assh_stream_out_state_e
+{
+  ASSH_TR_OUT_IDENT,
+  ASSH_TR_OUT_IDENT_PAUSE,
+  ASSH_TR_OUT_IDENT_DONE,
+  ASSH_TR_OUT_PACKETS,
+  ASSH_TR_OUT_PACKETS_ENCIPHERED,
+  ASSH_TR_OUT_PACKETS_PAUSE,
+  ASSH_TR_OUT_PACKETS_DONE,
+};
+
 /** The @ref ASSH_EVENT_READ event is reported in order to gather
     incoming ssh stream data from the remote host.
 
