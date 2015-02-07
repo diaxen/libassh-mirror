@@ -294,13 +294,13 @@ assh_packet_check_u32(struct assh_packet_s *p, uint32_t *u32,
 
 /** @internal @This compare two buffers of byte of the same length in
     constant time. */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_bool_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT uint8_t
 assh_memcmp(const uint8_t *nula, const uint8_t *nulb, size_t len)
 {
-  assh_bool_t r = 0;
+  uint8_t r = 0;
   while (len--)
     r |= nula[len] ^ nulb[len];
-  return r;  
+  return r;
 }
 
 /** @internal @This compares a ssh string with a size header to a @tt
