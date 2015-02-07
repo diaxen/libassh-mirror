@@ -34,6 +34,7 @@
 #endif
 
 #include "assh_algo.h"
+#include "assh_context.h"
 
 /** @This specifies quality of randomly generated data. */
 enum assh_prng_quality_e
@@ -80,7 +81,7 @@ typedef ASSH_PRNG_INIT_FCN(assh_prng_init_t);
                                            uint8_t *rdata, size_t rdata_len, \
 					   enum assh_prng_quality_e quality)
 /** @internal @This defines the function type for the random generation
-    operation of the prng module interface. */
+    operation of the prng module interface. @see assh_prng_get */
 typedef ASSH_PRNG_GET_FCN(assh_prng_get_t);
 
 /** @internal @see assh_prng_feed_t */
@@ -108,6 +109,15 @@ struct assh_prng_s
   assh_prng_feed_t    *f_feed;
   assh_prng_cleanup_t *f_cleanup;
 };
+
+/** @internal @This fills the buffer with random data. */
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_prng_get(struct assh_context_s *c,
+              uint8_t *rdata, size_t rdata_len,
+              enum assh_prng_quality_e quality)
+{
+  return c->prng->f_get(c, rdata, rdata_len, quality);
+}
 
 /** @multiple @This is a prng algorithm implementation descriptor. */
 extern const struct assh_prng_s assh_prng_xswap;

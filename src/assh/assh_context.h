@@ -121,7 +121,7 @@ void assh_context_init(struct assh_context_s *ctx,
 void assh_context_cleanup(struct assh_context_s *ctx);
 
 /** @This set the user private pointer of the context. */
-static inline void
+ASSH_INLINE void
 assh_context_set_pv(struct assh_context_s *ctx,
                     void *private)
 {
@@ -129,7 +129,7 @@ assh_context_set_pv(struct assh_context_s *ctx,
 }
 
 /** @This get the user private pointer of the context. */
-static inline void *
+ASSH_INLINE void *
 assh_context_get_pv(struct assh_context_s *ctx)
 {
   return ctx->pv;

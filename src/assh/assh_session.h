@@ -182,7 +182,7 @@ struct assh_session_s
 };
 
 /** @This set the user private pointer of the session. */
-static inline void
+ASSH_INLINE void
 assh_session_set_pv(struct assh_session_s *ctx,
                     void *private)
 {
@@ -190,14 +190,14 @@ assh_session_set_pv(struct assh_session_s *ctx,
 }
 
 /** @This get the user private pointer of the session. */
-static inline void *
+ASSH_INLINE void *
 assh_session_get_pv(struct assh_session_s *ctx)
 {
   return ctx->pv;
 }
 
 /** @internal This changes the current transport state */
-static inline void assh_transport_state(struct assh_session_s *s,
+ASSH_INLINE void assh_transport_state(struct assh_session_s *s,
                                         enum assh_transport_state_e st)
 {
 #ifdef CONFIG_ASSH_DEBUG_PROTOCOL

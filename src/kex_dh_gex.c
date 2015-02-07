@@ -451,7 +451,7 @@ static assh_error_t assh_kex_dh_gex_server_wait_size(struct assh_session_s *s,
 
   /* randomize group size */
   uint16_t r;
-  ASSH_ERR_RET(s->ctx->prng->f_get(s->ctx, (void*)&r, 2, ASSH_PRNG_QUALITY_NONCE));
+  ASSH_ERR_RET(assh_prng_get(s->ctx, (void*)&r, 2, ASSH_PRNG_QUALITY_NONCE));
   r = r % (max - min + 1);
   r -= r % 8;
   pv->server_n = min + r;

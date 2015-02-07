@@ -58,7 +58,7 @@ void assh_map_remove(struct assh_map_entry_s **parent,
                      struct assh_map_entry_s *item);
 
 /* @This finds and removes an item from the container. */
-static inline assh_error_t
+ASSH_INLINE assh_error_t
 assh_map_remove_id(struct assh_map_entry_s **root,
                    assh_map_id_t id)
 {

@@ -174,7 +174,7 @@ assh_key_create(struct assh_context_s *c,
     This function may only support the @ref
     ASSH_KEY_FMT_PUB_RFC4253_6_6 format.
 */
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_key_output(struct assh_context_s *c,
                 const struct assh_key_s *key,
                 uint8_t *blob, size_t *blob_len,
@@ -186,7 +186,7 @@ assh_key_output(struct assh_context_s *c,
 /** @This function returns true if both keys are equals. If the @tt
     pub parameter is set, only the public parts of the key are taken
     into account. */
-static inline ASSH_WARN_UNUSED_RESULT assh_bool_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_bool_t
 assh_key_cmp(struct assh_context_s *c, const struct assh_key_s *key,
 	     const struct assh_key_s *b, assh_bool_t pub)
 {
@@ -199,7 +199,7 @@ void assh_key_drop(struct assh_context_s *c,
 
 /** @This releases all the keys on the linked list
     and set the list head to @tt NULL. */
-static inline void
+ASSH_INLINE void
 assh_key_flush(struct assh_context_s *c,
                const struct assh_key_s **head)
 {
@@ -208,7 +208,7 @@ assh_key_flush(struct assh_context_s *c,
 }
 
 /** @internal @This inserts a key in a list of keys. */
-static inline void
+ASSH_INLINE void
 assh_key_insert(const struct assh_key_s **head,
                 const struct assh_key_s *key)
 {
@@ -217,7 +217,7 @@ assh_key_insert(const struct assh_key_s **head,
 }
 
 /** @This checks the validity of the key. */
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_key_validate(struct assh_context_s *c,
                   const struct assh_key_s *key)
 {

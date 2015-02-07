@@ -233,7 +233,7 @@ enum assh_error_e
 # define ASSH_DEBUG(...)
 
 /** @internal */
-static inline void
+ASSH_INLINE void
 assh_hexdump(const char *name, const void *data, unsigned int len)
 {
 }

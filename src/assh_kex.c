@@ -59,7 +59,7 @@ assh_error_t assh_kex_send_init(struct assh_session_s *s)
 
   uint8_t *cookie;
   ASSH_ERR_GTO(assh_packet_add_array(p, 16, &cookie), err_pck);
-  ASSH_ERR_GTO(c->prng->f_get(c, cookie,
+  ASSH_ERR_GTO(assh_prng_get(c, cookie,
 		  16, ASSH_PRNG_QUALITY_NONCE)
 	       | ASSH_ERRSV_DISCONNECT, err_pck);
 
@@ -659,7 +659,7 @@ assh_kex_server_hash1(struct assh_session_s *s, size_t kex_len,
 
   /* alloc reply packet */
   size_t ks_len;
-  ASSH_ERR_RET(hk->algo->f_output(c, hk, NULL, &ks_len,
+  ASSH_ERR_RET(assh_key_output(c, hk, NULL, &ks_len,
 	         ASSH_KEY_FMT_PUB_RFC4253_6_6)
 	       | ASSH_ERRSV_DISCONNECT);
 
@@ -673,7 +673,7 @@ assh_kex_server_hash1(struct assh_session_s *s, size_t kex_len,
   /* append public host key to packet. */
   uint8_t *ks_str;
   ASSH_ASSERT(assh_packet_add_string(*pout, ks_len, &ks_str));
-  ASSH_ERR_GTO(hk->algo->f_output(c, hk, ks_str, &ks_len,
+  ASSH_ERR_GTO(assh_key_output(c, hk, ks_str, &ks_len,
 		ASSH_KEY_FMT_PUB_RFC4253_6_6)
 	       | ASSH_ERRSV_DISCONNECT, err_p);
 

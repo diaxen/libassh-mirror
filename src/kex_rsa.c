@@ -181,7 +181,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
   uint8_t *em = secret + slen + 4;
   assh_store_u32(em - 4, elen);
 
-  ASSH_ERR_GTO(c->prng->f_get(c, secret + 4, slen - 4,
+  ASSH_ERR_GTO(assh_prng_get(c, secret + 4, slen - 4,
 		ASSH_PRNG_QUALITY_EPHEMERAL_KEY), err_tkey);
   assh_store_u32(secret, slen - 4);
   secret[4] &= 0x7f & (0xff >> ((8 - sbits) & 7));
@@ -194,7 +194,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
 
   em[0] = 0;
   uint8_t *seed = em + 1;
-  ASSH_ERR_GTO(c->prng->f_get(c, seed, hlen,
+  ASSH_ERR_GTO(assh_prng_get(c, seed, hlen,
 		ASSH_PRNG_QUALITY_NONCE), err_tkey);
 
   uint8_t *db = em + 1 + hlen;
@@ -358,12 +358,12 @@ static assh_error_t assh_kex_rsa_server_send_pubkey(struct assh_session_s *s)
 
   /* alloc reply packet */
   size_t ks_len;
-  ASSH_ERR_RET(hk->algo->f_output(c, hk, NULL, &ks_len,
+  ASSH_ERR_RET(assh_key_output(c, hk, NULL, &ks_len,
 	         ASSH_KEY_FMT_PUB_RFC4253_6_6)
 	       | ASSH_ERRSV_DISCONNECT);
 
   size_t t_len;
-  ASSH_ERR_RET(pv->t_key->algo->f_output(c, pv->t_key, NULL, &t_len,
+  ASSH_ERR_RET(assh_key_output(c, pv->t_key, NULL, &t_len,
 	         ASSH_KEY_FMT_PUB_RFC4253_6_6)
 	       | ASSH_ERRSV_DISCONNECT);
 
@@ -375,7 +375,7 @@ static assh_error_t assh_kex_rsa_server_send_pubkey(struct assh_session_s *s)
 
   uint8_t *ks_str;
   ASSH_ASSERT(assh_packet_add_string(pout, ks_len, &ks_str));
-  ASSH_ERR_GTO(hk->algo->f_output(c, hk, ks_str, &ks_len,
+  ASSH_ERR_GTO(assh_key_output(c, hk, ks_str, &ks_len,
 		ASSH_KEY_FMT_PUB_RFC4253_6_6)
 	       | ASSH_ERRSV_DISCONNECT, err_p);
 
@@ -383,7 +383,7 @@ static assh_error_t assh_kex_rsa_server_send_pubkey(struct assh_session_s *s)
 
   uint8_t *t_str;
   ASSH_ASSERT(assh_packet_add_string(pout, t_len, &t_str));
-  ASSH_ERR_GTO(pv->t_key->algo->f_output(c, pv->t_key, t_str, &t_len,
+  ASSH_ERR_GTO(assh_key_output(c, pv->t_key, t_str, &t_len,
 		ASSH_KEY_FMT_PUB_RFC4253_6_6)
 	       | ASSH_ERRSV_DISCONNECT, err_p);
 
@@ -503,7 +503,7 @@ static assh_error_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
 
   size_t sign_len;
   const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
-  ASSH_ERR_RET(sign_algo->f_generate(c, hk, 0, NULL, NULL, NULL, &sign_len)
+  ASSH_ERR_RET(assh_sign_generate(c, sign_algo, hk, 0, NULL, NULL, NULL, &sign_len)
 	       | ASSH_ERRSV_DISCONNECT);
 
   struct assh_packet_s *pout;

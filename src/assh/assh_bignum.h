@@ -202,7 +202,7 @@ struct assh_bignum_algo_s
 
     Resources used by temporary numbers are automatically released when
     the function returns. */
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_bignum_bytecode(struct assh_context_s *c,
                      const assh_bignum_op_t *ops,
                      const char *format, ...)
@@ -235,7 +235,7 @@ assh_bignum_bytecode(struct assh_context_s *c,
     When converting between two native big numbers, the current bits
     size of the source might be larger than the size of the destination
     provided that the actual value fits in the destination. */
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_bignum_convert(struct assh_context_s *c,
                     enum assh_bignum_fmt_e src_fmt,
                     enum assh_bignum_fmt_e dst_fmt,
@@ -250,7 +250,7 @@ size_t assh_bignum_size_of_bits(enum assh_bignum_fmt_e dst_fmt, size_t bits);
 
 /** @internal @This returns the byte size needed to store the given
     big number object. */
-static inline size_t
+ASSH_INLINE size_t
 assh_bignum_size_of_num(enum assh_bignum_fmt_e dst_fmt,
                         const struct assh_bignum_s *bn)
 {
@@ -275,7 +275,7 @@ assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
 
 /** @internal @This initializes a big number object. No buffer is
     allocated, the big number is left empty. */
-static inline void
+ASSH_INLINE void
 assh_bignum_init(struct assh_context_s *c,
                  struct assh_bignum_s  *bn,
                  size_t bits)
@@ -286,7 +286,7 @@ assh_bignum_init(struct assh_context_s *c,
 }
 
 /** @internal @This returns the number of bits of a big number. */
-static inline size_t
+ASSH_INLINE size_t
 assh_bignum_bits(const struct assh_bignum_s  *bn)
 {
   return bn->bits;
@@ -294,7 +294,7 @@ assh_bignum_bits(const struct assh_bignum_s  *bn)
 
 /** @internal @This test if a big number is actually stored in the
     object or if it's empty. */
-static inline assh_bool_t
+ASSH_INLINE assh_bool_t
 assh_bignum_isempty(const struct assh_bignum_s  *bn)
 {
   return bn->n == NULL;
@@ -303,7 +303,7 @@ assh_bignum_isempty(const struct assh_bignum_s  *bn)
 /** @internal @This releases the internal storage of a bignum. The big
     number object become empty as if the @ref assh_bignum_init
     function has just been called. */
-static inline void
+ASSH_INLINE void
 assh_bignum_release(struct assh_bignum_s  *bn)
 {
   if (bn->ctx)

@@ -75,7 +75,7 @@ extern const struct assh_edward_curve_s assh_e382_curve;
 extern const struct assh_edward_curve_s assh_e521_curve;
 
 /** @internal Adjust blob for use with edward curvre */
-static inline void
+ASSH_INLINE void
 assh_edward_adjust(const struct assh_edward_curve_s *curve, uint8_t *blob)
 {
   uint_fast8_t i = (8 - curve->bits) & 7;
@@ -87,7 +87,7 @@ assh_edward_adjust(const struct assh_edward_curve_s *curve, uint8_t *blob)
 }
 
 /** @internal Edward curve point encoding */
-static inline void 
+ASSH_INLINE void 
 assh_edward_encode(const struct assh_edward_curve_s *curve,
                    uint8_t y[], const uint8_t x[])
 {

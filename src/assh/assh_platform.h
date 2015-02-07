@@ -35,9 +35,19 @@
 #ifndef ASSH_PLATFORM_H_
 #define ASSH_PLATFORM_H_
 
+#ifdef __GNUC__
+# define ASSH_WARN_UNUSED_RESULT __attribute__((warn_unused_result))
+#else
+# define ASSH_WARN_UNUSED_RESULT
+#endif
+
+#define ASSH_INLINE static inline
+
+#define CONFIG_ASSH_NONALIGNED_ACCESS
+
 /** @internal @This stores a 32 bits value in network byte
     order into a non-aligned location. */
-static inline void assh_store_u32(uint8_t *s, uint32_t x)
+ASSH_INLINE void assh_store_u32(uint8_t *s, uint32_t x)
 {
 #ifdef CONFIG_ASSH_NONALIGNED_ACCESS
   *(uint32_t*)s = htonl(x);
@@ -51,7 +61,7 @@ static inline void assh_store_u32(uint8_t *s, uint32_t x)
 
 /** @internal @This stores a 32 bits value in little endian byte
     order into a non-aligned location. */
-static inline void assh_store_u32le(uint8_t *s, uint32_t x)
+ASSH_INLINE void assh_store_u32le(uint8_t *s, uint32_t x)
 {
   s[3] = x >> 24;
   s[2] = x >> 16;
@@ -61,7 +71,7 @@ static inline void assh_store_u32le(uint8_t *s, uint32_t x)
 
 /** @internal @This stores a 64 bits value in network byte
     order into a non-aligned location. */
-static inline void assh_store_u64(uint8_t *s, uint64_t x)
+ASSH_INLINE void assh_store_u64(uint8_t *s, uint64_t x)
 {
 #ifdef CONFIG_ASSH_NONALIGNED_ACCESS
   *(uint32_t*)(s) = htonl(x >> 32);
@@ -80,7 +90,7 @@ static inline void assh_store_u64(uint8_t *s, uint64_t x)
 
 /** @internal @This stores a 64 bits value in little endian byte
     order into a non-aligned location. */
-static inline void assh_store_u64le(uint8_t *s, uint64_t x)
+ASSH_INLINE void assh_store_u64le(uint8_t *s, uint64_t x)
 {
   s[7] = x >> 56;
   s[6] = x >> 48;
@@ -94,7 +104,7 @@ static inline void assh_store_u64le(uint8_t *s, uint64_t x)
 
 /** @internal @This loads a 32 bits value in network byte
     order from a non-aligned location. */
-static inline uint32_t assh_load_u32(const uint8_t *s)
+ASSH_INLINE uint32_t assh_load_u32(const uint8_t *s)
 {
 #ifdef CONFIG_ASSH_NONALIGNED_ACCESS
   return htonl(*(const uint32_t*)s);
@@ -105,14 +115,14 @@ static inline uint32_t assh_load_u32(const uint8_t *s)
 
 /** @internal @This loads a 32 bits value in little endian
     byte order from a non-aligned location. */
-static inline uint32_t assh_load_u32le(const uint8_t *s)
+ASSH_INLINE uint32_t assh_load_u32le(const uint8_t *s)
 {
   return s[0] + (s[1] << 8) + (s[2] << 16) + (s[3] << 24);
 }
 
 /** @internal @This loads a 64 bits value in network byte
     order from a non-aligned location. */
-static inline uint64_t assh_load_u64(const uint8_t *s)
+ASSH_INLINE uint64_t assh_load_u64(const uint8_t *s)
 {
   return ((uint64_t)s[7] << 0)  + ((uint64_t)s[6] << 8) +
          ((uint64_t)s[5] << 16) + ((uint64_t)s[4] << 24) +
@@ -122,7 +132,7 @@ static inline uint64_t assh_load_u64(const uint8_t *s)
 
 /** @internal @This loads a 64 bits value in little endian
     byte order from a non-aligned location. */
-static inline uint64_t assh_load_u64le(const uint8_t *s)
+ASSH_INLINE uint64_t assh_load_u64le(const uint8_t *s)
 {
   return ((uint64_t)s[0] << 0)  + ((uint64_t)s[1] << 8) +
          ((uint64_t)s[2] << 16) + ((uint64_t)s[3] << 24) +
@@ -131,7 +141,7 @@ static inline uint64_t assh_load_u64le(const uint8_t *s)
 }
 
 /** @internal @This performs a byte swap of a 32 bits value. */
-static inline uint32_t assh_swap_u32(uint32_t x)
+ASSH_INLINE uint32_t assh_swap_u32(uint32_t x)
 {
   x = (x << 16) | (x >> 16);
   x = ((x & 0x00ff00ff) << 8) | ((x & 0xff00ff00) >> 8);
@@ -158,11 +168,5 @@ static inline uint32_t assh_swap_u32(uint32_t x)
 
 /** @internal */
 #define ASSH_ALIGN8(x) ((((x) - 1) | 7) + 1)
-
-#ifdef __GNUC__
-# define ASSH_WARN_UNUSED_RESULT __attribute__((warn_unused_result))
-#else
-# define ASSH_WARN_UNUSED_RESULT
-#endif
 
 #endif

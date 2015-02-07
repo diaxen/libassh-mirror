@@ -169,21 +169,21 @@ enum assh_connection_reply_e
 #define ASSH_SRV_CN_DEFAULT_WINDOW  (ASSH_SRV_CN_DEFAULT_PKTSIZE * 3)
 
 /** This function sets the value of the channel private pointer. */
-static inline void
+ASSH_INLINE void
 assh_channel_set_pv(struct assh_channel_s *ch, void *pv)
 {
   ch->pv = pv;
 }
 
 /** This function returns the value of the channel private pointer. */
-static inline void *
+ASSH_INLINE void *
 assh_channel_pv(const struct assh_channel_s *ch)
 {
   return ch->pv;
 }
 
 /** This returns the current channel status */
-static inline enum assh_channel_status_e
+ASSH_INLINE enum assh_channel_status_e
 assh_channel_status(const struct assh_channel_s *ch)
 {
   return ch->status;
@@ -191,14 +191,14 @@ assh_channel_status(const struct assh_channel_s *ch)
 
 /** This set the maximum size of the local window. The next window
     adjust packet will increase the window size to match the given value. */
-static inline void assh_channel_set_win_size(struct assh_channel_s *ch,
+ASSH_INLINE void assh_channel_set_win_size(struct assh_channel_s *ch,
                                              uint32_t win_size)
 {
   ch->lwin_size = ASSH_MAX(win_size, ch->lpkt_size * 2);
 }
 
 /** This returns the number of bytes left in current windows for a channel */
-static inline void assh_channel_get_win_size(const struct assh_channel_s *ch,
+ASSH_INLINE void assh_channel_get_win_size(const struct assh_channel_s *ch,
                                              uint32_t *local, uint32_t *remote)
 {
   if (local != NULL)
@@ -208,7 +208,7 @@ static inline void assh_channel_get_win_size(const struct assh_channel_s *ch,
 }
 
 /** This returns the maximum packet size for a channel */
-static inline void assh_channel_get_pkt_size(const struct assh_channel_s *ch,
+ASSH_INLINE void assh_channel_get_pkt_size(const struct assh_channel_s *ch,
                                              uint32_t *local, uint32_t *remote)
 {
   if (local != NULL)
@@ -218,21 +218,21 @@ static inline void assh_channel_get_pkt_size(const struct assh_channel_s *ch,
 }
 
 /** This function sets the value of the request private pointer. */
-static inline void
+ASSH_INLINE void
 assh_request_set_pv(struct assh_request_s *rq, void *pv)
 {
   rq->pv = pv;
 }
 
 /** This function returns the value of the request private pointer. */
-static inline void *
+ASSH_INLINE void *
 assh_request_pv(const struct assh_request_s *rq)
 {
   return rq->pv;
 }
 
 /** This returns the current channel status */
-static inline enum assh_request_status_e
+ASSH_INLINE enum assh_request_status_e
 assh_request_status(struct assh_request_s *rq)
 {
   return rq->status;
@@ -471,7 +471,7 @@ assh_channel_open_success_reply2(struct assh_channel_s *ch,
 
    @see assh_channel_open_failed_reply
 */
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_channel_open_success_reply(struct assh_channel_s *ch,
                                 const uint8_t *rsp_data,
                                 size_t rsp_data_len)
@@ -552,7 +552,7 @@ assh_channel_open2(struct assh_session_s *s,
    the @ref assh_event_done function.
 */
 ASSH_WARN_UNUSED_RESULT assh_error_t
-static inline assh_channel_open(struct assh_session_s *s,
+ASSH_INLINE assh_channel_open(struct assh_session_s *s,
                                 const char *type, size_t type_len,
                                 const uint8_t *data, size_t data_len,
                                 struct assh_channel_s **ch)
@@ -668,7 +668,7 @@ assh_channel_data_send(struct assh_channel_s *ch, size_t size);
    not started or the last event has not been acknowledged by calling
    the @ref assh_event_done function.
 */
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_channel_data(struct assh_channel_s *ch,
                   const uint8_t *data, size_t *size)
 {
@@ -687,7 +687,7 @@ assh_channel_data(struct assh_channel_s *ch,
 
    @see assh_channel_data
 */
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_channel_data_ext(struct assh_channel_s *ch, uint32_t ext_type,
                       const uint8_t *data, size_t *size)
 {

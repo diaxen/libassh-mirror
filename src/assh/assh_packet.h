@@ -172,7 +172,7 @@ assh_packet_alloc(struct assh_context_s *c,
 void assh_packet_release(struct assh_packet_s *p);
 
 /** @internal @This increase the reference counter of the packet. */
-static inline struct assh_packet_s *
+ASSH_INLINE struct assh_packet_s *
 assh_packet_refinc(struct assh_packet_s *p)
 {
   p->ref_count++;
@@ -193,7 +193,7 @@ assh_packet_add_array(struct assh_packet_s *p, size_t len, uint8_t **result);
 /** @internal @This allocates an unsigned 32 bits integer in a packet
     and sets its value. If there is not enough space left in the
     packet, an error is returned. */
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_packet_add_u32(struct assh_packet_s *p, uint32_t value)
 {
   uint8_t *be;
@@ -263,7 +263,7 @@ assh_check_asn1(const uint8_t *buffer, size_t buffer_len, const uint8_t *str,
 
 /** @internal @This checks that a string is well inside packet
     bounds. @see assh_check_string */
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_packet_check_string(const struct assh_packet_s *p, const uint8_t *str,
                          uint8_t **next)
 {
@@ -272,7 +272,7 @@ assh_packet_check_string(const struct assh_packet_s *p, const uint8_t *str,
 
 /** @internal @This checks that an array is well inside packet
     bounds. @see assh_check_array */
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_packet_check_array(const struct assh_packet_s *p, const uint8_t *array,
                         size_t array_len, uint8_t **next)
 {
@@ -282,7 +282,7 @@ assh_packet_check_array(const struct assh_packet_s *p, const uint8_t *array,
 /** @internal @This checks that a 32 bits integer is well
     inside packet bounds and converts the value from network byte
     order. @see assh_packet_check_array */
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_packet_check_u32(struct assh_packet_s *p, uint32_t *u32,
 		      const uint8_t *data, uint8_t **next)
 {
@@ -294,7 +294,7 @@ assh_packet_check_u32(struct assh_packet_s *p, uint32_t *u32,
 
 /** @internal @This compare two buffers of byte of the same length in
     constant time. */
-static inline ASSH_WARN_UNUSED_RESULT assh_bool_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_bool_t
 assh_memcmp(const uint8_t *nula, const uint8_t *nulb, size_t len)
 {
   assh_bool_t r = 0;
@@ -305,7 +305,7 @@ assh_memcmp(const uint8_t *nula, const uint8_t *nulb, size_t len)
 
 /** @internal @This compares a ssh string with a size header to a @tt
     NUL terminated string. No bound checking is performed. */
-static inline ASSH_WARN_UNUSED_RESULT int
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT int
 assh_ssh_string_compare(const uint8_t *ssh_str, const char *nul_str)
 {
   size_t l = assh_load_u32(ssh_str);
@@ -321,7 +321,7 @@ assh_ssh_string_copy(const uint8_t *ssh_str, char *nul_str, size_t max_len);
 
 /** @internal @This compares the content of an @ref assh_buffer_s
     object with a nul terminated string. */
-static inline ASSH_WARN_UNUSED_RESULT uint_fast8_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT uint_fast8_t
 assh_buffer_strcmp(const struct assh_buffer_s *buf, const char *nul_str)
 {
   uint_fast16_t i;

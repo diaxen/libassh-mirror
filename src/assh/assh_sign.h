@@ -76,7 +76,7 @@ struct assh_algo_sign_s
     @tt sign_len parmeter with a size value which is greater or equal
     to what is needed to hold the signature blob. In this case, the
     @tt data_* parameters are not used. */
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_sign_generate(struct assh_context_s *c, const struct assh_algo_sign_s *algo,
                    const struct assh_key_s *key, size_t data_count,
                    const uint8_t * const data[], size_t const data_len[],
@@ -88,7 +88,7 @@ assh_sign_generate(struct assh_context_s *c, const struct assh_algo_sign_s *algo
 /** @internal @This checks the signature of the passed data using the
     provided key. The data can be split into multiple buffers. The @tt
     data_count parameter must specify the number of data buffers used. */
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_sign_check(struct assh_context_s *c, const struct assh_algo_sign_s *algo,
                  const struct assh_key_s *key, size_t data_count,
                  const uint8_t * const data[], size_t const data_len[],

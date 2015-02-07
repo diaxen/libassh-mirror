@@ -46,42 +46,42 @@ struct assh_queue_s
 };
 
 /** @internal */
-static inline void assh_queue_init(struct assh_queue_s *q)
+ASSH_INLINE void assh_queue_init(struct assh_queue_s *q)
 {
   q->head.next = q->head.prev = &q->head;
   q->count = 0;
 }
 
 /** @internal */
-static inline struct assh_queue_entry_s *
+ASSH_INLINE struct assh_queue_entry_s *
 assh_queue_front(struct assh_queue_s *q)
 {
   return q->head.next == &q->head ? NULL : q->head.next;
 }
 
 /** @internal */
-static inline struct assh_queue_entry_s *
+ASSH_INLINE struct assh_queue_entry_s *
 assh_queue_back(struct assh_queue_s *q)
 {
   return q->head.prev == &q->head ? NULL : q->head.prev;
 }
 
 /** @internal */
-static inline struct assh_queue_entry_s *
+ASSH_INLINE struct assh_queue_entry_s *
 assh_queue_next(struct assh_queue_s *q, struct assh_queue_entry_s *e)
 {
   return e->next == &q->head ? NULL : e->next;
 }
 
 /** @internal */
-static inline struct assh_queue_entry_s *
+ASSH_INLINE struct assh_queue_entry_s *
 assh_queue_prev(struct assh_queue_s *q, struct assh_queue_entry_s *e)
 {
   return e->prev == &q->head ? NULL : e->prev;
 }
 
 /** @internal */
-static inline void assh_queue_remove(struct assh_queue_s *q,
+ASSH_INLINE void assh_queue_remove(struct assh_queue_s *q,
                                      struct assh_queue_entry_s *e)
 {
   e->prev->next = e->next;
@@ -90,7 +90,7 @@ static inline void assh_queue_remove(struct assh_queue_s *q,
 }
 
 /** @internal */
-static inline void assh_queue_push_front(struct assh_queue_s *q,
+ASSH_INLINE void assh_queue_push_front(struct assh_queue_s *q,
 					 struct assh_queue_entry_s *b)
 {
   struct assh_queue_entry_s *a = &q->head;
@@ -102,7 +102,7 @@ static inline void assh_queue_push_front(struct assh_queue_s *q,
 }
 
 /** @internal */
-static inline void assh_queue_push_back(struct assh_queue_s *q,
+ASSH_INLINE void assh_queue_push_back(struct assh_queue_s *q,
 					struct assh_queue_entry_s *b)
 {
   struct assh_queue_entry_s *a = &q->head;
@@ -114,7 +114,7 @@ static inline void assh_queue_push_back(struct assh_queue_s *q,
 }
 
 /** @internal */
-static inline void assh_queue_concat(struct assh_queue_s *q,
+ASSH_INLINE void assh_queue_concat(struct assh_queue_s *q,
 				     struct assh_queue_s *r)
 {
   struct assh_queue_entry_s *a = &q->head;

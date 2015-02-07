@@ -282,7 +282,7 @@ static assh_error_t assh_userauth_server_pubkey_check(struct assh_session_s *s,
 
   /* check the signature */
   if (assh_sign_check(s->ctx, pv->algo, pv->pub_key, 3,
-                      sign_ptrs, sign_sizes, sign + 4, end - sign - 4) == ASSH_OK)
+        sign_ptrs, sign_sizes, sign + 4, end - sign - 4) == ASSH_OK)
     ASSH_ERR_RET(assh_userauth_server_success(s) | ASSH_ERRSV_DISCONNECT);
   else
     ASSH_ERR_RET(assh_userauth_server_failure(s) | ASSH_ERRSV_DISCONNECT);
@@ -310,7 +310,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
       size_t algo_name_len = strlen(pv->algo->algo.name);
 
       size_t blob_len;
-      ASSH_ERR_RET(pv->pub_key->algo->f_output(s->ctx, pv->pub_key,
+      ASSH_ERR_RET(assh_key_output(s->ctx, pv->pub_key,
                      NULL, &blob_len, ASSH_KEY_FMT_PUB_RFC4253_6_6) | ASSH_ERRSV_DISCONNECT);
 
       struct assh_packet_s *pout;
@@ -325,7 +325,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
       /* add public key blob */
       uint8_t *blob;
       ASSH_ASSERT(assh_packet_add_string(pout, blob_len, &blob));
-      ASSH_ERR_GTO(pv->pub_key->algo->f_output(s->ctx, pv->pub_key,
+      ASSH_ERR_GTO(assh_key_output(s->ctx, pv->pub_key,
                      blob, &blob_len, ASSH_KEY_FMT_PUB_RFC4253_6_6)
 		   | ASSH_ERRSV_DISCONNECT, err_packet);
       assh_packet_shrink_string(pout, blob, blob_len);

@@ -127,7 +127,7 @@ void assh_hash_payload_as_string(struct assh_hash_ctx_s *hctx,
 /** @internal @This initializes an hash algorithm context. The @tt
     hctx argument must points to a buffer allocated in secure memory
     of size given by @ref assh_hash_algo_s::ctx_size. */
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_hash_init(struct assh_context_s *c,
                struct assh_hash_ctx_s *hctx,
                const struct assh_hash_algo_s *algo)
@@ -139,7 +139,7 @@ assh_hash_init(struct assh_context_s *c,
 /** @internal @This creates a copy of the hash algorithm context. The
     new context must be released as if it was created by @ref
     assh_hash_init. */
-static inline ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_hash_copy(struct assh_hash_ctx_s *hctx_dst,
                struct assh_hash_ctx_s *hctx_src)
 {
@@ -147,7 +147,7 @@ assh_hash_copy(struct assh_hash_ctx_s *hctx_dst,
 }
 
 /** @internal @This updates the hash context with new input data. */
-static inline void
+ASSH_INLINE void
 assh_hash_update(struct assh_hash_ctx_s *hctx, const void *data, size_t len)
 {
   return hctx->algo->f_update(hctx, data, len);
@@ -155,7 +155,7 @@ assh_hash_update(struct assh_hash_ctx_s *hctx, const void *data, size_t len)
 
 /** @internal @This produce the hash output. It can be called multiple
     times when the hash algorithm has a variable length output. */
-static inline void
+ASSH_INLINE void
 assh_hash_final(struct assh_hash_ctx_s *hctx, uint8_t *hash, size_t len)
 {
   hctx->algo->f_final(hctx, hash, len);
@@ -164,7 +164,7 @@ assh_hash_final(struct assh_hash_ctx_s *hctx, uint8_t *hash, size_t len)
 /** @internal @This releases resources allocated by the @ref
     assh_hash_init and @ref assh_hash_copy functions.  @see
     assh_hash_cleanup. */
-static inline void
+ASSH_INLINE void
 assh_hash_cleanup(struct assh_hash_ctx_s *hctx)
 {
   hctx->algo->f_cleanup(hctx);
