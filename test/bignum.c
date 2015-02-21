@@ -325,7 +325,7 @@ assh_error_t test_add_sub(unsigned int count)
       };
 
       size_t s = 27 + rand() % 100;
-      size_t l = 1 + rand() % 12;
+      size_t l = 3 + rand() % 12;
 
       static const assh_bignum_op_t bytecode[] = {
         ASSH_BOP_SIZE(  A,      S                       ),
@@ -342,8 +342,8 @@ assh_error_t test_add_sub(unsigned int count)
         ASSH_BOP_MOVE(  C,      B                       ),
         ASSH_BOP_CMPEQ( C,      B,      0               ),
 
-      //ASSH_BOP_PRINT( A,      'A'                     ),
-      //ASSH_BOP_PRINT( B,      'A'                     ),
+      ASSH_BOP_PRINT( A,      'A'                     ),
+      ASSH_BOP_PRINT( B,      'B'                     ),
 
         ASSH_BOP_ADD(   B,      B,      A               ),
       //ASSH_BOP_PRINT( B,      'B'                     ),
@@ -363,9 +363,10 @@ assh_error_t test_add_sub(unsigned int count)
         ASSH_BOP_SIZEM( D,      S,      0,      2       ),
         ASSH_BOP_UINT(  C,      5                       ),
         ASSH_BOP_MUL(   D,      A,      C               ),
-      //ASSH_BOP_PRINT( C,      'C'                     ),
-      //ASSH_BOP_PRINT( D,      'D'                     ),
-      //ASSH_BOP_PRINT( B,      'B'                     ),
+      ASSH_BOP_PRINT( A,      'A'                     ),
+      ASSH_BOP_PRINT( B,      'B'                     ),
+      ASSH_BOP_PRINT( C,      'C'                     ),
+      ASSH_BOP_PRINT( D,      'D'                     ),
 
         ASSH_BOP_CMPEQ( D,      B,      0               ),
 

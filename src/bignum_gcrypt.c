@@ -359,7 +359,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
       uint_fast8_t od = opc & 0x3f;
       uint_fast32_t value = (opc >> 6) & 0xfffff;
 
-#ifdef CONFIG_ASSH_DEBUG_BIGNUM_TRACE
+#if defined(CONFIG_ASSH_DEBUG) && defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
       const char *opnames[] = ASSH_BIGNUM_OP_NAMES;
       ASSH_DEBUG("exec=%p, pc=%u, op=%s, a=%u, b=%u, c=%u, d=%u, value=%u\n",
                  ops, pc, opnames[op], oa, ob, oc, od, value);
@@ -672,6 +672,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
         }
 
         case ASSH_BIGNUM_OP_PRINT: {
+#ifdef CONFIG_ASSH_DEBUG
           struct assh_bignum_s *src = args[od];
           char id[5];
           id[4] = 0;
@@ -692,6 +693,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
               break;
             }
           fprintf(stderr, "\n");
+#endif
           break;
         }
 
