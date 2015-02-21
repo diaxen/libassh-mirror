@@ -99,7 +99,7 @@ assh_error_t test_convert()
     ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x11\x01\xf0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", &n))
     ABORT();
 
-  assh_bignum_release(&n);
+  assh_bignum_release(&context, &n);
   assh_bignum_init(&context, &n, 125);
 
   if (!assh_bignum_convert(&context,
@@ -109,7 +109,7 @@ assh_error_t test_convert()
     ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x10\x20\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", &n))
     ABORT();
 
-  assh_bignum_release(&n);
+  assh_bignum_release(&context, &n);
   assh_bignum_init(&context, &n, 117);
 
   if (assh_bignum_convert(&context,
@@ -178,7 +178,7 @@ assh_error_t test_convert()
     ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_NATIVE, &n, &m))
     ABORT();
 
-  assh_bignum_release(&m);
+  assh_bignum_release(&context, &m);
   assh_bignum_init(&context, &m, 60);
 
   if (!assh_bignum_convert(&context,

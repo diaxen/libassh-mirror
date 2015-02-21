@@ -136,7 +136,8 @@ assh_packet_dup(struct assh_packet_s *p, struct assh_packet_s **copy)
   return ASSH_OK;
 }
 
-assh_error_t assh_packet_add_mpint(struct assh_packet_s *p,
+assh_error_t assh_packet_add_mpint(struct assh_context_s *ctx,
+                                   struct assh_packet_s *p,
                                    const struct assh_bignum_s *bn)
 {
   assh_error_t err;
@@ -145,7 +146,7 @@ assh_error_t assh_packet_add_mpint(struct assh_packet_s *p,
   uint8_t *s;
   ASSH_ERR_RET(assh_packet_add_array(p, l, &s));
 
-  ASSH_ERR_RET(assh_bignum_convert(bn->ctx,
+  ASSH_ERR_RET(assh_bignum_convert(ctx,
     ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MPINT, bn, s));
 
   p->data_size -= l - assh_load_u32(s) - 4;

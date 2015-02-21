@@ -489,13 +489,14 @@ static assh_error_t assh_kex_dh_init(struct assh_session_s *s,
 static ASSH_KEX_CLEANUP_FCN(assh_kex_dh_cleanup)
 {
   struct assh_kex_dh_private_s *pv = s->kex_pv;
-
-  switch (s->ctx->type)
+  struct assh_context_s *c = s->ctx;
+  
+  switch (c->type)
     {
 #ifdef CONFIG_ASSH_CLIENT
     case ASSH_CLIENT:
-      assh_bignum_release(&pv->en);
-      assh_bignum_release(&pv->xn);
+      assh_bignum_release(c, &pv->en);
+      assh_bignum_release(c, &pv->xn);
       assh_key_flush(s->ctx, &pv->host_key);
       assh_packet_release(pv->pck);
       break;
@@ -510,7 +511,7 @@ static ASSH_KEX_CLEANUP_FCN(assh_kex_dh_cleanup)
       abort();
     }
 
-  assh_free(s->ctx, s->kex_pv, ASSH_ALLOC_INTERNAL);
+  assh_free(c, s->kex_pv, ASSH_ALLOC_INTERNAL);
   s->kex_pv = NULL;
 }
 

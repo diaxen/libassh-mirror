@@ -50,7 +50,7 @@ assh_error_t assh_hash_bignum(struct assh_context_s *ctx,
 
   ASSH_SCRATCH_ALLOC(ctx, uint8_t, s, l, ASSH_ERRSV_CONTINUE, err);
 
-  ASSH_ERR_GTO(assh_bignum_convert(bn->ctx,
+  ASSH_ERR_GTO(assh_bignum_convert(ctx,
     ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MPINT, bn, s), err_alloc);
 
   hctx->algo->f_update(hctx, s, assh_load_u32(s) + 4);

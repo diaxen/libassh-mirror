@@ -109,8 +109,6 @@ enum assh_bignum_fmt_e
     is currently allocated (@ref n is @tt NULL). */
 struct assh_bignum_s
 {
-  /* Associated context */
-  struct assh_context_s *ctx;
   /** Number bits size */
   size_t bits;
   /** Pointer to native big number data */
@@ -161,7 +159,7 @@ typedef ASSH_BIGNUM_CONVERT_FCN(assh_bignum_convert_t);
 
 /** @internal @see assh_bignum_release_t */
 #define ASSH_BIGNUM_RELEASE_FCN(n) \
-  void (n)(struct assh_bignum_s *bn)
+  void (n)(struct assh_context_s *ctx, struct assh_bignum_s *bn)
 
 /** @internal @This defines the function type for the release
     operation of the big number module interface.  @see
@@ -280,7 +278,6 @@ assh_bignum_init(struct assh_context_s *c,
                  struct assh_bignum_s  *bn,
                  size_t bits)
 {
-  bn->ctx = c;
   bn->bits = bits;
   bn->n = NULL;
 }
@@ -304,11 +301,10 @@ assh_bignum_isempty(const struct assh_bignum_s  *bn)
     number object become empty as if the @ref assh_bignum_init
     function has just been called. */
 ASSH_INLINE void
-assh_bignum_release(struct assh_bignum_s  *bn)
+assh_bignum_release(struct assh_context_s *ctx,
+                    struct assh_bignum_s  *bn)
 {
-  if (bn->ctx)
-    bn->ctx->bignum->f_release(bn);
-  bn->ctx = NULL;
+  ctx->bignum->f_release(ctx, bn);
 }
 
 /** @internal */
