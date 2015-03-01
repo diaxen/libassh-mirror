@@ -286,7 +286,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
     /* generate key pair */
     ASSH_BOP_RAND(      X,      T0,     Q,
                         ASSH_PRNG_QUALITY_LONGTERM_KEY  ),
-    ASSH_BOP_EXPM_C(    Y,      G,      X,      P       ),
+    ASSH_BOP_EXPM(    Y,      G,      X,      P       ),
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
     ASSH_BOP_PRINT(     Y,      'Y'                     ),
@@ -381,7 +381,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
       static const assh_bignum_op_t bytecode2[] = {
 
         ASSH_BOP_SIZE(  T1,     P                       ),
-        ASSH_BOP_EXPM_C(T1,     G,      X,      P       ),
+        ASSH_BOP_EXPM(T1,     G,      X,      P       ),
         ASSH_BOP_CMPEQ( T1,     Y,      0               ),
 
         ASSH_BOP_END(),

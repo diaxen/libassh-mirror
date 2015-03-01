@@ -158,7 +158,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
       ASSH_BOP_MLADLOOP(  42,             L               ),
 
       /* projective to affine */
-      ASSH_BOP_INV_C(     T0,     RZ,     P               ),
+      ASSH_BOP_INV(     T0,     RZ,     P               ),
       ASSH_BOP_MULM(      RX,     RX,     T0,     P       ),
       ASSH_BOP_MULM(      RY,     RY,     T0,     P       ),
 

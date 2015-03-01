@@ -136,7 +136,7 @@ assh_montgomery_point_mul(struct assh_session_s *s, const uint8_t *result,
     ASSH_BOP_MLADSWAP(  Z2,     Z3,     L               ),
     ASSH_BOP_MLADLOOP(  21,             L               ),
 
-    ASSH_BOP_INV_C(     Z2,     Z2,             P       ),
+    ASSH_BOP_INV(     Z2,     Z2,             P       ),
     ASSH_BOP_MULM(      T0,     X2,     Z2,     P       ),
 
 #ifdef CONFIG_ASSH_DEBUG_KEX

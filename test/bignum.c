@@ -36,7 +36,7 @@
 #include <stdio.h>
 
  /* 1024 bits prime number */
-static const uint8_t *prime = (const uint8_t*)"\x00\x00\x00\x81"
+static const uint8_t *prime1 = (const uint8_t*)"\x00\x00\x00\x81"
   "\x00\xff\xff\xff\xff\xff\xff\xff\xff\xc9\x0f\xda\xa2\x21\x68\xc2\x34"
   "\xc4\xc6\x62\x8b\x80\xdc\x1c\xd1\x29\x02\x4e\x08\x8a\x67\xcc\x74"
   "\x02\x0b\xbe\xa6\x3b\x13\x9b\x22\x51\x4a\x08\x79\x8e\x34\x04\xdd"
@@ -45,6 +45,17 @@ static const uint8_t *prime = (const uint8_t*)"\x00\x00\x00\x81"
   "\xf4\x4c\x42\xe9\xa6\x37\xed\x6b\x0b\xff\x5c\xb6\xf4\x06\xb7\xed"
   "\xee\x38\x6b\xfb\x5a\x89\x9f\xa5\xae\x9f\x24\x11\x7c\x4b\x1f\xe6"
   "\x49\x28\x66\x51\xec\xe6\x53\x81\xff\xff\xff\xff\xff\xff\xff\xff";
+
+static const uint8_t *prime2 = (const uint8_t*)"\x00\x00\x00\x81"
+  "\x00\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+  "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x04\x83";
+
 
 struct assh_context_s context;
 
@@ -227,13 +238,13 @@ assh_error_t test_shift()
   //ASSH_BOP_PRINT(     A,      'A'),
 
 #warning shift checks
-  ASSH_BOP_PRINT(     A,      'x'),
+    // ASSH_BOP_PRINT(     A,      'x'),
     ASSH_BOP_SHR(       B,      A,      0,      C),
-  ASSH_BOP_PRINT(     B,      'r'),
+    // ASSH_BOP_PRINT(     B,      'r'),
 
-  ASSH_BOP_PRINT(     B,      'x'),
+    // ASSH_BOP_PRINT(     B,      'x'),
     ASSH_BOP_SHL(       A,      B,      0,      C),
-  ASSH_BOP_PRINT(     A,      'l'),
+    // ASSH_BOP_PRINT(     A,      'l'),
 
     ASSH_BOP_END(),
   };
@@ -337,16 +348,16 @@ assh_error_t test_add_sub(unsigned int count)
                                 ASSH_PRNG_QUALITY_WEAK  ),
         ASSH_BOP_RAND(  B,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
                                 ASSH_PRNG_QUALITY_WEAK  ),
-      ASSH_BOP_PRINT( A,      'A'                     ),
+        // ASSH_BOP_PRINT( A,      'A'                     ),
         ASSH_BOP_SHR(   A,      A,      0,      L       ),
-      ASSH_BOP_PRINT( A,      'A'                     ),
+        // ASSH_BOP_PRINT( A,      'A'                     ),
         ASSH_BOP_SHR(   B,      B,      0,      L       ),
 
         ASSH_BOP_MOVE(  C,      B                       ),
         ASSH_BOP_CMPEQ( C,      B,      0               ),
 
-      ASSH_BOP_PRINT( A,      'A'                     ),
-      ASSH_BOP_PRINT( B,      'B'                     ),
+        // ASSH_BOP_PRINT( A,      'A'                     ),
+        // ASSH_BOP_PRINT( B,      'B'                     ),
 
         ASSH_BOP_ADD(   B,      B,      A               ),
       //ASSH_BOP_PRINT( B,      'B'                     ),
@@ -366,10 +377,10 @@ assh_error_t test_add_sub(unsigned int count)
         ASSH_BOP_SIZEM( D,      S,      0,      2       ),
         ASSH_BOP_UINT(  C,      5                       ),
         ASSH_BOP_MUL(   D,      A,      C               ),
-      ASSH_BOP_PRINT( A,      'A'                     ),
-      ASSH_BOP_PRINT( B,      'B'                     ),
-      ASSH_BOP_PRINT( C,      'C'                     ),
-      ASSH_BOP_PRINT( D,      'D'                     ),
+     // ASSH_BOP_PRINT( A,      'A'                     ),
+     // ASSH_BOP_PRINT( B,      'B'                     ),
+     // ASSH_BOP_PRINT( C,      'C'                     ),
+     // ASSH_BOP_PRINT( D,      'D'                     ),
 
         ASSH_BOP_CMPEQ( D,      B,      0               ),
 
@@ -510,7 +521,8 @@ assh_error_t test_modinv(unsigned int count)
       };
 
       ASSH_ERR_RET(assh_bignum_bytecode(&context, bytecode, "TTTTsM",
-                                        (size_t)(rand() % 900 + 100), prime));
+                                        (size_t)(rand() % 900 + 100),
+                                        i % 2 ? prime1 : prime2));
     }
 
   fprintf(stderr, "i");
@@ -529,7 +541,7 @@ assh_error_t test_mt(unsigned int count)
 
       enum bytecode_args_e
       {
-        P, A, B, R, MT, S, P_mpint
+        P, A, B, R, R2, MT, S, P_mpint
       };
 
       static const assh_bignum_op_t bytecode[] = {
@@ -539,30 +551,29 @@ assh_error_t test_mt(unsigned int count)
         ASSH_BOP_SIZE(  A,      P                       ),
         ASSH_BOP_SIZE(  B,      P                       ),
         ASSH_BOP_SIZE(  R,      P                       ),
+        ASSH_BOP_SIZE(  R2,     P                       ),
 
         ASSH_BOP_RAND(  A,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
                                 ASSH_PRNG_QUALITY_WEAK  ),
         ASSH_BOP_RAND(  B,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
                                 ASSH_PRNG_QUALITY_WEAK  ),
-        ASSH_BOP_PRINT( A,      'A'                     ),
 
-      ASSH_BOP_PRINT( P,      'P'                     ),
+        ASSH_BOP_MULM(  R2,      A,      B,      P      ),
+
         ASSH_BOP_MTINIT(MT,     P                       ),
         ASSH_BOP_MTTO(  A,      A,      MT              ),
-      ASSH_BOP_PRINT( A,      'A'                     ),
         ASSH_BOP_MTTO(  B,      B,      MT              ),
-      ASSH_BOP_PRINT( B,      'B'                     ),
         ASSH_BOP_MULM(  R,      A,      B,      MT      ),
-      ASSH_BOP_PRINT( R,      'R'                     ),
         ASSH_BOP_MTFROM(R,      R,      MT              ),
-      ASSH_BOP_PRINT( R,      'R'                     ),
+
+        ASSH_BOP_CMPEQ( R,      R2,      0               ),
 
         ASSH_BOP_END(),
       };
 
-      ASSH_ERR_RET(assh_bignum_bytecode(&context, bytecode, "TTTTmsM",
-                                        (size_t)1024 /*(rand() % 900 + 100)*/, prime));
-      exit(42);
+      ASSH_ERR_RET(assh_bignum_bytecode(&context, bytecode, "TTTTTmsM",
+                                        (size_t)1024 /*(rand() % 900 + 100)*/,
+                                        i % 2 ? prime1 : prime2));
     }
 
   fprintf(stderr, "m");
@@ -580,7 +591,7 @@ assh_error_t test_expmod(unsigned int count)
 
       enum bytecode_args_e
       {
-        P, A, IA, X, E, R1, R2, R3, R4, R5, P_mpint
+        P, A, IA, X, E, R1, R2, R3, R4, R5, P_mpint, MT
       };
 
       static const assh_bignum_op_t bytecode[] = {
@@ -596,6 +607,7 @@ assh_error_t test_expmod(unsigned int count)
         ASSH_BOP_SIZE(  R3,     P                       ),
         ASSH_BOP_SIZE(  R4,     P                       ),
         ASSH_BOP_SIZE(  R5,     P                       ),
+        ASSH_BOP_MTINIT(MT,     P                       ),
 
         ASSH_BOP_RAND(  A,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
                                 ASSH_PRNG_QUALITY_WEAK  ),
@@ -606,22 +618,34 @@ assh_error_t test_expmod(unsigned int count)
                                 ASSH_PRNG_QUALITY_WEAK  ),
         ASSH_BOP_INV(   IA,     A,      P               ),
 
+        // ASSH_BOP_PRINT( X,     'X'                    ),
+        // ASSH_BOP_PRINT( E,     'E'                    ),
+        // ASSH_BOP_PRINT( P,     'P'                    ),
+
         /* ((((a * x) % p)^e) % p) * ((inv(a)^e) % p) == x^e % p */
         ASSH_BOP_MULM(  R3,     A,      X,      P       ),
-        ASSH_BOP_EXPM(  R2,     R3,     E,      P       ),
-        ASSH_BOP_EXPM(  R1,     IA,     E,      P       ),
-        ASSH_BOP_MULM(  R4,     R1,     R2,     P       ),
-        ASSH_BOP_EXPM(  R5,     X,      E,      P       ),
+        ASSH_BOP_MTTO(  R3,     R3,     MT              ),
+        ASSH_BOP_EXPM(  R2,     R3,     E,      MT      ),
+        ASSH_BOP_MTTO(  IA,     IA,     MT              ),
+        ASSH_BOP_EXPM(  R1,     IA,     E,      MT      ),
+        ASSH_BOP_MULM(  R4,     R1,     R2,     MT      ),
+        ASSH_BOP_MTTO(  X,      X,      MT              ),
+        ASSH_BOP_EXPM(  R5,     X,      E,      MT      ),
 
-     // ASSH_BOP_PRINT( R4,     'R4'                    ),
-     // ASSH_BOP_PRINT( R5,     'R5'                    ),
         ASSH_BOP_CMPEQ( R4,     R5,     0               ),
+
+        ASSH_BOP_MTFROM(R4,     R4,     MT              ),
+        ASSH_BOP_MTFROM(R5,     R5,     MT              ),
+        ASSH_BOP_CMPEQ( R4,     R5,     0               ),
+
+        // ASSH_BOP_PRINT( R4,     '4'                    ),
+        // ASSH_BOP_PRINT( R5,     '5'                    ),
 
         ASSH_BOP_END(),
       };
 
       ASSH_ERR_RET(assh_bignum_bytecode(&context, bytecode,
-                                        "TTTTTTTTTTM", prime));
+                                        "TTTTTTTTTTMm", prime1));
     }
 
   fprintf(stderr, "e");
@@ -639,8 +663,9 @@ int main(int argc, char **argv)
 
   assh_context_init(&context, ASSH_SERVER);
 
+  ASSH_ERR_RET(assh_context_prng(&context, NULL));
 #warning weak
-  ASSH_ERR_RET(assh_context_prng(&context, &assh_prng_weak));
+  //  ASSH_ERR_RET(assh_context_prng(&context, &assh_prng_weak));
 
   test_convert();
   test_shift();
@@ -655,8 +680,8 @@ int main(int argc, char **argv)
       ASSH_ERR_RET(test_add_sub(0x100));
       ASSH_ERR_RET(test_div(0x100));
       ASSH_ERR_RET(test_move(0x100));
-      ASSH_ERR_RET(test_modinv(0x100));
-      ASSH_ERR_RET(test_mt(0x100));
+      ASSH_ERR_RET(test_modinv(0x1000));
+      ASSH_ERR_RET(test_mt(0x1000));
       ASSH_ERR_RET(test_expmod(0x10));
     }
 

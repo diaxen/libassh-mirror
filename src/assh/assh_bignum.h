@@ -102,7 +102,7 @@ enum assh_bignum_fmt_e
   ASSH_BIGNUM_SIZE    = 's',
   /** Montgomery ladder object. see assh_bignum_mlad_s */
   ASSH_BIGNUM_MLAD    = 'L',
-  /** Montgomery multiplication context computed from modulus */
+  /** Temporary montgomery multiplication context. */
   ASSH_BIGNUM_MT      = 'm',
 };
 
@@ -112,9 +112,9 @@ enum assh_bignum_fmt_e
 struct assh_bignum_s
 {
   /** Bits size */
-  uint32_t bits:24;
+  uint32_t bits;
   /** Whether the number is secret */
-  uint32_t secret:1;
+  //  uint32_t secret:1;
   /** Pointer to native big number data */
   void *n;
 };
@@ -369,21 +369,25 @@ enum assh_bignum_opcode_e
   ASSH_BOP_FMT2(ASSH_BIGNUM_OP_MOVE, dst, src)
 
 /** @mgroup{Bytecode instructions}
-    @internal This initializes a montgomery multiplication context
-    from a modulus number. */
+    @internal This initializes a temporary montgomery multiplication
+    context from a modulus number. The context is released at the end
+    of the bytecode execution. */
 #define ASSH_BOP_MTINIT(mt, mod) \
   ASSH_BOP_FMT2(ASSH_BIGNUM_OP_MTINIT, mt, mod)
 
 /** @mgroup{Bytecode instructions}
     @internal This converts the source number to montgomery representation.
+    The resulting value can be further processed by the @ref #ASSH_BOP_ADDM,
+    @ref #ASSH_BOP_SUBM, @ref #ASSH_BOP_MULM, @ref #ASSH_BOP_EXPM and @ref
+    #ASSH_BOP_MTFROM instructions.
     The @tt mt operand is a montgomery context initialized from the modulus
-    using the @ref ASSH_BOP_MT_INIT instruction. */
+    using the @ref #ASSH_BOP_MTINIT instruction. */
 #define ASSH_BOP_MTTO(dst, src, mt) \
   ASSH_BOP_FMT3(ASSH_BIGNUM_OP_MTTO, dst, src, mt)
 
 /** @mgroup{Bytecode instructions}
     @internal This converts the source number from montgomery representation.
-    @see #ASSH_BOP_TO_MT */
+    @see #ASSH_BOP_MTTO */
 #define ASSH_BOP_MTFROM(dst, src, mt) \
   ASSH_BOP_FMT3(ASSH_BIGNUM_OP_MTFROM, dst, src, mt)
 
@@ -412,7 +416,10 @@ enum assh_bignum_opcode_e
 /** @mgroup{Bytecode instructions}
     @internal This instruction computes @tt {dst = (src1 + src2) %
     mod}. The bit size of the destination number must be
-    @tt {bits(mod)} or larger. */
+    @tt {bits(mod)} or larger. The @tt mod operand can be either a
+    big number or a montgomery context. In the later case the bit
+    size of all operands must match the size of the montgomery
+    context. */
 #define ASSH_BOP_ADDM(dst, src1, src2, mod)                     \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_ADD, dst, src1, src2, mod)
 
@@ -438,7 +445,9 @@ enum assh_bignum_opcode_e
 /** @mgroup{Bytecode instructions}
     @internal This instruction computes @tt {dst = (src1 * src2) %
     mod}. The bit size of the destination number must be
-    @tt {bits(mod)} or larger. */
+    @tt {bits(mod)} or larger. The @tt mod operand can be either a
+    big number or a montgomery context. In the later case the bit
+    size of all operands must match the size of the montgomery context. */
 #define ASSH_BOP_MULM(dst, src1, src2, mod)                     \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_MUL, dst, src1, src2, mod)
 
@@ -474,26 +483,17 @@ enum assh_bignum_opcode_e
 
 /** @mgroup{Bytecode instructions}
     @internal This instruction computes @tt {dst = (src1 ^ src2) % mod}.
-    @see #ASSH_BOP_EXPM_C */
+    The @tt mod operand must be a montgomery context. The @tt src1 and
+    @tt dst operands are montgomery numbers and their bit size must
+    match the size of the montgomery context.
+    @see #ASSH_BOP_EXPM */
 #define ASSH_BOP_EXPM(dst, src1, src2, mod) \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_EXPM, dst, src1, src2, mod)
 
 /** @mgroup{Bytecode instructions}
-    @internal This instruction computes @tt {dst = (src1 ^ src2) %
-    mod}, in constant time. @see #ASSH_BOP_EXPM */
-#define ASSH_BOP_EXPM_C(dst, src1, src2, mod) \
-  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_EXPM, dst, src1, src2, mod)
-
-/** @mgroup{Bytecode instructions}
     @internal This instruction computes @tt {dst = invmod(src1, src2)}.
-    @see #ASSH_BOP_INV_C */
+    @see #ASSH_BOP_INV */
 #define ASSH_BOP_INV(dst, src1, src2)                \
-  ASSH_BOP_FMT3(ASSH_BIGNUM_OP_INV, dst, src1, src2)
-
-/** @mgroup{Bytecode instructions}
-    @internal This instruction computes @tt {dst = invmod(src1,
-    src2)}, in constant time. @see #ASSH_BOP_INV  */
-#define ASSH_BOP_INV_C(dst, src1, src2)              \
   ASSH_BOP_FMT3(ASSH_BIGNUM_OP_INV, dst, src1, src2)
 
 /** @mgroup{Bytecode instructions}

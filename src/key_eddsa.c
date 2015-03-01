@@ -213,7 +213,7 @@ assh_key_eddsa_create(struct assh_context_s *c,
     ASSH_BOP_MLADLOOP(  42,             L               ),
 
     /* projective to affine */
-    ASSH_BOP_INV_C(     T0,     RZ,     P               ),
+    ASSH_BOP_INV(     T0,     RZ,     P               ),
     ASSH_BOP_MULM(      RX,     RX,     T0,     P       ),
     ASSH_BOP_MULM(      RY,     RY,     T0,     P       ),
 

@@ -212,7 +212,7 @@ static assh_error_t assh_kex_dh_gex_client_wait_group(struct assh_session_s *s,
                         ASSH_PRNG_QUALITY_EPHEMERAL_KEY),
 
     /* compute dh public key */
-    ASSH_BOP_EXPM_C(    E,      G,      X,      P       ),
+    ASSH_BOP_EXPM(    E,      G,      X,      P       ),
 
     ASSH_BOP_MOVE(      E_mpint,        E               ),
 
@@ -302,7 +302,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_dh_gex_host_key_lookup_done)
     ASSH_BOP_CMPLTEQ(   F,      T,      0 /* f <= p-2 */), 
 
     /* compute shared secret */
-    ASSH_BOP_EXPM_C(    T,      F,      X,      P       ),
+    ASSH_BOP_EXPM(    T,      F,      X,      P       ),
     ASSH_BOP_MOVE(      K,      T               	),
 
     /* check shared secret range */
@@ -590,10 +590,10 @@ static assh_error_t assh_kex_dh_gex_server_wait_e(struct assh_session_s *s,
 
     /* compute dh public key using 2 as generator */
     ASSH_BOP_UINT(      T,      2               	),
-    ASSH_BOP_EXPM_C(    F,      T,      X,      P       ),
+    ASSH_BOP_EXPM(    F,      T,      X,      P       ),
 
     /* compute shared secret */
-    ASSH_BOP_EXPM_C(    K,      E,      X,      P       ),
+    ASSH_BOP_EXPM(    K,      E,      X,      P       ),
 
     /* check shared secret range */
     ASSH_BOP_UINT(      T,      2               	),

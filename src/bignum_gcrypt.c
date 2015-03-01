@@ -331,6 +331,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
     switch (format[i])
       {
       case ASSH_BIGNUM_TEMP:
+      case ASSH_BIGNUM_MT:
         tmp[j].bits = 0;
         tmp[j].n = NULL;
         args[i] = &tmp[j];
@@ -388,6 +389,24 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
                 dst->bits = b;
               }
           break;
+        }
+
+        case ASSH_BIGNUM_OP_MTINIT: {
+          struct assh_bignum_s *src = args[od];
+          struct assh_bignum_s *dst = args[oc];
+          gcry_mpi_release(dst->n);
+          dst->n = gcry_mpi_copy(src->n);
+          break;
+        }
+
+        case ASSH_BIGNUM_OP_MTFROM:
+        case ASSH_BIGNUM_OP_MTTO: {
+          if (oc == ob)
+            break;
+          struct assh_bignum_s *src = args[oc];
+          struct assh_bignum_s *dst = args[ob];
+          gcry_mpi_release(dst->n);
+          dst->n = gcry_mpi_copy(src->n);
         }
 
         case ASSH_BIGNUM_OP_ADD:

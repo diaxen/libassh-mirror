@@ -153,7 +153,7 @@ assh_sign_rsa_generate(struct assh_context_s *c,
 
     ASSH_BOP_MOVE(      EM,     EM_data			),
 
-    ASSH_BOP_EXPM_C(    C,      EM,     D,	N	),
+    ASSH_BOP_EXPM(    C,      EM,     D,	N	),
 
     ASSH_BOP_MOVE(      C_data, C			),
     ASSH_BOP_END(),
