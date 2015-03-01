@@ -31,6 +31,7 @@
 # include <gcrypt.h>
 #endif
 
+#include "prng_weak.c"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -248,7 +249,7 @@ assh_error_t test_shift()
   ABORT();
 }
 
-assh_error_t test_cmp(void)
+assh_error_t test_cmp()
 {
 
   enum bytecode_args_e
@@ -336,7 +337,9 @@ assh_error_t test_add_sub(unsigned int count)
                                 ASSH_PRNG_QUALITY_WEAK  ),
         ASSH_BOP_RAND(  B,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
                                 ASSH_PRNG_QUALITY_WEAK  ),
+      ASSH_BOP_PRINT( A,      'A'                     ),
         ASSH_BOP_SHR(   A,      A,      0,      L       ),
+      ASSH_BOP_PRINT( A,      'A'                     ),
         ASSH_BOP_SHR(   B,      B,      0,      L       ),
 
         ASSH_BOP_MOVE(  C,      B                       ),
@@ -507,14 +510,64 @@ assh_error_t test_modinv(unsigned int count)
       };
 
       ASSH_ERR_RET(assh_bignum_bytecode(&context, bytecode, "TTTTsM",
-                              (size_t)(rand() % 900 + 100), prime));
-
+                                        (size_t)(rand() % 900 + 100), prime));
     }
 
   fprintf(stderr, "i");
   return ASSH_OK;
 }
 
+
+/* montgomery mul */
+assh_error_t test_mt(unsigned int count)
+{
+  assh_error_t err;
+  int i;
+
+  for (i = 0; i < count; i++)
+    {
+
+      enum bytecode_args_e
+      {
+        P, A, B, R, MT, S, P_mpint
+      };
+
+      static const assh_bignum_op_t bytecode[] = {
+        ASSH_BOP_SIZE(  P,      P_mpint                 ),
+        ASSH_BOP_MOVE(  P,      P_mpint                 ),
+
+        ASSH_BOP_SIZE(  A,      P                       ),
+        ASSH_BOP_SIZE(  B,      P                       ),
+        ASSH_BOP_SIZE(  R,      P                       ),
+
+        ASSH_BOP_RAND(  A,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
+                                ASSH_PRNG_QUALITY_WEAK  ),
+        ASSH_BOP_RAND(  B,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
+                                ASSH_PRNG_QUALITY_WEAK  ),
+        ASSH_BOP_PRINT( A,      'A'                     ),
+
+      ASSH_BOP_PRINT( P,      'P'                     ),
+        ASSH_BOP_MTINIT(MT,     P                       ),
+        ASSH_BOP_MTTO(  A,      A,      MT              ),
+      ASSH_BOP_PRINT( A,      'A'                     ),
+        ASSH_BOP_MTTO(  B,      B,      MT              ),
+      ASSH_BOP_PRINT( B,      'B'                     ),
+        ASSH_BOP_MULM(  R,      A,      B,      MT      ),
+      ASSH_BOP_PRINT( R,      'R'                     ),
+        ASSH_BOP_MTFROM(R,      R,      MT              ),
+      ASSH_BOP_PRINT( R,      'R'                     ),
+
+        ASSH_BOP_END(),
+      };
+
+      ASSH_ERR_RET(assh_bignum_bytecode(&context, bytecode, "TTTTmsM",
+                                        (size_t)1024 /*(rand() % 900 + 100)*/, prime));
+      exit(42);
+    }
+
+  fprintf(stderr, "m");
+  return ASSH_OK;
+}
 
 /* test expmod. uses div, mul, modinv */
 assh_error_t test_expmod(unsigned int count)
@@ -585,7 +638,9 @@ int main(int argc, char **argv)
 #endif
 
   assh_context_init(&context, ASSH_SERVER);
-  ASSH_ERR_RET(assh_context_prng(&context, NULL));
+
+#warning weak
+  ASSH_ERR_RET(assh_context_prng(&context, &assh_prng_weak));
 
   test_convert();
   test_shift();
@@ -601,6 +656,7 @@ int main(int argc, char **argv)
       ASSH_ERR_RET(test_div(0x100));
       ASSH_ERR_RET(test_move(0x100));
       ASSH_ERR_RET(test_modinv(0x100));
+      ASSH_ERR_RET(test_mt(0x100));
       ASSH_ERR_RET(test_expmod(0x10));
     }
 

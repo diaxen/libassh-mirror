@@ -405,7 +405,8 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           struct assh_bignum_s *src2 = args[oc];
           if (od == ASSH_BOP_NOREG)
             {
-              assert(dst->bits >= ASSH_MAX(src1->bits, src2->bits));
+              assert(dst->bits >= src1->bits &&
+                     dst->bits >= src2->bits);
               switch (op)
                 {
                 case ASSH_BIGNUM_OP_ADD:

@@ -31,19 +31,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#if 0
+#if 1
 typedef uint64_t assh_bnword_t;
 typedef int64_t assh_bnsword_t;
 typedef unsigned __int128 assh_bnlong_t;
 #define ASSH_BN_FMT "%016llx"
 
-#elif 1
+#elif 0
 typedef uint32_t assh_bnword_t;
 typedef int32_t assh_bnsword_t;
 typedef uint64_t assh_bnlong_t;
 #define ASSH_BN_FMT "%08x"
 
-#elif 0
+#elif 1
 typedef uint16_t assh_bnword_t;
 typedef int16_t assh_bnsword_t;
 typedef uint32_t assh_bnlong_t;
@@ -67,12 +67,26 @@ typedef uint16_t assh_bnlong_t;
 /** @This specifies the number of bits in a big number word. */
 #define ASSH_BIGNUM_W (sizeof(assh_bnword_t) * 8)
 
-static inline int assh_bignum_words(size_t bits)
+#ifdef CONFIG_ASSH_DEBUG
+static void
+assh_bignum_dump(const assh_bnword_t *x, size_t l)
+{
+  size_t i;
+  fprintf(stderr, "0x");  
+  for (i = l; i-- > 0; )
+    fprintf(stderr, ASSH_BN_FMT, x[i]);
+  fprintf(stderr, "\n");  
+}
+#endif
+
+static inline size_t
+assh_bignum_words(size_t bits)
 {
   return (((bits - 1) | (ASSH_BIGNUM_W - 1)) + 1) / ASSH_BIGNUM_W;
 }
 
-static inline int assh_bn_clz(assh_bnword_t x)
+static inline uint_fast8_t
+assh_bn_clz(assh_bnword_t x)
 {
   switch (sizeof(x))
     {
@@ -254,14 +268,14 @@ static int_fast8_t assh_bignum_cmp(const struct assh_bignum_s *a,
   for (; i < bl; i++)
     {
       eq = (0 == bn[i]);
-      lt = (0 < bn[i]) | (lt & eq);
-      gt = (0 > bn[i]) | (gt & eq);
+      lt = (0 != bn[i]) | (lt & eq);
+      gt = (gt & eq);
     }
   for (; i < al; i++)
     {
       eq = (an[i] == 0);
-      lt = (an[i] < 0) | (lt & eq);
-      gt = (an[i] > 0) | (gt & eq);
+      lt = (lt & eq);
+      gt = (an[i] != 0) | (gt & eq);
     }
 
   return gt - lt;
@@ -287,7 +301,7 @@ assh_bignum_rand(struct assh_context_s *c,
   while (1)
     {
       if (bn->bits % ASSH_BIGNUM_W)
-        n[l - 1] >>= ASSH_BIGNUM_W - bn->bits;
+        n[l - 1] >>= (ASSH_BIGNUM_W - bn->bits) & (ASSH_BIGNUM_W - 1);
 
       if ((min == NULL || assh_bignum_cmp(bn, min) > 0) &&
           (max == NULL || assh_bignum_cmp(bn, max) < 0))
@@ -296,7 +310,7 @@ assh_bignum_rand(struct assh_context_s *c,
       for (i = 1; i < l; i++)
         n[l - 1] = n[l];
 
-      ASSH_ERR_RET(c->prng->f_get(c, (uint8_t*)n,
+      ASSH_ERR_RET(c->prng->f_get(c, (uint8_t*)(n + l - 1),
                      sizeof(assh_bnword_t), quality));
     }
 
@@ -339,8 +353,8 @@ assh_bignum_rshift(struct assh_bignum_s *dst,
 
 static assh_error_t ASSH_WARN_UNUSED_RESULT
 assh_bignum_lshift(struct assh_bignum_s *dst,
-               const struct assh_bignum_s *src,
-               uint_fast16_t n)
+                   const struct assh_bignum_s *src,
+                   uint_fast16_t n)
 {
   assh_error_t err;
 
@@ -401,7 +415,6 @@ assh_bignum_add(struct assh_bignum_s *dst,
   for (; i < dl; i++)
     dn[i] = t = (t >> ASSH_BIGNUM_W);
 
-  ASSH_DEBUG("%llx, %u\n", t, dst->bits);
   size_t m = dst->bits % ASSH_BIGNUM_W;
   if (m)
     {
@@ -451,128 +464,6 @@ assh_bignum_sub(struct assh_bignum_s *dst,
     }
 
   return ASSH_OK;
-}
-
-/*********************************************************************** mul */
-
-static void
-assh_bignum_school_mul(assh_bnword_t * __restrict__ r,
-                       const assh_bnword_t *a, unsigned int alen,
-                       const assh_bnword_t *b, unsigned int blen)
-{
-  memset(r, 0, alen * sizeof(assh_bnword_t));
-
-  unsigned int j, i;
-  assh_bnlong_t t;
-
-  for (j = 0; j < blen; j++)
-    {
-      for (t = i = 0; i < alen; i++)
-	r[i + j] = t = (assh_bnlong_t)a[i] * b[j] + r[i + j] + (t >> ASSH_BIGNUM_W);
-      r[i + j] = (t >> ASSH_BIGNUM_W);
-    }
-}
-
-static void
-assh_bignum_karatsuba(assh_bnword_t * __restrict__ r,
-                      const assh_bnword_t *a, const assh_bnword_t *b,
-                      assh_bnword_t *scratch, unsigned int l)
-{
-  if (l < ASSH_BIGNUM_KARATSUBA_THRESHOLD || (l & 1))
-    return assh_bignum_school_mul(r, a, l, b, l);
-
-  /*
-    scratch buffer:
-      layout: x[h], y_[h], z1[l+1]
-      size: 2*l+1        per stack frame
-            4*l+log2(l)  on initial call
-  */
-
-#define ASSH_KARA_SCRATCH(len) (len * 4)
-          /* + log2(len) - ASSH_KARA_SCRATCH(ASSH_BIGNUM_KARATSUBA_THRESHOLD) */
-
-  unsigned int i, h = l / 2;
-  assh_bnlong_t tx = 0, ty = 0;
-  assh_bnword_t cx, cy;
-
-  assh_bnword_t *x = scratch;
-  assh_bnword_t *y_ = scratch + h;
-  assh_bnword_t *y = x;
-
-  /* compute high/low parts sums */
-  for (i = 0; i < h; i++)
-    x[i] = tx = (assh_bnlong_t)a[i + h] + a[i] + (tx >> ASSH_BIGNUM_W);
-  cy = cx = (assh_bnsword_t)(tx >> 1) >> (ASSH_BIGNUM_W - 1);
-
-  if (a != b)
-    {
-      y = y_;
-      for (i = 0; i < h; i++)
-	y[i] = ty = (assh_bnlong_t)b[i + h] + b[i] + (ty >> ASSH_BIGNUM_W);
-      cy = (assh_bnsword_t)(ty >> 1) >> (ASSH_BIGNUM_W - 1);
-    }
-
-  /* recusive calls */
-  assh_bnword_t *z1 = scratch + l;
-
-  scratch += 2 * l + 1;
-  assh_bignum_karatsuba(r + l, a + h, b + h, scratch, h); /* z0 */
-  assh_bignum_karatsuba(z1   , x    , y    , scratch, h); /* z1 */
-  assh_bignum_karatsuba(r    , a    , b    , scratch, h); /* z2 */
-
-  /* z1 = z1 - z0 - z2 */
-  assh_bnlong_t t = (assh_bnlong_t)2 << ASSH_BIGNUM_W;
-  for (i = 0; i < h; i++)
-    z1[i] = t = (assh_bnlong_t)z1[i] + (assh_bnword_t)~r[i]
-              + (assh_bnword_t)~r[i + l] + (t >> ASSH_BIGNUM_W);
-  for (; i < l; i++)
-    z1[i] = t = (assh_bnlong_t)z1[i] + (assh_bnword_t)~r[i]
-              + (assh_bnword_t)~r[i + l] + (t >> ASSH_BIGNUM_W)
-              + (x[i-h] & cy) + (y[i-h] & cx);
-  z1[i] = (t >> ASSH_BIGNUM_W) - 2 - (cx & cy);
-
-  /* add z1 to result */
-  t = 0;
-  for (i = h; i < l+h+1; i++)
-    r[i] = t = (assh_bnlong_t)r[i] + z1[i - h] + (t >> ASSH_BIGNUM_W);
-  for (; (t >> ASSH_BIGNUM_W) && i < l*2; i++)
-    r[i] = t = (assh_bnlong_t)r[i] + (t >> ASSH_BIGNUM_W);
-}
-
-static assh_error_t ASSH_WARN_UNUSED_RESULT
-assh_bignum_mul(struct assh_context_s *ctx,
-                struct assh_bignum_s *r,
-                const struct assh_bignum_s *a,
-                const struct assh_bignum_s *b)
-{
-  assh_error_t err;
-
-  assert(r != a && r != b);
-
-  ASSH_CHK_RET(r->bits < a->bits + b->bits, ASSH_ERR_OUTPUT_OVERFLOW);
-
-  size_t rl = assh_bignum_words(r->bits);
-  size_t al = assh_bignum_words(a->bits);
-  size_t bl = assh_bignum_words(b->bits);
-  size_t l = al + bl;
-
-  if (al == bl && !(al & 1))
-    {
-      ASSH_SCRATCH_ALLOC(ctx, assh_bnword_t, scratch,
-			 ASSH_KARA_SCRATCH(al),
-			 ASSH_ERRSV_CONTINUE, err);
-      assh_bignum_karatsuba(r->n, a->n, b->n, scratch, al);
-      ASSH_SCRATCH_FREE(ctx, scratch);
-    }
-  else
-    assh_bignum_school_mul(r->n, a->n, al, b->n, bl);
-
-  ASSH_DEBUG("%u %u\n", rl, l);
-  memset((assh_bnword_t*)r->n + l, 0, (rl - l) * sizeof(assh_bnword_t));
-
-  err = ASSH_OK;
- err:
-  return err;
 }
 
 /*********************************************************************** div, modinv */
@@ -773,8 +664,7 @@ assh_bignum_div(struct assh_context_s *ctx,
 
   rl = al;
   ASSH_SCRATCH_ALLOC(ctx, assh_bnword_t, scratch,
-                     ASSH_KARA_SCRATCH(al),
-                     ASSH_ERRSV_CONTINUE, err);
+                     rl, ASSH_ERRSV_CONTINUE, err);
   rn = scratch;
  done:
 
@@ -982,10 +872,401 @@ assh_bignum_gcd(struct assh_context_s *ctx,
   return err;
 }
 
+/*********************************************************************** mul */
 
-/********************************************************* init and convert */
+static void
+assh_bignum_school_mul(assh_bnword_t * __restrict__ r,
+                       const assh_bnword_t *a, unsigned int alen,
+                       const assh_bnword_t *b, unsigned int blen)
+{
+  memset(r, 0, alen * sizeof(assh_bnword_t));
+
+  unsigned int j, i;
+  assh_bnlong_t t;
+
+  for (j = 0; j < blen; j++)
+    {
+      for (t = i = 0; i < alen; i++)
+	r[i + j] = t = (assh_bnlong_t)a[i] * b[j] + r[i + j] + (t >> ASSH_BIGNUM_W);
+      r[i + j] = (t >> ASSH_BIGNUM_W);
+    }
+}
+
+static void
+assh_bignum_karatsuba(assh_bnword_t * __restrict__ r,
+                      const assh_bnword_t *a, const assh_bnword_t *b,
+                      assh_bnword_t *scratch, unsigned int l)
+{
+  if (l < ASSH_BIGNUM_KARATSUBA_THRESHOLD || (l & 1))
+    return assh_bignum_school_mul(r, a, l, b, l);
+
+  /*
+    scratch buffer:
+      layout: x[h], y_[h], z1[l+1]
+      size: 2*l+1        per stack frame
+            4*l+log2(l)  on initial call
+  */
+
+#define ASSH_KARA_SCRATCH(len) (len * 4)
+          /* + log2(len) - ASSH_KARA_SCRATCH(ASSH_BIGNUM_KARATSUBA_THRESHOLD) */
+
+  unsigned int i, h = l / 2;
+  assh_bnlong_t tx = 0, ty = 0;
+  assh_bnword_t cx, cy;
+
+  assh_bnword_t *x = scratch;
+  assh_bnword_t *y_ = scratch + h;
+  assh_bnword_t *y = x;
+
+  /* compute high/low parts sums */
+  for (i = 0; i < h; i++)
+    x[i] = tx = (assh_bnlong_t)a[i + h] + a[i] + (tx >> ASSH_BIGNUM_W);
+  cy = cx = (assh_bnsword_t)(tx >> 1) >> (ASSH_BIGNUM_W - 1);
+
+  if (a != b)
+    {
+      y = y_;
+      for (i = 0; i < h; i++)
+	y[i] = ty = (assh_bnlong_t)b[i + h] + b[i] + (ty >> ASSH_BIGNUM_W);
+      cy = (assh_bnsword_t)(ty >> 1) >> (ASSH_BIGNUM_W - 1);
+    }
+
+  /* recusive calls */
+  assh_bnword_t *z1 = scratch + l;
+
+  scratch += 2 * l + 1;
+  assh_bignum_karatsuba(r + l, a + h, b + h, scratch, h); /* z0 */
+  assh_bignum_karatsuba(z1   , x    , y    , scratch, h); /* z1 */
+  assh_bignum_karatsuba(r    , a    , b    , scratch, h); /* z2 */
+
+  /* z1 = z1 - z0 - z2 */
+  assh_bnlong_t t = (assh_bnlong_t)2 << ASSH_BIGNUM_W;
+  for (i = 0; i < h; i++)
+    z1[i] = t = (assh_bnlong_t)z1[i] + (assh_bnword_t)~r[i]
+              + (assh_bnword_t)~r[i + l] + (t >> ASSH_BIGNUM_W);
+  for (; i < l; i++)
+    z1[i] = t = (assh_bnlong_t)z1[i] + (assh_bnword_t)~r[i]
+              + (assh_bnword_t)~r[i + l] + (t >> ASSH_BIGNUM_W)
+              + (x[i-h] & cy) + (y[i-h] & cx);
+  z1[i] = (t >> ASSH_BIGNUM_W) - 2 - (cx & cy);
+
+  /* add z1 to result */
+  t = 0;
+  for (i = h; i < l+h+1; i++)
+    r[i] = t = (assh_bnlong_t)r[i] + z1[i - h] + (t >> ASSH_BIGNUM_W);
+  for (; (t >> ASSH_BIGNUM_W) && i < l*2; i++)
+    r[i] = t = (assh_bnlong_t)r[i] + (t >> ASSH_BIGNUM_W);
+}
+
+static assh_error_t ASSH_WARN_UNUSED_RESULT
+assh_bignum_mul(struct assh_context_s *ctx,
+                struct assh_bignum_s *r,
+                const struct assh_bignum_s *a,
+                const struct assh_bignum_s *b)
+{
+  assh_error_t err;
+
+  assert(r != a && r != b);
+
+  ASSH_CHK_RET(r->bits < a->bits + b->bits, ASSH_ERR_OUTPUT_OVERFLOW);
+
+  size_t rl = assh_bignum_words(r->bits);
+  size_t al = assh_bignum_words(a->bits);
+  size_t bl = assh_bignum_words(b->bits);
+  size_t l = al + bl;
+
+  if (al == bl && !(al & 1))
+    {
+      ASSH_SCRATCH_ALLOC(ctx, assh_bnword_t, scratch,
+			 ASSH_KARA_SCRATCH(al),
+			 ASSH_ERRSV_CONTINUE, err);
+      assh_bignum_karatsuba(r->n, a->n, b->n, scratch, al);
+      ASSH_SCRATCH_FREE(ctx, scratch);
+    }
+  else
+    assh_bignum_school_mul(r->n, a->n, al, b->n, bl);
+
+  memset((assh_bnword_t*)r->n + l, 0, (rl - l) * sizeof(assh_bnword_t));
+
+  err = ASSH_OK;
+ err:
+  return err;
+}
+
+static assh_error_t ASSH_WARN_UNUSED_RESULT
+assh_bignum_mulmod(struct assh_context_s *ctx,
+                   struct assh_bignum_s *r,
+                   const struct assh_bignum_s *a,
+                   const struct assh_bignum_s *b,
+                   const struct assh_bignum_s *m)
+{
+  assh_error_t err;
+
+  assert(r != a && r != b && r != m);
+
+  ASSH_CHK_RET(r->bits < m->bits, ASSH_ERR_OUTPUT_OVERFLOW);
+
+  size_t al = assh_bignum_words(a->bits);
+  size_t bl = assh_bignum_words(b->bits);
+  size_t ml = assh_bignum_words(m->bits);
+  size_t rl = assh_bignum_words(r->bits);
+
+  size_t l = al + bl; /* result size */
+
+  assh_bool_t use_kara = al == bl && !(al & 1);
+  size_t scratch_len = l;
+  if (use_kara)
+    scratch_len += ASSH_KARA_SCRATCH(al);
+
+  ASSH_SCRATCH_ALLOC(ctx, assh_bnword_t, scratch, scratch_len,
+		     ASSH_ERRSV_CONTINUE, err);
+
+  assh_bnword_t *x = scratch;
+
+  if (use_kara)
+    assh_bignum_karatsuba(x, a->n, b->n, scratch + l, al);
+  else
+    assh_bignum_school_mul(x, a->n, al, b->n, bl);
+
+  ASSH_ERR_GTO(assh_bignum_div_euclidean(x, l, NULL, 0, m->n, ml), err_scratch);
+
+  memcpy(r->n, x, ml * sizeof(assh_bnword_t));
+  memset(r->n + ml, 0, (rl - ml) * sizeof(assh_bnword_t));
+
+  err = ASSH_OK;
+ err_scratch:
+  ASSH_SCRATCH_FREE(ctx, scratch);
+ err:
+  return err;
+}
+
+/********************************************************* montgomery */
+
+struct assh_bignum_mt_s
+{
+  assh_bnword_t *r2;
+  assh_bnword_t n0;
+  size_t bits;
+};
+
+static assh_bnword_t assh_bnword_mt_modinv(assh_bnword_t a)
+{
+  uint_fast8_t i, sh = assh_bn_clz(a);
+  assh_bnword_t b = -(a << sh);
+  assh_bnword_t q = -((assh_bnword_t)1 << sh);
+  assh_bnword_t c, r = 1;
+
+  while (a)
+    {
+      if (a < b)
+        {
+          ASSH_SWAP(a, b);
+          ASSH_SWAP(r, q);
+        }
+      sh = assh_bn_clz(b) - assh_bn_clz(a);
+      c = b << sh;
+      i = (c > a);
+      a -= (c >> i);
+      r -= q << (sh - i);
+    }
+
+  return q;
+}
+
+static void
+assh_bignum_mt_release(struct assh_context_s *c,
+                       struct assh_bignum_mt_s *mt)
+{
+  if (mt->r2 != NULL)
+    assh_free(c, mt->r2, ASSH_ALLOC_INTERNAL);
+}
+
+static assh_error_t ASSH_WARN_UNUSED_RESULT
+assh_bignum_mt_init(struct assh_context_s *c,
+                    struct assh_bignum_mt_s *mt,
+                    const struct assh_bignum_s *mod)
+{
+  assh_error_t err;
+
+  if (mt->r2 != NULL)
+    assh_free(c, mt->r2, ASSH_ALLOC_INTERNAL);
+  mt->r2 = NULL;
+
+  assh_bnword_t *r2, *m = mod->n;
+
+  /* check modulus is odd */
+  ASSH_CHK_RET(!(m[0] & 1), ASSH_ERR_NUM_OVERFLOW);
+
+  /* compute r^2 % n */
+  size_t ml = assh_bignum_words(mod->bits);
+  size_t rl = ml * 2 + 1;
+  ASSH_ERR_RET(assh_alloc(c, rl * sizeof(assh_bnword_t),
+                          ASSH_ALLOC_INTERNAL, (void**)&r2));
+
+  unsigned int i;
+  for (i = 0; i < ml * 2; i++)
+    r2[i] = 0;
+  r2[i] = 1;
+
+  ASSH_ERR_GTO(assh_bignum_div_euclidean(r2, rl, NULL, 0,
+                                         m, ml), err_);
+
+  /* keep the modulus in the higher half of the array */
+  memcpy(r2 + ml, m, ml * sizeof(assh_bnword_t));
+
+  mt->r2 = r2;
+  mt->bits = mod->bits;
+  mt->n0 = assh_bnword_mt_modinv(-m[0]);
+
+  return ASSH_OK;
+
+ err_:
+  assh_free(c, r2, ASSH_ALLOC_INTERNAL);
+  return err;
+}
+
+static void
+assh_bignum_mt_mul(const struct assh_bignum_mt_s *mt,
+                   assh_bnword_t * __restrict__ a,
+                   const assh_bnword_t * __restrict__ x,
+                   const assh_bnword_t * __restrict__ y)
+{
+  size_t i, j;
+  size_t ml = assh_bignum_words(mt->bits);
+  assh_bnword_t *m = mt->r2 + ml;
+  assh_bnword_t q, k = 0;
+  assh_bnlong_t p, t, r;
+
+  for (i = 0; i < ml; i++)
+    a[i] = 0;
+
+  for (i = 0; i < ml; i++)
+    {
+      p = a[0] + (assh_bnlong_t)x[i] * y[0];
+      q = p * mt->n0;
+      r = (assh_bnlong_t)m[0] * q;
+
+      /* t = (p + r) >> ASSH_BIGNUM_W, do not drop carry */
+      t = (assh_bnlong_t)(assh_bnword_t)r + (assh_bnword_t)p;
+      t = (t >> ASSH_BIGNUM_W) + (r >> ASSH_BIGNUM_W) + (p >> ASSH_BIGNUM_W);
+
+      for (j = 1; j < ml; j++)
+        {
+          p = a[j] + (assh_bnlong_t)x[i] * y[j];
+          r = (assh_bnlong_t)m[j] * q + t;
+
+          /* a[j-1] = p + r,  t = (p + r) >> ASSH_BIGNUM_W */
+          t = (assh_bnlong_t)(assh_bnword_t)r + (assh_bnword_t)p;
+          a[j-1] = t;
+          t = (t >> ASSH_BIGNUM_W) + (r >> ASSH_BIGNUM_W) + (p >> ASSH_BIGNUM_W);
+        }
+      t += k;
+      a[j-1] = t;
+      k = t >> ASSH_BIGNUM_W;
+    }
+
+  /* Masked final subtraction */
+#if 0
+  q = ((assh_bnlong_t)m[ml - 1] - t) >> ASSH_BIGNUM_W;
+#else
+  q = (k ^ 1) - 1;
+#endif
+
+  t = (assh_bnlong_t)(q & 1) << ASSH_BIGNUM_W;
+  for (i = 0; i < ml; i++)
+    a[i] = t = (assh_bnlong_t)a[i] + (q & ~m[i]) + (t >> ASSH_BIGNUM_W);
+}
+
+static void
+assh_bignum_mt_reduce(const struct assh_bignum_mt_s *mt,
+                      assh_bnword_t * __restrict__ a,
+                      const assh_bnword_t * __restrict__ x)
+{
+  size_t i, j;
+  size_t ml = assh_bignum_words(mt->bits);
+  assh_bnword_t *m = mt->r2 + ml;
+  assh_bnword_t q;
+  assh_bnlong_t p, t, r;
+
+  for (i = 0; i < ml; i++)
+    a[i] = 0;
+
+  for (i = 0; i < ml; i++)
+    {
+      p = a[0] + (assh_bnlong_t)x[i];
+      q = p * mt->n0;
+      r = (assh_bnlong_t)m[0] * q;
+      t = p + r;
+
+      for (j = 1; j < ml; j++)
+        {
+          p = a[j];
+          r = (assh_bnlong_t)m[j] * q + (t >> ASSH_BIGNUM_W);
+          t = p + r;
+          a[j-1] = t;
+        }
+      a[j-1] = (t >> ASSH_BIGNUM_W);
+    }
+}
+
+static assh_error_t ASSH_WARN_UNUSED_RESULT
+assh_bignum_mt_convert(struct assh_context_s *c, assh_bool_t fwd,
+                       const struct assh_bignum_mt_s *mt,
+                       struct assh_bignum_s *r,
+                       const struct assh_bignum_s *a)
+{
+  assh_error_t err;
+
+  ASSH_CHK_RET(mt->bits != a->bits || mt->bits != r->bits,
+               ASSH_ERR_NUM_OVERFLOW);
+  size_t ml = assh_bignum_words(mt->bits);
+  assh_bnword_t *t = r->n;
+
+  if (r != a)
+    goto done;
+
+  ASSH_SCRATCH_ALLOC(c, assh_bnword_t, scratch,
+                     ml, ASSH_ERRSV_CONTINUE, err);
+  t = scratch;
+ done:
+  err = ASSH_OK;
+
+  if (fwd)
+    assh_bignum_mt_mul(mt, t, mt->r2, a->n);
+  else
+    assh_bignum_mt_reduce(mt, t, a->n);
+
+  if (r == a)
+    {
+      memcpy(r->n, t, ml * sizeof(assh_bnword_t));
+      ASSH_SCRATCH_FREE(c, scratch);
+    }
+ err:
+  return err;
+}
+
+static assh_error_t ASSH_WARN_UNUSED_RESULT
+assh_bignum_mulmod_mt(struct assh_context_s *ctx,
+                      struct assh_bignum_s *r,
+                      const struct assh_bignum_s *a,
+                      const struct assh_bignum_s *b,
+                      const struct assh_bignum_mt_s *mt)
+{
+  assh_error_t err;
+  assert(r != a && r != b);
+  ASSH_CHK_RET(mt->bits != a->bits ||
+               mt->bits != b->bits ||
+               mt->bits != r->bits,
+               ASSH_ERR_NUM_OVERFLOW);
+
+  assh_bignum_mt_mul(mt, r->n, a->n, b->n);
+
+  return ASSH_OK;
+}
 
 #if 0
+
+/********************************************************* init and convert */
 
 static void assh_bignum_print_raw(FILE *out, const char *name,
 				  const assh_bnword_t *n, unsigned int len)
@@ -1011,47 +1292,6 @@ static void assh_bignum_print(FILE *out, const char *name,
 }
 
 /************************************************************ cmp, add, sub */
-
-assh_error_t assh_bignum_mulmod(struct assh_context_s *ctx,
-                                struct assh_bignum_s *r,
-                                const struct assh_bignum_s *a,
-                                const struct assh_bignum_s *b,
-                                const struct assh_bignum_s *m)
-{
-  assh_error_t err;
-
-  assert(r != a && r != b && r != m);
-
-  ASSH_CHK_RET(r->l < m->l, ASSH_ERR_OUTPUT_OVERFLOW);
-
-  size_t l = a->l + b->l; /* result size */
-
-  assh_bool_t use_kara = a->l == b->l && !(a->l & 1);
-  size_t scratch_len = l;
-  if (use_kara)
-    scratch_len += ASSH_KARA_SCRATCH(a->l);
-
-  ASSH_SCRATCH_ALLOC(ctx, assh_bnword_t, scratch, scratch_len,
-		     ASSH_ERRSV_CONTINUE, err);
-
-  assh_bnword_t *x = scratch;
-
-  if (use_kara)
-    assh_bignum_karatsuba(x, a->n, b->n, scratch + l, a->l);
-  else
-    assh_bignum_school_mul(x, a->n, a->l, b->n, b->l);
-
-  ASSH_ERR_GTO(assh_bignum_div_euclidean(x, l, NULL, 0, m->n, m->l), err_scratch);
-
-  memcpy(r->n, x, m->l * sizeof(assh_bnword_t));
-  memset(r->n + m->l, 0, (r->l - m->l) * sizeof(assh_bnword_t));
-
-  err = ASSH_OK;
- err_scratch:
-  ASSH_SCRATCH_FREE(ctx, scratch);
- err:
-  return err;
-}
 
 /*********************************************************************** exp */
 
@@ -1215,19 +1455,29 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_builtin_convert)
 
 static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
 {
-  uint_fast8_t flen, tlen = 0;
+  uint_fast8_t flen, tlen, mlen;
   assh_error_t err;
-  uint_fast8_t i, j, pc = 0;
+  uint_fast8_t i, j, k, pc = 0;
 
   /* find number of arguments and temporaries */
-  for (tlen = flen = 0; format[flen]; flen++)
-    if (format[flen] == 'T')
-      tlen++;
+  for (mlen = tlen = flen = 0; format[flen]; flen++)
+    {
+      switch (format[flen])
+        {
+        case ASSH_BIGNUM_TEMP:
+          tlen++;
+          break;
+        case ASSH_BIGNUM_MT:
+          mlen++;
+          break;
+        }
+    }
 
   void *args[flen];
   struct assh_bignum_s tmp[tlen];
+  struct assh_bignum_mt_s mt[mlen];
 
-  for (j = i = 0; i < flen; i++)
+  for (i = j = k = 0; i < flen; i++)
     switch (format[i])
       {
       case ASSH_BIGNUM_TEMP:
@@ -1235,6 +1485,12 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
         tmp[j].n = NULL;
         args[i] = &tmp[j];
         j++;
+        break;
+      case ASSH_BIGNUM_MT:
+        mt[k].bits = 0;
+        mt[k].r2 = NULL;
+        args[i] = &mt[k];
+        k++;
         break;
       case ASSH_BIGNUM_SIZE:
         args[i] = (void*)va_arg(ap, size_t);
@@ -1310,10 +1566,29 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
 
         case ASSH_BIGNUM_OP_MUL: {
           struct assh_bignum_s *dst = args[oa];
-          if (od != ASSH_BOP_NOREG)
-            assert(!"montgomery");
+          struct assh_bignum_s *src1 = args[ob];
+          struct assh_bignum_s *src2 = args[oc];
           ASSH_ERR_GTO(assh_bignum_realloc(c, dst), err_sc);
-          ASSH_ERR_GTO(assh_bignum_mul(c, dst, args[ob], args[oc]), err_sc);
+          if (od == ASSH_BOP_NOREG)
+            ASSH_ERR_GTO(assh_bignum_mul(c, dst, src1, src2), err_sc);
+          else if (format[od] == ASSH_BIGNUM_MT)
+            ASSH_ERR_GTO(assh_bignum_mulmod_mt(c, dst, src1, src2, args[od]), err_sc);
+          else
+            ASSH_ERR_GTO(assh_bignum_mulmod(c, dst, src1, src2, args[od]), err_sc);
+          break;
+        }
+
+        case ASSH_BIGNUM_OP_MTINIT: {
+          ASSH_ERR_GTO(assh_bignum_mt_init(c, args[oc], args[od]), err_sc);
+          break;
+        }
+
+        case ASSH_BIGNUM_OP_MTFROM:
+        case ASSH_BIGNUM_OP_MTTO: {
+          struct assh_bignum_s *dst = args[ob];
+          ASSH_ERR_GTO(assh_bignum_realloc(c, dst), err_sc);
+          ASSH_ERR_GTO(assh_bignum_mt_convert(c, op == ASSH_BIGNUM_OP_MTTO,
+                                              args[od], dst, args[oc]), err_sc);
           break;
         }
 
@@ -1435,19 +1710,14 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
             case ASSH_BIGNUM_TEMP:
               fprintf(stderr, "[bits=%zu] ", src->bits);
               if (src->n != NULL)
-                {
-                  assh_bnword_t *n = src->n;
-                  for (i = assh_bignum_words(src->bits); i-- > 0; )
-                    fprintf(stderr, ASSH_BN_FMT, n[i]);
-                }
+                assh_bignum_dump(src->n, assh_bignum_words(src->bits));
               else
-                fprintf(stderr, "NULL");
+                fprintf(stderr, "NULL\n");
               break;
             case ASSH_BIGNUM_SIZE:
-              fprintf(stderr, "%u", (unsigned)(uintptr_t)args[od]);
+              fprintf(stderr, "%u\n", (unsigned)(uintptr_t)args[od]);
               break;
             }
-          fprintf(stderr, "\n");
 #endif
           break;
         }
@@ -1458,9 +1728,16 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
  end:
   err = ASSH_OK;
  err_sc:;
+
+  /* release numbers */
   for (i = 0; i < tlen; i++)
     if (tmp[i].n != NULL)
       assh_free(c, tmp[i].n, ASSH_ALLOC_SECUR);
+
+  for (i = 0; i < mlen; i++)
+    if (mt[i].r2 != NULL)
+      assh_free(c, mt[i].r2, ASSH_ALLOC_INTERNAL);
+
   return err;
 }
 

@@ -102,6 +102,8 @@ enum assh_bignum_fmt_e
   ASSH_BIGNUM_SIZE    = 's',
   /** Montgomery ladder object. see assh_bignum_mlad_s */
   ASSH_BIGNUM_MLAD    = 'L',
+  /** Montgomery multiplication context computed from modulus */
+  ASSH_BIGNUM_MT      = 'm',
 };
 
 /** @internal @This represents a big number in native format. The
@@ -109,8 +111,10 @@ enum assh_bignum_fmt_e
     is currently allocated (@ref n is @tt NULL). */
 struct assh_bignum_s
 {
-  /** Number bits size */
-  size_t bits;
+  /** Bits size */
+  uint32_t bits:24;
+  /** Whether the number is secret */
+  uint32_t secret:1;
   /** Pointer to native big number data */
   void *n;
 };
@@ -331,6 +335,9 @@ enum assh_bignum_opcode_e
   ASSH_BIGNUM_OP_MLADJMP,
   ASSH_BIGNUM_OP_MLADSWAP,
   ASSH_BIGNUM_OP_MLADLOOP,
+  ASSH_BIGNUM_OP_MTINIT,
+  ASSH_BIGNUM_OP_MTTO,
+  ASSH_BIGNUM_OP_MTFROM,
   ASSH_BIGNUM_OP_PRIME,
   ASSH_BIGNUM_OP_ISPRIM,
   ASSH_BIGNUM_OP_PRINT,
@@ -342,8 +349,9 @@ enum assh_bignum_opcode_e
     "sub", "mul", "div", "gcd",                 \
     "expm", "inv", "shr", "shl",                \
     "rand", "cmp", "testc", "tests", "uint",    \
-    "mladjmp", "mladswap", "mladloop", "prime", \
-    "isprim", "print"                           \
+    "mladjmp", "mladswap", "mladloop",          \
+    "mtinit", "mtto", "mtfrom",                 \
+    "prime", "isprim", "print"                  \
 }
 
 /** @internal Reserved big number bytecode register id. */
@@ -359,6 +367,25 @@ enum assh_bignum_opcode_e
     formats. It is equivalent to the @ref assh_bignum_convert_t function. */
 #define ASSH_BOP_MOVE(dst, src) \
   ASSH_BOP_FMT2(ASSH_BIGNUM_OP_MOVE, dst, src)
+
+/** @mgroup{Bytecode instructions}
+    @internal This initializes a montgomery multiplication context
+    from a modulus number. */
+#define ASSH_BOP_MTINIT(mt, mod) \
+  ASSH_BOP_FMT2(ASSH_BIGNUM_OP_MTINIT, mt, mod)
+
+/** @mgroup{Bytecode instructions}
+    @internal This converts the source number to montgomery representation.
+    The @tt mt operand is a montgomery context initialized from the modulus
+    using the @ref ASSH_BOP_MT_INIT instruction. */
+#define ASSH_BOP_MTTO(dst, src, mt) \
+  ASSH_BOP_FMT3(ASSH_BIGNUM_OP_MTTO, dst, src, mt)
+
+/** @mgroup{Bytecode instructions}
+    @internal This converts the source number from montgomery representation.
+    @see #ASSH_BOP_TO_MT */
+#define ASSH_BOP_MTFROM(dst, src, mt) \
+  ASSH_BOP_FMT3(ASSH_BIGNUM_OP_MTFROM, dst, src, mt)
 
 /** @mgroup{Bytecode instructions}
     @internal This instruction changes the bit size of a number. It is
