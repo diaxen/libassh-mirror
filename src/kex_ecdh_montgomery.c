@@ -44,8 +44,6 @@
 
 #include <assh/assh_bignum.h>
 
-#include "ecc_bop.h"
-
 #include <string.h>
 #include <stdlib.h>
 
@@ -85,6 +83,41 @@ struct assh_kex_ecdhmt_private_s
   uint8_t *pubkey;
   uint8_t *pvkey;
 };
+
+/* addition on montgomery curve, single coordinate. 18ops */
+#define ASSH_BOP_MONTGOMERY_SADD(X1, X2, X3, Z2, Z3,		\
+				  T0, T1, A24, P)		\
+    /* D = X3 - Z3        */					\
+    ASSH_BOP_SUBM(	T0,	X3,	Z3,	P	),	\
+    /* B = X2 - Z2        */					\
+    ASSH_BOP_SUBM(	T1,	X2,	Z2,	P	),	\
+    /* A = X2 + Z2        */					\
+    ASSH_BOP_ADDM(	X2,	X2,	Z2,	P	),	\
+    /* C = X3 + Z3        */					\
+    ASSH_BOP_ADDM(	Z2,	X3,	Z3,	P	),	\
+    /* DA = D*A           */					\
+    ASSH_BOP_MULM(	Z3,	T0,	X2,	P	),	\
+    /* CB = C*B           */					\
+    ASSH_BOP_MULM(	Z2,	Z2,	T1,	P	),	\
+    /* BB = B^2           */					\
+    ASSH_BOP_MULM( 	T0,	T1,	T1,	P	),	\
+    /* AA = A^2           */					\
+    ASSH_BOP_MULM( 	T1,	X2,	X2,	P	),	\
+    /* X5 = Z1*(DA+CB)^2  */					\
+    ASSH_BOP_ADDM(	X3,	Z3,	Z2,	P	),	\
+    ASSH_BOP_MULM( 	X3,	X3,	X3,	P	),	\
+    /* Z5 = X1*(DA-CB)^2  */					\
+    ASSH_BOP_SUBM(	Z2,	Z3,	Z2,	P	),	\
+    ASSH_BOP_MULM( 	Z2,	Z2,	Z2,	P	),	\
+    /* X4 = AA*BB         */					\
+    ASSH_BOP_MULM(	X2,	T1,	T0,	P	),	\
+    /* E = AA - BB        */					\
+    ASSH_BOP_SUBM(      T1,	T1,	T0,	P	),	\
+    /* Z4 = E*(BB+a24*E)  */					\
+    ASSH_BOP_MULM(	Z3,	T1,	A24,    P	),	\
+    ASSH_BOP_ADDM(	T0,	T0,	Z3,	P	),	\
+    ASSH_BOP_MULM(	Z3,	X1,	Z2,	P	),	\
+    ASSH_BOP_MULM(	Z2,	T1,	T0,	P	)
 
 assh_error_t ASSH_WARN_UNUSED_RESULT
 assh_montgomery_point_mul(struct assh_session_s *s, const uint8_t *result,

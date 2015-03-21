@@ -28,8 +28,6 @@
 #include <assh/assh_prng.h>
 #include <assh/assh_hash.h>
 
-#include "ecc_bop.h"
-
 #include <string.h>
 
 static ASSH_KEY_OUTPUT_FCN(assh_key_eddsa_output)

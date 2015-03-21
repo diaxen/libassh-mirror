@@ -29,8 +29,6 @@
 #include <assh/assh_prng.h>
 #include <assh/assh_alloc.h>
 
-#include "ecc_bop.h"
-
 #include <string.h>
 
 static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)

@@ -95,5 +95,70 @@ assh_edward_encode(const struct assh_edward_curve_s *curve,
   y[j] |= ((x[0] & 1) << 7);
 }
 
+/** @internal addition on twisted edward curve, projective
+    coordinate. 20 ops */
+#define ASSH_BOP_TEDWARD_PADD(X3, Y3, Z3, X1, Y1, Z1,		\
+			      X2, Y2, Z2, T0, T1, A, D, P)	\
+    /* A = Z1*Z2 */						\
+    ASSH_BOP_MULM(	Z3,	Z1,	Z2,	P	),	\
+    /* I = (X1+Y1)*(X2+Y2) */					\
+    ASSH_BOP_ADDM(	T0,	X1,	Y1,	P	),	\
+    ASSH_BOP_ADDM(	T1,	X2,	Y2,	P	),	\
+    ASSH_BOP_MULM(	T0,	T0,	T1,	P	),	\
+    /* C = X1*X2 */						\
+    ASSH_BOP_MULM(	X3,	X1,	X2,	P	),	\
+    /* D = Y1*Y2 */						\
+    ASSH_BOP_MULM(	Y3,	Y1,	Y2,	P	),	\
+    /* E = d*C*D */						\
+    ASSH_BOP_MULM(	T1,	X3,	Y3,	P	),	\
+    ASSH_BOP_MULM(	T1,	T1,	D ,	P	),	\
+    /* H = A*(I-C-D) */						\
+    ASSH_BOP_SUBM(	T0,	T0,	X3,	P	),	\
+    ASSH_BOP_SUBM(	T0,	T0,	Y3,	P	),	\
+    ASSH_BOP_MULM(	T0,	T0,	Z3,	P	),	\
+    /* J = (D-a*C)*A */						\
+    ASSH_BOP_MULM(	X3,	X3,	A,	P	),	\
+    ASSH_BOP_SUBM(	Y3,	Y3,	X3,	P	),	\
+    ASSH_BOP_MULM(	Y3,	Y3,	Z3,	P	),	\
+    /* F = A*A - E */						\
+    ASSH_BOP_MULM(	Z3,	Z3,	Z3,	P	),	\
+    ASSH_BOP_SUBM(	X3,	Z3,	T1,	P	),	\
+    /* G = A*A + E */						\
+    ASSH_BOP_ADDM(	Z3,	Z3,	T1,	P	),	\
+    /* Y3 = G*J */						\
+    ASSH_BOP_MULM(	Y3,	Y3,	Z3,	P	),	\
+    /* Z3 = F*G */						\
+    ASSH_BOP_MULM(	Z3,	Z3,	X3,	P	),	\
+    /* X3 = F*H */						\
+    ASSH_BOP_MULM(	X3,	X3,	T0,	P	)
+
+/** @internal doubling on twisted edward curve, projective
+    coordinate. 15 ops */
+#define ASSH_BOP_TEDWARD_PDBL(X3, Y3, Z3, X1, Y1, Z1, T0, T1, P)\
+    /* C = X1^2 */						\
+    ASSH_BOP_MULM(	X3,	X1,	X1,	P	),	\
+    /* D = Y1^2 */						\
+    ASSH_BOP_MULM(	Y3,	Y1,	Y1,	P	),	\
+    /* B = (X1+Y1)^2-C-D */					\
+    ASSH_BOP_ADDM(	T0,	X1,	Y1,	P	),	\
+    ASSH_BOP_MULM(	T0,	T0,	T0,	P	),	\
+    ASSH_BOP_SUBM(	T0,	T0,	X3,	P	),	\
+    ASSH_BOP_SUBM(	T0,	T0,	Y3,	P	),	\
+    /* E = a*C */						\
+    ASSH_BOP_MULM(	X3,	X3,	A,	P	),	\
+    /* F = E+D */						\
+    ASSH_BOP_ADDM(	Z3,	X3,	Y3,	P	),	\
+    /* Y3 = F*(E-D) */						\
+    ASSH_BOP_SUBM(	Y3,	X3,	Y3,	P	),	\
+    ASSH_BOP_MULM(	Y3,	Z3,	Y3,	P	),	\
+    /* J = F-2*Z1^2 */						\
+    ASSH_BOP_MULM(	T1,	Z1,	Z1,	P	),	\
+    ASSH_BOP_ADDM(	T1,	T1,	T1,	P	),	\
+    ASSH_BOP_SUBM(	T1,	Z3,	T1,	P	),	\
+    /* X3 = B*J */						\
+    ASSH_BOP_MULM(	X3,	T0,	T1,	P	),	\
+    /* Z3 = F*J */						\
+    ASSH_BOP_MULM(	Z3,	Z3,	T1,	P	)
+
 #endif
 
