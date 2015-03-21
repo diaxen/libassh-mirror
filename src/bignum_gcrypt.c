@@ -409,10 +409,11 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           dst->n = gcry_mpi_copy(src->n);
         }
 
+        case ASSH_BIGNUM_OP_EXPM:
+          assert(format[od] == ASSH_BIGNUM_MT);
         case ASSH_BIGNUM_OP_ADD:
         case ASSH_BIGNUM_OP_SUB:
-        case ASSH_BIGNUM_OP_MUL:
-        case ASSH_BIGNUM_OP_EXPM: {
+        case ASSH_BIGNUM_OP_MUL: {
           struct assh_bignum_s *dst = args[oa];
           if (dst->n == NULL)
             {

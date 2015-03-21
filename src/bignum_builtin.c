@@ -67,6 +67,13 @@ typedef uint16_t assh_bnlong_t;
 /** @This specifies the number of bits in a big number word. */
 #define ASSH_BIGNUM_W (sizeof(assh_bnword_t) * 8)
 
+struct assh_bignum_mt_s
+{
+  assh_bnword_t *r2;
+  assh_bnword_t n0;
+  size_t bits;
+};
+
 #ifdef CONFIG_ASSH_DEBUG
 static void
 assh_bignum_dump(const assh_bnword_t *x, size_t l)
@@ -101,22 +108,6 @@ assh_bn_clz(assh_bnword_t x)
     }
 
   abort();
-}
-
-/* This function checks the higher word of the number for overflow. */
-static assh_error_t ASSH_WARN_UNUSED_RESULT
-assh_bignum_overflow(const assh_bnword_t *x, size_t bits)
-{
-  assh_error_t err;
-
-  if (bits % ASSH_BIGNUM_W)
-    {
-      assh_bnword_t mask = (assh_bnword_t)-1
-        >> ((ASSH_BIGNUM_W - bits) & (ASSH_BIGNUM_W - 1));
-      ASSH_CHK_RET(*x & ~mask, ASSH_ERR_OUTPUT_OVERFLOW);
-    }
-
-  return ASSH_OK;
 }
 
 /* This function copies a value between two big number objects. */
@@ -326,8 +317,8 @@ assh_bignum_rshift(struct assh_bignum_s *dst,
 {
   assh_error_t err;
 
-  ASSH_CHK_RET(src->bits != dst->bits, ASSH_ERR_OUTPUT_OVERFLOW);
-  ASSH_CHK_RET(n >= src->bits, ASSH_ERR_OUTPUT_OVERFLOW);
+  assert(src->bits == dst->bits);
+  assert(n < src->bits);
 
   size_t i, l = assh_bignum_words(src->bits);
 
@@ -358,8 +349,8 @@ assh_bignum_lshift(struct assh_bignum_s *dst,
 {
   assh_error_t err;
 
-  ASSH_CHK_RET(src->bits != dst->bits, ASSH_ERR_OUTPUT_OVERFLOW);
-  ASSH_CHK_RET(n >= src->bits, ASSH_ERR_OUTPUT_OVERFLOW);
+  assert(src->bits == dst->bits);
+  assert(n < src->bits);
 
   size_t i, l = assh_bignum_words(src->bits);
 
@@ -382,55 +373,34 @@ assh_bignum_lshift(struct assh_bignum_s *dst,
       o = 0;
     }
 
-  ASSH_ERR_RET(assh_bignum_overflow(dn + l - 1, dst->bits));
-
-  return ASSH_OK;
-}
-
-static assh_error_t ASSH_WARN_UNUSED_RESULT
-assh_bignum_add(struct assh_bignum_s *dst,
-                const struct assh_bignum_s *a,
-                const struct assh_bignum_s *b)
-{
-  assh_error_t err;
-
-  size_t dl = assh_bignum_words(dst->bits);
-  size_t al = assh_bignum_words(a->bits);
-  size_t bl = assh_bignum_words(b->bits);
-  const assh_bnword_t *an = a->n;
-  const assh_bnword_t *bn = b->n;
-  assh_bnword_t *dn = dst->n;
-  assh_bnlong_t t = 0;
-
-  ASSH_CHK_RET(dl < ASSH_MAX(al, bl), ASSH_ERR_OUTPUT_OVERFLOW);
-
-  if (al < bl)
-    ASSH_SWAP(a, b);
-
-  size_t i;
-  for (i = 0; i < bl; i++)
-    dn[i] = t = (assh_bnlong_t)an[i] + bn[i] + (t >> ASSH_BIGNUM_W);
-  for (; i < al; i++)
-    dn[i] = t = (assh_bnlong_t)an[i] + (t >> ASSH_BIGNUM_W);
-  for (; i < dl; i++)
-    dn[i] = t = (t >> ASSH_BIGNUM_W);
-
-  size_t m = dst->bits % ASSH_BIGNUM_W;
-  if (m)
+  if (dst->bits % ASSH_BIGNUM_W)
     {
-      t >>= m;
-      ASSH_CHK_RET(t != 0, ASSH_ERR_NUM_OVERFLOW);
+      assh_bnword_t mask = (assh_bnword_t)-1
+        >> ((ASSH_BIGNUM_W - dst->bits) & (ASSH_BIGNUM_W - 1));
+      ASSH_CHK_RET(dn[l - 1] & ~mask, ASSH_ERR_OUTPUT_OVERFLOW);
     }
-  
+
   return ASSH_OK;
 }
 
+/*********************************************************************** add, sub */
+
 static assh_error_t ASSH_WARN_UNUSED_RESULT
-assh_bignum_sub(struct assh_bignum_s *dst,
-                const struct assh_bignum_s *a,
-                const struct assh_bignum_s *b)
+assh_bignum_addsub(struct assh_bignum_s *dst,
+                   const struct assh_bignum_s *a,
+                   const struct assh_bignum_s *b,
+                   const struct assh_bignum_mt_s *mt,
+                   assh_bnword_t smask /* 0:add, -1:sub */)
 {
   assh_error_t err;
+  assh_bnword_t amask = 0;
+
+  /* make A the largest bits length */
+  if (a->bits < b->bits)
+    {
+      ASSH_SWAP(a, b);
+      amask ^= smask;
+    }
 
   size_t dl = assh_bignum_words(dst->bits);
   size_t al = assh_bignum_words(a->bits);
@@ -438,29 +408,49 @@ assh_bignum_sub(struct assh_bignum_s *dst,
   const assh_bnword_t *an = a->n;
   const assh_bnword_t *bn = b->n;
   assh_bnword_t *dn = dst->n;
-  assh_bnlong_t t = (assh_bnlong_t)1 << ASSH_BIGNUM_W;
-  assh_bnword_t bmask = (assh_bnword_t)(al < bl) - 1;
-  assh_bnword_t amask = ~bmask;
 
-  ASSH_CHK_RET(dl < ASSH_MAX(al, bl), ASSH_ERR_OUTPUT_OVERFLOW);
+  assert(dl >= al);
 
-  if (amask)
-    ASSH_SWAP(a, b);
-
+  assh_bnlong_t t = (assh_bnlong_t)(smask & 1) << ASSH_BIGNUM_W;
+  assh_bnword_t bmask = amask ^ smask;
   size_t i;
+
+  /* add/sub numbers */
   for (i = 0; i < bl; i++)
     dn[i] = t = (assh_bnlong_t)(an[i] ^ amask) + (bn[i] ^ bmask) + (t >> ASSH_BIGNUM_W);
   for (; i < al; i++)
     dn[i] = t = (assh_bnlong_t)(an[i] ^ amask) + bmask + (t >> ASSH_BIGNUM_W);
   for (; i < dl; i++)
-    dn[i] = t = (t >> ASSH_BIGNUM_W);
+    dn[i] = t = smask + (t >> ASSH_BIGNUM_W);
 
-  size_t m = dst->bits % ASSH_BIGNUM_W;
-  if (m)
+  /* handle overflow condition */
+  t ^= (assh_bnlong_t)(smask & 1) << ASSH_BIGNUM_W;
+
+  if (mt)
     {
-      t ^= (assh_bnlong_t)1 << ASSH_BIGNUM_W;
-      t >>= m;
-      ASSH_CHK_RET(t != 0, ASSH_ERR_NUM_OVERFLOW);
+      assert(dst->bits == mt->bits);
+      if (a->bits == dst->bits)
+        {
+          /* We have to ensure the result fits in the buffer by
+             subtracting/adding the modulus if a carry was generated. It ok
+             if the result is actually larger than the modulus, provided
+             that it fits. assh_bignum_mt_reduce will work this out. */
+          assh_bnword_t q = ((t >> ASSH_BIGNUM_W) ^ 1) - 1;
+          assh_bnword_t *m = mt->r2 + dl;
+          /* masked reduce */
+          ASSH_DEBUG("carry %u\n", q);
+          t = (assh_bnlong_t)(q & 1 & ~smask) << ASSH_BIGNUM_W;
+          for (i = 0; i < dl; i++)
+            dn[i] = t = (assh_bnlong_t)dn[i] + (q & (m[i] ^ (assh_bnword_t)~smask))
+              + (t >> ASSH_BIGNUM_W);
+        }
+    }
+  else
+    {
+      size_t l = dst->bits % ASSH_BIGNUM_W;
+      if (!l)
+        l = ASSH_BIGNUM_W;
+      ASSH_CHK_RET(t >> l != 0, ASSH_ERR_NUM_OVERFLOW);
     }
 
   return ASSH_OK;
@@ -954,7 +944,7 @@ assh_bignum_karatsuba(assh_bnword_t * __restrict__ r,
   t = 0;
   for (i = h; i < l+h+1; i++)
     r[i] = t = (assh_bnlong_t)r[i] + z1[i - h] + (t >> ASSH_BIGNUM_W);
-  for (; (t >> ASSH_BIGNUM_W) && i < l*2; i++)
+  for (; i < l*2; i++)
     r[i] = t = (assh_bnlong_t)r[i] + (t >> ASSH_BIGNUM_W);
 }
 
@@ -994,7 +984,7 @@ assh_bignum_mul(struct assh_context_s *ctx,
 }
 
 static assh_error_t ASSH_WARN_UNUSED_RESULT
-assh_bignum_mulmod(struct assh_context_s *ctx,
+assh_bignum_mul_mod(struct assh_context_s *ctx,
                    struct assh_bignum_s *r,
                    const struct assh_bignum_s *a,
                    const struct assh_bignum_s *b,
@@ -1041,13 +1031,6 @@ assh_bignum_mulmod(struct assh_context_s *ctx,
 }
 
 /********************************************************* montgomery */
-
-struct assh_bignum_mt_s
-{
-  assh_bnword_t *r2;
-  assh_bnword_t n0;
-  size_t bits;
-};
 
 static assh_bnword_t assh_bnword_mt_modinv(assh_bnword_t a)
 {
@@ -1166,12 +1149,7 @@ assh_bignum_mt_mul(const struct assh_bignum_mt_s *mt,
     }
 
   /* Masked final subtraction */
-#if 0
-  q = ((assh_bnlong_t)m[ml - 1] - t) >> ASSH_BIGNUM_W;
-#else
   q = (k ^ 1) - 1;
-#endif
-
   t = (assh_bnlong_t)(q & 1) << ASSH_BIGNUM_W;
   for (i = 0; i < ml; i++)
     a[i] = t = (assh_bnlong_t)a[i] + (q & ~m[i]) + (t >> ASSH_BIGNUM_W);
@@ -1207,8 +1185,6 @@ assh_bignum_mt_reduce(const struct assh_bignum_mt_s *mt,
         }
       a[j-1] = (t >> ASSH_BIGNUM_W);
     }
-
-  //  assert((assh_bnlong_t)m[ml - 1] >= t);
 }
 
 static assh_error_t ASSH_WARN_UNUSED_RESULT
@@ -1248,7 +1224,7 @@ assh_bignum_mt_convert(struct assh_context_s *c, assh_bool_t fwd,
 }
 
 static assh_error_t ASSH_WARN_UNUSED_RESULT
-assh_bignum_mulmod_mt(struct assh_context_s *ctx,
+assh_bignum_mul_mod_mt(struct assh_context_s *ctx,
                       struct assh_bignum_s *r,
                       const struct assh_bignum_s *a,
                       const struct assh_bignum_s *b,
@@ -1289,6 +1265,7 @@ assh_bignum_expmod_mt(struct assh_context_s *ctx,
   assh_bnword_t *rn = NULL;
   uint_fast16_t i = 0;
 
+#warning constant time version
   memcpy(sq, a->n, ml * sizeof(assh_bnword_t));
 
   while (1)
@@ -1322,109 +1299,6 @@ assh_bignum_expmod_mt(struct assh_context_s *ctx,
  err:
   return err;
 }
-
-#if 0
-
-/********************************************************* init and convert */
-
-static void assh_bignum_print_raw(FILE *out, const char *name,
-				  const assh_bnword_t *n, unsigned int len)
-{
-  int i, j;
-
-  if (name != NULL)
-    fprintf(out, "%s: ", name);
-  for (i = 0; i < len; i++)
-    {
-      assh_bnword_t x = n[len - i - 1];
-      for (j = ASSH_BIGNUM_W - 4; j >= 0; j -= 4)
-	fputc("0123456789ABCDEF"[(x >> j) & 0xf], out);
-    }
-  if (name != NULL)
-    fputc('\n', out);
-}
-
-static void assh_bignum_print(FILE *out, const char *name,
-                              const struct assh_bignum_s *bn)
-{
-  assh_bignum_print_raw(out, name, bn->n, bn->l);
-}
-
-/************************************************************ cmp, add, sub */
-
-/*********************************************************************** exp */
-
-assh_error_t assh_bignum_expmod(struct assh_context_s *ctx,
-                                struct assh_bignum_s *r,
-				const struct assh_bignum_s *x,
-				const struct assh_bignum_s *e,
-				const struct assh_bignum_s *mod)
-{
-  assh_error_t err;
-
-  ASSH_CHK_RET(r->l < mod->l, ASSH_ERR_OUTPUT_OVERFLOW);
-
-  /* square length */
-  unsigned int sql = ASSH_MAX(mod->l, x->l) * 2;
-
-  ASSH_SCRATCH_ALLOC(ctx, assh_bnword_t, scratch,
-		     + sql * 2  /* sq[2] */
-		     + sql * 2  /* r[2] */
-		     + ASSH_KARA_SCRATCH(sql / 2),
-		     ASSH_ERRSV_CONTINUE, err);
-
-  assh_bnword_t *sqa = scratch, *sqb = scratch + sql;
-  assh_bnword_t *ra = NULL,     *rb = scratch + sql * 3;
-  assh_bnword_t *kara_scratch = scratch + sql * 4;
-  unsigned int i, j;
-
-  memcpy(sqa, x->n, x->l * sizeof(assh_bnword_t));
-  memset(sqa + x->l, 0, (sql - x->l) * sizeof(assh_bnword_t));
-
-  for (i = 0; i < e->l; i++)
-    {
-      for (j = 0; j < ASSH_BIGNUM_W; j++)
-	{
-	  if ((e->n[i] >> j) & 1)
-	    {
-	      if (ra == NULL)
-		{
-		  memcpy(rb, sqa, sql * sizeof(assh_bnword_t));
-		  ra = scratch + sql * 2;
-		}
-	      else
-		{
-		  assh_bignum_karatsuba(rb, ra, sqa, kara_scratch, sql / 2);
-		  ASSH_ERR_GTO(assh_bignum_div_euclidean(rb, sql, NULL, 0,
-					       mod->n, mod->l), err_scratch);
-		}
-
-	      ASSH_SWAP(ra, rb);
-	    }
-
-	  assh_bignum_karatsuba(sqb, sqa, sqa, kara_scratch, sql / 2);
-	  ASSH_ERR_GTO(assh_bignum_div_euclidean(sqb, sql, NULL, 0,
-					 mod->n, mod->l), err_scratch);
-	  ASSH_SWAP(sqa, sqb);
-	}
-    }
-
-  /* zero exponent case */
-  ASSH_CHK_GTO(ra == NULL, ASSH_ERR_NUM_OVERFLOW, err_scratch);
-
-  memcpy(r->n, ra, mod->l * sizeof(assh_bnword_t));
-  memset(r->n + mod->l, 0, (r->l - mod->l) * sizeof(assh_bnword_t));
-
-  err = ASSH_OK;
- err_scratch:
-  ASSH_SCRATCH_FREE(ctx, scratch);
- err:
-  return err;
-}
-
-//  if (bn->bits >= bits && bn->n != NULL)
-//    return ASSH_OK;
-#endif
 
 static ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_bignum_realloc(struct assh_context_s *c,
@@ -1605,21 +1479,15 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           break;
         }
 
+        case ASSH_BIGNUM_OP_SUB:
         case ASSH_BIGNUM_OP_ADD: {
           struct assh_bignum_s *dst = args[oa];
-          if (od != ASSH_BOP_NOREG)
-            assert(!"mod sub");
           ASSH_ERR_GTO(assh_bignum_realloc(c, dst), err_sc);
-          ASSH_ERR_GTO(assh_bignum_add(dst, args[ob], args[oc]), err_sc);
-          break;
-        }
-
-        case ASSH_BIGNUM_OP_SUB: {
-          struct assh_bignum_s *dst = args[oa];
+          assh_bnword_t mask = (assh_bnword_t)(op == ASSH_BIGNUM_OP_ADD) - 1;
           if (od != ASSH_BOP_NOREG)
-            assert(!"mod sub");
-          ASSH_ERR_GTO(assh_bignum_realloc(c, dst), err_sc);
-          ASSH_ERR_GTO(assh_bignum_sub(dst, args[ob], args[oc]), err_sc);
+            ASSH_ERR_GTO(assh_bignum_addsub(dst, args[ob], args[oc], args[od], mask), err_sc);
+          else
+            ASSH_ERR_GTO(assh_bignum_addsub(dst, args[ob], args[oc], NULL, mask), err_sc);
           break;
         }
 
@@ -1631,9 +1499,9 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           if (od == ASSH_BOP_NOREG)
             ASSH_ERR_GTO(assh_bignum_mul(c, dst, src1, src2), err_sc);
           else if (format[od] == ASSH_BIGNUM_MT)
-            ASSH_ERR_GTO(assh_bignum_mulmod_mt(c, dst, src1, src2, args[od]), err_sc);
+            ASSH_ERR_GTO(assh_bignum_mul_mod_mt(c, dst, src1, src2, args[od]), err_sc);
           else
-            ASSH_ERR_GTO(assh_bignum_mulmod(c, dst, src1, src2, args[od]), err_sc);
+            ASSH_ERR_GTO(assh_bignum_mul_mod(c, dst, src1, src2, args[od]), err_sc);
           break;
         }
 
@@ -1706,10 +1574,10 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           switch (op)
             {
             case ASSH_BIGNUM_OP_SHR:
-              assh_bignum_rshift(dst, src, b + oc - 128);
+              ASSH_ERR_GTO(assh_bignum_rshift(dst, src, b + oc - 128), err_sc);
               break;
             case ASSH_BIGNUM_OP_SHL:
-              assh_bignum_lshift(dst, src, b + oc - 128);
+              ASSH_ERR_GTO(assh_bignum_lshift(dst, src, b + oc - 128), err_sc);
               break;
             default:
               abort();

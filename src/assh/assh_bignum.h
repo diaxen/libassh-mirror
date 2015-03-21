@@ -416,10 +416,9 @@ enum assh_bignum_opcode_e
 /** @mgroup{Bytecode instructions}
     @internal This instruction computes @tt {dst = (src1 + src2) %
     mod}. The bit size of the destination number must be
-    @tt {bits(mod)} or larger. The @tt mod operand can be either a
-    big number or a montgomery context. In the later case the bit
-    size of all operands must match the size of the montgomery
-    context. */
+    @tt {max(bits(src1), bits(src2))} or larger. The @tt mod operand
+    must be a montgomery context. The bit size of the destination
+    must match the bit size of the montgomery context modulus. */
 #define ASSH_BOP_ADDM(dst, src1, src2, mod)                     \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_ADD, dst, src1, src2, mod)
 
@@ -499,7 +498,9 @@ enum assh_bignum_opcode_e
 /** @mgroup{Bytecode instructions}
     @internal This instruction computes @tt {dst = shift_right(src1,
     val + size(src2))}. @tt val must be in range @tt{[-128, +127]} and
-    @tt src2 can be @ref #ASSH_BOP_NOREG. */
+    @tt src2 can be @ref #ASSH_BOP_NOREG. The source and destination
+    operands must have the same bit length and the shift amount must
+    be less than the length. */
 #define ASSH_BOP_SHR(dst, src, val, src2)              \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_SHR, dst, src, 128 + (val), src2)
 
