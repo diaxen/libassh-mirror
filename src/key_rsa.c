@@ -141,9 +141,9 @@ static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
   k->key.algo = &assh_key_rsa;
 
   /* init numbers */
-  assh_bignum_init(c, &k->nn, bits);
-  assh_bignum_init(c, &k->dn, bits);
-  assh_bignum_init(c, &k->en, 17);
+  assh_bignum_init(c, &k->nn, bits, 0);
+  assh_bignum_init(c, &k->dn, bits, 1);
+  assh_bignum_init(c, &k->en, 17, 0);
 
   enum bytecode_args_e
   {
@@ -292,9 +292,9 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
   k->key.algo = &assh_key_rsa;
 
   /* init numbers */
-  assh_bignum_init(c, &k->nn, n_len);
-  assh_bignum_init(c, &k->en, e_len);
-  assh_bignum_init(c, &k->dn, d_len);
+  assh_bignum_init(c, &k->nn, n_len, 0);
+  assh_bignum_init(c, &k->en, e_len, 0);
+  assh_bignum_init(c, &k->dn, d_len, 1);
 
   /* convert numbers from blob representation */
   switch (format)

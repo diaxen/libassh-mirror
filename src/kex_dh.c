@@ -468,8 +468,8 @@ static assh_error_t assh_kex_dh_init(struct assh_session_s *s,
     {
 #ifdef CONFIG_ASSH_CLIENT
     case ASSH_CLIENT:
-      assh_bignum_init(s->ctx, &pv->en, group->size);
-      assh_bignum_init(s->ctx, &pv->xn, exp_n);
+      assh_bignum_init(s->ctx, &pv->en, group->size, 0);
+      assh_bignum_init(s->ctx, &pv->xn, exp_n, 1);
       pv->host_key = NULL;
       pv->pck = NULL;
       break;

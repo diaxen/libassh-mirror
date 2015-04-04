@@ -48,7 +48,7 @@
       xxxxxx    xxxxxxxxxxxxxxxxxxxxxxxxxx
 
       op(6)          c(20)           d(6)
-      xxxxxx  xxxxxxxxxxxxxxxxxxxx  xxxxxx
+      xxxxxx   xxxxxxxxxxxxxxxxxxxx xxxxxx
 
       op(6)     b(12)       c(8)     d(6)
       xxxxxx  xxxxxxxxxxxx xxxxxxxx xxxxxx
@@ -82,6 +82,8 @@ enum assh_bignum_fmt_e
   /** Same representation as @ref ASSH_BIGNUM_NATIVE, used as a
       temporary value during bytecode execution. */
   ASSH_BIGNUM_TEMP    = 'T',
+  /** Secret temporary, @see ASSH_BIGNUM_TEMP. */
+  ASSH_BIGNUM_STEMP   = 'X',
   /** SSH mpint representation. */
   ASSH_BIGNUM_MPINT   = 'M',
   /** ASN1 integer representation. */
@@ -112,9 +114,9 @@ enum assh_bignum_fmt_e
 struct assh_bignum_s
 {
   /** Bits size */
-  uint32_t bits;
+  uint32_t bits:31;
   /** Whether the number is secret */
-  //  uint32_t secret:1;
+  uint32_t secret:1;
   /** Pointer to native big number data */
   void *n;
 };
@@ -280,9 +282,10 @@ assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
 ASSH_INLINE void
 assh_bignum_init(struct assh_context_s *c,
                  struct assh_bignum_s  *bn,
-                 size_t bits)
+                 size_t bits, assh_bool_t secret)
 {
   bn->bits = bits;
+  bn->secret = secret;
   bn->n = NULL;
 }
 
@@ -378,18 +381,18 @@ enum assh_bignum_opcode_e
 /** @mgroup{Bytecode instructions}
     @internal This converts the source number to montgomery representation.
     The resulting value can be further processed by the @ref #ASSH_BOP_ADDM,
-    @ref #ASSH_BOP_SUBM, @ref #ASSH_BOP_MULM, @ref #ASSH_BOP_EXPM and @ref
-    #ASSH_BOP_MTFROM instructions.
+    @ref #ASSH_BOP_SUBM, @ref #ASSH_BOP_MULM, @ref #ASSH_BOP_EXPM,
+    @ref ASSH_BOP_INV and @ref #ASSH_BOP_MTFROM instructions.
     The @tt mt operand is a montgomery context initialized from the modulus
     using the @ref #ASSH_BOP_MTINIT instruction. */
 #define ASSH_BOP_MTTO(dst, src, mt) \
-  ASSH_BOP_FMT3(ASSH_BIGNUM_OP_MTTO, dst, src, mt)
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_MTTO, 1, dst, src, mt)
 
 /** @mgroup{Bytecode instructions}
     @internal This converts the source number from montgomery representation.
     @see #ASSH_BOP_MTTO */
 #define ASSH_BOP_MTFROM(dst, src, mt) \
-  ASSH_BOP_FMT3(ASSH_BIGNUM_OP_MTFROM, dst, src, mt)
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_MTFROM, 1, dst, src, mt)
 
 /** @mgroup{Bytecode instructions}
     @internal This instruction changes the bit size of a number. It is
@@ -491,6 +494,9 @@ enum assh_bignum_opcode_e
 
 /** @mgroup{Bytecode instructions}
     @internal This instruction computes @tt {dst = invmod(src1, src2)}.
+    If @tt src2 is a montgomery context, the inversion is performed
+    against the prime modulus in contant time using the Fermat
+    little theorem.
     @see #ASSH_BOP_INV */
 #define ASSH_BOP_INV(dst, src1, src2)                \
   ASSH_BOP_FMT3(ASSH_BIGNUM_OP_INV, dst, src1, src2)

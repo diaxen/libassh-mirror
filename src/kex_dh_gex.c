@@ -758,7 +758,7 @@ static assh_error_t assh_kex_dh_gex_init(struct assh_session_s *s,
              pv->algo_n, pv->algo_min, pv->exp_n);
 #endif
 
-  assh_bignum_init(s->ctx, &pv->pn, 0);
+  assh_bignum_init(s->ctx, &pv->pn, 0, 0);
 
   switch (s->ctx->type)
     {
@@ -767,9 +767,9 @@ static assh_error_t assh_kex_dh_gex_init(struct assh_session_s *s,
       pv->host_key = NULL;
       pv->pck = NULL;
 
-      assh_bignum_init(s->ctx, &pv->gn, 0);
-      assh_bignum_init(s->ctx, &pv->en, 0);
-      assh_bignum_init(s->ctx, &pv->xn, exp_n);
+      assh_bignum_init(s->ctx, &pv->gn, 0, 0);
+      assh_bignum_init(s->ctx, &pv->en, 0, 0);
+      assh_bignum_init(s->ctx, &pv->xn, exp_n, 1);
       break;
 #endif
 
