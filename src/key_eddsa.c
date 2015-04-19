@@ -163,7 +163,7 @@ assh_key_eddsa_create(struct assh_context_s *c,
 
   assh_edward_adjust(curve, h + n);
 
-  struct assh_bignum_mlad_s mlad = {
+  struct assh_bignum_lad_s lad = {
     .data = h + n,
     .count = n * 8,
     .msbyte_1st = 0,
@@ -174,7 +174,8 @@ assh_key_eddsa_create(struct assh_context_s *c,
     BX_mpint, BY_mpint, A_mpint, P_mpint, D_mpint, L, Size, /* in */
     RX_raw, RY_raw,                                      /* out */
     P, A, D, T0, T1,                                     /* temp */
-    RX, RY, RZ,  BX, BY, BZ,  PX, PY, PZ,  QX, QY, QZ
+    RX, RY, RZ,  BX, BY, BZ,  PX, PY, PZ,  QX, QY, QZ,
+    MT
   };
 
   static const assh_bignum_op_t bytecode[] = {
@@ -193,27 +194,33 @@ assh_key_eddsa_create(struct assh_context_s *c,
     ASSH_BOP_MOVE(      BY,     BY_mpint                ),
     ASSH_BOP_UINT(      BZ,     1                       ),
 
+    ASSH_BOP_MTINIT(    MT,     P                       ),
+    ASSH_BOP_MTTO(      A,      D,      A,      MT      ),
+    ASSH_BOP_MTTO(      RX,     BZ,     RX,     MT      ),
+
     /* ladder */
     ASSH_BOP_TEDWARD_PDBL( PX, PY, PZ,  RX, RY, RZ,
-                             T0, T1, P                    ),
+                             T0, T1, MT                 ),
 
     ASSH_BOP_TEDWARD_PADD( QX, QY, QZ,  PX, PY, PZ,
-                           BX, BY, BZ,  T0, T1, A, D, P ),
+                           BX, BY, BZ,  T0, T1, A, D, MT ),
 
     ASSH_BOP_MOVE(      RX,     PX                      ),
     ASSH_BOP_MOVE(      RY,     PY                      ),
     ASSH_BOP_MOVE(      RZ,     PZ                      ),
 
-    ASSH_BOP_MLADSWAP(  RX,     QX,     L               ),
-    ASSH_BOP_MLADSWAP(  RY,     QY,     L               ),
-    ASSH_BOP_MLADSWAP(  RZ,     QZ,     L               ),
+    ASSH_BOP_LADSWAP(   RX,     QX,     L               ),
+    ASSH_BOP_LADSWAP(   RY,     QY,     L               ),
+    ASSH_BOP_LADSWAP(   RZ,     QZ,     L               ),
 
-    ASSH_BOP_MLADLOOP(  42,             L               ),
+    ASSH_BOP_LADLOOP(   42,             L               ),
 
     /* projective to affine */
-    ASSH_BOP_INV(     T0,     RZ,     P               ),
-    ASSH_BOP_MULM(      RX,     RX,     T0,     P       ),
-    ASSH_BOP_MULM(      RY,     RY,     T0,     P       ),
+    ASSH_BOP_INV(       T0,     RZ,     MT              ),
+    ASSH_BOP_MULM(      RX,     RX,     T0,     MT      ),
+    ASSH_BOP_MULM(      RY,     RY,     T0,     MT      ),
+
+    ASSH_BOP_MTFROM(    RX,     RY,     RX,     MT      ),    
 
     ASSH_BOP_MOVE(      RX_raw, RX                      ),
     ASSH_BOP_MOVE(      RY_raw, RY                      ),
@@ -227,8 +234,8 @@ assh_key_eddsa_create(struct assh_context_s *c,
   };
 
   ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode,
-      "MMMMMLsddTTTTTTTTTTTTTTTTTTTTT", curve->bx, curve->by,
-      curve->a, curve->p, curve->d, &mlad, curve->bits, rx, kp), err_scratch);
+      "MMMMMLsddTTTTTTTTTTTTTTTTTm", curve->bx, curve->by,
+      curve->a, curve->p, curve->d, &lad, curve->bits, rx, kp), err_scratch);
 
   assh_edward_encode(curve, kp, rx);
 

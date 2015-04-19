@@ -102,7 +102,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
   assh_hexdump("r", r, 2 * n);
 #endif
 
-  struct assh_bignum_mlad_s mlad = {
+  struct assh_bignum_lad_s lad = {
     .data = r,
     .count = n * 8 * 2,
     .msbyte_1st = 0,
@@ -117,58 +117,63 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
       /* out */
       RX_raw, RY_raw,
       /* temp */
-      P, A, D, T0, T1,
+      MT, A, D,
       RX, RY, RZ,  BX, BY, BZ,
-      PX, PY, PZ,  QX, QY, QZ
+      PX, PY, PZ,  QX, QY, QZ, T0, T1,
     };
 
     static const assh_bignum_op_t bytecode1[] = {
 
-      ASSH_BOP_SIZER(     P,      QZ,     P_n            ),
+      ASSH_BOP_SIZER(   A,      T1,     P_n             ),
 
       /* init */
-      ASSH_BOP_MOVE(      P,      P_mpint                 ),
-      ASSH_BOP_MOVE(      A,      A_mpint                 ),
-      ASSH_BOP_MOVE(      D,      D_mpint                 ),
+      ASSH_BOP_MOVE(    T0,     P_mpint                 ),
+      ASSH_BOP_MTINIT(	MT,     T0                      ),
+      ASSH_BOP_MOVE(    A,      A_mpint                 ),
+      ASSH_BOP_MOVE(    D,      D_mpint                 ),
 
-      ASSH_BOP_UINT(      RX,     0                       ),
-      ASSH_BOP_UINT(      RY,     1                       ),
-      ASSH_BOP_UINT(      RZ,     1                       ),
-      ASSH_BOP_MOVE(      BX,     BX_mpint                ),
-      ASSH_BOP_MOVE(      BY,     BY_mpint                ),
-      ASSH_BOP_UINT(      BZ,     1                       ),
+      ASSH_BOP_UINT(    RX,     0                       ),
+      ASSH_BOP_UINT(    RY,     1                       ),
+      ASSH_BOP_UINT(    RZ,     1                       ),
+      ASSH_BOP_MOVE(    BX,     BX_mpint                ),
+      ASSH_BOP_MOVE(    BY,     BY_mpint                ),
+      ASSH_BOP_UINT(    BZ,     1                       ),
+
+      ASSH_BOP_MTTO(	A,      BZ,    A,      MT       ),
 
       /* ladder */
       ASSH_BOP_TEDWARD_PDBL( PX, PY, PZ,  RX, RY, RZ,
-                             T0, T1, P                    ),
+                             T0, T1, MT                 ),
 
       ASSH_BOP_TEDWARD_PADD( QX, QY, QZ,  PX, PY, PZ,
-                             BX, BY, BZ,  T0, T1, A, D, P ),
+                             BX, BY, BZ,  T0, T1, A, D, MT ),
 
-      ASSH_BOP_MOVE(      RX,     PX                      ),
-      ASSH_BOP_MOVE(      RY,     PY                      ),
-      ASSH_BOP_MOVE(      RZ,     PZ                      ),
+      ASSH_BOP_MOVE(    RX,     PX                      ),
+      ASSH_BOP_MOVE(    RY,     PY                      ),
+      ASSH_BOP_MOVE(    RZ,     PZ                      ),
 
-      ASSH_BOP_MLADSWAP(  RX,     QX,     L               ),
-      ASSH_BOP_MLADSWAP(  RY,     QY,     L               ),
-      ASSH_BOP_MLADSWAP(  RZ,     QZ,     L               ),
+      ASSH_BOP_LADSWAP( RX,     QX,     L               ),
+      ASSH_BOP_LADSWAP( RY,     QY,     L               ),
+      ASSH_BOP_LADSWAP( RZ,     QZ,     L               ),
 
-      ASSH_BOP_MLADLOOP(  42,             L               ),
+      ASSH_BOP_LADLOOP( 42,             L               ),
 
       /* projective to affine */
-      ASSH_BOP_INV(     T0,     RZ,     P               ),
-      ASSH_BOP_MULM(      RX,     RX,     T0,     P       ),
-      ASSH_BOP_MULM(      RY,     RY,     T0,     P       ),
+      ASSH_BOP_INV(     T0,     RZ,     MT              ),
+      ASSH_BOP_MULM(    RX,     RX,     T0,     MT      ),
+      ASSH_BOP_MULM(    RY,     RY,     T0,     MT      ),
 
-      ASSH_BOP_MOVE(      RX_raw, RX                      ),
-      ASSH_BOP_MOVE(      RY_raw, RY                      ),
+      ASSH_BOP_MTFROM(	RX,     RY,     RX,     MT      ),
+
+      ASSH_BOP_MOVE(    RX_raw, RX                      ),
+      ASSH_BOP_MOVE(    RY_raw, RY                      ),
 
       ASSH_BOP_END(),
     };
 
     ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode1,
-      "MMMMMLsddTTTTTTTTTTTTTTTTTTTTT", curve->bx, curve->by,
-      curve->a, curve->p, curve->d, &mlad, curve->bits, rx, r_str), err_scratch);
+      "MMMMMLsddmTTXXXXXXTTTTTTTT", curve->bx, curve->by,
+      curve->a, curve->p, curve->d, &lad, curve->bits, rx, r_str), err_scratch);
   }
 
   /* encode point */
@@ -205,29 +210,36 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
   {
     enum {
       L_mpint, H_raw, AZ_raw, R_raw, S_raw, P_n,
-      AZ, L, S, H, R
+      L, T0, T1, S, MT
     };
 
     static const assh_bignum_op_t bytecode2[] = {
+      ASSH_BOP_SIZEM(   T1,     P_n,    0,      1       ),
+      ASSH_BOP_SIZE(    T0,     T1                      ),
+      ASSH_BOP_SIZE(    L,      T1                      ),
+      ASSH_BOP_SIZE(    S,      P_n                     ),
 
-      ASSH_BOP_SIZER(     AZ,     S,      P_n            ),
-      ASSH_BOP_SIZEM(     H,      P_n,   0,      1       ),
-      ASSH_BOP_SIZE(      R,      H                       ),
+      ASSH_BOP_MOVE(    L,      L_mpint                 ),
+      ASSH_BOP_MTINIT(  MT,     L                       ),
 
-      ASSH_BOP_MOVE(      L,      L_mpint                 ),
-      ASSH_BOP_MOVE(      H,      H_raw                   ),
-      ASSH_BOP_MOVE(      R,      R_raw                   ),
-      ASSH_BOP_MOVE(      AZ,     AZ_raw                  ),
+      ASSH_BOP_MOVE(    T1,     H_raw                   ),
+      ASSH_BOP_MOVE(    S,      AZ_raw                  ),
+      ASSH_BOP_MOVE(    T0,     S                       ),
+      ASSH_BOP_MTTO(    T0,     T1,     T0,     MT      ),
+      ASSH_BOP_MULM(    T1,     T1,     T0,     MT      ),
 
-      ASSH_BOP_MULM(      S,      H,     AZ,      L       ),
-      ASSH_BOP_ADDM(      S,      S,     R,       L       ),
+      ASSH_BOP_MOVE(    T0,     R_raw                   ),
+      ASSH_BOP_MTTO(    T0,     T0,     T0,     MT      ),
+      ASSH_BOP_ADDM(    T1,     T1,     T0,     MT      ),
 
-      ASSH_BOP_MOVE(      S_raw,  S                       ),
+      ASSH_BOP_MTFROM(  T1,     T1,     T1,     MT      ),
+      ASSH_BOP_MOVE(    S,      T1                      ),
+      ASSH_BOP_MOVE(    S_raw,  S                       ),
 
       ASSH_BOP_END(),
     };
 
-    ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode2, "MddddsTTTTT",
+    ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode2, "MddddsTXXXm",
       curve->l, hram, az, r, s_str, n * 8), err_scratch);
   }
 
@@ -287,14 +299,14 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
   /* key X sign bit as mpint */
   uint8_t kx[5] = { 0, 0, 0, kp[n-1] >> 7, 1 };
 
-  struct assh_bignum_mlad_s mlad1 = {
+  struct assh_bignum_lad_s lad1 = {
     .data = hram,
     .count = n * 8 * 2,
     .msbyte_1st = 0,
     .msbit_1st = 1,
   };
 
-  struct assh_bignum_mlad_s mlad2 = {
+  struct assh_bignum_lad_s lad2 = {
     .data = rs_str + 4 + n,
     .count = n * 8,
     .msbyte_1st = 0,
@@ -309,8 +321,8 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
     RX_raw, RY_raw,
     /* temp */
     P, A, D, T0, T1,
-    RX, RY, RZ,  BX, BY, BZ,  PX, PY, PZ,
-    QX, QY, QZ, U = PY, V = PZ,
+    BX, BY, BZ,  RX, RY, RZ,  PX, PY, PZ,
+    QX, QY, QZ,  MT, U = PY, V = PZ,
   };
 
   static const assh_bignum_op_t bytecode[] = {
@@ -330,69 +342,78 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
     ASSH_BOP_SUBM(      U,      U,      T0,     P       ),
     ASSH_BOP_SUBM(      V,      V,      A,      P       ),
 
+    ASSH_BOP_MTINIT(    MT,     P                       ),
+    ASSH_BOP_MTTO(      U,      V,      U,      MT      ),
+    ASSH_BOP_MTTO(      A,      D,      A,      MT      ),
+
     /* compute x = sqrt(u/v), the method depends on the value of P.
        This is tricky when p%8 == 1 (does not occur in used curves) */
 
-    ASSH_BOP_TESTS(     P,      1,      ASSH_BOP_NOREG,  21       ),
+    ASSH_BOP_TESTS(     P,      1,      ASSH_BOP_NOREG,  22       ),
 
     /*** case p%8 == 5: x = (uv^3)*(uv^7)^((p-5)/8) */
 
     /* v3 = v^3 */
-    ASSH_BOP_MULM(      T1,     V,      V,      P       ),
-    ASSH_BOP_MULM(      T1,     T1,     V,      P       ),
+    ASSH_BOP_MULM(      T0,     V,      V,      MT      ),
+    ASSH_BOP_MULM(      T1,     T0,     V,      MT      ),
 
     /* x = uv^7 */
-    ASSH_BOP_MULM(      PX,     T1,     T1,     P       ),
-    ASSH_BOP_MULM(      PX,     PX,     V,      P       ),
-    ASSH_BOP_MULM(      PX,     PX,     U,      P       ),
+    ASSH_BOP_MULM(      PX,     T1,     T1,     MT      ),
+    ASSH_BOP_MULM(      PX,     PX,     V,      MT      ),
+    ASSH_BOP_MULM(      PX,     PX,     U,      MT      ),
 
     /* x = (uv^7)^((p-5)/8) */
     ASSH_BOP_UINT(      T0,     5                       ),
-    ASSH_BOP_SUBM(      T0,     P,      T0,     P       ),
+    ASSH_BOP_SUB(       T0,     P,      T0              ),
     ASSH_BOP_SHR(       T0,     T0,     3,      ASSH_BOP_NOREG  ),
-    ASSH_BOP_EXPM(      BX,     PX,     T0,     P       ),
+    ASSH_BOP_EXPM(      BX,     PX,     T0,     MT      ),
 
     /* x = (uv^3)*(uv^7)^((p-5)/8) */
-    ASSH_BOP_MULM(      BX,     BX,     T1,     P       ),
-    ASSH_BOP_MULM(      BX,     BX,     U,      P       ),
+    ASSH_BOP_MULM(      BX,     BX,     T1,     MT      ),
+    ASSH_BOP_MULM(      BX,     BX,     U,      MT      ),
 
     /* check v*x^2 == +/-u */
-    ASSH_BOP_MULM(      PX,     BX,     BX,    P        ),
-    ASSH_BOP_MULM(      PX,     PX,     V,     P        ),
+    ASSH_BOP_MULM(      PX,     BX,     BX,     MT      ),
+    ASSH_BOP_MULM(      PX,     PX,     V,      MT      ),
 
-    ASSH_BOP_SUBM(      T0,     PX,     U,     P        ),
-    ASSH_BOP_ADDM(      T1,     PX,     U,     P        ),
+    ASSH_BOP_SUBM(      T0,     PX,     U,      MT      ),
+    ASSH_BOP_ADDM(      T1,     PX,     U,      MT      ),
+
+    ASSH_BOP_MTFROM(    T0,     BX,     T0,     MT      ),
 
     ASSH_BOP_UINT(      PX,     0                       ),
     ASSH_BOP_CMPEQ(     T0,     PX,     3               ),
     ASSH_BOP_CMPEQ(     T1,     PX,     0 /* abort */   ),
     ASSH_BOP_MOVE(      T0,     I_mpint                 ),
     ASSH_BOP_MULM(      BX,     BX,     T0,     P       ),
-
-    ASSH_BOP_JMP(       12                              ),
+    ASSH_BOP_JMP(       15                              ),
 
     /*** case p%4 == 3: x = (uv)*(uv^3)^((p-3)/4) */
 
     /* x = uv^3 */
-    ASSH_BOP_MULM(      PX,     V,      V,     P        ),
-    ASSH_BOP_MULM(      PX,     PX,     V,     P        ),
-    ASSH_BOP_MULM(      PX,     PX,     U,     P        ),
+    ASSH_BOP_MULM(      PX,     V,      V,      MT      ),
+    ASSH_BOP_MULM(      PX,     PX,     V,      MT      ),
+    ASSH_BOP_MULM(      PX,     PX,     U,      MT      ),
 
     /* x = (uv^3)^((p-3)/4) */
     ASSH_BOP_UINT(      T0,     3                       ),
-    ASSH_BOP_SUBM(      T0,     P,      T0,     P       ),
+    ASSH_BOP_SUB(       T0,     P,      T0              ),
     ASSH_BOP_SHR(       T0,     T0,     2,      ASSH_BOP_NOREG  ),
-    ASSH_BOP_EXPM(      BX,     PX,     T0,     P       ),
+    ASSH_BOP_EXPM(      BX,     PX,     T0,     MT      ),
 
     /* x = (uv)*(uv^3)^((p-3)/4) */
-    ASSH_BOP_MULM(      BX,     BX,     U,     P        ),
-    ASSH_BOP_MULM(      BX,     BX,     V,     P        ),
+    ASSH_BOP_MULM(      BX,     BX,     U,      MT      ),
+    ASSH_BOP_MULM(      BX,     BX,     V,      MT      ),
 
     /* check v*x^2 == u */
-    ASSH_BOP_MULM(      PX,     BX,     BX,    P        ),
-    ASSH_BOP_MULM(      PX,     PX,     V,     P        ),
+    ASSH_BOP_MULM(      PX,     BX,     BX,     MT      ),
+    ASSH_BOP_MULM(      PX,     PX,     V,      MT      ),
 
-    ASSH_BOP_CMPEQ(     U,      PX,     0 /* abort */   ),
+    ASSH_BOP_SUBM(      T1,     PX,     U,      MT      ),
+
+    ASSH_BOP_MTFROM(    T1,     BX,     T1,     MT      ),
+    ASSH_BOP_UINT(      PX,     0                       ),
+    ASSH_BOP_CMPEQ(     T1,     PX,     0 /* abort */   ),
 
     /***********/
 
@@ -414,16 +435,19 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
     ASSH_BOP_UINT(      RY,     1                       ),
     ASSH_BOP_UINT(      RZ,     1                       ),
 
+    ASSH_BOP_MTTO(      BX,     BZ,     BX,     MT      ),
+    ASSH_BOP_MTTO(      RY,     RZ,     RY,     MT      ),
+
     ASSH_BOP_TEDWARD_PDBL( PX, PY, PZ,  RX, RY, RZ,
-                           T0, T1, P                    ),
-    ASSH_BOP_MLADJMP(   L1,     4                       ),
+                           T0, T1, MT                   ),
+    ASSH_BOP_LADJMP(   L1,     4                        ),
     ASSH_BOP_MOVE(      RX,     PX                      ),
     ASSH_BOP_MOVE(      RY,     PY                      ),
     ASSH_BOP_MOVE(      RZ,     PZ                      ),
     ASSH_BOP_JMP(       20                              ),
     ASSH_BOP_TEDWARD_PADD( RX, RY, RZ,  PX, PY, PZ,
-                           BX, BY, BZ,  T0, T1, A, D, P ),
-    ASSH_BOP_MLADLOOP(  41,     L1                      ),
+                           BX, BY, BZ,  T0, T1, A, D, MT ),
+    ASSH_BOP_LADLOOP(  41,     L1                      ),
 
     /* compute S.B */
     ASSH_BOP_MOVE(      BX,     BX_mpint                ),
@@ -434,21 +458,25 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
     ASSH_BOP_UINT(      QY,     1                       ),
     ASSH_BOP_UINT(      QZ,     1                       ),
 
+    ASSH_BOP_MTTO(      BX,     BZ,     BX,     MT      ),
+    ASSH_BOP_MTTO(      QY,     QZ,     QY,     MT      ),
+
     ASSH_BOP_TEDWARD_PDBL( PX, PY, PZ,  QX, QY, QZ,
-                           T0, T1, P                    ),
-    ASSH_BOP_MLADJMP(   L2,     4                       ),
+                           T0, T1, MT                   ),
+    ASSH_BOP_LADJMP(    L2,     4                       ),
     ASSH_BOP_MOVE(      QX,     PX                      ),
     ASSH_BOP_MOVE(      QY,     PY                      ),
     ASSH_BOP_MOVE(      QZ,     PZ                      ),
     ASSH_BOP_JMP(       20                              ),
     ASSH_BOP_TEDWARD_PADD( QX, QY, QZ,  PX, PY, PZ,
-                           BX, BY, BZ,  T0, T1, A, D, P ),
-    ASSH_BOP_MLADLOOP(  41,     L2                      ),
+                           BX, BY, BZ,  T0, T1, A, D, MT ),
+    ASSH_BOP_LADLOOP(   41,     L2                      ),
 
     /* compute S.B + H(R,A,M).A */
     ASSH_BOP_TEDWARD_PADD( PX, PY, PZ,  RX, RY, RZ,
-                           QX, QY, QZ,  T0, T1, A, D, P ),
+                           QX, QY, QZ,  T0, T1, A, D, MT ),
 
+    ASSH_BOP_MTFROM(    PX,     PZ,     PX,     MT      ),
     ASSH_BOP_INV(       T0,     PZ,     P               ),
     ASSH_BOP_MULM(      RX,     PX,     T0,     P       ),
     ASSH_BOP_MULM(      RY,     PY,     T0,     P       ),
@@ -460,9 +488,9 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
   };
 
   ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode,
-          "MMMMMMLLsdMddTTTTTTTTTTTTTTTTT", curve->bx, curve->by,
+          "MMMMMMLLsdMddTTTTTTTTTTTTTTTTTm", curve->bx, curve->by,
           curve->a, curve->p, curve->d, curve->i,
-          &mlad1, &mlad2, curve->bits, kp, kx, rx, ry), err_scratch);
+          &lad1, &lad2, curve->bits, kp, kx, rx, ry), err_scratch);
 
   /* encode point */
   assh_edward_encode(curve, ry, rx);

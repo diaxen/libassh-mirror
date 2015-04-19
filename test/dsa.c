@@ -53,11 +53,13 @@ assh_error_t dsa_generate(struct assh_context_s *c,
     /* output values */
     R, S,
     /* temporary numbers from input strings */
-    P, Q, G, Y, X, K, M,
+    P, Q, G, X, K, M,
     /* temporary numbers */
     R1, R2, R3,
     /* bit size */
-    N, L
+    N, L,
+    /* montgomery context */
+    MT
   };
 
   assh_bignum_op_t bytecode[] = {
@@ -70,9 +72,6 @@ assh_error_t dsa_generate(struct assh_context_s *c,
 
     ASSH_BOP_SIZE(	G,	L			),
     ASSH_BOP_MOVE(      G,      G_mp			),
-
-    ASSH_BOP_SIZE(	Y,	L			),
-    ASSH_BOP_MOVE(      Y,      Y_mp			),
 
     ASSH_BOP_SIZE(	X,	N			),
     ASSH_BOP_MOVE(      X,      X_mp			),
@@ -90,29 +89,40 @@ assh_error_t dsa_generate(struct assh_context_s *c,
     ASSH_BOP_SIZE(	R,	N			),
     ASSH_BOP_SIZE(	S,	N			),
 
+    ASSH_BOP_MTINIT(	MT,	P			),
     /* g^k mod p */
-    ASSH_BOP_EXPM(      R3,     G,      K,	P       ),
+    ASSH_BOP_MTTO(      G,	G,	G,	MT	),
+    ASSH_BOP_EXPM(      R3,     G,      K,	MT      ),
+    ASSH_BOP_MTFROM(    R3,	R3,	R3,	MT	),
     /* r = (g^k mod p) mod q */
-    ASSH_BOP_MOD(       R,      R3,      Q		),
+    ASSH_BOP_MOD(       R3,     R3,      Q		),
+    ASSH_BOP_MOVE(      R,      R3			),
     /* (x * r) mod q */
-    ASSH_BOP_MULM(      R1,     X,      R,	Q	),
+    ASSH_BOP_MTINIT(	MT,	Q			),
+    ASSH_BOP_MTTO(      R2,	R2,	R,	MT	),
+    ASSH_BOP_MTTO(      X,	X,	X,	MT	),
+    ASSH_BOP_MTTO(      M,	M,	M,	MT	),
+    ASSH_BOP_MULM(      R1,     X,      R2,	MT	),
     /* sha(m) + (x * r) */
-    ASSH_BOP_ADDM(      R2,     M,      R1,	Q       ),
+    ASSH_BOP_ADDM(      R2,     M,      R1,	MT      ),
     /* k^-1 */
     ASSH_BOP_INV(       R1,     K,      Q		),
+    ASSH_BOP_MTTO(      R1,	R1,	R1,	MT	),
     /* s = k^-1 * (sha(m) + (x * r)) mod q */
-    ASSH_BOP_MULM(      S,      R1,     R2,	Q       ),
+    ASSH_BOP_MULM(      S,      R1,     R2,	MT      ),
+    ASSH_BOP_MTFROM(    S,	S,	S,	MT	),
+    ASSH_BOP_PRIVACY(   S,	0			),
 
-    ASSH_BOP_PRINT(	R,	0			),
-    ASSH_BOP_PRINT(	S,	1			),
+    ASSH_BOP_PRINT(	R,	'R'			),
+    ASSH_BOP_PRINT(	S,	'S'			),
 
     ASSH_BOP_END(),
   };
 
   ASSH_ERR_RET(assh_bignum_bytecode(c, bytecode,
 	      /* mpint */ "MMMMMMM"
-	      /* r, s */ "NN" /* temps: */ "TTTTTTTTTT"
-	      /* sizes */ "ss",
+	      /* r, s */ "NN" /* temps: */ "TTTXTTTTT"
+	      /* sizes */ "ss" /* montgomery */ "m",
 
 	      /* char* */   mp_pn, mp_qn, mp_gn, mp_yn, mp_xn, mp_kn, mp_m ,
 	      /* bignums */ rn, sn, /* bit sizes */ n, l));
@@ -140,7 +150,9 @@ assh_error_t dsa_verify(struct assh_context_s *c,
     /* temporary numbers */
     W, U1, V1, U2, V2,
     /* bit size */
-    N, L
+    N, L,
+    /* montgomery context */
+    MT
   };
 
   assh_bignum_op_t bytecode[] = {
@@ -168,22 +180,26 @@ assh_error_t dsa_verify(struct assh_context_s *c,
     ASSH_BOP_SIZE(	V2,	L			),
 
     ASSH_BOP_INV(       W,      S,      Q		),
+    /* r * w mod q */
+    ASSH_BOP_MULM(      U2,     R,      W,	Q       ),
 
     /* (sha(m) * w) mod q */
     ASSH_BOP_MULM(      U1,     M,      W,	Q       ),
     /* g^u1 */
-    ASSH_BOP_EXPM(      V1,     G,      U1,	P	),
-    /* r * w mod q */
-    ASSH_BOP_MULM(      U2,     R,      W,	Q       ),
+    ASSH_BOP_MTINIT(	MT,	P			),
+    ASSH_BOP_MTTO(      G,	G,	G,	MT	),
+    ASSH_BOP_EXPM(      V1,     G,      U1,	MT	),
     /* y^u2 */
-    ASSH_BOP_EXPM(      V2,     Y,      U2,	P	),
+    ASSH_BOP_MTTO(      Y,	Y,	Y,	MT	),
+    ASSH_BOP_EXPM(      V2,     Y,      U2,	MT	),
     /* (g^u1 * y^u2) mod p */
-    ASSH_BOP_MULM(      Y,      V1,     V2,	P	),
+    ASSH_BOP_MULM(      Y,      V1,     V2,	MT	),
     /* v = (g^u1 * y^u2) mod p mod q */
+    ASSH_BOP_MTFROM(    Y,	Y,	Y,	MT	),
     ASSH_BOP_MOD(       V,      Y,      Q		),
 
-    ASSH_BOP_PRINT(	R,	2			),
-    ASSH_BOP_PRINT(	V,	3			),
+    ASSH_BOP_PRINT(	R,	'R'			),
+    ASSH_BOP_PRINT(	V,	'V'			),
     ASSH_BOP_CMPEQ(     V,      R,	0		),
 
     ASSH_BOP_END(),
@@ -192,7 +208,7 @@ assh_error_t dsa_verify(struct assh_context_s *c,
   ASSH_ERR_RET(assh_bignum_bytecode(c, bytecode,
 	      /* mpint */ "MMMMM"
 	      /* r, s, v */ "NNN" /* temps: */ "TTTTTTTTTT"
-              /* sizes */ "ss",
+              /* sizes */ "ss" /* montgomery */ "m",
 
 	      /* char* */   mp_pn, mp_qn, mp_gn, mp_yn, mp_m ,
 	      /* bignums */ rn, sn, vn, /* bit sizes */ n, l));
@@ -243,7 +259,7 @@ int main()
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_RET(assh_bignum_bytecode(&context, bytecode, "HTNs",
+  ASSH_ERR_RET(assh_bignum_bytecode(&context, bytecode, "MTNs",
 				    mp_r, &vn, n));
 
   assh_bignum_release(&context, &rn);

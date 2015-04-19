@@ -365,10 +365,10 @@ assh_error_t test_ops()
       ASSH_BOP_SIZE(	M,	R		),
       ASSH_BOP_MOVE(	M,	M_mpint		),
       ASSH_BOP_MTINIT(	MT,     M               ),
-      ASSH_BOP_MTTO(    A,      A,      MT      ),
-      ASSH_BOP_MTTO(    B,      B,      MT      ),
+      ASSH_BOP_MTTO(    A,      A,      A,      MT      ),
+      ASSH_BOP_MTTO(    B,      B,      B,      MT      ),
       ASSH_BOP_ADDM(	R,	A,	B,	MT	),
-      ASSH_BOP_MTFROM(  R,      R,      MT      ),
+      ASSH_BOP_MTFROM(  R,      R,      R,      MT      ),
       ASSH_BOP_MOVE(	R_mpint,	R	),
       ASSH_BOP_END(),
     };
@@ -379,10 +379,25 @@ assh_error_t test_ops()
       ASSH_BOP_SIZE(	M,	R		),
       ASSH_BOP_MOVE(	M,	M_mpint		),
       ASSH_BOP_MTINIT(	MT,     M               ),
-      ASSH_BOP_MTTO(    A,      A,      MT      ),
-      ASSH_BOP_MTTO(    B,      B,      MT      ),
+      ASSH_BOP_MTTO(    A,      A,      A,      MT      ),
+      ASSH_BOP_MTTO(    B,      B,      B,      MT      ),
       ASSH_BOP_SUBM(	R,	A,	B,	MT	),
-      ASSH_BOP_MTFROM(  R,      R,      MT      ),
+      ASSH_BOP_MTFROM(  R,      R,      R,      MT      ),
+      ASSH_BOP_MOVE(	R_mpint,	R	),
+      ASSH_BOP_END(),
+    };
+
+    static const assh_bignum_op_t bytecode_mulm_mt[] = {
+      ASSH_BOP_MOVE(	A,	A_mpint		),
+      ASSH_BOP_MOVE(	B,	B_mpint		),
+      ASSH_BOP_SIZE(	M,	R		),
+      ASSH_BOP_MOVE(	M,	M_mpint		),
+      ASSH_BOP_MTINIT(	MT,     M               ),
+      ASSH_BOP_MTTO(    A,      A,      A,      MT      ),
+      ASSH_BOP_MTTO(    B,      B,      B,      MT      ),
+      ASSH_BOP_MOVE(	R,	A		),
+      ASSH_BOP_MULM(	R,	R,	A,	MT	),
+      ASSH_BOP_MTFROM(  R,      R,      R,      MT      ),
       ASSH_BOP_MOVE(	R_mpint,	R	),
       ASSH_BOP_END(),
     };
@@ -392,9 +407,9 @@ assh_error_t test_ops()
       ASSH_BOP_SIZE(	M,	R		),
       ASSH_BOP_MOVE(	M,	M_mpint		),
       ASSH_BOP_MTINIT(	MT,     M               ),
-      ASSH_BOP_MTTO(    A,      A,      MT      ),
+      ASSH_BOP_MTTO(    A,      A,      A,      MT      ),
       ASSH_BOP_INV(	R,	A,	MT	),
-      ASSH_BOP_MTFROM(  R,      R,      MT      ),
+      ASSH_BOP_MTFROM(  R,      R,      R,      MT      ),
       ASSH_BOP_MOVE(	R_mpint,	R	),
       ASSH_BOP_END(),
     };
@@ -566,6 +581,14 @@ assh_error_t test_ops()
 	"\x00\x00\x00\x10"     "\x40\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
 	"\x00\x00\x00\x11" "\x00\xf5\x55\x55\x55\x55\x55\x55\x55\x55\x55\x55\x55\x55\x55\x55\x55",
       },
+
+//      {
+//	128, 128, 128, 0, bytecode_mulm_mt,
+//	"\x00\x00\x00\x11" "\x00\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80",
+//	"\x00\x00\x00\x10"     "\x40\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80\x80",
+//	"\x00\x00\x00\x10"     "\x40\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+//	"\x00\x00\x00\x11" "\x00\xf5\x55\x55\x55\x55\x55\x55\x55\x55\x55\x55\x55\x55\x55\x55\x55",
+//      },
 
       {
 	128, 128, 128, 0, bytecode_modinv_mt,
@@ -868,10 +891,10 @@ assh_error_t test_mt(unsigned int count)
         ASSH_BOP_MULM(  R2,      A,      B,      P      ),
 
         ASSH_BOP_MTINIT(MT,     P                       ),
-        ASSH_BOP_MTTO(  A,      A,      MT              ),
-        ASSH_BOP_MTTO(  B,      B,      MT              ),
+        ASSH_BOP_MTTO(  A,      A,      A,      MT              ),
+        ASSH_BOP_MTTO(  B,      B,      B,      MT              ),
         ASSH_BOP_MULM(  R,      A,      B,      MT      ),
-        ASSH_BOP_MTFROM(R,      R,      MT              ),
+        ASSH_BOP_MTFROM(R,      R,      R,      MT              ),
 
         ASSH_BOP_CMPEQ( R,      R2,      0               ),
 
@@ -931,18 +954,18 @@ assh_error_t test_expmod(unsigned int count)
 
         /* ((((a * x) % p)^e) % p) * ((inv(a)^e) % p) == x^e % p */
         ASSH_BOP_MULM(  R3,     A,      X,      P       ),
-        ASSH_BOP_MTTO(  R3,     R3,     MT              ),
+        ASSH_BOP_MTTO(  R3,     R3,     R3,     MT              ),
         ASSH_BOP_EXPM(  R2,     R3,     E,      MT      ),
-        ASSH_BOP_MTTO(  IA,     IA,     MT              ),
+        ASSH_BOP_MTTO(  IA,     IA,     IA,     MT              ),
         ASSH_BOP_EXPM(  R1,     IA,     E,      MT      ),
         ASSH_BOP_MULM(  R4,     R1,     R2,     MT      ),
-        ASSH_BOP_MTTO(  X,      X,      MT              ),
+        ASSH_BOP_MTTO(  X,      X,      X,      MT              ),
         ASSH_BOP_EXPM(  R5,     X,      E,      MT      ),
 
         ASSH_BOP_CMPEQ( R4,     R5,     0               ),
 
-        ASSH_BOP_MTFROM(R4,     R4,     MT              ),
-        ASSH_BOP_MTFROM(R5,     R5,     MT              ),
+        ASSH_BOP_MTFROM(R4,     R4,     R4,     MT              ),
+        ASSH_BOP_MTFROM(R5,     R5,     R5,     MT              ),
         ASSH_BOP_CMPEQ( R4,     R5,     0               ),
 
         // ASSH_BOP_PRINT( R4,     '4'                    ),

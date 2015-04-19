@@ -102,8 +102,8 @@ enum assh_bignum_fmt_e
   ASSH_BIGNUM_INT     = 'i',
   /** Intptr_t value interpreted as a bit size. */
   ASSH_BIGNUM_SIZE    = 's',
-  /** Montgomery ladder object. see assh_bignum_mlad_s */
-  ASSH_BIGNUM_MLAD    = 'L',
+  /** Ladder object. see assh_bignum_lad_s */
+  ASSH_BIGNUM_LAD    = 'L',
   /** Temporary montgomery multiplication context. */
   ASSH_BIGNUM_MT      = 'm',
 };
@@ -114,17 +114,19 @@ enum assh_bignum_fmt_e
 struct assh_bignum_s
 {
   /** Bits size */
-  uint32_t bits:31;
+  uint16_t bits;
   /** Whether the number is secret */
-  uint32_t secret:1;
-  /** Pointer to native big number data */
+  uint16_t secret:1;
+  /** Whether the number is a montgomery modulus */
+  uint16_t montgomery:1;
+  /** Number data */
   void *n;
 };
 
-/** @internal @This contains a montgomery ladder state which can be
-    used during bytecode execution.  @see #ASSH_BOP_MLADLOOP @see
-    #ASSH_BOP_MLADSWAP @see #ASSH_BOP_MLADJMP */
-struct assh_bignum_mlad_s
+/** @internal @This contains a ladder state which can be
+    used during bytecode execution.  @see #ASSH_BOP_LADLOOP @see
+    #ASSH_BOP_LADSWAP @see #ASSH_BOP_LADJMP */
+struct assh_bignum_lad_s
 {
   /** Input data */
   const uint8_t *data;
@@ -135,6 +137,20 @@ struct assh_bignum_mlad_s
   /** Set when data are most significant byte first in the buffer. */
   assh_bool_t msbyte_1st:1;
 };
+
+/* test current ladder bit */
+static inline assh_bool_t
+assh_bignum_lad(struct assh_bignum_lad_s *lad)
+{
+  uint16_t bit = lad->count - 1;
+
+  if (!lad->msbit_1st)
+    bit ^= 7;
+  if (lad->msbyte_1st)
+    return (lad->data[0] >> (bit & 7)) & 1;
+  else
+    return (lad->data[bit / 8] >> (bit & 7)) & 1;
+}
 
 /** @internal @see assh_bignum_bytecode_t */
 #define ASSH_BIGNUM_BYTECODE_FCN(n)        \
@@ -286,6 +302,7 @@ assh_bignum_init(struct assh_context_s *c,
 {
   bn->bits = bits;
   bn->secret = secret;
+  bn->montgomery = 0;
   bn->n = NULL;
 }
 
@@ -335,14 +352,16 @@ enum assh_bignum_opcode_e
   ASSH_BIGNUM_OP_TESTC,
   ASSH_BIGNUM_OP_TESTS,
   ASSH_BIGNUM_OP_UINT,
-  ASSH_BIGNUM_OP_MLADJMP,
-  ASSH_BIGNUM_OP_MLADSWAP,
-  ASSH_BIGNUM_OP_MLADLOOP,
+  ASSH_BIGNUM_OP_LADJMP,
+  ASSH_BIGNUM_OP_LADSWAP,
+  ASSH_BIGNUM_OP_LADLOOP,
   ASSH_BIGNUM_OP_MTINIT,
   ASSH_BIGNUM_OP_MTTO,
   ASSH_BIGNUM_OP_MTFROM,
+  ASSH_BIGNUM_OP_MTONE,
   ASSH_BIGNUM_OP_PRIME,
   ASSH_BIGNUM_OP_ISPRIM,
+  ASSH_BIGNUM_OP_PRIVACY,
   ASSH_BIGNUM_OP_PRINT,
 };
 
@@ -352,9 +371,9 @@ enum assh_bignum_opcode_e
     "sub", "mul", "div", "gcd",                 \
     "expm", "inv", "shr", "shl",                \
     "rand", "cmp", "testc", "tests", "uint",    \
-    "mladjmp", "mladswap", "mladloop",          \
-    "mtinit", "mtto", "mtfrom",                 \
-    "prime", "isprim", "print"                  \
+    "ladjmp", "ladswap", "ladloop",             \
+    "mtinit", "mtto", "mtfrom", "mtone",        \
+    "prime", "isprim", "privacy", "print"       \
 }
 
 /** @internal Reserved big number bytecode register id. */
@@ -380,19 +399,24 @@ enum assh_bignum_opcode_e
 
 /** @mgroup{Bytecode instructions}
     @internal This converts the source number to montgomery representation.
+
     The resulting value can be further processed by the @ref #ASSH_BOP_ADDM,
     @ref #ASSH_BOP_SUBM, @ref #ASSH_BOP_MULM, @ref #ASSH_BOP_EXPM,
     @ref ASSH_BOP_INV and @ref #ASSH_BOP_MTFROM instructions.
     The @tt mt operand is a montgomery context initialized from the modulus
     using the @ref #ASSH_BOP_MTINIT instruction. */
-#define ASSH_BOP_MTTO(dst, src, mt) \
-  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_MTTO, 1, dst, src, mt)
+#define ASSH_BOP_MTTO(dst1, dst2, src, mt)         \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_MTTO, dst2 - dst1 + 1, dst1, src, mt)
 
 /** @mgroup{Bytecode instructions}
     @internal This converts the source number from montgomery representation.
+    The resulting number is reduced according to the modulus.
     @see #ASSH_BOP_MTTO */
-#define ASSH_BOP_MTFROM(dst, src, mt) \
-  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_MTFROM, 1, dst, src, mt)
+#define ASSH_BOP_MTFROM(dst1, dst2, src, mt)       \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_MTFROM, dst2 - dst1 + 1, dst1, src, mt)
+
+#define ASSH_BOP_MTONE(dst, mt)       \
+  ASSH_BOP_FMT2(ASSH_BIGNUM_OP_MTFROM, dst2 - dst1 + 1, dst1, src, mt)
 
 /** @mgroup{Bytecode instructions}
     @internal This instruction changes the bit size of a number. It is
@@ -418,10 +442,10 @@ enum assh_bignum_opcode_e
 
 /** @mgroup{Bytecode instructions}
     @internal This instruction computes @tt {dst = (src1 + src2) %
-    mod}. The bit size of the destination number must be
-    @tt {max(bits(src1), bits(src2))} or larger. The @tt mod operand
-    must be a montgomery context. The bit size of the destination
-    must match the bit size of the montgomery context modulus. */
+    mod} in constant time. The bit size of the destination number must be
+    @tt {max(bits(src1), bits(src2))} or larger. The @tt mod
+    operand can be either a big number or a montgomery context.
+    The value of the modulus is subtracted on overflow. */
 #define ASSH_BOP_ADDM(dst, src1, src2, mod)                     \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_ADD, dst, src1, src2, mod)
 
@@ -432,9 +456,9 @@ enum assh_bignum_opcode_e
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_SUB, dst, src1, src2, mod)
 
 /** @mgroup{Bytecode instructions}
-    @internal This instruction computes @tt {dst = (src1 + src2)}. The
-    bit size of the destination number must be @tt {max(bits(src1),
-    bits(src2))} or larger. */
+    @internal This instruction computes @tt {dst = (src1 + src2)} in
+    constant time. The bit size of the destination number must
+    be @tt {max(bits(src1), bits(src2))} or larger. */
 #define ASSH_BOP_ADD(dst, src1, src2)                           \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_ADD, dst, src1, src2, ASSH_BOP_NOREG)
 
@@ -449,14 +473,15 @@ enum assh_bignum_opcode_e
     mod}. The bit size of the destination number must be
     @tt {bits(mod)} or larger. The @tt mod operand can be either a
     big number or a montgomery context. In the later case the bit
-    size of all operands must match the size of the montgomery context. */
+    size of all operands must match the size of the montgomery
+    context and the operation is computed in constant time. */
 #define ASSH_BOP_MULM(dst, src1, src2, mod)                     \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_MUL, dst, src1, src2, mod)
 
 /** @mgroup{Bytecode instructions}
-    @internal This instruction computes @tt {dst = (src1 * src2)}. The
-    bit size of the destination number must be @tt {bits(src1) +
-    bits(src2)} or larger.*/
+    @internal This instruction computes @tt {dst = (src1 * src2)} in
+    constant time. The bit size of the destination number must
+    be @tt {bits(src1) + bits(src2)} or larger.*/
 #define ASSH_BOP_MUL(dst, src1, src2)                     \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_MUL, dst, src1, src2, ASSH_BOP_NOREG)
 
@@ -494,19 +519,18 @@ enum assh_bignum_opcode_e
 
 /** @mgroup{Bytecode instructions}
     @internal This instruction computes @tt {dst = invmod(src1, src2)}.
-    If @tt src2 is a montgomery context, the inversion is performed
-    against the prime modulus in contant time using the Fermat
-    little theorem.
-    @see #ASSH_BOP_INV */
+    If @tt src2 is a montgomery context, the modulus must be prime as
+    the operation is performed in constant time using the Fermat
+    little theorem. */
 #define ASSH_BOP_INV(dst, src1, src2)                \
   ASSH_BOP_FMT3(ASSH_BIGNUM_OP_INV, dst, src1, src2)
 
 /** @mgroup{Bytecode instructions}
     @internal This instruction computes @tt {dst = shift_right(src1,
-    val + size(src2))}. @tt val must be in range @tt{[-128, +127]} and
-    @tt src2 can be @ref #ASSH_BOP_NOREG. The source and destination
-    operands must have the same bit length and the shift amount must
-    be less than the length. */
+    val + size(src2))} in constant time. @tt val must be in range
+    @tt{[-128, +127]} and @tt src2 can be @ref #ASSH_BOP_NOREG.
+    The source and destination operands must have the same bit
+    length and the shift amount must be less than the length. */
 #define ASSH_BOP_SHR(dst, src, val, src2)              \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_SHR, dst, src, 128 + (val), src2)
 
@@ -520,15 +544,17 @@ enum assh_bignum_opcode_e
     @internal This instruction initializes a big number with random
     data. A new value is generated until it does fall in the specified
     range. The @tt min and @tt max bounds can be @ref #ASSH_BOP_NOREG.
-    The quality operand is of type @ref assh_prng_quality_e. */
+    The quality operand is of type @ref assh_prng_quality_e. The result
+    is flagged secret if the requested quality is not weak. */
 #define ASSH_BOP_RAND(dst, min, max, quality)          \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_RAND, dst, min, max, quality)
 
 /** @mgroup{Bytecode instructions}
-    @internal This instruction changes the program counter if the two
-    numbers are equal. The bytecode execution is aborted with the @ref
+    @internal This instruction performs a comparison in constant time.
+    It changes the program counter if the two numbers are equal.
+    The bytecode execution is aborted with the @ref
     ASSH_ERR_NUM_COMPARE_FAILED error if the condition is false and
-    the value of @tt pcdiff is 0. It can be used with numbers of
+    the value of @tt pcdiff is 0. It can be used with values of
     different bit length. */
 #define ASSH_BOP_CMPEQ(src1, src2, pcdiff)                    \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CMP, src1, src2, 128 + pcdiff, 0)
@@ -571,30 +597,36 @@ enum assh_bignum_opcode_e
   ASSH_BOP_FMT2(ASSH_BIGNUM_OP_UINT, value, dst)
 
 /** @mgroup{Bytecode instructions}
-    @internal This instruction performs a conditional jump between two
-    values depending on the current state of the @ref
-    assh_bignum_mlad_s object. It is useful to implement a fast
+    @internal This instruction initializes a big number from a 12 bits
+    unsigned integer constant. The result is converted to montgomery form. */
+#define ASSH_BOP_MTUINT(dst, value, mt)                    \
+  ASSH_BOP_FMT3(ASSH_BIGNUM_OP_MTUINT, value, mt, dst)
+
+/** @mgroup{Bytecode instructions}
+    @internal This instruction performs a conditional jump
+    depending on the current state of the @ref
+    assh_bignum_lad_s object. It is useful to implement a fast
     variant of the ladder algorithm when constant time execution is
-    not required.  @see #ASSH_BOP_MLADLOOP @see ASSH_BIGNUM_MLAD */
-#define ASSH_BOP_MLADJMP(mlad, pcdiff)                                 \
-  ASSH_BOP_FMT2(ASSH_BIGNUM_OP_MLADJMP, 128 + pcdiff, mlad)
+    not required.  @see #ASSH_BOP_LADLOOP @see ASSH_BIGNUM_LAD */
+#define ASSH_BOP_LADJMP(lad, pcdiff)                                 \
+  ASSH_BOP_FMT2(ASSH_BIGNUM_OP_LADJMP, 128 + pcdiff, lad)
 
 /** @mgroup{Bytecode instructions}
     @internal This instruction performs a conditional swap between two
     values depending on the current state of the @ref
-    assh_bignum_mlad_s object. It is useful to implement a montgomery
-    ladder.  @see #ASSH_BOP_MLADLOOP @see ASSH_BIGNUM_MLAD */
-#define ASSH_BOP_MLADSWAP(src1, src2, mlad)               \
-  ASSH_BOP_FMT3(ASSH_BIGNUM_OP_MLADSWAP, src1, src2, mlad)
+    assh_bignum_lad_s object. It is useful to implement a
+    ladder.  @see #ASSH_BOP_LADLOOP @see ASSH_BIGNUM_LAD */
+#define ASSH_BOP_LADSWAP(src1, src2, lad)               \
+  ASSH_BOP_FMT3(ASSH_BIGNUM_OP_LADSWAP, src1, src2, lad)
 
 /** @mgroup{Bytecode instructions}
     @internal This instruction conditionally jump backward depending
-    on the current state of the @ref assh_bignum_mlad_s object and
+    on the current state of the @ref assh_bignum_lad_s object and
     advances the state of the ladder object to the next data bit. It
-    is useful to implement a montgomery ladder.
-    @see #ASSH_BOP_MLADSWAP @see ASSH_BIGNUM_MLAD */
-#define ASSH_BOP_MLADLOOP(rel, mlad)                    \
-  ASSH_BOP_FMT2(ASSH_BIGNUM_OP_MLADLOOP, rel, mlad)
+    is useful to implement a ladder.
+    @see #ASSH_BOP_LADSWAP @see ASSH_BIGNUM_LAD */
+#define ASSH_BOP_LADLOOP(rel, lad)                    \
+  ASSH_BOP_FMT2(ASSH_BIGNUM_OP_LADLOOP, rel, lad)
 
 /** @mgroup{Bytecode instructions}
     @internal This instruction generates a prime number in the range
@@ -617,6 +649,13 @@ enum assh_bignum_opcode_e
     @internal This instruction is similar to @ref #ASSH_BOP_ISPRIM. */
 #define ASSH_BOP_ISNTPRIM(src, pcdiff)                                   \
   ASSH_BOP_FMT3(ASSH_BIGNUM_OP_ISPRIM, 0, pcdiff + 128, src)
+
+/** @mgroup{Bytecode instructions}
+    @internal The secret flag is forwarded to results of operations
+    on big numbers. This instruction can be used to change the secret
+    flag of a value. */
+#define ASSH_BOP_PRIVACY(src, secret) \
+  ASSH_BOP_FMT2(ASSH_BIGNUM_OP_PRIVACY, secret, src)
 
 /** @mgroup{Bytecode instructions}
     @internal This instruction prints a big number argument for

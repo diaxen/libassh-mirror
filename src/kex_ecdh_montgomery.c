@@ -129,7 +129,7 @@ assh_montgomery_point_mul(struct assh_session_s *s, const uint8_t *result,
 
   ASSH_CHK_RET(scalar[0] % curve->cofactor != 0, ASSH_ERR_BAD_DATA);
 
-  struct assh_bignum_mlad_s mlad = {
+  struct assh_bignum_lad_s lad = {
     .data = scalar,
     .count = curve->bits,
     .msbyte_1st = 0,
@@ -138,23 +138,22 @@ assh_montgomery_point_mul(struct assh_session_s *s, const uint8_t *result,
 
   enum {
     R_raw, BP_raw, P_mpint, A24_mpint,
-    X1, X2, Z2, X3, Z3, T0, T1, A24, P,
+    X1, X2, Z2, X3, Z3, T0, T1, A24,
     MT, S, L
   };
 
   static const assh_bignum_op_t bytecode[] = {
 
-    ASSH_BOP_SIZER(     X1,     P,      S               ),
+    ASSH_BOP_SIZER(     X1,     A24,    S               ),
 
     /* init */
-    ASSH_BOP_MOVE(      P,      P_mpint                 ),
-    ASSH_BOP_MTINIT(	MT,     P                       ),
+    ASSH_BOP_MOVE(      T0,     P_mpint                 ),
+    ASSH_BOP_MTINIT(	MT,     T0                      ),
 
     ASSH_BOP_MOVE(      A24,    A24_mpint               ),
     ASSH_BOP_MOVE(      X1,     BP_raw                  ),
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
-    ASSH_BOP_PRINT(     P,     'P'                      ),
     ASSH_BOP_PRINT(     X1,    'B'                      ),
 #endif
 
@@ -163,20 +162,22 @@ assh_montgomery_point_mul(struct assh_session_s *s, const uint8_t *result,
     ASSH_BOP_MOVE(      X3,     X1                      ),
     ASSH_BOP_UINT(      Z3,     1                       ),
 
+    ASSH_BOP_MTTO(	X1,     A24,    X1,     MT      ),
     /* montgomery ladder */
-    ASSH_BOP_MONTGOMERY_SADD(X1, X2, X3, Z2, Z3, T0, T1, A24, P),
+    ASSH_BOP_MONTGOMERY_SADD(X1, X2, X3, Z2, Z3, T0, T1, A24, MT),
 
-    ASSH_BOP_MLADSWAP(  X2,     X3,     L               ),
-    ASSH_BOP_MLADSWAP(  Z2,     Z3,     L               ),
-    ASSH_BOP_MLADLOOP(  21,             L               ),
+    ASSH_BOP_LADSWAP(  X2,     X3,     L                ),
+    ASSH_BOP_LADSWAP(  Z2,     Z3,     L                ),
+    ASSH_BOP_LADLOOP(  21,             L                ),
 
-    ASSH_BOP_INV(       Z2,     Z2,             P       ),
-    ASSH_BOP_MULM(      T0,     X2,     Z2,     P       ),
+    ASSH_BOP_INV(       T0,     Z2,             MT      ),
+    ASSH_BOP_MULM(      T0,     X2,     T0,     MT      ),
+
+    ASSH_BOP_MTFROM(	T0,     T1,     T0,     MT      ),
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
     ASSH_BOP_PRINT(     T0,     'R'                     ),
 #endif
-
     /* check contributory behavior */
     ASSH_BOP_UINT(      T1,     0                       ),
     ASSH_BOP_CMPNE(     T1,     T0,      0              ),
@@ -186,8 +187,8 @@ assh_montgomery_point_mul(struct assh_session_s *s, const uint8_t *result,
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_RET(assh_bignum_bytecode(s->ctx, bytecode, "ddMMTTTTTTTTTmsL",
-          result, basepoint, curve->prime, curve->a24, curve->bits, &mlad));
+  ASSH_ERR_RET(assh_bignum_bytecode(s->ctx, bytecode, "ddMMTTTTTTTTmsL",
+          result, basepoint, curve->prime, curve->a24, curve->bits, &lad));
 
   return ASSH_OK;
 }

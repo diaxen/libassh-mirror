@@ -100,7 +100,7 @@ static assh_error_t assh_kex_dh_client_send_expmod(struct assh_session_s *s)
   {
     G_mpint, P_mpint, E_mpint,
     E, X, G_n,
-    G, P
+    G, P, MT
   };
 
   static const assh_bignum_op_t bytecode[] = {
@@ -116,14 +116,17 @@ static assh_error_t assh_kex_dh_client_send_expmod(struct assh_session_s *s)
                         ASSH_PRNG_QUALITY_EPHEMERAL_KEY),
 
     /* compute dh public key */
-    ASSH_BOP_EXPM(      E,      G,      X,	P       ),
+    ASSH_BOP_MTINIT(    MT,     P                       ),
+    ASSH_BOP_MTTO(      G,      G,      G,      MT      ),
+    ASSH_BOP_EXPM(      E,      G,      X,	MT      ),
+    ASSH_BOP_MTFROM(    E,      E,      E,      MT      ),
 
     ASSH_BOP_MOVE(      E_mpint,        E		),
 
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "MMMNNsTT",
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "MMMNNsTTm",
                    /* M */ gr->generator, gr->prime, e_str,
                    /* N */ &pv->en, &pv->xn, gr->size), err_p);
 
@@ -177,15 +180,11 @@ static ASSH_EVENT_DONE_FCN(assh_kex_dh_host_key_lookup_done)
   {
     G_mpint, P_mpint, F_mpint, K_mpint,
     X, G_n,
-    G, P, F, T, K
+    G, P, F, T, K, MT
   };
 
   static const assh_bignum_op_t bytecode[] = {
-    ASSH_BOP_SIZE(      G,      G_n			),
-    ASSH_BOP_SIZE(      P,      G_n			),
-    ASSH_BOP_SIZE(      F,      G_n			),
-    ASSH_BOP_SIZE(      T,      G_n			),
-    ASSH_BOP_SIZE(      K,      G_n			),
+    ASSH_BOP_SIZER(     G,      K,	G_n		),
 
     ASSH_BOP_MOVE(      F,      F_mpint			),
     ASSH_BOP_MOVE(      G,      G_mpint			),
@@ -198,8 +197,10 @@ static ASSH_EVENT_DONE_FCN(assh_kex_dh_host_key_lookup_done)
     ASSH_BOP_CMPLTEQ(   F,      T,      0 /* f <= p-2 */), 
 
     /* compute shared secret */
-    ASSH_BOP_EXPM(      T,      F,      X,      P	),
-    ASSH_BOP_MOVE(      K,      T			),
+    ASSH_BOP_MTINIT(    MT,     P                       ),
+    ASSH_BOP_MTTO(      F,      F,      F,      MT      ),
+    ASSH_BOP_EXPM(      T,      F,      X,      MT	),
+    ASSH_BOP_MTFROM(    K,      K,      T,      MT      ),
 
     /* check shared secret range */
     ASSH_BOP_UINT(      T,      2			),
@@ -212,7 +213,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_dh_host_key_lookup_done)
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(s->ctx, bytecode, "MMMMNsTTTTT",
+  ASSH_ERR_GTO(assh_bignum_bytecode(s->ctx, bytecode, "MMMMNsTTTTTm",
                    /* M */ gr->generator, gr->prime, f_str, secret,
                    /* N */ &pv->xn, gr->size), err_scratch);
 
@@ -316,17 +317,11 @@ static assh_error_t assh_kex_dh_server_wait_e(struct assh_session_s *s,
   {
     G_mpint, P_mpint, E_mpint, F_mpint, K_mpint,
     X_n, G_n,
-    F, G, P, E, X, K, T
+    F, G, P, E, X, K, T, MT
   };
 
   static const assh_bignum_op_t bytecode[] = {
-    ASSH_BOP_SIZE(      F,      G_n			),
-    ASSH_BOP_SIZE(      G,      G_n			),
-    ASSH_BOP_SIZE(      P,      G_n			),
-    ASSH_BOP_SIZE(      E,      G_n			),
-    ASSH_BOP_SIZE(      X,      X_n			),
-    ASSH_BOP_SIZE(      K,      G_n			),
-    ASSH_BOP_SIZE(      T,      G_n			),
+    ASSH_BOP_SIZER(     F,      T,	G_n		),
 
     ASSH_BOP_MOVE(      G,      G_mpint         	),
     ASSH_BOP_MOVE(      P,      P_mpint         	),
@@ -343,11 +338,14 @@ static assh_error_t assh_kex_dh_server_wait_e(struct assh_session_s *s,
     ASSH_BOP_RAND(      X,      T,      P,
                         ASSH_PRNG_QUALITY_EPHEMERAL_KEY),
 
-    /* compute dh public key */
-    ASSH_BOP_EXPM(      F,      G,      X,	P       ),
-
-    /* compute shared secret */
-    ASSH_BOP_EXPM(      K,      E,      X,	P       ),
+    /* compute dh public key and shared secret */
+    ASSH_BOP_MTINIT(    MT,     P                       ),
+    ASSH_BOP_MTTO(      G,      G,      G,      MT      ),
+    ASSH_BOP_EXPM(      F,      G,      X,	MT      ),
+    ASSH_BOP_MTFROM(    F,      F,      F,      MT      ),
+    ASSH_BOP_MTTO(      E,      E,      E,      MT      ),
+    ASSH_BOP_EXPM(      K,      E,      X,	MT      ),
+    ASSH_BOP_MTFROM(    K,      K,      K,      MT      ),
 
     /* check shared secret range */
     ASSH_BOP_UINT(      T,      2               	),
@@ -361,7 +359,7 @@ static assh_error_t assh_kex_dh_server_wait_e(struct assh_session_s *s,
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "MMMMMssTTTTTTT",
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "MMMMMssTTTTXTTm",
                    gr->generator, gr->prime, e_str, f_str, secret,
                    pv->exp_n, gr->size), err_p);
 

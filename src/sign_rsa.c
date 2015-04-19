@@ -144,22 +144,25 @@ assh_sign_rsa_generate(struct assh_context_s *c,
   {
     C_data, EM_data,            /* data buffers */
     N, D,                       /* big number inputs */
-    C, EM                       /* big number temporaries */
+    C, EM,                      /* big number temporaries */
+    MT
   };
 
   static const assh_bignum_op_t bytecode[] = {
     ASSH_BOP_SIZE(      C,      N			),
     ASSH_BOP_SIZE(      EM,     N			),
+    ASSH_BOP_MTINIT(    MT,     N                       ),
 
     ASSH_BOP_MOVE(      EM,     EM_data			),
-
-    ASSH_BOP_EXPM(    C,      EM,     D,	N	),
+    ASSH_BOP_MTTO(      EM,     EM,     EM,     MT      ),
+    ASSH_BOP_EXPM(      C,      EM,     D,	MT	),
+    ASSH_BOP_MTFROM(    C,      C,      C,      MT      ),
 
     ASSH_BOP_MOVE(      C_data, C			),
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "DDNNTT",
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "DDNNTTm",
                    /* Data */ c_str, em_buf,
                    /* Num  */ &k->nn, &k->dn), err_scratch);
 
@@ -198,22 +201,25 @@ assh_sign_rsa_check(struct assh_context_s *c,
   {
     C_data, EM_data,            /* data buffers */
     N, E,                       /* big number inputs */
-    C, EM                       /* big number temporaries */
+    C, EM,                      /* big number temporaries */
+    MT
   };
 
   static const assh_bignum_op_t bytecode[] = {
     ASSH_BOP_SIZE(      C,      N			),
     ASSH_BOP_SIZE(      EM,     N			),
+    ASSH_BOP_MTINIT(    MT,     N                       ),
 
     ASSH_BOP_MOVE(      C,      C_data                  ),
-
-    ASSH_BOP_EXPM(      EM,     C,      E,	N	),
+    ASSH_BOP_MTTO(      C,      C,      C,      MT      ),
+    ASSH_BOP_EXPM(      EM,     C,      E,	MT	),
+    ASSH_BOP_MTFROM(    EM,     EM,     EM,     MT      ),
 
     ASSH_BOP_MOVE(      EM_data, EM                     ),
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "DDNNTT",
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "DDNNTTm",
                    /* Data */ c_str + 4, em,
                    /* Nun  */ &k->nn, &k->en), err_em);
 

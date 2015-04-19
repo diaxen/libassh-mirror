@@ -115,16 +115,12 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
   {
     K_data, R_data, S_data, M_data,    /* data buffers */
     P, Q, G, X,                        /* big number inputs */
-    K, R, M, S, R1, R2, R3             /* big number temporaries */
+    K, R, M, S, R1, R2, R3,            /* big number temporaries */
+    MT
   };
 
   static const assh_bignum_op_t bytecode[] = {
-    ASSH_BOP_SIZE(      K,      Q                       ),
-    ASSH_BOP_SIZE(      R,      Q                       ),
-    ASSH_BOP_SIZE(      M,      Q                       ),
-    ASSH_BOP_SIZE(      S,      Q                       ),
-    ASSH_BOP_SIZE(      R1,     Q                       ),
-    ASSH_BOP_SIZE(      R2,     Q                       ),
+    ASSH_BOP_SIZER(     K,      R2,     Q               ),
     ASSH_BOP_SIZE(      R3,     P                       ),
 
     ASSH_BOP_MOVE(      K,      K_data                  ),
@@ -135,20 +131,31 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
     ASSH_BOP_PRINT(     M,      'M'                     ),
 #endif
 
-    ASSH_BOP_MOD(       K,      K,      Q               ),
+    ASSH_BOP_MTINIT(	MT,	P			),
     /* g^k mod p */
-    ASSH_BOP_EXPM(      R3,     G,      K,      P       ),
+    ASSH_BOP_MTTO(      R3,	R3,     G,	MT	),
+    ASSH_BOP_EXPM(      R3,     R3,     K,      MT      ),
+    ASSH_BOP_MTFROM(    R3,	R3,	R3,	MT	),
     /* r = (g^k mod p) mod q */
-    ASSH_BOP_MOD(       R,      R3,     Q               ),
-    ASSH_BOP_MOVE(      R_data, R                       ),
+    ASSH_BOP_MOD(       R3,     R3,     Q               ),
+    ASSH_BOP_MOVE(      R,      R3                      ),
     /* (x * r) mod q */
-    ASSH_BOP_MULM(      R1,     X,      R,      Q       ),
+    ASSH_BOP_MTINIT(	MT,	Q			),
+    ASSH_BOP_MTTO(      R2,	R2,	R,	MT	),
+    ASSH_BOP_MTTO(      S,	S,	X,	MT	),
+    ASSH_BOP_MTTO(      M,	M,	M,	MT	),
+    ASSH_BOP_MULM(      R1,     S,      R2,     MT      ),
     /* sha(m) + (x * r) */
-    ASSH_BOP_ADDM(      R2,     M,      R1,     Q       ),
+    ASSH_BOP_ADDM(      R2,     M,      R1,     MT      ),
     /* k^-1 */
+#warning inv needs to be constant time?
     ASSH_BOP_INV(       R1,     K,      Q               ),
+    ASSH_BOP_MTTO(      R1,	R1,	R1,	MT	),
     /* s = k^-1 * (sha(m) + (x * r)) mod q */
-    ASSH_BOP_MULM(      S,      R1,     R2,     Q       ),
+    ASSH_BOP_MULM(      S,      R1,     R2,     MT      ),
+    ASSH_BOP_MTFROM(    S,	S,	S,	MT	),
+
+    ASSH_BOP_MOVE(      R_data, R                       ),
     ASSH_BOP_MOVE(      S_data, S                       ),
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
@@ -159,7 +166,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "DDDDNNNNTTTTTTT",
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "DDDDNNNNTTTTTTTm",
                   /* D */ nonce, r_str, s_str, msgh,
                   /* N */ &k->pn, &k->qn, &k->gn, &k->xn), err_scratch);
 
@@ -213,19 +220,13 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_dsa_check)
   {
     R_data, S_data, M_data,     /* data buffers */
     P, Q, G, Y,                 /* big number inputs */
-    M, R, S, W, U1, V1, U2, V2, V  /* big number temporaries */
+    M, R, S, W, U1, U2, V1, V2, V,  /* big number temporaries */
+    MT
   };
 
   static const assh_bignum_op_t bytecode[] = {
-    ASSH_BOP_SIZE(      M,      Q                       ),
-    ASSH_BOP_SIZE(      R,      Q                       ),
-    ASSH_BOP_SIZE(      S,      Q                       ),
-    ASSH_BOP_SIZE(      W,      Q                       ),
-    ASSH_BOP_SIZE(      U1,     Q                       ),
-    ASSH_BOP_SIZE(      V1,     P                       ),
-    ASSH_BOP_SIZE(      U2,     Q                       ),
-    ASSH_BOP_SIZE(      V2,     P                       ),
-    ASSH_BOP_SIZE(      V,      P                       ),
+    ASSH_BOP_SIZER(     M,      U2,     Q               ),
+    ASSH_BOP_SIZER(     V1,     V,      P               ),
 
     ASSH_BOP_MOVE(      R,      R_data                  ),
     ASSH_BOP_MOVE(      S,      S_data                  ),
@@ -238,18 +239,22 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_dsa_check)
 #endif
 
     ASSH_BOP_INV(       W,      S,      Q               ),
+    /* r * w mod q */
+    ASSH_BOP_MULM(      U2,     R,      W,      Q       ),
     /* (sha(m) * w) mod q */
     ASSH_BOP_MULM(      U1,     M,      W,      Q       ),
     /* g^u1 */
-    ASSH_BOP_EXPM(      V1,     G,      U1,     P       ),
-    /* r * w mod q */
-    ASSH_BOP_MULM(      U2,     R,      W,      Q       ),
+    ASSH_BOP_MTINIT(	MT,	P			),
+    ASSH_BOP_MTTO(      V1,	V1,	G,	MT	),
+    ASSH_BOP_EXPM(      V1,     V1,     U1,     MT      ),
     /* y^u2 */
-    ASSH_BOP_EXPM(      V2,     Y,      U2,     P       ),
+    ASSH_BOP_MTTO(      V2,	V2,	Y,	MT	),
+    ASSH_BOP_EXPM(      V2,     V2,     U2,     MT      ),
     /* (g^u1 * y^u2) mod p */
-    ASSH_BOP_MULM(      V,      V1,     V2,     P       ),
+    ASSH_BOP_MULM(      V1,     V1,     V2,     MT      ),
     /* v = (g^u1 * y^u2) mod p mod q */
-    ASSH_BOP_MOD(       V,      V,      Q               ),
+    ASSH_BOP_MTFROM(    V1,	V1,	V1,	MT	),
+    ASSH_BOP_MOD(       V,      V1,     Q               ),
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
     ASSH_BOP_PRINT(     V,      'V'                     ),
@@ -260,7 +265,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_dsa_check)
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "DDDNNNNTTTTTTTTT",
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "DDDNNNNTTTTTTTTTm",
                  /* D */ rs_str + 4, rs_str + 4 + n / 8, msgh,
                  /* N */ &k->pn, &k->qn, &k->gn, &k->yn), err_scratch);
 

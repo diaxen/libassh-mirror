@@ -148,7 +148,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
   enum bytecode_args_e
   {
     N, D, E,
-    P, Q, T0, T1
+    P, Q, T0, T1, MT
   };
 
   static const assh_bignum_op_t bytecode[] = {
@@ -167,19 +167,25 @@ static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
 
     ASSH_BOP_MUL(       N,      P,      Q               ),
 
+    // FIXME could use T1 = N - (P + Q -1)
     ASSH_BOP_UINT(      T0,     1                       ),
     ASSH_BOP_SUB(       P,      P,      T0              ),
     ASSH_BOP_SUB(       Q,      Q,      T0              ),
     ASSH_BOP_MUL(       T1,     P,      Q               ),
+#warning  (p-1)(q-1) must be secret
 
     ASSH_BOP_UINT(      E,      65537                   ),
     ASSH_BOP_INV(       D,      E,      T1              ),
 
+    ASSH_BOP_PRIVACY(   D,      1                       ),
+
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "NNNTTTT",
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "NNNXXTTm",
                         &k->nn, &k->dn, &k->en), err_key);
+
+  assert(!k->nn.secret && !k->en.secret && k->dn.secret);
 
   *key = &k->key;
   return ASSH_OK;

@@ -153,7 +153,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
        q = 2^N - e,
        p = 2^L - (2^L-1) % q - q * f
        g = 2^((p-1)/q) % p
-     with small e and f
+     with e and f small
   */
 
   size_t l = ASSH_ALIGN8(bits);
@@ -240,7 +240,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
   {
     P, Q, G, Y, X,
     E_x, F_x,
-    T0, T1, T2,
+    T0, T1, T2, MT,
   };
 
   static const assh_bignum_op_t bytecode[] = {
@@ -274,8 +274,10 @@ static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
     ASSH_BOP_UINT(      T0,     1                       ),
     ASSH_BOP_ADD(       P,      P,      T0              ),
 
+    ASSH_BOP_MTINIT(    MT,     P                       ),
     ASSH_BOP_UINT(      G,      2                       ),
-    ASSH_BOP_EXPM(      G,      G,      T2,     P       ),
+    ASSH_BOP_MTTO(      G,      G,      G,      MT      ),
+    ASSH_BOP_EXPM(      G,      G,      T2,     MT      ),
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
     ASSH_BOP_PRINT(     P,      'P'                     ),
@@ -286,7 +288,10 @@ static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
     /* generate key pair */
     ASSH_BOP_RAND(      X,      T0,     Q,
                         ASSH_PRNG_QUALITY_LONGTERM_KEY  ),
-    ASSH_BOP_EXPM(    Y,      G,      X,      P       ),
+    ASSH_BOP_EXPM(    Y,      G,      X,      MT        ),
+    ASSH_BOP_PRIVACY( Y,      0 			),
+    ASSH_BOP_MTFROM(  Y,      Y,      Y,      MT        ),
+    ASSH_BOP_MTFROM(  G,      G,      G,      MT        ),
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
     ASSH_BOP_PRINT(     Y,      'Y'                     ),
@@ -296,9 +301,12 @@ static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "NNNNNiiTTT",
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "NNNNNiiTTTm",
                  &k->pn, &k->qn, &k->gn, &k->yn, &k->xn,
                  (uintptr_t)e, (uintptr_t)f[(l-1024)/8]), err_key);
+
+  assert(!k->pn.secret && !k->qn.secret &&
+         !k->gn.secret && !k->yn.secret && k->xn.secret);
 
   *key = &k->key;
   return ASSH_OK;
@@ -327,7 +335,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
 
   enum bytecode_args_e
   {
-    P, Q, G, Y, T1, T2
+    P, Q, G, X, Y, T1, T2, MT
   };
 
   static const assh_bignum_op_t bytecode1[] = {
@@ -351,8 +359,12 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
     ASSH_BOP_CMPLT(     T1,     G,      0 /* g > 1 */   ),
     ASSH_BOP_CMPLT(     G,      P,      0 /* g < p */   ),
 
+    ASSH_BOP_MTINIT(    MT,     P                       ),
+
     /* check generator order in the group */
-    ASSH_BOP_EXPM(      T2,     G,      Q,      P       ),
+    ASSH_BOP_MTTO(      T2,     T2,     G,      MT      ),
+    ASSH_BOP_EXPM(      T2,     T2,     Q,      MT      ),
+    ASSH_BOP_MTFROM(    T2,     T2,     T2,     MT      ),
     ASSH_BOP_CMPEQ(     T1,     T2,     0               ),
 
     /* check public key range */
@@ -361,35 +373,23 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
     ASSH_BOP_CMPLT(     Y,      T2,     0 /* y < p-1 */ ),
 
     /* check public key order in the group */
-    ASSH_BOP_EXPM(      T2,     Y,      Q,      P       ),
+    ASSH_BOP_MTTO(      T2,     T2,     Y,      MT      ),
+    ASSH_BOP_EXPM(      T2,     T2,     Q,      MT      ),
+    ASSH_BOP_MTFROM(    T2,     T2,     T2,     MT      ),
     ASSH_BOP_CMPEQ(     T1,     T2,     0               ),
+
+    /* check private key */
+    ASSH_BOP_CMPEQ(     X,      ASSH_BOP_NOREG, 4       ),
+    ASSH_BOP_MTTO(      T2,     T2,     G,      MT      ),
+    ASSH_BOP_EXPM(      T2,     T2,     X,      MT      ),
+    ASSH_BOP_MTFROM(    T2,     T2,     T2,     MT      ),
+    ASSH_BOP_CMPEQ(     T2,     Y,      0               ),
 
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_RET(assh_bignum_bytecode(c, bytecode1, "NNNNTT",
-                             &k->pn, &k->qn, &k->gn, &k->yn));
-
-  /* check that the private part match the public part of the key */
-  if (!assh_bignum_isempty(&k->xn))
-    {
-      enum bytecode_args_e
-      {
-        P, G, Y, X, T1
-      };
-
-      static const assh_bignum_op_t bytecode2[] = {
-
-        ASSH_BOP_SIZE(  T1,     P                       ),
-        ASSH_BOP_EXPM(T1,     G,      X,      P       ),
-        ASSH_BOP_CMPEQ( T1,     Y,      0               ),
-
-        ASSH_BOP_END(),
-      };
-
-      ASSH_ERR_RET(assh_bignum_bytecode(c, bytecode2, "NNNNT",
-                                        &k->pn, &k->gn, &k->yn, &k->xn));
-    }
+  ASSH_ERR_RET(assh_bignum_bytecode(c, bytecode1, "NNNNNTTm",
+                             &k->pn, &k->qn, &k->gn, &k->xn, &k->yn));
 
   return ASSH_OK;
 }

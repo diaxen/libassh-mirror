@@ -224,7 +224,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
   {
     EM_data,                    /* data buffer */
     N, E,                       /* big number inputs */
-    A, B                        /* big number temporaries */
+    A, B, MT                    /* big number temporaries */
   };
 
   static const assh_bignum_op_t bytecode[] = {
@@ -233,13 +233,16 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
 
     ASSH_BOP_MOVE(      A,      EM_data			),
 
-    ASSH_BOP_EXPM(      B,      A,     E,	N	),
+    ASSH_BOP_MTINIT(    MT,     N                       ),
+    ASSH_BOP_MTTO(      A,      A,      A,      MT      ),
+    ASSH_BOP_EXPM(      B,      A,      E,	MT	),
+    ASSH_BOP_MTFROM(    B,      B,      B,      MT      ),
 
     ASSH_BOP_MOVE(      EM_data, B			),
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "DNNTT",
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "DNNXXm",
                 em, &t_key->nn, &t_key->en), err_tkey);
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
@@ -450,7 +453,7 @@ static assh_error_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
   {
     EM_data,                    /* data buffer */
     N, D,                       /* big number inputs */
-    A, B                        /* big number temporaries */
+    A, B, MT                    /* big number temporaries */
   };
 
   static const assh_bignum_op_t bytecode[] = {
@@ -459,13 +462,16 @@ static assh_error_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
 
     ASSH_BOP_MOVE(      A,      EM_data			),
 
-    ASSH_BOP_EXPM(      B,      A,     D,	N	),
+    ASSH_BOP_MTINIT(    MT,     N                       ),
+    ASSH_BOP_MTTO(      A,      A,      A,      MT      ),
+    ASSH_BOP_EXPM(      B,      A,      D,	MT	),
+    ASSH_BOP_MTFROM(    B,      B,      B,      MT      ),
 
     ASSH_BOP_MOVE(      EM_data, B			),
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_RET(assh_bignum_bytecode(c, bytecode, "DNNTT",
+  ASSH_ERR_RET(assh_bignum_bytecode(c, bytecode, "DNNXXm",
                  em, &t_key->nn, &t_key->dn));
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
