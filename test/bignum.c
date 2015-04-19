@@ -220,47 +220,6 @@ assh_error_t test_convert()
   ABORT();
 }
 
-assh_error_t test_shift()
-{
-  assh_error_t err;
-
-  enum bytecode_args_e
-  {
-    A, B, C, S
-  };
-
-#warning move shift tests in test_ops()
-  static const assh_bignum_op_t bytecode[] = {
-    ASSH_BOP_SIZE(      A,      S       ),
-    ASSH_BOP_SIZE(      B,      S       ),
-
-    ASSH_BOP_RAND(      A,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
-                                ASSH_PRNG_QUALITY_WEAK  ),
-  //ASSH_BOP_PRINT(     A,      'A'),
-
-#warning shift checks
-    // ASSH_BOP_PRINT(     A,      'x'),
-    ASSH_BOP_SHR(       B,      A,      0,      C),
-    // ASSH_BOP_PRINT(     B,      'r'),
-
-    // ASSH_BOP_PRINT(     B,      'x'),
-    ASSH_BOP_SHL(       A,      B,      0,      C),
-    // ASSH_BOP_PRINT(     A,      'l'),
-
-    ASSH_BOP_END(),
-  };
-
-  ASSH_ERR_GTO(assh_bignum_bytecode(&context, bytecode, "TTss",
-                                    (size_t)69, (size_t)256), err_);
-
-  fprintf(stderr, "s");
-  return 0;
-
- err_:
-  fprintf(stderr, "Shift error\n");
-  ABORT();
-}
-
 assh_error_t test_cmp()
 {
 #warning move cmp tests in test_ops() ?
@@ -304,7 +263,9 @@ assh_error_t test_cmp()
     ASSH_BOP_END(),
   };
 
-  if (!assh_bignum_bytecode(&context, bytecode2, "HHTTs", "1", "10", (size_t)64))
+  if (assh_bignum_bytecode(&context, bytecode2, "MMTTs",
+        "\x00\x00\x00\x01\x01", "\x00\x00\x00\x01\x10", (size_t)64)
+      != ASSH_ERR_NUM_COMPARE_FAILED)
     ABORT();
 
   assh_bignum_op_t bytecode3[] = {
@@ -319,7 +280,9 @@ assh_error_t test_cmp()
     ASSH_BOP_END(),
   };
 
-  if (!assh_bignum_bytecode(&context, bytecode3, "HHTTs", "1", "10", (size_t)64))
+  if (assh_bignum_bytecode(&context, bytecode3, "MMTTs",
+        "\x00\x00\x00\x01\x01", "\x00\x00\x00\x01\x10", (size_t)64)
+      != ASSH_ERR_NUM_COMPARE_FAILED)
     ABORT();
 
   fprintf(stderr, "c");
@@ -341,6 +304,22 @@ assh_error_t test_ops()
     enum bytecode_args_e
     {
       A, B, R, M, A_mpint, B_mpint, R_mpint, M_mpint, MT
+    };
+
+    static const assh_bignum_op_t bytecode_shl[] = {
+      ASSH_BOP_MOVE(	A,	A_mpint		),
+      ASSH_BOP_MOVE(	B,	B_mpint		),
+      ASSH_BOP_SHL(	R,	A,	0,	B	),
+      ASSH_BOP_MOVE(	R_mpint,	R	),
+      ASSH_BOP_END(),
+    };
+
+    static const assh_bignum_op_t bytecode_shr[] = {
+      ASSH_BOP_MOVE(	A,	A_mpint		),
+      ASSH_BOP_MOVE(	B,	B_mpint		),
+      ASSH_BOP_SHR(	R,	A,	0,	B	),
+      ASSH_BOP_MOVE(	R_mpint,	R	),
+      ASSH_BOP_END(),
     };
 
     static const assh_bignum_op_t bytecode_add[] = {
@@ -416,11 +395,82 @@ assh_error_t test_ops()
 
     static const struct op_test_s tests[] = {
       {
+	128, 32, 128, 0, bytecode_shr,
+	"\x00\x00\x00\x10\x1f\x23\x45\x67\x89\xab\xcd\x0e\xe0\xdc\xab\x98\x76\x54\x32\xf1",
+	"\x00\x00\x00\x00",
+	"\x00\x00\x00\x0c\x1f\x23\x45\x67\x89\xab\xcd\x0e\xe0\xdc\xab\x98",
+      },
+
+      {
+	128, 31, 128, 0, bytecode_shr,
+	"\x00\x00\x00\x10\x1f\x23\x45\x67\x89\xab\xcd\x0e\xe0\xdc\xab\x98\x76\x54\x32\xf1",
+	"\x00\x00\x00\x00",
+	"\x00\x00\x00\x0c\x3e\x46\x8a\xcf\x13\x57\x9a\x1d\xc1\xb9\x57\x30",
+      },
+
+      {
+	128, 101, 128, 0, bytecode_shr,
+	"\x00\x00\x00\x10\x1f\x23\x45\x67\x89\xab\xcd\x0e\xe0\xdc\xab\x98\x76\x54\x32\xf1",
+	"\x00\x00\x00\x00",
+	"\x00\x00\x00\x04\x00\xf9\x1a\x2b",
+      },
+
+      {
+	128, 5, 128, 0, bytecode_shr,
+	"\x00\x00\x00\x10\x1f\x23\x45\x67\x89\xab\xcd\x0e\xe0\xdc\xab\x98\x76\x54\x32\xf1",
+	"\x00\x00\x00\x00",
+	"\x00\x00\x00\x10\x00\xf9\x1a\x2b\x3c\x4d\x5e\x68\x77\x06\xe5\x5c\xc3\xb2\xa1\x97",
+      },
+
+      {
+	128, 0, 128, 0, bytecode_shr,
+	"\x00\x00\x00\x10\x1f\x23\x45\x67\x89\xab\xcd\x0e\xe0\xdc\xab\x98\x76\x54\x32\xf1",
+	"\x00\x00\x00\x00",
+	"\x00\x00\x00\x10\x1f\x23\x45\x67\x89\xab\xcd\x0e\xe0\xdc\xab\x98\x76\x54\x32\xf1",
+      },
+
+      {
+	128, 32, 128, 0, bytecode_shl,
+	"\x00\x00\x00\x10\x1f\x23\x45\x67\x89\xab\xcd\x0e\xe0\xdc\xab\x98\x76\x54\x32\xf1",
+	"\x00\x00\x00\x00",
+	"\x00\x00\x00\x11\x00\x89\xab\xcd\x0e\xe0\xdc\xab\x98\x76\x54\x32\xf1\x00\x00\x00\x00",
+      },
+
+      {
+	128, 31, 128, 0, bytecode_shl,
+	"\x00\x00\x00\x10\x1f\x23\x45\x67\x89\xab\xcd\x0e\xe0\xdc\xab\x98\x76\x54\x32\xf1",
+	"\x00\x00\x00\x00",
+	"\x00\x00\x00\x11\x00\xc4\xd5\xe6\x87\x70\x6e\x55\xcc\x3b\x2a\x19\x78\x80\x00\x00\x00",
+      },
+
+      {
+	128, 101, 128, 0, bytecode_shl,
+	"\x00\x00\x00\x10\x1f\x23\x45\x67\x89\xab\xcd\x0e\xe0\xdc\xab\x98\x76\x54\x32\xf1",
+	"\x00\x00\x00\x00",
+	"\x00\x00\x00\x11\x00\xca\x86\x5e\x20\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+      },
+
+      {
+	128, 5, 128, 0, bytecode_shl,
+	"\x00\x00\x00\x10\x1f\x23\x45\x67\x89\xab\xcd\x0e\xe0\xdc\xab\x98\x76\x54\x32\xf1",
+	"\x00\x00\x00\x00",
+	"\x00\x00\x00\x11\x00\xe4\x68\xac\xf1\x35\x79\xa1\xdc\x1b\x95\x73\x0e\xca\x86\x5e\x20",
+      },
+
+      {
+	128, 0, 128, 0, bytecode_shl,
+	"\x00\x00\x00\x10\x1f\x23\x45\x67\x89\xab\xcd\x0e\xe0\xdc\xab\x98\x76\x54\x32\xf1",
+	"\x00\x00\x00\x00",
+	"\x00\x00\x00\x10\x1f\x23\x45\x67\x89\xab\xcd\x0e\xe0\xdc\xab\x98\x76\x54\x32\xf1",
+      },
+
+      {
 	128, 128, 128, 0, bytecode_add,
 	"\x00\x00\x00\x00",
 	"\x00\x00\x00\x00",
 	"\x00\x00\x00\x00",
       },
+
       {
 	8, 8, 8, 0, bytecode_add,
 	"\x00\x00\x00\x01" "\x02",
@@ -998,7 +1048,6 @@ int main(int argc, char **argv)
   //  ASSH_ERR_RET(assh_context_prng(&context, &assh_prng_weak));
 
   test_convert();
-  test_shift();
   test_cmp();
   test_ops();
 

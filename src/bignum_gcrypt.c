@@ -551,6 +551,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
               break;
             case ASSH_BIGNUM_OP_SHL:
               gcry_mpi_lshift(dst->n, src->n, b + oc - 128);
+	      gcry_mpi_clear_highbit(dst->n, dst->bits);
               break;
             default:
               abort();

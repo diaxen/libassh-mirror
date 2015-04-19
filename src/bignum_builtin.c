@@ -343,8 +343,6 @@ assh_bignum_rshift(struct assh_bignum_s *dst,
                    const struct assh_bignum_s *src,
                    uint_fast16_t n)
 {
-  assh_error_t err;
-
   assert(src->bits == dst->bits);
   assert(n < src->bits);
   dst->secret = src->secret;
@@ -369,6 +367,8 @@ assh_bignum_rshift(struct assh_bignum_s *dst,
       dn[i] = ((assh_bnlong_t)o >> (n % ASSH_BIGNUM_W));
       o = 0;
     }
+
+  return ASSH_OK;
 }
 
 static assh_error_t ASSH_WARN_UNUSED_RESULT
@@ -382,7 +382,7 @@ assh_bignum_lshift(struct assh_bignum_s *dst,
   assert(n < src->bits);
   dst->secret = src->secret;
 
-  size_t i, l = assh_bignum_words(src->bits);
+  ssize_t i, l = assh_bignum_words(src->bits);
 
   if (dst == src && n == 0)
     return ASSH_OK;
@@ -390,24 +390,17 @@ assh_bignum_lshift(struct assh_bignum_s *dst,
   assh_bnword_t *dn = dst->n, *sn = src->n;
 
   assh_bnword_t o = sn[l - 1 - n / ASSH_BIGNUM_W];
-  for (i = l; i-- > n / ASSH_BIGNUM_W; )
+  for (i = 0; i < l - n / ASSH_BIGNUM_W - 1; i++)
     {
-      assh_bnword_t x = sn[i - 1 - n / ASSH_BIGNUM_W];
-      dn[i] = ((assh_bnlong_t)o << (n % ASSH_BIGNUM_W))
+      assh_bnword_t x = sn[l - 2 - i - n / ASSH_BIGNUM_W];
+      dn[l - 1 - i] = ((assh_bnlong_t)o << (n % ASSH_BIGNUM_W))
         | ((assh_bnlong_t)x >> (ASSH_BIGNUM_W - n % ASSH_BIGNUM_W));
       o = x;
     }
-  for (i++; i-- > 0; )
+  for (; i < l; i++)
     {
-      dn[i] = ((assh_bnlong_t)o << (n % ASSH_BIGNUM_W));
+      dn[l - 1 - i] = ((assh_bnlong_t)o << (n % ASSH_BIGNUM_W));
       o = 0;
-    }
-
-  if (dst->bits % ASSH_BIGNUM_W)
-    {
-      assh_bnword_t mask = (assh_bnword_t)-1
-        >> ((ASSH_BIGNUM_W - dst->bits) & (ASSH_BIGNUM_W - 1));
-      ASSH_CHK_RET(dn[l - 1] & ~mask, ASSH_ERR_OUTPUT_OVERFLOW);
     }
 
   return ASSH_OK;
