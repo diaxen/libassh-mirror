@@ -80,7 +80,6 @@ static ASSH_ALLOCATOR(assh_default_allocator)
 void assh_context_init(struct assh_context_s *c,
                        enum assh_context_type_e type)
 {
-  assh_error_t err;
   c->session_count = 0;
 
   assert(

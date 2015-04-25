@@ -254,7 +254,6 @@ assh_key_eddsa_create(struct assh_context_s *c,
 
 static ASSH_KEY_VALIDATE_FCN(assh_key_eddsa_validate)
 {
-  assh_error_t err;
   struct assh_key_eddsa_s *k = (void*)key;
 
   if (!k->private)

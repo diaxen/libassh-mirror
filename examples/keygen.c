@@ -49,7 +49,9 @@ int main(int argc, char *argv[])
 
   struct assh_context_s context;
   assh_context_init(&context, ASSH_SERVER);
-  assh_context_prng(&context, NULL);
+
+  if (assh_context_prng(&context, NULL))
+    abort();
 
   if (assh_key_create(&context, &key, bits, &assh_key_dsa, ASSH_ALGO_ANY))
     abort();
@@ -70,5 +72,7 @@ int main(int argc, char *argv[])
   FILE *f = fopen("dsa_key", "wb");
   fwrite(blob, len, 1, f);
   fclose(f);
+
+  return 0;
 }
 

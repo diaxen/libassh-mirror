@@ -67,7 +67,6 @@ struct assh_context_s context;
 
 assh_error_t test_convert()
 {
-  assh_error_t err;
   struct assh_bignum_s n, m;
   uint8_t buf[32];
 
@@ -215,7 +214,6 @@ assh_error_t test_convert()
   fprintf(stderr, "v");
   return ASSH_OK;
 
- err_:
   fprintf(stderr, "Convert error\n");
   ABORT();
 }
@@ -291,7 +289,6 @@ assh_error_t test_cmp()
 
 assh_error_t test_ops()
 {
-  assh_error_t err;
   {
     struct op_test_s
     {
