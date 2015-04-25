@@ -569,12 +569,12 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
 
         case ASSH_BIGNUM_OP_CMP: {
           int r = 0;
-          if (ob != oa)
-            {
-              struct assh_bignum_s *src1 = args[oa];
-              struct assh_bignum_s *src2 = args[ob];
-              r = gcry_mpi_cmp(src1->n, src2->n);
-            }
+          struct assh_bignum_s *src1 = args[oa];
+          struct assh_bignum_s *src2 = args[ob];
+          if (ob == ASSH_BOP_NOREG)
+            r = src1->n != NULL;
+          else if (ob != oa)
+            r = gcry_mpi_cmp(src1->n, src2->n);
           switch (od)
             {
             case 0:             /* cmpeq */

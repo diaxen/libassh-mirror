@@ -554,8 +554,11 @@ enum assh_bignum_opcode_e
     It changes the program counter if the two numbers are equal.
     The bytecode execution is aborted with the @ref
     ASSH_ERR_NUM_COMPARE_FAILED error if the condition is false and
-    the value of @tt pcdiff is 0. It can be used with values of
-    different bit length. */
+    the value of @tt pcdiff is 0.
+
+    It can be used with values of different bit length. It is possible
+    to test if an @ref assh_bignum_s object is empty by comparing
+    against @ref #ASSH_BOP_NOREG. */
 #define ASSH_BOP_CMPEQ(src1, src2, pcdiff)                    \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CMP, src1, src2, 128 + pcdiff, 0)
 /** @mgroup{Bytecode instructions}

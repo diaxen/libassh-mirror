@@ -1752,12 +1752,12 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
 
         case ASSH_BIGNUM_OP_CMP: {
           int r = 0;
-          if (ob != oa)
-            {
-              struct assh_bignum_s *src1 = args[oa];
-              struct assh_bignum_s *src2 = args[ob];
-              r = assh_bignum_cmp(src1, src2);
-            }
+          struct assh_bignum_s *src1 = args[oa];
+          struct assh_bignum_s *src2 = args[ob];
+          if (ob == ASSH_BOP_NOREG)
+            r = src1->n != NULL;
+          else if (ob != oa)
+            r = assh_bignum_cmp(src1, src2);
           switch (od)
             {
             case 0:             /* cmpeq */
