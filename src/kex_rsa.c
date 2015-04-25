@@ -637,7 +637,7 @@ static assh_error_t assh_kex_rsa_init(struct assh_session_s *s,
 
 #ifdef CONFIG_ASSH_SERVER
  err:
-  assh_free(c, pv, ASSH_ALLOC_INTERNAL);
+  assh_free(c, pv);
   return err;
 #endif
 }
@@ -652,7 +652,7 @@ static ASSH_KEX_CLEANUP_FCN(assh_kex_rsa_cleanup)
     case ASSH_CLIENT:
       assh_key_flush(s->ctx, &pv->host_key);
       assh_packet_release(pv->pck);
-      assh_free(s->ctx, pv->secret, ASSH_ALLOC_SECUR);
+      assh_free(s->ctx, pv->secret);
       break;
 #endif
 
@@ -661,7 +661,7 @@ static ASSH_KEX_CLEANUP_FCN(assh_kex_rsa_cleanup)
       if (pv->hash_ctx != NULL)
 	{
 	  assh_hash_cleanup(pv->hash_ctx);
-	  assh_free(s->ctx, pv->hash_ctx, ASSH_ALLOC_SECUR);
+	  assh_free(s->ctx, pv->hash_ctx);
 	}
       break;
 #endif
@@ -670,7 +670,7 @@ static ASSH_KEX_CLEANUP_FCN(assh_kex_rsa_cleanup)
       abort();
     }
 
-  assh_free(s->ctx, s->kex_pv, ASSH_ALLOC_INTERNAL);
+  assh_free(s->ctx, s->kex_pv);
   s->kex_pv = NULL;
 }
 

@@ -190,7 +190,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
   *key = &k->key;
   return ASSH_OK;
  err_key:
-  assh_free(c, k, ASSH_ALLOC_SECUR);
+  assh_free(c, k);
   return err;
 }
 
@@ -330,7 +330,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
   assh_bignum_release(c, &k->nn);
   assh_bignum_release(c, &k->en);
   assh_bignum_release(c, &k->dn);
-  assh_free(c, k, ASSH_ALLOC_SECUR);
+  assh_free(c, k);
   return err;
 }
 
@@ -341,7 +341,7 @@ static ASSH_KEY_CLEANUP_FCN(assh_key_rsa_cleanup)
   assh_bignum_release(c, &k->nn);
   assh_bignum_release(c, &k->en);
   assh_bignum_release(c, &k->dn);
-  assh_free(c, k, ASSH_ALLOC_SECUR);
+  assh_free(c, k);
 }
 
 const struct assh_key_ops_s assh_key_rsa =

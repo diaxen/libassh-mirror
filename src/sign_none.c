@@ -29,7 +29,7 @@
 
 static ASSH_KEY_CLEANUP_FCN(assh_key_none_cleanup)
 {
-  assh_free(c, key, ASSH_ALLOC_SECUR);
+  assh_free(c, key);
 }
 
 static ASSH_KEY_OUTPUT_FCN(assh_key_none_output)

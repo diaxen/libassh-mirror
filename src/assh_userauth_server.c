@@ -136,7 +136,7 @@ static ASSH_SERVICE_CLEANUP_FCN(assh_userauth_server_cleanup)
 
   assh_userauth_server_flush_state(s);
 
-  assh_free(s->ctx, pv, ASSH_ALLOC_SECUR);
+  assh_free(s->ctx, pv);
 
   s->srv_pv = NULL;
   s->srv = NULL;

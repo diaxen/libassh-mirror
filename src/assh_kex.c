@@ -353,9 +353,9 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
   return ASSH_OK;
 
  err_kout:
-  assh_free(s->ctx, kout, ASSH_ALLOC_SECUR);
+  assh_free(s->ctx, kout);
  err_kin:
-  assh_free(s->ctx, kin, ASSH_ALLOC_SECUR);
+  assh_free(s->ctx, kin);
   return err;
 }
 
@@ -743,7 +743,7 @@ void assh_kex_keys_cleanup(struct assh_session_s *s, struct assh_kex_keys_s *key
   if (keys->cmp_ctx != NULL)
     keys->cmp->f_cleanup(s->ctx, keys->cmp_ctx);
 
-  assh_free(s->ctx, keys, ASSH_ALLOC_SECUR);
+  assh_free(s->ctx, keys);
 }
 
 assh_error_t assh_kex_end(struct assh_session_s *s, assh_bool_t accept)

@@ -173,7 +173,7 @@ static ASSH_PRNG_FEED_FCN(assh_prng_xswap_feed)
 static ASSH_PRNG_CLEANUP_FCN(assh_prng_xswap_cleanup)
 {
   struct assh_prng_pv_s *ctx = c->prng_pv;
-  assh_free(c, ctx, ASSH_ALLOC_SECUR);
+  assh_free(c, ctx);
 }
 
 const struct assh_prng_s assh_prng_xswap = 

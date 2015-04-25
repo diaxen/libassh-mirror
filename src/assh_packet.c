@@ -111,7 +111,7 @@ void assh_packet_release(struct assh_packet_s *p)
   if (pl->size + p->alloc_size >= c->pck_pool_max_bsize ||
       c->pck_pool_size + p->alloc_size >= c->pck_pool_max_size)
     {
-      assh_free(c, p, ASSH_ALLOC_PACKET);
+      assh_free(c, p);
     }
   else
     {

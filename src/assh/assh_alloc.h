@@ -35,6 +35,7 @@
     allocated memory. */
 enum assh_alloc_type_e
 {
+  ASSH_ALLOC_NONE,
   /** General purpose allocation in non-secur memory. */
   ASSH_ALLOC_INTERNAL,
   /** Buffer allocation in secur memory which don't last longer than a
@@ -65,11 +66,10 @@ assh_realloc(struct assh_context_s *c, void **ptr, size_t size,
 }
 
 /** @internal @This releases memory. */
-ASSH_INLINE void assh_free(struct assh_context_s *c, void *ptr,
-			     enum assh_alloc_type_e type)
+ASSH_INLINE void assh_free(struct assh_context_s *c, void *ptr)
 {
   if (ptr != NULL)
-    (void)c->f_alloc(c, &ptr, 0, type);
+    (void)c->f_alloc(c, &ptr, 0, ASSH_ALLOC_NONE);
 }
 
 #ifdef CONFIG_ASSH_ALLOCA
@@ -102,7 +102,7 @@ ASSH_INLINE void assh_free(struct assh_context_s *c, void *ptr,
 			  ASSH_ALLOC_SCRATCH, (void**)&name) | sv, lbl);
 
 # define ASSH_SCRATCH_FREE(context, name)				\
-  do { assh_free(context, name, ASSH_ALLOC_SCRATCH); } while (0)
+  do { assh_free(context, name); } while (0)
 
 #endif
 

@@ -823,7 +823,7 @@ static ASSH_KEX_CLEANUP_FCN(assh_kex_dh_gex_cleanup)
       abort();
     }
 
-  assh_free(c, s->kex_pv, ASSH_ALLOC_INTERNAL);
+  assh_free(c, s->kex_pv);
   s->kex_pv = NULL;
 }
 

@@ -110,7 +110,7 @@ static ASSH_SERVICE_CLEANUP_FCN(assh_userauth_client_cleanup)
   assh_key_flush(s->ctx, &pv->pub_keys);
 #endif
 
-  assh_free(s->ctx, pv, ASSH_ALLOC_INTERNAL);
+  assh_free(s->ctx, pv);
 
   s->srv_pv = NULL;
   s->srv = NULL;

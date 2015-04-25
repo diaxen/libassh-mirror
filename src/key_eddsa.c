@@ -248,7 +248,7 @@ assh_key_eddsa_create(struct assh_context_s *c,
  err_scratch:
   ASSH_SCRATCH_FREE(c, sc);
  err_key:
-  assh_free(c, k, ASSH_ALLOC_SECUR);
+  assh_free(c, k);
   return err;
 }
 
@@ -331,7 +331,7 @@ assh_key_eddsa_load(struct assh_context_s *c,
   return ASSH_OK;
 
  err_key:
-  assh_free(c, k, ASSH_ALLOC_SECUR);
+  assh_free(c, k);
   return err;
 }
 
@@ -339,7 +339,7 @@ static ASSH_KEY_CLEANUP_FCN(assh_key_eddsa_cleanup)
 {
   struct assh_key_eddsa_s *k = (void*)key;
 
-  assh_free(c, k, ASSH_ALLOC_SECUR);
+  assh_free(c, k);
 }
 
 const struct assh_edward_curve_s assh_ed25519_curve = 

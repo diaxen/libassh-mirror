@@ -135,7 +135,7 @@ static void assh_pck_pool_cleanup(struct assh_context_s *c)
           n = p->pool_next;
           pl->size -= p->alloc_size;
           pl->count--;
-          assh_free(c, p, ASSH_ALLOC_PACKET);
+          assh_free(c, p);
         }
 
       assert(pl->count == 0);

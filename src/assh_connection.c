@@ -76,7 +76,7 @@ static void assh_request_queue_cleanup(struct assh_session_s *s,
       assh_packet_release(rq->reply_pck);
 
       assh_queue_remove(q, rqe);
-      assh_free(s->ctx, rqe, ASSH_ALLOC_INTERNAL);
+      assh_free(s->ctx, rqe);
     }
 }
 
@@ -88,7 +88,7 @@ static void assh_channel_cleanup(struct assh_channel_s *ch)
   assh_request_queue_cleanup(s, &ch->request_lqueue);
   assh_packet_release(ch->data_pck);
 
-  assh_free(s->ctx, ch, ASSH_ALLOC_INTERNAL);  
+  assh_free(s->ctx, ch);  
 }
 
 static void assh_channel_queue_cleanup(struct assh_session_s *s,
@@ -122,7 +122,7 @@ static void assh_request_dequeue(struct assh_session_s *s,
       assh_transport_push(s, rq->reply_pck);
       rq->reply_pck = NULL;
       assh_queue_remove(q, rqe);
-      assh_free(s->ctx, rq, ASSH_ALLOC_INTERNAL);
+      assh_free(s->ctx, rq);
     }
 }
 
@@ -502,7 +502,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_request_reply_done)
   assert(e->connection.request_reply.rq == rq);
 
   assh_queue_remove(q, rqe);
-  assh_free(s->ctx, rq, ASSH_ALLOC_INTERNAL);
+  assh_free(s->ctx, rq);
 
   return ASSH_OK;
 }
@@ -1601,7 +1601,7 @@ static ASSH_SERVICE_CLEANUP_FCN(assh_connection_cleanup)
   assh_map_iter(pv->channel_map, NULL, &assh_channel_cleanup_i);
   assh_channel_queue_cleanup(s, &pv->closing_queue);
 
-  assh_free(s->ctx, pv, ASSH_ALLOC_INTERNAL);
+  assh_free(s->ctx, pv);
 
   s->srv_pv = NULL;
   s->srv = NULL;

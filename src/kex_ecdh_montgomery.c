@@ -489,7 +489,7 @@ static ASSH_KEX_CLEANUP_FCN(assh_kex_ecdhmt_cleanup)
     }
 #endif
 
-  assh_free(s->ctx, s->kex_pv, ASSH_ALLOC_SECUR);
+  assh_free(s->ctx, s->kex_pv);
   s->kex_pv = NULL;
 }
 

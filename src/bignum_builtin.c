@@ -1191,7 +1191,7 @@ assh_bignum_mt_init(struct assh_context_s *c,
   if (m == NULL || mt->mod.bits < mod->bits)
     {
       if (m != NULL)
-        assh_free(c, m, ASSH_ALLOC_INTERNAL);
+        assh_free(c, m);
       mt->mod.n = NULL;
       ASSH_ERR_RET(assh_alloc(c, (ml * 3 + 1) * sizeof(assh_bnword_t),
                               ASSH_ALLOC_INTERNAL, (void**)&m));
@@ -1228,7 +1228,7 @@ assh_bignum_mt_init(struct assh_context_s *c,
 
  err_:
   mt->mod.n = NULL;
-  assh_free(c, m, ASSH_ALLOC_INTERNAL);
+  assh_free(c, m);
   return err;
 }
 
@@ -1874,23 +1874,23 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
  err_sc:;
 
   if (sc.n != NULL)
-    assh_free(c, sc.n, sc.secur ? ASSH_ALLOC_SECUR : ASSH_ALLOC_INTERNAL);
+    assh_free(c, sc.n);
 
   /* release numbers */
   for (i = 0; i < tlen; i++)
     if (tmp[i].n != NULL)
-      assh_free(c, tmp[i].n, ASSH_ALLOC_SECUR);
+      assh_free(c, tmp[i].n);
 
   for (i = 0; i < mlen; i++)
     if (mt[i].mod.n != NULL)
-      assh_free(c, mt[i].mod.n, ASSH_ALLOC_INTERNAL);
+      assh_free(c, mt[i].mod.n);
 
   return err;
 }
 
 static ASSH_BIGNUM_RELEASE_FCN(assh_bignum_builtin_release)
 {
-  assh_free(ctx, bn->n, ASSH_ALLOC_SECUR);
+  assh_free(ctx, bn->n);
 }
 
 const struct assh_bignum_algo_s assh_bignum_builtin =
