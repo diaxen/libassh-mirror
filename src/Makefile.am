@@ -40,7 +40,7 @@ endif
 if COND_gcrypt_bignum
 libassh_la_SOURCES +=	bignum_gcrypt.c
 else
-libassh_la_SOURCES +=	bignum_builtin.c
+libassh_la_SOURCES +=	bignum_builtin.c bignum_builtin_primes.h
 endif
 
 if COND_gcrypt_prng

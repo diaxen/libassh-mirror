@@ -157,6 +157,7 @@ ASSH_INLINE uint32_t assh_swap_u32(uint32_t x)
 /** @internal */
 #define ASSH_SWAP(a, b) do { typeof(a) __a = (a); typeof(b) __b = (b); (a) = __b; (b) = __a; } while(0)
 
+#ifdef __GNUC__
 /** @internal */
 #define ASSH_CLZ8(x)  (__builtin_clz((uint8_t)(x)) + 8 - sizeof(int) * 8)
 /** @internal */
@@ -165,6 +166,16 @@ ASSH_INLINE uint32_t assh_swap_u32(uint32_t x)
 #define ASSH_CLZ32(x) (__builtin_clzl((uint32_t)(x)) + 32 - sizeof(long) * 8)
 /** @internal */
 #define ASSH_CLZ64(x) (__builtin_clzll((uint64_t)(x)) + 64 - sizeof(long long) * 8)
+
+/** @internal */
+#define ASSH_CTZ8(x) __builtin_ctz(x)
+/** @internal */
+#define ASSH_CTZ16(x) __builtin_ctz(x)
+/** @internal */
+#define ASSH_CTZ32(x) __builtin_ctzl(x)
+/** @internal */
+#define ASSH_CTZ64(x) __builtin_ctzll(x)
+#endif
 
 /** @internal */
 #define ASSH_ALIGN8(x) ((((x) - 1) | 7) + 1)

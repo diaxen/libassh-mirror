@@ -388,7 +388,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_RET(assh_bignum_bytecode(c, bytecode1, "NNNNNTTm",
+  ASSH_ERR_RET(assh_bignum_bytecode(c, 0, bytecode1, "NNNNNTTm",
                              &k->pn, &k->qn, &k->gn, &k->xn, &k->yn));
 
   return ASSH_OK;

@@ -31,36 +31,52 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#if 0
-typedef uint64_t assh_bnword_t;
-typedef int64_t assh_bnsword_t;
-typedef unsigned __int128 assh_bnlong_t;
-#define ASSH_BN_FMT "%016llx"
+#ifndef CONFIG_ASSH_BIGNUM_WORD
+# define CONFIG_ASSH_BIGNUM_WORD 32
+#endif
 
-#elif 1
-typedef uint32_t assh_bnword_t;
-typedef int32_t assh_bnsword_t;
-typedef uint64_t assh_bnlong_t;
-typedef int64_t assh_bnslong_t;
-#define ASSH_BN_FMT "%08x"
-
-#elif 0
-typedef uint16_t assh_bnword_t;
-typedef int16_t assh_bnsword_t;
-typedef uint32_t assh_bnlong_t;
-#define ASSH_BN_FMT "%04x"
-
-#else
-
+#if CONFIG_ASSH_BIGNUM_WORD == 8
 /* 8 bits big number word is useful for testing bignum algorithms.
    Because there are fewer possible word values, it will test more
    corner cases in a short time. */
 typedef uint8_t assh_bnword_t;
 typedef int8_t assh_bnsword_t;
 typedef uint16_t assh_bnlong_t;
+typedef int16_t assh_bnslong_t;
 #define ASSH_BN_FMT "%02x"
+#define assh_bn_clz(x) ASSH_CLZ8((assh_bnword_t)x)
+#define assh_bn_ctz(x) ASSH_CTZ8((assh_bnword_t)x)
+
+#elif CONFIG_ASSH_BIGNUM_WORD == 16
+typedef uint16_t assh_bnword_t;
+typedef int16_t assh_bnsword_t;
+typedef uint32_t assh_bnlong_t;
+typedef int32_t assh_bnslong_t;
+#define ASSH_BN_FMT "%04x"
+#define assh_bn_clz(x) ASSH_CLZ16((assh_bnword_t)x)
+#define assh_bn_ctz(x) ASSH_CTZ16((assh_bnword_t)x)
+
+#elif CONFIG_ASSH_BIGNUM_WORD == 32
+typedef uint32_t assh_bnword_t;
+typedef int32_t assh_bnsword_t;
+typedef uint64_t assh_bnlong_t;
+typedef int64_t assh_bnslong_t;
+#define ASSH_BN_FMT "%08x"
+#define assh_bn_clz(x) ASSH_CLZ32((assh_bnword_t)x)
+#define assh_bn_ctz(x) ASSH_CTZ32((assh_bnword_t)x)
+
+#elif CONFIG_ASSH_BIGNUM_WORD == 64
+typedef uint64_t assh_bnword_t;
+typedef int64_t assh_bnsword_t;
+typedef unsigned __int128 assh_bnlong_t;
+typedef signed __int128 assh_bnslong_t;
+#define ASSH_BN_FMT "%016llx"
+#define assh_bn_clz(x) ASSH_CLZ64((assh_bnword_t)x)
+#define assh_bn_ctz(x) ASSH_CTZ64((assh_bnword_t)x)
 
 #endif
+
+#define ASSH_BN_WORDMAX (assh_bnword_t)-1LL
 
 /** Minimum number of words for karatsuba to switch to school mul. */
 #define ASSH_BIGNUM_KARATSUBA_THRESHOLD 32
@@ -117,24 +133,6 @@ static inline size_t
 assh_bignum_words(size_t bits)
 {
   return (((bits - 1) | (ASSH_BIGNUM_W - 1)) + 1) / ASSH_BIGNUM_W;
-}
-
-static inline uint_fast8_t
-assh_bn_clz(assh_bnword_t x)
-{
-  switch (sizeof(x))
-    {
-    case 1:
-      return ASSH_CLZ8(x);
-    case 2:
-      return ASSH_CLZ16(x);
-    case 4:
-      return ASSH_CLZ32(x);
-    case 8:
-      return ASSH_CLZ64(x);
-    }
-
-  abort();
 }
 
 static void
@@ -259,7 +257,7 @@ assh_bignum_from_buffer(struct assh_bignum_s *bn,
 
       if (bn->bits % ASSH_BIGNUM_W)
         {
-          assh_bnword_t mask = (assh_bnword_t)-1
+          assh_bnword_t mask = ASSH_BN_WORDMAX
             >> ((ASSH_BIGNUM_W - bn->bits) & (ASSH_BIGNUM_W - 1));
 
           if (format == ASSH_BIGNUM_MSB_RAW || format == ASSH_BIGNUM_LSB_RAW)
@@ -291,6 +289,34 @@ assh_bignum_from_uint(struct assh_bignum_s *bn,
   return ASSH_OK;
 }
 
+static assh_bool_t assh_bignum_eq_uint(const assh_bnword_t a,
+                                       const assh_bnword_t *b, size_t bl)
+{
+  size_t i;
+  assh_bnword_t r = b[0] ^ a;
+
+  for (i = 1; i < bl; i++)
+    r |= b[i];
+
+  return !r;
+}
+
+static assh_bool_t assh_bignum_eq(const assh_bnword_t *a, size_t al,
+                                  const assh_bnword_t *b, size_t bl)
+{
+  size_t i;
+  assh_bnword_t r = 0;
+
+  for (i = 0; i < al && i < bl; i++)
+    r |= a[i] ^ b[i];
+  for (; i < al; i++)
+    r |= a[i];
+  for (; i < bl; i++)
+    r |= b[i];
+
+  return !r;
+}
+
 static int_fast8_t assh_bignum_cmp(const struct assh_bignum_s *a,
                                    const struct assh_bignum_s *b)
 {
@@ -300,7 +326,7 @@ static int_fast8_t assh_bignum_cmp(const struct assh_bignum_s *a,
   assh_bnword_t *an = a->n, *bn = b->n;
   int_fast8_t lt = 0, gt = 0, eq;
 
-#warning check constant time
+#warning FIXME check constant time
   for (i = 0; i < l; i++)
     {
       eq = (an[i] == bn[i]);
@@ -401,8 +427,6 @@ assh_bignum_lshift(struct assh_bignum_s *dst,
                    const struct assh_bignum_s *src,
                    uint_fast16_t n)
 {
-  assh_error_t err;
-
   assert(src->bits == dst->bits);
   assert(n < src->bits);
   dst->secret = src->secret;
@@ -487,7 +511,7 @@ assh_bignum_addsub(struct assh_bignum_s *dst,
         {
           struct assh_bignum_mt_s *mt = (void*)mod;
           assh_bnword_t *r1 = (assh_bnword_t*)mt->mod.n + 2 * dl;
-#warning add either r%n or n-r%n depending on compare of the first word?
+#warning FIXME add either r%n or n-r%n depending on compare of the first word?
           /* add/sub r%n on overflow */
           m = r1;
           /* switch between add/sub */
@@ -896,7 +920,6 @@ assh_bignum_school_mul(assh_bnword_t * __restrict__ r,
 	r[i + j] = t = (assh_bnlong_t)a[i] * b[j] + r[i + j] + (t >> ASSH_BIGNUM_W);
       r[i + j] = (t >> ASSH_BIGNUM_W);
     }
-#warning square opt
 }
 
 #if !defined(__OPTIMIZE_SIZE__)
@@ -1183,7 +1206,6 @@ assh_bignum_mt_init(struct assh_context_s *c,
   /* check modulus is odd */
   ASSH_CHK_RET(!(*(assh_bnword_t*)mod->n & 1), ASSH_ERR_NUM_OVERFLOW);
 
-  /* compute r^2 % n */
   size_t ml = assh_bignum_words(mod->bits);
 
   assh_bnword_t *m = mt->mod.n;
@@ -1206,15 +1228,18 @@ assh_bignum_mt_init(struct assh_context_s *c,
   mt->mod.montgomery = 1;
   mt->n0 = assh_bnword_mt_modinv(-m[0]);
 
+  /* compute r**2 % n */
   assh_bnword_t *r2 = m + ml;
-  assh_bnword_t *r1 = m + ml * 2;
 
-  unsigned int i;
+  size_t i;
   for (i = 0; i < ml * 2; i++)
     r2[i] = 0;
   r2[i] = 1;
 
   ASSH_ERR_GTO(assh_bignum_div_euclidean(r2, ml * 2 + 1, NULL, 0, m, ml), err_);
+
+  /* compute 1 in montgomery representation */
+  assh_bnword_t *r1 = m + ml * 2;
 
   for (i = 0; i < ml; i++)
     r1[i] = 0;
@@ -1421,13 +1446,284 @@ assh_bignum_modinv_mt(struct assh_context_s *ctx,
   return ASSH_OK;
 }
 
+#include "bignum_builtin_primes.h"
+
+struct assh_bignum_sieve_s
+{
+  uint16_t offsets[ASSH_SIEVE_PRIMES];
+};
+
+/* compute offsets of prime number sieve */
+static assh_error_t ASSH_WARN_UNUSED_RESULT
+assh_bignum_sieve_init(struct assh_context_s *ctx,
+                       struct assh_bignum_sieve_s * __restrict__ s,
+                       const struct assh_bignum_s *bn)
+{
+  assh_error_t err;
+  size_t l = assh_bignum_words(bn->bits);
+  assh_bnword_t *n = bn->n;  
+  size_t i, k;
+
+  /* compute n modulus some prime numbers */
+  for (i = 0; i < ASSH_SIEVE_PRIMES; i++)
+    {
+      uint32_t o = n[0] % assh_primes[i];
+      uint16_t m = ASSH_BN_WORDMAX % assh_primes[i] + 1;
+      uint16_t p = assh_primes[i];
+      uint16_t p2m = m;
+
+      for (k = 1; k < l; k++)
+        {
+          /* prevent overflow */
+          if ((k & 63) == 0)
+            o %= p;
+
+          /* update the sieve with the next big number word */
+          o += (uint32_t)m * (n[k] % p);
+          m = ((uint32_t)m * p2m) % p;
+        }
+
+      s->offsets[i] = o % p;
+    }
+
+  /* adjust sieve values */
+  for (i = 0; i < ASSH_SIEVE_PRIMES; i++)
+    {
+      uint16_t o = s->offsets[i];
+      uint16_t p = assh_primes[i];
+      if (o)
+        o = p - o;
+      /* keep s->offsets[n] + bignum odd */
+      if ((o ^ n[0] ^ 1) & 1)
+        o += p;
+      s->offsets[i] = o;
+    }
+
+  return ASSH_OK;
+}
+
+static assh_error_t ASSH_WARN_UNUSED_RESULT
+assh_bignum_miller_rabin(struct assh_context_s *ctx,
+                         struct assh_bignum_scratch_s *sc,
+                         const struct assh_bignum_s *bn, size_t rounds)
+{
+  assh_error_t err;
+  size_t l = assh_bignum_words(bn->bits);
+  assh_bnword_t *n = bn->n;  
+  size_t i;
+
+  assert(bn->bits > 0 && (n[0] & 1));
+
+  ASSH_ERR_RET(assh_bignum_scratch_expand(ctx, sc, l * 4));
+
+  assh_bnword_t *an = sc->n;
+  assh_bnword_t *cn = sc->n + l;
+  assh_bnword_t *zn = sc->n + l * 2;
+  assh_bnword_t *tn = sc->n + l * 3;
+
+  /* compute c = n - 1 */
+  assh_bnlong_t t = 0;
+  for (i = 0; i < l; i++)
+    cn[i] = t = (assh_bnlong_t)n[i] + ASSH_BN_WORDMAX + (t >> ASSH_BIGNUM_W);
+
+  /* b = ctz(c) */
+  size_t b = 0;
+  while (1)
+    {
+      ASSH_CHK_RET(b >= l, ASSH_ERR_NUM_OVERFLOW);
+      if (cn[b])
+        break;
+      b++;
+    }
+  b = b * ASSH_BIGNUM_W + assh_bn_ctz(cn[b]);
+  assert(b > 0);
+
+  /* Initialize a temporary montgomery context. We do not need to
+     compute r2 for conversion to montgomery representation because
+     the random value a is assumed to be in montgomery representation.
+     We do not need to compute r1 because the LSB of the exponent
+     is always set so we can skip the first multiply_by_one operation. */
+  struct assh_bignum_mt_s mt;
+  mt.mod.bits = l * ASSH_BIGNUM_W;
+  mt.n0 = assh_bnword_mt_modinv(-n[0]);
+  mt.mod.n = n;
+
+  while (rounds--)
+    {
+      /* generate a in range [2, n - 2] */
+#warning FIXME generate better random a
+      for (i = 0; i + 1 < l; i++)
+        an[i] = rand();
+      an[i] = n[i] - 1;
+
+      /* compute z = a**(c >> b) % n */
+      memcpy(zn, an, l * sizeof(assh_bnword_t)); /* LSB(c >> b) is always set */
+
+      for (i = b + 1; i < bn->bits; i++)
+        {
+          assh_bool_t c = (cn[i / ASSH_BIGNUM_W]
+                           >> (i % ASSH_BIGNUM_W)) & 1;
+          volatile assh_bool_t d = bn->secret | c;
+
+          assh_bignum_mt_mul(&mt, tn, an, an);
+          memcpy(an, tn, l * sizeof(assh_bnword_t));
+
+          if (d)
+            {
+              /* constant time exp */
+              assh_bignum_mt_mul(&mt, tn, zn, an);
+              assh_bignum_cmov(zn, tn, l, c);
+            }
+        }
+
+      /* probable prime if z == 1 */
+      assh_bignum_mt_reduce(&mt, tn, zn);
+      if (assh_bignum_eq_uint(1, tn, l))
+        continue;
+
+      i = b - 1;
+      while (1)
+        {
+          /* probable prime if z == p - 1 */
+          assh_bignum_mt_reduce(&mt, tn, zn);
+          if (assh_bignum_eq(tn, l, cn, l))
+            break;
+
+          if (!i--)
+            return ASSH_NOT_FOUND;
+
+          /* z = z**2 % p */
+          assh_bignum_mt_mul(&mt, tn, zn, zn);
+          memcpy(zn, tn, l * sizeof(assh_bnword_t));
+
+          /* composite if z == 1 */
+          assh_bignum_mt_reduce(&mt, tn, zn);
+          if (assh_bignum_eq_uint(1, tn, l))
+            return ASSH_NOT_FOUND;
+        }
+    }
+
+  return ASSH_OK;
+}
+
+static assh_error_t ASSH_WARN_UNUSED_RESULT
+assh_bignum_check_prime(struct assh_context_s *ctx,
+                        struct assh_bignum_scratch_s *sc,
+                        const struct assh_bignum_s *bn)
+{
+  assh_error_t err;
+  size_t l = assh_bignum_words(bn->bits);
+  assh_bnword_t *n = bn->n;
+  size_t i;
+
+  if (l == 0 || !(n[0] & 1))
+    return ASSH_NOT_FOUND;
+
+  struct assh_bignum_sieve_s *sieve;
+  ASSH_ERR_RET(assh_alloc(ctx, sizeof(*sieve),
+                 bn->secret ? ASSH_ALLOC_SECUR : ASSH_ALLOC_INTERNAL,
+                 (void**)&sieve));
+
+  ASSH_ERR_GTO(assh_bignum_sieve_init(ctx, sieve, bn), err_);
+
+  assh_bool_t composite = 0;
+  for (i = 0; i < ASSH_SIEVE_PRIMES; i++)
+    composite |= !sieve->offsets[i];
+
+  if (composite)
+    return ASSH_NOT_FOUND;
+
+  /* number of round estimate for probability of n with unknown origin
+     being composite equals to 2**-128 */
+  ASSH_ERR_GTO(assh_bignum_miller_rabin(ctx, sc, bn, 64), err_);
+
+ err_:
+  assh_free(ctx, sieve);
+  return err;
+}
+
+static assh_error_t ASSH_WARN_UNUSED_RESULT
+assh_bignum_next_prime(struct assh_context_s *ctx,
+                       struct assh_bignum_scratch_s *sc,
+                       struct assh_bignum_s *bn)
+{
+  assh_error_t err;
+  const size_t l = assh_bignum_words(bn->bits);
+  assh_bnword_t *n = bn->n;  
+  uint32_t sieve_bits[8];
+  uint32_t k, offset = 0;
+  size_t i, j;
+
+  /* simple formula for upper bound of max prime gap */
+  const uint32_t max_prime_gap = (bn->bits * bn->bits) / 2;
+
+  struct assh_bignum_sieve_s * __restrict__ sieve;
+  ASSH_ERR_RET(assh_alloc(ctx, sizeof(*sieve),
+                 bn->secret ? ASSH_ALLOC_SECUR : ASSH_ALLOC_INTERNAL,
+                 (void**)&sieve));
+
+  ASSH_ERR_GTO(assh_bignum_sieve_init(ctx, sieve, bn), err_);
+
+  for (k = 0; k < max_prime_gap; k += 512)
+    {
+      /* update sieve bitmap */
+      memset(sieve_bits, 0, sizeof(sieve_bits));
+      for (i = 0; i < ASSH_SIEVE_PRIMES; i++)
+        {
+          uint32_t s = sieve->offsets[i];
+          while (s - k < 512)
+            {
+              uint32_t x = (s - k) >> 1;
+              sieve_bits[x / 32] |= 1 << (x % 32);
+              s += assh_primes[i] * 2;
+            }
+          sieve->offsets[i] = s;
+        }
+
+      /* test remaining candidate primes */
+      for (i = 0; i < 8; i++)
+        {
+          uint32_t x;
+          for (x = ~sieve_bits[i]; x; x &= (x - 1))
+            {
+              uint32_t o = k + (i * 32 + ASSH_CTZ32(x)) * 2 + (sieve->offsets[0] & 1);
+              ASSH_DEBUG("candidate prime at offset %u, mask is %x\n", o, x);
+
+              /* advance big number to candidate prime */
+              assh_bnword_t c = o - offset;
+              ASSH_CHK_GTO(c != o - offset, ASSH_ERR_NUM_OVERFLOW, err_);
+              offset = o;
+              assh_bnlong_t t = (assh_bnlong_t)c << ASSH_BIGNUM_W;
+              for (j = 0; j < l; j++)
+                n[j] = t = (assh_bnlong_t)n[j] + (t >> ASSH_BIGNUM_W);
+              ASSH_CHK_GTO((t >> ASSH_BIGNUM_W) != 0, ASSH_ERR_NUM_OVERFLOW, err_);
+
+              /* test prime candidate. number of rounds estimate for a
+                 randomly generated number taken from: "Average case
+                 error estimates for the strong probable prime test,
+                 Mathematics of Computation 61" */
+              ASSH_ERR_GTO(assh_bignum_miller_rabin(ctx, sc, bn, 7), err_);
+              if (err == ASSH_OK)
+                goto err_;
+            }
+        }
+    }
+
+  /* give up */
+  ASSH_ERR_GTO(ASSH_ERR_NUM_OVERFLOW, err_);
+
+ err_:
+  assh_free(ctx, sieve);
+  return err;
+}
+
 static ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_bignum_realloc(struct assh_context_s *c,
                     struct assh_bignum_s *bn)
 {
   if (bn->n != NULL)
     return ASSH_OK;
-#warning may not always alloc in secur memory
+#warning should not always alloc in secur memory, should update allocation
   return assh_realloc(c, &bn->n, assh_bignum_words(bn->bits) *
                       sizeof(assh_bnword_t), ASSH_ALLOC_SECUR);
 }
@@ -1828,6 +2124,12 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           ASSH_ERR_GTO(assh_bignum_realloc(c, dst), err_sc);
           ASSH_ERR_GTO(assh_bignum_from_uint(dst, value), err_sc);
           ASSH_CHK_GTO(dst->n == NULL, ASSH_ERR_MEM, err_sc);
+          break;
+        }
+
+        case ASSH_BIGNUM_OP_PRIME: {
+          struct assh_bignum_s *dst = args[ob];
+          ASSH_ERR_GTO(assh_bignum_next_prime(c, &sc, dst), err_sc);
           break;
         }
 
