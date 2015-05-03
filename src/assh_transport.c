@@ -569,10 +569,6 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 
 	/* dispatch packet to running service */
         default:
-	  ASSH_CHK_RET(s->srv == NULL, ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
-
-	/* no packet */
-        case SSH_MSG_INVALID:
 	  break;
 	}
       break;
@@ -592,23 +588,47 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
       ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
     }
 
-  if (s->srv == NULL)
+  const struct assh_service_s *srv = s->srv;
+
+  while (1)
     {
+      if (srv == NULL)
+	{
+	  ASSH_CHK_RET(p != NULL, ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+
 #ifdef CONFIG_ASSH_CLIENT
-      /* client send a service request if no service is currently running */
-      if (s->ctx->type == ASSH_CLIENT && s->srv_rq == NULL)
-	ASSH_ERR_RET(assh_service_send_request(s) | ASSH_ERRSV_DISCONNECT);
+	  /* client send a service request if no service is currently running */
+	  if (s->ctx->type == ASSH_CLIENT && s->srv_rq == NULL)
+	    ASSH_ERR_RET(assh_service_send_request(s) | ASSH_ERRSV_DISCONNECT);
 #endif
-      goto done;
+	  break;
+	}
+
+      /* call service processing function, with or without a packet */
+      err = srv->f_process(s, p, e);
+
+      /* we have an event to report */
+      if (e->id != ASSH_EVENT_INVALID)
+	{
+	  if (err == ASSH_NO_DATA)
+	    return ASSH_OK;
+	  break;
+	}
+
+      /* loop if the running service has changed */
+      if (srv != s->srv)
+	{
+	  srv = s->srv;
+	  if (err == ASSH_OK)
+	    {
+	      p = NULL;
+	      continue;
+	    }
+	}
+
+      if (err != ASSH_NO_DATA)
+	break;
     }
-
-  do {
-    /* call service processing function, with or without a packet */
-    err = s->srv->f_process(s, p, e);
-  } while (err == ASSH_NO_DATA && e->id == ASSH_EVENT_INVALID);
-
-  if (err == ASSH_NO_DATA)
-    return ASSH_OK;
 
  done:
   assh_packet_release(s->in_pck);
