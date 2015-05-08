@@ -97,7 +97,8 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 	    /* test line prefix */
 	    if (i >= 7 && !strncmp((char*)s->ident_str, "SSH-", 4))
 	      {
-		ASSH_CHK_RET(strncmp((char*)s->ident_str + 4, "2.0", 3),
+		ASSH_CHK_RET(strncmp((char*)s->ident_str + 4, "2.0", 3) &&
+			     strncmp((char*)s->ident_str + 4, "1.9", 3),
 			     ASSH_ERR_BAD_VERSION | ASSH_ERRSV_FIN);
 
 		/* copy remaining unused bytes to packet header buffer */
