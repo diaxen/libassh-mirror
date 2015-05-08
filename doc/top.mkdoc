@@ -58,6 +58,149 @@ assh_config.h
   @insert toc
 @end section
 
+@section TP {Introduction}
+
+  Libassh is a C library which implements the ssh2 protocol.
+
+  Both client and server sides are supported.
+
+  @section {Asynchronous ssh}
+    It has been designed to be fully asynchronous. This not only means
+    that the library calls are non-blocking: it is also able to handle
+    out of order operations permitted by the underlying ssh2 protocol.
+    This includes sending or handling multiple channel open requests out
+    of order.
+
+    The library is event based. Its event loop agnostic design eases
+    integration in applications, including those based on event loop
+    from an existing toolkits. The library core does not perform the
+    socket operations directly but instead return events in order to
+    move data in and out. It actually only contains the ssh2 protocol
+    state machines and algorithms. Some helpers are provided for
+    convenience.
+  @end section
+
+  @section {Modular ssh}
+    This ssh2 implementation tries to be as modular as the protocol
+    specification is.
+
+    Algorithms are implemented as modules. New algorithms can be
+    implemented and registered dynamically. Here is a list of defined
+    module APIs:
+
+    @list
+      @item ssh2 key exchange,
+      @item ssh2 signature algorithms,
+      @item ssh2 cipher algorithms,
+      @item ssh2 message authentication algorithms,
+      @item ssh2 services.
+    @end list
+
+    Additional modular APIs are used for cryptographic hashes, random
+    data generation and big number computation engine.
+
+  @end section
+
+  @section {License}
+    Libassh source code is covered by the LGPL 2.1 license.
+  @end section
+
+@end section
+
+@section TP {Supported algorithms}
+
+  The library is provided with some built-in modules and some gcrypt
+  based modules. It's modular design makes it easy to write other
+  modules on top of any cypto library.
+
+  It is possible to run the ssh protocol using only library built-in
+  modules. All modules provide client and server side support.
+
+  Provided asymmetric crypto algorithms relies on stand-alone
+  implementations. This include key-exchange and signature
+  algorithms. These implementations rely on a big number engine
+  module. A gcypt based and a built-in big number engines are
+  provided. The built-in engine support constant time computations in
+  order to avoid side channel attacks.
+
+  Some gcypt based and built-in modules are provided for ciphers and MACs.
+
+  @section T {Built-in key-exchange algorithms}
+
+    @section {Standard Diffie-Hellman}
+      @tt {diffie-hellman-group1-sha1},
+      @tt {diffie-hellman-group14-sha1}.
+    @end section
+
+    @section {Standard Diffie-Hellman with group exchange}
+      @tt {diffie-hellman-group-exchange-sha1},
+      @tt {diffie-hellman-group-exchange-sha256}.
+    @end section
+
+    @section {RSA encrypted secret}
+      @tt {rsa1024-sha1},
+      @tt {rsa2048-sha256}.
+    @end section
+
+    @section {Montgomery curves Diffie-Hellman}
+      @tt {curve25519-sha256@libssh.org},
+      @tt {m383-sha384@libassh.org},
+      @tt {m511-sha512@libassh.org}.
+    @end section
+
+  @end section
+
+  @section T {Built-in signature algorithms}
+
+    @section {DSA}
+      @tt {ssh-dss},
+      @tt {dsa2048-sha224@libassh.org},
+      @tt {dsa2048-sha256@libassh.org},
+      @tt {dsa3072-sha256@libassh.org}.
+    @end section
+
+    @section {RSA}
+      @tt {ssh-rsa},
+      @tt {rsa2048-sha256@libassh.org},
+      @tt {rsa3072-sha256@libassh.org}.
+    @end section
+
+    @section {EdDSA}
+      @tt {ssh-ed25519},
+      @tt {eddsa-e382-shake256@libassh.org},
+      @tt {eddsa-e521-shake256@libassh.org}.
+    @end section
+
+  @end section
+
+  @section T {Built-in ciphers}
+    @tt {aes128-cbc},    @tt {aes192-cbc},    @tt {aes256-cbc},
+    @tt {aes128-ctr},    @tt {aes192-ctr},    @tt {aes256-ctr},
+    @tt {arcfour},    @tt {arcfour128},    @tt {arcfour256}.
+  @end section
+
+  @section T {Gcrypt based ciphers}
+    @tt {serpent128-cbc},    @tt {serpent192-cbc},    @tt {serpent256-cbc},
+    @tt {serpent128-ctr},    @tt {serpent192-ctr},    @tt {serpent256-ctr},
+    @tt {twofish128-cbc},    @tt {twofish256-cbc},
+    @tt {twofish128-ctr},    @tt {twofish256-ctr},
+    @tt {3des-cbc},      @tt {3des-ctr},
+    @tt {cast128-cbc},   @tt {cast128-ctr},
+    @tt {blowfish-cbc},  @tt {blowfish-ctr}.
+  @end section
+
+  @section T {Built-in MACs}
+    @tt {hmac-md5}, @tt {hmac-md5-96},
+    @tt {hmac-sha1}, @tt {hmac-sha1-96},
+    @tt {hmac-sha256}, @tt {hmac-sha512}.
+  @end section
+
+  @section T {Gcrypt based MACs}
+    @tt {hmac-ripemd160}
+  @end section
+
+@end section
+
 @section TPe {API documentation}
 
   @section THe {Headers list}
