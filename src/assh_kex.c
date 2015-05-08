@@ -63,7 +63,7 @@ assh_error_t assh_kex_send_init(struct assh_session_s *s)
 		  16, ASSH_PRNG_QUALITY_NONCE)
 	       | ASSH_ERRSV_DISCONNECT, err_pck);
 
-  unsigned int ac = c->algos_count;
+  unsigned int ac = c->algo_cnt;
 
   /* lists of algorithms */
   unsigned int i = 0, j;
@@ -155,7 +155,7 @@ assh_kex_server_algos(struct assh_context_s *c, uint8_t *lists[9],
       /* ignore MAC if we chose an authenticated cipher */
       if (i == 4 || i == 5)
         {
-          struct assh_algo_cipher_s *cipher = algos[i - 2];
+          struct assh_algo_cipher_s *cipher = (void*)algos[i - 2];
           if (cipher->auth_size)
             {
               algos[i] = &assh_hmac_none.algo;
@@ -216,7 +216,7 @@ assh_kex_client_algos(struct assh_context_s *c, uint8_t *lists[9],
       /* ignore MAC if we chose an authenticated cipher */
       if (i == 4 || i == 5)
         {
-          struct assh_algo_cipher_s *cipher = algos[i - 2];
+          struct assh_algo_cipher_s *cipher = (void*)algos[i - 2];
           if (cipher->auth_size)
             {
               algos[i] = &assh_hmac_none.algo;
@@ -227,7 +227,7 @@ assh_kex_client_algos(struct assh_context_s *c, uint8_t *lists[9],
       /* iterate over available algorithms */
       for (; ; j++)
         {
-          ASSH_CHK_RET(j == c->algos_count,
+          ASSH_CHK_RET(j == c->algo_cnt,
 		       ASSH_ERR_MISSING_ALGO | ASSH_ERRSV_DISCONNECT);
 
           const struct assh_algo_s *a = c->algos[j];

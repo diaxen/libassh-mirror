@@ -97,25 +97,31 @@ struct assh_context_s
   /** Packet pool buckets of spare packets by size. */
   struct assh_packet_pool_s pool[ASSH_PCK_POOL_SIZE];
 
-  /** Registered algorithms */
-  const struct assh_algo_s *algos[ASSH_MAX_ALGORITHMS];
-  /** Number of registered algorithms */
-  size_t algos_count;
-
   /** Registered services. */
-  const struct assh_service_s *srvs[ASSH_MAX_SERVICES];
+  const struct assh_service_s *srvs[CONFIG_ASSH_MAX_SERVICES];
   /** Number of registered services */
   size_t srvs_count;
 
   /** Big number engine */
   const struct assh_bignum_algo_s *bignum;
+
+  /** Number of algorithm slots */
+  uint16_t algo_max;
+
+  /** Number of registered algorithms */
+  uint16_t algo_cnt;
+
+  /** Registered algorithms */
+  const struct assh_algo_s *algos[CONFIG_ASSH_MAX_ALGORITHMS];
 };
 
-/** @This allocates and initializes a context. The @tt alloc parameter
-    may be @tt NULL. @see assh_context_init */
+/** @This allocates and initializes a context. The maximum number of
+    registered algorithms should be @ref #CONFIG_ASSH_MAX_ALGORITHMS
+    if the @ref assh_algo_register_default function is used. The @tt
+    alloc parameter may be @tt NULL. @see assh_context_init */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_context_create(struct assh_context_s **ctx,
-		    enum assh_context_type_e type,
+		    enum assh_context_type_e type, size_t algo_max,
 		    assh_allocator_t *alloc, void *alloc_pv);
 
 /** @This initializes a context for use as a client or server. This

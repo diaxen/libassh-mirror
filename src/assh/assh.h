@@ -188,12 +188,6 @@ enum assh_error_e
 /** @internal Number of buckets in the packet allocator pool */
 #define ASSH_PCK_POOL_SIZE (ASSH_PCK_POOL_MAX - ASSH_PCK_POOL_MIN)
 
-/** @internal Size of the context registered algorithms pointer array */
-#define ASSH_MAX_ALGORITHMS 64
-
-/** @internal Size of the context registered services pointer array */
-#define ASSH_MAX_SERVICES 4
-
 /** @internal Maximum size of hash algorithms output in bytes. */
 #define ASSH_MAX_HASH_SIZE 64
 

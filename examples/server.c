@@ -81,7 +81,7 @@ int main()
   /** init a server context */
   struct assh_context_s *context;
 
-  if (assh_context_create(&context, ASSH_SERVER, NULL, NULL))
+  if (assh_context_create(&context, ASSH_SERVER, CONFIG_ASSH_MAX_ALGORITHMS, NULL, NULL))
     abort();
 
   /** register authentication and connection services */

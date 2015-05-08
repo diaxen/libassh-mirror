@@ -49,7 +49,7 @@ assh_key_algo_guess(struct assh_context_s *c,
 
       for (i = 0; ; i++)
         {
-          if (i == c->algos_count)
+          if (i == c->algo_cnt)
             return NULL;
           algo = c->algos[i]->key;
           if (algo != NULL && c->algos[i]->class_ != role &&

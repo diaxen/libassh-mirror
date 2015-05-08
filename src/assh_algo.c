@@ -37,10 +37,11 @@ static int assh_algo_order(const struct assh_algo_s *a,
 			   const struct assh_algo_s *b,
 			   unsigned int safety)
 {
+  safety++;
   if (a->class_ != b->class_)
     return a->class_ - b->class_;
-  return ((b->speed * (99 - safety) + b->safety * safety) -
-	  (a->speed * (99 - safety) + a->safety * safety));
+  return ((b->speed * (101 - safety) + b->safety * safety) -
+	  (a->speed * (101 - safety) + a->safety * safety));
 }
 
 static void assh_algo_udpate(struct assh_context_s *c,
@@ -49,7 +50,7 @@ static void assh_algo_udpate(struct assh_context_s *c,
 {
   /* sort algorithms by class and safety/speed factor */
   int_fast16_t i, j, k;
-  for (i = 0; i < c->algos_count; i++)
+  for (i = 0; i < c->algo_cnt; i++)
     {
       const struct assh_algo_s *a = c->algos[i];
       for (j = i - 1; j >= 0; j--)
@@ -63,9 +64,9 @@ static void assh_algo_udpate(struct assh_context_s *c,
     }
 
   /* remove duplicated names in the same class */
-  for (i = 0; i < c->algos_count; i++)
+  for (i = 0; i < c->algo_cnt; i++)
     {
-      for (k = j = i + 1; j < c->algos_count; j++)
+      for (k = j = i + 1; j < c->algo_cnt; j++)
 	{
 	  const struct assh_algo_s *a = c->algos[i];
 	  const struct assh_algo_s *b = c->algos[j];
@@ -80,14 +81,14 @@ static void assh_algo_udpate(struct assh_context_s *c,
 	  else if (a->priority < b->priority)
 	    ASSH_SWAP(c->algos[k], c->algos[i]);
 	}
-      c->algos_count = k;
+      c->algo_cnt = k;
     next:;
     }
 
   /* estimate size of the kex init packet */
   size_t kex_init_size = /* random cookie */ 16;
   enum assh_algo_class_e last = ASSH_ALGO_ANY;
-  for (i = 0; i < c->algos_count; i++)
+  for (i = 0; i < c->algo_cnt; i++)
     {
       const struct assh_algo_s *a = c->algos[i];
       size_t l = 0;
@@ -120,7 +121,7 @@ assh_error_t assh_algo_register(struct assh_context_s *c, unsigned int safety,
 				unsigned int min_safety, const struct assh_algo_s *table[])
 {
   assh_error_t err = ASSH_OK;
-  size_t i, count = c->algos_count;
+  size_t i, count = c->algo_cnt;
 
   ASSH_CHK_RET(safety > 99, ASSH_ERR_BAD_ARG);
 
@@ -129,11 +130,11 @@ assh_error_t assh_algo_register(struct assh_context_s *c, unsigned int safety,
       const struct assh_algo_s *algo = table[i];
       if (algo->safety < min_safety)
 	continue;
-      ASSH_CHK_RET(count == ASSH_MAX_ALGORITHMS, ASSH_ERR_MEM);
+      ASSH_CHK_RET(count == c->algo_max, ASSH_ERR_MEM);
       c->algos[count++] = algo;
     }
 
-  c->algos_count = count;
+  c->algo_cnt = count;
   assh_algo_udpate(c, safety, min_safety);
 
   return ASSH_OK;
@@ -142,7 +143,7 @@ assh_error_t assh_algo_register(struct assh_context_s *c, unsigned int safety,
 const struct assh_algo_s *
 assh_algo_registered(struct assh_context_s *c, uint_fast16_t i)
 {
-  if (i >= c->algos_count)
+  if (i >= c->algo_cnt)
     return NULL;
   return c->algos[i];
 }
@@ -152,7 +153,7 @@ assh_error_t assh_algo_register_va(struct assh_context_s *c, unsigned int safety
 {
   assh_error_t err = ASSH_OK;
   va_list ap;
-  size_t count = c->algos_count;
+  size_t count = c->algo_cnt;
 
   ASSH_CHK_RET(safety > 99, ASSH_ERR_BAD_ARG);
 
@@ -166,11 +167,11 @@ assh_error_t assh_algo_register_va(struct assh_context_s *c, unsigned int safety
         break;
       if (algo->safety < min_safety)
 	continue;
-      ASSH_CHK_GTO(count == ASSH_MAX_ALGORITHMS, ASSH_ERR_MEM, err_);
+      ASSH_CHK_GTO(count == c->algo_max, ASSH_ERR_MEM, err_);
       c->algos[count++] = algo;
     }
 
-  c->algos_count = count;
+  c->algo_cnt = count;
   assh_algo_udpate(c, safety, min_safety);
 
  err_:
@@ -180,7 +181,7 @@ assh_error_t assh_algo_register_va(struct assh_context_s *c, unsigned int safety
 
 void assh_algo_unregister(struct assh_context_s *c)
 {
-  c->algos_count = 0;
+  c->algo_cnt = 0;
 }
 
 const struct assh_algo_s *assh_algo_table[] = {
@@ -271,7 +272,7 @@ assh_error_t assh_algo_by_name(struct assh_context_s *c,
   uint_fast16_t i;
   const struct assh_algo_s *a;
 
-  for (i = 0; i < c->algos_count; i++)
+  for (i = 0; i < c->algo_cnt; i++)
     {
       a = c->algos[i];
 
@@ -281,7 +282,7 @@ assh_error_t assh_algo_by_name(struct assh_context_s *c,
 	break;
     }
 
-  if (i == c->algos_count)
+  if (i == c->algo_cnt)
     return ASSH_NOT_FOUND;
 
   *algo = a;
@@ -295,7 +296,7 @@ assh_error_t assh_algo_by_key(struct assh_context_s *c,
   uint_fast16_t i = pos == NULL ? 0 : *pos;
   const struct assh_algo_s *a;
 
-  for (; i < c->algos_count; i++)
+  for (; i < c->algo_cnt; i++)
     {
       a = c->algos[i];
 
@@ -305,7 +306,7 @@ assh_error_t assh_algo_by_key(struct assh_context_s *c,
 	break;
     }
 
-  if (i >= c->algos_count)
+  if (i >= c->algo_cnt)
     return ASSH_NOT_FOUND;
 
   if (pos != NULL)

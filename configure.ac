@@ -86,12 +86,14 @@ if test x$enable_gcrypt = xyes ; then
 
     ])
   ])
+   AC_DEFINE([CONFIG_ASSH_MAX_ALGORITHMS], 72, [Maximum number of registered algorithms])
 else
-      enable_gcrypt_hash=no
-      enable_gcrypt_bignum=no
-      enable_gcrypt_prng=no
-      enable_gcrypt_alloc=no
-      enable_gcrypt_ciphers=no
+   enable_gcrypt_hash=no
+   enable_gcrypt_bignum=no
+   enable_gcrypt_prng=no
+   enable_gcrypt_alloc=no
+   enable_gcrypt_ciphers=no
+   AC_DEFINE([CONFIG_ASSH_MAX_ALGORITHMS], 48, [Maximum number of registered algorithms])
 fi
 
 
@@ -120,6 +122,8 @@ fi
 
 AC_DEFINE([CONFIG_ASSH_AUTH_USERNAME_LEN], [32], [SSH authentication max username length])
 AC_DEFINE([CONFIG_ASSH_AUTH_PASSWORD_LEN], [32], [SSH authentication max password length])
+
+AC_DEFINE([CONFIG_ASSH_MAX_SERVICES], [4], [Maximum number of registered services])
 
 #AC_DEFINE([CONFIG_ASSH_ALLOCA], [], [Enable storing key related material on stack])
 

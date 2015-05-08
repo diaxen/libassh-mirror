@@ -104,7 +104,8 @@ void assh_context_init(struct assh_context_s *c,
   c->keys = NULL;
   c->kex_init_size = 0;
 
-  c->algos_count = 0;
+  c->algo_cnt = 0;
+  c->algo_max = CONFIG_ASSH_MAX_ALGORITHMS;
 
   int i;
   for (i = 0; i < ASSH_PCK_POOL_SIZE; i++)
@@ -129,7 +130,7 @@ void assh_context_init(struct assh_context_s *c,
 
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_context_create(struct assh_context_s **ctx,
-		    enum assh_context_type_e type,
+		    enum assh_context_type_e type, size_t algo_max,
 		    assh_allocator_t *alloc, void *alloc_pv)
 {
   assh_error_t err;
@@ -141,9 +142,12 @@ assh_context_create(struct assh_context_s **ctx,
     }
 
   *ctx = NULL;
-  ASSH_ERR_RET(alloc(alloc_pv, (void**)ctx, sizeof(struct assh_context_s), ASSH_ALLOC_INTERNAL));
+  ASSH_ERR_RET(alloc(alloc_pv, (void**)ctx,
+                     sizeof(**ctx) - sizeof((*ctx)->algos) + algo_max * sizeof(void*)
+                     , ASSH_ALLOC_INTERNAL));
 
   assh_context_init(*ctx, type, alloc, alloc_pv);
+  (*ctx)->algo_max = algo_max;
 
   return ASSH_OK;
 }
