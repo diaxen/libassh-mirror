@@ -227,6 +227,12 @@ const struct assh_algo_s *assh_algo_table[] = {
   &assh_cipher_serpent128_ctr.algo,
   &assh_cipher_serpent192_ctr.algo,
   &assh_cipher_serpent256_ctr.algo,
+  &assh_cipher_aes128_gcm.algo,
+  &assh_cipher_aes256_gcm.algo,
+  &assh_cipher_serpent128_gcm.algo,
+  &assh_cipher_serpent256_gcm.algo,
+  &assh_cipher_twofish128_gcm.algo,
+  &assh_cipher_twofish256_gcm.algo,
 #endif
   &assh_cipher_arc4.algo,
   &assh_cipher_arc4_128.algo,
@@ -244,6 +250,12 @@ const struct assh_algo_s *assh_algo_table[] = {
   &assh_hmac_sha1_96.algo,
   &assh_hmac_sha256.algo,
   &assh_hmac_sha512.algo,
+  &assh_hmac_md5_etm.algo,
+  &assh_hmac_md5_96_etm.algo,
+  &assh_hmac_sha1_etm.algo,
+  &assh_hmac_sha1_96_etm.algo,
+  &assh_hmac_sha256_etm.algo,
+  &assh_hmac_sha512_etm.algo,
 #ifdef CONFIG_ASSH_USE_GCRYPT_HASH
   &assh_hmac_ripemd160.algo,
 #endif

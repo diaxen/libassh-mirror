@@ -164,6 +164,20 @@ const struct assh_algo_mac_s assh_hmac_md5 =
   .f_cleanup = assh_hmac_cleanup,
 };
 
+const struct assh_algo_mac_s assh_hmac_md5_etm = 
+{
+  .algo = { .name = "hmac-md5-etm@openssh.com", .class_ = ASSH_ALGO_MAC,
+            .safety = 30, .speed = 70 },
+  .ctx_size = sizeof(struct assh_hmac_context_s),
+  .key_size = 16,
+  .mac_size = 16,
+  .etm = 1,
+  .f_init = assh_hmac_md5_init,
+  .f_compute = assh_hmac_compute,
+  .f_check = assh_hmac_check,
+  .f_cleanup = assh_hmac_cleanup,
+};
+
 
 static ASSH_MAC_INIT_FCN(assh_hmac_md5_96_init)
 {
@@ -177,6 +191,20 @@ const struct assh_algo_mac_s assh_hmac_md5_96 =
   .ctx_size = sizeof(struct assh_hmac_context_s),
   .key_size = 16,
   .mac_size = 12,
+  .f_init = assh_hmac_md5_96_init,
+  .f_compute = assh_hmac_compute,
+  .f_check = assh_hmac_check,
+  .f_cleanup = assh_hmac_cleanup,
+};
+
+const struct assh_algo_mac_s assh_hmac_md5_96_etm = 
+{
+  .algo = { .name = "hmac-md5-96-etm@openssh.com", .class_ = ASSH_ALGO_MAC,
+            .safety = 20, .speed = 75 },
+  .ctx_size = sizeof(struct assh_hmac_context_s),
+  .key_size = 16,
+  .mac_size = 12,
+  .etm = 1,
   .f_init = assh_hmac_md5_96_init,
   .f_compute = assh_hmac_compute,
   .f_check = assh_hmac_check,
@@ -202,6 +230,20 @@ const struct assh_algo_mac_s assh_hmac_sha1 =
   .f_cleanup = assh_hmac_cleanup,
 };
 
+const struct assh_algo_mac_s assh_hmac_sha1_etm = 
+{
+  .algo = { .name = "hmac-sha1-etm@openssh.com", .class_ = ASSH_ALGO_MAC,
+            .safety = 35, .speed = 70 },
+  .ctx_size = sizeof(struct assh_hmac_context_s),
+  .key_size = 20,
+  .mac_size = 20,
+  .etm = 1,
+  .f_init = assh_hmac_sha1_init,
+  .f_compute = assh_hmac_compute,
+  .f_check = assh_hmac_check,
+  .f_cleanup = assh_hmac_cleanup,
+};
+
 
 static ASSH_MAC_INIT_FCN(assh_hmac_sha1_96_init)
 {
@@ -215,6 +257,20 @@ const struct assh_algo_mac_s assh_hmac_sha1_96 =
   .ctx_size = sizeof(struct assh_hmac_context_s),
   .key_size = 20,
   .mac_size = 12,
+  .f_init = assh_hmac_sha1_96_init,
+  .f_compute = assh_hmac_compute,
+  .f_check = assh_hmac_check,
+  .f_cleanup = assh_hmac_cleanup,
+};
+
+const struct assh_algo_mac_s assh_hmac_sha1_96_etm = 
+{
+  .algo = { .name = "hmac-sha1-96-etm@openssh.com", .class_ = ASSH_ALGO_MAC,
+            .safety = 20, .speed = 75 },
+  .ctx_size = sizeof(struct assh_hmac_context_s),
+  .key_size = 20,
+  .mac_size = 12,
+  .etm = 1,
   .f_init = assh_hmac_sha1_96_init,
   .f_compute = assh_hmac_compute,
   .f_check = assh_hmac_check,
@@ -240,6 +296,20 @@ const struct assh_algo_mac_s assh_hmac_sha256 =
   .f_cleanup = assh_hmac_cleanup,
 };
 
+const struct assh_algo_mac_s assh_hmac_sha256_etm = 
+{
+  .algo = { .name = "hmac-sha2-256-etm@openssh.com", .class_ = ASSH_ALGO_MAC,
+            .safety = 45, .speed = 60 },
+  .ctx_size = sizeof(struct assh_hmac_context_s),
+  .key_size = 32,
+  .mac_size = 32,
+  .etm = 1,
+  .f_init = assh_hmac_sha256_init,
+  .f_compute = assh_hmac_compute,
+  .f_check = assh_hmac_check,
+  .f_cleanup = assh_hmac_cleanup,
+};
+
 
 static ASSH_MAC_INIT_FCN(assh_hmac_sha512_init)
 {
@@ -253,6 +323,20 @@ const struct assh_algo_mac_s assh_hmac_sha512 =
   .ctx_size = sizeof(struct assh_hmac_context_s),
   .key_size = 64,
   .mac_size = 64,
+  .f_init = assh_hmac_sha512_init,
+  .f_compute = assh_hmac_compute,
+  .f_check = assh_hmac_check,
+  .f_cleanup = assh_hmac_cleanup,
+};
+
+const struct assh_algo_mac_s assh_hmac_sha512_etm =
+{
+  .algo = { .name = "hmac-sha2-512-etm@openssh.com", .class_ = ASSH_ALGO_MAC,
+            .safety = 55, .speed = 50 },
+  .ctx_size = sizeof(struct assh_hmac_context_s),
+  .key_size = 64,
+  .mac_size = 64,
+  .etm = 1,
   .f_init = assh_hmac_sha512_init,
   .f_compute = assh_hmac_compute,
   .f_check = assh_hmac_check,

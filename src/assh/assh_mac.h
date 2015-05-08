@@ -80,6 +80,8 @@ struct assh_algo_mac_s
   size_t key_size;
   /** Authentication tag size. */
   size_t mac_size;
+  /** This is set if encrypt must be performed before mac */
+  assh_bool_t etm;
   assh_mac_init_t    *f_init;
   assh_mac_compute_t *f_compute;
   assh_mac_check_t  *f_check;
@@ -94,6 +96,13 @@ extern const struct assh_algo_mac_s assh_hmac_sha1;
 extern const struct assh_algo_mac_s assh_hmac_sha1_96;
 extern const struct assh_algo_mac_s assh_hmac_sha256;
 extern const struct assh_algo_mac_s assh_hmac_sha512;
+
+extern const struct assh_algo_mac_s assh_hmac_md5_etm;
+extern const struct assh_algo_mac_s assh_hmac_md5_96_etm;
+extern const struct assh_algo_mac_s assh_hmac_sha1_etm;
+extern const struct assh_algo_mac_s assh_hmac_sha1_96_etm;
+extern const struct assh_algo_mac_s assh_hmac_sha256_etm;
+extern const struct assh_algo_mac_s assh_hmac_sha512_etm;
 
 #ifdef CONFIG_ASSH_USE_GCRYPT_HASH
 extern const struct assh_algo_mac_s assh_hmac_ripemd160;

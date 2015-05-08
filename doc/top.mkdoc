@@ -180,6 +180,7 @@ assh_config.h
   @end section
 
   @section T {Gcrypt based ciphers}
+    @tt {aes128-gcm@openssh.com}, @tt {aes256-gcm@openssh.com},
     @tt {serpent128-cbc},    @tt {serpent192-cbc},    @tt {serpent256-cbc},
     @tt {serpent128-ctr},    @tt {serpent192-ctr},    @tt {serpent256-ctr},
     @tt {twofish128-cbc},    @tt {twofish256-cbc},
@@ -192,11 +193,14 @@ assh_config.h
   @section T {Built-in MACs}
     @tt {hmac-md5}, @tt {hmac-md5-96},
     @tt {hmac-sha1}, @tt {hmac-sha1-96},
-    @tt {hmac-sha256}, @tt {hmac-sha512}.
+    @tt {hmac-sha256}, @tt {hmac-sha512},
+    @tt {hmac-md5-etm@openssh.com}, @tt {hmac-md5-96-etm@openssh.com},
+    @tt {hmac-sha1-etm@openssh.com}, @tt {hmac-sha1-96-etm@openssh.com},
+    @tt {hmac-sha256-etm@openssh.com}, @tt {hmac-sha512-etm@openssh.com},
   @end section
 
   @section T {Gcrypt based MACs}
-    @tt {hmac-ripemd160}
+    @tt {hmac-ripemd160}, @tt {hmac-ripemd160-etm@openssh.com}
   @end section
 
 @end section

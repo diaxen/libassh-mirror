@@ -76,7 +76,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 {
   assh_error_t err;
   struct assh_kex_keys_s *k = s->cur_keys_in;
-  unsigned int bsize = k == NULL ? 16 : ASSH_MAX(k->cipher->block_size, 16);
+  unsigned int hsize = k->cipher->head_size;
 
   size_t rd_size = e->transport.read.transferred;
   assert(rd_size <= e->transport.read.buf.size);
@@ -108,6 +108,10 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 		  i--;
 		s->ident_len = i;
 
+		/* we might still have enough bytes to start packet decode */
+		if (s->stream_in_size >= hsize)
+		  goto head_done;
+
 		s->stream_in_st = ASSH_TR_IN_HEAD;
 		return ASSH_OK;
 	      }
@@ -127,32 +131,27 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
     /* decipher packet head, compute packet length and allocate packet */
     case ASSH_TR_IN_HEAD_DONE: {
 
-      if (s->stream_in_size < bsize)
+      if (s->stream_in_size < hsize)
 	{
 	  /* not enough header data yet to decipher the 1st block */
 	  s->stream_in_st = ASSH_TR_IN_HEAD;
 	  return ASSH_OK;
 	}
+      head_done:
 
-      /* decipher */
-      if (k != NULL)
+      /* decipher head */
+      if (!k->mac->etm)
 	ASSH_ERR_RET(k->cipher->f_process(k->cipher_ctx,
-			  s->stream_in_pck_head, bsize) | ASSH_ERRSV_DISCONNECT);
+		       s->stream_in_pck_head, hsize,
+		       ASSH_CIPHER_PCK_HEAD) | ASSH_ERRSV_DISCONNECT);
 
-      /* compute various length values */
+      /* adjust length */
       size_t len = assh_load_u32(s->stream_in_pck_head);
-      uint8_t pad_len = s->stream_in_pck_head[4];
-      unsigned int align = k == NULL ? 8 : ASSH_MAX(k->cipher->block_size, 8);
 
-      ASSH_CHK_RET(len > ASSH_MAX_PCK_LEN - 4 || len < 12,
+      ASSH_CHK_RET(len > ASSH_MAX_PCK_PAYLOAD_SIZE,
 		   ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
 
-      len += 4;
-      ASSH_CHK_RET(len % align || pad_len < 4,
-		   ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
-
-      if (k != NULL)
-	len += k->mac->mac_size;
+      len += 4 + k->mac->mac_size + k->cipher->auth_size;
 
       /* allocate actual packet and copy header */
       struct assh_packet_s *p;
@@ -161,12 +160,6 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
       memcpy(p->data, s->stream_in_pck_head, s->stream_in_size);
       p->data_size = len;
       s->stream_in_pck = p;
-
-      if (len > s->stream_in_size)
-	{
-	  s->stream_in_st = ASSH_TR_IN_PAYLOAD;
-	  return ASSH_OK;
-	}
     }
 
     /* decipher remaining packet data, check MAC and accept packet */
@@ -180,17 +173,37 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 	  return ASSH_OK;
 	}
 
-      size_t mac_len = 0;
+      size_t mac_len = k->mac->mac_size + k->cipher->auth_size;
 
-      if (k != NULL)
+      if (k->cipher->auth_size)	/* Authenticated cipher */
 	{
-	  mac_len = k->mac->mac_size;
-
-	  /* decipher */
-	  ASSH_ERR_RET(k->cipher->f_process(
-              k->cipher_ctx, p->data + bsize,
-	      p->data_size - bsize - mac_len) | ASSH_ERRSV_DISCONNECT);
+	  ASSH_ERR_RET(k->cipher->f_process(k->cipher_ctx, p->data,
+					    p->data_size, ASSH_CIPHER_PCK_TAIL)
+		       | ASSH_ERRSV_DISCONNECT);
 	}
+      else if (k->mac->etm)	/* Encrypt then Mac */
+	{
+	  ASSH_ERR_RET(k->mac->f_check(k->mac_ctx, s->in_seq, p->data,
+				       p->data_size - mac_len,
+				       p->data + p->data_size - mac_len)
+		       | ASSH_ERRSV_DISCONNECT);
+
+	  ASSH_ERR_RET(k->cipher->f_process(k->cipher_ctx, p->data + 4,
+				  p->data_size - mac_len - 4, ASSH_CIPHER_PCK_HEAD)
+		       | ASSH_ERRSV_DISCONNECT);
+	}
+      else			/* Mac and Encrypt */
+	{
+	  ASSH_ERR_RET(k->cipher->f_process(k->cipher_ctx, p->data + hsize,
+				  p->data_size - hsize - mac_len, ASSH_CIPHER_PCK_TAIL)
+		       | ASSH_ERRSV_DISCONNECT);
+
+	  ASSH_ERR_RET(k->mac->f_check(k->mac_ctx, s->in_seq, p->data,
+				       p->data_size - mac_len,
+				       p->data + p->data_size - mac_len)
+		       | ASSH_ERRSV_DISCONNECT);
+	}
+#warning FIXME decompress
 
 #ifdef CONFIG_ASSH_DEBUG_PROTOCOL
       ASSH_DEBUG("incoming packet: session=%p tr_st=%i, size=%zu, msg=%u\n",
@@ -198,27 +211,21 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
       assh_hexdump("in packet", p->data, p->data_size);
 #endif
 
-      if (k != NULL)
-	{
-	  /* compute and compare MAC */
-	  ASSH_ERR_RET(k->mac->f_check(k->mac_ctx, s->in_seq, p->data,
-					p->data_size - mac_len,
-					p->data + p->data_size - mac_len)
-		       | ASSH_ERRSV_DISCONNECT);
-
-#warning FIXME decompress
-	}
-
-      s->kex_bytes += p->data_size;
+      uint8_t pad_len = p->head.pad_len;
 
       /* reduce packet size to actual payload */
-      p->data_size -= mac_len + p->head.pad_len;
+      ASSH_CHK_RET(pad_len < 4 || p->data_size < 4 + 1 + pad_len + mac_len,
+		   ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
+
+      p->data_size -= mac_len + pad_len;
 
       /* push completed incoming packet for dispatch */
       assert(s->in_pck == NULL);
       s->in_pck = p;
 
       /* reinit input state */
+      s->kex_bytes += p->data_size;
+
       s->in_seq++;
       s->stream_in_pck = NULL;
       s->stream_in_st = ASSH_TR_IN_HEAD;
@@ -246,16 +253,15 @@ assh_error_t assh_transport_read(struct assh_session_s *s,
     /* read stream into ident buffer */
     case ASSH_TR_IN_IDENT:
       *data = s->ident_str + s->stream_in_size;
-      *size = ASSH_MIN(16, sizeof(s->ident_str) - s->stream_in_size);
       s->stream_in_st = ASSH_TR_IN_IDENT_DONE;
+      *size = ASSH_MIN(8, sizeof(s->ident_str) - s->stream_in_size);
       break;
 
     /* read stream into packet head buffer */
     case ASSH_TR_IN_HEAD: {
-      unsigned int bsize = k == NULL ? 16 : ASSH_MAX(k->cipher->block_size, 16);
       *data = s->stream_in_pck_head + s->stream_in_size;
-      *size = bsize - s->stream_in_size;
       s->stream_in_st = ASSH_TR_IN_HEAD_DONE;
+      *size = k->cipher->head_size - s->stream_in_size;
       break;
     }
 
@@ -358,16 +364,15 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 
       /* compute various length and payload pointer values */
       struct assh_kex_keys_s *k = s->cur_keys_out;
-      unsigned int align = 8;
-      size_t mac_len = 0;
 
-      if (k != NULL)
-	{
-	  align = ASSH_MAX(k->cipher->block_size, 8);
-	  mac_len = k->mac->mac_size;
-	}
+      unsigned int align = ASSH_MAX(k->cipher->block_size, 8);
+      size_t mac_len = k->mac->mac_size + k->cipher->auth_size;
 
-      size_t pad_len = align - p->data_size % align;
+      size_t cipher_len = p->data_size;
+      if (k->mac->etm || k->cipher->auth_size)
+	cipher_len -= 4;
+
+      size_t pad_len = align - cipher_len % align;
       if (pad_len < 4)
 	pad_len += align;
 
@@ -394,19 +399,39 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 
       assh_bool_t newkey = p->head.msg == SSH_MSG_NEWKEYS;
 
-      /* compute MAC and encrypt packet */
-      if (k != NULL)
+      if (k->cipher->auth_size)	/* Authenticated cipher */
+	{
+	  assert(k->cipher->auth_size != 0);
+	  ASSH_ERR_RET(k->cipher->f_process(k->cipher_ctx, p->data,
+			    p->data_size, ASSH_CIPHER_PCK_TAIL)
+		       | ASSH_ERRSV_FIN);
+	}
+      else if (k->mac->etm)	/* Encrypt then Mac */
+	{
+	  ASSH_ERR_RET(k->cipher->f_process(k->cipher_ctx, p->data + 4,
+			    p->data_size - mac_len - 4, ASSH_CIPHER_PCK_TAIL)
+		       | ASSH_ERRSV_FIN);
+
+	  ASSH_ERR_RET(k->mac->f_compute(k->mac_ctx, s->out_seq, p->data,
+			 p->data_size - mac_len, mac_ptr)
+		       | ASSH_ERRSV_FIN);
+	}
+      else			/* Mac and Encrypt */
 	{
 	  ASSH_ERR_RET(k->mac->f_compute(k->mac_ctx, s->out_seq, p->data,
 			 p->data_size - mac_len, mac_ptr) | ASSH_ERRSV_FIN);
 
 	  ASSH_ERR_RET(k->cipher->f_process(k->cipher_ctx, p->data,
-			    p->data_size - mac_len) | ASSH_ERRSV_FIN);
+			    p->data_size - mac_len, ASSH_CIPHER_PCK_TAIL)
+		       | ASSH_ERRSV_FIN);
 	}
+
+      s->stream_out_st = ASSH_TR_OUT_PACKETS_DONE;
 
       if (newkey)
 	{
 	  /* release the old output cipher/mac context and install the new one */
+	  assert(s->new_keys_out != NULL);
 	  assh_kex_keys_cleanup(s, s->cur_keys_out);
 	  s->cur_keys_out = s->new_keys_out;
 	  s->new_keys_out = NULL;
@@ -419,7 +444,6 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
       s->stream_out_size = 0;
       *data = p->data;
       *size = p->data_size;
-      s->stream_out_st = ASSH_TR_OUT_PACKETS_DONE;
       break;
     }
 

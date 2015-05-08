@@ -43,9 +43,19 @@
     of size given by @ref assh_algo_cipher_s::ctx_size. */
 typedef ASSH_CIPHER_INIT_FCN(assh_cipher_init_t);
 
+/** @internal @This specifies the packet cipher processing phases. */
+enum assh_cipher_op_e
+{
+  /** Process packet head data containing the packet length word */
+  ASSH_CIPHER_PCK_HEAD,
+  /** Process remaining packet data */
+  ASSH_CIPHER_PCK_TAIL,
+};
+
 /** @internal @see assh_cipher_process_t */
 #define ASSH_CIPHER_PROCESS_FCN(n) \
-  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(void *ctx_, uint8_t *data, size_t len)
+  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(void *ctx_, uint8_t *data, size_t len, \
+                                           enum assh_cipher_op_e op)
 
 /** @internal @This defines the function type for the data processing
     operation of the cipher module interface. */
@@ -68,11 +78,17 @@ struct assh_algo_cipher_s
   /** Size of the context structure needed to initialize the algorithm. */
   size_t ctx_size;
   /** Cipher block size in bytes, not less than 8. */
-  size_t block_size;
+  uint8_t block_size;
+  /** Cipher IV size, may be 0. */
+  uint8_t iv_size;
   /** Cipher key size in bytes. */
-  size_t key_size;
-  /** This indicates if the algorithm is a block cipher or a stream cipher */
-  assh_bool_t is_stream;
+  uint8_t key_size;
+  /** Cipher authentication tag size in bytes, may be 0. */
+  uint8_t auth_size;
+  /** Number of packet bytes which must be fetched in order to
+      decipher the packet length word. greater or equal to 4. */
+  uint8_t head_size;
+
   assh_cipher_init_t *f_init;
   assh_cipher_process_t *f_process;
   assh_cipher_cleanup_t *f_cleanup;
@@ -111,6 +127,8 @@ extern const struct assh_algo_cipher_s assh_cipher_twofish128_cbc;
 extern const struct assh_algo_cipher_s assh_cipher_twofish256_cbc;
 extern const struct assh_algo_cipher_s assh_cipher_twofish128_ctr;
 extern const struct assh_algo_cipher_s assh_cipher_twofish256_ctr;
+extern const struct assh_algo_cipher_s assh_cipher_twofish128_gcm;
+extern const struct assh_algo_cipher_s assh_cipher_twofish256_gcm;
 
 extern const struct assh_algo_cipher_s assh_cipher_serpent128_cbc;
 extern const struct assh_algo_cipher_s assh_cipher_serpent192_cbc;
@@ -118,6 +136,12 @@ extern const struct assh_algo_cipher_s assh_cipher_serpent256_cbc;
 extern const struct assh_algo_cipher_s assh_cipher_serpent128_ctr;
 extern const struct assh_algo_cipher_s assh_cipher_serpent192_ctr;
 extern const struct assh_algo_cipher_s assh_cipher_serpent256_ctr;
+extern const struct assh_algo_cipher_s assh_cipher_serpent128_gcm;
+extern const struct assh_algo_cipher_s assh_cipher_serpent256_gcm;
+
+extern const struct assh_algo_cipher_s assh_cipher_aes128_gcm;
+extern const struct assh_algo_cipher_s assh_cipher_aes256_gcm;
+
 #endif
 #endif
 

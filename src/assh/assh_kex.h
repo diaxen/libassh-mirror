@@ -268,6 +268,9 @@ struct assh_algo_kex_s
   assh_kex_process_t *f_process;
 };
 
+/** @internal None cipher algortihm contexts used at startup */
+extern const struct assh_kex_keys_s assh_keys_none;
+
 /** Dummy key-exchange algorithm using a not so secret value. */
 extern const struct assh_algo_kex_s assh_kex_none;
 
