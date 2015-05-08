@@ -75,7 +75,7 @@ union assh_event_prng_u
     data in @ref assh_context_s::prng_pv. */
 typedef ASSH_PRNG_INIT_FCN(assh_prng_init_t);
 
-/** @internal @see assh_prng_t */
+/** @internal @see assh_prng_get_t */
 #define ASSH_PRNG_GET_FCN(n) \
   ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_context_s *c,    \
                                            uint8_t *rdata, size_t rdata_len, \

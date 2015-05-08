@@ -402,7 +402,7 @@ enum assh_bignum_opcode_e
 
     The resulting value can be further processed by the @ref #ASSH_BOP_ADDM,
     @ref #ASSH_BOP_SUBM, @ref #ASSH_BOP_MULM, @ref #ASSH_BOP_EXPM,
-    @ref ASSH_BOP_INV and @ref #ASSH_BOP_MTFROM instructions.
+    @ref #ASSH_BOP_INV and @ref #ASSH_BOP_MTFROM instructions.
     The @tt mt operand is a montgomery context initialized from the modulus
     using the @ref #ASSH_BOP_MTINIT instruction. */
 #define ASSH_BOP_MTTO(dst1, dst2, src, mt)         \
