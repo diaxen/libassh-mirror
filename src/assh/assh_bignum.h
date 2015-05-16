@@ -118,7 +118,11 @@ struct assh_bignum_s
   /** Whether the number is secret */
   uint16_t secret:1;
   /** Whether the number is a montgomery modulus */
-  uint16_t montgomery:1;
+  uint16_t mt_mod:1;
+  /** Whether the number is in montgomery representation */
+  uint16_t mt_num:1;
+  /** Associated montgomery context id */
+  uint16_t mt_id:6;
   /** Number data */
   void *n;
 };
@@ -302,7 +306,8 @@ assh_bignum_init(struct assh_context_s *c,
 {
   bn->bits = bits;
   bn->secret = secret;
-  bn->montgomery = 0;
+  bn->mt_mod = 0;
+  bn->mt_num = 0;
   bn->n = NULL;
 }
 

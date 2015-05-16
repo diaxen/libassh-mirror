@@ -1009,8 +1009,6 @@ assh_error_t test_expmod(unsigned int count)
         ASSH_BOP_MTTO(  X,      X,      X,      MT              ),
         ASSH_BOP_EXPM(  R5,     X,      E,      MT      ),
 
-        ASSH_BOP_CMPEQ( R4,     R5,     0               ),
-
         ASSH_BOP_MTFROM(R4,     R4,     R4,     MT              ),
         ASSH_BOP_MTFROM(R5,     R5,     R5,     MT              ),
         ASSH_BOP_CMPEQ( R4,     R5,     0               ),

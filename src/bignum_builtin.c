@@ -507,7 +507,7 @@ assh_bignum_addsub(struct assh_bignum_s *dst,
       assh_bnword_t q = ((t >> ASSH_BIGNUM_W) ^ 1) - 1;
       assh_bnword_t *m;
 
-      if (mod->montgomery)
+      if (mod->mt_mod)
         {
           struct assh_bignum_mt_s *mt = (void*)mod;
           assh_bnword_t *r1 = (assh_bnword_t*)mt->mod.n + 2 * dl;
@@ -1225,7 +1225,7 @@ assh_bignum_mt_init(struct assh_context_s *c,
 
   mt->mod.bits = mod->bits;
   mt->mod.secret = 0;
-  mt->mod.montgomery = 1;
+  mt->mod.mt_mod = 1;
   mt->n0 = assh_bnword_mt_modinv(-m[0]);
 
   /* compute r**2 % n */
@@ -1746,11 +1746,13 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_builtin_convert)
         case ASSH_BIGNUM_STEMP:
           ASSH_ERR_RET(assh_bignum_realloc(c, dstn));
           ASSH_ERR_RET(assh_bignum_copy(dstn, srcn));
+          dstn->mt_num = srcn->mt_num;
           break;
         case ASSH_BIGNUM_MPINT:
         case ASSH_BIGNUM_STRING:
         case ASSH_BIGNUM_MSB_RAW:
         case ASSH_BIGNUM_LSB_RAW:
+          assert(!srcn->mt_num);
           assh_bignum_to_buffer(srcn, dst, dstfmt);
           break;
 
@@ -1765,6 +1767,7 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_builtin_convert)
       assert(dstfmt == ASSH_BIGNUM_NATIVE ||
              dstfmt == ASSH_BIGNUM_STEMP ||
              dstfmt == ASSH_BIGNUM_TEMP);
+      dstn->mt_num = 0;
 
       if (srcfmt == ASSH_BIGNUM_MSB_RAW ||
           srcfmt == ASSH_BIGNUM_LSB_RAW)
@@ -1919,12 +1922,22 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
         case ASSH_BIGNUM_OP_SUB:
         case ASSH_BIGNUM_OP_ADD: {
           struct assh_bignum_s *dst = args[oa];
+          struct assh_bignum_s *src1 = args[ob];
+          struct assh_bignum_s *src2 = args[oc];
           ASSH_ERR_GTO(assh_bignum_realloc(c, dst), err_sc);
           assh_bnword_t mask = (assh_bnword_t)(op == ASSH_BIGNUM_OP_ADD) - 1;
           if (od != ASSH_BOP_NOREG)
-            ASSH_ERR_GTO(assh_bignum_addsub(dst, args[ob], args[oc], args[od], mask), err_sc);
+            {
+              struct assh_bignum_s *mod = args[od];
+              assert(mod->mt_mod == src1->mt_num);
+              ASSH_ERR_GTO(assh_bignum_addsub(dst, src1, src2, mod, mask), err_sc);
+            }
           else
-            ASSH_ERR_GTO(assh_bignum_addsub(dst, args[ob], args[oc], NULL, mask), err_sc);
+            {
+              assert(!src1->mt_num && !src2->mt_num);
+              ASSH_ERR_GTO(assh_bignum_addsub(dst, src1, src2, NULL, mask), err_sc);
+            }
+          dst->mt_num = src1->mt_num;
           break;
         }
 
@@ -1934,11 +1947,25 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           struct assh_bignum_s *src2 = args[oc];
           ASSH_ERR_GTO(assh_bignum_realloc(c, dst), err_sc);
           if (od == ASSH_BOP_NOREG)
-            ASSH_ERR_GTO(assh_bignum_mul(c, &sc, dst, src1, src2), err_sc);
-          else if (format[od] == ASSH_BIGNUM_MT)
-            ASSH_ERR_GTO(assh_bignum_mul_mod_mt(c, &sc, dst, src1, src2, args[od]), err_sc);
+            {
+              assert(!src1->mt_num && !src2->mt_num);
+              ASSH_ERR_GTO(assh_bignum_mul(c, &sc, dst, src1, src2), err_sc);
+            }
           else
-            ASSH_ERR_GTO(assh_bignum_mul_mod(c, &sc, dst, src1, src2, args[od]), err_sc);
+            {
+              struct assh_bignum_mt_s *mod = args[od];
+              if (format[od] == ASSH_BIGNUM_MT)
+                {
+                  assert(mod->mod.mt_mod && src1->mt_num);
+                  ASSH_ERR_GTO(assh_bignum_mul_mod_mt(c, &sc, dst, src1, src2, args[od]), err_sc);
+                }
+              else
+                {
+                  assert(!mod->mod.mt_mod && !src1->mt_num);
+                  ASSH_ERR_GTO(assh_bignum_mul_mod(c, &sc, dst, src1, src2, args[od]), err_sc);
+                }
+            }
+          dst->mt_num = src1->mt_num;
           break;
         }
 
@@ -1946,16 +1973,25 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           struct assh_bignum_s *dst = args[oa];
           struct assh_bignum_s *src1 = args[ob];
           struct assh_bignum_s *src2 = args[oc];
+          struct assh_bignum_mt_s *mod = args[od]; 
           assert(format[od] == ASSH_BIGNUM_MT);
+          assert(mod->mod.mt_mod);
+          assert(src1->mt_num);
+          assert(!src2->mt_num);
           ASSH_ERR_GTO(assh_bignum_realloc(c, dst), err_sc);
-          ASSH_ERR_GTO(assh_bignum_expmod_mt(c, &sc, dst, src1, src2, args[od]), err_sc);
+          ASSH_ERR_GTO(assh_bignum_expmod_mt(c, &sc, dst, src1, src2, mod), err_sc);
+          dst->mt_num = src1->mt_num;
           break;
         }
 
         case ASSH_BIGNUM_OP_MTINIT: {
           struct assh_bignum_s *mod = args[od];
+          struct assh_bignum_mt_s *dst = args[oc];
+          assert(!mod->mt_num);
           assert(format[oc] == ASSH_BIGNUM_MT);
-          ASSH_ERR_GTO(assh_bignum_mt_init(c, args[oc], mod), err_sc);
+          ASSH_ERR_GTO(assh_bignum_mt_init(c, dst, mod), err_sc);
+          dst->mod.mt_mod = 1;
+          dst->mod.mt_num = 0;
           break;
         }
 
@@ -1966,9 +2002,12 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
             {
               struct assh_bignum_s *dst = args[ob + i];
               struct assh_bignum_s *src = args[oc + i];
+              assert(src->mt_num != (op == ASSH_BIGNUM_OP_MTTO));
               ASSH_ERR_GTO(assh_bignum_realloc(c, dst), err_sc);
               ASSH_ERR_GTO(assh_bignum_mt_convert(c, &sc, op == ASSH_BIGNUM_OP_MTTO,
                                                   args[od], dst, src), err_sc);
+              dst->mt_num = (op == ASSH_BIGNUM_OP_MTTO);
+              dst->mt_id = od;
             }
           break;
         }
@@ -1976,14 +2015,17 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
         case ASSH_BIGNUM_OP_DIV: {
           struct assh_bignum_s *dsta = NULL, *dstb = NULL;
           struct assh_bignum_s *src1 = args[oc], *src2 = args[od];
+          assert(!src1->mt_num && !src2->mt_num);
           if (oa != ASSH_BOP_NOREG)
             {
               dsta = args[oa];
+              dsta->mt_num = 0;
               ASSH_ERR_GTO(assh_bignum_realloc(c, dsta), err_sc);
             }
           if (ob != ASSH_BOP_NOREG)
             {
               dstb = args[ob];
+              dstb->mt_num = 0;
               ASSH_ERR_GTO(assh_bignum_realloc(c, dstb), err_sc);
             }
           ASSH_ERR_GTO(assh_bignum_div(c, &sc, dstb, dsta, src1, src2), err_sc);
@@ -1995,17 +2037,26 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           struct assh_bignum_s *src1 = args[oc];
           ASSH_ERR_GTO(assh_bignum_realloc(c, dst), err_sc);
           if (format[od] == ASSH_BIGNUM_MT)
-            ASSH_ERR_GTO(assh_bignum_modinv_mt(c, &sc, dst, src1, args[od]), err_sc);
+            {
+              assert(src1->mt_num);
+              ASSH_ERR_GTO(assh_bignum_modinv_mt(c, &sc, dst, src1, args[od]), err_sc);
+            }
           else
-            ASSH_ERR_GTO(assh_bignum_modinv(c, &sc, dst, src1, args[od]), err_sc);
+            {
+              assert(!src1->mt_num);
+              ASSH_ERR_GTO(assh_bignum_modinv(c, &sc, dst, src1, args[od]), err_sc);
+            }
+          dst->mt_num = src1->mt_num;
           break;
         }
 
         case ASSH_BIGNUM_OP_GCD: {
           struct assh_bignum_s *dst = args[ob];
           struct assh_bignum_s *src1 = args[oc], *src2 = args[od];
+          assert(!src1->mt_num && !src2->mt_num);
           ASSH_ERR_GTO(assh_bignum_realloc(c, dst), err_sc);
           ASSH_ERR_GTO(assh_bignum_gcd(c, &sc, dst, src1, src2), err_sc);
+          dst->mt_num = 0;
           break;
         }
 
@@ -2013,6 +2064,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
         case ASSH_BIGNUM_OP_SHL: {
           struct assh_bignum_s *dst = args[oa];
           struct assh_bignum_s *src = args[ob];
+          assert(!src->mt_num);
           size_t b = 0;
           ASSH_CHK_GTO(dst->bits != src->bits, ASSH_ERR_OUTPUT_OVERFLOW, err_sc);
           if (od != ASSH_BOP_NOREG)
@@ -2033,6 +2085,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
             default:
               abort();
             }
+          dst->mt_num = 0;
           break;
         }
 
@@ -2043,6 +2096,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
                          ob == ASSH_BOP_NOREG ? NULL : args[ob],
                          oc == ASSH_BOP_NOREG ? NULL : args[oc],
                          od), err_sc);
+          dst->mt_num = 0;
           break;
         }
 
@@ -2050,6 +2104,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           int r = 0;
           struct assh_bignum_s *src1 = args[oa];
           struct assh_bignum_s *src2 = args[ob];
+          assert(!src1->mt_num && !src2->mt_num);
           if (ob == ASSH_BOP_NOREG)
             r = src1->n != NULL;
           else if (ob != oa)
@@ -2103,6 +2158,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
         case ASSH_BIGNUM_OP_TESTC: {
           struct assh_bignum_s *src1 = args[oa];
           size_t b = ob;
+          assert(!src1->mt_num);
           if (od != ASSH_BOP_NOREG)
             {
               ASSH_ERR_GTO(assh_bignum_size_of_data(format[od], args[od],
@@ -2124,12 +2180,14 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           ASSH_ERR_GTO(assh_bignum_realloc(c, dst), err_sc);
           ASSH_ERR_GTO(assh_bignum_from_uint(dst, value), err_sc);
           ASSH_CHK_GTO(dst->n == NULL, ASSH_ERR_MEM, err_sc);
+          dst->mt_num = 0;
           break;
         }
 
         case ASSH_BIGNUM_OP_PRIME: {
           struct assh_bignum_s *dst = args[ob];
           ASSH_ERR_GTO(assh_bignum_next_prime(c, &sc, dst), err_sc);
+          dst->mt_num = 0;
           break;
         }
 
