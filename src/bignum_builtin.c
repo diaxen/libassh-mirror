@@ -129,6 +129,18 @@ assh_bignum_dump(const assh_bnword_t *x, size_t l)
 }
 #endif
 
+static inline assh_bnword_t assh_bignum_eqzero(assh_bnword_t a)
+{
+  /* return !a in constant time */
+  return ((assh_bnword_t)(~a & (a - 1)) >> (ASSH_BIGNUM_W - 1)) & 1;
+}
+
+static inline assh_bnword_t assh_bignum_lt(assh_bnword_t a, assh_bnword_t b)
+{
+  /* return a < b in constant time */
+  return (((assh_bnlong_t)a - (assh_bnlong_t)b) >> ASSH_BIGNUM_W) & 1;
+}
+
 static inline size_t
 assh_bignum_words(size_t bits)
 {
@@ -326,24 +338,27 @@ static int_fast8_t assh_bignum_cmp(const struct assh_bignum_s *a,
   assh_bnword_t *an = a->n, *bn = b->n;
   int_fast8_t lt = 0, gt = 0, eq;
 
-#warning FIXME check constant time
   for (i = 0; i < l; i++)
     {
-      eq = (an[i] == bn[i]);
-      lt = (an[i] < bn[i]) | (lt & eq);
-      gt = (an[i] > bn[i]) | (gt & eq);
+      assh_bnword_t ax = an[i];
+      assh_bnword_t bx = bn[i];
+      eq = assh_bignum_eqzero(ax ^ bx);
+      lt = assh_bignum_lt(ax, bx) | (lt & eq);
+      gt = assh_bignum_lt(bx, ax) | (gt & eq);
     }
   for (; i < bl; i++)
     {
-      eq = (0 == bn[i]);
-      lt = (0 != bn[i]) | (lt & eq);
+      assh_bnword_t bx = bn[i];
+      eq = assh_bignum_eqzero(bx);
+      lt = (eq ^ 1) | (lt & eq);
       gt = (gt & eq);
     }
   for (; i < al; i++)
     {
-      eq = (an[i] == 0);
+      assh_bnword_t ax = an[i];
+      eq = assh_bignum_eqzero(ax);
       lt = (lt & eq);
-      gt = (an[i] != 0) | (gt & eq);
+      gt = (eq ^ 1) | (gt & eq);
     }
 
   return gt - lt;
