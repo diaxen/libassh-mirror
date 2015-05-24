@@ -1183,30 +1183,39 @@ assh_bignum_mt_reduce(const struct assh_bignum_mt_s *mt,
   size_t i, j;
   size_t ml = assh_bignum_words(mt->mod.bits);
   assh_bnword_t *m = mt->mod.n;
-  assh_bnword_t q;
-  assh_bnlong_t p, t, r;
+  assh_bnword_t e;
 
   for (i = 0; i < ml; i++)
     a[i] = 0;
 
   for (i = 0; i < ml; i++)
     {
-      p = a[0] + (assh_bnlong_t)x[i];
-      q = p * mt->n0;
-      r = (assh_bnlong_t)m[0] * q;
-      t = p + r;
+      assh_bnlong_t p = a[0] + (assh_bnlong_t)x[i];
+      assh_bnword_t q = p * mt->n0;
+      assh_bnword_t pm = m[0];
+      assh_bnlong_t r = (assh_bnlong_t)pm * q;
+      assh_bnlong_t t = p + r;
+      e = 0;
 
       for (j = 1; j < ml; j++)
         {
+          assh_bnword_t cm = m[j];
           p = a[j];
-          r = (assh_bnlong_t)m[j] * q + (t >> ASSH_BIGNUM_W);
+          r = (assh_bnlong_t)cm * q + (t >> ASSH_BIGNUM_W);
           t = p + r;
           a[j-1] = t;
+          e |= (t ^ pm);
+          pm = cm;
         }
-      a[j-1] = (t >> ASSH_BIGNUM_W);
+      q = (t >> ASSH_BIGNUM_W);
+      a[j-1] = q;
+      e |= (q ^ pm);
     }
 
-#warning FIXME a might be == mod
+  /* handle a == mod */
+  e = assh_bignum_eqzero(e) - 1;
+  for (i = 0; i < ml; i++)
+    a[i] &= e;
 }
 
 static assh_error_t ASSH_WARN_UNUSED_RESULT
