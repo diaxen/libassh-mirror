@@ -386,16 +386,16 @@ assh_bignum_rand(struct assh_context_s *c,
   while (1)
     {
       if (bn->bits % ASSH_BIGNUM_W)
-        n[l - 1] >>= (ASSH_BIGNUM_W - bn->bits) & (ASSH_BIGNUM_W - 1);
+        n[l - 1] &= ASSH_BN_WORDMAX >> (ASSH_BIGNUM_W - bn->bits % ASSH_BIGNUM_W);
 
       if ((min == NULL || assh_bignum_cmp(bn, min) > 0) &&
           (max == NULL || assh_bignum_cmp(bn, max) < 0))
         break;
 
-      for (i = 1; i < l; i++)
-        n[l - 1] = n[l];
+      for (i = l; --i != 0; )
+        n[i] = n[i - 1];
 
-      ASSH_ERR_RET(c->prng->f_get(c, (uint8_t*)(n + l - 1),
+      ASSH_ERR_RET(c->prng->f_get(c, (uint8_t*)n,
                      sizeof(assh_bnword_t), quality));
     }
 

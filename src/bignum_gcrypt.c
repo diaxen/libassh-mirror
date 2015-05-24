@@ -29,6 +29,13 @@
 
 #include <gcrypt.h>
 
+static void assh_bignum_gcrypt_lsb(uint8_t *data, size_t size)
+{
+  size_t i;
+  for (i = 0; i < size / 2; i++)
+    ASSH_SWAP(data[i], data[size - i - 1]);
+}
+
 static ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_gcrypt_bignum_rand(struct assh_context_s *c,
                         struct assh_bignum_s *bn,
@@ -45,8 +52,7 @@ assh_gcrypt_bignum_rand(struct assh_context_s *c,
   if (max != NULL)
     bits = ASSH_MIN(bits, gcry_mpi_get_nbits(max->n));
 
-  size_t n = ASSH_ALIGN8(bn->bits);
-
+#ifdef CONFIG_ASSH_USE_GCRYPT_PRNG
   if (c->prng == &assh_prng_gcrypt)
     {
       enum gcry_random_level level;
@@ -64,6 +70,8 @@ assh_gcrypt_bignum_rand(struct assh_context_s *c,
 	  level = GCRY_VERY_STRONG_RANDOM;
 	  break;
 	}
+
+      size_t n = ASSH_ALIGN8(bits);
 
       if (bn->n == NULL)
         bn->n = gcry_mpi_snew(n);
@@ -93,10 +101,18 @@ assh_gcrypt_bignum_rand(struct assh_context_s *c,
       err = ASSH_OK;
     }
   else
+#endif
     {
+      const size_t wsize = 32;
+      size_t n = ((bits - 1) | (wsize - 1)) + 1;
+
       ASSH_SCRATCH_ALLOC(c, uint8_t, rnd, n / 8, ASSH_ERRSV_CONTINUE, err_);
 
       ASSH_ERR_GTO(c->prng->f_get(c, rnd, n / 8, quality), err_sc);
+#ifdef CONFIG_ASSH_DEBUG
+      /* give same result as bignum_builtin.c on little-endian platforms */
+      assh_bignum_gcrypt_lsb(rnd, n / 8);
+#endif
 
       while (1)
         {
@@ -104,14 +120,17 @@ assh_gcrypt_bignum_rand(struct assh_context_s *c,
           bn->n = NULL;
           ASSH_CHK_GTO(gcry_mpi_scan((gcry_mpi_t*)&bn->n,
                  GCRYMPI_FMT_USG, rnd, n / 8, NULL), ASSH_ERR_CRYPTO, err_sc);
-          gcry_mpi_rshift(bn->n, bn->n, n - bits);
+          gcry_mpi_clear_highbit(bn->n, bits);
 
           if ((min == NULL || gcry_mpi_cmp(bn->n, min->n) > 0) &&
               (max == NULL || gcry_mpi_cmp(bn->n, max->n) < 0))
             break;
 
-          memmove(rnd + 1, rnd, n / 8 - 1);
-          ASSH_ERR_GTO(c->prng->f_get(c, rnd, 1, quality), err_sc);
+          memmove(rnd, rnd + wsize / 8, (n - wsize) / 8);
+          ASSH_ERR_GTO(c->prng->f_get(c, rnd + (n - wsize) / 8, wsize / 8, quality), err_sc);
+#ifdef CONFIG_ASSH_DEBUG
+          assh_bignum_gcrypt_lsb(rnd, wsize / 8);
+#endif
         }
 
       err = ASSH_OK;
@@ -121,13 +140,6 @@ assh_gcrypt_bignum_rand(struct assh_context_s *c,
     }
 
   return err;
-}
-
-static void assh_bignum_gcrypt_lsb(uint8_t *data, size_t size)
-{
-  size_t i;
-  for (i = 0; i < size / 2; i++)
-    ASSH_SWAP(data[i], data[size - i - 1]);
 }
 
 static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_gcrypt_convert)
