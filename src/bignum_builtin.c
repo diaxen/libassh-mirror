@@ -804,6 +804,8 @@ assh_bignum_modinv(struct assh_context_s *ctx,
   memcpy(p, an, al * sizeof(assh_bnword_t));
   memset(p + al, 0, (ml - al) * sizeof(assh_bnword_t));
 
+  ASSH_ERR_RET(assh_bignum_div_euclidean(p, al, NULL, 0, r, ml));
+
   memset(v, 0, ml * sizeof(assh_bnword_t));
   memset(un + 1, 0, (ul - 1) * sizeof(assh_bnword_t));
   un[0] = 1;
