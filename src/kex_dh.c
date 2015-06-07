@@ -436,6 +436,9 @@ static assh_error_t assh_kex_dh_init(struct assh_session_s *s,
   assh_error_t err;
   struct assh_kex_dh_private_s *pv;
 
+  if (cipher_key_size < 64)
+    cipher_key_size = 64;
+
   size_t exp_n = cipher_key_size * 2;
 
   /* allocate DH private context */
