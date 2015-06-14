@@ -35,6 +35,7 @@
 #include <assh/assh_event.h>
 #include <assh/helper_key.h>
 
+#include "prng_weak.c"
 #include "fifo.h"
 #include "leaks_check.h"
 
@@ -140,6 +141,9 @@ int test(int (*fend)(int, int), int n)
 
   assh_context_init(&context[0], ASSH_SERVER, assh_leaks_allocator, NULL);
   assh_context_init(&context[1], ASSH_CLIENT, assh_leaks_allocator, NULL);
+
+  ASSH_ERR_RET(assh_context_prng(&context[0], &assh_prng_weak));
+  ASSH_ERR_RET(assh_context_prng(&context[1], &assh_prng_weak));
 
   ch_refs = 0;
   for (j = 0; j < CH_MAP_SIZE; j++)

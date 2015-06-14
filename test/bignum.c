@@ -1037,10 +1037,7 @@ int main(int argc, char **argv)
 #endif
 
   assh_context_init(&context, ASSH_SERVER, NULL, NULL);
-
-  ASSH_ERR_RET(assh_context_prng(&context, NULL));
-#warning weak
-  //  ASSH_ERR_RET(assh_context_prng(&context, &assh_prng_weak));
+  ASSH_ERR_RET(assh_context_prng(&context, &assh_prng_weak));
 
   test_convert();
   test_cmp();

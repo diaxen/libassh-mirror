@@ -38,6 +38,7 @@
 #include <assh/key_dsa.h>
 #include <assh/key_eddsa.h>
 
+#include "prng_weak.c"
 #include "leaks_check.h"
 #include "fifo.h"
 #include "keys.h"
@@ -128,8 +129,14 @@ int test(const struct assh_algo_kex_s *kex,
 	 const struct algo_with_key_s *kex_key,
 	 const struct algo_with_key_s *sign_key)
 {
+  assh_error_t err;
+
   assh_context_init(&context[0], ASSH_SERVER, assh_leaks_allocator, NULL);
   assh_context_init(&context[1], ASSH_CLIENT, assh_leaks_allocator, NULL);
+
+  ASSH_ERR_RET(assh_context_prng(&context[0], &assh_prng_weak));
+  ASSH_ERR_RET(assh_context_prng(&context[1], &assh_prng_weak));
+
   uint_fast8_t i;
 
   fprintf(stderr, "==== %s, %s, %s, %s, %s ====\n",
