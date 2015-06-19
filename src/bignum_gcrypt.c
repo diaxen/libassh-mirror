@@ -49,6 +49,8 @@ assh_gcrypt_bignum_rand(struct assh_context_s *c,
 
   size_t bits = bn->bits;
 
+  bn->secret |= quality != ASSH_PRNG_QUALITY_WEAK;
+
   if (max != NULL)
     bits = ASSH_MIN(bits, gcry_mpi_get_nbits(max->n));
 
@@ -167,6 +169,7 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_gcrypt_convert)
           ASSH_CHK_RET(dstn->n == NULL, ASSH_ERR_MEM);
           dstn->n = gcry_mpi_set(dstn->n, srcn->n);
           dstn->mt_num = srcn->mt_num;
+          dstn->secret = srcn->secret;
           break;
         case ASSH_BIGNUM_STRING:
           assert(!srcn->mt_num);
@@ -456,11 +459,13 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           struct assh_bignum_s *src = args[od];
           struct assh_bignum_s *dst = args[oc];
           assert(!src->mt_num);
+          assert(!src->secret);
           gcry_mpi_release(dst->n);
           dst->n = gcry_mpi_copy(src->n);
           dst->bits = src->bits;
           dst->mt_mod = 1;
           dst->mt_num = 0;
+          dst->secret = 0;
           break;
         }
 
@@ -477,6 +482,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
                 continue;
               gcry_mpi_release(dst->n);
               dst->n = gcry_mpi_copy(src->n);
+              dst->secret = src->secret;
             }
           break;
         }
@@ -489,6 +495,8 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           struct assh_bignum_s *src1 = args[ob];
           struct assh_bignum_s *src2 = args[oc];
           struct assh_bignum_s *dst = args[oa];
+          dst->secret = src1->secret | src2->secret;
+
           if (dst->n == NULL)
             {
               dst->n = gcry_mpi_snew(dst->bits);
@@ -542,6 +550,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
                 case ASSH_BIGNUM_OP_MUL:
                   assert(mod->mt_mod == src1->mt_num);
                   assert(mod->mt_mod == src2->mt_num);
+                  assert((!src1->secret && !src2->secret) || mod->mt_mod);
                   gcry_mpi_mulm(dst->n, src1->n, src2->n, mod->n);
                   break;
                 case ASSH_BIGNUM_OP_EXPM:
@@ -567,10 +576,12 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           struct assh_bignum_s *src1 = args[oc];
           struct assh_bignum_s *src2 = args[od];
           assert(!src1->mt_num && !src2->mt_num);
+          assert(!src1->secret && !src2->secret);
           if (oa != ASSH_BOP_NOREG)
             {
               dsta = args[oa];
               dsta->mt_num = 0;
+              dsta->secret = 0;
               if (dsta->n == NULL)
                 {
                   dsta->n = gcry_mpi_snew(dsta->bits);
@@ -582,6 +593,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
             {
               dstb = args[ob];
               dstb->mt_num = 0;
+              dstb->secret = 0;
               if (dstb->n == NULL)
                 {
                   dstb->n = gcry_mpi_snew(dstb->bits);
@@ -613,18 +625,21 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           switch (op)
             {
             case ASSH_BIGNUM_OP_GCD:
+              assert(!src1->secret && !src2->secret);
               assert(!src1->mt_num && !src2->mt_num);
               gcry_mpi_gcd(dst->n, src1->n, src2->n);
               dst->mt_num = 0;
               break;
             case ASSH_BIGNUM_OP_INV:
               assert(src2->mt_mod == src1->mt_num);
+              assert(!src1->secret || src2->mt_mod);
               gcry_mpi_invm(dst->n, src1->n, src2->n);
               dst->mt_num = src1->mt_num;
               break;
             default:
               abort();
             }
+          dst->secret = src1->secret | src2->secret;
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
           assh_bignum_gcrypt_print(dst, ASSH_BIGNUM_NATIVE, 'R', pc);
 #endif
@@ -661,6 +676,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
               abort();
             }
           dst->mt_num = 0;
+          dst->secret = src->secret;
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
           assh_bignum_gcrypt_print(dst, ASSH_BIGNUM_NATIVE, 'R', pc);
 #endif
@@ -684,11 +700,18 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           int r = 0;
           struct assh_bignum_s *src1 = args[oa];
           struct assh_bignum_s *src2 = args[ob];
-          assert(!src1->mt_num && !src2->mt_num);
           if (ob == ASSH_BOP_NOREG)
             r = src1->n != NULL;
-          else if (ob != oa)
-            r = gcry_mpi_cmp(src1->n, src2->n);
+          else
+            {
+              assert(!src2->mt_num);
+              if (ob != oa)
+                {
+                  assert(!src1->mt_num);
+                  assert(oc == 128 || (!src1->secret && !src1->secret));
+                  r = gcry_mpi_cmp(src1->n, src2->n);
+                }
+            }
           switch (od)
             {
             case 0:             /* cmpeq */
@@ -716,6 +739,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           struct assh_bignum_s *src1 = args[oa];
           size_t b = ob;
           assert(!src1->mt_num);
+          assert(oc == 128 || !src1->secret);
           if (od != ASSH_BOP_NOREG)
             {
               ASSH_ERR_GTO(assh_bignum_size_of_data(format[od], args[od],

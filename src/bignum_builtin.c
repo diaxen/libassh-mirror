@@ -2210,11 +2210,18 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           int r = 0;
           struct assh_bignum_s *src1 = args[oa];
           struct assh_bignum_s *src2 = args[ob];
-          assert(!src1->mt_num && !src2->mt_num);
           if (ob == ASSH_BOP_NOREG)
             r = src1->n != NULL;
-          else if (ob != oa)
-            r = assh_bignum_cmp(src1, src2);
+          else
+            {
+              assert(!src2->mt_num);
+              if (ob != oa)
+                {
+                  assert(!src1->mt_num);
+                  assert(oc == 128 || (!src1->secret && !src1->secret));
+                  r = assh_bignum_cmp(src1, src2);
+                }
+            }
           switch (od)
             {
             case 0:             /* cmpeq */
@@ -2265,6 +2272,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           struct assh_bignum_s *src1 = args[oa];
           size_t b = ob;
           assert(!src1->mt_num);
+          assert(oc == 128 || !src1->secret);
           if (od != ASSH_BOP_NOREG)
             {
               ASSH_ERR_GTO(assh_bignum_size_of_data(format[od], args[od],
