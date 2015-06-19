@@ -115,13 +115,13 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
   {
     K_data, R_data, S_data, M_data,    /* data buffers */
     P, Q, G, X,                        /* big number inputs */
-    K, R, M, S, R1, R2, R3,            /* big number temporaries */
+    K, R, M, S, R1, R2, R3, R4,        /* big number temporaries */
     MT
   };
 
   static const assh_bignum_op_t bytecode[] = {
     ASSH_BOP_SIZER(     K,      R2,     Q               ),
-    ASSH_BOP_SIZE(      R3,     P                       ),
+    ASSH_BOP_SIZER(     R3,     R4,     P               ),
 
     ASSH_BOP_MOVE(      K,      K_data                  ),
     ASSH_BOP_MOVE(      M,      M_data                  ),
@@ -137,7 +137,11 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
     ASSH_BOP_EXPM(      R3,     R3,     K,      MT      ),
     ASSH_BOP_MTFROM(    R3,	R3,	R3,	MT	),
     /* r = (g^k mod p) mod q */
-    ASSH_BOP_MOD(       R3,     R3,     Q               ),
+    ASSH_BOP_MOVE(      R4,     Q                       ),
+    ASSH_BOP_MTINIT(	MT,	R4			),
+    ASSH_BOP_MTTO(      R3,	R3,	R3,	MT	),
+    ASSH_BOP_MOD(       R3,     R3,             MT      ),
+    ASSH_BOP_MTFROM(    R3,	R3,	R3,	MT	),
     ASSH_BOP_MOVE(      R,      R3                      ),
     /* (x * r) mod q */
     ASSH_BOP_MTINIT(	MT,	Q			),
@@ -148,9 +152,8 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
     /* sha(m) + (x * r) */
     ASSH_BOP_ADDM(      R2,     M,      R1,     MT      ),
     /* k^-1 */
-#warning inv needs to be constant time?
-    ASSH_BOP_INV(       R1,     K,      Q               ),
-    ASSH_BOP_MTTO(      R1,	R1,	R1,	MT	),
+    ASSH_BOP_MTTO(      M,	M,	K,	MT	),
+    ASSH_BOP_INV(       R1,     M,      MT              ),
     /* s = k^-1 * (sha(m) + (x * r)) mod q */
     ASSH_BOP_MULM(      S,      R1,     R2,     MT      ),
     ASSH_BOP_MTFROM(    S,	S,	S,	MT	),
@@ -166,7 +169,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "DDDDNNNNTTTTTTTm",
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "DDDDNNNNXTTTTTTTm",
                   /* D */ nonce, r_str, s_str, msgh,
                   /* N */ &k->pn, &k->qn, &k->gn, &k->xn), err_scratch);
 

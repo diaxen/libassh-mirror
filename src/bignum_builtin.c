@@ -2103,20 +2103,26 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
         case ASSH_BIGNUM_OP_DIV: {
           struct assh_bignum_s *dsta = NULL, *dstb = NULL;
           struct assh_bignum_s *src1 = args[oc], *src2 = args[od];
-          assert(!src1->mt_num && !src2->mt_num);
+          assert(!src2->mt_num);
+          assert(src1->mt_num == src2->mt_mod);
           if (oa != ASSH_BOP_NOREG)
             {
+              assert(!src2->mt_mod);
               dsta = args[oa];
               dsta->mt_num = 0;
               ASSH_ERR_GTO(assh_bignum_realloc(c, dsta), err_sc);
             }
           if (ob != ASSH_BOP_NOREG)
             {
+              if (src2->mt_mod)
+                goto div_done;
               dstb = args[ob];
-              dstb->mt_num = 0;
+              dstb->mt_num = src2->mt_mod;
+              dstb->mt_id = src1->mt_id;
               ASSH_ERR_GTO(assh_bignum_realloc(c, dstb), err_sc);
             }
           ASSH_ERR_GTO(assh_bignum_div(c, &sc, dstb, dsta, src1, src2), err_sc);
+          div_done:
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
           if (dsta)
             assh_bignum_builtin_print(dsta, ASSH_BIGNUM_NATIVE, 'A', pc, mt);
