@@ -132,14 +132,15 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
       ASSH_BOP_MOVE(    A,      A_mpint                 ),
       ASSH_BOP_MOVE(    D,      D_mpint                 ),
 
-      ASSH_BOP_UINT(    RX,     0                       ),
-      ASSH_BOP_UINT(    RY,     1                       ),
-      ASSH_BOP_UINT(    RZ,     1                       ),
+      ASSH_BOP_MTUINT(  RX,     0,      MT              ),
+      ASSH_BOP_MTUINT(  RY,     1,      MT              ),
+      ASSH_BOP_MTUINT(  RZ,     1,      MT              ),
       ASSH_BOP_MOVE(    BX,     BX_mpint                ),
       ASSH_BOP_MOVE(    BY,     BY_mpint                ),
-      ASSH_BOP_UINT(    BZ,     1                       ),
+      ASSH_BOP_MTUINT(  BZ,     1,      MT              ),
 
-      ASSH_BOP_MTTO(	A,      BZ,    A,      MT       ),
+      ASSH_BOP_MTTO(	A,      D,     A,      MT       ),
+      ASSH_BOP_MTTO(	BX,     BY,    BX,     MT       ),
 
       /* ladder */
       ASSH_BOP_TEDWARD_PDBL( PX, PY, PZ,  RX, RY, RZ,
@@ -428,15 +429,14 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
     ASSH_BOP_PRINT(     BX,     'X'                     ),
     ASSH_BOP_PRINT(     BY,     'Y'                     ),
 #endif
-    ASSH_BOP_UINT(      BZ,     1                       ),
+    ASSH_BOP_MTUINT(    BZ,     1,      MT              ),
 
     /* compute H(R,A,M).A */
-    ASSH_BOP_UINT(      RX,     0                       ),
-    ASSH_BOP_UINT(      RY,     1                       ),
-    ASSH_BOP_UINT(      RZ,     1                       ),
+    ASSH_BOP_MTUINT(    RX,     0,      MT              ),
+    ASSH_BOP_MTUINT(    RY,     1,      MT              ),
+    ASSH_BOP_MTUINT(    RZ,     1,      MT              ),
 
-    ASSH_BOP_MTTO(      BX,     BZ,     BX,     MT      ),
-    ASSH_BOP_MTTO(      RY,     RZ,     RY,     MT      ),
+    ASSH_BOP_MTTO(      BX,     BY,     BX,     MT      ),
 
     ASSH_BOP_TEDWARD_PDBL( PX, PY, PZ,  RX, RY, RZ,
                            T0, T1, MT                   ),
@@ -452,14 +452,13 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
     /* compute S.B */
     ASSH_BOP_MOVE(      BX,     BX_mpint                ),
     ASSH_BOP_MOVE(      BY,     BY_mpint                ),
-    ASSH_BOP_UINT(      BZ,     1                       ),
+    ASSH_BOP_MTUINT(    BZ,     1,      MT              ),
 
-    ASSH_BOP_UINT(      QX,     0                       ),
-    ASSH_BOP_UINT(      QY,     1                       ),
-    ASSH_BOP_UINT(      QZ,     1                       ),
+    ASSH_BOP_MTUINT(    QX,     0,      MT              ),
+    ASSH_BOP_MTUINT(    QY,     1,      MT              ),
+    ASSH_BOP_MTUINT(    QZ,     1,      MT              ),
 
-    ASSH_BOP_MTTO(      BX,     BZ,     BX,     MT      ),
-    ASSH_BOP_MTTO(      QY,     QZ,     QY,     MT      ),
+    ASSH_BOP_MTTO(      BX,     BY,     BX,     MT      ),
 
     ASSH_BOP_TEDWARD_PDBL( PX, PY, PZ,  QX, QY, QZ,
                            T0, T1, MT                   ),

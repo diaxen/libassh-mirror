@@ -1950,12 +1950,11 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
       uint_fast8_t ob = (opc >> 14) & 0x3f;
       uint_fast8_t oc = (opc >> 6) & 0xff;
       uint_fast8_t od = opc & 0x3f;
-      uint_fast32_t value = (opc >> 6) & 0xfffff;
 
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
       const char *opnames[] = ASSH_BIGNUM_OP_NAMES;
-      ASSH_DEBUG("pc=%u, op=%s, a=%u, b=%u, c=%u, d=%u, value=%u\n",
-                 pc, opnames[op], oa, ob, oc, od, value);
+      ASSH_DEBUG("pc=%u, op=%s, a=%u, b=%u, c=%u, d=%u\n",
+                 pc, opnames[op], oa, ob, oc, od);
 #endif
 
       pc++;
@@ -2282,11 +2281,40 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           break;
         }
 
+        case ASSH_BIGNUM_OP_MTUINT: {
+          uint_fast32_t value = (opc >> 14) & 0xfff;
+          struct assh_bignum_s *dst = args[od];
+          struct assh_bignum_mt_s *mt = args[oc];
+          assert(dst->bits == mt->mod.bits);
+          size_t ml = assh_bignum_words(mt->mod.bits);
+          ASSH_ERR_GTO(assh_bignum_realloc(c, dst), err_sc);
+          dst->mt_num = 1;
+          dst->mt_id = oc;
+          switch (value)
+            {
+            case 0:
+              memset(dst->n, 0, ml * sizeof(assh_bnword_t));
+              break;
+            case 1:
+              memcpy(dst->n, (assh_bnword_t*)mt->mod.n + 2 * ml, ml * sizeof(assh_bnword_t));
+              break;
+            default:
+              ASSH_ERR_GTO(assh_bignum_from_uint(dst, value), err_sc);
+              ASSH_ERR_GTO(assh_bignum_mt_convert(c, &sc, 1, mt, dst, dst), err_sc);
+              break;
+            }
+#if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
+          if (trace & 2)
+            assh_bignum_builtin_print(dst, ASSH_BIGNUM_NATIVE, 'R', pc, mt);
+#endif
+          break;
+        }
+
         case ASSH_BIGNUM_OP_UINT: {
+          uint_fast32_t value = (opc >> 6) & 0xfffff;
           struct assh_bignum_s *dst = args[od];
           ASSH_ERR_GTO(assh_bignum_realloc(c, dst), err_sc);
           ASSH_ERR_GTO(assh_bignum_from_uint(dst, value), err_sc);
-          ASSH_CHK_GTO(dst->n == NULL, ASSH_ERR_MEM, err_sc);
           dst->mt_num = 0;
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
           assh_bignum_builtin_print(dst, ASSH_BIGNUM_NATIVE, 'R', pc, mt);

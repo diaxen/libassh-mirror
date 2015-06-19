@@ -405,12 +405,11 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
       uint_fast8_t ob = (opc >> 14) & 0x3f;
       uint_fast8_t oc = (opc >> 6) & 0xff;
       uint_fast8_t od = opc & 0x3f;
-      uint_fast32_t value = (opc >> 6) & 0xfffff;
 
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
       const char *opnames[] = ASSH_BIGNUM_OP_NAMES;
-      ASSH_DEBUG("pc=%u, op=%s, a=%u, b=%u, c=%u, d=%u, value=%u\n",
-                 pc, opnames[op], oa, ob, oc, od, value);
+      ASSH_DEBUG("pc=%u, op=%s, a=%u, b=%u, c=%u, d=%u\n",
+                 pc, opnames[op], oa, ob, oc, od);
 #endif
 
       pc++;
@@ -730,10 +729,26 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           break;
         }
 
-        case ASSH_BIGNUM_OP_UINT: {
+        case ASSH_BIGNUM_OP_MTUINT: {
+          uint_fast32_t value = (opc >> 14) & 0xfff;
           struct assh_bignum_s *dst = args[od];
+          struct assh_bignum_s *mt = args[oc];
+          assert(dst->bits == mt->bits);
+          dst->mt_num = 1;
+          dst->mt_id = oc;
           dst->n = gcry_mpi_set_ui(dst->n, value);
+          ASSH_CHK_GTO(dst->n == NULL, ASSH_ERR_MEM, err_sc);
+#if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
+          assh_bignum_gcrypt_print(dst, ASSH_BIGNUM_NATIVE, 'R', pc);
+#endif
+          break;
+        }
+
+        case ASSH_BIGNUM_OP_UINT: {
+          uint_fast32_t value = (opc >> 6) & 0xfffff;
+          struct assh_bignum_s *dst = args[od];
           dst->mt_num = 0;
+          dst->n = gcry_mpi_set_ui(dst->n, value);
           ASSH_CHK_GTO(dst->n == NULL, ASSH_ERR_MEM, err_sc);
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
           assh_bignum_gcrypt_print(dst, ASSH_BIGNUM_NATIVE, 'R', pc);

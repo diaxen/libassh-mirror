@@ -138,13 +138,13 @@ assh_montgomery_point_mul(struct assh_session_s *s, const uint8_t *result,
 
   enum {
     R_raw, BP_raw, P_mpint, A24_mpint,
-    X1, X2, Z2, X3, Z3, T0, T1, A24,
+    X2, Z2, Z3, X1, X3, T0, T1, A24,
     MT, S, L
   };
 
   static const assh_bignum_op_t bytecode[] = {
 
-    ASSH_BOP_SIZER(     X1,     A24,    S               ),
+    ASSH_BOP_SIZER(     X2,     A24,    S               ),
 
     /* init */
     ASSH_BOP_MOVE(      T0,     P_mpint                 ),
@@ -157,10 +157,10 @@ assh_montgomery_point_mul(struct assh_session_s *s, const uint8_t *result,
     ASSH_BOP_PRINT(     X1,    'B'                      ),
 #endif
 
-    ASSH_BOP_UINT(      X2,     1                       ),
-    ASSH_BOP_UINT(      Z2,     0                       ),
+    ASSH_BOP_MTUINT(    X2,     1,      MT              ),
+    ASSH_BOP_MTUINT(    Z2,     0,      MT              ),
     ASSH_BOP_MOVE(      X3,     X1                      ),
-    ASSH_BOP_UINT(      Z3,     1                       ),
+    ASSH_BOP_MTUINT(    Z3,     1,      MT              ),
 
     ASSH_BOP_MTTO(	X1,     A24,    X1,     MT      ),
     /* montgomery ladder */

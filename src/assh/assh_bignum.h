@@ -357,13 +357,13 @@ enum assh_bignum_opcode_e
   ASSH_BIGNUM_OP_TESTC,
   ASSH_BIGNUM_OP_TESTS,
   ASSH_BIGNUM_OP_UINT,
+  ASSH_BIGNUM_OP_MTUINT,
   ASSH_BIGNUM_OP_LADJMP,
   ASSH_BIGNUM_OP_LADSWAP,
   ASSH_BIGNUM_OP_LADLOOP,
   ASSH_BIGNUM_OP_MTINIT,
   ASSH_BIGNUM_OP_MTTO,
   ASSH_BIGNUM_OP_MTFROM,
-  ASSH_BIGNUM_OP_MTONE,
   ASSH_BIGNUM_OP_PRIME,
   ASSH_BIGNUM_OP_ISPRIM,
   ASSH_BIGNUM_OP_PRIVACY,
@@ -376,7 +376,7 @@ enum assh_bignum_opcode_e
     "sub", "mul", "div", "gcd",                 \
     "expm", "inv", "shr", "shl",                \
     "rand", "cmp", "testc", "tests", "uint",    \
-    "ladjmp", "ladswap", "ladloop",             \
+    "mtuint", "ladjmp", "ladswap", "ladloop",   \
     "mtinit", "mtto", "mtfrom", "mtone",        \
     "prime", "isprim", "privacy", "print"       \
 }
@@ -419,9 +419,6 @@ enum assh_bignum_opcode_e
     @see #ASSH_BOP_MTTO */
 #define ASSH_BOP_MTFROM(dst1, dst2, src, mt)       \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_MTFROM, dst2 - dst1 + 1, dst1, src, mt)
-
-#define ASSH_BOP_MTONE(dst, mt)       \
-  ASSH_BOP_FMT2(ASSH_BIGNUM_OP_MTFROM, dst2 - dst1 + 1, dst1, src, mt)
 
 /** @mgroup{Bytecode instructions}
     @internal This instruction changes the bit size of a number. It is
