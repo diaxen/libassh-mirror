@@ -237,6 +237,7 @@ struct assh_kex_keys_s
   void *mac_ctx;
   const struct assh_algo_compress_s *cmp;
   void *cmp_ctx;
+  uint_fast8_t safety;
 };
 
 /**

@@ -143,7 +143,8 @@ int main(int argc, char **argv)
                 fprintf(stderr, "unable to load user rsa key\n");
             }
 
-          if (event.userauth_client.methods.use_password) 
+          if (event.userauth_client.methods.use_password &&
+              assh_session_safety(session) > 25)
             {
               fprintf(stderr, "password input\n");
               event.userauth_client.methods.password.str = "test";

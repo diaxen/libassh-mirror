@@ -258,3 +258,9 @@ assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t inerr)
   return inerr | ASSH_ERRSV_FIN;
 }
 
+uint_fast8_t assh_session_safety(struct assh_session_s *s)
+{
+  return ASSH_MIN(s->cur_keys_out->safety,
+                  s->cur_keys_in->safety);
+}
+

@@ -199,5 +199,12 @@ void assh_session_release(struct assh_session_s *s);
 */
 assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t err);
 
+/** @This returns the current session safety factor which depends on
+    algorithms chosen during the last key exchange. The safety
+    factor may change during the session lifetime.
+    @see assh_algo_register_va
+*/
+uint_fast8_t assh_session_safety(struct assh_session_s *s);
+
 #endif
 
