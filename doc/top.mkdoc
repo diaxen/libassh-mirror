@@ -89,10 +89,10 @@ assh_config.h
     module APIs:
 
     @list
-      @item ssh2 key exchange,
-      @item ssh2 signature algorithms,
-      @item ssh2 cipher algorithms,
-      @item ssh2 message authentication algorithms,
+      @item ssh2 @xref{key-exchange algorithms},
+      @item ssh2 @xref{signature algorithms},
+      @item ssh2 @xref{cipher algorithms},
+      @item ssh2 @xref{message authentication algorithms},
       @item ssh2 services.
     @end list
 
@@ -107,6 +107,10 @@ assh_config.h
 
 @end section
 
+@macro rfc number
+  @url {https://tools.ietf.org/html/rfc@number@}{ rfc@number@ }
+@end macro
+
 @section TP {Supported algorithms}
 
   The library is provided with some built-in modules and some gcrypt
@@ -120,87 +124,187 @@ assh_config.h
   implementations. This include key-exchange and signature
   algorithms. These implementations rely on a big number engine
   module. A gcypt based and a built-in big number engines are
-  provided. The built-in engine support constant time computations in
-  order to avoid side channel attacks.
+  provided. The built-in engine supports strict constant time
+  computations in order to avoid side channel attacks.
 
   Some gcypt based and built-in modules are provided for ciphers and MACs.
 
-  @section T {Built-in key-exchange algorithms}
+  Algorithm registration functions are declared in @ref{@assh/assh_algo.h}.
 
-    @section {Standard Diffie-Hellman}
-      @tt {diffie-hellman-group1-sha1},
-      @tt {diffie-hellman-group14-sha1}.
+  @section T {Key-exchange algorithms}
+
+    Key-exchange related declarations can be found in @ref{@assh/assh_kex.h}.
+
+    @section {Prime field Diffie-Hellman}
+      These are diffie-hellman over prime field algorithms, specified
+      in @invoke{4253}rfc :
+      @list
+        @item @tt {diffie-hellman-group1-sha1} (1024 bits prime),
+        @item @tt {diffie-hellman-group14-sha1} (2048 bits prime).
+      @end list
     @end section
 
-    @section {Standard Diffie-Hellman with group exchange}
-      @tt {diffie-hellman-group-exchange-sha1},
-      @tt {diffie-hellman-group-exchange-sha256}.
+    @section {Prime field Diffie-Hellman with group exchange}
+      These are diffie-hellman over prime field algorithms using
+      server provided groups as specified in @invoke{4419}rfc:
+      @list
+        @item @tt {diffie-hellman-group-exchange-sha1},
+        @item @tt {diffie-hellman-group-exchange-sha256}.
+      @end list
     @end section
 
     @section {RSA encrypted secret}
-      @tt {rsa1024-sha1},
-      @tt {rsa2048-sha256}.
+      These key exchange methods relies on RSA encrypted secret as
+      specified in @invoke{4432}rfc:
+      @list
+        @item @tt {rsa1024-sha1},
+        @item @tt {rsa2048-sha256}.
+      @end list
     @end section
 
     @section {Montgomery curves Diffie-Hellman}
-      @tt {curve25519-sha256@libssh.org},
-      @tt {m383-sha384@libassh.org},
-      @tt {m511-sha512@libassh.org}.
+      These are diffie-hellman algorithms based on montgomery elliptic
+      curve as proposed in @em {Curve25519: new Diffie-Hellman speed
+      records}.
+
+      The protocol part for ssh is specified in @em
+      {curve25519-sha256_libssh.org.txt}.
+
+      Two additional sets of curve parameters proposed in @em{IETF
+      draft-ladd-safecurves-04} with larger key sizes are implemented
+      as well.
+      @list
+        @item @tt {curve25519-sha256@libssh.org},
+        @item @tt {m383-sha384@libassh.org},
+        @item @tt {m511-sha512@libassh.org}.
+      @end list
     @end section
 
   @end section
 
-  @section T {Built-in signature algorithms}
+  @section T {Signature algorithms}
 
-    @section {DSA}
-      @tt {ssh-dss},
-      @tt {dsa2048-sha224@libassh.org},
-      @tt {dsa2048-sha256@libassh.org},
-      @tt {dsa3072-sha256@libassh.org}.
+    Signature related declarations can be found in @ref{@assh/assh_sign.h}.
+
+    @section {DSA signature}
+      These are implementations of the Digitial Signature Algorithm as
+      specified in @em {FIPS 186.4}.
+
+      The original ssh @invoke{4253}rfc only specifies use of 1024
+      bits DSA keys. The last version of the DSA standard specifies
+      larger key sizes, implemented here as extensions. The additional
+      algorithms accept any key size grater than their base key size
+      and reject lower key sizes.
+
+      @list
+        @item @tt {ssh-dss} (use @em {sha1}, 1024 bits key),
+        @item @tt {dsa2048-sha224@libassh.org} (key size >= 2048 bits),
+        @item @tt {dsa2048-sha256@libassh.org} (key size >= 2048 bits),
+        @item @tt {dsa3072-sha256@libassh.org} (key size >= 3072 bits).
+      @end list
     @end section
 
-    @section {RSA}
-      @tt {ssh-rsa},
-      @tt {rsa2048-sha256@libassh.org},
-      @tt {rsa3072-sha256@libassh.org}.
+    @section {RSA signature}
+      These are implementations of the RSA signature algorithm as
+      specified in @em {FIPS 186.4}.
+
+      The original RSA signature algorithm specified in @invoke{4253}rfc
+      relies on @em{md5} and @em{sha1} hashes. Additional algorithms
+      using the @em{sha2-256} hash and enforcing a key size limit are
+      provided:
+
+      @list
+        @item @tt {ssh-rsa},
+        @item @tt {rsa2048-sha256@libassh.org},
+        @item @tt {rsa3072-sha256@libassh.org}.
+      @end list
+
+      Variants of the @tt {ssh-rsa} algorithms are proposed which
+      reject lower key sizes and weak hash algorithms. The retained
+      variant depends of the safety value passed to the @ref
+      assh_algo_register_va function:
+
+      @list
+        @item generate @em{sha1}, accept @em{sha*} or @em{md5}, accept keys size >= 768 bits,
+        @item generate @em{sha1}, accept @em{sha*}, accept keys size >= 1024 bits,
+        @item generate @em{sha1}, accept @em{sha*}, accept keys size >= 2048 bits,
+      @end list
     @end section
 
-    @section {EdDSA}
-      @tt {ssh-ed25519},
-      @tt {eddsa-e382-shake256@libassh.org},
-      @tt {eddsa-e521-shake256@libassh.org}.
+    @section {EdDSA signature}
+      These are signature algorithms based on edward elliptic curve as proposed
+      in @em {High-speed high-security signatures}. @em{Ed25519} relies on the
+      @em{sha2-512} hash algorithm.
+
+      Two additional sets of curve parameters with larger key sizes
+      are implemented as proposed in @em{IETF draft-ladd-safecurves-04}.
+      Variable output length variants of @em{sha3} are used as underlying
+      hashes because the output of @em{sha2-512} is not large enough.
+
+      @list
+        @item @tt {ssh-ed25519},
+        @item @tt {eddsa-e382-shake256@libassh.org},
+        @item @tt {eddsa-e521-shake256@libassh.org}.
+      @end list
     @end section
 
   @end section
 
-  @section T {Built-in ciphers}
-    @tt {aes128-cbc},    @tt {aes192-cbc},    @tt {aes256-cbc},
-    @tt {aes128-ctr},    @tt {aes192-ctr},    @tt {aes256-ctr},
-    @tt {arcfour},    @tt {arcfour128},    @tt {arcfour256}.
+  @section T {Cipher algorithms}
+
+    Cipher related declarations can be found in @ref{@assh/assh_cipher.h}.
+
+    Cipher specified in @invoke{4253}rfc as well as their @em{CTR}
+    variants specified in @invoke{4344}rfc are implemented.
+
+    Authenticated ciphers use the packet format described in
+    @invoke{5647}rfc but the proposed algorithms selection mechanism
+    is impractical and not implemented. MAC algorithm selection is
+    skipped instead when an authenticated cipher is selected.
+
+    @list
+      @item @tt {aes128-cbc},  @tt {aes192-cbc},    @tt {aes256-cbc},
+      @item @tt {aes128-ctr},  @tt {aes192-ctr},    @tt {aes256-ctr},
+      @item @tt {arcfour},     @tt {arcfour128},    @tt {arcfour256}.
+    @end list
+
+    When the GCrypt library is used, these additional cipher algorithms are available:
+    @list
+      @item @tt {serpent128-cbc},    @tt {serpent192-cbc},    @tt {serpent256-cbc},
+      @item @tt {serpent128-ctr},    @tt {serpent192-ctr},    @tt {serpent256-ctr},
+      @item @tt {twofish128-cbc},    @tt {twofish256-cbc},
+      @item @tt {twofish128-ctr},    @tt {twofish256-ctr},
+      @item @tt {3des-cbc},      @tt {3des-ctr},
+      @item @tt {cast128-cbc},   @tt {cast128-ctr},
+      @item @tt {blowfish-cbc},  @tt {blowfish-ctr}.
+      @item @tt {aes128-gcm@openssh.com}, @tt {aes256-gcm@openssh.com},
+      @item @tt {serpent128-gcm@libassh.org}, @tt {serpent256-gcm@libassh.org},
+      @item @tt {twofish128-gcm@libassh.org}, @tt {twofish256-gcm@libassh.org},
+    @end list
+
   @end section
 
-  @section T {Gcrypt based ciphers}
-    @tt {aes128-gcm@openssh.com}, @tt {aes256-gcm@openssh.com},
-    @tt {serpent128-cbc},    @tt {serpent192-cbc},    @tt {serpent256-cbc},
-    @tt {serpent128-ctr},    @tt {serpent192-ctr},    @tt {serpent256-ctr},
-    @tt {twofish128-cbc},    @tt {twofish256-cbc},
-    @tt {twofish128-ctr},    @tt {twofish256-ctr},
-    @tt {3des-cbc},      @tt {3des-ctr},
-    @tt {cast128-cbc},   @tt {cast128-ctr},
-    @tt {blowfish-cbc},  @tt {blowfish-ctr}.
-  @end section
+  @section T {Message authentication algorithms}
 
-  @section T {Built-in MACs}
-    @tt {hmac-md5}, @tt {hmac-md5-96},
-    @tt {hmac-sha1}, @tt {hmac-sha1-96},
-    @tt {hmac-sha256}, @tt {hmac-sha512},
-    @tt {hmac-md5-etm@openssh.com}, @tt {hmac-md5-96-etm@openssh.com},
-    @tt {hmac-sha1-etm@openssh.com}, @tt {hmac-sha1-96-etm@openssh.com},
-    @tt {hmac-sha256-etm@openssh.com}, @tt {hmac-sha512-etm@openssh.com},
-  @end section
+    MAC related declarations can be found in @ref{@assh/assh_mac.h}.
 
-  @section T {Gcrypt based MACs}
-    @tt {hmac-ripemd160}, @tt {hmac-ripemd160-etm@openssh.com}
+    Standard ssh MAC algorithms based on @em{md5}, @em{sha1} and
+    @em{sha2} are provided as specified in @invoke{4253}rfc and
+    @invoke{6668}rfc. Additional @em {Encrypt-then-Mac} algorithms are
+    provided as well.
+    @list
+      @item @tt {hmac-md5}, @tt {hmac-md5-96},
+      @item @tt {hmac-sha1}, @tt {hmac-sha1-96},
+      @item @tt {hmac-sha2-256}, @tt {hmac-sha2-512},
+      @item @tt {hmac-md5-etm@openssh.com}, @tt {hmac-md5-96-etm@openssh.com},
+      @item @tt {hmac-sha1-etm@openssh.com}, @tt {hmac-sha1-96-etm@openssh.com},
+      @item @tt {hmac-sha2-256-etm@openssh.com}, @tt {hmac-sha2-512-etm@openssh.com}.
+    @end list
+
+    When the GCrypt library is used, these additional MAC algorithms are available:
+    @list
+      @item @tt {hmac-ripemd160}, @tt {hmac-ripemd160-etm@openssh.com}
+    @end list
   @end section
 
 @end section
