@@ -332,5 +332,10 @@ extern const struct assh_algo_kex_s assh_kex_rsa1024_sha1;
 /** Standard @tt rsa2048-sha256 algorithm specified in rfc4432. */
 extern const struct assh_algo_kex_s assh_kex_rsa2048_sha256;
 
+/** Standard @tt nist curves dh algorithm specified in rfc5656. */
+extern const struct assh_algo_kex_s assh_kex_sha2_nistp256;
+extern const struct assh_algo_kex_s assh_kex_sha2_nistp384;
+extern const struct assh_algo_kex_s assh_kex_sha2_nistp521;
+
 #endif
 

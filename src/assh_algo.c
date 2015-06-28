@@ -197,6 +197,9 @@ const struct assh_algo_s *assh_algo_table[] = {
   &assh_kex_dh_gex_sha256_4.algo,
   &assh_kex_rsa1024_sha1.algo,
   &assh_kex_rsa2048_sha256.algo,
+  &assh_kex_sha2_nistp256.algo,
+  &assh_kex_sha2_nistp384.algo,
+  &assh_kex_sha2_nistp521.algo,
   /* sign */
   &assh_sign_dsa.algo,
   &assh_sign_dsa2048_sha224.algo,

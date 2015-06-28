@@ -180,6 +180,18 @@ assh_config.h
       @end list
     @end section
 
+    @section {Weierstrass curves Diffie-Hellman}
+      These are diffie-hellman algorithms based on weierstrass
+      elliptic curve as proposed in @invoke{5656}rfc. The 3 NIST
+      curves required by the rfc are implemented.
+
+      @list
+        @item @tt {ecdh-sha2-nistp256},
+        @item @tt {ecdh-sha2-nistp384},
+        @item @tt {ecdh-sha2-nistp521}
+      @end list
+    @end section
+
   @end section
 
   @section T {Signature algorithms}
