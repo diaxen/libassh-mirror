@@ -152,15 +152,29 @@ assh_kex_server_algos(struct assh_context_s *c, uint8_t *lists[9],
   *guessed = 1;
   for (i = 0; i < 8; i++)
     {
-      /* ignore MAC if we chose an authenticated cipher */
-      if (i == 4 || i == 5)
+      switch (i)
         {
+        case 1: {
+          struct assh_algo_kex_s *kex = (void*)algos[i - 1];
+          if (kex->implicit_auth)
+            {
+              /* ignore host key algorithm */
+              algos[i] = &assh_sign_none.algo;
+              continue;
+            }
+          break;
+        }
+        case 4:
+        case 5: {
           struct assh_algo_cipher_s *cipher = (void*)algos[i - 2];
           if (cipher->auth_size)
             {
+              /* ignore MAC algorithm */
               algos[i] = &assh_hmac_none.algo;
               continue;
             }
+          break;
+        }
         }
 
       char *start = (char*)(lists[i] + 4);
@@ -213,15 +227,29 @@ assh_kex_client_algos(struct assh_context_s *c, uint8_t *lists[9],
   *guessed = 1;
   for (j = i = 0; i < 8; i++)
     {
-      /* ignore MAC if we chose an authenticated cipher */
-      if (i == 4 || i == 5)
+      switch (i)
         {
+        case 1: {
+          struct assh_algo_kex_s *kex = (void*)algos[i - 1];
+          if (kex->implicit_auth)
+            {
+              /* ignore host key algorithm */
+              algos[i] = &assh_sign_none.algo;
+              continue;
+            }
+          break;
+        }
+        case 4:
+        case 5: {
           struct assh_algo_cipher_s *cipher = (void*)algos[i - 2];
           if (cipher->auth_size)
             {
+              /* ignore MAC algorithm */
               algos[i] = &assh_hmac_none.algo;
               continue;
             }
+          break;
+        }
         }
 
       /* iterate over available algorithms */
@@ -317,7 +345,11 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
   const struct assh_algo_compress_s *cmp_in   = (const void *)algos[6];
   const struct assh_algo_compress_s *cmp_out  = (const void *)algos[7];
 
-  uint_fast8_t kin_safety = ASSH_MIN(kex->algo.safety, sign->algo.safety);
+  uint_fast8_t kin_safety = kex->algo.safety;
+
+  if (!kex->implicit_auth)
+    kin_safety = ASSH_MIN(kin_safety, sign->algo.safety);
+
   uint_fast8_t kout_safety = kin_safety;
 
 #ifdef CONFIG_ASSH_DEBUG_KEX

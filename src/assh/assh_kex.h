@@ -267,6 +267,7 @@ struct assh_algo_kex_s
   assh_kex_init_t *f_init;
   assh_kex_cleanup_t *f_cleanup;
   assh_kex_process_t *f_process;
+  assh_bool_t implicit_auth;
 };
 
 /** @internal None cipher algortihm contexts used at startup */
