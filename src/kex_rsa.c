@@ -355,8 +355,8 @@ static assh_error_t assh_kex_rsa_server_send_pubkey(struct assh_session_s *s)
   /* look for an host key pair which can be used with the selected algorithm. */
 
   const struct assh_key_s *hk;
-  ASSH_ERR_RET(assh_key_lookup(c, &hk, &s->host_sign_algo->algo)
-               | ASSH_ERRSV_DISCONNECT);
+  ASSH_CHK_RET(assh_key_lookup(c, &hk, &s->host_sign_algo->algo) != ASSH_OK,
+               ASSH_ERR_MISSING_KEY | ASSH_ERRSV_DISCONNECT);
   pv->host_key = hk;
 
   /* alloc reply packet */

@@ -742,8 +742,8 @@ assh_kex_server_hash1(struct assh_session_s *s, size_t kex_len,
   /* look for an host key pair which can be used with the selected algorithm. */
   const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
 
-  ASSH_ERR_RET(assh_key_lookup(c, host_key, &s->host_sign_algo->algo)
-               | ASSH_ERRSV_DISCONNECT);
+  ASSH_CHK_RET(assh_key_lookup(c, host_key, &s->host_sign_algo->algo) != ASSH_OK,
+               ASSH_ERR_MISSING_KEY | ASSH_ERRSV_DISCONNECT);
   const struct assh_key_s *hk = *host_key;
 
   /* alloc reply packet */
