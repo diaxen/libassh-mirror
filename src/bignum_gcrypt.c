@@ -536,13 +536,11 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
               switch (op)
                 {
                 case ASSH_BIGNUM_OP_ADD:
-                  assert(mod->mt_mod == src1->mt_num);
-                  assert(mod->mt_mod == src2->mt_num);
+                  assert(mod->mt_mod && src1->mt_num && src2->mt_num);
                   gcry_mpi_addm(dst->n, src1->n, src2->n, mod->n);
                   break;
                 case ASSH_BIGNUM_OP_SUB:
-                  assert(mod->mt_mod == src1->mt_num);
-                  assert(mod->mt_mod == src2->mt_num);
+                  assert(mod->mt_mod && src1->mt_num && src2->mt_num);
                   gcry_mpi_subm(dst->n, src1->n, src2->n, mod->n);
                   ASSH_CHK_GTO(gcry_mpi_is_neg(dst->n),
                                ASSH_ERR_NUM_OVERFLOW, err_sc);

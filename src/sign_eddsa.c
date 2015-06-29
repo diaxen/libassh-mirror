@@ -337,15 +337,16 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
     ASSH_BOP_MOVE(      BY,     KY_raw                  ),
 
     /* u = y^2-1, v = d*y^2-a */
-    ASSH_BOP_MULM(      U,      BY,     BY,     P       ),
-    ASSH_BOP_MULM(      V,      U,      D,      P       ),
-    ASSH_BOP_UINT(      T0,     1                       ),
-    ASSH_BOP_SUBM(      U,      U,      T0,     P       ),
-    ASSH_BOP_SUBM(      V,      V,      A,      P       ),
-
     ASSH_BOP_MTINIT(    MT,     P                       ),
     ASSH_BOP_MTTO(      U,      V,      U,      MT      ),
     ASSH_BOP_MTTO(      A,      D,      A,      MT      ),
+    ASSH_BOP_MTTO(      BY,     BY,     BY,     MT      ),
+
+    ASSH_BOP_MULM(      U,      BY,     BY,     MT      ),
+    ASSH_BOP_MULM(      V,      U,      D,      MT      ),
+    ASSH_BOP_MTUINT(    T0,     1,              MT      ),
+    ASSH_BOP_SUBM(      U,      U,      T0,     MT      ),
+    ASSH_BOP_SUBM(      V,      V,      A,      MT      ),
 
     /* compute x = sqrt(u/v), the method depends on the value of P.
        This is tricky when p%8 == 1 (does not occur in used curves) */
@@ -420,10 +421,10 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
 
     /* x = -x if sign of x does not match sign bit in encoded key */
     ASSH_BOP_TESTS(     BX,     0,      ASSH_BOP_NOREG,  1      ),
-    ASSH_BOP_SUBM(      BX,     P,      BX,     P               ),
+    ASSH_BOP_SUB(       BX,     P,      BX              ),
     ASSH_BOP_MOVE(      T0,     KX_mpint                        ),
     ASSH_BOP_TESTC(     T0,     0,      ASSH_BOP_NOREG,  1      ),
-    ASSH_BOP_SUBM(      BX,     P,      BX,     P               ),
+    ASSH_BOP_SUB(       BX,     P,      BX              ),
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
     ASSH_BOP_PRINT(     BX,     'X'                     ),
@@ -436,7 +437,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
     ASSH_BOP_MTUINT(    RY,     1,      MT              ),
     ASSH_BOP_MTUINT(    RZ,     1,      MT              ),
 
-    ASSH_BOP_MTTO(      BX,     BY,     BX,     MT      ),
+    ASSH_BOP_MTTO(      BX,     BX,     BX,     MT      ),
 
     ASSH_BOP_TEDWARD_PDBL( PX, PY, PZ,  RX, RY, RZ,
                            T0, T1, MT                   ),

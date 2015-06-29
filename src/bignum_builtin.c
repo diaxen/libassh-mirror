@@ -522,22 +522,13 @@ assh_bignum_addsub(struct assh_bignum_s *dst,
       assh_bnword_t q = ((t >> ASSH_BIGNUM_W) ^ 1) - 1;
       assh_bnword_t *m;
 
-      if (mod->mt_mod)
-        {
-          struct assh_bignum_mt_s *mt = (void*)mod;
-          assh_bnword_t *r1 = (assh_bnword_t*)mt->mod.n + 2 * dl;
+      struct assh_bignum_mt_s *mt = (void*)mod;
+      assh_bnword_t *r1 = (assh_bnword_t*)mt->mod.n + 2 * dl;
 #warning FIXME add either r%n or n-r%n depending on compare of the first word?
-          /* add/sub r%n on overflow */
-          m = r1;
-          /* switch between add/sub */
-          smask = ~smask;
-        }
-      else
-        {
-          m = mod->n;
-          if (a->bits < dst->bits)
-            return ASSH_OK;
-        }
+      /* add/sub r%n on overflow */
+      m = r1;
+      /* switch between add/sub */
+      smask = ~smask;
 
       /* masked reduce */
       t = (assh_bnlong_t)(q & 1 & ~smask) << ASSH_BIGNUM_W;
@@ -2008,7 +1999,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           if (od != ASSH_BOP_NOREG)
             {
               struct assh_bignum_s *mod = args[od];
-              assert(mod->mt_mod == src1->mt_num);
+              assert(mod->mt_mod && src1->mt_num && src2->mt_num);
               ASSH_ERR_GTO(assh_bignum_addsub(dst, src1, src2, mod, mask), err_sc);
             }
           else

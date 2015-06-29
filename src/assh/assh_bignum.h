@@ -446,8 +446,7 @@ enum assh_bignum_opcode_e
     @internal This instruction computes @tt {dst = (src1 + src2) %
     mod} in constant time. The bit size of the destination number must be
     @tt {max(bits(src1), bits(src2))} or larger. The @tt mod
-    operand can be either a big number or a montgomery context.
-    The value of the modulus is subtracted on overflow. */
+    must be a montgomery context. */
 #define ASSH_BOP_ADDM(dst, src1, src2, mod)                     \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_ADD, dst, src1, src2, mod)
 
