@@ -209,7 +209,10 @@ struct assh_bignum_algo_s
     function and the number of temporary values. The format string is
     composed of characters defined in @ref assh_bignum_fmt_e. An extra
     argument must be passed to the function for each non-temporary
-    entry in the format string.
+    entry in the format string. If @tt NULL is passed as argument
+    following a mpint argument, the pointer will be set when the mpint
+    is written. This allows storing contiguous numbers in mpint format
+    whithout knowing the size of the encoded numbers.
 
     The @ref #ASSH_BOP_MOVE instruction can be used to convert between
     native big numbers (arguments or temporaries) and other types of

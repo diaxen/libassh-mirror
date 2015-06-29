@@ -1955,19 +1955,26 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
         case ASSH_BIGNUM_OP_END:
           goto end;
 
-        case ASSH_BIGNUM_OP_MOVE:
+        case ASSH_BIGNUM_OP_MOVE: {
+          void *src = args[oc];
           ASSH_ERR_GTO(assh_bignum_builtin_convert(c,
-                    format[od], format[oc], args[od], args[oc]), err_sc);
+                    format[od], format[oc], args[od], src), err_sc);
+
+          /* deduce pointer of next buffer arg */
+          if (format[oc] == 'M' && format[oc + 1] && args[oc + 1] == NULL)
+            args[oc + 1] = (uint8_t*)src + 4 + assh_load_u32(src);
+
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
           switch (format[oc])
             {
             case ASSH_BIGNUM_NATIVE:
             case ASSH_BIGNUM_TEMP:
             case ASSH_BIGNUM_STEMP:
-              assh_bignum_builtin_print(args[oc], ASSH_BIGNUM_NATIVE, 'R', pc, mt);
+              assh_bignum_builtin_print(src, ASSH_BIGNUM_NATIVE, 'R', pc, mt);
             }
 #endif
           break;
+        }
 
         case ASSH_BIGNUM_OP_SIZER:
         case ASSH_BIGNUM_OP_SIZE: {
