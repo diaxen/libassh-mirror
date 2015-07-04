@@ -119,8 +119,10 @@ struct assh_kex_ecdhmt_private_s
     ASSH_BOP_MULM(	Z3,	X1,	Z2,	P	),	\
     ASSH_BOP_MULM(	Z2,	T1,	T0,	P	)
 
+#define ASSH_BOP_MONTGOMERY_SADD_OPS 18
+
 assh_error_t ASSH_WARN_UNUSED_RESULT
-assh_montgomery_point_mul(struct assh_session_s *s, const uint8_t *result,
+assh_montgomery_point_mul(struct assh_session_s *s, uint8_t *result,
                           const uint8_t *basepoint, const uint8_t *scalar)
 {
   struct assh_kex_ecdhmt_private_s *pv = s->kex_pv;
@@ -168,7 +170,7 @@ assh_montgomery_point_mul(struct assh_session_s *s, const uint8_t *result,
 
     ASSH_BOP_LADSWAP(  X2,     X3,     L                ),
     ASSH_BOP_LADSWAP(  Z2,     Z3,     L                ),
-    ASSH_BOP_LADLOOP(  21,             L                ),
+    ASSH_BOP_LADLOOP(  ASSH_BOP_MONTGOMERY_SADD_OPS + 3, L      ),
 
     ASSH_BOP_INV(       T0,     Z2,             MT      ),
     ASSH_BOP_MULM(      T0,     X2,     T0,     MT      ),

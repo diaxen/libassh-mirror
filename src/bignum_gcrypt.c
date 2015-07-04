@@ -370,7 +370,8 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
 {
   uint_fast8_t flen, tlen = 0;
   assh_error_t err;
-  uint_fast8_t i, j, pc = 0;
+  uint_fast8_t i, j;
+  uint_fast16_t pc = 0;
 
   /* find number of arguments and temporaries */
   for (tlen = flen = 0; format[flen]; flen++)

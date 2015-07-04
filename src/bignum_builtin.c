@@ -1880,7 +1880,8 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
 {
   uint_fast8_t flen, tlen, mlen;
   assh_error_t err;
-  uint_fast8_t i, j, k, pc = 0;
+  uint_fast8_t i, j, k;
+  uint_fast16_t pc = 0;
   struct assh_bignum_scratch_s sc
     = { .words = 0, .n = NULL, .secur = 0 };
 
