@@ -1763,7 +1763,10 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_builtin_convert)
         case ASSH_BIGNUM_STEMP:
           ASSH_ERR_RET(assh_bignum_realloc(c, dstn));
           ASSH_ERR_RET(assh_bignum_copy(dstn, srcn));
+#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
           dstn->mt_num = srcn->mt_num;
+          dstn->mt_id = srcn->mt_id;
+#endif
           break;
         case ASSH_BIGNUM_MPINT:
         case ASSH_BIGNUM_STRING:
@@ -1784,8 +1787,9 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_builtin_convert)
       assert(dstfmt == ASSH_BIGNUM_NATIVE ||
              dstfmt == ASSH_BIGNUM_STEMP ||
              dstfmt == ASSH_BIGNUM_TEMP);
+#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
       dstn->mt_num = 0;
-
+#endif
       if (srcfmt == ASSH_BIGNUM_MSB_RAW ||
           srcfmt == ASSH_BIGNUM_LSB_RAW)
         {
@@ -1861,7 +1865,7 @@ assh_bignum_builtin_print(void *arg, enum assh_bignum_fmt_e fmt,
       if (src->mt_num)
         {
           assh_bnword_t t[l];
-          assh_bignum_mt_reduce(mt /*+ src->mt_id*/, t, src->n);
+          assh_bignum_mt_reduce(mt + src->mt_id, t, src->n);
           assh_bignum_dump(t, l);
         }
       else
@@ -2015,7 +2019,10 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
               assert(!src1->mt_num && !src2->mt_num);
               ASSH_ERR_GTO(assh_bignum_addsub(dst, src1, src2, NULL, mask), err_sc);
             }
+#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
           dst->mt_num = src1->mt_num;
+          dst->mt_id = src1->mt_id;
+#endif
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
           assh_bignum_builtin_print(dst, ASSH_BIGNUM_NATIVE, 'R', pc, mt);
 #endif
@@ -2046,7 +2053,10 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
                   ASSH_ERR_GTO(assh_bignum_mul_mod(c, &sc, dst, src1, src2, args[od]), err_sc);
                 }
             }
+#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
           dst->mt_num = src1->mt_num;
+          dst->mt_id = src1->mt_id;
+#endif
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
           assh_bignum_builtin_print(dst, ASSH_BIGNUM_NATIVE, 'R', pc, mt);
 #endif
@@ -2064,7 +2074,10 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           assert(!src2->mt_num);
           ASSH_ERR_GTO(assh_bignum_realloc(c, dst), err_sc);
           ASSH_ERR_GTO(assh_bignum_expmod_mt(c, &sc, dst, src1, src2, mod), err_sc);
+#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
           dst->mt_num = src1->mt_num;
+          dst->mt_id = src1->mt_id;
+#endif
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
           assh_bignum_builtin_print(dst, ASSH_BIGNUM_NATIVE, 'R', pc, mt);
 #endif
@@ -2077,8 +2090,10 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           assert(!mod->mt_num);
           assert(format[oc] == ASSH_BIGNUM_MT);
           ASSH_ERR_GTO(assh_bignum_mt_init(c, dst, mod), err_sc);
+#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
           dst->mod.mt_mod = 1;
           dst->mod.mt_num = 0;
+#endif
           break;
         }
 
@@ -2093,8 +2108,10 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
               ASSH_ERR_GTO(assh_bignum_realloc(c, dst), err_sc);
               ASSH_ERR_GTO(assh_bignum_mt_convert(c, &sc, op == ASSH_BIGNUM_OP_MTTO,
                                                   args[od], dst, src), err_sc);
+#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
               dst->mt_num = (op == ASSH_BIGNUM_OP_MTTO);
-              dst->mt_id = od;
+              dst->mt_id = (struct assh_bignum_mt_s*)args[od] - mt;
+#endif
             }
           break;
         }
@@ -2108,7 +2125,9 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
             {
               assert(!src2->mt_mod);
               dsta = args[oa];
+#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
               dsta->mt_num = 0;
+#endif
               ASSH_ERR_GTO(assh_bignum_realloc(c, dsta), err_sc);
             }
           if (ob != ASSH_BOP_NOREG)
@@ -2145,7 +2164,10 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
               assert(!src1->mt_num);
               ASSH_ERR_GTO(assh_bignum_modinv(c, &sc, dst, src1, args[od]), err_sc);
             }
+#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
           dst->mt_num = src1->mt_num;
+          dst->mt_id = src1->mt_id;
+#endif
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
           assh_bignum_builtin_print(dst, ASSH_BIGNUM_NATIVE, 'R', pc, mt);
 #endif
@@ -2158,7 +2180,9 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           assert(!src1->mt_num && !src2->mt_num);
           ASSH_ERR_GTO(assh_bignum_realloc(c, dst), err_sc);
           ASSH_ERR_GTO(assh_bignum_gcd(c, &sc, dst, src1, src2), err_sc);
+#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
           dst->mt_num = 0;
+#endif
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
           assh_bignum_builtin_print(dst, ASSH_BIGNUM_NATIVE, 'R', pc, mt);
 #endif
@@ -2190,7 +2214,9 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
             default:
               abort();
             }
+#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
           dst->mt_num = 0;
+#endif
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
           assh_bignum_builtin_print(dst, ASSH_BIGNUM_NATIVE, 'R', pc, mt);
 #endif
@@ -2204,7 +2230,9 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
                          ob == ASSH_BOP_NOREG ? NULL : args[ob],
                          oc == ASSH_BOP_NOREG ? NULL : args[oc],
                          od), err_sc);
+#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
           dst->mt_num = 0;
+#endif
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
           assh_bignum_builtin_print(dst, ASSH_BIGNUM_NATIVE, 'R', pc, mt);
 #endif
@@ -2301,8 +2329,10 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           assert(dst->bits == mt->mod.bits);
           size_t ml = assh_bignum_words(mt->mod.bits);
           ASSH_ERR_GTO(assh_bignum_realloc(c, dst), err_sc);
+#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
           dst->mt_num = 1;
-          dst->mt_id = oc;
+          dst->mt_id = (struct assh_bignum_mt_s*)args[oc] - mt;
+#endif
           switch (value)
             {
             case 0:
@@ -2328,7 +2358,9 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           struct assh_bignum_s *dst = args[od];
           ASSH_ERR_GTO(assh_bignum_realloc(c, dst), err_sc);
           ASSH_ERR_GTO(assh_bignum_from_uint(dst, value), err_sc);
+#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
           dst->mt_num = 0;
+#endif
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
           assh_bignum_builtin_print(dst, ASSH_BIGNUM_NATIVE, 'R', pc, mt);
 #endif
@@ -2338,7 +2370,9 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
         case ASSH_BIGNUM_OP_PRIME: {
           struct assh_bignum_s *dst = args[ob];
           ASSH_ERR_GTO(assh_bignum_next_prime(c, &sc, dst), err_sc);
+#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
           dst->mt_num = 0;
+#endif
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
           assh_bignum_builtin_print(dst, ASSH_BIGNUM_NATIVE, 'R', pc, mt);
 #endif
