@@ -2121,6 +2121,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           struct assh_bignum_s *src1 = args[oc], *src2 = args[od];
           assert(!src2->mt_num);
           assert(src1->mt_num == src2->mt_mod);
+          assert(src2->mt_mod || (!src1->secret && !src2->secret));
           if (oa != ASSH_BOP_NOREG)
             {
               assert(!src2->mt_mod);
@@ -2132,12 +2133,22 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
             }
           if (ob != ASSH_BOP_NOREG)
             {
-              if (src2->mt_mod)
-                goto div_done;
               dstb = args[ob];
-              dstb->mt_num = src2->mt_mod;
-              dstb->mt_id = src1->mt_id;
-              ASSH_ERR_GTO(assh_bignum_realloc(c, dstb), err_sc);
+              if (dstb != src1)
+                {
+#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
+                  dstb->mt_num = src2->mt_mod;
+                  dstb->mt_id = src2->mt_id;
+#endif
+                  ASSH_ERR_GTO(assh_bignum_realloc(c, dstb), err_sc);
+                }
+              if (src2->mt_mod)
+                {
+                  if (dstb != src1)
+                    ASSH_ERR_GTO(assh_bignum_copy(dstb, src1), err_sc);
+                  dstb->secret = 0;
+                  goto div_done;
+                }
             }
           ASSH_ERR_GTO(assh_bignum_div(c, &sc, dstb, dsta, src1, src2), err_sc);
           div_done:
