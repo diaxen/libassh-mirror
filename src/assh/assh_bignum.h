@@ -374,6 +374,7 @@ enum assh_bignum_opcode_e
   ASSH_BIGNUM_OP_BOOL,
   ASSH_BIGNUM_OP_PRIVACY,
   ASSH_BIGNUM_OP_PRINT,
+  ASSH_BIGNUM_OP_TRACE,
 };
 
 /** @internal */
@@ -691,6 +692,9 @@ enum assh_bignum_bool_op
     debugging purpose. The id argument is an ASCII integer constant. */
 #define ASSH_BOP_PRINT(src, id) \
   ASSH_BOP_FMT2(ASSH_BIGNUM_OP_PRINT, id, src)
+
+#define ASSH_BOP_TRACE(mode) \
+  ASSH_BOP_FMT1(ASSH_BIGNUM_OP_TRACE, mode)
 
 /** @multiple @internal @This is a big number engine implementation
     descriptor. */
