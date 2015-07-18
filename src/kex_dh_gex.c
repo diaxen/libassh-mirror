@@ -193,18 +193,22 @@ static assh_error_t assh_kex_dh_gex_client_wait_group(struct assh_session_s *s,
 
     /* check prime */
     ASSH_BOP_UINT(      T1,     1                       ),
-    ASSH_BOP_TESTS(     P,      1,      G_n,    0       ),
+    ASSH_BOP_TEST(      P,      1,      G_n,    0       ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
 #if 0
-    ASSH_BOP_ISPRIM(    P,      0                       ),
+    ASSH_BOP_ISPRIME(   P,      0                       ),
     ASSH_BOP_SUB(       T2,     P,      T1              ),
     ASSH_BOP_SHR(       Q,      T2,     1, ASSH_BOP_NOREG	),
-    ASSH_BOP_ISPRIM(    Q,      0                       ),
+    ASSH_BOP_ISPRIME(   Q,      0                       ),
 #endif
 
     /* check generator */
-    ASSH_BOP_CMPLT(     T1,     G,      0               ), /* g > 1 */
+    ASSH_BOP_CMPGT(     G,     T1,      0               ), /* g > 1 */
+    ASSH_BOP_CFAIL(     1,      0                       ),
+
     ASSH_BOP_SUB(       T2,     P,      T1              ),
     ASSH_BOP_CMPLT(     G,      T2,     0               ), /* g < p - 1 */
+    ASSH_BOP_CFAIL(     1,      0                       ),
 
     /* generate private exponent */
     ASSH_BOP_UINT(      T1,     DH_MAX_GRSIZE           ),
@@ -300,9 +304,12 @@ static ASSH_EVENT_DONE_FCN(assh_kex_dh_gex_host_key_lookup_done)
 
     /* check server public exponent */
     ASSH_BOP_UINT(      T,      2               	),
-    ASSH_BOP_CMPLTEQ(   T,      F,      0 /* f >= 2 */	), 
+    ASSH_BOP_CMPGTEQ(   F,      T,      0  /* f >= 2 */	),
+    ASSH_BOP_CFAIL(     1,      0                       ),
+
     ASSH_BOP_SUB(       T,      P,      T       	),
-    ASSH_BOP_CMPLTEQ(   F,      T,      0 /* f <= p-2 */), 
+    ASSH_BOP_CMPLTEQ(   F,      T,      0 /* f <= p-2 */),
+    ASSH_BOP_CFAIL(     1,      0                       ),
 
     /* compute shared secret */
     ASSH_BOP_MTINIT(    MT,     P                       ),
@@ -312,9 +319,12 @@ static ASSH_EVENT_DONE_FCN(assh_kex_dh_gex_host_key_lookup_done)
 
     /* check shared secret range */
     ASSH_BOP_UINT(      T,      2               	),
-    ASSH_BOP_CMPLTEQ(   T,      K,      0 /* k >= 2 */	),
+    ASSH_BOP_CMPGTEQ(   K,      T,      0 /* k >= 2 */	),
+    ASSH_BOP_CFAIL(     1,      0                       ),
+
     ASSH_BOP_SUB(       T,      P,      T       	),
     ASSH_BOP_CMPLTEQ(   K,      T,      0 /* k <= p-2 */),
+    ASSH_BOP_CFAIL(     1,      0                       ),
 
     ASSH_BOP_MOVE(      K_mpint,        K       	),
 
@@ -584,9 +594,11 @@ static assh_error_t assh_kex_dh_gex_server_wait_e(struct assh_session_s *s,
 
     /* check client public key */
     ASSH_BOP_UINT(      T,      2                       ),
-    ASSH_BOP_CMPLTEQ(   T,      E,      0 /* f >= 2 */  ), 
+    ASSH_BOP_CMPGTEQ(   E,      T,      0 /* f >= 2 */  ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
     ASSH_BOP_SUB(       T,      P,      T               ),
-    ASSH_BOP_CMPLTEQ(   E,      T,      0 /* f <= p-2 */), 
+    ASSH_BOP_CMPLTEQ(   E,      T,      0 /* f <= p-2 */),
+    ASSH_BOP_CFAIL(     1,      0                       ),
 
     /* generate private exponent */
     ASSH_BOP_UINT(      T,      DH_MAX_GRSIZE   	),
@@ -608,9 +620,12 @@ static assh_error_t assh_kex_dh_gex_server_wait_e(struct assh_session_s *s,
 
     /* check shared secret range */
     ASSH_BOP_UINT(      T,      2               	),
-    ASSH_BOP_CMPLTEQ(   T,      K,      0 /* k >= 2 */	),
+    ASSH_BOP_CMPGTEQ(   K,      T,      0 /* k >= 2 */	),
+    ASSH_BOP_CFAIL(     1,      0                       ),
+
     ASSH_BOP_SUB(       T,      P,      T       	),
     ASSH_BOP_CMPLTEQ(   K,      T,      0 /* k <= p-2 */),
+    ASSH_BOP_CFAIL(     1,      0                       ),
 
     ASSH_BOP_MOVE(      K_mpint,        K               ),
     ASSH_BOP_MOVE(      F_mpint,        F               ),

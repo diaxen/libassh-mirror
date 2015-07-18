@@ -264,6 +264,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_dsa_check)
 #endif
 
     ASSH_BOP_CMPEQ(     V,      R,      0               ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
 
     ASSH_BOP_END(),
   };

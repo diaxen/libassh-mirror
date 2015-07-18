@@ -103,37 +103,9 @@ assh_weierstrass_base_mul(struct assh_session_s *s)
     ASSH_BOP_MOVE(      X1,     X_raw                   ),
     ASSH_BOP_MOVE(      Y1,     Y_raw                   ),
     ASSH_BOP_MTTO(      X1,     Y1,     X1,     MT      ),
-    ASSH_BOP_MTUINT(    Z1,     1,      MT              ),
 
-#ifdef CONFIG_ASSH_DEBUG_KEX
-    ASSH_BOP_PRINT(     X1,    'x'                      ),
-    ASSH_BOP_PRINT(     Y1,    'y'                      ),
-#endif
-
-    ASSH_BOP_MOVE(      X2,     X1                      ),
-    ASSH_BOP_MOVE(      Y2,     Y1                      ),
-    ASSH_BOP_MOVE(      Z2,     Z1                      ),
-
-    /* ladder */
-    ASSH_BOP_WS_PDBL(X3, Y3, Z3, X2, Y2, Z2, T0, T1, MT),
-    ASSH_BOP_MOVE(      X2,     X3                      ),
-    ASSH_BOP_MOVE(      Y2,     Y3                      ),
-    ASSH_BOP_MOVE(      Z2,     Z3                      ),
-
-    ASSH_BOP_WS_PADD(X3, Y3, Z3, X1, Y1, Z1, X2, Y2, Z2, T0, T1, T2, T3, MT),
-
-    ASSH_BOP_LADSWAP(  X2,     X3,     L                ),
-    ASSH_BOP_LADSWAP(  Y2,     Y3,     L                ),
-    ASSH_BOP_LADSWAP(  Z2,     Z3,     L                ),
-    ASSH_BOP_LADLOOP(  ASSH_BOP_WS_PDBL_OPS + 3 + ASSH_BOP_WS_PADD_OPS + 4, L),
-
-    ASSH_BOP_MTFROM(	T0,     T0,     Z2,     MT      ),
-    ASSH_BOP_UINT(      T1,     0                       ),
-    ASSH_BOP_CMPNE(     T1,     T0,      0              ),
-
-    ASSH_BOP_INV(       T0,     Z2,             MT      ),
-    ASSH_BOP_MULM(      X2,     X2,     T0,     MT      ),
-    ASSH_BOP_MULM(      Y2,     Y2,     T0,     MT      ),
+    ASSH_BOP_WS_SCMUL(X3, Y3, Z3, X2, Y2, Z2, X1, Y1, Z1,
+                      T0, T1, T2, T3, L, MT),
 
     ASSH_BOP_MTFROM(	X2,     Y2,     X2,     MT      ),
 
@@ -197,48 +169,17 @@ assh_weierstrass_point_mul(struct assh_session_s *s, uint8_t *px,
     ASSH_BOP_MOVE(      Y1,     Y_raw                   ),
     ASSH_BOP_MOVE(      T2,     B_raw                   ),
     ASSH_BOP_MTTO(      X1,     Y1,     X1,     MT      ),
-    ASSH_BOP_MTUINT(    Z1,     1,      MT              ),
 
     /* check that point is on curve */
-    ASSH_BOP_MULM(      T0,     Y1,     Y1,     MT      ),
-    ASSH_BOP_MULM(      T1,     X1,     X1,     MT      ),
-    ASSH_BOP_MULM(      T1,     T1,     X1,     MT      ),
-    ASSH_BOP_SUBM(      T1,     T0,     T1,     MT      ),
-    ASSH_BOP_ADDM(      T1,     T1,     X1,     MT      ),
-    ASSH_BOP_ADDM(      T1,     T1,     X1,     MT      ),
-    ASSH_BOP_ADDM(      T1,     T1,     X1,     MT      ),
-    ASSH_BOP_MTFROM(	T1,     T1,     T1,     MT      ),
-    ASSH_BOP_CMPEQ(     T1,     T2,      0              ),
+    ASSH_BOP_WS_POINTONCURVE(X1, Y1, T0, T1, T2, MT),
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
     ASSH_BOP_PRINT(     X1,    'x'                      ),
     ASSH_BOP_PRINT(     Y1,    'y'                      ),
 #endif
 
-    ASSH_BOP_MOVE(      X2,     X1                      ),
-    ASSH_BOP_MOVE(      Y2,     Y1                      ),
-    ASSH_BOP_MOVE(      Z2,     Z1                      ),
-
-    /* ladder */
-    ASSH_BOP_WS_PDBL(X3, Y3, Z3, X2, Y2, Z2, T0, T1, MT),
-    ASSH_BOP_MOVE(      X2,     X3                      ),
-    ASSH_BOP_MOVE(      Y2,     Y3                      ),
-    ASSH_BOP_MOVE(      Z2,     Z3                      ),
-
-    ASSH_BOP_WS_PADD(X3, Y3, Z3, X1, Y1, Z1, X2, Y2, Z2, T0, T1, T2, T3, MT),
-
-    ASSH_BOP_LADSWAP(  X2,     X3,     L                ),
-    ASSH_BOP_LADSWAP(  Y2,     Y3,     L                ),
-    ASSH_BOP_LADSWAP(  Z2,     Z3,     L                ),
-    ASSH_BOP_LADLOOP(  ASSH_BOP_WS_PDBL_OPS + 3 + ASSH_BOP_WS_PADD_OPS + 4, L),
-
-    ASSH_BOP_MTFROM(	T0,     T0,     Z2,     MT      ),
-    ASSH_BOP_UINT(      T1,     0                       ),
-    ASSH_BOP_CMPNE(     T1,     T0,      0              ),
-
-    ASSH_BOP_INV(       T0,     Z2,             MT      ),
-    ASSH_BOP_MULM(      X2,     X2,     T0,     MT      ),
-    ASSH_BOP_MULM(      Y2,     Y2,     T0,     MT      ),
+    ASSH_BOP_WS_SCMUL(X3, Y3, Z3, X2, Y2, Z2, X1, Y1, Z1,
+                      T0, T1, T2, T3, L, MT),
 
     ASSH_BOP_MTFROM(	X2,     Y2,     X2,     MT      ),
 

@@ -200,7 +200,8 @@ assh_error_t dsa_verify(struct assh_context_s *c,
 
     ASSH_BOP_PRINT(	R,	'R'			),
     ASSH_BOP_PRINT(	V,	'V'			),
-    ASSH_BOP_CMPEQ(     V,      R,	0		),
+    ASSH_BOP_CMPEQ(     V,      R,	0      		),
+    ASSH_BOP_CFAIL(     1,	0                       ),
 
     ASSH_BOP_END(),
   };
@@ -254,7 +255,8 @@ int main()
     ASSH_BOP_SIZE(	R,	N			),
     ASSH_BOP_MOVE(      R,      R_mp			),
 
-    ASSH_BOP_CMPEQ(     V,      R,	0		),
+    ASSH_BOP_CMPEQ(     V,      R,	0      		),
+    ASSH_BOP_CFAIL(     1,	0                       ),
 
     ASSH_BOP_END(),
   };

@@ -140,6 +140,7 @@ struct assh_bignum_lad_s
   assh_bool_t msbit_1st:1;
   /** Set when data are most significant byte first in the buffer. */
   assh_bool_t msbyte_1st:1;
+  assh_bool_t secret:1;
 };
 
 /* test current ladder bit */
@@ -357,18 +358,20 @@ enum assh_bignum_opcode_e
   ASSH_BIGNUM_OP_SHL,
   ASSH_BIGNUM_OP_RAND,
   ASSH_BIGNUM_OP_CMP,
-  ASSH_BIGNUM_OP_TESTC,
-  ASSH_BIGNUM_OP_TESTS,
+  ASSH_BIGNUM_OP_TEST,
   ASSH_BIGNUM_OP_UINT,
   ASSH_BIGNUM_OP_MTUINT,
-  ASSH_BIGNUM_OP_LADJMP,
-  ASSH_BIGNUM_OP_LADSWAP,
-  ASSH_BIGNUM_OP_LADLOOP,
+  ASSH_BIGNUM_OP_JMP,
+  ASSH_BIGNUM_OP_CFAIL,
+  ASSH_BIGNUM_OP_LADTEST,
+  ASSH_BIGNUM_OP_LADNEXT,
+  ASSH_BIGNUM_OP_CSWAP,
   ASSH_BIGNUM_OP_MTINIT,
   ASSH_BIGNUM_OP_MTTO,
   ASSH_BIGNUM_OP_MTFROM,
   ASSH_BIGNUM_OP_PRIME,
-  ASSH_BIGNUM_OP_ISPRIM,
+  ASSH_BIGNUM_OP_ISPRIME,
+  ASSH_BIGNUM_OP_BOOL,
   ASSH_BIGNUM_OP_PRIVACY,
   ASSH_BIGNUM_OP_PRINT,
 };
@@ -378,10 +381,11 @@ enum assh_bignum_opcode_e
     "end", "move", "sizer", "size", "add",      \
     "sub", "mul", "div", "gcd",                 \
     "expm", "inv", "shr", "shl",                \
-    "rand", "cmp", "testc", "tests", "uint",    \
-    "mtuint", "ladjmp", "ladswap", "ladloop",   \
-    "mtinit", "mtto", "mtfrom", "mtone",        \
-    "prime", "isprim", "privacy", "print"       \
+    "rand", "cmp", "test", "uint",              \
+    "mtuint", "(c)jmp", "cfail", "ladtest", "ladnext", \
+    "swap", "mtinit", "mtto", "mtfrom",         \
+    "prime", "isprime", "bool", "privacy",      \
+    "print", "trace"                            \
 }
 
 /** @internal Reserved big number bytecode register id. */
@@ -555,48 +559,59 @@ enum assh_bignum_opcode_e
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_RAND, dst, min, max, quality)
 
 /** @mgroup{Bytecode instructions}
-    @internal This instruction performs a comparison in constant time.
-    It changes the program counter if the two numbers are equal.
-    The bytecode execution is aborted with the @ref
-    ASSH_ERR_NUM_COMPARE_FAILED error if the condition is false and
-    the value of @tt pcdiff is 0.
-
+    @internal This instruction performs a comparison in constant time
+    and updates the condition flag.
     It can be used with values of different bit length. It is possible
     to test if an @ref assh_bignum_s object is empty by comparing
     against @ref #ASSH_BOP_NOREG. */
-#define ASSH_BOP_CMPEQ(src1, src2, pcdiff)                    \
-  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CMP, src1, src2, 128 + pcdiff, 0)
+#define ASSH_BOP_CMPEQ(src1, src2, condid)                    \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CMP, condid, src1, src2, 0)
+
 /** @mgroup{Bytecode instructions}
     @internal This instruction is similar to @ref #ASSH_BOP_CMPEQ. */
-#define ASSH_BOP_CMPNE(src1, src2, pcdiff)                    \
-  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CMP, src1, src2, 128 + pcdiff, 1)
+#define ASSH_BOP_CMPLT(src1, src2, condid)                    \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CMP, condid, src1, src2, 1)
+
 /** @mgroup{Bytecode instructions}
     @internal This instruction is similar to @ref #ASSH_BOP_CMPEQ. */
-#define ASSH_BOP_CMPLT(src1, src2, pcdiff)                    \
-  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CMP, src1, src2, 128 + pcdiff, 2)
+#define ASSH_BOP_CMPGT(src1, src2, condid)                    \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CMP, condid, src2, src1, 1)
+
 /** @mgroup{Bytecode instructions}
     @internal This instruction is similar to @ref #ASSH_BOP_CMPEQ. */
-#define ASSH_BOP_CMPLTEQ(src1, src2, pcdiff)                  \
-  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CMP, src1, src2, 128 + pcdiff, 3)
+#define ASSH_BOP_CMPLTEQ(src1, src2, condid)                  \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CMP, condid, src1, src2, 2)
+
+/** @mgroup{Bytecode instructions}
+    @internal This instruction is similar to @ref #ASSH_BOP_CMPEQ. */
+#define ASSH_BOP_CMPGTEQ(src1, src2, condid)                  \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CMP, condid, src2, src1, 2)
 
 /** @mgroup{Bytecode instructions}
     @internal This instruction jump to a different bytecode location. */
-#define ASSH_BOP_JMP(pcdiff)                  \
-  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CMP, 0, 0, 128 + pcdiff, 0)
+#define ASSH_BOP_JMP(pcdiff)                           \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_JMP, 0, 1, 128 + pcdiff, 0)
 
 /** @mgroup{Bytecode instructions}
-    @internal This instruction tests a bit in @tt src1 and jumps to a
-    different bytecode location if the bit is cleared. When the @tt
+    @internal This instruction jump to a different bytecode location
+    if the condition flag is different from inv. */
+#define ASSH_BOP_CJMP(pcdiff, inv, condid)              \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_JMP, condid, 0, 128 + pcdiff, inv)
+
+/** @mgroup{Bytecode instructions}
+    @internal This instruction abort bytecode execution with an error
+    if the condition flag is different from inv. */
+#define ASSH_BOP_CFAIL(inv, condid)                 \
+  ASSH_BOP_FMT2(ASSH_BIGNUM_OP_CFAIL, condid, inv)
+
+/** @mgroup{Bytecode instructions}
+    @internal This instruction tests a bit in @tt src1 and updates the
+    condition flag. When the @tt
     src2 operand is @ref #ASSH_BOP_NOREG, the tested bit position is
     @tt{val}. In the other case, the tested bit position is @tt
     {size(src2) - val)}. @tt val must be in the range @tt{[0, 64]}. */
-#define ASSH_BOP_TESTC(src1, val, src2, pcdiff)                          \
-  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_TESTC, src1, val, 128 + pcdiff, src2)
-
-/** @mgroup{Bytecode instructions}
-    @internal This instruction is similar to @ref #ASSH_BOP_TESTC. */
-#define ASSH_BOP_TESTS(src1, val, src2, pcdiff)                          \
-  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_TESTS, src1, val, 128 + pcdiff, src2)
+#define ASSH_BOP_TEST(src1, val, src2, condid)                 \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_TEST, condid, src1, val, src2)
 
 /** @mgroup{Bytecode instructions}
     @internal This instruction initializes a big number from a 20 bits
@@ -611,30 +626,24 @@ enum assh_bignum_opcode_e
   ASSH_BOP_FMT3(ASSH_BIGNUM_OP_MTUINT, value, mt, dst)
 
 /** @mgroup{Bytecode instructions}
-    @internal This instruction performs a conditional jump
-    depending on the current state of the @ref
-    assh_bignum_lad_s object. It is useful to implement a fast
-    variant of the ladder algorithm when constant time execution is
-    not required.  @see #ASSH_BOP_LADLOOP @see ASSH_BIGNUM_LAD */
-#define ASSH_BOP_LADJMP(lad, pcdiff)                                 \
-  ASSH_BOP_FMT2(ASSH_BIGNUM_OP_LADJMP, 128 + pcdiff, lad)
+    @internal This instruction performs a conditional swap in constant time
+    between two values depending on the condition flag.  */
+#define ASSH_BOP_CSWAP(src1, src2, inv, condid)                \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CSWAP, condid, src1, src2, inv)
 
 /** @mgroup{Bytecode instructions}
-    @internal This instruction performs a conditional swap between two
-    values depending on the current state of the @ref
-    assh_bignum_lad_s object. It is useful to implement a
-    ladder.  @see #ASSH_BOP_LADLOOP @see ASSH_BIGNUM_LAD */
-#define ASSH_BOP_LADSWAP(src1, src2, lad)               \
-  ASSH_BOP_FMT3(ASSH_BIGNUM_OP_LADSWAP, src1, src2, lad)
+    @internal This instruction upadates the condition flag according to
+    the current bit pointed to by the @ref assh_bignum_lad_s object. */
+#define ASSH_BOP_LADTEST(lad, condid)                  \
+  ASSH_BOP_FMT2(ASSH_BIGNUM_OP_LADTEST, condid, lad)
 
 /** @mgroup{Bytecode instructions}
-    @internal This instruction conditionally jump backward depending
-    on the current state of the @ref assh_bignum_lad_s object and
-    advances the state of the ladder object to the next data bit. It
-    is useful to implement a ladder.
+    @internal This instruction advances the state of the ladder object
+    to the next data bit and set the condition flag if the last bit as
+    not been reached.
     @see #ASSH_BOP_LADSWAP @see ASSH_BIGNUM_LAD */
-#define ASSH_BOP_LADLOOP(rel, lad)                    \
-  ASSH_BOP_FMT2(ASSH_BIGNUM_OP_LADLOOP, rel, lad)
+#define ASSH_BOP_LADNEXT(lad, condid)                    \
+  ASSH_BOP_FMT2(ASSH_BIGNUM_OP_LADNEXT, condid, lad)
 
 /** @mgroup{Bytecode instructions}
     @internal This instruction generates a prime number in the range
@@ -646,17 +655,29 @@ enum assh_bignum_opcode_e
   ASSH_BOP_FMT3(ASSH_BIGNUM_OP_PRIME, dst, min, max)
 
 /** @mgroup{Bytecode instructions}
-    @internal This instruction changes the program counter if the
-    number is a prime greater than 2. The bytecode execution is
-    aborted with the @ref ASSH_ERR_NUM_OVERFLOW error if the number is
-    not prime and the value of @tt pcdiff is 0. */
-#define ASSH_BOP_ISPRIM(src, pcdiff)                                   \
-  ASSH_BOP_FMT3(ASSH_BIGNUM_OP_ISPRIM, 1, pcdiff + 128, src)
+    @internal This instruction updates the condition flag. It is set if
+    the number is a prime greater than 2. */
+#define ASSH_BOP_ISPRIME(src, condid)                          \
+  ASSH_BOP_FMT2(ASSH_BIGNUM_OP_ISPRIME, condid, src)
+
+/** specify boolean operations for use with @ref #ASSH_BOP_BOOL */
+enum assh_bignum_bool_op
+{
+  ASSH_BOP_BOOL_AND,
+  ASSH_BOP_BOOL_OR,
+  ASSH_BOP_BOOL_XOR,
+  ASSH_BOP_BOOL_ANDN,
+  ASSH_BOP_BOOL_NAND,
+  ASSH_BOP_BOOL_NOR,
+  ASSH_BOP_BOOL_NXOR,
+  ASSH_BOP_BOOL_NANDN,
+};
 
 /** @mgroup{Bytecode instructions}
-    @internal This instruction is similar to @ref #ASSH_BOP_ISPRIM. */
-#define ASSH_BOP_ISNTPRIM(src, pcdiff)                                   \
-  ASSH_BOP_FMT3(ASSH_BIGNUM_OP_ISPRIM, 0, pcdiff + 128, src)
+    @internal This instructions performs the specified boolean
+    operation on condition flags. @see assh_bignum_bool_op */
+#define ASSH_BOP_BOOL(conddst, condsrc1, condsrc2, boolop)      \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_BOOL, conddst, condsrc1, condsrc2, boolop)
 
 /** @mgroup{Bytecode instructions}
     @internal The secret flag is forwarded to results of operations

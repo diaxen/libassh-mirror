@@ -372,6 +372,10 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
   assh_error_t err;
   uint_fast8_t i, j;
   uint_fast16_t pc = 0;
+  uint8_t cond = 0;
+#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
+  uint8_t cond_secret = 0;
+#endif
 
   /* find number of arguments and temporaries */
   for (tlen = flen = 0; format[flen]; flen++)
@@ -706,58 +710,63 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
 
         case ASSH_BIGNUM_OP_CMP: {
           int r = 0;
-          struct assh_bignum_s *src1 = args[oa];
-          struct assh_bignum_s *src2 = args[ob];
-          if (ob == ASSH_BOP_NOREG)
-            r = src1->n != NULL;
+          struct assh_bignum_s *src1 = args[ob];
+          struct assh_bignum_s *src2 = args[oc];
+          uint8_t cond_mask = 1 << oa;
+          cond &= ~cond_mask;
+#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
+          cond_secret &= ~cond_mask;
+#endif
+          if (oc == ASSH_BOP_NOREG)
+            {
+              r = src1->n != NULL;
+            }
           else
             {
+#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
+              cond_secret |= (src1->secret | src2->secret) << oa;
+#endif
               assert(!src2->mt_num);
-              if (ob != oa)
+              if (oc != ob)
                 {
                   assert(!src1->mt_num);
-                  assert(oc == 128 || (!src1->secret && !src1->secret));
                   r = gcry_mpi_cmp(src1->n, src2->n);
                 }
             }
           switch (od)
             {
             case 0:             /* cmpeq */
-              r = r != 0;
-              break;
-            case 1:             /* cmpne */
               r = r == 0;
               break;
-            case 2:             /* cmplt */
-              r = r >= 0;
+            case 1:             /* cmplt */
+              r = r < 0;
               break;
-            case 3:             /* cmplteq */
-              r = r > 0;
+            case 2:             /* cmplteq */
+              r = r <= 0;
               break;
             }
-          if (r)
-            ASSH_CHK_GTO(oc == 128, ASSH_ERR_NUM_COMPARE_FAILED, err_sc);
-          else
-            pc += oc - 128;
+          cond |= r << oa;
           break;
         }
 
-        case ASSH_BIGNUM_OP_TESTS:
-        case ASSH_BIGNUM_OP_TESTC: {
-          struct assh_bignum_s *src1 = args[oa];
-          size_t b = ob;
+        case ASSH_BIGNUM_OP_TEST: {
+          struct assh_bignum_s *src1 = args[ob];
+          uint8_t cond_mask = (1 << oa);
+          cond &= ~cond_mask;
+          size_t b = oc;
           assert(!src1->mt_num);
-          assert(oc == 128 || !src1->secret);
           if (od != ASSH_BOP_NOREG)
             {
               ASSH_ERR_GTO(assh_bignum_size_of_data(format[od], args[od],
                                                     NULL, NULL, &b), err_sc);
-              b -= ob;
+              b -= oc;
             }
-          if (!gcry_mpi_test_bit(src1->n, b) ^ (op == ASSH_BIGNUM_OP_TESTC))
-            ASSH_CHK_GTO(oc == 128, ASSH_ERR_NUM_COMPARE_FAILED, err_sc);
-          else
-            pc += oc - 128;
+          assert(b < src1->bits);
+          cond |= !!gcry_mpi_test_bit(src1->n, b) << oa;
+#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
+          cond_secret &= ~cond_mask;
+          cond_secret |= src1->secret << oa;
+#endif
           break;
         }
 
@@ -788,30 +797,78 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           break;
         }
 
-        case ASSH_BIGNUM_OP_LADJMP: {
-          if (assh_bignum_lad(args[od]))
+        case ASSH_BIGNUM_OP_JMP:
+          assert(!((cond_secret >> oa) & 1));
+          if (ob | (((cond >> oa) ^ od) & 1))
             pc += oc - 128;
           break;
-        }
 
-        case ASSH_BIGNUM_OP_LADSWAP: {
+        case ASSH_BIGNUM_OP_CSWAP: {
           struct assh_bignum_s *src1 = args[ob];
           struct assh_bignum_s *src2 = args[oc];
 
-          if (assh_bignum_lad(args[od]))
+          if (((cond >> oa) ^ od) & 1)
             gcry_mpi_swap(src1->n, src2->n);
           break;
         }
 
-        case ASSH_BIGNUM_OP_LADLOOP: {
+        case ASSH_BIGNUM_OP_CFAIL:
+          ASSH_CHK_GTO(((cond >> oc) ^ od) & 1, ASSH_ERR_NUM_COMPARE_FAILED, err_sc);
+          break;
+
+        case ASSH_BIGNUM_OP_LADTEST: {
           struct assh_bignum_lad_s *lad = args[od];
+          uint8_t cond_mask = (1 << oc);
+          cond &= ~cond_mask;
+          cond |= assh_bignum_lad(lad) << oc;
+#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
+          cond_secret &= cond_mask;
+          cond_secret |= lad->secret << oc;
+#endif
+          break;
+        }
+
+        case ASSH_BIGNUM_OP_LADNEXT: {
+          struct assh_bignum_lad_s *lad = args[od];
+          uint8_t cond_mask = (1 << oc);
+          cond &= ~cond_mask;
           uint16_t bit = --lad->count;
           if (bit)
             {
               if (lad->msbyte_1st && (bit & 7) == 0)
                 lad->data++;
-              pc -= oc;
+              cond |= cond_mask;
             }
+#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
+          cond_secret &= ~cond_mask;
+#endif
+          break;
+        }
+
+        case ASSH_BIGNUM_OP_BOOL: {
+          uint8_t src1 = (cond >> ob) & 1;
+          uint8_t src2 = (cond >> oc) & 1;
+          uint8_t dst_mask = (1 << oa);
+          cond &= ~dst_mask;
+          /* shift lookup table:
+              op:       3     2     1     0
+                       ANDN  XOR    OR   AND
+            src1 src2  -------- dst --------
+             0    0     0     0     0     0
+             0    1     0     1     1     0
+             1    0     1     1     1     0
+             1    1     0     0     1     1
+            --------------------------------
+              hex:      4     6     E     8
+             ~hex:      B     9     1     7
+           */
+          cond |= ((0xb91746e8 >> ((od << 2) | (src1 << 1) | src2)) & 1) << oa;
+#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG)
+          cond_secret &= ~dst_mask;
+          uint8_t src1_secret = (cond_secret >> ob) & 1;
+          uint8_t src2_secret = (cond_secret >> oc) & 1;
+          cond_secret |= (src1_secret | src1_secret) << oa;
+#endif
           break;
         }
 
@@ -847,15 +904,17 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           break;
         }
 
-        case ASSH_BIGNUM_OP_ISPRIM: {
+        case ASSH_BIGNUM_OP_ISPRIME: {
           struct assh_bignum_s *src = args[od];
           assert(!src->mt_num);
-          if (ob ^ (gcry_mpi_cmp_ui(src->n, 2) <= 0 ||
-                    gcry_prime_check(src->n, 0)))
-            pc += oc - 128;
-          else
-            ASSH_CHK_GTO(oc == 128, ASSH_ERR_NUM_OVERFLOW, err_sc);
-          break;
+          assert(!src->secret);
+          uint8_t cond_mask = (1 << oc);
+          cond &= ~cond_mask;
+          cond |= (gcry_mpi_cmp_ui(src->n, 2) > 0 &&
+                   !gcry_prime_check(src->n, 0)) << oc;
+#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG)
+          cond_secret &= ~cond_mask;
+#endif
         }
 
         case ASSH_BIGNUM_OP_PRIVACY: {

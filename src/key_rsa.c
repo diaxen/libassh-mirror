@@ -101,9 +101,12 @@ static ASSH_KEY_CMP_FCN(assh_key_rsa_cmp)
   };
 
   static const assh_bignum_op_t *bc, bytecode[] = {
-    ASSH_BOP_CMPEQ(     D1,     D0,	0       ),
-    ASSH_BOP_CMPEQ(     E1,     E0,	0       ),
-    ASSH_BOP_CMPEQ(     N1,     N0,	0       ),
+    ASSH_BOP_CMPEQ(     D1,     D0,      0              ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
+    ASSH_BOP_CMPEQ(     E1,     E0,      0              ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
+    ASSH_BOP_CMPEQ(     N1,     N0,      0              ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
     ASSH_BOP_END(),
   };
 
@@ -112,7 +115,7 @@ static ASSH_KEY_CMP_FCN(assh_key_rsa_cmp)
   if (pub)
     {
       /* skip compare of D */
-      bc++;
+      bc += 2;
     }
   else
     {
@@ -120,7 +123,7 @@ static ASSH_KEY_CMP_FCN(assh_key_rsa_cmp)
           assh_bignum_isempty(&l->dn))
         return 0;
       if (assh_bignum_isempty(&l->dn))
-        bc++;
+        bc += 2;
     }
 
   return assh_bignum_bytecode(c, bc, "NNNNNNNN",
@@ -163,7 +166,9 @@ static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
     ASSH_BOP_SHL(       T0,     T0,     -2,     P       ),
     ASSH_BOP_PRIME(     P,      T0,     ASSH_BOP_NOREG  ),
     ASSH_BOP_PRIME(     Q,      T0,     ASSH_BOP_NOREG  ),
-    ASSH_BOP_CMPNE(     P,      Q,      0 /* sanity check */ ),
+    /* sanity check */
+    ASSH_BOP_CMPEQ(     P,      Q,      0               ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
 
     ASSH_BOP_MUL(       N,      P,      Q               ),
 

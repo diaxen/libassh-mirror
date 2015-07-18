@@ -210,11 +210,12 @@ assh_key_eddsa_create(struct assh_context_s *c,
     ASSH_BOP_MOVE(      RY,     PY                      ),
     ASSH_BOP_MOVE(      RZ,     PZ                      ),
 
-    ASSH_BOP_LADSWAP(   RX,     QX,     L               ),
-    ASSH_BOP_LADSWAP(   RY,     QY,     L               ),
-    ASSH_BOP_LADSWAP(   RZ,     QZ,     L               ),
-
-    ASSH_BOP_LADLOOP(   42,             L               ),
+    ASSH_BOP_LADTEST(   L,      0                               ),
+    ASSH_BOP_CSWAP(     RX,     QX,     0,      0               ),
+    ASSH_BOP_CSWAP(     RY,     QY,     0,      0               ),
+    ASSH_BOP_CSWAP(     RZ,     QZ,     0,      0               ),
+    ASSH_BOP_LADNEXT(   L,      0                               ),
+    ASSH_BOP_CJMP(      -44,    0,      0                       ),
 
     /* projective to affine */
     ASSH_BOP_INV(       T0,     RZ,     MT              ),

@@ -90,4 +90,55 @@ struct assh_weierstrass_curve_s
 
 #define ASSH_BOP_WS_PADD_OPS 21
 
+/* check that a point is on the weierstrass curve */
+#define ASSH_BOP_WS_POINTONCURVE(X1, Y1, T0, T1, B, P)          \
+    ASSH_BOP_MULM(      T0,     Y1,     Y1,     P       ),      \
+    ASSH_BOP_MULM(      T1,     X1,     X1,     P       ),      \
+    ASSH_BOP_MULM(      T1,     T1,     X1,     P       ),      \
+    ASSH_BOP_SUBM(      T1,     T0,     T1,     P       ),      \
+    ASSH_BOP_ADDM(      T1,     T1,     X1,     P       ),      \
+    ASSH_BOP_ADDM(      T1,     T1,     X1,     P       ),      \
+    ASSH_BOP_ADDM(      T1,     T1,     X1,     P       ),      \
+    ASSH_BOP_MTFROM(	T1,     T1,     T1,     P       ),      \
+    ASSH_BOP_CMPEQ(     T1,     B,      0               ),      \
+    ASSH_BOP_CFAIL(     1,      0                       )
+
+/* constant time scalar mul */
+#define ASSH_BOP_WS_SCMUL(X3, Y3, Z3, X2, Y2, Z2, X1, Y1, Z1,           \
+			  T0, T1, T2, T3, L, P)                         \
+                                                                        \
+    ASSH_BOP_LADNEXT(   L,      0                       ),              \
+    ASSH_BOP_CFAIL(     1,      0                       ),              \
+                                                                        \
+    ASSH_BOP_MTUINT(    Z1,     1,      P               ),              \
+    ASSH_BOP_MOVE(      X2,     X1                      ),              \
+    ASSH_BOP_MOVE(      Y2,     Y1                      ),              \
+    ASSH_BOP_MOVE(      Z2,     Z1                      ),              \
+                                                                        \
+    /* ladder */                                                        \
+    ASSH_BOP_WS_PDBL(X3, Y3, Z3, X2, Y2, Z2, T0, T1, P  ),              \
+    ASSH_BOP_MOVE(      X2,     X3                      ),              \
+    ASSH_BOP_MOVE(      Y2,     Y3                      ),              \
+    ASSH_BOP_MOVE(      Z2,     Z3                      ),              \
+                                                                        \
+    ASSH_BOP_WS_PADD(X3, Y3, Z3, X1, Y1, Z1, X2, Y2, Z2,                \
+                     T0, T1, T2, T3, P),                                \
+                                                                        \
+    ASSH_BOP_LADTEST(   L,      0                       ),              \
+    ASSH_BOP_CSWAP(     X2,     X3,     0,      0       ),              \
+    ASSH_BOP_CSWAP(     Y2,     Y3,     0,      0       ),              \
+    ASSH_BOP_CSWAP(     Z2,     Z3,     0,      0       ),              \
+    ASSH_BOP_LADNEXT(   L,      0                       ),              \
+    ASSH_BOP_CJMP(      -ASSH_BOP_WS_PDBL_OPS - 3                       \
+                        -ASSH_BOP_WS_PADD_OPS - 6,                      \
+                        0,      0    ),                                 \
+                                                                        \
+    ASSH_BOP_MTFROM(	T0,     T0,     Z2,     P       ),              \
+    ASSH_BOP_UINT(      T1,     0                       ),              \
+    ASSH_BOP_CMPEQ(     T1,     T0,     0               ),              \
+    ASSH_BOP_CFAIL(     0,      0                       ),              \
+                                                                        \
+    ASSH_BOP_INV(       T0,     Z2,             P      ),               \
+    ASSH_BOP_MULM(      X2,     X2,     T0,     P      ),               \
+    ASSH_BOP_MULM(      Y2,     Y2,     T0,     P      )
 

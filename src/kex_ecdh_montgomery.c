@@ -168,9 +168,12 @@ assh_montgomery_point_mul(struct assh_session_s *s, uint8_t *result,
     /* montgomery ladder */
     ASSH_BOP_MONTGOMERY_SADD(X1, X2, X3, Z2, Z3, T0, T1, A24, MT),
 
-    ASSH_BOP_LADSWAP(  X2,     X3,     L                ),
-    ASSH_BOP_LADSWAP(  Z2,     Z3,     L                ),
-    ASSH_BOP_LADLOOP(  ASSH_BOP_MONTGOMERY_SADD_OPS + 3, L      ),
+    ASSH_BOP_LADTEST(   L,      0                       ),
+    ASSH_BOP_CSWAP(     X2,     X3,     0,      0       ),
+    ASSH_BOP_CSWAP(     Z2,     Z3,     0,      0       ),
+    ASSH_BOP_LADNEXT(   L,      0                       ),
+    ASSH_BOP_CJMP(      - ASSH_BOP_MONTGOMERY_SADD_OPS - 5,
+                        0,      0   ),
 
     ASSH_BOP_INV(       T0,     Z2,             MT      ),
     ASSH_BOP_MULM(      T0,     X2,     T0,     MT      ),
@@ -182,7 +185,8 @@ assh_montgomery_point_mul(struct assh_session_s *s, uint8_t *result,
 #endif
     /* check contributory behavior */
     ASSH_BOP_UINT(      T1,     0                       ),
-    ASSH_BOP_CMPNE(     T1,     T0,      0              ),
+    ASSH_BOP_CMPEQ(     T1,     T0,     0               ),
+    ASSH_BOP_CFAIL(     0,      0                       ),
 
     ASSH_BOP_MOVE(      R_raw,  T0                      ),
 

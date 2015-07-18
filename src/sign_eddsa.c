@@ -153,11 +153,12 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
       ASSH_BOP_MOVE(    RY,     PY                      ),
       ASSH_BOP_MOVE(    RZ,     PZ                      ),
 
-      ASSH_BOP_LADSWAP( RX,     QX,     L               ),
-      ASSH_BOP_LADSWAP( RY,     QY,     L               ),
-      ASSH_BOP_LADSWAP( RZ,     QZ,     L               ),
-
-      ASSH_BOP_LADLOOP( 42,             L               ),
+      ASSH_BOP_LADTEST(   L,      0                     ),
+      ASSH_BOP_CSWAP(     RX,     QX,     0,      0     ),
+      ASSH_BOP_CSWAP(     RY,     QY,     0,      0     ),
+      ASSH_BOP_CSWAP(     RZ,     QZ,     0,      0     ),
+      ASSH_BOP_LADNEXT(   L,      0                     ),
+      ASSH_BOP_CJMP(      -44,    0,      0             ),
 
       /* projective to affine */
       ASSH_BOP_INV(     T0,     RZ,     MT              ),
@@ -338,7 +339,6 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
 
     /* u = y^2-1, v = d*y^2-a */
     ASSH_BOP_MTINIT(    MT,     P                       ),
-    ASSH_BOP_MTTO(      U,      V,      U,      MT      ),
     ASSH_BOP_MTTO(      A,      D,      A,      MT      ),
     ASSH_BOP_MTTO(      BY,     BY,     BY,     MT      ),
 
@@ -351,7 +351,8 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
     /* compute x = sqrt(u/v), the method depends on the value of P.
        This is tricky when p%8 == 1 (does not occur in used curves) */
 
-    ASSH_BOP_TESTS(     P,      1,      ASSH_BOP_NOREG,  22       ),
+    ASSH_BOP_TEST(      P,      1,      ASSH_BOP_NOREG,      0  ),
+    ASSH_BOP_CJMP(      24,     0,      0                       ),
 
     /*** case p%8 == 5: x = (uv^3)*(uv^7)^((p-5)/8) */
 
@@ -384,11 +385,13 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
     ASSH_BOP_MTFROM(    T0,     BX,     T0,     MT      ),
 
     ASSH_BOP_UINT(      PX,     0                       ),
-    ASSH_BOP_CMPEQ(     T0,     PX,     3               ),
-    ASSH_BOP_CMPEQ(     T1,     PX,     0 /* abort */   ),
+    ASSH_BOP_CMPEQ(     T0,     PX,     0               ),
+    ASSH_BOP_CJMP(      21,     0,      0               ),
+    ASSH_BOP_CMPEQ(     T1,     PX,     0               ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
     ASSH_BOP_MOVE(      T0,     I_mpint                 ),
     ASSH_BOP_MULM(      BX,     BX,     T0,     P       ),
-    ASSH_BOP_JMP(       15                              ),
+    ASSH_BOP_JMP(       16                              ),
 
     /*** case p%4 == 3: x = (uv)*(uv^3)^((p-3)/4) */
 
@@ -415,15 +418,17 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
 
     ASSH_BOP_MTFROM(    T1,     BX,     T1,     MT      ),
     ASSH_BOP_UINT(      PX,     0                       ),
-    ASSH_BOP_CMPEQ(     T1,     PX,     0 /* abort */   ),
+    ASSH_BOP_CMPEQ(     T1,     PX,     0               ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
 
     /***********/
 
     /* x = -x if sign of x does not match sign bit in encoded key */
-    ASSH_BOP_TESTS(     BX,     0,      ASSH_BOP_NOREG,  1      ),
-    ASSH_BOP_SUB(       BX,     P,      BX              ),
+    ASSH_BOP_TEST(      BX,     0,      ASSH_BOP_NOREG,      0  ),
     ASSH_BOP_MOVE(      T0,     KX_mpint                        ),
-    ASSH_BOP_TESTC(     T0,     0,      ASSH_BOP_NOREG,  1      ),
+    ASSH_BOP_TEST(      T0,     0,      ASSH_BOP_NOREG,      1  ),
+    ASSH_BOP_BOOL(      0,      0,      1, ASSH_BOP_BOOL_XOR    ),
+    ASSH_BOP_CJMP(      1,      0,      0                       ),
     ASSH_BOP_SUB(       BX,     P,      BX              ),
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
@@ -441,14 +446,16 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
 
     ASSH_BOP_TEDWARD_PDBL( PX, PY, PZ,  RX, RY, RZ,
                            T0, T1, MT                   ),
-    ASSH_BOP_LADJMP(   L1,     4                        ),
+    ASSH_BOP_LADTEST(   L1,      0                      ),
+    ASSH_BOP_CJMP(      4,       0,      0              ),
     ASSH_BOP_MOVE(      RX,     PX                      ),
     ASSH_BOP_MOVE(      RY,     PY                      ),
     ASSH_BOP_MOVE(      RZ,     PZ                      ),
     ASSH_BOP_JMP(       20                              ),
     ASSH_BOP_TEDWARD_PADD( RX, RY, RZ,  PX, PY, PZ,
                            BX, BY, BZ,  T0, T1, A, D, MT ),
-    ASSH_BOP_LADLOOP(  41,     L1                      ),
+    ASSH_BOP_LADNEXT(   L1,     0                       ),
+    ASSH_BOP_CJMP(      -43,    0,      0               ),
 
     /* compute S.B */
     ASSH_BOP_MOVE(      BX,     BX_mpint                ),
@@ -463,14 +470,16 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
 
     ASSH_BOP_TEDWARD_PDBL( PX, PY, PZ,  QX, QY, QZ,
                            T0, T1, MT                   ),
-    ASSH_BOP_LADJMP(    L2,     4                       ),
+    ASSH_BOP_LADTEST(   L2,     0                       ),
+    ASSH_BOP_CJMP(      4,      0,      0               ),
     ASSH_BOP_MOVE(      QX,     PX                      ),
     ASSH_BOP_MOVE(      QY,     PY                      ),
     ASSH_BOP_MOVE(      QZ,     PZ                      ),
     ASSH_BOP_JMP(       20                              ),
     ASSH_BOP_TEDWARD_PADD( QX, QY, QZ,  PX, PY, PZ,
                            BX, BY, BZ,  T0, T1, A, D, MT ),
-    ASSH_BOP_LADLOOP(   41,     L2                      ),
+    ASSH_BOP_LADNEXT(   L2,     0                       ),
+    ASSH_BOP_CJMP(      -43,    0,      0               ),
 
     /* compute S.B + H(R,A,M).A */
     ASSH_BOP_TEDWARD_PADD( PX, PY, PZ,  RX, RY, RZ,

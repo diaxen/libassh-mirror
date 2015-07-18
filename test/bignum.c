@@ -234,13 +234,18 @@ assh_error_t test_cmp()
     ASSH_BOP_SIZE(	Y,	S			),
     ASSH_BOP_MOVE(	Y,	Y_hex			),
 
-    ASSH_BOP_CMPNE(     X,      Y,      0		),
-    ASSH_BOP_CMPLT(     X,      Y,      0		),
+    ASSH_BOP_CMPEQ(     X,      Y,	0        	),
+    ASSH_BOP_CFAIL(     0,	0                       ),
+    ASSH_BOP_CMPLT(     X,      Y,	0      		),
+    ASSH_BOP_CFAIL(     1,	0                       ),
 
     ASSH_BOP_UINT(      X,      16                      ),
-    ASSH_BOP_CMPEQ(     X,      Y,      0		),
-    ASSH_BOP_CMPLTEQ(   X,      Y,      0		),
-    ASSH_BOP_CMPLTEQ(   Y,      X,      0		),
+    ASSH_BOP_CMPEQ(     X,      Y,	0          	),
+    ASSH_BOP_CFAIL(     1,	0                       ),
+    ASSH_BOP_CMPLTEQ(   X,      Y,	0           	),
+    ASSH_BOP_CFAIL(     1,	0                       ),
+    ASSH_BOP_CMPLTEQ(   Y,      X,	0          	),
+    ASSH_BOP_CFAIL(     1,	0                       ),
 
     ASSH_BOP_END(),
   };
@@ -256,7 +261,8 @@ assh_error_t test_cmp()
     ASSH_BOP_SIZE(	Y,	S			),
     ASSH_BOP_MOVE(	Y,	Y_hex			),
 
-    ASSH_BOP_CMPEQ(     X,      Y,      0		),
+    ASSH_BOP_CMPEQ(     X,      Y,	0     		),
+    ASSH_BOP_CFAIL(     1,	0                       ),
 
     ASSH_BOP_END(),
   };
@@ -273,7 +279,8 @@ assh_error_t test_cmp()
     ASSH_BOP_SIZE(	Y,	S			),
     ASSH_BOP_MOVE(	Y,	Y_hex			),
 
-    ASSH_BOP_CMPLT(     Y,      X,      0		),
+    ASSH_BOP_CMPLT(     Y,      X,	0      		),
+    ASSH_BOP_CFAIL(     1,	0                       ),
 
     ASSH_BOP_END(),
   };
@@ -301,6 +308,30 @@ assh_error_t test_ops()
     enum bytecode_args_e
     {
       A, B, R, M, A_mpint, B_mpint, R_mpint, M_mpint, MT
+    };
+
+    static const assh_bignum_op_t bytecode_cmpeq[] = {
+      ASSH_BOP_MOVE(	A,	A_mpint		),
+      ASSH_BOP_MOVE(	B,	B_mpint		),
+      ASSH_BOP_CMPEQ(	A,	B,	0	),
+      ASSH_BOP_CFAIL(	1,	0		),
+      ASSH_BOP_END(),
+    };
+
+    static const assh_bignum_op_t bytecode_cmplt[] = {
+      ASSH_BOP_MOVE(	A,	A_mpint		),
+      ASSH_BOP_MOVE(	B,	B_mpint		),
+      ASSH_BOP_CMPLT(	A,	B,	0	),
+      ASSH_BOP_CFAIL(	1,	0		),
+      ASSH_BOP_END(),
+    };
+
+    static const assh_bignum_op_t bytecode_cmplteq[] = {
+      ASSH_BOP_MOVE(	A,	A_mpint		),
+      ASSH_BOP_MOVE(	B,	B_mpint		),
+      ASSH_BOP_CMPLTEQ(	A,	B,	0	),
+      ASSH_BOP_CFAIL(	1,	0		),
+      ASSH_BOP_END(),
     };
 
     static const assh_bignum_op_t bytecode_shl[] = {
@@ -391,6 +422,42 @@ assh_error_t test_ops()
     };
 
     static const struct op_test_s tests[] = {
+      {
+	128, 128, 0, 0, bytecode_cmpeq,
+	"\x00\x00\x00\x10\x1f\x23\x45\x67\x89\xab\xcd\x0e\xe0\xdc\xab\x98\x76\x54\x32\xf1",
+	"\x00\x00\x00\x10\x1f\x23\x45\x67\x89\xab\xcd\x0e\xe0\xdc\xab\x98\x76\x54\x32\xf1",
+      },
+
+      {
+	128, 128, 0, 1, bytecode_cmpeq,
+	"\x00\x00\x00\x10\x1f\x23\x45\x67\x89\xab\xcd\x0e\xe0\xdc\xab\x98\x76\x54\x32\xf1",
+	"\x00\x00\x00\x10\x1f\x23\x45\x67\x89\xab\xcd\x0e\xe0\xdc\xab\x98\x76\x54\x32\xf0",
+      },
+
+      {
+	128, 128, 0, 1, bytecode_cmplt,
+	"\x00\x00\x00\x10\x1f\x23\x45\x67\x89\xab\xcd\x0e\xe0\xdc\xab\x98\x76\x54\x32\xf1",
+	"\x00\x00\x00\x08\x40\xdc\xab\x98\x76\x54\x32\xf0",
+      },
+
+      {
+	128, 128, 0, 0, bytecode_cmplt,
+	"\x00\x00\x00\x08\x40\xdc\xab\x98\x76\x54\x32\xf0",
+	"\x00\x00\x00\x10\x1f\x23\x45\x67\x89\xab\xcd\x0e\xe0\xdc\xab\x98\x76\x54\x32\xf1",
+      },
+
+      {
+	128, 64, 0, 1, bytecode_cmplt,
+	"\x00\x00\x00\x10\x1f\x23\x45\x67\x89\xab\xcd\x0e\xe0\xdc\xab\x98\x76\x54\x32\xf1",
+	"\x00\x00\x00\x08\x40\xdc\xab\x98\x76\x54\x32\xf0",
+      },
+
+      {
+	64, 128, 0, 0, bytecode_cmplt,
+	"\x00\x00\x00\x08\x40\xdc\xab\x98\x76\x54\x32\xf0",
+	"\x00\x00\x00\x10\x1f\x23\x45\x67\x89\xab\xcd\x0e\xe0\xdc\xab\x98\x76\x54\x32\xf1",
+      },
+
       {
 	128, 32, 128, 0, bytecode_shr,
 	"\x00\x00\x00\x10\x1f\x23\x45\x67\x89\xab\xcd\x0e\xe0\xdc\xab\x98\x76\x54\x32\xf1",
@@ -681,12 +748,17 @@ assh_error_t test_ops()
 	  {
 	    if (e)
 	      ABORT();
-	    size_t s = 4 + assh_load_u32((const uint8_t*)t->r);
-	    if (memcmp(buf, t->r, s))
+	    if (t->r)
 	      {
-		assh_hexdump("result", buf, s);
-		assh_hexdump("expected", t->r, s);
-		ABORT();
+		size_t s = 4 + assh_load_u32((const uint8_t*)t->r);
+		if (memcmp(buf, t->r, s))
+		  {
+#ifdef CONFIG_ASSH_DEBUG
+		    assh_hexdump("result", buf, s);
+		    assh_hexdump("expected", t->r, s);
+#endif
+		    ABORT();
+		  }
 	      }
 	  }
 
@@ -731,19 +803,22 @@ assh_error_t test_add_sub(unsigned int count)
         ASSH_BOP_SHR(   B,      B,      0,      L       ),
 
         ASSH_BOP_MOVE(  C,      B                       ),
-        ASSH_BOP_CMPEQ( C,      B,      0               ),
+        ASSH_BOP_CMPEQ( C,      B,	0               ),
+        ASSH_BOP_CFAIL( 1,	0                       ),
 
         // ASSH_BOP_PRINT( A,      'A'                     ),
         // ASSH_BOP_PRINT( B,      'B'                     ),
 
         ASSH_BOP_ADD(   B,      B,      A               ),
       //ASSH_BOP_PRINT( B,      'B'                     ),
-        ASSH_BOP_CMPNE( C,      B,      0               ),
+        ASSH_BOP_CMPEQ( C,      B,	0               ),
+        ASSH_BOP_CFAIL( 0,	0                       ),
 
         ASSH_BOP_SUB(   B,      B,      A               ),
       //ASSH_BOP_PRINT( B,      'B'                     ),
       //ASSH_BOP_PRINT( C,      'C'                     ),
-        ASSH_BOP_CMPEQ( C,      B,      0               ),
+        ASSH_BOP_CMPEQ( C,      B,	0               ),
+        ASSH_BOP_CFAIL( 1,	0                       ),
 
         ASSH_BOP_MOVE(  B,      A                       ),
         ASSH_BOP_ADD(   B,      A,      B               ),
@@ -759,7 +834,8 @@ assh_error_t test_add_sub(unsigned int count)
      // ASSH_BOP_PRINT( C,      'C'                     ),
      // ASSH_BOP_PRINT( D,      'D'                     ),
 
-        ASSH_BOP_CMPEQ( D,      B,      0               ),
+        ASSH_BOP_CMPEQ( D,      B,	0               ),
+        ASSH_BOP_CFAIL( 1,	0                       ),
 
         ASSH_BOP_END(),
       };
@@ -800,7 +876,8 @@ assh_error_t test_div(unsigned int count)
         ASSH_BOP_MUL(   E,      B,      C               ),
         ASSH_BOP_ADD(   E,      E,      D               ),
 
-        ASSH_BOP_CMPEQ( E,      A,      0               ),
+        ASSH_BOP_CMPEQ( E,      A,	0               ),
+        ASSH_BOP_CFAIL( 1,	0                       ),
 
         ASSH_BOP_END(),
       };
@@ -887,12 +964,14 @@ assh_error_t test_modinv(unsigned int count)
                                 ASSH_PRNG_QUALITY_WEAK  ),
 
         ASSH_BOP_INV(   C,      B,      P               ),
-        ASSH_BOP_CMPLT( C,      P,      0               ),
+        ASSH_BOP_CMPLT( C,      P,	0                       ),
+        ASSH_BOP_CFAIL( 1,	0                               ),
 
         ASSH_BOP_MULM(  D,      B,      C,      P       ),
 
         ASSH_BOP_UINT(  P,      1                       ),
-        ASSH_BOP_CMPEQ( P,      D,      0               ),
+        ASSH_BOP_CMPEQ( P,      D,	0                       ),
+        ASSH_BOP_CFAIL( 1,	0                               ),
 
         ASSH_BOP_END(),
       };
@@ -943,7 +1022,8 @@ assh_error_t test_mt(unsigned int count)
         ASSH_BOP_MULM(  R,      A,      B,      MT      ),
         ASSH_BOP_MTFROM(R,      R,      R,      MT              ),
 
-        ASSH_BOP_CMPEQ( R,      R2,      0               ),
+        ASSH_BOP_CMPEQ( R,      R2,	0                      ),
+        ASSH_BOP_CFAIL( 1,	0                               ),
 
         ASSH_BOP_END(),
       };
@@ -1011,7 +1091,8 @@ assh_error_t test_expmod(unsigned int count)
 
         ASSH_BOP_MTFROM(R4,     R4,     R4,     MT              ),
         ASSH_BOP_MTFROM(R5,     R5,     R5,     MT              ),
-        ASSH_BOP_CMPEQ( R4,     R5,     0               ),
+        ASSH_BOP_CMPEQ( R4,     R5,	0                      ),
+        ASSH_BOP_CFAIL( 1,	0                               ),
 
         // ASSH_BOP_PRINT( R4,     '4'                    ),
         // ASSH_BOP_PRINT( R5,     '5'                    ),

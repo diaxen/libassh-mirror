@@ -115,11 +115,16 @@ static ASSH_KEY_CMP_FCN(assh_key_dsa_cmp)
   };
 
   static const assh_bignum_op_t *bc, bytecode[] = {
-    ASSH_BOP_CMPEQ(     X1,     X0,	0       ),
-    ASSH_BOP_CMPEQ(     P1,     P0,	0       ),
-    ASSH_BOP_CMPEQ(     Q1,     Q0,	0       ),
-    ASSH_BOP_CMPEQ(     G1,     G0,	0       ),
-    ASSH_BOP_CMPEQ(     Y1,     Y0,	0       ),
+    ASSH_BOP_CMPEQ(     X1,     X0,      0       ),
+    ASSH_BOP_CFAIL(     1,      0                ),
+    ASSH_BOP_CMPEQ(     P1,     P0,      0       ),
+    ASSH_BOP_CFAIL(     1,      0                ),
+    ASSH_BOP_CMPEQ(     Q1,     Q0,      0       ),
+    ASSH_BOP_CFAIL(     1,      0                ),
+    ASSH_BOP_CMPEQ(     G1,     G0,      0       ),
+    ASSH_BOP_CFAIL(     1,      0                ),
+    ASSH_BOP_CMPEQ(     Y1,     Y0,      0       ),
+    ASSH_BOP_CFAIL(     1,      0                ),
     ASSH_BOP_END(),
   };
 
@@ -342,22 +347,29 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
     ASSH_BOP_SIZER(     T1,     T2,     P               ),
 
     /* check q prime */
-    ASSH_BOP_TESTS(     Q,      1,      Q,      0       ),
-    ASSH_BOP_ISPRIM(    Q,      0                       ),
+    ASSH_BOP_TEST(      Q,      1,      Q,      0       ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
+    ASSH_BOP_ISPRIME(   Q,      0                       ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
 
     /* check p prime */
-    ASSH_BOP_TESTS(     P,      1,      P,      0       ),
-    ASSH_BOP_ISPRIM(    P,      0                       ),
+    ASSH_BOP_TEST(      P,      1,      P,      0       ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
+    ASSH_BOP_ISPRIME(   P,      0                       ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
 
     /* check (p-1)%q < 1 */
     ASSH_BOP_UINT(      T1,     1                       ),
     ASSH_BOP_SUB(       T2,     P,      T1              ),
     ASSH_BOP_MOD(       T2,     T2,     Q               ),
-    ASSH_BOP_CMPLT(     T2,     T1,     0               ),
+    ASSH_BOP_CMPLT(     T2,     T1,      0              ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
 
     /* check generator range */
     ASSH_BOP_CMPLT(     T1,     G,      0 /* g > 1 */   ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
     ASSH_BOP_CMPLT(     G,      P,      0 /* g < p */   ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
 
     ASSH_BOP_MTINIT(    MT,     P                       ),
 
@@ -365,25 +377,31 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
     ASSH_BOP_MTTO(      T2,     T2,     G,      MT      ),
     ASSH_BOP_EXPM(      T2,     T2,     Q,      MT      ),
     ASSH_BOP_MTFROM(    T2,     T2,     T2,     MT      ),
-    ASSH_BOP_CMPEQ(     T1,     T2,     0               ),
+    ASSH_BOP_CMPEQ(     T1,     T2,      0              ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
 
     /* check public key range */
     ASSH_BOP_CMPLT(     T1,     Y,      0  /* y > 1 */  ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
     ASSH_BOP_SUB(       T2,     P,      T1              ),
-    ASSH_BOP_CMPLT(     Y,      T2,     0 /* y < p-1 */ ),
+    ASSH_BOP_CMPLT(     Y,      T2,      0/* y < p-1 */ ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
 
     /* check public key order in the group */
     ASSH_BOP_MTTO(      T2,     T2,     Y,      MT      ),
     ASSH_BOP_EXPM(      T2,     T2,     Q,      MT      ),
     ASSH_BOP_MTFROM(    T2,     T2,     T2,     MT      ),
-    ASSH_BOP_CMPEQ(     T1,     T2,     0               ),
+    ASSH_BOP_CMPEQ(     T1,     T2,      0              ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
 
     /* check private key */
-    ASSH_BOP_CMPEQ(     X,      ASSH_BOP_NOREG, 4       ),
+    ASSH_BOP_CMPEQ(     X,      ASSH_BOP_NOREG,      0  ),
+    ASSH_BOP_CJMP(      4,      0,      0               ),
     ASSH_BOP_MTTO(      T2,     T2,     G,      MT      ),
     ASSH_BOP_EXPM(      T2,     T2,     X,      MT      ),
     ASSH_BOP_MTFROM(    T2,     T2,     T2,     MT      ),
     ASSH_BOP_CMPEQ(     T2,     Y,      0               ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
 
     ASSH_BOP_END(),
   };
