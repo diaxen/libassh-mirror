@@ -425,16 +425,20 @@ int test(int (*fend)(int, int), int n)
 
 	      if (rqe->type_len != e->type.len)
 		{
+#ifdef CONFIG_ASSH_DEBUG
 		  assh_hexdump("rq", rqe->type, rqe->type_len);
 		  assh_hexdump("ev", e->type.str, e->type.len);
+#endif
 		  TEST_FAIL("(ctx %u seed %u) request.type_len: rq:%u ev:%zu\n",
 			    i, seed, rqe->type_len, e->type.len);
 		}
 
 	      if (e->type.len && memcmp(rqe->type, e->type.str, e->type.len))
 		{
+#ifdef CONFIG_ASSH_DEBUG
 		  assh_hexdump("rq", rqe->type, rqe->type_len);
 		  assh_hexdump("ev", e->type.str, e->type.len);
+#endif
 		  TEST_FAIL("(ctx %u seed %u) request.type\n", i, seed);
 		}
 
@@ -444,8 +448,10 @@ int test(int (*fend)(int, int), int n)
 
 	      if (e->rq_data.size && memcmp(rqe->rq_data, e->rq_data.data, e->rq_data.size))
 		{
+#ifdef CONFIG_ASSH_DEBUG
 		  assh_hexdump("rq", rqe->rq_data, rqe->data_len);
 		  assh_hexdump("ev", e->rq_data.data, e->rq_data.size);
+#endif
 		  TEST_FAIL("(ctx %u seed %u) request.data\n", i, seed);
 		}
 
@@ -548,8 +554,10 @@ int test(int (*fend)(int, int), int n)
 
 		  if (e->rsp_data.size && memcmp(rqe->rsp_data, e->rsp_data.data, e->rsp_data.size))
 		    {
+#ifdef CONFIG_ASSH_DEBUG
 		      assh_hexdump("rq", rqe->rsp_data, rqe->data_len);
 		      assh_hexdump("ev", e->rsp_data.data, e->rsp_data.size);
+#endif
 		      TEST_FAIL("(ctx %u seed %u) request_reply.rsp_data.data\n", i, seed);
 		    }
 		  rq_event_success_count++;
@@ -614,8 +622,10 @@ int test(int (*fend)(int, int), int n)
 
 	      if (e->type.len && memcmp(che->type, e->type.str, e->type.len))
 		{
+#ifdef CONFIG_ASSH_DEBUG
 		  assh_hexdump("ch", che->type, che->type_len);
 		  assh_hexdump("ev", e->type.str, e->type.len);
+#endif
 		  TEST_FAIL("(ctx %u seed %u) channel_open.type\n", i, seed);
 		}
 
@@ -625,8 +635,10 @@ int test(int (*fend)(int, int), int n)
 
 	      if (e->rq_data.size && memcmp(che->data, e->rq_data.data, e->rq_data.size))
 		{
+#ifdef CONFIG_ASSH_DEBUG
 		  assh_hexdump("ch", che->data, che->data_len);
 		  assh_hexdump("ev", e->rq_data.data, e->rq_data.size);
+#endif
 		  TEST_FAIL("(ctx %u seed %u) channel_open.data\n", i, seed);
 		}
 
@@ -678,8 +690,10 @@ int test(int (*fend)(int, int), int n)
 
 		  if (e->rsp_data.size && memcmp(che->data, e->rsp_data.data, e->rsp_data.size))
 		    {
+#ifdef CONFIG_ASSH_DEBUG
 		      assh_hexdump("ch", che->data, che->data_len);
 		      assh_hexdump("ev", e->rsp_data.data, e->rsp_data.size);
+#endif
 		      TEST_FAIL("(ctx %u seed %u) channel_open_reply.data\n", i, seed);
 		    }
 

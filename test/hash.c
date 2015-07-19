@@ -141,13 +141,17 @@ main(int argc, char **argv)
 #if 0
       assh_hash_init(&context, ctx, algo);
       assh_hash_final(ctx, buf, hash_size);
+#ifdef CONFIG_ASSH_DEBUG
       assh_hexdump("empty", buf, hash_size);
+#endif
       assh_hash_cleanup(ctx);
 
       assh_hash_init(&context, ctx, algo);
       assh_hash_update(ctx, "abc", 3);
       assh_hash_final(ctx, buf, hash_size);
+#ifdef CONFIG_ASSH_DEBUG
       assh_hexdump("abc", buf, hash_size);
+#endif
       assh_hash_cleanup(ctx);
 #endif
 
@@ -185,8 +189,10 @@ main(int argc, char **argv)
 
       if (memcmp(buf, tests[i].out, hash_size))
 	{
+#ifdef CONFIG_ASSH_DEBUG
 	  assh_hexdump("hash result", buf, hash_size);
 	  assh_hexdump("expected   ", tests[i].out, hash_size);
+#endif
 	  err++;
 	}
     }  

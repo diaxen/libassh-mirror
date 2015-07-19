@@ -152,8 +152,10 @@ assh_error_t test_const()
 
       if (memcmp(algos[i].sign, sign, sign_len))
 	{
+#ifdef CONFIG_ASSH_DEBUG
 	  assh_hexdump("expected", algos[i].sign, sign_len);
 	  assh_hexdump("wrong", sign, sign_len);
+#endif
 	  abort();
 	}
 
