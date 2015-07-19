@@ -85,10 +85,10 @@ assh_sign_rsa_generate(struct assh_context_s *c,
   /* check availability of the private key */
   ASSH_CHK_RET(assh_bignum_isempty(&k->dn), ASSH_ERR_MISSING_KEY);
 
-  unsigned int n = assh_bignum_bits(&k->nn);
+  size_t n = ASSH_ALIGN8(assh_bignum_bits(&k->nn)) / 8;
 
   /* check/return signature length */
-  size_t len = ASSH_RSA_ID_LEN + 4 + n / 8;
+  size_t len = ASSH_RSA_ID_LEN + 4 + n;
 
   if (sign == NULL)
     {
@@ -103,12 +103,12 @@ assh_sign_rsa_generate(struct assh_context_s *c,
   ASSH_CHK_RET(digest->algo == NULL, ASSH_ERR_NOTSUP);
 
   /* build encoded message buffer */
-  unsigned int ps_len = n / 8 - 3 - digest->oid_len - digest->algo->hash_size;
+  unsigned int ps_len = n - 3 - digest->oid_len - digest->algo->hash_size;
 
   ASSH_CHK_RET(ps_len < 8, ASSH_ERR_BAD_DATA);
 
   ASSH_SCRATCH_ALLOC(c, uint8_t, scratch,
-                     digest->algo->ctx_size + n / 8,
+                     digest->algo->ctx_size + n,
                      ASSH_ERRSV_CONTINUE, err_);
 
   uint8_t *em_buf = scratch + digest->algo->ctx_size;
@@ -127,17 +127,18 @@ assh_sign_rsa_generate(struct assh_context_s *c,
 
   ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, digest->algo), err_scratch);
   for (i = 0; i < data_count; i++)
-    assh_hash_update(hash_ctx, data[i], data_len[i]);
+      assh_hash_update(hash_ctx, data[i], data_len[i]);
   assh_hash_final(hash_ctx, em, digest->algo->hash_size);
+
   assh_hash_cleanup(hash_ctx);
 
   /* build signature blob */
   memcpy(sign, ASSH_RSA_ID, ASSH_RSA_ID_LEN);
-  assh_store_u32(sign + ASSH_RSA_ID_LEN, n / 8);
+  assh_store_u32(sign + ASSH_RSA_ID_LEN, n);
   uint8_t *c_str = sign + ASSH_RSA_ID_LEN + 4;
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
-  assh_hexdump("rsa generate em", em_buf, n / 8);
+  assh_hexdump("rsa generate em", em_buf, n);
 #endif
 
   enum bytecode_args_e
@@ -185,16 +186,16 @@ assh_sign_rsa_check(struct assh_context_s *c,
 
   assert(key->algo == &assh_key_rsa);
 
-  unsigned int n = assh_bignum_bits(&k->nn);
+  size_t n = ASSH_ALIGN8(assh_bignum_bits(&k->nn)) / 8;
 
-  ASSH_CHK_RET(sign_len != ASSH_RSA_ID_LEN + 4 + n / 8, ASSH_ERR_INPUT_OVERFLOW);
+  ASSH_CHK_RET(sign_len != ASSH_RSA_ID_LEN + 4 + n, ASSH_ERR_INPUT_OVERFLOW);
 
   ASSH_CHK_RET(memcmp(sign, ASSH_RSA_ID, ASSH_RSA_ID_LEN), ASSH_ERR_BAD_DATA);
 
   uint8_t *c_str = (uint8_t*)sign + ASSH_RSA_ID_LEN;
-  ASSH_CHK_RET(assh_load_u32(c_str) != n / 8, ASSH_ERR_INPUT_OVERFLOW);
+  ASSH_CHK_RET(assh_load_u32(c_str) != n, ASSH_ERR_INPUT_OVERFLOW);
 
-  ASSH_SCRATCH_ALLOC(c, uint8_t, em_buf, n / 8, ASSH_ERRSV_CONTINUE, err_);
+  ASSH_SCRATCH_ALLOC(c, uint8_t, em_buf, n, ASSH_ERRSV_CONTINUE, err_);
   uint8_t *em = em_buf;
 
   enum bytecode_args_e
@@ -224,10 +225,10 @@ assh_sign_rsa_check(struct assh_context_s *c,
                    /* Nun  */ &k->nn, &k->en), err_em);
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
-  assh_hexdump("rsa check em", em, n / 8);
+  assh_hexdump("rsa check em", em, n);
 #endif
 
-  uint8_t *em_end = em + n / 8;
+  uint8_t *em_end = em + n;
   uint_fast16_t i;
 
   /* check padding */

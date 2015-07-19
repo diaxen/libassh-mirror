@@ -136,6 +136,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
   assh_error_t err;
 
   ASSH_CHK_RET(bits < 1024, ASSH_ERR_NOTSUP);
+  bits += bits & 1;
 
   struct assh_key_rsa_s *k;
 
@@ -171,16 +172,17 @@ static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
                         ASSH_PRNG_QUALITY_LONGTERM_KEY  ),
     /* sanity check */
     ASSH_BOP_CMPEQ(     P,      Q,      0               ),
-    ASSH_BOP_CFAIL(     1,      0                       ),
+    ASSH_BOP_CFAIL(     0,      0                       ),
 
     ASSH_BOP_MUL(       N,      P,      Q               ),
+    ASSH_BOP_PRIVACY(   N,      0                       ),
 
     // FIXME could use T1 = N - (P + Q -1)
     ASSH_BOP_UINT(      T0,     1                       ),
     ASSH_BOP_SUB(       P,      P,      T0              ),
     ASSH_BOP_SUB(       Q,      Q,      T0              ),
     ASSH_BOP_MUL(       T1,     P,      Q               ),
-#warning  (p-1)(q-1) must be secret
+    ASSH_BOP_PRIVACY(   T1,     0                       ),
 
     ASSH_BOP_UINT(      E,      65537                   ),
     ASSH_BOP_INV(       D,      E,      T1              ),
