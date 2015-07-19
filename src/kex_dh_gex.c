@@ -196,10 +196,10 @@ static assh_error_t assh_kex_dh_gex_client_wait_group(struct assh_session_s *s,
     ASSH_BOP_TEST(      P,      1,      G_n,    0       ),
     ASSH_BOP_CFAIL(     1,      0                       ),
 #if 0
-    ASSH_BOP_ISPRIME(   P,      0                       ),
+    ASSH_BOP_ISPRIME(   P,      5,      0               ),
     ASSH_BOP_SUB(       T2,     P,      T1              ),
     ASSH_BOP_SHR(       Q,      T2,     1, ASSH_BOP_NOREG	),
-    ASSH_BOP_ISPRIME(   Q,      0                       ),
+    ASSH_BOP_ISPRIME(   Q,      5,      0               ),
 #endif
 
     /* check generator */

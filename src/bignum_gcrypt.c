@@ -36,6 +36,30 @@ static void assh_bignum_gcrypt_lsb(uint8_t *data, size_t size)
     ASSH_SWAP(data[i], data[size - i - 1]);
 }
 
+static enum gcry_random_level
+assh_gcrypt_bignum_randlevel(enum assh_prng_quality_e quality)
+{
+#if defined(CONFIG_ASSH_DEBUG)
+  ASSH_DEBUG("CONFIG_ASSH_DEBUG: using weak random\n");
+  return GCRY_WEAK_RANDOM;
+#else
+  switch (quality)
+    {
+    case ASSH_PRNG_QUALITY_WEAK:
+      return GCRY_WEAK_RANDOM;
+      break;
+    case ASSH_PRNG_QUALITY_NONCE:
+    case ASSH_PRNG_QUALITY_EPHEMERAL_KEY:
+      return GCRY_STRONG_RANDOM;
+      break;
+    case ASSH_PRNG_QUALITY_LONGTERM_KEY:
+    default:
+      return GCRY_VERY_STRONG_RANDOM;
+      break;
+    }
+#endif
+}
+
 static ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_gcrypt_bignum_rand(struct assh_context_s *c,
                         struct assh_bignum_s *bn,
@@ -57,22 +81,7 @@ assh_gcrypt_bignum_rand(struct assh_context_s *c,
 #ifdef CONFIG_ASSH_USE_GCRYPT_PRNG
   if (c->prng == &assh_prng_gcrypt)
     {
-      enum gcry_random_level level;
-      switch (quality)
-	{
-	case ASSH_PRNG_QUALITY_WEAK:
-	  level = GCRY_WEAK_RANDOM;
-	  break;
-	case ASSH_PRNG_QUALITY_NONCE:
-	case ASSH_PRNG_QUALITY_EPHEMERAL_KEY:
-	  level = GCRY_STRONG_RANDOM;
-	  break;
-	case ASSH_PRNG_QUALITY_LONGTERM_KEY:
-	default:
-	  level = GCRY_VERY_STRONG_RANDOM;
-	  break;
-	}
-
+      enum gcry_random_level level = assh_gcrypt_bignum_randlevel(quality);
       size_t n = ASSH_ALIGN8(bits);
 
       if (bn->n == NULL)
@@ -889,29 +898,29 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
         }
 
         case ASSH_BIGNUM_OP_PRIME: {
-          struct assh_bignum_s *dst = args[ob];
+          struct assh_bignum_s *dst = args[oa];
           struct assh_gcrypt_prime_s pchk = { NULL, NULL };
           size_t bits = dst->bits;
-          if (oc != ASSH_BOP_NOREG)
+          if (ob != ASSH_BOP_NOREG)
             {
-              struct assh_bignum_s *min = args[oc];
+              struct assh_bignum_s *min = args[ob];
               pchk.min = min->n;
               assert(min->bits == dst->bits);
             }
-          if (od != ASSH_BOP_NOREG)
+          if (oc != ASSH_BOP_NOREG)
             {
-              struct assh_bignum_s *max = args[od];
+              struct assh_bignum_s *max = args[oc];
               pchk.max = max->n;
               assert(max->bits == dst->bits);
               bits = gcry_mpi_get_nbits(pchk.max);
             }
           if (dst->n)
             gcry_mpi_release(dst->n);
- 
-         /* FIXME call gcry_random_add_bytes here */
+
+          /* FIXME call gcry_random_add_bytes here */
           ASSH_CHK_GTO(gcry_prime_generate((struct gcry_mpi **)&dst->n,
                          bits, 0, NULL, assh_gcrypt_prime_chk,
-                         &pchk, GCRY_STRONG_RANDOM, 0),
+                         &pchk, assh_gcrypt_bignum_randlevel(od), 0),
                        ASSH_ERR_CRYPTO, err_sc);
           dst->mt_num = 0;
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
@@ -925,10 +934,11 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           struct assh_bignum_s *src = args[od];
           assert(!src->mt_num);
           assert(!src->secret);
-          uint8_t cond_mask = (1 << oc);
+          assert(oc >= 7);
+          uint8_t cond_mask = (1 << ob);
           cond &= ~cond_mask;
           cond |= (gcry_mpi_cmp_ui(src->n, 2) > 0 &&
-                   !gcry_prime_check(src->n, 0)) << oc;
+                   !gcry_prime_check(src->n, 0)) << ob;
 #if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG)
           cond_secret &= ~cond_mask;
 #endif

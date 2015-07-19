@@ -24,6 +24,7 @@
 #include <assh/key_rsa.h>
 #include <assh/assh_packet.h>
 #include <assh/assh_alloc.h>
+#include <assh/assh_prng.h>
 
 #include <string.h>
 
@@ -164,8 +165,10 @@ static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
     /* generate 2 prime numbers with the 2 most significant bits set */
     ASSH_BOP_UINT(      T0,     3                       ),
     ASSH_BOP_SHL(       T0,     T0,     -2,     P       ),
-    ASSH_BOP_PRIME(     P,      T0,     ASSH_BOP_NOREG  ),
-    ASSH_BOP_PRIME(     Q,      T0,     ASSH_BOP_NOREG  ),
+    ASSH_BOP_PRIME(     P,      T0,     ASSH_BOP_NOREG,
+                        ASSH_PRNG_QUALITY_LONGTERM_KEY  ),
+    ASSH_BOP_PRIME(     Q,      T0,     ASSH_BOP_NOREG,
+                        ASSH_PRNG_QUALITY_LONGTERM_KEY  ),
     /* sanity check */
     ASSH_BOP_CMPEQ(     P,      Q,      0               ),
     ASSH_BOP_CFAIL(     1,      0                       ),

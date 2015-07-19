@@ -652,14 +652,16 @@ enum assh_bignum_opcode_e
     used. If @tt max is @tt ASSH_BOP_NOREG, the most significant bit
     of the destination will be set so that the bit size of the
     generated number is large. */
-#define ASSH_BOP_PRIME(dst, min, max)                 \
-  ASSH_BOP_FMT3(ASSH_BIGNUM_OP_PRIME, dst, min, max)
+#define ASSH_BOP_PRIME(dst, min, max, quality)            \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_PRIME, dst, min, max, quality)
 
-/** @mgroup{Bytecode instructions}
-    @internal This instruction updates the condition flag. It is set if
-    the number is a prime greater than 2. */
-#define ASSH_BOP_ISPRIME(src, condid)                          \
-  ASSH_BOP_FMT2(ASSH_BIGNUM_OP_ISPRIME, condid, src)
+/** @mgroup{Bytecode instructions} @internal This instruction updates
+    the condition flag. It is set if the number is a prime greater
+    than 2. Seven miller rabin rounds are enough for values picked at
+    random. The number of rounds for values of unknown origin is
+    greater and depends on the required probability. */
+#define ASSH_BOP_ISPRIME(src, rounds, condid)                  \
+  ASSH_BOP_FMT3(ASSH_BIGNUM_OP_ISPRIME, condid, rounds, src)
 
 /** specify boolean operations for use with @ref #ASSH_BOP_BOOL */
 enum assh_bignum_bool_op

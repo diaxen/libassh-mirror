@@ -346,16 +346,16 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
   static const assh_bignum_op_t bytecode1[] = {
     ASSH_BOP_SIZER(     T1,     T2,     P               ),
 
-    /* check q prime */
+    /* check q prime with probability 1e-6 */
     ASSH_BOP_TEST(      Q,      1,      Q,      0       ),
     ASSH_BOP_CFAIL(     1,      0                       ),
-    ASSH_BOP_ISPRIME(   Q,      0                       ),
+    ASSH_BOP_ISPRIME(   Q,      10,     0               ),
     ASSH_BOP_CFAIL(     1,      0                       ),
 
-    /* check p prime */
+    /* check p prime with probability 1e-6 */
     ASSH_BOP_TEST(      P,      1,      P,      0       ),
     ASSH_BOP_CFAIL(     1,      0                       ),
-    ASSH_BOP_ISPRIME(   P,      0                       ),
+    ASSH_BOP_ISPRIME(   P,      10,     0               ),
     ASSH_BOP_CFAIL(     1,      0                       ),
 
     /* check (p-1)%q < 1 */
