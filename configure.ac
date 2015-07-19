@@ -34,6 +34,22 @@ AC_CHECK_HEADERS(assert.h, AC_DEFINE([HAVE_ASSERT_H]))
 AC_C_CONST
 AC_C_INLINE
 
+AC_CHECK_SIZEOF(long)
+AC_CHECK_TYPE(long long, [bnlong_size=8], [bnlong_size=$ac_cv_sizeof_long])
+AC_CHECK_TYPE(__int128,  [bnlong_size=x])
+
+case "${ac_cv_sizeof_long}_${bnlong_size}" in
+    8_x)
+         AC_DEFINE(CONFIG_ASSH_BIGNUM_WORD, 64, [Using 64 bits words for bignum.])
+    ;;
+    8_8|4_8)
+         AC_DEFINE(CONFIG_ASSH_BIGNUM_WORD, 32, [Using 32 bits words for bignum.])
+    ;;
+    *)
+         AC_DEFINE(CONFIG_ASSH_BIGNUM_WORD, 16, [Using 16 bits words for bignum.])
+    ;;
+esac
+
 AC_ARG_ENABLE(server, AC_HELP_STRING(--disable-server, [Disable SSH server support]),
 		       enable_server=$enableval, enable_server=yes)
 
@@ -46,8 +62,8 @@ AC_ARG_ENABLE(gcrypt, AC_HELP_STRING(--disable-gcrypt, [Disable use of gcrypt su
 AC_ARG_ENABLE(gcrypt_hash, AC_HELP_STRING(--disable-gcrypt-hash, [Disable use of gcrypt hash algorithms]),
 		       enable_gcrypt_hash=$enableval, enable_gcrypt_hash=yes)
 
-AC_ARG_ENABLE(gcrypt_bignum, AC_HELP_STRING(--disable-gcrypt-bignum, [Disable use of gcrypt big number functions]),
-		       enable_gcrypt_bignum=$enableval, enable_gcrypt_bignum=yes)
+AC_ARG_ENABLE(gcrypt_bignum, AC_HELP_STRING(--enable-gcrypt-bignum, [Enable use of gcrypt big number functions]),
+		       enable_gcrypt_bignum=$enableval, enable_gcrypt_bignum=no)
 
 AC_ARG_ENABLE(gcrypt_prng, AC_HELP_STRING(--disable-gcrypt-prng, [Disable use of gcrypt random number generation]),
 		       enable_gcrypt_prng=$enableval, enable_gcrypt_prng=yes)
