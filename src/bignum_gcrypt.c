@@ -463,7 +463,6 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           break;
         }
 
-        case ASSH_BIGNUM_OP_SIZER:
         case ASSH_BIGNUM_OP_SIZE: {
           size_t b, i;
           ASSH_ERR_GTO(assh_bignum_size_of_data(format[ob], args[ob],
@@ -474,12 +473,18 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
               dst->bits = ((od >= 32) ? (b << (od - 32))
                            : (b >> (32 - od))) + (intptr_t)(int8_t)oc;
             }
-          else
-            for (i = oa; i <= oc; i++) 
-              {
-                struct assh_bignum_s *dst = args[i];
-                dst->bits = b;
-              }
+          break;
+        }
+
+        case ASSH_BIGNUM_OP_SIZER: {
+          size_t b, i;
+          ASSH_ERR_GTO(assh_bignum_size_of_data(format[ob], args[ob],
+                                                NULL, NULL, &b), err_sc);
+          for (i = oa; i <= oc; i++) 
+            {
+              struct assh_bignum_s *dst = args[i];
+              dst->bits = b;
+            }
           break;
         }
 
