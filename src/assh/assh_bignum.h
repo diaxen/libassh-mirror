@@ -44,14 +44,14 @@
     binary formats is as follow:
 
     @code R
-      op(6)               c(26)
-      xxxxxx    xxxxxxxxxxxxxxxxxxxxxxxxxx
+      op(6)                          d(6)
+      xxxxxx                        xxxxxx
 
-      op(6)          c(20)           d(6)
-      xxxxxx   xxxxxxxxxxxxxxxxxxxx xxxxxx
+      op(6)                  c(8)    d(6)
+      xxxxxx               xxxxxxxx xxxxxx
 
-      op(6)     b(12)       c(8)     d(6)
-      xxxxxx  xxxxxxxxxxxx xxxxxxxx xxxxxx
+      op(6)          b(12)   c(8)    d(6)
+      xxxxxx        xxxxxx xxxxxxxx xxxxxx
 
       op(6)   a(6)   b(6)    c(8)    d(6)
       xxxxxx xxxxxx xxxxxx xxxxxxxx xxxxxx
@@ -210,10 +210,7 @@ struct assh_bignum_algo_s
     function and the number of temporary values. The format string is
     composed of characters defined in @ref assh_bignum_fmt_e. An extra
     argument must be passed to the function for each non-temporary
-    entry in the format string. If @tt NULL is passed as argument
-    following a mpint argument, the pointer will be set when the mpint
-    is written. This allows storing contiguous numbers in mpint format
-    whithout knowing the size of the encoded numbers.
+    entry in the format string.
 
     The @ref #ASSH_BOP_MOVE instruction can be used to convert between
     native big numbers (arguments or temporaries) and other types of
@@ -227,6 +224,11 @@ struct assh_bignum_algo_s
     store the result as the number will not be dynamically
     resized. Working on numbers with a predefined storage size helps
     with constant time execution.
+
+    If @tt NULL is passed as argument following a mpint argument, the
+    pointer will be set when the mpint is written. This allows storing
+    contiguous numbers in mpint format whithout knowing the size of
+    the encoded numbers.
 
     Resources used by temporary numbers are automatically released when
     the function returns. */
