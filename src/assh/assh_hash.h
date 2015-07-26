@@ -150,7 +150,7 @@ assh_hash_copy(struct assh_hash_ctx_s *hctx_dst,
 ASSH_INLINE void
 assh_hash_update(struct assh_hash_ctx_s *hctx, const void *data, size_t len)
 {
-  return hctx->algo->f_update(hctx, data, len);
+  hctx->algo->f_update(hctx, data, len);
 }
 
 /** @internal @This produce the hash output. It can be called multiple

@@ -947,7 +947,10 @@ assh_bignum_karatsuba(assh_bnword_t * __restrict__ r,
                       assh_bnword_t *scratch, unsigned int l)
 {
   if (l < ASSH_BIGNUM_KARATSUBA_THRESHOLD || (l & 1))
-    return assh_bignum_school_mul(r, a, l, b, l);
+    {
+      assh_bignum_school_mul(r, a, l, b, l);
+      return;
+    }
 
   /*
     scratch buffer:
