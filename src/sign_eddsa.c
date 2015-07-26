@@ -102,31 +102,26 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
   assh_hexdump("r", r, 2 * n);
 #endif
 
-  struct assh_bignum_lad_s lad = {
-    .data = r,
-    .count = n * 8 * 2,
-    .msbyte_1st = 0,
-    .msbit_1st = 1,
-  };
-
   {
     enum {
       /* in */
       BX_mpint, BY_mpint, A_mpint, P_mpint, D_mpint,
-      L, P_n,
+      P_n, SC_raw, SC_size,
       /* out */
       RX_raw, RY_raw,
       /* temp */
       MT, A, D,
       RX, RY, RZ,  BX, BY, BZ,
-      PX, PY, PZ,  QX, QY, QZ, T0, T1,
+      PX, PY, PZ,  QX, QY, QZ, T0, T1, SC
     };
 
     static const assh_bignum_op_t bytecode1[] = {
 
       ASSH_BOP_SIZER(   A,      T1,     P_n             ),
+      ASSH_BOP_SIZE(    SC,     SC_size                 ),
 
       /* init */
+      ASSH_BOP_MOVE(    SC,     SC_raw                  ),
       ASSH_BOP_MOVE(    T0,     P_mpint                 ),
       ASSH_BOP_MTINIT(	MT,     T0                      ),
       ASSH_BOP_MOVE(    A,      A_mpint                 ),
@@ -141,6 +136,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
 
       ASSH_BOP_MTTO(	A,      D,     A,      MT       ),
       ASSH_BOP_MTTO(	BX,     BY,    BX,     MT       ),
+      ASSH_BOP_LADINIT( SC                              ),
 
       /* ladder */
       ASSH_BOP_TEDWARD_PDBL( PX, PY, PZ,  RX, RY, RZ,
@@ -153,11 +149,11 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
       ASSH_BOP_MOVE(    RY,     PY                      ),
       ASSH_BOP_MOVE(    RZ,     PZ                      ),
 
-      ASSH_BOP_LADTEST(   L,      0                     ),
+      ASSH_BOP_LADTEST(   SC,     0                     ),
       ASSH_BOP_CSWAP(     RX,     QX,     0,      0     ),
       ASSH_BOP_CSWAP(     RY,     QY,     0,      0     ),
       ASSH_BOP_CSWAP(     RZ,     QZ,     0,      0     ),
-      ASSH_BOP_LADNEXT(   L,      0                     ),
+      ASSH_BOP_LADNEXT(   0                             ),
       ASSH_BOP_CJMP(      -44,    0,      0             ),
 
       /* projective to affine */
@@ -174,8 +170,10 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
     };
 
     ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode1,
-      "MMMMMLsddmTTXXXXXXTTTTTTTT", curve->bx, curve->by,
-      curve->a, curve->p, curve->d, &lad, curve->bits, rx, r_str), err_scratch);
+      "MMMMMsdsddmTTXXXXXXTTTTTTTTX", curve->bx, curve->by,
+      curve->a, curve->p, curve->d, curve->bits,
+      r, n * 8 * 2,             /* scalar */
+      rx, r_str), err_scratch);
   }
 
   /* encode point */
@@ -301,36 +299,26 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
   /* key X sign bit as mpint */
   uint8_t kx[5] = { 0, 0, 0, kp[n-1] >> 7, 1 };
 
-  struct assh_bignum_lad_s lad1 = {
-    .data = hram,
-    .count = n * 8 * 2,
-    .msbyte_1st = 0,
-    .msbit_1st = 1,
-  };
-
-  struct assh_bignum_lad_s lad2 = {
-    .data = rs_str + 4 + n,
-    .count = n * 8,
-    .msbyte_1st = 0,
-    .msbit_1st = 1,
-  };
-
   enum {
     /* in */
     BX_mpint, BY_mpint, A_mpint, P_mpint, D_mpint, I_mpint,
-    L1, L2, P_n, KY_raw, KX_mpint,
+    P_n, KY_raw, KX_mpint, SC1_raw, SC2_raw, SC2_size,
     /* out */
     RX_raw, RY_raw,
     /* temp */
     P, A, D, T0, T1,
     BX, BY, BZ,  RX, RY, RZ,  PX, PY, PZ,
-    QX, QY, QZ,  MT, U = PY, V = PZ,
+    QX, QY, QZ, SC1, SC2, MT, U = PY, V = PZ
   };
 
   static const assh_bignum_op_t bytecode[] = {
 
-    ASSH_BOP_SIZER(     P,      QZ,     P_n            ),
+    ASSH_BOP_SIZER(     P,      QZ,     P_n             ),
+    ASSH_BOP_SIZEM(     SC1,    SC2_size, 0, 1          ),
+    ASSH_BOP_SIZE(      SC2,    SC2_size                ),
 
+    ASSH_BOP_MOVE(      SC1,    SC1_raw                 ),
+    ASSH_BOP_MOVE(      SC2,    SC2_raw                 ),
     ASSH_BOP_MOVE(      P,      P_mpint                 ),
     ASSH_BOP_MOVE(      A,      A_mpint                 ),
     ASSH_BOP_MOVE(      D,      D_mpint                 ),
@@ -443,10 +431,11 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
     ASSH_BOP_MTUINT(    RZ,     1,      MT              ),
 
     ASSH_BOP_MTTO(      BX,     BX,     BX,     MT      ),
+    ASSH_BOP_LADINIT(   SC1                             ),
 
     ASSH_BOP_TEDWARD_PDBL( PX, PY, PZ,  RX, RY, RZ,
                            T0, T1, MT                   ),
-    ASSH_BOP_LADTEST(   L1,      0                      ),
+    ASSH_BOP_LADTEST(   SC1,     0                      ),
     ASSH_BOP_CJMP(      4,       0,      0              ),
     ASSH_BOP_MOVE(      RX,     PX                      ),
     ASSH_BOP_MOVE(      RY,     PY                      ),
@@ -454,7 +443,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
     ASSH_BOP_JMP(       20                              ),
     ASSH_BOP_TEDWARD_PADD( RX, RY, RZ,  PX, PY, PZ,
                            BX, BY, BZ,  T0, T1, A, D, MT ),
-    ASSH_BOP_LADNEXT(   L1,     0                       ),
+    ASSH_BOP_LADNEXT(   0                               ),
     ASSH_BOP_CJMP(      -43,    0,      0               ),
 
     /* compute S.B */
@@ -467,10 +456,11 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
     ASSH_BOP_MTUINT(    QZ,     1,      MT              ),
 
     ASSH_BOP_MTTO(      BX,     BY,     BX,     MT      ),
+    ASSH_BOP_LADINIT(   SC2                             ),
 
     ASSH_BOP_TEDWARD_PDBL( PX, PY, PZ,  QX, QY, QZ,
                            T0, T1, MT                   ),
-    ASSH_BOP_LADTEST(   L2,     0                       ),
+    ASSH_BOP_LADTEST(   SC2,    0                       ),
     ASSH_BOP_CJMP(      4,      0,      0               ),
     ASSH_BOP_MOVE(      QX,     PX                      ),
     ASSH_BOP_MOVE(      QY,     PY                      ),
@@ -478,7 +468,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
     ASSH_BOP_JMP(       20                              ),
     ASSH_BOP_TEDWARD_PADD( QX, QY, QZ,  PX, PY, PZ,
                            BX, BY, BZ,  T0, T1, A, D, MT ),
-    ASSH_BOP_LADNEXT(   L2,     0                       ),
+    ASSH_BOP_LADNEXT(   0                               ),
     ASSH_BOP_CJMP(      -43,    0,      0               ),
 
     /* compute S.B + H(R,A,M).A */
@@ -497,9 +487,11 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
   };
 
   ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode,
-          "MMMMMMLLsdMddTTTTTTTTTTTTTTTTTm", curve->bx, curve->by,
+          "MMMMMMsdMddsddTTTTTTTTTTTTTTTTTTTm", curve->bx, curve->by,
           curve->a, curve->p, curve->d, curve->i,
-          &lad1, &lad2, curve->bits, kp, kx, rx, ry), err_scratch);
+          curve->bits, kp, kx,
+          hram, rs_str + 4 + n, n * 8, /* scalars */
+          rx, ry), err_scratch);
 
   /* encode point */
   assh_edward_encode(curve, ry, rx);

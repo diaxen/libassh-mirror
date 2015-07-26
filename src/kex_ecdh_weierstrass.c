@@ -79,33 +79,27 @@ assh_weierstrass_base_mul(struct assh_session_s *s)
 
   assert(curve->cofactor == 1);
 
-  struct assh_bignum_lad_s lad = {
-    .data = pv->pvkey,
-    .count = curve->bits - 1,
-    .msbyte_1st = 0,
-    .msbit_1st = 1,
-  };
-
   enum {
-    X_raw, Y_raw, P_raw,
-    X1, Y1, Z1, X2, Y2, Z2, X3, Y3, Z3, T0, T1, T2, T3,
-    MT, S, L
+    X_raw, Y_raw, P_raw, SC_raw,
+    X1, Y1, Z1, X2, Y2, Z2, X3, Y3, Z3, T0, T1, T2, T3, SC,
+    MT, S
   };
 
   static const assh_bignum_op_t bytecode[] = {
 
-    ASSH_BOP_SIZER(     X1,     T3,    S                ),
+    ASSH_BOP_SIZER(     X1,     SC,    S                ),
 
     /* init */
     ASSH_BOP_MOVE(      T0,     P_raw                   ),
     ASSH_BOP_MTINIT(	MT,     T0                      ),
 
+    ASSH_BOP_MOVE(      SC,     SC_raw                  ),
     ASSH_BOP_MOVE(      X1,     X_raw                   ),
     ASSH_BOP_MOVE(      Y1,     Y_raw                   ),
     ASSH_BOP_MTTO(      X1,     Y1,     X1,     MT      ),
 
     ASSH_BOP_WS_SCMUL(X3, Y3, Z3, X2, Y2, Z2, X1, Y1, Z1,
-                      T0, T1, T2, T3, L, MT),
+                      T0, T1, T2, T3, SC, MT),
 
     ASSH_BOP_MTFROM(	X2,     Y2,     X2,     MT      ),
 
@@ -129,7 +123,7 @@ assh_weierstrass_base_mul(struct assh_session_s *s)
   memcpy(ry, curve->gy, pv->size);
 
   ASSH_ERR_RET(assh_bignum_bytecode(s->ctx, 0, bytecode,
-                "DDDTTTTTTTTTTTTTmsL", rx, ry, curve->p, curve->bits, &lad));
+                "DDDDTTTTTTTTTTTTTXms", rx, ry, curve->p, pv->pvkey, curve->bits));
 
   return ASSH_OK;
 }
@@ -144,27 +138,21 @@ assh_weierstrass_point_mul(struct assh_session_s *s, uint8_t *px,
 
   assert(curve->cofactor == 1);
 
-  struct assh_bignum_lad_s lad = {
-    .data = pv->pvkey,
-    .count = curve->bits - 1,
-    .msbyte_1st = 0,
-    .msbit_1st = 1,
-  };
-
   enum {
-    X_raw, Y_raw, P_raw, B_raw, PX_mpint,
-    X1, Y1, Z1, X2, Y2, Z2, X3, Y3, Z3, T0, T1, T2, T3,
-    MT, S, L
+    X_raw, Y_raw, P_raw, B_raw, SC_raw, PX_mpint,
+    X1, Y1, Z1, X2, Y2, Z2, X3, Y3, Z3, T0, T1, T2, T3, SC,
+    MT, S
   };
 
   static const assh_bignum_op_t bytecode[] = {
 
-    ASSH_BOP_SIZER(     X1,     T3,    S                ),
+    ASSH_BOP_SIZER(     X1,     SC,    S                ),
 
     /* init */
     ASSH_BOP_MOVE(      T0,     P_raw                   ),
     ASSH_BOP_MTINIT(	MT,     T0                      ),
 
+    ASSH_BOP_MOVE(      SC,     SC_raw                  ),
     ASSH_BOP_MOVE(      X1,     X_raw                   ),
     ASSH_BOP_MOVE(      Y1,     Y_raw                   ),
     ASSH_BOP_MOVE(      T2,     B_raw                   ),
@@ -179,7 +167,7 @@ assh_weierstrass_point_mul(struct assh_session_s *s, uint8_t *px,
 #endif
 
     ASSH_BOP_WS_SCMUL(X3, Y3, Z3, X2, Y2, Z2, X1, Y1, Z1,
-                      T0, T1, T2, T3, L, MT),
+                      T0, T1, T2, T3, SC, MT),
 
     ASSH_BOP_MTFROM(	X2,     Y2,     X2,     MT      ),
 
@@ -196,8 +184,8 @@ assh_weierstrass_point_mul(struct assh_session_s *s, uint8_t *px,
   const uint8_t *rx = r + 1;
   const uint8_t *ry = r + 1 + pv->size;
 
-  ASSH_ERR_RET(assh_bignum_bytecode(s->ctx, 0, bytecode, "DDDDMTTTTTTTTTTTTTmsL",
-                 rx, ry, curve->p, curve->b, px, curve->bits, &lad));
+  ASSH_ERR_RET(assh_bignum_bytecode(s->ctx, 0, bytecode, "DDDDDMTTTTTTTTTTTTTXms",
+                 rx, ry, curve->p, curve->b, pv->pvkey, px, curve->bits));
 
   return ASSH_OK;
 }

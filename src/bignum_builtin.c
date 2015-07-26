@@ -1942,6 +1942,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
   assh_error_t err;
   uint_fast8_t i, j, k;
   uint_fast16_t pc = 0;
+  uint_fast16_t lad_index;
 #if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
   uint8_t cond_secret = 0;
 #endif
@@ -2388,29 +2389,32 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           ASSH_CHK_GTO(((cond >> oc) ^ od) & 1, ASSH_ERR_NUM_COMPARE_FAILED, err_sc);
           break;
 
+        case ASSH_BIGNUM_OP_LADINIT: {
+          struct assh_bignum_s *src = args[od];
+          lad_index = src->bits - 1;
+          ASSH_CHK_GTO(lad_index == 0, ASSH_ERR_NUM_OVERFLOW, err_sc);
+          break;
+        }
+
         case ASSH_BIGNUM_OP_LADTEST: {
-          struct assh_bignum_lad_s *lad = args[od];
+          struct assh_bignum_s *src = args[od];
           uint8_t cond_mask = (1 << oc);
           cond &= ~cond_mask;
-          cond |= assh_bignum_lad(lad) << oc;
+          assh_bnword_t *n = src->n;
+          cond |= ((n[lad_index / ASSH_BIGNUM_W]
+                    >> (lad_index % ASSH_BIGNUM_W)) & 1) << oc;
 #if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
           cond_secret &= cond_mask;
-          cond_secret |= lad->secret << oc;
+          cond_secret |= src->secret << oc;
 #endif
           break;
         }
 
         case ASSH_BIGNUM_OP_LADNEXT: {
-          struct assh_bignum_lad_s *lad = args[od];
-          uint8_t cond_mask = (1 << oc);
+          uint8_t cond_mask = (1 << od);
           cond &= ~cond_mask;
-          uint16_t bit = --lad->count;
-          if (bit)
-            {
-              if (lad->msbyte_1st && (bit & 7) == 0)
-                lad->data++;
-              cond |= cond_mask;
-            }
+          if (lad_index--)
+            cond |= cond_mask;
 #if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
           cond_secret &= ~cond_mask;
 #endif

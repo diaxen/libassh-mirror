@@ -102,8 +102,6 @@ enum assh_bignum_fmt_e
   ASSH_BIGNUM_INT     = 'i',
   /** Intptr_t value interpreted as a bit size. */
   ASSH_BIGNUM_SIZE    = 's',
-  /** Ladder object. see assh_bignum_lad_s */
-  ASSH_BIGNUM_LAD    = 'L',
   /** Temporary montgomery multiplication context. */
   ASSH_BIGNUM_MT      = 'm',
 };
@@ -126,36 +124,6 @@ struct assh_bignum_s
   /** Number data */
   void *n;
 };
-
-/** @internal @This contains a ladder state which can be
-    used during bytecode execution.  @see #ASSH_BOP_LADLOOP @see
-    #ASSH_BOP_LADSWAP @see #ASSH_BOP_LADJMP */
-struct assh_bignum_lad_s
-{
-  /** Input data */
-  const uint8_t *data;
-  /** Number of bits in data */
-  uint16_t count;
-  /** Set when data are stored most significant bit first in a byte. */
-  assh_bool_t msbit_1st:1;
-  /** Set when data are most significant byte first in the buffer. */
-  assh_bool_t msbyte_1st:1;
-  assh_bool_t secret:1;
-};
-
-/* test current ladder bit */
-static inline assh_bool_t
-assh_bignum_lad(struct assh_bignum_lad_s *lad)
-{
-  uint16_t bit = lad->count - 1;
-
-  if (!lad->msbit_1st)
-    bit ^= 7;
-  if (lad->msbyte_1st)
-    return (lad->data[0] >> (bit & 7)) & 1;
-  else
-    return (lad->data[bit / 8] >> (bit & 7)) & 1;
-}
 
 /** @internal @see assh_bignum_bytecode_t */
 #define ASSH_BIGNUM_BYTECODE_FCN(n)        \
@@ -365,6 +333,7 @@ enum assh_bignum_opcode_e
   ASSH_BIGNUM_OP_MTUINT,
   ASSH_BIGNUM_OP_JMP,
   ASSH_BIGNUM_OP_CFAIL,
+  ASSH_BIGNUM_OP_LADINIT,
   ASSH_BIGNUM_OP_LADTEST,
   ASSH_BIGNUM_OP_LADNEXT,
   ASSH_BIGNUM_OP_CSWAP,
@@ -385,7 +354,8 @@ enum assh_bignum_opcode_e
     "sub", "mul", "div", "gcd",                 \
     "expm", "inv", "shr", "shl",                \
     "rand", "cmp", "test", "uint",              \
-    "mtuint", "(c)jmp", "cfail", "ladtest", "ladnext", \
+    "mtuint", "(c)jmp", "cfail",                \
+    "ladinit", "ladtest", "ladnext",            \
     "swap", "mtinit", "mtto", "mtfrom",         \
     "prime", "isprime", "bool", "privacy",      \
     "print", "trace"                            \
@@ -635,18 +605,22 @@ enum assh_bignum_opcode_e
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CSWAP, condid, src1, src2, inv)
 
 /** @mgroup{Bytecode instructions}
-    @internal This instruction upadates the condition flag according to
-    the current bit pointed to by the @ref assh_bignum_lad_s object. */
-#define ASSH_BOP_LADTEST(lad, condid)                  \
-  ASSH_BOP_FMT2(ASSH_BIGNUM_OP_LADTEST, condid, lad)
+    @internal This instruction initialize the ladder bit index to 0. */
+#define ASSH_BOP_LADINIT(src)                  \
+  ASSH_BOP_FMT1(ASSH_BIGNUM_OP_LADINIT, src)
 
 /** @mgroup{Bytecode instructions}
-    @internal This instruction advances the state of the ladder object
-    to the next data bit and set the condition flag if the last bit as
-    not been reached.
+    @internal This instruction upadates the condition flag according to
+    the bit in source number selected by the current ladder index. */
+#define ASSH_BOP_LADTEST(src, condid)                  \
+  ASSH_BOP_FMT2(ASSH_BIGNUM_OP_LADTEST, condid, src)
+
+/** @mgroup{Bytecode instructions}
+    @internal This instruction increments the current ladder bit index
+    and set the condition flag if the last bit as not been reached.
     @see #ASSH_BOP_LADSWAP @see ASSH_BIGNUM_LAD */
-#define ASSH_BOP_LADNEXT(lad, condid)                    \
-  ASSH_BOP_FMT2(ASSH_BIGNUM_OP_LADNEXT, condid, lad)
+#define ASSH_BOP_LADNEXT(condid)                    \
+  ASSH_BOP_FMT1(ASSH_BIGNUM_OP_LADNEXT, condid)
 
 /** @mgroup{Bytecode instructions}
     @internal This instruction generates a prime number in the range

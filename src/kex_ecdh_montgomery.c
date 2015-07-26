@@ -131,27 +131,21 @@ assh_montgomery_point_mul(struct assh_session_s *s, uint8_t *result,
 
   ASSH_CHK_RET(scalar[0] % curve->cofactor != 0, ASSH_ERR_BAD_DATA);
 
-  struct assh_bignum_lad_s lad = {
-    .data = scalar,
-    .count = curve->bits,
-    .msbyte_1st = 0,
-    .msbit_1st = 1,
-  };
-
   enum {
-    R_raw, BP_raw, P_mpint, A24_mpint,
-    X2, Z2, Z3, X1, X3, T0, T1, A24,
-    MT, S, L
+    R_raw, BP_raw, SC_raw, P_mpint, A24_mpint,
+    X2, Z2, Z3, X1, X3, T0, T1, A24, SC,
+    MT, S
   };
 
   static const assh_bignum_op_t bytecode[] = {
 
-    ASSH_BOP_SIZER(     X2,     A24,    S               ),
+    ASSH_BOP_SIZER(     X2,     SC,    S                ),
 
     /* init */
     ASSH_BOP_MOVE(      T0,     P_mpint                 ),
     ASSH_BOP_MTINIT(	MT,     T0                      ),
 
+    ASSH_BOP_MOVE(      SC,     SC_raw                  ),
     ASSH_BOP_MOVE(      A24,    A24_mpint               ),
     ASSH_BOP_MOVE(      X1,     BP_raw                  ),
 
@@ -163,15 +157,16 @@ assh_montgomery_point_mul(struct assh_session_s *s, uint8_t *result,
     ASSH_BOP_MTUINT(    Z2,     0,      MT              ),
     ASSH_BOP_MOVE(      X3,     X1                      ),
     ASSH_BOP_MTUINT(    Z3,     1,      MT              ),
+    ASSH_BOP_LADINIT(   SC                              ),
 
     ASSH_BOP_MTTO(	X1,     A24,    X1,     MT      ),
     /* montgomery ladder */
     ASSH_BOP_MONTGOMERY_SADD(X1, X2, X3, Z2, Z3, T0, T1, A24, MT),
 
-    ASSH_BOP_LADTEST(   L,      0                       ),
+    ASSH_BOP_LADTEST(   SC,     0                       ),
     ASSH_BOP_CSWAP(     X2,     X3,     0,      0       ),
     ASSH_BOP_CSWAP(     Z2,     Z3,     0,      0       ),
-    ASSH_BOP_LADNEXT(   L,      0                       ),
+    ASSH_BOP_LADNEXT(   0                               ),
     ASSH_BOP_CJMP(      - ASSH_BOP_MONTGOMERY_SADD_OPS - 5,
                         0,      0   ),
 
@@ -193,8 +188,8 @@ assh_montgomery_point_mul(struct assh_session_s *s, uint8_t *result,
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_RET(assh_bignum_bytecode(s->ctx, 0, bytecode, "ddMMTTTTTTTTmsL",
-          result, basepoint, curve->prime, curve->a24, curve->bits, &lad));
+  ASSH_ERR_RET(assh_bignum_bytecode(s->ctx, 0, bytecode, "dddMMTTTTTTTTXms",
+          result, basepoint, scalar, curve->prime, curve->a24, curve->bits));
 
   return ASSH_OK;
 }
