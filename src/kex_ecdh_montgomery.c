@@ -193,7 +193,7 @@ assh_montgomery_point_mul(struct assh_session_s *s, uint8_t *result,
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_RET(assh_bignum_bytecode(s->ctx, bytecode, "ddMMTTTTTTTTmsL",
+  ASSH_ERR_RET(assh_bignum_bytecode(s->ctx, 0, bytecode, "ddMMTTTTTTTTmsL",
           result, basepoint, curve->prime, curve->a24, curve->bits, &lad));
 
   return ASSH_OK;

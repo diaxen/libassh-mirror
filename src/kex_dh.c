@@ -126,7 +126,7 @@ static assh_error_t assh_kex_dh_client_send_expmod(struct assh_session_s *s)
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "MMMNNsTTm",
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "MMMNNsTTm",
                    /* M */ gr->generator, gr->prime, e_str,
                    /* N */ &pv->en, &pv->xn, gr->size), err_p);
 
@@ -217,7 +217,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_dh_host_key_lookup_done)
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(s->ctx, bytecode, "MMMMNsTTTTTm",
+  ASSH_ERR_GTO(assh_bignum_bytecode(s->ctx, 0, bytecode, "MMMMNsTTTTTm",
                    /* M */ gr->generator, gr->prime, f_str, secret,
                    /* N */ &pv->xn, gr->size), err_scratch);
 
@@ -368,7 +368,7 @@ static assh_error_t assh_kex_dh_server_wait_e(struct assh_session_s *s,
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "MMMMMssTTTTXTTm",
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "MMMMMssTTTTXTTm",
                    gr->generator, gr->prime, e_str, f_str, secret,
                    pv->exp_n, gr->size), err_p);
 

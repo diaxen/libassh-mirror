@@ -160,7 +160,7 @@ assh_bignum_lad(struct assh_bignum_lad_s *lad)
 /** @internal @see assh_bignum_bytecode_t */
 #define ASSH_BIGNUM_BYTECODE_FCN(n)        \
   ASSH_WARN_UNUSED_RESULT assh_error_t \
-  (n)(struct assh_context_s *c,        \
+  (n)(struct assh_context_s *c, uint8_t cond, \
       const assh_bignum_op_t *ops,     \
       const char *format, va_list ap)
 
@@ -233,14 +233,14 @@ struct assh_bignum_algo_s
     Resources used by temporary numbers are automatically released when
     the function returns. */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_bignum_bytecode(struct assh_context_s *c,
+assh_bignum_bytecode(struct assh_context_s *c, uint8_t cond,
                      const assh_bignum_op_t *ops,
                      const char *format, ...)
 {
   va_list ap;
   assh_error_t err;
   va_start(ap, format);
-  err = c->bignum->f_bytecode(c, ops, format, ap);
+  err = c->bignum->f_bytecode(c, cond, ops, format, ap);
   va_end(ap);
   return err;
 }

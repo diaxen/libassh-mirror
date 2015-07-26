@@ -163,7 +163,7 @@ assh_sign_rsa_generate(struct assh_context_s *c,
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "DDNNTTm",
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "DDNNTTm",
                    /* Data */ c_str, em_buf,
                    /* Num  */ &k->nn, &k->dn), err_scratch);
 
@@ -220,7 +220,7 @@ assh_sign_rsa_check(struct assh_context_s *c,
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "DDNNTTm",
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "DDNNTTm",
                    /* Data */ c_str + 4, em,
                    /* Nun  */ &k->nn, &k->en), err_em);
 

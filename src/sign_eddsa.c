@@ -173,7 +173,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
       ASSH_BOP_END(),
     };
 
-    ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode1,
+    ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode1,
       "MMMMMLsddmTTXXXXXXTTTTTTTT", curve->bx, curve->by,
       curve->a, curve->p, curve->d, &lad, curve->bits, rx, r_str), err_scratch);
   }
@@ -241,7 +241,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
       ASSH_BOP_END(),
     };
 
-    ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode2, "MddddsTXXXm",
+    ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode2, "MddddsTXXXm",
       curve->l, hram, az, r, s_str, n * 8), err_scratch);
   }
 
@@ -496,7 +496,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode,
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode,
           "MMMMMMLLsdMddTTTTTTTTTTTTTTTTTm", curve->bx, curve->by,
           curve->a, curve->p, curve->d, curve->i,
           &lad1, &lad2, curve->bits, kp, kx, rx, ry), err_scratch);

@@ -169,7 +169,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "DDDDNNNNXTTTTTTTm",
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "DDDDNNNNXTTTTTTTm",
                   /* D */ nonce, r_str, s_str, msgh,
                   /* N */ &k->pn, &k->qn, &k->gn, &k->xn), err_scratch);
 
@@ -269,7 +269,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_dsa_check)
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "DDDNNNNTTTTTTTTTm",
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "DDDNNNNTTTTTTTTTm",
                  /* D */ rs_str + 4, rs_str + 4 + n / 8, msgh,
                  /* N */ &k->pn, &k->qn, &k->gn, &k->yn), err_scratch);
 

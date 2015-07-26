@@ -250,7 +250,7 @@ assh_error_t test_cmp()
     ASSH_BOP_END(),
   };
 
-  if (assh_bignum_bytecode(&context, bytecode1, "MMTTs", "\x00\x00\x00\x01\x01",
+  if (assh_bignum_bytecode(&context, 0, bytecode1, "MMTTs", "\x00\x00\x00\x01\x01",
                            "\x00\x00\x00\x01\x10", (size_t)64))
     ABORT();
 
@@ -267,7 +267,7 @@ assh_error_t test_cmp()
     ASSH_BOP_END(),
   };
 
-  if (assh_bignum_bytecode(&context, bytecode2, "MMTTs",
+  if (assh_bignum_bytecode(&context, 0, bytecode2, "MMTTs",
         "\x00\x00\x00\x01\x01", "\x00\x00\x00\x01\x10", (size_t)64)
       != ASSH_ERR_NUM_COMPARE_FAILED)
     ABORT();
@@ -285,7 +285,7 @@ assh_error_t test_cmp()
     ASSH_BOP_END(),
   };
 
-  if (assh_bignum_bytecode(&context, bytecode3, "MMTTs",
+  if (assh_bignum_bytecode(&context, 0, bytecode3, "MMTTs",
         "\x00\x00\x00\x01\x01", "\x00\x00\x00\x01\x10", (size_t)64)
       != ASSH_ERR_NUM_COMPARE_FAILED)
     ABORT();
@@ -771,7 +771,7 @@ assh_error_t test_ops()
 	assh_bignum_init(&context, &r, t->rbits, 0);
 
 	memset(buf, 0, sizeof(buf));
-	assh_error_t e = assh_bignum_bytecode(&context, t->bytecode, "NNNTMMMMm",
+	assh_error_t e = assh_bignum_bytecode(&context, 0, t->bytecode, "NNNTMMMMm",
 					      &a, &b, &r, t->a, t->b, buf, t->m);
 
 	if (t->err)
@@ -875,7 +875,7 @@ assh_error_t test_add_sub(unsigned int count)
         ASSH_BOP_END(),
       };
 
-      ASSH_ERR_RET(assh_bignum_bytecode(&context, bytecode, "TTTTss", s, l));
+      ASSH_ERR_RET(assh_bignum_bytecode(&context, 0, bytecode, "TTTTss", s, l));
     }
 
   fprintf(stderr, "a");
@@ -917,7 +917,7 @@ assh_error_t test_div(unsigned int count)
         ASSH_BOP_END(),
       };
 
-      ASSH_ERR_RET(assh_bignum_bytecode(&context, bytecode, "TTTTTs", (size_t)256));
+      ASSH_ERR_RET(assh_bignum_bytecode(&context, 0, bytecode, "TTTTTs", (size_t)256));
     }
 
   fprintf(stderr, "d");
@@ -963,7 +963,7 @@ assh_error_t test_move(unsigned int count)
         ASSH_BOP_END(),
       };
 
-      ASSH_ERR_RET(assh_bignum_bytecode(&context, bytecode, "TTsMM",
+      ASSH_ERR_RET(assh_bignum_bytecode(&context, 0, bytecode, "TTsMM",
                                         (size_t)256, mpa, mpb));
 
       ASSH_CHK_RET(memcmp(mpa, mpb, s+4), ASSH_ERR_BAD_DATA);
@@ -1011,7 +1011,7 @@ assh_error_t test_modinv(unsigned int count)
         ASSH_BOP_END(),
       };
 
-      ASSH_ERR_RET(assh_bignum_bytecode(&context, bytecode, "TTTTsM",
+      ASSH_ERR_RET(assh_bignum_bytecode(&context, 0, bytecode, "TTTTsM",
                                         (size_t)(rand() % 900 + 100),
                                         i % 2 ? prime1 : prime2));
     }
@@ -1063,7 +1063,7 @@ assh_error_t test_mt(unsigned int count)
         ASSH_BOP_END(),
       };
 
-      ASSH_ERR_RET(assh_bignum_bytecode(&context, bytecode, "TTTTTmsM",
+      ASSH_ERR_RET(assh_bignum_bytecode(&context, 0, bytecode, "TTTTTmsM",
                                         (size_t)1024 /*(rand() % 900 + 100)*/,
                                         i % 2 ? prime1 : prime2));
     }
@@ -1135,7 +1135,7 @@ assh_error_t test_expmod(unsigned int count)
         ASSH_BOP_END(),
       };
 
-      ASSH_ERR_RET(assh_bignum_bytecode(&context, bytecode,
+      ASSH_ERR_RET(assh_bignum_bytecode(&context, 0, bytecode,
                                         "TTTTTTTTTTMm", prime1));
     }
 

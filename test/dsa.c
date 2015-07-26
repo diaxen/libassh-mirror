@@ -119,7 +119,7 @@ assh_error_t dsa_generate(struct assh_context_s *c,
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_RET(assh_bignum_bytecode(c, bytecode,
+  ASSH_ERR_RET(assh_bignum_bytecode(c, 0, bytecode,
 	      /* mpint */ "MMMMMMM"
 	      /* r, s */ "NN" /* temps: */ "TTTXTTTTT"
 	      /* sizes */ "ss" /* montgomery */ "m",
@@ -206,7 +206,7 @@ assh_error_t dsa_verify(struct assh_context_s *c,
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_RET(assh_bignum_bytecode(c, bytecode,
+  ASSH_ERR_RET(assh_bignum_bytecode(c, 0, bytecode,
 	      /* mpint */ "MMMMM"
 	      /* r, s, v */ "NNN" /* temps: */ "TTTTTTTTTT"
               /* sizes */ "ss" /* montgomery */ "m",
@@ -261,7 +261,7 @@ int main()
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_RET(assh_bignum_bytecode(&context, bytecode, "MTNs",
+  ASSH_ERR_RET(assh_bignum_bytecode(&context, 0, bytecode, "MTNs",
 				    mp_r, &vn, n));
 
   assh_bignum_release(&context, &rn);

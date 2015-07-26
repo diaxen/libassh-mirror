@@ -381,7 +381,6 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
   assh_error_t err;
   uint_fast8_t i, j;
   uint_fast16_t pc = 0;
-  uint8_t cond = 0;
 #if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
   uint8_t cond_secret = 0;
 #endif

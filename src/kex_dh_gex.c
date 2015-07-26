@@ -226,7 +226,7 @@ static assh_error_t assh_kex_dh_gex_client_wait_group(struct assh_session_s *s,
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(s->ctx, bytecode, "MMMNNNNTTTsm",
+  ASSH_ERR_GTO(assh_bignum_bytecode(s->ctx, 0, bytecode, "MMMNNNNTTTsm",
                                     /* M */ g_str, p_str, e_str,
                                     /* N */ &pv->gn, &pv->pn, &pv->en, &pv->xn,
                                     /* S */ n), err_p);
@@ -331,7 +331,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_dh_gex_host_key_lookup_done)
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(s->ctx, bytecode, "MMNNNTTTm",
+  ASSH_ERR_GTO(assh_bignum_bytecode(s->ctx, 0, bytecode, "MMNNNTTTm",
                  /* M */ f_str, secret,
                  /* N */ &pv->xn, &pv->gn, &pv->pn,
                  /* T */ pv->server_n, pv->server_n, pv->server_n),
@@ -516,7 +516,7 @@ static assh_error_t assh_kex_dh_gex_server_wait_size(struct assh_session_s *s,
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "MsiNT", p_str,
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "MsiNT", p_str,
     pv->server_n, (uintptr_t)assh_kex_dh_gex_groups[(pv->server_n - 1024) / 8],
     &pv->pn), err_p);
 
@@ -633,7 +633,7 @@ static assh_error_t assh_kex_dh_gex_server_wait_e(struct assh_session_s *s,
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "MMMNsXTTTTm",
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "MMMNsXTTTTm",
                    e_str, f_str, secret, &pv->pn,
                    pv->exp_n), err_p);
 

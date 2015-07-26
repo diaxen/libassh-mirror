@@ -127,7 +127,7 @@ static ASSH_KEY_CMP_FCN(assh_key_rsa_cmp)
         bc += 2;
     }
 
-  return assh_bignum_bytecode(c, bc, "NNNNNNNN",
+  return assh_bignum_bytecode(c, 0, bc, "NNNNNNNN",
     &k->nn, &l->nn, &k->en, &l->en, &k->dn, &l->dn) == 0;
 }
 
@@ -192,7 +192,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "NNNXXTTm",
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "NNNXXTTm",
                         &k->nn, &k->dn, &k->en), err_key);
 
   assert(!k->nn.secret && !k->en.secret && k->dn.secret);

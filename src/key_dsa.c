@@ -144,7 +144,7 @@ static ASSH_KEY_CMP_FCN(assh_key_dsa_cmp)
         bc++;
     }
 
-  return assh_bignum_bytecode(c, bc, "NNNNNNNN",
+  return assh_bignum_bytecode(c, 0, bc, "NNNNNNNN",
     &k->pn, &l->pn, &k->qn, &l->qn, &k->gn, &l->gn, &k->yn, &l->yn) == 0;
 }
 
@@ -306,7 +306,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, bytecode, "NNNNNiiTTTm",
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "NNNNNiiTTTm",
                  &k->pn, &k->qn, &k->gn, &k->yn, &k->xn,
                  (uintptr_t)e, (uintptr_t)f[(l-1024)/8]), err_key);
 
