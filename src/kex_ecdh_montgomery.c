@@ -151,6 +151,7 @@ assh_montgomery_point_mul(struct assh_session_s *s, uint8_t *result,
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
     ASSH_BOP_PRINT(     X1,    'B'                      ),
+    ASSH_BOP_PRINT(     SC,    'S'                      ),
 #endif
 
     ASSH_BOP_MTUINT(    X2,     1,      MT              ),
@@ -160,15 +161,22 @@ assh_montgomery_point_mul(struct assh_session_s *s, uint8_t *result,
     ASSH_BOP_LADINIT(   SC                              ),
 
     ASSH_BOP_MTTO(	X1,     A24,    X1,     MT      ),
-    /* montgomery ladder */
-    ASSH_BOP_MONTGOMERY_SADD(X1, X2, X3, Z2, Z3, T0, T1, A24, MT),
 
-    ASSH_BOP_LADTEST(   SC,     0                       ),
+    /* montgomery ladder */
+    ASSH_BOP_LADTEST(   SC,     1                       ),
+    ASSH_BOP_BOOL(      0,      0,      1,      ASSH_BOP_BOOL_XOR ),
     ASSH_BOP_CSWAP(     X2,     X3,     0,      0       ),
     ASSH_BOP_CSWAP(     Z2,     Z3,     0,      0       ),
-    ASSH_BOP_LADNEXT(   0                               ),
-    ASSH_BOP_CJMP(      - ASSH_BOP_MONTGOMERY_SADD_OPS - 5,
-                        0,      0   ),
+    ASSH_BOP_BOOL(      0,      1,      1,      ASSH_BOP_BOOL_OR ),
+
+    ASSH_BOP_MONTGOMERY_SADD(X1, X2, X3, Z2, Z3, T0, T1, A24, MT),
+
+    ASSH_BOP_LADNEXT(   1                               ),
+    ASSH_BOP_CJMP(      - ASSH_BOP_MONTGOMERY_SADD_OPS - 7,
+                        0,      1   ),
+
+    ASSH_BOP_CSWAP(     X2,     X3,     0,      0       ),
+    ASSH_BOP_CSWAP(     Z2,     Z3,     0,      0       ),
 
     ASSH_BOP_INV(       T0,     Z2,             MT      ),
     ASSH_BOP_MULM(      T0,     X2,     T0,     MT      ),
