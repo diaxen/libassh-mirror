@@ -116,7 +116,6 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
     };
 
     static const assh_bignum_op_t bytecode1[] = {
-
       ASSH_BOP_SIZER(   A,      T1,     P_n             ),
       ASSH_BOP_SIZE(    SC,     SC_size                 ),
 
@@ -297,12 +296,12 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
 #endif
 
   /* key X sign bit as mpint */
-  uint8_t kx[5] = { 0, 0, 0, kp[n-1] >> 7, 1 };
+  uint8_t kx_sign = kp[n - 1] & 0x80;
 
   enum {
     /* in */
     BX_mpint, BY_mpint, A_mpint, P_mpint, D_mpint, I_mpint,
-    P_n, KY_raw, KX_mpint, SC1_raw, SC2_raw, SC2_size,
+    P_n, KY_raw, SC1_raw, SC2_raw, SC2_size,
     /* out */
     RX_raw, RY_raw,
     /* temp */
@@ -413,10 +412,9 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
 
     /* x = -x if sign of x does not match sign bit in encoded key */
     ASSH_BOP_TEST(      BX,     0,      ASSH_BOP_NOREG,      0  ),
-    ASSH_BOP_MOVE(      T0,     KX_mpint                        ),
-    ASSH_BOP_TEST(      T0,     0,      ASSH_BOP_NOREG,      1  ),
-    ASSH_BOP_BOOL(      0,      0,      1, ASSH_BOP_BOOL_XOR    ),
-    ASSH_BOP_CJMP(      1,      0,      0                       ),
+    ASSH_BOP_BOOL(      0,      0,      /* kx sign */ 7,
+                        ASSH_BOP_BOOL_XOR               ),
+    ASSH_BOP_CJMP(      1,      0,      0               ),
     ASSH_BOP_SUB(       BX,     P,      BX              ),
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
@@ -486,10 +484,10 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode,
-          "MMMMMMsdMddsddTTTTTTTTTTTTTTTTTTTm", curve->bx, curve->by,
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, kx_sign, bytecode,
+          "MMMMMMsdddsddTTTTTTTTTTTTTTTTTTTm", curve->bx, curve->by,
           curve->a, curve->p, curve->d, curve->i,
-          curve->bits, kp, kx,
+          curve->bits, kp,
           hram, rs_str + 4 + n, n * 8, /* scalars */
           rx, ry), err_scratch);
 
