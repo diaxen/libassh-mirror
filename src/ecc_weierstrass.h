@@ -1,8 +1,34 @@
+/*
+
+  libassh - asynchronous ssh2 client/server library.
+
+  Copyright (C) 2014 Alexandre Becoulet <alexandre.becoulet@free.fr>
+
+  This library is free software; you can redistribute it and/or modify
+  it under the terms of the GNU Lesser General Public License as
+  published by the Free Software Foundation; either version 2.1 of the
+  License, or (at your option) any later version.
+
+  This library is distributed in the hope that it will be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+  02110-1301 USA
+
+*/
+
+#ifndef _ECC_WEIERSTRASS_H_
+#define _ECC_WEIERSTRASS_H_
 
 #include <stdint.h>
 
 struct assh_weierstrass_curve_s
 {
+  const char *name;
   const uint8_t *p;
   const uint8_t *n;
   const uint8_t *c;
@@ -13,7 +39,12 @@ struct assh_weierstrass_curve_s
   uint_fast8_t cofactor;
 };
 
-/** http://www.hyperelliptic.org/EFD dbl-2007-bl-2 */
+extern const struct assh_weierstrass_curve_s assh_nistp256_curve;
+extern const struct assh_weierstrass_curve_s assh_nistp384_curve;
+extern const struct assh_weierstrass_curve_s assh_nistp521_curve;
+
+/* weierstrass point doubling,
+    from http://www.hyperelliptic.org/EFD dbl-2007-bl-2 */
 #define ASSH_BOP_WS_PDBL(X3, Y3, Z3, X1, Y1, Z1, T0, T1, P)	\
 								\
   /* A = 3*(X1-Z1)*(X1+Z1) */					\
@@ -50,7 +81,8 @@ struct assh_weierstrass_curve_s
 
 #define ASSH_BOP_WS_PDBL_OPS 21
 
-/* Efficient elliptic curve exponentiation using mixed coordinates, p51-65 */
+/* weierstrass point addition, from Efficient elliptic curve
+   exponentiation using mixed coordinates, p51-65 */
 #define ASSH_BOP_WS_PADD(X3, Y3, Z3, X2, Y2, Z2, X1, Y1, Z1,	\
 			 T0, T1, T2, T3, P)			\
 								\
@@ -141,4 +173,6 @@ struct assh_weierstrass_curve_s
     ASSH_BOP_INV(       T0,     Z2,             P      ),               \
     ASSH_BOP_MULM(      X2,     X2,     T0,     P      ),               \
     ASSH_BOP_MULM(      Y2,     Y2,     T0,     P      )
+
+#endif
 

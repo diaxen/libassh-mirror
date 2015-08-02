@@ -24,7 +24,8 @@ libassh_la_SOURCES = assh_context.c assh_session.c assh_packet.c	\
 	assh_algo.c assh_key.c assh_service.c assh_map.c assh_bignum.c	\
 	assh_connection.c assh_userauth_client.c assh_userauth_server.c	\
 	kex_none.c kex_dh.c kex_dh_gex.c kex_rsa.c			\
-	kex_ecdh_montgomery.c kex_ecdh_weierstrass.c ecc_weierstrass.h	\
+	kex_ecdh_montgomery.c kex_ecdh_weierstrass.c			\
+	ecc_weierstrass.c ecc_weierstrass.h				\
 	cipher_none.c							\
 	mac_none.c							\
 	key_dsa.c key_rsa.c key_eddsa.c					\
