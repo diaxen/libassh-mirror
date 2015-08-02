@@ -337,6 +337,7 @@ enum assh_bignum_opcode_e
   ASSH_BIGNUM_OP_LADTEST,
   ASSH_BIGNUM_OP_LADNEXT,
   ASSH_BIGNUM_OP_CSWAP,
+  ASSH_BIGNUM_OP_CMOVE,
   ASSH_BIGNUM_OP_MTINIT,
   ASSH_BIGNUM_OP_MTTO,
   ASSH_BIGNUM_OP_MTFROM,
@@ -355,8 +356,8 @@ enum assh_bignum_opcode_e
     "expm", "inv", "shr", "shl",                \
     "rand", "cmp", "test", "uint",              \
     "mtuint", "(c)jmp", "cfail",                \
-    "ladinit", "ladtest", "ladnext",            \
-    "swap", "mtinit", "mtto", "mtfrom",         \
+    "ladinit", "ladtest", "ladnext", "cswap",   \
+    "cmove", "mtinit", "mtto", "mtfrom",        \
     "prime", "isprime", "bool", "privacy",      \
     "print", "trace"                            \
 }
@@ -373,7 +374,13 @@ enum assh_bignum_opcode_e
     @internal This instruction moves and converts values in various
     formats. It is equivalent to the @ref assh_bignum_convert_t function. */
 #define ASSH_BOP_MOVE(dst, src) \
-  ASSH_BOP_FMT2(ASSH_BIGNUM_OP_MOVE, dst, src)
+  ASSH_BOP_FMT3(ASSH_BIGNUM_OP_MOVE, 0, dst, src)
+
+/** @mgroup{Bytecode instructions}
+    @internal Same behavior as @ref #ASSH_BOP_MOVE, set the secret
+    flag on destination. */
+#define ASSH_BOP_MOVES(dst, src) \
+  ASSH_BOP_FMT3(ASSH_BIGNUM_OP_MOVE, 1, dst, src)
 
 /** @mgroup{Bytecode instructions}
     @internal This initializes a temporary montgomery multiplication
@@ -605,7 +612,14 @@ enum assh_bignum_opcode_e
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CSWAP, condid, src1, src2, inv)
 
 /** @mgroup{Bytecode instructions}
-    @internal This instruction initialize the ladder bit index to 0. */
+    @internal This instruction performs a conditional move in constant time
+    depending on the condition flag.  */
+#define ASSH_BOP_CMOVE(dst, src, inv, condid)                \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_CMOVE, condid, dst, src, inv)
+
+/** @mgroup{Bytecode instructions}
+    @internal This instruction initialize the ladder bit index to
+    @em{bits(src)-1}. */
 #define ASSH_BOP_LADINIT(src)                  \
   ASSH_BOP_FMT1(ASSH_BIGNUM_OP_LADINIT, src)
 
@@ -616,9 +630,8 @@ enum assh_bignum_opcode_e
   ASSH_BOP_FMT2(ASSH_BIGNUM_OP_LADTEST, condid, src)
 
 /** @mgroup{Bytecode instructions}
-    @internal This instruction increments the current ladder bit index
-    and set the condition flag if the last bit as not been reached.
-    @see #ASSH_BOP_LADSWAP @see ASSH_BIGNUM_LAD */
+    @internal This instruction decrements the current ladder bit index
+    and set the condition flag if the new index value is 0. */
 #define ASSH_BOP_LADNEXT(condid)                    \
   ASSH_BOP_FMT1(ASSH_BIGNUM_OP_LADNEXT, condid)
 

@@ -220,6 +220,7 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_gcrypt_convert)
              dstfmt == ASSH_BIGNUM_STEMP ||
              dstfmt == ASSH_BIGNUM_TEMP);
       dstn->mt_num = 0;
+      dstn->secret = 0;
       size_t s, n, b;
 
       if (srcfmt == ASSH_BIGNUM_MSB_RAW ||
@@ -442,24 +443,26 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           goto end;
 
         case ASSH_BIGNUM_OP_MOVE: {
-          void *src = args[oc];
+          void *dst = args[oc];
           ASSH_ERR_GTO(assh_bignum_gcrypt_convert(c, format[od], format[oc],
-                                             args[od], src), err_sc);
+                                             args[od], dst), err_sc);
 
-          /* deduce pointer of next buffer arg */
-          if (format[oc] == 'M' && format[oc + 1] && args[oc + 1] == NULL)
-            args[oc + 1] = (uint8_t*)src + 4 + assh_load_u32(src);
-
-#if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
           switch (format[oc])
             {
+            case ASSH_BIGNUM_MPINT:
+              /* deduce pointer of next buffer arg */
+              if (format[oc + 1] && args[oc + 1] == NULL)
+                args[oc + 1] = (uint8_t*)dst + 4 + assh_load_u32(dst);
+              break;
             case ASSH_BIGNUM_NATIVE:
             case ASSH_BIGNUM_TEMP:
             case ASSH_BIGNUM_STEMP:
+              ((struct assh_bignum_s *)dst)->secret |= ob;
+#if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
               if (trace & 2)
-                assh_bignum_gcrypt_print(src, ASSH_BIGNUM_NATIVE, 'R', pc);
-            }
+                assh_bignum_gcrypt_print(dst, ASSH_BIGNUM_NATIVE, 'R', pc);
 #endif
+            }
           break;
         }
 
@@ -806,6 +809,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           dst->mt_num = 1;
           dst->mt_id = oc;
           dst->n = gcry_mpi_set_ui(dst->n, value);
+          dst->secret = 0;
           ASSH_CHK_GTO(dst->n == NULL, ASSH_ERR_MEM, err_sc);
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
           if (trace & 2)
@@ -819,6 +823,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           struct assh_bignum_s *dst = args[od];
           dst->mt_num = 0;
           dst->n = gcry_mpi_set_ui(dst->n, value);
+          dst->secret = 0;
           ASSH_CHK_GTO(dst->n == NULL, ASSH_ERR_MEM, err_sc);
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
           if (trace & 2)
@@ -834,11 +839,34 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           break;
 
         case ASSH_BIGNUM_OP_CSWAP: {
-          struct assh_bignum_s *src1 = args[ob];
-          struct assh_bignum_s *src2 = args[oc];
+          struct assh_bignum_s *a = args[ob];
+          struct assh_bignum_s *b = args[oc];
 
+          a->secret = b->secret = a->secret |
+            b->secret | ((cond_secret >> oa) & 1);
           if (((cond >> oa) ^ od) & 1)
-            gcry_mpi_swap(src1->n, src2->n);
+            gcry_mpi_swap(a->n, b->n);
+#if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
+          if (trace & 2)
+            {
+              assh_bignum_gcrypt_print(a, ASSH_BIGNUM_NATIVE, 'A', pc);
+              assh_bignum_gcrypt_print(b, ASSH_BIGNUM_NATIVE, 'B', pc);
+            }
+#endif
+          break;
+        }
+
+        case ASSH_BIGNUM_OP_CMOVE: {
+          struct assh_bignum_s *dst = args[ob];
+          struct assh_bignum_s *src = args[oc];
+
+          dst->secret |= src->secret | ((cond_secret >> oa) & 1);
+          if (((cond >> oa) ^ od) & 1)
+            gcry_mpi_set(dst->n, src->n);
+#if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
+          if (trace & 2)
+            assh_bignum_gcrypt_print(dst, ASSH_BIGNUM_NATIVE, 'R', pc);
+#endif
           break;
         }
 
