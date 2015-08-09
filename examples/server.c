@@ -36,6 +36,7 @@
 #include <assh/key_rsa.h>
 #include <assh/key_dsa.h>
 #include <assh/key_eddsa.h>
+#include <assh/key_ecdsa.h>
 
 #ifdef CONFIG_ASSH_USE_GCRYPT
 # include <gcrypt.h>
@@ -112,6 +113,10 @@ int main()
   if (assh_load_hostkey_filename(context, &assh_key_eddsa_e521, ASSH_ALGO_SIGN, "e521_host_key",
 				 ASSH_KEY_FMT_PV_OPENSSH_V1_KEY) != ASSH_OK)
     fprintf(stderr, "unable to load eddsa e521 key\n");
+
+  if (assh_load_hostkey_filename(context, &assh_key_ecdsa_nistp256, ASSH_ALGO_SIGN, "ecdsa_host_key",
+				 ASSH_KEY_FMT_PV_OPENSSH_V1_KEY) != ASSH_OK)
+    fprintf(stderr, "unable to load ecdsa key\n");
 
   signal(SIGPIPE, SIG_IGN);
 

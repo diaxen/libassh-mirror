@@ -102,14 +102,14 @@ if test x$enable_gcrypt = xyes ; then
 
     ])
   ])
-   AC_DEFINE([CONFIG_ASSH_MAX_ALGORITHMS], 72, [Maximum number of registered algorithms])
+   AC_DEFINE([CONFIG_ASSH_MAX_ALGORITHMS], 96, [Maximum number of registered algorithms])
 else
    enable_gcrypt_hash=no
    enable_gcrypt_bignum=no
    enable_gcrypt_prng=no
    enable_gcrypt_alloc=no
    enable_gcrypt_ciphers=no
-   AC_DEFINE([CONFIG_ASSH_MAX_ALGORITHMS], 48, [Maximum number of registered algorithms])
+   AC_DEFINE([CONFIG_ASSH_MAX_ALGORITHMS], 64, [Maximum number of registered algorithms])
 fi
 
 

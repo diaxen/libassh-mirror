@@ -150,5 +150,9 @@ extern const struct assh_algo_sign_s assh_sign_eddsa_e382;
     See @url {http://safecurves.cr.yp.to/} */
 extern const struct assh_algo_sign_s assh_sign_eddsa_e521;
 
+extern const struct assh_algo_sign_s assh_sign_nistp256;
+extern const struct assh_algo_sign_s assh_sign_nistp384;
+extern const struct assh_algo_sign_s assh_sign_nistp521;
+
 #endif
 

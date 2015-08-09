@@ -213,6 +213,9 @@ const struct assh_algo_s *assh_algo_table[] = {
   &assh_sign_ed25519.algo,
   &assh_sign_eddsa_e382.algo,
   &assh_sign_eddsa_e521.algo,
+  &assh_sign_nistp256.algo,
+  &assh_sign_nistp384.algo,
+  &assh_sign_nistp521.algo,
   /* ciphers */
 #ifdef CONFIG_ASSH_USE_GCRYPT_CIPHERS
   &assh_cipher_tdes_cbc.algo,

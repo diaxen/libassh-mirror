@@ -38,6 +38,7 @@ assh/helper_fd.h
 assh/helper_key.h
 assh/key_dsa.h
 assh/key_eddsa.h
+assh/key_ecdsa.h
 assh/key_rsa.h
 assh_config.h
 }
@@ -257,6 +258,18 @@ assh_config.h
         @item @tt {ssh-ed25519},
         @item @tt {eddsa-e382-shake256@libassh.org},
         @item @tt {eddsa-e521-shake256@libassh.org}.
+      @end list
+    @end section
+
+    @section {ECDSA signature}
+      These are implementations of the Elliptic Curve Digitial
+      Signature Algorithm as specified in @em {FIPS 186.4} and
+      @invoke{5656}rfc.
+
+      @list
+        @item @tt {ecdsa-sha2-nistp256},
+        @item @tt {ecdsa-sha2-nistp384},
+        @item @tt {ecdsa-sha2-nistp521}
       @end list
     @end section
 
