@@ -24,6 +24,7 @@
 #include <arpa/inet.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include <sys/types.h>
 
 /**
@@ -146,6 +147,14 @@ ASSH_INLINE uint32_t assh_swap_u32(uint32_t x)
   x = (x << 16) | (x >> 16);
   x = ((x & 0x00ff00ff) << 8) | ((x & 0xff00ff00) >> 8);
   return x;
+}
+
+ASSH_INLINE void assh_clear(void *data, size_t len)
+{
+  memset(data, 0, len);
+#ifdef __GNUC__
+  asm volatile ("" ::: "memory");
+#endif
 }
 
 /** @internal */
