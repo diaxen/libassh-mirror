@@ -2425,6 +2425,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
         case ASSH_BIGNUM_OP_LADTEST: {
           struct assh_bignum_s *src = args[od];
           uint8_t cond_mask = (1 << oc);
+          assert(!src->mt_num);
           cond &= ~cond_mask;
           assh_bnword_t *n = src->n;
           cond |= ((n[lad_index / ASSH_BIGNUM_W]

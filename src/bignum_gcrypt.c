@@ -884,6 +884,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
         case ASSH_BIGNUM_OP_LADTEST: {
           struct assh_bignum_s *src = args[od];
           uint8_t cond_mask = (1 << oc);
+          assert(!src->mt_num);
           cond &= ~cond_mask;
           cond |= !!gcry_mpi_test_bit(src->n, lad_index) << oc;
 #if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
