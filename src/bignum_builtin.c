@@ -2178,6 +2178,10 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           uint_fast8_t i;
           for (i = 0; i < oa; i++)
             {
+#if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
+              if (ob == oc)
+                ASSH_DEBUG("MT convert: may optimize with src != dst\n");
+#endif
               struct assh_bignum_s *dst = args[ob + i];
               struct assh_bignum_s *src = args[oc + i];
               assert(src->mt_num != (op == ASSH_BIGNUM_OP_MTTO));
