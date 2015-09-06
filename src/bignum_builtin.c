@@ -1941,9 +1941,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
   uint_fast8_t i, j, k;
   uint_fast16_t pc = 0;
   uint_fast16_t lad_index;
-#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
   uint8_t cond_secret = 0;
-#endif
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
   uint8_t trace = 0;
 #endif
@@ -2343,18 +2341,14 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           struct assh_bignum_s *src2 = args[oc];
           uint8_t cond_mask = 1 << oa;
           cond &= ~cond_mask;
-#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
           cond_secret &= ~cond_mask;
-#endif
           if (oc == ASSH_BOP_NOREG)
             {
               r = src1->n != NULL;
             }
           else
             {
-#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
               cond_secret |= (src1->secret | src2->secret) << oa;
-#endif
               assert(!src2->mt_num);
               if (oc != ob)
                 {
@@ -2434,10 +2428,8 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           assh_bnword_t *n = src->n;
           cond |= ((n[lad_index / ASSH_BIGNUM_W]
                     >> (lad_index % ASSH_BIGNUM_W)) & 1) << oc;
-#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
           cond_secret &= cond_mask;
           cond_secret |= src->secret << oc;
-#endif
           break;
         }
 
@@ -2446,9 +2438,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           cond &= ~cond_mask;
           if (lad_index--)
             cond |= cond_mask;
-#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
           cond_secret &= ~cond_mask;
-#endif
           break;
         }
 
@@ -2467,10 +2457,8 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           assert(b < src1->bits);
           assh_bnword_t *n = src1->n;
           cond |= ((n[b / ASSH_BIGNUM_W] >> (b % ASSH_BIGNUM_W)) & 1) << oa;
-#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
           cond_secret &= ~cond_mask;
           cond_secret |= src1->secret << oa;
-#endif
           break;
         }
 
@@ -2530,9 +2518,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           ASSH_ERR_GTO(assh_bignum_check_prime(c, &sc, src, oc, &r), err_sc);
           cond &= ~cond_mask;
           cond |= r << ob;
-#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG)
           cond_secret &= ~cond_mask;
-#endif
           break;
         }
 
@@ -2571,12 +2557,10 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
              ~hex:      B     9     1     7
            */
           cond |= ((0xb91746e8 >> ((od << 2) | (src1 << 1) | src2)) & 1) << oa;
-#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG)
           cond_secret &= ~dst_mask;
           uint8_t src1_secret = (cond_secret >> ob) & 1;
           uint8_t src2_secret = (cond_secret >> oc) & 1;
-          cond_secret |= (src1_secret | src1_secret) << oa;
-#endif
+          cond_secret |= (src1_secret | src2_secret) << oa;
           break;
         }
 

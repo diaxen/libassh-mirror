@@ -383,9 +383,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
   uint_fast8_t i, j;
   uint_fast16_t pc = 0;
   uint_fast16_t lad_index;
-#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
   uint8_t cond_secret = 0;
-#endif
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
   uint8_t trace = 0;
 #endif
@@ -745,18 +743,14 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           struct assh_bignum_s *src2 = args[oc];
           uint8_t cond_mask = 1 << oa;
           cond &= ~cond_mask;
-#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
           cond_secret &= ~cond_mask;
-#endif
           if (oc == ASSH_BOP_NOREG)
             {
               r = src1->n != NULL;
             }
           else
             {
-#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
               cond_secret |= (src1->secret | src2->secret) << oa;
-#endif
               assert(!src2->mt_num);
               if (oc != ob)
                 {
@@ -794,10 +788,8 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
             }
           assert(b < src1->bits);
           cond |= !!gcry_mpi_test_bit(src1->n, b) << oa;
-#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
           cond_secret &= ~cond_mask;
           cond_secret |= src1->secret << oa;
-#endif
           break;
         }
 
@@ -887,10 +879,8 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           assert(!src->mt_num);
           cond &= ~cond_mask;
           cond |= !!gcry_mpi_test_bit(src->n, lad_index) << oc;
-#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
           cond_secret &= cond_mask;
           cond_secret |= src->secret << oc;
-#endif
           break;
         }
 
@@ -899,9 +889,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           cond &= ~cond_mask;
           if (lad_index--)
             cond |= cond_mask;
-#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
           cond_secret &= ~cond_mask;
-#endif
           break;
         }
 
@@ -923,12 +911,10 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
              ~hex:      B     9     1     7
            */
           cond |= ((0xb91746e8 >> ((od << 2) | (src1 << 1) | src2)) & 1) << oa;
-#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG)
           cond_secret &= ~dst_mask;
           uint8_t src1_secret = (cond_secret >> ob) & 1;
           uint8_t src2_secret = (cond_secret >> oc) & 1;
           cond_secret |= (src1_secret | src1_secret) << oa;
-#endif
           break;
         }
 
@@ -974,9 +960,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           cond &= ~cond_mask;
           cond |= (gcry_mpi_cmp_ui(src->n, 2) > 0 &&
                    !gcry_prime_check(src->n, 0)) << ob;
-#if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG)
           cond_secret &= ~cond_mask;
-#endif
         }
 
         case ASSH_BIGNUM_OP_PRIVACY: {
