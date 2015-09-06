@@ -290,7 +290,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_768)
 {
   if (key == NULL)
     return c->type == ASSH_SERVER;
-  if (key->algo != &assh_key_rsa)
+  if (key->algo != &assh_key_rsa || key->role != ASSH_ALGO_SIGN)
     return 0;
   const struct assh_key_rsa_s *k = (const void*)key;
   return assh_bignum_bits(&k->nn) >= 768;
@@ -331,7 +331,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_1024)
 {
   if (key == NULL)
     return c->type == ASSH_SERVER;
-  if (key->algo != &assh_key_rsa)
+  if (key->algo != &assh_key_rsa || key->role != ASSH_ALGO_SIGN)
     return 0;
   const struct assh_key_rsa_s *k = (const void*)key;
   return assh_bignum_bits(&k->nn) >= 1024;
@@ -365,7 +365,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_2048)
 {
   if (key == NULL)
     return c->type == ASSH_SERVER;
-  if (key->algo != &assh_key_rsa)
+  if (key->algo != &assh_key_rsa || key->role != ASSH_ALGO_SIGN)
     return 0;
   const struct assh_key_rsa_s *k = (const void*)key;
   return assh_bignum_bits(&k->nn) >= 2048;
@@ -419,7 +419,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_3072)
 {
   if (key == NULL)
     return c->type == ASSH_SERVER;
-  if (key->algo != &assh_key_rsa)
+  if (key->algo != &assh_key_rsa || key->role != ASSH_ALGO_SIGN)
     return 0;
   const struct assh_key_rsa_s *k = (const void*)key;
   return assh_bignum_bits(&k->nn) >= 3072;

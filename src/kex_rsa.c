@@ -686,7 +686,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_kex_rsa1024_suitable_key)
 {
   if (key == NULL)
     return 0;
-  if (key->algo != &assh_key_rsa)
+  if (key->algo != &assh_key_rsa || key->role != ASSH_ALGO_KEX)
     return 0;
   const struct assh_key_rsa_s *k = (const void*)key;
   return assh_bignum_bits(&k->nn) >= 1024;
@@ -717,7 +717,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_kex_rsa2048_suitable_key)
 {
   if (key == NULL)
     return 0;
-  if (key->algo != &assh_key_rsa)
+  if (key->algo != &assh_key_rsa || key->role != ASSH_ALGO_KEX)
     return 0;
   const struct assh_key_rsa_s *k = (const void*)key;
   return assh_bignum_bits(&k->nn) >= 2048;
