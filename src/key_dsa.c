@@ -226,7 +226,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
   struct assh_key_dsa_s *k;
 
   ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_key_dsa_s),
-                          ASSH_ALLOC_SECUR, (void**)&k));
+                          ASSH_ALLOC_INTERNAL, (void**)&k));
 
   k->key.algo = &assh_key_dsa;
 
@@ -466,7 +466,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
   struct assh_key_dsa_s *k = (void*)*key;
 
   ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_key_dsa_s),
-                          ASSH_ALLOC_SECUR, (void**)&k));
+                          ASSH_ALLOC_INTERNAL, (void**)&k));
 
   k->key.algo = &assh_key_dsa;
 
