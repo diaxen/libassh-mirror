@@ -219,20 +219,22 @@ assh_error_t test_loop()
   for (i = 0; algos[i].algo; i++)
     {
       const struct assh_algo_sign_s *a = algos[i].algo;
-      const struct assh_key_s *key;
+      const struct assh_key_s *key, *key2;
 
       fprintf(stderr, "\n%s sign/verify: ", a->algo.name);
 
       uint8_t key_blob[algos[i].key_len];
       memcpy(key_blob, algos[i].key, sizeof(key_blob));
 
-      if (!algos[i].gen_key)
-	{
-	  fprintf(stderr, "L");
-	  ASSH_ERR_RET(assh_key_load(&context, &key, a->algo.key, ASSH_ALGO_SIGN,
-	                 key_blob[0], key_blob + 1, sizeof(key_blob) - 1));
-	  ASSH_ERR_RET(assh_key_validate(&context, key));
-	}
+      fprintf(stderr, "L");
+      ASSH_ERR_RET(assh_key_load(&context, &key2, a->algo.key, ASSH_ALGO_SIGN,
+				 key_blob[0], key_blob + 1, sizeof(key_blob) - 1));
+      ASSH_ERR_RET(assh_key_validate(&context, key2));
+
+      assert(assh_key_cmp(&context, key2, key2, 0));
+      assert(assh_key_cmp(&context, key2, key2, 1));
+
+      key = key2;
 
       int size;
       for (size = TEST_SIZE; size != 0; )
@@ -246,6 +248,12 @@ assh_error_t test_loop()
 	                    a->algo.key, ASSH_ALGO_SIGN));
               fprintf(stderr, "C");
 	      ASSH_ERR_RET(assh_key_validate(&context, key));
+
+	      assert(assh_key_cmp(&context, key, key, 0));
+	      assert(assh_key_cmp(&context, key, key, 1));
+
+	      assert(!assh_key_cmp(&context, key, key2, 0));
+	      assert(!assh_key_cmp(&context, key, key2, 1));
             }
 
 	  size--;
@@ -321,8 +329,7 @@ assh_error_t test_loop()
 	    assh_key_drop(&context, &key);
 	}
 
-      if (!algos[i].gen_key)
-	assh_key_drop(&context, &key);
+      assh_key_drop(&context, &key2);
     }
 
   for (i = 0; algos[i].algo; i++)

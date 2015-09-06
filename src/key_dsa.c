@@ -114,9 +114,11 @@ static ASSH_KEY_CMP_FCN(assh_key_dsa_cmp)
     P0, P1, Q0, Q1, G0, G1, Y0, Y1, X0, X1
   };
 
-  static const assh_bignum_op_t *bc, bytecode[] = {
+  static const assh_bignum_op_t bytecode[] = {
+    ASSH_BOP_CJMP(      2,      0,       0       ),
     ASSH_BOP_CMPEQ(     X1,     X0,      0       ),
     ASSH_BOP_CFAIL(     1,      0                ),
+
     ASSH_BOP_CMPEQ(     P1,     P0,      0       ),
     ASSH_BOP_CFAIL(     1,      0                ),
     ASSH_BOP_CMPEQ(     Q1,     Q0,      0       ),
@@ -128,24 +130,18 @@ static ASSH_KEY_CMP_FCN(assh_key_dsa_cmp)
     ASSH_BOP_END(),
   };
 
-  bc = bytecode;
-
-  if (pub)
+  if (!pub)
     {
-      /* skip compare of X */
-      bc++;
-    }
-  else
-    {
-      if (assh_bignum_isempty(&k->xn) != 
+      if (assh_bignum_isempty(&k->xn) !=
           assh_bignum_isempty(&l->xn))
         return 0;
       if (assh_bignum_isempty(&l->xn))
-        bc++;
+        pub = 1;
     }
 
-  return assh_bignum_bytecode(c, 0, bc, "NNNNNNNN",
-    &k->pn, &l->pn, &k->qn, &l->qn, &k->gn, &l->gn, &k->yn, &l->yn) == 0;
+  return assh_bignum_bytecode(c, pub, bytecode, "NNNNNNNNNN",
+                              &k->pn, &l->pn, &k->qn, &l->qn, &k->gn, &l->gn,
+                              &k->yn, &l->yn, &k->xn, &l->xn) == 0;
 }
 
 static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)

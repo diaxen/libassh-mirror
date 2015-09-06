@@ -101,9 +101,11 @@ static ASSH_KEY_CMP_FCN(assh_key_rsa_cmp)
     N0, N1, E0, E1, D0, D1
   };
 
-  static const assh_bignum_op_t *bc, bytecode[] = {
+  static const assh_bignum_op_t bytecode[] = {
+    ASSH_BOP_CJMP(      2,      0,       0              ),
     ASSH_BOP_CMPEQ(     D1,     D0,      0              ),
     ASSH_BOP_CFAIL(     1,      0                       ),
+
     ASSH_BOP_CMPEQ(     E1,     E0,      0              ),
     ASSH_BOP_CFAIL(     1,      0                       ),
     ASSH_BOP_CMPEQ(     N1,     N0,      0              ),
@@ -111,23 +113,16 @@ static ASSH_KEY_CMP_FCN(assh_key_rsa_cmp)
     ASSH_BOP_END(),
   };
 
-  bc = bytecode;
-
-  if (pub)
+  if (!pub)
     {
-      /* skip compare of D */
-      bc += 2;
-    }
-  else
-    {
-      if (assh_bignum_isempty(&k->dn) != 
+      if (assh_bignum_isempty(&k->dn) !=
           assh_bignum_isempty(&l->dn))
         return 0;
       if (assh_bignum_isempty(&l->dn))
-        bc += 2;
+        pub = 1;
     }
 
-  return assh_bignum_bytecode(c, 0, bc, "NNNNNNNN",
+  return assh_bignum_bytecode(c, pub, bytecode, "NNNNNN",
     &k->nn, &l->nn, &k->en, &l->en, &k->dn, &l->dn) == 0;
 }
 
@@ -206,31 +201,42 @@ static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
 
 static ASSH_KEY_VALIDATE_FCN(assh_key_rsa_validate)
 {
-#if 0
   struct assh_key_rsa_s *k = (void*)key;
   assh_error_t err = ASSH_OK;
 
   unsigned int n = assh_bignum_bits(&k->nn);
 
   /* check key size */
-  if (n < 768 || n > 8192 || n % 8)
-    return ASSH_OK;
+  ASSH_CHK_RET(n < 768 || n > 8192, ASSH_ERR_BAD_DATA);
 
   enum bytecode_args_e
   {
-    E
+    N, D, E, T0
   };
 
+  /* FIXME add constant time private key validation  */
+
   static const assh_bignum_op_t bytecode[] = {
+    ASSH_BOP_SIZE(      T0,     N                       ),
+
+    /* check N */
+    ASSH_BOP_TEST(      N,      1,      N,      0       ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
+    ASSH_BOP_TEST(      N,      0, ASSH_BOP_NOREG, 0    ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
+
+    /* check E */
+    ASSH_BOP_TEST(      E,      0, ASSH_BOP_NOREG, 0    ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
+    ASSH_BOP_UINT(      T0,     2                       ),
+    ASSH_BOP_CMPLTEQ(   E,      T0,     0               ),
+    ASSH_BOP_CFAIL(     0,      0                       ),
+
     ASSH_BOP_END(),
   };
 
-  err = assh_bignum_bytecode(c, bytecode, "NNNNTT");
-
-  if (err != ASSH_ERR_NUM_COMPARE_FAILED)
-    ASSH_ERR_RET(err);
-#endif
-#warning rsa key validate
+  ASSH_ERR_RET(assh_bignum_bytecode(c, 0, bytecode, "NNNT",
+                                    &k->nn, &k->dn, &k->en));
 
   return ASSH_OK;
 }
