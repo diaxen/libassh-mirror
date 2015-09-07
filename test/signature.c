@@ -9,6 +9,7 @@
 
 #include "keys.h"
 #include "prng_weak.h"
+#include "test.h"
 
 #ifdef CONFIG_ASSH_USE_GCRYPT
 # include <gcrypt.h>
@@ -231,8 +232,8 @@ assh_error_t test_loop()
 				 key_blob[0], key_blob + 1, sizeof(key_blob) - 1));
       ASSH_ERR_RET(assh_key_validate(&context, key2));
 
-      assert(assh_key_cmp(&context, key2, key2, 0));
-      assert(assh_key_cmp(&context, key2, key2, 1));
+      TEST_ASSERT(assh_key_cmp(&context, key2, key2, 0));
+      TEST_ASSERT(assh_key_cmp(&context, key2, key2, 1));
 
       key = key2;
 
@@ -249,11 +250,11 @@ assh_error_t test_loop()
               fprintf(stderr, "C");
 	      ASSH_ERR_RET(assh_key_validate(&context, key));
 
-	      assert(assh_key_cmp(&context, key, key, 0));
-	      assert(assh_key_cmp(&context, key, key, 1));
+	      TEST_ASSERT(assh_key_cmp(&context, key, key, 0));
+	      TEST_ASSERT(assh_key_cmp(&context, key, key, 1));
 
-	      assert(!assh_key_cmp(&context, key, key2, 0));
-	      assert(!assh_key_cmp(&context, key, key2, 1));
+	      TEST_ASSERT(!assh_key_cmp(&context, key, key2, 0));
+	      TEST_ASSERT(!assh_key_cmp(&context, key, key2, 1));
             }
 
 	  size--;
@@ -281,7 +282,7 @@ assh_error_t test_loop()
           fprintf(stderr, "g");
 
 	  ASSH_ERR_RET(assh_sign_generate(&context, a, key, c, ptr, sz, NULL, &sign_len));
-	  assert(sign_len > 0);
+	  TEST_ASSERT(sign_len > 0);
 
 	  uint8_t sign[sign_len];
 	  ASSH_ERR_RET(assh_sign_generate(&context, a, key, c, ptr, sz, sign, &sign_len));
@@ -289,7 +290,7 @@ assh_error_t test_loop()
           fprintf(stderr, "v");
 
 	  err = assh_sign_check(&context, a, key, c, ptr, sz, sign, sign_len);
-	  assert(err == ASSH_OK);
+	  TEST_ASSERT(err == ASSH_OK);
 
           unsigned int r1 = rand() % sign_len;
           unsigned char r2 = rand();
@@ -304,12 +305,12 @@ assh_error_t test_loop()
           fprintf(stderr, "V");
 
 	  err = assh_sign_check(&context, a, key, c, ptr, sz, sign, sign_len);
-	  assert(err != ASSH_OK);
+	  TEST_ASSERT(err != ASSH_OK);
 
 	  sign[r1] ^= r2;
 
 	  err = assh_sign_check(&context, a, key, c, ptr, sz, sign, sign_len);
-	  assert(err == ASSH_OK);
+	  TEST_ASSERT(err == ASSH_OK);
 
 	  if (size)
 	    {
@@ -322,7 +323,7 @@ assh_error_t test_loop()
 	      data[r1] ^= r2;
 
 	      err = assh_sign_check(&context, a, key, c, ptr, sz, sign, sign_len);
-	      assert(err != ASSH_OK);
+	      TEST_ASSERT(err != ASSH_OK);
 	    }
 
 	  if (algos[i].gen_key)
@@ -371,15 +372,15 @@ assh_error_t test_loop()
 			      key_blob[0], key_blob + 1, sizeof(key_blob) - 1);
 
 	  if (!bad)
-	    assert(err == ASSH_OK);
+	    TEST_ASSERT(err == ASSH_OK);
 	  else if (err == ASSH_OK)
 	    {
 	      fprintf(stderr, "C");
 
 	      err = assh_key_validate(&context, key);
 
-	      assert(bad || (err == ASSH_OK));
-	      //	  assert(!bad || (err != ASSH_OK));
+	      TEST_ASSERT(bad || (err == ASSH_OK));
+	      //	  TEST_ASSERT(!bad || (err != ASSH_OK));
 
 	      assh_key_drop(&context, &key);
 	    }

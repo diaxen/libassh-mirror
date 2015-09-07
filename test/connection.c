@@ -38,6 +38,7 @@
 #include "prng_weak.c"
 #include "fifo.h"
 #include "leaks_check.h"
+#include "test.h"
 
 #include <errno.h>
 
@@ -122,12 +123,6 @@ unsigned long ch_close_count = 0;
 unsigned long ch_event_close_count = 0;
 unsigned long ch_eof_count = 0;
 unsigned long ch_event_eof_count = 0;
-
-#define TEST_FAIL(...)				\
-  do {						\
-    fprintf(stderr, "FAIL " __VA_ARGS__);	\
-    return 1;					\
-  } while (0)
 
 int test(int (*fend)(int, int), int n)
 {
@@ -264,7 +259,7 @@ int test(int (*fend)(int, int), int n)
 		if (n == RQ_POSTPONED_SIZE)
 		  break;
 		rq_postponed[(n+l) % RQ_POSTPONED_SIZE] = NULL;
-		assert(rqe->status == 4);
+		TEST_ASSERT(rqe->status == 4);
 		rqe->data_len = 0;
 
 		switch (rand() % 2)
@@ -505,7 +500,7 @@ int test(int (*fend)(int, int), int n)
 		  for (n = 0; n < RQ_POSTPONED_SIZE; n++)
 		    if (rq_postponed[n] == NULL)
 		      break;
-		  assert(n < RQ_POSTPONED_SIZE);
+		  TEST_ASSERT(n < RQ_POSTPONED_SIZE);
 		  rq_postponed[n] = rqe;
 		  break;
 		}
@@ -535,7 +530,7 @@ int test(int (*fend)(int, int), int n)
 		  lrqf->count--;
 		}
 
-	      assert(e->rq == rqe->srq);
+	      TEST_ASSERT(e->rq == rqe->srq);
 
 	      if (lrqf->count <= 0)
 		TEST_FAIL("(ctx %u seed %u) request count %u %p, (> 0 expected) %u\n",

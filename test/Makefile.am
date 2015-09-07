@@ -73,5 +73,6 @@ signature_CFLAGS = -I$(top_srcdir)/src
 EXTRA_DIST = \
 fifo.h \
 keys.h \
+test.h \
 leaks_check.h \
 prng_weak.h
