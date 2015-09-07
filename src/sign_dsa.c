@@ -65,11 +65,12 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
   //  unsigned int l = assh_bignum_bits(&k->pn);
   unsigned int n = assh_bignum_bits(&k->qn);
 
-  /* check/return signature length */
-  size_t len = ASSH_DSA_ID_LEN + 4 + n * 2 / 8;
-
   const struct assh_hash_algo_s *algo;
   ASSH_ERR_RET(assh_sign_dsa_hash_algo(&algo, n));
+  n /= 8;
+
+  /* check/return signature length */
+  size_t len = ASSH_DSA_ID_LEN + 4 + n * 2;
 
   if (sign == NULL)
     {
@@ -81,35 +82,42 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
   *sign_len = len;
 
   memcpy(sign, ASSH_DSA_ID, ASSH_DSA_ID_LEN);
-  assh_store_u32(sign + ASSH_DSA_ID_LEN, n * 2 / 8);
+  assh_store_u32(sign + ASSH_DSA_ID_LEN, n * 2);
   uint8_t *r_str = sign + ASSH_DSA_ID_LEN + 4;
-  uint8_t *s_str = r_str + n / 8;
+  uint8_t *s_str = r_str + n;
 
   ASSH_SCRATCH_ALLOC(c, uint8_t, scratch,
-		     algo->ctx_size
-                     + /* sizeof nonce[] */ n / 8 
-                     + /* sizeof msgh[] */ n / 8,
+		     algo->ctx_size * 2
+                     + /* sizeof nonce[] */ n * 2
+                     + /* sizeof msgh[] */ n,
 		     ASSH_ERRSV_CONTINUE, err_);
 
-  void *hash_ctx = (void*)scratch;
-  uint8_t *nonce = scratch + algo->ctx_size;
-  uint8_t *msgh = nonce + n / 8;
+  void *hash_ctx1 = scratch;
+  void *hash_ctx2 = scratch + algo->ctx_size;
+  uint8_t *nonce = scratch + algo->ctx_size * 2;
+  uint8_t *msgh = nonce + n * 2;
   unsigned int i;
 
   /* message hash */
-  ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, algo), err_scratch);
+  ASSH_ERR_GTO(assh_hash_init(c, hash_ctx1, algo), err_scratch);
   for (i = 0; i < data_count; i++)
-    assh_hash_update(hash_ctx, data[i], data_len[i]);
-  assh_hash_final(hash_ctx, msgh, n / 8);
-  assh_hash_cleanup(hash_ctx);
+    assh_hash_update(hash_ctx1, data[i], data_len[i]);
+  assh_hash_final(hash_ctx1, msgh, n);
+  assh_hash_cleanup(hash_ctx1);
 
   /* Do not rely on prng, avoid leaking key bits.
-     Use hash(key|hash(data)) as nonce. */
-  ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, algo), err_scratch);
-  ASSH_ERR_GTO(assh_hash_bignum(c, hash_ctx, &k->xn), err_hash);
-  assh_hash_update(hash_ctx, msgh, n / 8);
-  assh_hash_final(hash_ctx, nonce, n / 8);
-  assh_hash_cleanup(hash_ctx);
+     Use expand(hash(key|msgh) % q as nonce. */
+  ASSH_ERR_GTO(assh_hash_init(c, hash_ctx1, algo), err_scratch);
+  ASSH_ERR_GTO(assh_hash_bignum(c, hash_ctx1, &k->xn), err_hash);
+  assh_hash_update(hash_ctx1, msgh, n);
+
+  ASSH_ERR_GTO(assh_hash_copy(hash_ctx2, hash_ctx1), err_hash);
+  assh_hash_update(hash_ctx1, "A", 1); /* first half */
+  assh_hash_final(hash_ctx1, nonce, n);
+  assh_hash_update(hash_ctx2, "B", 1); /* second half */
+  assh_hash_final(hash_ctx2, nonce + n, n);
+  assh_hash_cleanup(hash_ctx2);
+  assh_hash_cleanup(hash_ctx1);
 
   enum bytecode_args_e
   {
@@ -121,9 +129,19 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
 
   static const assh_bignum_op_t bytecode[] = {
     ASSH_BOP_SIZER(     K,      R2,     Q               ),
-    ASSH_BOP_SIZER(     R3,     R4,     P               ),
 
-    ASSH_BOP_MOVE(      K,      K_data                  ),
+    /* reduce k */
+    ASSH_BOP_SIZEM(     R3,     Q,      0,      1       ),
+    ASSH_BOP_SIZE(      R4,     R3                      ),
+    ASSH_BOP_MOVE(      R4,     Q                       ),
+    ASSH_BOP_MTINIT(	MT,	R4			),
+    ASSH_BOP_MOVES(     R3,     K_data                  ),
+    ASSH_BOP_MTTO(      R4,     R4,     R3,     MT      ),
+    ASSH_BOP_MOD(       R4,     R4,             MT	),
+    ASSH_BOP_MTFROM(    R3,     R3,     R4,     MT      ),
+    ASSH_BOP_MOVE(      K,      R3                      ),
+
+    ASSH_BOP_SIZER(     R3,     R4,     P               ),
     ASSH_BOP_MOVE(      M,      M_data                  ),
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
@@ -177,7 +195,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
   return ASSH_OK;
 
  err_hash:
-  assh_hash_cleanup(hash_ctx);
+  assh_hash_cleanup(hash_ctx1);
  err_scratch:
   ASSH_SCRATCH_FREE(c, scratch);
  err_:
@@ -192,20 +210,21 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_dsa_check)
   //  unsigned int l = assh_bignum_bits(&k->pn);
   unsigned int n = assh_bignum_bits(&k->qn);
 
-  ASSH_CHK_RET(sign_len != ASSH_DSA_ID_LEN + 4 + n * 2 / 8, ASSH_ERR_INPUT_OVERFLOW);
+  const struct assh_hash_algo_s *algo;
+  ASSH_ERR_RET(assh_sign_dsa_hash_algo(&algo, n));
+  n /= 8;
+
+  ASSH_CHK_RET(sign_len != ASSH_DSA_ID_LEN + 4 + n * 2, ASSH_ERR_INPUT_OVERFLOW);
 
   ASSH_CHK_RET(memcmp(sign, ASSH_DSA_ID, ASSH_DSA_ID_LEN), ASSH_ERR_BAD_DATA);
 
-  const struct assh_hash_algo_s *algo;
-  ASSH_ERR_RET(assh_sign_dsa_hash_algo(&algo, n));
-
   /* check signature blob size */
   uint8_t *rs_str = (uint8_t*)sign + ASSH_DSA_ID_LEN;
-  ASSH_CHK_RET(assh_load_u32(rs_str) != n * 2 / 8, ASSH_ERR_INPUT_OVERFLOW);
+  ASSH_CHK_RET(assh_load_u32(rs_str) != n * 2, ASSH_ERR_INPUT_OVERFLOW);
 
   ASSH_SCRATCH_ALLOC(c, uint8_t, scratch,
 		     algo->ctx_size
-                     + /* sizeof msgh[] */ n / 8,
+                     + /* sizeof msgh[] */ n,
 		     ASSH_ERRSV_CONTINUE, err_);
 
   /* message hash */
@@ -216,7 +235,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_dsa_check)
   ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, algo), err_scratch);
   for (i = 0; i < data_count; i++)
     assh_hash_update(hash_ctx, data[i], data_len[i]);
-  assh_hash_final(hash_ctx, msgh, n / 8);
+  assh_hash_final(hash_ctx, msgh, n);
   assh_hash_cleanup(hash_ctx);
 
   enum bytecode_args_e
@@ -270,7 +289,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_dsa_check)
   };
 
   ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "DDDNNNNTTTTTTTTTm",
-                 /* D */ rs_str + 4, rs_str + 4 + n / 8, msgh,
+                 /* D */ rs_str + 4, rs_str + 4 + n, msgh,
                  /* N */ &k->pn, &k->qn, &k->gn, &k->yn), err_scratch);
 
   err = ASSH_OK;
