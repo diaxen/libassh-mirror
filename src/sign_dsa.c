@@ -260,6 +260,19 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_dsa_check)
     ASSH_BOP_PRINT(     S,      'S'                     ),
 #endif
 
+    /* check r and s ranges */
+    ASSH_BOP_UINT(      U1,     0               	),
+
+    ASSH_BOP_CMPGT(     S,      U1,     0 /* s > 0 */   ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
+    ASSH_BOP_CMPLT(     S,      Q,      0 /* s < n */   ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
+
+    ASSH_BOP_CMPGT(     R,      U1,     0 /* r > 0 */   ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
+    ASSH_BOP_CMPLT(     R,      Q,      0 /* r < n */   ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
+
     ASSH_BOP_INV(       W,      S,      Q               ),
     /* r * w mod q */
     ASSH_BOP_MULM(      U2,     R,      W,      Q       ),
