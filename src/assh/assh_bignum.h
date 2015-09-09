@@ -144,7 +144,7 @@ typedef ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_bytecode_t);
   (n)(struct assh_context_s *c,           \
       enum assh_bignum_fmt_e srcfmt,      \
       enum assh_bignum_fmt_e dstfmt,      \
-      const void *src, void *dst)
+      const void *src, void *dst, assh_bool_t secret)
 
 /** @internal @This defines the function type for the number
     conversion operation of the big number module interface.  @see
@@ -237,9 +237,10 @@ ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_bignum_convert(struct assh_context_s *c,
                     enum assh_bignum_fmt_e src_fmt,
                     enum assh_bignum_fmt_e dst_fmt,
-                    const void *src, void *dst)
+                    const void *src, void *dst,
+                    assh_bool_t dst_secret)
 {
-  return c->bignum->f_convert(c, src_fmt, dst_fmt, src, dst);
+  return c->bignum->f_convert(c, src_fmt, dst_fmt, src, dst, dst_secret);
 }
 
 /** @internal @This returns the byte size needed to store a big number
