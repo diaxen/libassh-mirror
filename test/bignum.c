@@ -70,7 +70,7 @@ assh_error_t test_convert()
   struct assh_bignum_s n, m;
   uint8_t buf[32];
 
-  assh_bignum_init(&context, &n, 128, 0);
+  assh_bignum_init(&context, &n, 128);
 
   /********************/
   memset(buf, 0xaa, sizeof(buf));
@@ -111,7 +111,7 @@ assh_error_t test_convert()
     ABORT();
 
   assh_bignum_release(&context, &n);
-  assh_bignum_init(&context, &n, 125, 0);
+  assh_bignum_init(&context, &n, 125);
 
   if (!assh_bignum_convert(&context,
     ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x11\x00\xf0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", &n, 0))
@@ -121,7 +121,7 @@ assh_error_t test_convert()
     ABORT();
 
   assh_bignum_release(&context, &n);
-  assh_bignum_init(&context, &n, 117, 0);
+  assh_bignum_init(&context, &n, 117);
 
   if (assh_bignum_convert(&context,
     ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x0f\x10\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00\x04", &n, 0))
@@ -170,7 +170,7 @@ assh_error_t test_convert()
     ABORT();
 
   /* value to large */
-  assh_bignum_init(&context, &m, 64, 0);
+  assh_bignum_init(&context, &m, 64);
   if (!assh_bignum_convert(&context,
     ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_NATIVE, &n, &m, 0))
     ABORT();
@@ -190,7 +190,7 @@ assh_error_t test_convert()
     ABORT();
 
   assh_bignum_release(&context, &m);
-  assh_bignum_init(&context, &m, 60, 0);
+  assh_bignum_init(&context, &m, 60);
 
   if (!assh_bignum_convert(&context,
     ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_NATIVE, &n, &m, 0))
@@ -766,9 +766,9 @@ assh_error_t test_ops()
 	uint8_t buf[5 + bytes];
 
 	struct assh_bignum_s a, b, r;
-	assh_bignum_init(&context, &a, t->abits, 0);
-	assh_bignum_init(&context, &b, t->bbits, 0);
-	assh_bignum_init(&context, &r, t->rbits, 0);
+	assh_bignum_init(&context, &a, t->abits);
+	assh_bignum_init(&context, &b, t->bbits);
+	assh_bignum_init(&context, &r, t->rbits);
 
 	memset(buf, 0, sizeof(buf));
 	assh_error_t e = assh_bignum_bytecode(&context, 0, t->bytecode, "NNNTMMMMm",

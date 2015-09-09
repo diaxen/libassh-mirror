@@ -93,7 +93,7 @@ assh_weierstrass_base_mul(struct assh_session_s *s)
     ASSH_BOP_MOVE(      T0,     P_raw                   ),
     ASSH_BOP_MTINIT(	MT,     T0                      ),
 
-    ASSH_BOP_MOVE(      SC,     SC_raw                  ),
+    ASSH_BOP_MOVES(     SC,     SC_raw                  ),
     ASSH_BOP_MOVE(      X1,     X_raw                   ),
     ASSH_BOP_MOVE(      Y1,     Y_raw                   ),
     ASSH_BOP_MTTO(      X1,     Y1,     X1,     MT      ),
@@ -123,7 +123,7 @@ assh_weierstrass_base_mul(struct assh_session_s *s)
   memcpy(ry, curve->gy, pv->size);
 
   ASSH_ERR_RET(assh_bignum_bytecode(s->ctx, 0, bytecode,
-                "DDDDTTTTTTTTTTTTTXms", rx, ry, curve->p, pv->pvkey, curve->bits));
+                "DDDDTTTTTTTTTTTTTTms", rx, ry, curve->p, pv->pvkey, curve->bits));
 
   return ASSH_OK;
 }
@@ -152,7 +152,7 @@ assh_weierstrass_point_mul(struct assh_session_s *s, uint8_t *px,
     ASSH_BOP_MOVE(      T0,     P_raw                   ),
     ASSH_BOP_MTINIT(	MT,     T0                      ),
 
-    ASSH_BOP_MOVE(      SC,     SC_raw                  ),
+    ASSH_BOP_MOVES(     SC,     SC_raw                  ),
     ASSH_BOP_MOVE(      X1,     X_raw                   ),
     ASSH_BOP_MOVE(      Y1,     Y_raw                   ),
     ASSH_BOP_MOVE(      T2,     B_raw                   ),
@@ -184,7 +184,7 @@ assh_weierstrass_point_mul(struct assh_session_s *s, uint8_t *px,
   const uint8_t *rx = r + 1;
   const uint8_t *ry = r + 1 + pv->size;
 
-  ASSH_ERR_RET(assh_bignum_bytecode(s->ctx, 0, bytecode, "DDDDDMTTTTTTTTTTTTTXms",
+  ASSH_ERR_RET(assh_bignum_bytecode(s->ctx, 0, bytecode, "DDDDDMTTTTTTTTTTTTTTms",
                  rx, ry, curve->p, curve->b, pv->pvkey, px, curve->bits));
 
   return ASSH_OK;

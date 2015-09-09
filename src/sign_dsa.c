@@ -187,7 +187,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "DDDDNNNNXTTTTTTTm",
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "DDDDNNNNTTTTTTTTm",
                   /* D */ nonce, r_str, s_str, msgh,
                   /* N */ &k->pn, &k->qn, &k->gn, &k->xn), err_scratch);
 

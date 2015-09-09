@@ -141,9 +141,9 @@ static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
   k->key.algo = &assh_key_rsa;
 
   /* init numbers */
-  assh_bignum_init(c, &k->nn, bits, 0);
-  assh_bignum_init(c, &k->dn, bits, 1);
-  assh_bignum_init(c, &k->en, 17, 0);
+  assh_bignum_init(c, &k->nn, bits);
+  assh_bignum_init(c, &k->dn, bits);
+  assh_bignum_init(c, &k->en, 17);
 
   enum bytecode_args_e
   {
@@ -170,24 +170,24 @@ static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
     ASSH_BOP_CFAIL(     0,      0                       ),
 
     ASSH_BOP_MUL(       N,      P,      Q               ),
-    ASSH_BOP_PRIVACY(   N,      0                       ),
+    ASSH_BOP_PRIVACY(   N,      0,      0               ),
 
     // FIXME could use T1 = N - (P + Q -1)
     ASSH_BOP_UINT(      T0,     1                       ),
     ASSH_BOP_SUB(       P,      P,      T0              ),
     ASSH_BOP_SUB(       Q,      Q,      T0              ),
     ASSH_BOP_MUL(       T1,     P,      Q               ),
-    ASSH_BOP_PRIVACY(   T1,     0                       ),
 
+    ASSH_BOP_PRIVACY(   T1,     0,      1               ),
+    ASSH_BOP_PRIVACY(   D,      1,      1               ),
     ASSH_BOP_UINT(      E,      65537                   ),
     ASSH_BOP_INV(       D,      E,      T1              ),
-
-    ASSH_BOP_PRIVACY(   D,      1                       ),
+    ASSH_BOP_PRIVACY(   D,      1,      0               ),
 
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "NNNXXTTm",
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "NNNTTTTm",
                         &k->nn, &k->dn, &k->en), err_key);
 
   assert(!k->nn.secret && !k->en.secret && k->dn.secret);
@@ -314,9 +314,9 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
   k->key.algo = &assh_key_rsa;
 
   /* init numbers */
-  assh_bignum_init(c, &k->nn, n_len, 0);
-  assh_bignum_init(c, &k->en, e_len, 0);
-  assh_bignum_init(c, &k->dn, d_len, 1);
+  assh_bignum_init(c, &k->nn, n_len);
+  assh_bignum_init(c, &k->en, e_len);
+  assh_bignum_init(c, &k->dn, d_len);
 
   /* convert numbers from blob representation */
   switch (format)

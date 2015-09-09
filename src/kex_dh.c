@@ -130,6 +130,8 @@ static assh_error_t assh_kex_dh_client_send_expmod(struct assh_session_s *s)
                    /* M */ gr->generator, gr->prime, e_str,
                    /* N */ &pv->en, &pv->xn, gr->size), err_p);
 
+  assert(pv->xn.secret);
+
   assh_packet_string_resized(p, e_str + 4);
 
   assh_transport_push(s, p);
@@ -368,7 +370,7 @@ static assh_error_t assh_kex_dh_server_wait_e(struct assh_session_s *s,
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "MMMMMssTTTTXTTm",
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "MMMMMssTTTTTTTm",
                    gr->generator, gr->prime, e_str, f_str, secret,
                    pv->exp_n, gr->size), err_p);
 
@@ -478,8 +480,8 @@ static assh_error_t assh_kex_dh_init(struct assh_session_s *s,
     {
 #ifdef CONFIG_ASSH_CLIENT
     case ASSH_CLIENT:
-      assh_bignum_init(s->ctx, &pv->en, group->size, 0);
-      assh_bignum_init(s->ctx, &pv->xn, exp_n, 1);
+      assh_bignum_init(s->ctx, &pv->en, group->size);
+      assh_bignum_init(s->ctx, &pv->xn, exp_n);
       pv->host_key = NULL;
       pv->pck = NULL;
       break;

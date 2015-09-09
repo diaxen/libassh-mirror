@@ -194,9 +194,9 @@ assh_key_ecdsa_create(struct assh_context_s *c,
   k->curve = curve;
   k->hash = hash;
 
-  assh_bignum_init(c, &k->xn, curve->bits, 0);
-  assh_bignum_init(c, &k->yn, curve->bits, 0);
-  assh_bignum_init(c, &k->sn, curve->bits, 1);
+  assh_bignum_init(c, &k->xn, curve->bits);
+  assh_bignum_init(c, &k->yn, curve->bits);
+  assh_bignum_init(c, &k->sn, curve->bits);
 
   assert(curve->cofactor == 1); /* more checks needed if != 1 */
 
@@ -228,8 +228,8 @@ assh_key_ecdsa_create(struct assh_context_s *c,
 
     ASSH_BOP_MTFROM(	X2,     Y2,     X2,     MT      ),
 
-    ASSH_BOP_PRIVACY(   X2,     0 			),
-    ASSH_BOP_PRIVACY(   Y2,     0 			),
+    ASSH_BOP_PRIVACY(   X2,     0,      0		),
+    ASSH_BOP_PRIVACY(   Y2,     0,      0		),
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
     ASSH_BOP_PRINT(     X2,    'X'                      ),
@@ -239,7 +239,7 @@ assh_key_ecdsa_create(struct assh_context_s *c,
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "DDDDNNNXXXXXXXXXXXm",
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "DDDDNNNTTTTTTTTTTTm",
                curve->gx, curve->gy, curve->p, curve->n,
                &k->xn, &k->yn, &k->sn), err_key);
 
@@ -382,9 +382,9 @@ assh_key_ecdsa_load(struct assh_context_s *c,
   ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_key_ecdsa_s),
                           ASSH_ALLOC_INTERNAL, (void**)&k));
 
-  assh_bignum_init(c, &k->xn, curve->bits, 0);
-  assh_bignum_init(c, &k->yn, curve->bits, 0);
-  assh_bignum_init(c, &k->sn, curve->bits, 1);
+  assh_bignum_init(c, &k->xn, curve->bits);
+  assh_bignum_init(c, &k->yn, curve->bits);
+  assh_bignum_init(c, &k->sn, curve->bits);
 
   switch (format)
     {

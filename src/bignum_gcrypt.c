@@ -162,7 +162,6 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_gcrypt_convert)
   struct assh_bignum_s *dstn = dst;
 
   if (srcfmt == ASSH_BIGNUM_NATIVE ||
-      srcfmt == ASSH_BIGNUM_STEMP ||
       srcfmt == ASSH_BIGNUM_TEMP)
     {
       size_t s = ASSH_ALIGN8(srcn->bits) / 8;
@@ -171,7 +170,6 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_gcrypt_convert)
       switch (dstfmt)
         {
         case ASSH_BIGNUM_NATIVE:
-        case ASSH_BIGNUM_STEMP:
         case ASSH_BIGNUM_TEMP:
           ASSH_CHK_RET(dstn->bits < gcry_mpi_get_nbits(srcn->n), ASSH_ERR_NUM_OVERFLOW);
           gcry_mpi_release(dstn->n);
@@ -217,7 +215,6 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_gcrypt_convert)
   else
     {
       assert(dstfmt == ASSH_BIGNUM_NATIVE ||
-             dstfmt == ASSH_BIGNUM_STEMP ||
              dstfmt == ASSH_BIGNUM_TEMP);
       dstn->mt_num = 0;
       size_t s, n, b;
@@ -351,7 +348,6 @@ assh_bignum_gcrypt_print(void *arg, enum assh_bignum_fmt_e fmt,
   switch (fmt)
     {
     case ASSH_BIGNUM_NATIVE:
-    case ASSH_BIGNUM_STEMP:
     case ASSH_BIGNUM_TEMP:
       fprintf(stderr, "[bits=%zu] ", src->bits);
       if (src->secret)
@@ -438,8 +434,6 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
   for (j = i = 0; i < flen; i++)
     switch (format[i])
       {
-      case ASSH_BIGNUM_STEMP:
-        tmp[j].secret = 1;
       case ASSH_BIGNUM_TEMP:
       case ASSH_BIGNUM_MT:
         args[i] = &tmp[j];
@@ -491,7 +485,6 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
             case ASSH_BIGNUM_NATIVE:
             case ASSH_BIGNUM_TEMP:
-            case ASSH_BIGNUM_STEMP:
               if (trace & 2)
                 assh_bignum_gcrypt_print(dst, ASSH_BIGNUM_NATIVE, 'R', pc);
 #endif

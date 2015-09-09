@@ -242,7 +242,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "DNNXXm",
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "DNNTTm",
                 em, &t_key->nn, &t_key->en), err_tkey);
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
@@ -471,7 +471,7 @@ static assh_error_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_RET(assh_bignum_bytecode(c, 0, bytecode, "DNNXXm",
+  ASSH_ERR_RET(assh_bignum_bytecode(c, 0, bytecode, "DNNTTm",
                  em, &t_key->nn, &t_key->dn));
 
 #ifdef CONFIG_ASSH_DEBUG_KEX

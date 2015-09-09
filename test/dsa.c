@@ -111,7 +111,7 @@ assh_error_t dsa_generate(struct assh_context_s *c,
     /* s = k^-1 * (sha(m) + (x * r)) mod q */
     ASSH_BOP_MULM(      S,      R1,     R2,	MT      ),
     ASSH_BOP_MTFROM(    S,	S,	S,	MT	),
-    ASSH_BOP_PRIVACY(   S,	0			),
+    ASSH_BOP_PRIVACY(   S,	0,	0		),
 
     ASSH_BOP_PRINT(	R,	'R'			),
     ASSH_BOP_PRINT(	S,	'S'			),
@@ -232,14 +232,14 @@ int main()
   struct assh_bignum_s rn;
   struct assh_bignum_s sn;
 
-  assh_bignum_init(&context, &rn, n, 0);
-  assh_bignum_init(&context, &sn, n, 0);
+  assh_bignum_init(&context, &rn, n);
+  assh_bignum_init(&context, &sn, n);
 
   dsa_generate(&context, &rn, &sn);
 
   struct assh_bignum_s vn;
 
-  assh_bignum_init(&context, &vn, n, 0);
+  assh_bignum_init(&context, &vn, n);
 
   dsa_verify(&context, &rn, &sn, &vn);
 

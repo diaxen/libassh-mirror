@@ -120,7 +120,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
       ASSH_BOP_SIZE(    SC,     SC_size                 ),
 
       /* init */
-      ASSH_BOP_MOVE(    SC,     SC_raw                  ),
+      ASSH_BOP_MOVES(   SC,     SC_raw                  ),
       ASSH_BOP_MOVE(    T0,     P_mpint                 ),
       ASSH_BOP_MTINIT(	MT,     T0                      ),
       ASSH_BOP_MOVE(    A,      A_mpint                 ),
@@ -169,7 +169,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
     };
 
     ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode1,
-      "MMMMMsdsddmTTXXXXXXTTTTTTTTX", curve->bx, curve->by,
+      "MMMMMsdsddmTTTTTTTTTTTTTTTTT", curve->bx, curve->by,
       curve->a, curve->p, curve->d, curve->bits,
       r, n * 8 * 2,             /* scalar */
       rx, r_str), err_scratch);
@@ -221,13 +221,13 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
       ASSH_BOP_MOVE(    L,      L_mpint                 ),
       ASSH_BOP_MTINIT(  MT,     L                       ),
 
-      ASSH_BOP_MOVE(    T1,     H_raw                   ),
-      ASSH_BOP_MOVE(    S,      AZ_raw                  ),
+      ASSH_BOP_MOVES(   T1,     H_raw                   ),
+      ASSH_BOP_MOVES(   S,      AZ_raw                  ),
       ASSH_BOP_MOVE(    T0,     S                       ),
       ASSH_BOP_MTTO(    T0,     T1,     T0,     MT      ),
       ASSH_BOP_MULM(    T1,     T1,     T0,     MT      ),
 
-      ASSH_BOP_MOVE(    T0,     R_raw                   ),
+      ASSH_BOP_MOVES(   T0,     R_raw                   ),
       ASSH_BOP_MTTO(    T0,     T0,     T0,     MT      ),
       ASSH_BOP_ADDM(    T1,     T1,     T0,     MT      ),
 
@@ -238,7 +238,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
       ASSH_BOP_END(),
     };
 
-    ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode2, "MddddsTXXXm",
+    ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode2, "MddddsTTTTm",
       curve->l, hram, az, r, s_str, n * 8), err_scratch);
   }
 

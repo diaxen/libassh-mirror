@@ -34,7 +34,6 @@ size_t assh_bignum_size_of_bits(enum assh_bignum_fmt_e fmt, size_t bits)
   switch (fmt)
     {
     case ASSH_BIGNUM_NATIVE:
-    case ASSH_BIGNUM_STEMP:
     case ASSH_BIGNUM_TEMP:
       l = sizeof(struct assh_bignum_s);
       break;
@@ -104,7 +103,6 @@ assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
   switch (fmt)
     {
     case ASSH_BIGNUM_NATIVE:
-    case ASSH_BIGNUM_STEMP:
     case ASSH_BIGNUM_TEMP: {
       const struct assh_bignum_s *bn = data;
       l = sizeof(struct assh_bignum_s);

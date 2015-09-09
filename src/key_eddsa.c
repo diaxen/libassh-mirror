@@ -178,7 +178,7 @@ assh_key_eddsa_create(struct assh_context_s *c,
     ASSH_BOP_SIZE(      SC,     SC_size                 ),
 
     /* init */
-    ASSH_BOP_MOVE(      SC,     SC_raw                  ),
+    ASSH_BOP_MOVES(     SC,     SC_raw                  ),
     ASSH_BOP_MOVE(      P,      P_mpint                 ),
     ASSH_BOP_MOVE(      A,      A_mpint                 ),
     ASSH_BOP_MOVE(      D,      D_mpint                 ),
@@ -233,7 +233,7 @@ assh_key_eddsa_create(struct assh_context_s *c,
   };
 
   ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode,
-      "MMMMMsdsddTTTTTTTTTTTTTTTTTXm", curve->bx, curve->by,
+      "MMMMMsdsddTTTTTTTTTTTTTTTTTTm", curve->bx, curve->by,
       curve->a, curve->p, curve->d, curve->bits,
       h + n, n * 8,             /* scalar */
       rx, kp), err_scratch);

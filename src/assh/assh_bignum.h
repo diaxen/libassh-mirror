@@ -82,8 +82,6 @@ enum assh_bignum_fmt_e
   /** Same representation as @ref ASSH_BIGNUM_NATIVE, used as a
       temporary value during bytecode execution. */
   ASSH_BIGNUM_TEMP    = 'T',
-  /** Secret temporary, @see ASSH_BIGNUM_TEMP. */
-  ASSH_BIGNUM_STEMP   = 'X',
   /** SSH mpint representation. */
   ASSH_BIGNUM_MPINT   = 'M',
   /** ASN1 integer representation. */
@@ -113,8 +111,15 @@ struct assh_bignum_s
 {
   /** Bits size */
   uint16_t bits;
-  /** Whether the number is secret */
-  uint16_t secret:1;
+  /** The value must be stored in secure memory and can only be
+      used with constant time operations. This flag is updated when a
+      new value is stored. */
+  volatile uint16_t secret:1;
+  /** Any new value stored in this big number object must use secure
+      memory even if the value is not secret. */
+  volatile uint16_t secure:1;
+  /** The current storage is allocated in secure memory. */
+  volatile uint16_t storage:1;
   /** Whether the number is a montgomery modulus */
   uint16_t mt_mod:1;
   /** Whether the number is in montgomery representation */
@@ -277,10 +282,11 @@ assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
 ASSH_INLINE void
 assh_bignum_init(struct assh_context_s *c,
                  struct assh_bignum_s  *bn,
-                 size_t bits, assh_bool_t secret)
+                 size_t bits)
 {
   bn->bits = bits;
-  bn->secret = secret;
+  bn->secret = 0;
+  bn->secure = 0;
   bn->mt_mod = 0;
   bn->mt_num = 0;
   bn->n = NULL;
@@ -676,8 +682,8 @@ enum assh_bignum_bool_op
     @internal The secret flag is forwarded to results of operations
     on big numbers. This instruction can be used to change the secret
     flag of a value. */
-#define ASSH_BOP_PRIVACY(src, secret) \
-  ASSH_BOP_FMT2(ASSH_BIGNUM_OP_PRIVACY, secret, src)
+#define ASSH_BOP_PRIVACY(src, secret, secur)                  \
+  ASSH_BOP_FMT3(ASSH_BIGNUM_OP_PRIVACY, secret, secur, src)
 
 /** @mgroup{Bytecode instructions}
     @internal This instruction prints a big number argument for

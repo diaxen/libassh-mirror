@@ -231,6 +231,8 @@ static assh_error_t assh_kex_dh_gex_client_wait_group(struct assh_session_s *s,
                                     /* N */ &pv->gn, &pv->pn, &pv->en, &pv->xn,
                                     /* S */ n), err_p);
 
+  assert(pv->xn.secret);
+
   assh_packet_string_resized(pout, e_str + 4);
 
   assh_transport_push(s, pout);
@@ -633,7 +635,7 @@ static assh_error_t assh_kex_dh_gex_server_wait_e(struct assh_session_s *s,
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "MMMNsXTTTTm",
+  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "MMMNsTTTTTm",
                    e_str, f_str, secret, &pv->pn,
                    pv->exp_n), err_p);
 
@@ -787,7 +789,7 @@ static assh_error_t assh_kex_dh_gex_init(struct assh_session_s *s,
              pv->algo_n, pv->algo_min, pv->exp_n);
 #endif
 
-  assh_bignum_init(s->ctx, &pv->pn, 0, 0);
+  assh_bignum_init(s->ctx, &pv->pn, 0);
 
   switch (s->ctx->type)
     {
@@ -796,9 +798,9 @@ static assh_error_t assh_kex_dh_gex_init(struct assh_session_s *s,
       pv->host_key = NULL;
       pv->pck = NULL;
 
-      assh_bignum_init(s->ctx, &pv->gn, 0, 0);
-      assh_bignum_init(s->ctx, &pv->en, 0, 0);
-      assh_bignum_init(s->ctx, &pv->xn, exp_n, 1);
+      assh_bignum_init(s->ctx, &pv->gn, 0);
+      assh_bignum_init(s->ctx, &pv->en, 0);
+      assh_bignum_init(s->ctx, &pv->xn, exp_n);
       break;
 #endif
 

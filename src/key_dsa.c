@@ -231,11 +231,11 @@ static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
   k->key.algo = &assh_key_dsa;
 
   /* init numbers */
-  assh_bignum_init(c, &k->pn, l, 0);
-  assh_bignum_init(c, &k->qn, n, 0);
-  assh_bignum_init(c, &k->gn, l, 0);
-  assh_bignum_init(c, &k->yn, l, 0);
-  assh_bignum_init(c, &k->xn, n, 1);
+  assh_bignum_init(c, &k->pn, l);
+  assh_bignum_init(c, &k->qn, n);
+  assh_bignum_init(c, &k->gn, l);
+  assh_bignum_init(c, &k->yn, l);
+  assh_bignum_init(c, &k->xn, n);
 
   enum bytecode_args_e
   {
@@ -290,7 +290,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
     ASSH_BOP_RAND(      X,      T0,     Q,
                         ASSH_PRNG_QUALITY_LONGTERM_KEY  ),
     ASSH_BOP_EXPM(    Y,      G,      X,      MT        ),
-    ASSH_BOP_PRIVACY( Y,      0 			),
+    ASSH_BOP_PRIVACY( Y,      0,      0			),
     ASSH_BOP_MTFROM(  Y,      Y,      Y,      MT        ),
     ASSH_BOP_MTFROM(  G,      G,      G,      MT        ),
 
@@ -471,11 +471,11 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
   k->key.algo = &assh_key_dsa;
 
   /* init numbers */
-  assh_bignum_init(c, &k->pn, l, 0);
-  assh_bignum_init(c, &k->qn, n, 0);
-  assh_bignum_init(c, &k->gn, l, 0);
-  assh_bignum_init(c, &k->yn, l, 0);
-  assh_bignum_init(c, &k->xn, n, 1);
+  assh_bignum_init(c, &k->pn, l);
+  assh_bignum_init(c, &k->qn, n);
+  assh_bignum_init(c, &k->gn, l);
+  assh_bignum_init(c, &k->yn, l);
+  assh_bignum_init(c, &k->xn, n);
 
   /* convert numbers from blob representation */
   switch (format)

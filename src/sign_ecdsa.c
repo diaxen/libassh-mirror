@@ -145,7 +145,6 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_ecdsa_generate)
     ASSH_BOP_WS_SCMUL2(X3, Y3, Z3, X2, Y2, Z2, X1, Y1, Z1,
                        T0, T1, T2, T3, K, MT),
 
-    ASSH_BOP_PRIVACY(   X2,     0                       ),
     ASSH_BOP_MTFROM(	X2,     X2,     X2,     MT      ),
 
     ASSH_BOP_MOVE(      T0,     N_raw                   ),

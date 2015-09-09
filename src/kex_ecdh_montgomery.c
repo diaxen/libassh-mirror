@@ -145,7 +145,7 @@ assh_montgomery_point_mul(struct assh_session_s *s, uint8_t *result,
     ASSH_BOP_MOVE(      T0,     P_mpint                 ),
     ASSH_BOP_MTINIT(	MT,     T0                      ),
 
-    ASSH_BOP_MOVE(      SC,     SC_raw                  ),
+    ASSH_BOP_MOVES(     SC,     SC_raw                  ),
     ASSH_BOP_MOVE(      A24,    A24_mpint               ),
     ASSH_BOP_MOVE(      X1,     BP_raw                  ),
 
@@ -196,7 +196,7 @@ assh_montgomery_point_mul(struct assh_session_s *s, uint8_t *result,
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_RET(assh_bignum_bytecode(s->ctx, 0, bytecode, "dddMMTTTTTTTTXms",
+  ASSH_ERR_RET(assh_bignum_bytecode(s->ctx, 0, bytecode, "dddMMTTTTTTTTTms",
           result, basepoint, scalar, curve->prime, curve->a24, curve->bits));
 
   return ASSH_OK;
