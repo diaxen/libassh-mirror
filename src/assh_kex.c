@@ -93,6 +93,9 @@ assh_error_t assh_kex_send_init(struct assh_session_s *s)
           memcpy(tail + first, a->name, l);
           if (first)
             tail[0] = ',';
+          else if (j < 2)
+            s->kex_preferred[j] = a; /* keep prefered algorithm */
+
           first = 1;
         }
 
@@ -143,13 +146,13 @@ assh_error_t assh_kex_send_init(struct assh_session_s *s)
 #ifdef CONFIG_ASSH_SERVER
 /* select server side algorithms based on KEX init lists from client */
 static assh_error_t
-assh_kex_server_algos(struct assh_context_s *c, uint8_t *lists[9],
-                      const struct assh_algo_s *algos[8], assh_bool_t *guessed)
+assh_kex_server_algos(struct assh_session_s *s, uint8_t *lists[9],
+                      const struct assh_algo_s *algos[8])
 {
+  struct assh_context_s *c = s->ctx;
   assh_error_t err;
   unsigned int i;
 
-  *guessed = 1;
   for (i = 0; i < 8; i++)
     {
       switch (i)
@@ -159,7 +162,7 @@ assh_kex_server_algos(struct assh_context_s *c, uint8_t *lists[9],
           if (kex->implicit_auth)
             {
               /* ignore host key algorithm */
-              algos[i] = &assh_sign_none.algo;
+              s->kex_preferred[i] = algos[i] = &assh_sign_none.algo;
               continue;
             }
           break;
@@ -202,9 +205,10 @@ assh_kex_server_algos(struct assh_context_s *c, uint8_t *lists[9],
           goto done;
 
         next:
+          if (i < 2)            /* invalidate preferred */
+            s->kex_preferred[i] = NULL;
+
           start = n + 1;
-          if (i < 2) /* KEX or HOST KEY algorithm */
-            *guessed = 0;
         }
 
       ASSH_ERR_RET(ASSH_ERR_MISSING_ALGO | ASSH_ERRSV_DISCONNECT);
@@ -218,13 +222,13 @@ assh_kex_server_algos(struct assh_context_s *c, uint8_t *lists[9],
 #ifdef CONFIG_ASSH_CLIENT
 /* select client side algorithms based on KEX init lists from server */
 static assh_error_t
-assh_kex_client_algos(struct assh_context_s *c, uint8_t *lists[9],
-                      const struct assh_algo_s *algos[8], assh_bool_t *guessed)
+assh_kex_client_algos(struct assh_session_s *s, uint8_t *lists[9],
+                      const struct assh_algo_s *algos[8])
 {
+  struct assh_context_s *c = s->ctx;
   assh_error_t err;
   unsigned int i, j;
 
-  *guessed = 1;
   for (j = i = 0; i < 8; i++)
     {
       switch (i)
@@ -234,7 +238,7 @@ assh_kex_client_algos(struct assh_context_s *c, uint8_t *lists[9],
           if (kex->implicit_auth)
             {
               /* ignore host key algorithm */
-              algos[i] = &assh_sign_none.algo;
+              s->kex_preferred[i] = algos[i] = &assh_sign_none.algo;
               continue;
             }
           break;
@@ -266,6 +270,7 @@ assh_kex_client_algos(struct assh_context_s *c, uint8_t *lists[9],
 
           char *start = (char*)(lists[i] + 4);
           char *end = (char*)lists[i+1];
+          assh_bool_t inval = 0;
 
           /* iterate over name-list */
           while (start < end)
@@ -278,13 +283,14 @@ assh_kex_client_algos(struct assh_context_s *c, uint8_t *lists[9],
               if (!strncmp(start, a->name, n - start)
                   && a->name[n - start] == '\0')
                 {
+                  if (i < 2 && inval)            /* invalidate preferred */
+                    s->kex_preferred[i] = NULL;
                   algos[i] = a;
                   goto done;
                 }
 
+              inval = 1;
               start = n + 1;
-              if (i < 2) /* KEX or HOST KEY algorithm */
-                *guessed = 0;
             }
         }
     done:;
@@ -311,7 +317,6 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
                | ASSH_ERRSV_DISCONNECT);
 
   assh_bool_t guess_follows = *lists[10];
-  assh_bool_t good_guess;
 
   const struct assh_algo_s *algos[8];
 
@@ -320,19 +325,22 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
     {
 #ifdef CONFIG_ASSH_SERVER
     case ASSH_SERVER:
-      ASSH_ERR_RET(assh_kex_server_algos(s->ctx, lists, algos, &good_guess)
+      ASSH_ERR_RET(assh_kex_server_algos(s, lists, algos)
 		   | ASSH_ERRSV_DISCONNECT);
       break;
 #endif
 #ifdef CONFIG_ASSH_CLIENT
     case ASSH_CLIENT:
-      ASSH_ERR_RET(assh_kex_client_algos(s->ctx, lists, algos, &good_guess)
+      ASSH_ERR_RET(assh_kex_client_algos(s, lists, algos)
 		   | ASSH_ERRSV_DISCONNECT);
       break;
 #endif
     default:
       abort();
     }
+
+  assh_bool_t good_guess = s->kex_preferred[0] == algos[0] &&
+                           s->kex_preferred[1] == algos[1];
 
   s->kex_bad_guess = guess_follows && !good_guess;
 

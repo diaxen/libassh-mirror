@@ -56,6 +56,8 @@ struct assh_session_s
   /** Pointer to the last key exechange packet sent by client. Valid
       during key exechange. */
   struct assh_packet_s *kex_init_remote;
+  /** remote side prefered kex and host signature algorithms */
+  const struct assh_algo_s *kex_preferred[2];
 
   /** amount of data transfered since last kex */
   uint32_t kex_bytes;
