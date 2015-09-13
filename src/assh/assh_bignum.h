@@ -94,8 +94,6 @@ enum assh_bignum_fmt_e
   ASSH_BIGNUM_LSB_RAW = 'd',
   /** NUL terminated hexadecimal representation */
   ASSH_BIGNUM_HEX     = 'H',
-  /** NUL terminated decimal string representation */
-  ASSH_BIGNUM_DEC     = 'd',
   /** Intptr_t value interpreted as a number value. */
   ASSH_BIGNUM_INT     = 'i',
   /** Intptr_t value interpreted as a bit size. */
