@@ -373,7 +373,7 @@ assh_key_ecdsa_load(struct assh_context_s *c,
     }
 
     case ASSH_KEY_FMT_PV_PEM_ASN1: {
-      uint8_t *seq, *seq_end, *val, *tmp, *next;
+      const uint8_t *seq, *seq_end, *val, *tmp, *next;
       ASSH_ERR_RET(assh_check_asn1(blob, blob_len, blob, &seq, &seq_end,
                                    /* seq */ 0x30));
 

@@ -412,8 +412,8 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
 {
   assh_error_t err;
 
-  unsigned int l, n;
-  uint8_t *p_str, *q_str, *g_str, *y_str, *x_str;
+  size_t l, n;
+  const uint8_t *p_str, *q_str, *g_str, *y_str, *x_str;
 
   /* parse the key blob */
   switch (format)
@@ -425,9 +425,9 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
 
       p_str = (uint8_t*)blob + ASSH_DSA_ID_LEN;
       ASSH_ERR_RET(assh_check_string(blob, blob_len, p_str, &q_str));
-      l = (assh_load_u32(p_str) * 8) & 0xfffffc00;
+      ASSH_ERR_RET(assh_bignum_size_of_data(ASSH_BIGNUM_MPINT, p_str, NULL, NULL, &l));
       ASSH_ERR_RET(assh_check_string(blob, blob_len, q_str, &g_str));
-      n = (assh_load_u32(q_str) * 8) & 0xffffffe0;
+      ASSH_ERR_RET(assh_bignum_size_of_data(ASSH_BIGNUM_MPINT, q_str, NULL, NULL, &n));
       ASSH_ERR_RET(assh_check_string(blob, blob_len, g_str, &y_str));
       ASSH_ERR_RET(assh_check_string(blob, blob_len, y_str, NULL));
       x_str = NULL;
@@ -435,7 +435,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
     }
 
     case ASSH_KEY_FMT_PV_PEM_ASN1: {
-      uint8_t *seq, *seq_end, *val;
+      const uint8_t *seq, *seq_end, *val;
       ASSH_ERR_RET(assh_check_asn1(blob, blob_len, blob, &seq, &seq_end,
                                    /* seq */ 0x30));
 
@@ -443,10 +443,10 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
       ASSH_ERR_RET(assh_check_asn1(blob, blob_len, seq, NULL, &p_str, 0x02));
 
       /* parse p, q, g, y, x */
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, p_str, &val, &q_str, 0x02));
-      l = ((q_str - val) * 8) & 0xfffffc00;
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, q_str, &val, &g_str, 0x02));
-      n = ((g_str - val) * 8) & 0xffffffe0;
+      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, p_str, NULL, &q_str, 0x02));
+      ASSH_ERR_RET(assh_bignum_size_of_data(ASSH_BIGNUM_ASN1, p_str, NULL, NULL, &l));
+      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, q_str, NULL, &g_str, 0x02));
+      ASSH_ERR_RET(assh_bignum_size_of_data(ASSH_BIGNUM_ASN1, q_str, NULL, NULL, &n));
       ASSH_ERR_RET(assh_check_asn1(blob, blob_len, g_str, NULL, &y_str, 0x02));
       ASSH_ERR_RET(assh_check_asn1(blob, blob_len, y_str, NULL, &x_str, 0x02));
       ASSH_ERR_RET(assh_check_asn1(blob, blob_len, x_str, NULL, NULL, 0x02));
