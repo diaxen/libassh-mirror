@@ -1533,6 +1533,7 @@ assh_bignum_sieve_init(struct assh_context_s *ctx,
 static assh_error_t ASSH_WARN_UNUSED_RESULT
 assh_bignum_miller_rabin(struct assh_context_s *c,
                          struct assh_bignum_scratch_s *sc,
+                         assh_bnword_t *rn,
                          const struct assh_bignum_s *bn,
                          size_t rounds, assh_bool_t *result)
 {
@@ -1545,12 +1546,11 @@ assh_bignum_miller_rabin(struct assh_context_s *c,
   *result = 0;
 
   assh_bnword_t *an;
-  ASSH_ERR_RET(assh_bignum_scratch_expand(c, &an, sc, l * 5, bn->secret | bn->secure));
+  ASSH_ERR_RET(assh_bignum_scratch_expand(c, &an, sc, l * 4, bn->secret | bn->secure));
 
   assh_bnword_t *cn = an + l;
   assh_bnword_t *zn = an + l * 2;
   assh_bnword_t *tn = an + l * 3;
-  assh_bnword_t *rn = an + l * 4;
 
   /* compute c = n - 1 */
   assh_bnlong_t t = 0;
@@ -1578,10 +1578,6 @@ assh_bignum_miller_rabin(struct assh_context_s *c,
   mt.mod.bits = l * ASSH_BIGNUM_W;
   mt.n0 = assh_bnword_mt_modinv(-n[0]);
   mt.mod.n = n;
-
-  /* generate random base */
-  ASSH_ERR_RET(c->prng->f_get(c, (uint8_t*)rn,
-                 l * sizeof(assh_bnword_t), ASSH_PRNG_QUALITY_NONCE));
 
   while (1)
     {
@@ -1651,9 +1647,10 @@ assh_bignum_check_prime(struct assh_context_s *ctx,
                         const struct assh_bignum_s *bn,
                         size_t rounds, assh_bool_t *result)
 {
-  assh_error_t err;
+  assh_error_t err = ASSH_OK;
   size_t l = assh_bignum_words(bn->bits);
   assh_bnword_t *n = bn->n;
+  assh_bnword_t rn[l];
   size_t i;
 
   *result = 0;
@@ -1672,10 +1669,14 @@ assh_bignum_check_prime(struct assh_context_s *ctx,
   for (i = 0; i < ASSH_SIEVE_PRIMES; i++)
     composite |= assh_bignum_eqzero(sieve->offsets[i]);
 
-  if (composite)
-    return ASSH_OK;
+  if (!composite)
+    {
+      /* generate random base for mr algorithm */
+      ASSH_ERR_GTO(ctx->prng->f_get(ctx, (uint8_t*)rn,
+                 sizeof(rn), ASSH_PRNG_QUALITY_NONCE), err_);
 
-  ASSH_ERR_GTO(assh_bignum_miller_rabin(ctx, sc, bn, rounds, result), err_);
+      ASSH_ERR_GTO(assh_bignum_miller_rabin(ctx, sc, rn, bn, rounds, result), err_);
+    }
 
  err_:
   assh_free(ctx, sieve);
@@ -1693,6 +1694,11 @@ assh_bignum_next_prime(struct assh_context_s *ctx,
   uint32_t sieve_bits[8];
   uint32_t k, offset = 0;
   size_t i, j;
+
+  /* generate random base for mr algorithm */
+  assh_bnword_t rn[l];
+  ASSH_ERR_RET(ctx->prng->f_get(ctx, (uint8_t*)rn,
+                 sizeof(rn), ASSH_PRNG_QUALITY_NONCE));
 
   /* simple formula for upper bound of max prime gap */
   const uint32_t max_prime_gap = (bn->bits * bn->bits) / 2;
@@ -1743,7 +1749,7 @@ assh_bignum_next_prime(struct assh_context_s *ctx,
                  error estimates for the strong probable prime test,
                  Mathematics of Computation 61" */
               assh_bool_t r;
-              ASSH_ERR_GTO(assh_bignum_miller_rabin(ctx, sc, bn, 7, &r), err_);
+              ASSH_ERR_GTO(assh_bignum_miller_rabin(ctx, sc, rn, bn, 7, &r), err_);
               if (r)
                 goto err_;
             }
