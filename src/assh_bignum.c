@@ -148,9 +148,13 @@ assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
       const uint8_t *asn1 = data;
       ASSH_CHK_RET(*asn1 != 0x02, ASSH_ERR_BAD_DATA);
       assh_asn1_size(asn1, &l, &n);
-#warning reject negative numbers as in mpint?
       asn1 += l;
+      ASSH_CHK_RET(n == 0, ASSH_ERR_BAD_DATA);
       l += n;
+#if 0
+      /* this check is disabled as it does not work for octet/bit string content type */
+      ASSH_CHK_RET(asn1[0] & 0x80 /* negative integer */, ASSH_ERR_NUM_OVERFLOW);
+#endif
       while (n > 0 && asn1[0] == 0)
         asn1++, n--;
       b = n * 8;
