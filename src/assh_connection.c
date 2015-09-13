@@ -65,6 +65,18 @@ struct assh_connection_context_s
   uint32_t ch_id_counter;
 };
 
+static uint32_t
+assh_channel_next_id(struct assh_connection_context_s *pv)
+{
+  uint32_t id;
+
+  do {
+    id = pv->ch_id_counter++;
+  } while (assh_map_lookup(&pv->channel_map, id, NULL) != NULL);
+
+  return id;
+}
+
 static void assh_request_queue_cleanup(struct assh_session_s *s,
 				       struct assh_queue_s *q)
 {
@@ -767,7 +779,7 @@ assh_connection_got_channel_open(struct assh_session_s *s,
   ASSH_ERR_RET(assh_alloc(s->ctx, sizeof(*ch), ASSH_ALLOC_INTERNAL, (void**)&ch)
 	       | ASSH_ERRSV_DISCONNECT);
 
-  ch->mentry.id = pv->ch_id_counter++;
+  ch->mentry.id = assh_channel_next_id(pv);
   ch->remote_id = rid;
   ch->rpkt_size = pkt_size;
   ch->rwin_left = win_size;
@@ -845,7 +857,7 @@ assh_channel_open2(struct assh_session_s *s,
   ch->lpkt_size = ASSH_MIN(pkt_size, ASSH_MAX_PCK_PAYLOAD_SIZE
                            - /* extended data message header */ 3 * 4);
   ch->lwin_size = ch->lwin_left = ASSH_MAX(win_size, ch->lpkt_size * 4);
-  ch->mentry.id = pv->ch_id_counter++;
+  ch->mentry.id = assh_channel_next_id(pv);
   ch->status = ASSH_CHANNEL_ST_OPEN_SENT;
   ch->session = s;
   ch->data_pck = NULL;
