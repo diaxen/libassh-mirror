@@ -209,6 +209,9 @@ assh_error_t test_convert()
   if (memcmp(buf, "\x00\x00\x00\x08\x0f\x00\x00\x00\xf0\x00\x00\x00\xaa", 9))
     ABORT();
 
+  assh_bignum_release(&context, &n);
+  assh_bignum_release(&context, &m);
+
   /********************/
 
   fprintf(stderr, "v");
@@ -1172,6 +1175,8 @@ int main(int argc, char **argv)
       ASSH_ERR_RET(test_mt(0x1000));
       ASSH_ERR_RET(test_expmod(0x10));
     }
+
+  assh_context_cleanup(&context);
 
   fprintf(stderr, "\nDone\n");
   return 0;
