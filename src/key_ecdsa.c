@@ -314,7 +314,7 @@ assh_key_ecdsa_load(struct assh_context_s *c,
   size_t dlen = strlen(curve->name);
   size_t kp_len = 1 + 2 * n;
 
-  const uint8_t *x_str, *y_str, *s_str;
+  const uint8_t *x_str, *y_str, *s_str = NULL;
 
   /* parse the key blob */
   switch (format)

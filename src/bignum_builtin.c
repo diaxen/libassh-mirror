@@ -1488,7 +1488,6 @@ assh_bignum_sieve_init(struct assh_context_s *ctx,
                        struct assh_bignum_sieve_s * __restrict__ s,
                        const struct assh_bignum_s *bn)
 {
-  assh_error_t err;
   size_t l = assh_bignum_words(bn->bits);
   assh_bnword_t *n = bn->n;  
   size_t i, k;
@@ -1948,7 +1947,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
   assh_error_t err;
   uint_fast8_t i, j, k;
   uint_fast16_t pc = 0;
-  uint_fast16_t lad_index;
+  uint_fast16_t lad_index = 0;
   uint8_t cond_secret = 0;
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
   uint8_t trace = 0;
@@ -2049,7 +2048,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
         }
 
         case ASSH_BIGNUM_OP_SIZE: {
-          size_t b, i;
+          size_t b;
           ASSH_ERR_GTO(assh_bignum_size_of_data(format[ob], args[ob],
                                                 NULL, NULL, &b), err_sc);
           struct assh_bignum_s *dst = args[oa];
