@@ -35,13 +35,20 @@
 
 struct assh_weierstrass_curve_s;
 
+struct assh_key_ecdsa_id_s
+{
+  const char *name;
+  const uint8_t *oid;           /* len in oid[0] */
+  const struct assh_weierstrass_curve_s *curve;
+  const struct assh_hash_algo_s *hash;
+};
+
 /** @internal ECDSA key storage */
 struct assh_key_ecdsa_s
 {
   struct assh_key_s key;
 
-  const struct assh_weierstrass_curve_s *curve;
-  const struct assh_hash_algo_s *hash;
+  const struct assh_key_ecdsa_id_s *id;
 
   /* public key ec point */
   struct assh_bignum_s xn;
@@ -53,9 +60,7 @@ struct assh_key_ecdsa_s
 ASSH_FIRST_FIELD_ASSERT(assh_key_ecdsa_s, key);
 
 /** @multiple @internal Key operations descriptor for Ecdsa keys */
-extern const struct assh_key_ops_s assh_key_ecdsa_nistp256;
-extern const struct assh_key_ops_s assh_key_ecdsa_nistp384;
-extern const struct assh_key_ops_s assh_key_ecdsa_nistp521;
+extern const struct assh_key_ops_s assh_key_ecdsa_nistp;
 
 #endif
 

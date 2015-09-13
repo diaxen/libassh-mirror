@@ -114,7 +114,7 @@ int main()
 				 ASSH_KEY_FMT_PV_OPENSSH_V1_KEY) != ASSH_OK)
     fprintf(stderr, "unable to load eddsa e521 key\n");
 
-  if (assh_load_hostkey_filename(context, &assh_key_ecdsa_nistp256, ASSH_ALGO_SIGN, "ecdsa_host_key",
+  if (assh_load_hostkey_filename(context, &assh_key_ecdsa_nistp, ASSH_ALGO_SIGN, "ecdsa_host_key",
 				 ASSH_KEY_FMT_PV_RFC2440_PEM_ASN1) != ASSH_OK)
     fprintf(stderr, "unable to load ecdsa key\n");
 

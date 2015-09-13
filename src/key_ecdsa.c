@@ -32,19 +32,60 @@
 
 #include <string.h>
 
+static const struct assh_key_ecdsa_id_s assh_key_ecdsa_id[] = {
+  { "ecdsa-sha2-nistp256",
+    (const uint8_t*)"\x08" "\x2a\x86\x48\xce\x3d\x03\x01\x07",
+    &assh_nistp256_curve, &assh_hash_sha256 },
+  { "ecdsa-sha2-nistp384",
+    (const uint8_t*)"\x05" "\x2b\x81\x04\x00\x22",
+    &assh_nistp384_curve, &assh_hash_sha384 },
+  { "ecdsa-sha2-nistp521",
+    (const uint8_t*)"\x05" "\x2b\x81\x04\x00\x23",
+    &assh_nistp521_curve, &assh_hash_sha512 },
+  { NULL }
+};
+
+static const struct assh_key_ecdsa_id_s *
+assh_key_ecdsa_lookup_name(const char *name, size_t name_len)
+{
+  const struct assh_key_ecdsa_id_s *n;
+  for (n = assh_key_ecdsa_id; n->name != NULL; n++)
+    if (name_len == strlen(n->name) && !strcmp(name, n->name))
+      return n;
+  return NULL;
+};
+
+static const struct assh_key_ecdsa_id_s *
+assh_key_ecdsa_lookup_oid(const uint8_t *id, size_t id_len)
+{
+  const struct assh_key_ecdsa_id_s *n;
+  for (n = assh_key_ecdsa_id; n->name != NULL; n++)
+    if (id_len == n->oid[0] && !memcmp(id, n->oid + 1, id_len))
+      return n;
+  return NULL;
+};
+
+static const struct assh_key_ecdsa_id_s *
+assh_key_ecdsa_lookup_bits(size_t bits)
+{
+  const struct assh_key_ecdsa_id_s *n;
+  for (n = assh_key_ecdsa_id; n->name != NULL; n++)
+    if (bits == n->curve->bits)
+      return n;
+  return NULL;
+};
+
 static ASSH_KEY_OUTPUT_FCN(assh_key_ecdsa_output)
 {
   struct assh_key_ecdsa_s *k = (void*)key;
 
-  assert(key->algo == &assh_key_ecdsa_nistp256 ||
-         key->algo == &assh_key_ecdsa_nistp384 ||
-         key->algo == &assh_key_ecdsa_nistp521);
+  assert(key->algo == &assh_key_ecdsa_nistp);
 
-  const struct assh_weierstrass_curve_s *curve = k->curve;
+  const struct assh_weierstrass_curve_s *curve = k->id->curve;
   assh_error_t err;
 
   size_t n = ASSH_ALIGN8(curve->bits) / 8;
-  size_t tlen = strlen(k->key.algo->type);
+  size_t tlen = strlen(k->id->name);
   size_t dlen = strlen(curve->name);
   size_t pub_len = /* algo id*/ 4 + tlen
     + /* curve id */ 4 + dlen
@@ -61,7 +102,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_ecdsa_output)
           ASSH_CHK_RET(pub_len > *blob_len, ASSH_ERR_OUTPUT_OVERFLOW);
 
           assh_store_u32(blob, tlen);
-          memcpy(blob + 4, k->key.algo->type, tlen);
+          memcpy(blob + 4, k->id->name, tlen);
           blob += 4 + tlen;
 
           assh_store_u32(blob, dlen);
@@ -96,7 +137,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_ecdsa_output)
           ASSH_CHK_RET(len > *blob_len, ASSH_ERR_OUTPUT_OVERFLOW);
 
           assh_store_u32(blob, tlen);
-          memcpy(blob + 4, k->key.algo->type, tlen);
+          memcpy(blob + 4, k->id->name, tlen);
           blob += 4 + tlen;
 
           assh_store_u32(blob, dlen);
@@ -138,9 +179,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_ecdsa_output)
 
 static ASSH_KEY_CMP_FCN(assh_key_ecdsa_cmp)
 {
-  assert(key->algo == &assh_key_ecdsa_nistp256 ||
-         key->algo == &assh_key_ecdsa_nistp384 ||
-         key->algo == &assh_key_ecdsa_nistp521);
+  assert(key->algo == &assh_key_ecdsa_nistp);
 
   if (key->algo != b->algo)
     return 0;
@@ -181,18 +220,18 @@ static assh_error_t
 assh_key_ecdsa_create(struct assh_context_s *c,
                       const struct assh_key_ops_s *algo,
                       struct assh_key_s **key,
-                      const struct assh_weierstrass_curve_s *curve,
-                      const struct assh_hash_algo_s *hash)
+                      const struct assh_key_ecdsa_id_s *id)
 {
   assh_error_t err;
   struct assh_key_ecdsa_s *k;
+  const struct assh_weierstrass_curve_s *curve = id->curve;
+  const struct assh_hash_algo_s *hash = id->hash;
 
   ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_key_ecdsa_s),
                           ASSH_ALLOC_INTERNAL, (void**)&k));
 
   k->key.algo = algo;
-  k->curve = curve;
-  k->hash = hash;
+  k->id = id;
 
   assh_bignum_init(c, &k->xn, curve->bits);
   assh_bignum_init(c, &k->yn, curve->bits);
@@ -258,11 +297,9 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_ecdsa_validate)
 {
   assh_error_t err;
   struct assh_key_ecdsa_s *k = (void*)key;
-  const struct assh_weierstrass_curve_s *curve = k->curve;
+  const struct assh_weierstrass_curve_s *curve = k->id->curve;
 
-  assert(key->algo == &assh_key_ecdsa_nistp256 ||
-         key->algo == &assh_key_ecdsa_nistp384 ||
-         key->algo == &assh_key_ecdsa_nistp521);
+  assert(key->algo == &assh_key_ecdsa_nistp);
 
   ASSH_CHK_RET(curve->bits != assh_bignum_bits(&k->xn) ||
                curve->bits != assh_bignum_bits(&k->yn),
@@ -303,62 +340,53 @@ assh_key_ecdsa_load(struct assh_context_s *c,
                     const struct assh_key_ops_s *algo,
                     const uint8_t *blob, size_t blob_len,
                     struct assh_key_s **key,
-                    enum assh_key_format_e format,
-                    const struct assh_weierstrass_curve_s *curve,
-                    const struct assh_hash_algo_s *hash)
+                    enum assh_key_format_e format)
 {
   assh_error_t err;
-
-  size_t n = ASSH_ALIGN8(curve->bits) / 8;
-  size_t tlen = strlen(algo->type);
-  size_t dlen = strlen(curve->name);
-  size_t kp_len = 1 + 2 * n;
-
+  const struct assh_key_ecdsa_id_s *id = NULL;
   const uint8_t *x_str, *y_str, *s_str = NULL;
 
   /* parse the key blob */
   switch (format)
     {
-    case ASSH_KEY_FMT_PUB_RFC4253_6_6: {
-      size_t len = /* algo id*/ 4 + tlen
-        + /* curve id */ 4 + dlen
-        + /* curve point */ 4 + kp_len;
-
-      ASSH_CHK_RET(blob_len < len, ASSH_ERR_INPUT_OVERFLOW);
-
-      ASSH_CHK_RET(assh_load_u32(blob) != tlen, ASSH_ERR_BAD_DATA);
-      ASSH_CHK_RET(memcmp(algo->type, blob + 4, tlen), ASSH_ERR_BAD_DATA);
-      blob += 4 + tlen;
-
-      ASSH_CHK_RET(assh_load_u32(blob) != dlen, ASSH_ERR_BAD_DATA);
-      ASSH_CHK_RET(memcmp(curve->name, blob + 4, dlen), ASSH_ERR_BAD_DATA);
-      blob += 4 + dlen;
-
-      ASSH_CHK_RET(assh_load_u32(blob) != kp_len, ASSH_ERR_BAD_DATA);
-      /* point compression not supported */
-      ASSH_CHK_RET(blob[4] != 4, ASSH_ERR_NOTSUP);
-      x_str = blob + 4 + 1;
-      y_str = blob + 4 + 1 + n;
-      break;
-    }
-
+    case ASSH_KEY_FMT_PUB_RFC4253_6_6:
     case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY: {
+
+      /* lookup key type */
+      ASSH_CHK_RET(blob_len < 4, ASSH_ERR_INPUT_OVERFLOW);
+      size_t id_len = assh_load_u32(blob);
+      ASSH_CHK_RET(blob_len < 4 + id_len, ASSH_ERR_INPUT_OVERFLOW);
+      id = assh_key_ecdsa_lookup_name((const char*)blob + 4, id_len);
+
+      ASSH_CHK_RET(id == NULL, ASSH_ERR_NOTSUP);
+
+      size_t n = ASSH_ALIGN8(id->curve->bits) / 8;
+      size_t tlen = strlen(id->name);
+      size_t dlen = strlen(id->curve->name);
+      size_t kp_len = 1 + 2 * n;
+
       size_t min_len = /* algo id*/ 4 + tlen
         + /* curve id */ 4 + dlen
-        + /* curve point */ 4 + kp_len
-        + /* scalar mpint */ 4;
-      size_t max_len = min_len + 4 + 1 + n;
+        + /* curve point */ 4 + kp_len;
+      size_t max_len = min_len;
+
+      if (format == ASSH_KEY_FMT_PV_OPENSSH_V1_KEY)
+        {
+          /* scalar mpint */
+          min_len += 4;
+          max_len += 4 + 1 + n;
+        }
 
       ASSH_CHK_RET(blob_len < min_len || blob_len > max_len,
                    ASSH_ERR_INPUT_OVERFLOW);
 
       ASSH_CHK_RET(assh_load_u32(blob) != tlen, ASSH_ERR_BAD_DATA);
-      ASSH_CHK_RET(memcmp(algo->type, blob + 4, tlen), ASSH_ERR_BAD_DATA);
+      ASSH_CHK_RET(memcmp(id->name, blob + 4, tlen), ASSH_ERR_BAD_DATA);
       blob += 4 + tlen;
       blob_len -= 4 + tlen;
 
       ASSH_CHK_RET(assh_load_u32(blob) != dlen, ASSH_ERR_BAD_DATA);
-      ASSH_CHK_RET(memcmp(curve->name, blob + 4, dlen), ASSH_ERR_BAD_DATA);
+      ASSH_CHK_RET(memcmp(id->curve->name, blob + 4, dlen), ASSH_ERR_BAD_DATA);
       blob += 4 + dlen;
       blob_len -= 4 + dlen;
 
@@ -367,13 +395,18 @@ assh_key_ecdsa_load(struct assh_context_s *c,
       ASSH_CHK_RET(blob[4] != 4, ASSH_ERR_NOTSUP);
       x_str = blob + 4 + 1;
       y_str = blob + 4 + 1 + n;
-      s_str = blob + 4 + kp_len;
-      ASSH_ERR_RET(assh_check_string(blob, blob_len, s_str, NULL));
+
+      if (format == ASSH_KEY_FMT_PV_OPENSSH_V1_KEY)
+        {
+          s_str = blob + 4 + kp_len;
+          ASSH_ERR_RET(assh_check_string(blob, blob_len, s_str, NULL));
+        }
       break;
     }
 
     case ASSH_KEY_FMT_PV_PEM_ASN1: {
-      const uint8_t *seq, *seq_end, *val, *tmp, *next;
+      const uint8_t *seq, *seq_end, *val, *next;
+
       ASSH_ERR_RET(assh_check_asn1(blob, blob_len, blob, &seq, &seq_end,
                                    /* seq */ 0x30));
 
@@ -385,21 +418,23 @@ assh_key_ecdsa_load(struct assh_context_s *c,
       /* private key */
       ASSH_ERR_RET(assh_check_asn1(blob, blob_len, next, &s_str, &next,
                                    /* octet string */ 0x04));
-      ASSH_CHK_RET(s_str + n != next, ASSH_ERR_BAD_DATA);
+      size_t psize = next - s_str;
 
-      tmp = next;
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, next, &val, &next, 0));
-      if (tmp[0] == 0xa0)       /* optional domain parameters */
-        {
-          tmp = next;
-          ASSH_ERR_RET(assh_check_asn1(blob, blob_len, next, &val, NULL, 0));
-        }
+      /* domain parameters */
+      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, next, &val, &next, 0xa0));
+      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, val, &val, NULL, 0x06));
+      id = assh_key_ecdsa_lookup_oid(val, next - val);
 
-      ASSH_CHK_RET(tmp[0] != /* optional public key */ 0xa1, ASSH_ERR_BAD_DATA);
+      ASSH_CHK_RET(id == NULL, ASSH_ERR_NOTSUP);
+      size_t n = ASSH_ALIGN8(id->curve->bits) / 8;
+      ASSH_CHK_RET(n != psize, ASSH_ERR_BAD_DATA);
+
+      /* public key */
+      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, next, &val, NULL, 0xa1));
       ASSH_ERR_RET(assh_check_asn1(blob, blob_len, val, &x_str, &next, 0x03));
 
       ASSH_CHK_RET(x_str + 2 + 2 * n != next, ASSH_ERR_BAD_DATA);
-      ASSH_CHK_RET(x_str[1] != 0x04 /* no point compression */, ASSH_ERR_BAD_DATA);
+      ASSH_CHK_RET(x_str[1] != 0x04 /* no point compression */, ASSH_ERR_NOTSUP);
       x_str += 2;
       y_str = x_str + n;
 
@@ -416,25 +451,24 @@ assh_key_ecdsa_load(struct assh_context_s *c,
   ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_key_ecdsa_s),
                           ASSH_ALLOC_INTERNAL, (void**)&k));
 
-  assh_bignum_init(c, &k->xn, curve->bits);
-  assh_bignum_init(c, &k->yn, curve->bits);
-  assh_bignum_init(c, &k->sn, curve->bits);
+  size_t bits = id->curve->bits;
+  assh_bignum_init(c, &k->xn, bits);
+  assh_bignum_init(c, &k->yn, bits);
+  assh_bignum_init(c, &k->sn, bits);
 
   switch (format)
     {
-    case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY:
-      ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
-                                       s_str, &k->sn, 1), err_key);
-    case ASSH_KEY_FMT_PUB_RFC4253_6_6:
-      ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MSB_RAW, ASSH_BIGNUM_NATIVE,
-                                       x_str, &k->xn, 0), err_key);
-      ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MSB_RAW, ASSH_BIGNUM_NATIVE,
-                                       y_str, &k->yn, 0), err_key);
-      break;
-
     case ASSH_KEY_FMT_PV_PEM_ASN1:
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MSB_RAW, ASSH_BIGNUM_NATIVE,
                                        s_str, &k->sn, 1), err_key);
+      goto pub;
+
+    case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY:
+      ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
+                                       s_str, &k->sn, 1), err_key);
+
+    case ASSH_KEY_FMT_PUB_RFC4253_6_6:
+    pub:
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MSB_RAW, ASSH_BIGNUM_NATIVE,
                                        x_str, &k->xn, 0), err_key);
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MSB_RAW, ASSH_BIGNUM_NATIVE,
@@ -446,8 +480,7 @@ assh_key_ecdsa_load(struct assh_context_s *c,
     }
 
   k->key.algo = algo;
-  k->curve = curve;
-  k->hash = hash;
+  k->id = id;
 
   *key = &k->key;
 
@@ -471,70 +504,21 @@ static ASSH_KEY_CLEANUP_FCN(assh_key_ecdsa_cleanup)
   assh_free(c, k);
 }
 
-static ASSH_KEY_LOAD_FCN(assh_key_ecdsa_nistp256_load)
+static ASSH_KEY_CREATE_FCN(assh_key_ecdsa_nistp_create)
 {
-  return assh_key_ecdsa_load(c, algo, blob, blob_len, key, format,
-                             &assh_nistp256_curve, &assh_hash_sha256);
+  assh_error_t err;
+  const struct assh_key_ecdsa_id_s *id = assh_key_ecdsa_lookup_bits(bits);
+  ASSH_CHK_RET(id == NULL, ASSH_ERR_NOTSUP);
+  ASSH_ERR_RET(assh_key_ecdsa_create(c, algo, key, id));
+  return ASSH_OK;
 }
 
-static ASSH_KEY_CREATE_FCN(assh_key_ecdsa_nistp256_create)
+const struct assh_key_ops_s assh_key_ecdsa_nistp =
 {
-  return assh_key_ecdsa_create(c, algo, key,
-                               &assh_nistp256_curve, &assh_hash_sha256);
-}
-
-const struct assh_key_ops_s assh_key_ecdsa_nistp256 =
-{
-  .type = "ecdsa-sha2-nistp256",
+  .type = "ecdsa-sha2-nist",
   .f_output = assh_key_ecdsa_output,
-  .f_create = assh_key_ecdsa_nistp256_create,
-  .f_load = assh_key_ecdsa_nistp256_load,
-  .f_validate = assh_key_ecdsa_validate,
-  .f_cmp = assh_key_ecdsa_cmp,
-  .f_cleanup = assh_key_ecdsa_cleanup,
-};
-
-static ASSH_KEY_LOAD_FCN(assh_key_ecdsa_nistp384_load)
-{
-  return assh_key_ecdsa_load(c, algo, blob, blob_len, key, format,
-                             &assh_nistp384_curve, &assh_hash_sha384);
-}
-
-static ASSH_KEY_CREATE_FCN(assh_key_ecdsa_nistp384_create)
-{
-  return assh_key_ecdsa_create(c, algo, key,
-                               &assh_nistp384_curve, &assh_hash_sha384);
-}
-
-const struct assh_key_ops_s assh_key_ecdsa_nistp384 =
-{
-  .type = "ecdsa-sha2-nistp384",
-  .f_output = assh_key_ecdsa_output,
-  .f_create = assh_key_ecdsa_nistp384_create,
-  .f_load = assh_key_ecdsa_nistp384_load,
-  .f_validate = assh_key_ecdsa_validate,
-  .f_cmp = assh_key_ecdsa_cmp,
-  .f_cleanup = assh_key_ecdsa_cleanup,
-};
-
-static ASSH_KEY_LOAD_FCN(assh_key_ecdsa_nistp521_load)
-{
-  return assh_key_ecdsa_load(c, algo, blob, blob_len, key, format,
-                             &assh_nistp521_curve, &assh_hash_sha512);
-}
-
-static ASSH_KEY_CREATE_FCN(assh_key_ecdsa_nistp521_create)
-{
-  return assh_key_ecdsa_create(c, algo, key,
-                               &assh_nistp521_curve, &assh_hash_sha512);
-}
-
-const struct assh_key_ops_s assh_key_ecdsa_nistp521 =
-{
-  .type = "ecdsa-sha2-nistp521",
-  .f_output = assh_key_ecdsa_output,
-  .f_create = assh_key_ecdsa_nistp521_create,
-  .f_load = assh_key_ecdsa_nistp521_load,
+  .f_create = assh_key_ecdsa_nistp_create,
+  .f_load = assh_key_ecdsa_load,
   .f_validate = assh_key_ecdsa_validate,
   .f_cmp = assh_key_ecdsa_cmp,
   .f_cleanup = assh_key_ecdsa_cleanup,

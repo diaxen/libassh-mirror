@@ -38,14 +38,14 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_ecdsa_generate)
   const struct assh_key_ecdsa_s *k = (const void*)key;
   assh_error_t err;
 
-  const struct assh_weierstrass_curve_s *curve = k->curve;
-  const struct assh_hash_algo_s *hash = k->hash;
+  const struct assh_weierstrass_curve_s *curve = k->id->curve;
+  const struct assh_hash_algo_s *hash = k->id->hash;
 
   /* check availability of the private key */
   ASSH_CHK_RET(assh_bignum_isempty(&k->sn), ASSH_ERR_MISSING_KEY);
 
   size_t n = ASSH_ALIGN8(curve->bits) / 8;
-  size_t tlen = strlen(k->key.algo->type);
+  size_t tlen = strlen(k->id->name);
   size_t maxlen = 4 + tlen + 4 + 2 * (/* mpint */ (4 + 1 + n));
 
   /* check/return signature length */
@@ -58,7 +58,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_ecdsa_generate)
   ASSH_CHK_RET(*sign_len < maxlen, ASSH_ERR_OUTPUT_OVERFLOW);
 
   assh_store_u32(sign, tlen);
-  memcpy(sign + 4, k->key.algo->type, tlen);
+  memcpy(sign + 4, k->id->name, tlen);
   uint8_t *rs_str = sign + 4 + tlen + 4;
 
   /* hash function output size */
@@ -219,17 +219,17 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_ecdsa_check)
   const struct assh_key_ecdsa_s *k = (const void*)key;
   assh_error_t err;
 
-  const struct assh_weierstrass_curve_s *curve = k->curve;
-  const struct assh_hash_algo_s *hash = k->hash;
+  const struct assh_weierstrass_curve_s *curve = k->id->curve;
+  const struct assh_hash_algo_s *hash = k->id->hash;
 
-  size_t n = ASSH_ALIGN8(k->curve->bits) / 8;
-  size_t tlen = strlen(k->key.algo->type);
+  size_t n = ASSH_ALIGN8(curve->bits) / 8;
+  size_t tlen = strlen(k->id->name);
   size_t minlen = 4 + tlen + 4 + 2 * (/* mpint */ 4);
 
   ASSH_CHK_RET(sign_len < minlen, ASSH_ERR_INPUT_OVERFLOW);
 
   ASSH_CHK_RET(tlen != assh_load_u32(sign), ASSH_ERR_BAD_DATA);
-  ASSH_CHK_RET(memcmp(sign + 4, k->key.algo->type, tlen), ASSH_ERR_BAD_DATA);
+  ASSH_CHK_RET(memcmp(sign + 4, k->id->name, tlen), ASSH_ERR_BAD_DATA);
 
   uint8_t *rs_str = (uint8_t*)sign + 4 + tlen;
   uint8_t *r_mpint = rs_str + 4;
@@ -367,7 +367,10 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_nistp256_suitable_key)
 {
   if (key == NULL)
     return c->type == ASSH_SERVER;
-  return key->algo == &assh_key_ecdsa_nistp256;
+  struct assh_key_ecdsa_s *k = (void*)key;
+  return key->algo == &assh_key_ecdsa_nistp &&
+    k->id->curve == &assh_nistp256_curve &&
+    k->id->hash == &assh_hash_sha256;
 }
 
 const struct assh_algo_sign_s assh_sign_nistp256 =
@@ -376,7 +379,7 @@ const struct assh_algo_sign_s assh_sign_nistp256 =
     .name = "ecdsa-sha2-nistp256", .class_ = ASSH_ALGO_SIGN,
     .safety = 50, .speed = 90,
     .f_suitable_key = assh_sign_nistp256_suitable_key,
-    .key = &assh_key_ecdsa_nistp256,
+    .key = &assh_key_ecdsa_nistp,
   },
   .f_generate = assh_sign_ecdsa_generate,
   .f_check = assh_sign_ecdsa_check,
@@ -387,7 +390,10 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_nistp384_suitable_key)
 {
   if (key == NULL)
     return c->type == ASSH_SERVER;
-  return key->algo == &assh_key_ecdsa_nistp384;
+  struct assh_key_ecdsa_s *k = (void*)key;
+  return key->algo == &assh_key_ecdsa_nistp &&
+    k->id->curve == &assh_nistp384_curve &&
+    k->id->hash == &assh_hash_sha384;
 }
 
 const struct assh_algo_sign_s assh_sign_nistp384 =
@@ -396,7 +402,7 @@ const struct assh_algo_sign_s assh_sign_nistp384 =
     .name = "ecdsa-sha2-nistp384", .class_ = ASSH_ALGO_SIGN,
     .safety = 50, .speed = 90,
     .f_suitable_key = assh_sign_nistp384_suitable_key,
-    .key = &assh_key_ecdsa_nistp384,
+    .key = &assh_key_ecdsa_nistp,
   },
   .f_generate = assh_sign_ecdsa_generate,
   .f_check = assh_sign_ecdsa_check,
@@ -407,7 +413,10 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_nistp521_suitable_key)
 {
   if (key == NULL)
     return c->type == ASSH_SERVER;
-  return key->algo == &assh_key_ecdsa_nistp521;
+  struct assh_key_ecdsa_s *k = (void*)key;
+  return key->algo == &assh_key_ecdsa_nistp &&
+    k->id->curve == &assh_nistp521_curve &&
+    k->id->hash == &assh_hash_sha512;
 }
 
 const struct assh_algo_sign_s assh_sign_nistp521 =
@@ -416,7 +425,7 @@ const struct assh_algo_sign_s assh_sign_nistp521 =
     .name = "ecdsa-sha2-nistp521", .class_ = ASSH_ALGO_SIGN,
     .safety = 50, .speed = 90,
     .f_suitable_key = assh_sign_nistp521_suitable_key,
-    .key = &assh_key_ecdsa_nistp521,
+    .key = &assh_key_ecdsa_nistp,
   },
   .f_generate = assh_sign_ecdsa_generate,
   .f_check = assh_sign_ecdsa_check,
