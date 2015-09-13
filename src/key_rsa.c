@@ -279,20 +279,20 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
 
     case ASSH_KEY_FMT_PV_PEM_ASN1: {
       uint8_t *seq, *seq_end, *p_str, *version, *val;
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, blob, &seq, &seq_end));
-      /* sequence type */
-      ASSH_CHK_RET(blob[0] != 0x30, ASSH_ERR_BAD_DATA);
+      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, blob, &seq, &seq_end,
+                                   /* seq */ 0x30));
 
       /* skip first value */
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, seq, &version, &n_str));
+      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, seq, &version, &n_str,
+                                   /* integer */ 0x02));
 
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, n_str, &val, &e_str));
+      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, n_str, &val, &e_str, 0x02));
       n_len = assh_rsa_mpint_strip(val, e_str - val);
 
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, e_str, &val, &d_str));
+      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, e_str, &val, &d_str, 0x02));
       e_len = assh_rsa_mpint_strip(val, d_str - val);
 
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, d_str, &val, &p_str));
+      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, d_str, &val, &p_str, 0x02));
       d_len = assh_rsa_mpint_strip(val, p_str - val);
       break;
     }

@@ -372,6 +372,40 @@ assh_key_ecdsa_load(struct assh_context_s *c,
       break;
     }
 
+    case ASSH_KEY_FMT_PV_PEM_ASN1: {
+      uint8_t *seq, *seq_end, *val, *tmp, *next;
+      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, blob, &seq, &seq_end,
+                                   /* seq */ 0x30));
+
+      /* version */
+      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, seq, &val, &next,
+                                   /* integer */ 0x02));
+      ASSH_CHK_RET(val + 1 != next || val[0] != 1, ASSH_ERR_BAD_DATA);
+
+      /* private key */
+      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, next, &s_str, &next,
+                                   /* octet string */ 0x04));
+      ASSH_CHK_RET(s_str + n != next, ASSH_ERR_BAD_DATA);
+
+      tmp = next;
+      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, next, &val, &next, 0));
+      if (tmp[0] == 0xa0)       /* optional domain parameters */
+        {
+          tmp = next;
+          ASSH_ERR_RET(assh_check_asn1(blob, blob_len, next, &val, NULL, 0));
+        }
+
+      ASSH_CHK_RET(tmp[0] != /* optional public key */ 0xa1, ASSH_ERR_BAD_DATA);
+      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, val, &x_str, &next, 0x03));
+
+      ASSH_CHK_RET(x_str + 2 + 2 * n != next, ASSH_ERR_BAD_DATA);
+      ASSH_CHK_RET(x_str[1] != 0x04 /* no point compression */, ASSH_ERR_BAD_DATA);
+      x_str += 2;
+      y_str = x_str + n;
+
+      break;
+    }
+
     default:
       ASSH_ERR_RET(ASSH_ERR_NOTSUP);
     }
@@ -396,6 +430,17 @@ assh_key_ecdsa_load(struct assh_context_s *c,
                                        x_str, &k->xn, 0), err_key);
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MSB_RAW, ASSH_BIGNUM_NATIVE,
                                        y_str, &k->yn, 0), err_key);
+      break;
+
+    case ASSH_KEY_FMT_PV_PEM_ASN1:
+      ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MSB_RAW, ASSH_BIGNUM_NATIVE,
+                                       s_str, &k->sn, 1), err_key);
+      ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MSB_RAW, ASSH_BIGNUM_NATIVE,
+                                       x_str, &k->xn, 0), err_key);
+      ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MSB_RAW, ASSH_BIGNUM_NATIVE,
+                                       y_str, &k->yn, 0), err_key);
+      break;
+
     default:
       break;
     }

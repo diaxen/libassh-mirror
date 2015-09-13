@@ -155,12 +155,13 @@ assh_error_t assh_packet_add_mpint(struct assh_context_s *ctx,
 
 assh_error_t
 assh_check_asn1(const uint8_t *buffer, size_t buffer_len, const uint8_t *str,
-                uint8_t **value, uint8_t **next)
+                uint8_t **value, uint8_t **next, uint8_t id)
 {
   assh_error_t err;
 
   const uint8_t *e = buffer + buffer_len;
   ASSH_CHK_RET(str < buffer || str > e - 2, ASSH_ERR_INPUT_OVERFLOW);
+  ASSH_CHK_RET(id != 0 && str[0] != id, ASSH_ERR_BAD_DATA);
 
   str++; /* discard type identifer */
   unsigned int l = *str++;

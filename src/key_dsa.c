@@ -436,22 +436,20 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
 
     case ASSH_KEY_FMT_PV_PEM_ASN1: {
       uint8_t *seq, *seq_end, *val;
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, blob, &seq, &seq_end));
-
-      /* sequence type */
-      ASSH_CHK_RET(blob[0] != 0x30, ASSH_ERR_BAD_DATA);
+      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, blob, &seq, &seq_end,
+                                   /* seq */ 0x30));
 
       /* skip first value */
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, seq, NULL, &p_str));
+      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, seq, NULL, &p_str, 0x02));
 
       /* parse p, q, g, y, x */
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, p_str, &val, &q_str));
+      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, p_str, &val, &q_str, 0x02));
       l = ((q_str - val) * 8) & 0xfffffc00;
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, q_str, &val, &g_str));
+      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, q_str, &val, &g_str, 0x02));
       n = ((g_str - val) * 8) & 0xffffffe0;
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, g_str, NULL, &y_str));
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, y_str, NULL, &x_str));
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, x_str, NULL, NULL));
+      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, g_str, NULL, &y_str, 0x02));
+      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, y_str, NULL, &x_str, 0x02));
+      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, x_str, NULL, NULL, 0x02));
       break;
     }
 

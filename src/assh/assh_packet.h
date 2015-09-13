@@ -260,7 +260,7 @@ assh_check_string(const uint8_t *buffer, size_t buffer_len,
     value. Any of these two parameters may be @tt NULL. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_check_asn1(const uint8_t *buffer, size_t buffer_len, const uint8_t *str,
-                uint8_t **value, uint8_t **next);
+                uint8_t **value, uint8_t **next, uint8_t id);
 
 /** @internal @This checks that a string is well inside packet
     bounds. @see assh_check_string */
