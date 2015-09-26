@@ -1973,6 +1973,20 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
         case ASSH_BIGNUM_MT:
           mlen++;
           break;
+#if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
+        case ASSH_BIGNUM_NATIVE:
+        case ASSH_BIGNUM_MPINT:
+        case ASSH_BIGNUM_ASN1:
+        case ASSH_BIGNUM_STRING:
+        case ASSH_BIGNUM_MSB_RAW:
+        case ASSH_BIGNUM_LSB_RAW:
+        case ASSH_BIGNUM_HEX:
+        case ASSH_BIGNUM_INT:
+        case ASSH_BIGNUM_SIZE:
+          break;
+        default:
+          abort();
+#endif
         }
     }
 
