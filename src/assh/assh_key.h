@@ -36,6 +36,8 @@
 /** @This specifies the storage formats of SSH keys. */
 enum assh_key_format_e
 {
+  ASSH_KEY_FMT_NONE,
+
   /** Public key in rfc4716, base64 ascii format. */
   ASSH_KEY_FMT_PUB_RFC4716,
   /** Public key in rfc4253, section 6.6 binary format. */
@@ -51,6 +53,8 @@ enum assh_key_format_e
   ASSH_KEY_FMT_PV_RFC2440_PEM_ASN1,
   /** Private key in PEM Asn1 DER binary format. */
   ASSH_KEY_FMT_PV_PEM_ASN1,
+
+  ASSH_KEY_FMT_LAST = ASSH_KEY_FMT_PV_PEM_ASN1,
 };
 
 /** @internal @see assh_key_load_t */
