@@ -42,6 +42,8 @@ enum assh_key_format_e
   ASSH_KEY_FMT_PUB_RFC4716,
   /** Public key in rfc4253, section 6.6 binary format. */
   ASSH_KEY_FMT_PUB_RFC4253_6_6,
+  /** Public key in openssh base64 format with underlying rfc4253 binary format. */
+  ASSH_KEY_FMT_PUB_OPENSSH,
 
   /** Keys openssh-key-v1 base64 format */
   ASSH_KEY_FMT_OPENSSH_V1,

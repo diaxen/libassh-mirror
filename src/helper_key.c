@@ -28,6 +28,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <ctype.h>
 
 struct assh_base64_ctx_s
 {
@@ -167,8 +168,45 @@ static assh_error_t assh_load_rfc4716(FILE *file, uint8_t *kdata, size_t *klen)
     }
 
   ASSH_ERR_RET(ASSH_ERR_BAD_DATA);
+}
 
-  return ASSH_OK;
+static assh_error_t assh_load_pub_openssh(FILE *file, uint8_t *kdata, size_t *klen)
+{
+  struct assh_base64_ctx_s ctx;
+  assh_error_t err;
+  int in;
+  int state = 0;
+  assh_base64_init(&ctx, kdata, *klen);
+
+  while (in = fgetc(file))
+    {
+      if (in == EOF || in == '\n' || in == '\r')
+	break;
+      switch (state)
+	{
+	case 0:
+	  if (!isspace(in))
+	    break;
+	  state = 1;
+	  break;
+	case 1:
+	  if (isspace(in))
+	    break;
+	  state = 2;
+	case 2:
+	  if (isspace(in))
+	    {
+	      ASSH_ERR_RET(assh_base64_final(&ctx));
+	      *klen = assh_base64_size(&ctx);
+	      return ASSH_OK;
+	    }
+	  uint8_t in8 = in;
+	  ASSH_ERR_RET(assh_base64_update(&ctx, &in8, 1));
+	  break;
+	}
+    }
+
+  ASSH_ERR_RET(ASSH_ERR_BAD_DATA);
 }
 
 assh_error_t assh_load_key_file(struct assh_context_s *c,
@@ -187,6 +225,11 @@ assh_error_t assh_load_key_file(struct assh_context_s *c,
     {
     case ASSH_KEY_FMT_PUB_RFC4716:
       assh_load_rfc4716(file, blob, &blob_len);
+      format = ASSH_KEY_FMT_PUB_RFC4253_6_6;
+      break;
+
+    case ASSH_KEY_FMT_PUB_OPENSSH:
+      assh_load_pub_openssh(file, blob, &blob_len);
       format = ASSH_KEY_FMT_PUB_RFC4253_6_6;
       break;
 

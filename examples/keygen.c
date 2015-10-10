@@ -50,6 +50,8 @@ static const struct assh_keygen_format_s formats[] = {
     ASSH_KEY_FMT_PUB_RFC4716, 1 },
   { "rfc4716_bin", "rfc4716 underlying binary key format",
     ASSH_KEY_FMT_PUB_RFC4253_6_6, 1 },
+  { "openssh_pub", "openssh public key format",
+    ASSH_KEY_FMT_PUB_OPENSSH, 1 },
   { "openssh_v1", "",
     ASSH_KEY_FMT_OPENSSH_V1 },
   { "openssh_v1_bin", "",
