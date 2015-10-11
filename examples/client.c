@@ -97,6 +97,8 @@ int main(int argc, char **argv)
   struct assh_fd_context_s fd_ctx;
   assh_fd_events_register(&ev_table, &fd_ctx, sock, rnd_fd);
 
+  assh_bool_t auth_keys_done = 0;
+
   while (1)
     {
       struct assh_event_s event;
@@ -130,8 +132,10 @@ int main(int argc, char **argv)
         }
 
         case ASSH_EVENT_USERAUTH_CLIENT_METHODS: {
-          if (event.userauth_client.methods.use_pub_key)
+          if (event.userauth_client.methods.use_pub_key && !auth_keys_done)
             {
+              auth_keys_done = 1;
+
               if (assh_load_key_filename(context, &event.userauth_client.methods.pub_keys,
                                          &assh_key_dsa, ASSH_ALGO_SIGN, "dsa_user_key",
                                          ASSH_KEY_FMT_PV_RFC2440_PEM_ASN1) != ASSH_OK)
