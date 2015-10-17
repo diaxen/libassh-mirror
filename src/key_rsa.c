@@ -59,7 +59,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_rsa_output)
             {
               ASSH_CHK_RET(s > *blob_len, ASSH_ERR_OUTPUT_OVERFLOW);
               ASSH_ERR_RET(assh_bignum_convert(c, ASSH_BIGNUM_NATIVE,
-                             ASSH_BIGNUM_MPINT, *bn, blob, 0));
+                             ASSH_BIGNUM_MPINT, *bn, blob, NULL, 0));
               s = assh_load_u32(blob) + 4;
               *blob_len -= s;
               blob += s;
@@ -311,18 +311,18 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
     {
     case ASSH_KEY_FMT_PUB_RFC4253_6_6:
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
-                                       n_str, &k->nn, 0), err_num);
+                                       n_str, &k->nn, NULL, 0), err_num);
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
-                                       e_str, &k->en, 0), err_num);
+                                       e_str, &k->en, NULL, 0), err_num);
       break;
 
     case ASSH_KEY_FMT_PV_PEM_ASN1:
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE,
-                                       n_str, &k->nn, 0), err_num);
+                                       n_str, &k->nn, NULL, 0), err_num);
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE,
-                                       e_str, &k->en, 0), err_num);
+                                       e_str, &k->en, NULL, 0), err_num);
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE,
-                                       d_str, &k->dn, 1), err_num);
+                                       d_str, &k->dn, NULL, 1), err_num);
     default:
       break;
     }

@@ -147,7 +147,7 @@ assh_error_t assh_packet_add_mpint(struct assh_context_s *ctx,
   ASSH_ERR_RET(assh_packet_add_array(p, l, &s));
 
   ASSH_ERR_RET(assh_bignum_convert(ctx,
-    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MPINT, bn, s, 0));
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MPINT, bn, s, NULL, 0));
 
   p->data_size -= l - assh_load_u32(s) - 4;
   return ASSH_OK;

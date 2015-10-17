@@ -114,9 +114,9 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_ecdsa_output)
           uint8_t *rx = blob + 4 + 1;
           uint8_t *ry = rx + n;
           ASSH_ERR_RET(assh_bignum_convert(c, ASSH_BIGNUM_NATIVE,
-                                           ASSH_BIGNUM_MSB_RAW, &k->xn, rx, 0));
+                                           ASSH_BIGNUM_MSB_RAW, &k->xn, rx, NULL, 0));
           ASSH_ERR_RET(assh_bignum_convert(c, ASSH_BIGNUM_NATIVE,
-                                           ASSH_BIGNUM_MSB_RAW, &k->yn, ry, 0));
+                                           ASSH_BIGNUM_MSB_RAW, &k->yn, ry, NULL, 0));
         }
 
       *blob_len = pub_len;
@@ -150,11 +150,11 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_ecdsa_output)
           uint8_t *ry = rx + n;
           uint8_t *sc = ry + n;
           ASSH_ERR_RET(assh_bignum_convert(c, ASSH_BIGNUM_NATIVE,
-                                           ASSH_BIGNUM_MSB_RAW, &k->xn, rx, 0));
+                                           ASSH_BIGNUM_MSB_RAW, &k->xn, rx, NULL, 0));
           ASSH_ERR_RET(assh_bignum_convert(c, ASSH_BIGNUM_NATIVE,
-                                           ASSH_BIGNUM_MSB_RAW, &k->yn, ry, 0));
+                                           ASSH_BIGNUM_MSB_RAW, &k->yn, ry, NULL, 0));
           ASSH_ERR_RET(assh_bignum_convert(c, ASSH_BIGNUM_NATIVE,
-                                           ASSH_BIGNUM_MPINT, &k->sn, sc, 1));
+                                           ASSH_BIGNUM_MPINT, &k->sn, sc, NULL, 1));
           len = pub_len + 4 + assh_load_u32(sc);
         }
 
@@ -460,19 +460,19 @@ assh_key_ecdsa_load(struct assh_context_s *c,
     {
     case ASSH_KEY_FMT_PV_PEM_ASN1:
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MSB_RAW, ASSH_BIGNUM_NATIVE,
-                                       s_str, &k->sn, 1), err_key);
+                                       s_str, &k->sn, NULL, 1), err_key);
       goto pub;
 
     case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY:
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
-                                       s_str, &k->sn, 1), err_key);
+                                       s_str, &k->sn, NULL, 1), err_key);
 
     case ASSH_KEY_FMT_PUB_RFC4253_6_6:
     pub:
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MSB_RAW, ASSH_BIGNUM_NATIVE,
-                                       x_str, &k->xn, 0), err_key);
+                                       x_str, &k->xn, NULL, 0), err_key);
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MSB_RAW, ASSH_BIGNUM_NATIVE,
-                                       y_str, &k->yn, 0), err_key);
+                                       y_str, &k->yn, NULL, 0), err_key);
       break;
 
     default:

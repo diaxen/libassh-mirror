@@ -229,7 +229,7 @@ assh_bignum_copy(struct assh_bignum_s *dst,
    enough to hold the value. */
 static void
 assh_bignum_to_buffer(const struct assh_bignum_s *bn,
-                      uint8_t * __restrict__ in,
+                      uint8_t *in, uint8_t **end,
                       enum assh_bignum_fmt_e format)
 {
   size_t i, l = ASSH_ALIGN8(bn->bits) / 8;
@@ -263,6 +263,8 @@ assh_bignum_to_buffer(const struct assh_bignum_s *bn,
 
   if (in < m)
     assh_store_u32(in, p - m);
+  if (end)
+    *end = p;
 }
 
 static assh_error_t ASSH_WARN_UNUSED_RESULT
@@ -1841,7 +1843,7 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_builtin_convert)
         case ASSH_BIGNUM_MSB_RAW:
         case ASSH_BIGNUM_LSB_RAW:
           assert(!srcn->mt_num);
-          assh_bignum_to_buffer(srcn, dst, dstfmt);
+          assh_bignum_to_buffer(srcn, dst, next, dstfmt);
           break;
 
         default:
@@ -2047,23 +2049,23 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
 
         case ASSH_BIGNUM_OP_MOVE: {
           void *dst = args[oc];
+          uint8_t *next;
           ASSH_ERR_GTO(assh_bignum_builtin_convert(c,
-                    format[od], format[oc], args[od], dst, ob), err_sc);
+                    format[od], format[oc], args[od], dst, &next, ob), err_sc);
 
+          /* deduce pointer of next buffer arg */
+          if (oc + 1 < flen && args[oc + 1] == NULL)
+            args[oc + 1] = next;
+
+#if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
           switch (format[oc])
             {
-            case ASSH_BIGNUM_MPINT:
-              /* deduce pointer of next buffer arg */
-              if (format[oc + 1] && args[oc + 1] == NULL)
-                args[oc + 1] = (uint8_t*)dst + 4 + assh_load_u32(dst);
-              break;
-#if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
             case ASSH_BIGNUM_NATIVE:
             case ASSH_BIGNUM_TEMP:
               if (trace & 2)
                 assh_bignum_builtin_print(dst, ASSH_BIGNUM_NATIVE, 'R', pc, mt);
-#endif
             }
+#endif
           break;
         }
 

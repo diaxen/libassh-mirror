@@ -61,7 +61,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_dsa_output)
             {
               ASSH_CHK_RET(s > *blob_len, ASSH_ERR_OUTPUT_OVERFLOW);
               ASSH_ERR_RET(assh_bignum_convert(c, ASSH_BIGNUM_NATIVE,
-                             ASSH_BIGNUM_MPINT, bn, blob, 0));
+                             ASSH_BIGNUM_MPINT, bn, blob, NULL, 0));
               s = assh_load_u32(blob) + 4;
               *blob_len -= s;
               blob += s;
@@ -480,26 +480,26 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
     {
     case ASSH_KEY_FMT_PUB_RFC4253_6_6:
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
-                                       p_str, &k->pn, 0), err_xn);
+                                       p_str, &k->pn, NULL, 0), err_xn);
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
-                                       q_str, &k->qn, 0), err_xn);
+                                       q_str, &k->qn, NULL, 0), err_xn);
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
-                                       g_str, &k->gn, 0), err_xn);
+                                       g_str, &k->gn, NULL, 0), err_xn);
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
-                                       y_str, &k->yn, 0), err_xn);
+                                       y_str, &k->yn, NULL, 0), err_xn);
       break;
 
     case ASSH_KEY_FMT_PV_PEM_ASN1:
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE,
-                                       p_str, &k->pn, 0), err_xn);
+                                       p_str, &k->pn, NULL, 0), err_xn);
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE,
-                                       q_str, &k->qn, 0), err_xn);
+                                       q_str, &k->qn, NULL, 0), err_xn);
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE,
-                                       g_str, &k->gn, 0), err_xn);
+                                       g_str, &k->gn, NULL, 0), err_xn);
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE,
-                                       y_str, &k->yn, 0), err_xn);
+                                       y_str, &k->yn, NULL, 0), err_xn);
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE,
-                                       x_str, &k->xn, 1), err_xn);
+                                       x_str, &k->xn, NULL, 1), err_xn);
     default:
       break;
     }

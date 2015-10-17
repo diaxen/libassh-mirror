@@ -177,7 +177,7 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_gcrypt_convert)
           ASSH_CHK_RET(dstn->n == NULL, ASSH_ERR_MEM);
           dstn->mt_num = srcn->mt_num;
           dstn->secret = srcn->secret | secret;
-          break;
+          return ASSH_OK;
         case ASSH_BIGNUM_STRING:
           assert(!srcn->mt_num);
           assh_store_u32(dst, s);
@@ -189,13 +189,24 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_gcrypt_convert)
           assert(!srcn->mt_num);
           ASSH_CHK_RET(gcry_mpi_print(GCRYMPI_FMT_SSH, dst, s + 5, NULL, srcn->n),
                        ASSH_ERR_NUM_OVERFLOW);
-          break;
+          s = 4 + assh_load_u32(dst);
+          goto no_pad;
         case ASSH_BIGNUM_LSB_RAW:
         case ASSH_BIGNUM_MSB_RAW:
           assert(!srcn->mt_num);
           ASSH_CHK_RET(gcry_mpi_print(GCRYMPI_FMT_USG, dst, s, &z, srcn->n),
                        ASSH_ERR_NUM_OVERFLOW);
           break;
+        case ASSH_BIGNUM_ASN1: {
+          assh_bool_t insert_zero = s == 0 || gcry_mpi_test_bit(srcn->n, s * 8 - 1);
+          size_t asn1_len = insert_zero + s;
+          assh_append_asn1(&dst, 0x02, asn_len);
+          if (insert_zero)
+            *dst++ = 0;
+          ASSH_CHK_RET(gcry_mpi_print(GCRYMPI_FMT_USG, dst, s, NULL, srcn->n),
+                       ASSH_ERR_NUM_OVERFLOW);
+          goto no_pad;
+        }
         default:
           ASSH_ERR_RET(ASSH_ERR_NOTSUP);
         }
@@ -211,6 +222,10 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_gcrypt_convert)
       /* reverse byte order */
       if (dstfmt == ASSH_BIGNUM_LSB_RAW)
         assh_bignum_gcrypt_lsb(dst, s);
+
+    no_pad:
+      if (next)
+        *next = dst + s;
     }
   else
     {
@@ -472,23 +487,23 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
 
         case ASSH_BIGNUM_OP_MOVE: {
           void *dst = args[oc];
+          uint8_t *next;
           ASSH_ERR_GTO(assh_bignum_gcrypt_convert(c, format[od], format[oc],
-                                                  args[od], dst, ob), err_sc);
+                         args[od], dst, &next, ob), err_sc);
 
+          /* deduce pointer of next buffer arg */
+          if (oc + 1 < flen && args[oc + 1] == NULL)
+            args[oc + 1] = next;
+
+#if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
           switch (format[oc])
             {
-            case ASSH_BIGNUM_MPINT:
-              /* deduce pointer of next buffer arg */
-              if (format[oc + 1] && args[oc + 1] == NULL)
-                args[oc + 1] = (uint8_t*)dst + 4 + assh_load_u32(dst);
-              break;
-#if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
             case ASSH_BIGNUM_NATIVE:
             case ASSH_BIGNUM_TEMP:
               if (trace & 2)
                 assh_bignum_gcrypt_print(dst, ASSH_BIGNUM_NATIVE, 'R', pc);
-#endif
             }
+#endif
           break;
         }
 

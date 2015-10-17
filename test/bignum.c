@@ -75,96 +75,96 @@ assh_error_t test_convert()
   /********************/
   memset(buf, 0xaa, sizeof(buf));
   if (assh_bignum_convert(&context,
-    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x01\x55", &n, 0))
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x01\x55", &n, NULL, 0))
     ABORT();
 
   if (assh_bignum_convert(&context,
-    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MPINT, &n, buf, 0))
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MPINT, &n, buf, NULL, 0))
     ABORT();
 
   if (memcmp(buf, "\x00\x00\x00\x01\x55\xaa", 6))
     ABORT();
 
   if (!assh_bignum_convert(&context,
-    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x01\x85", &n, 0))
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x01\x85", &n, NULL, 0))
     ABORT();
 
   if (!assh_bignum_convert(&context,
-    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x01\x00", &n, 0))
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x01\x00", &n, NULL, 0))
     ABORT();
 
   if (!assh_bignum_convert(&context,
-    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x02\x00\x00", &n, 0))
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x02\x00\x00", &n, NULL, 0))
     ABORT();
 
   if (!assh_bignum_convert(&context,
-    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x02\x00\x10", &n, 0))
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x02\x00\x10", &n, NULL, 0))
     ABORT();
 
   /********************/
   if (assh_bignum_convert(&context,
-    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x11\x00\xf0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", &n, 0))
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x11\x00\xf0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", &n, NULL, 0))
     ABORT();
 
   if (!assh_bignum_convert(&context,
-    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x11\x01\xf0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", &n, 0))
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x11\x01\xf0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", &n, NULL, 0))
     ABORT();
 
   assh_bignum_release(&context, &n);
   assh_bignum_init(&context, &n, 125);
 
   if (!assh_bignum_convert(&context,
-    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x11\x00\xf0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", &n, 0))
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x11\x00\xf0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", &n, NULL, 0))
     ABORT();
   if (!assh_bignum_convert(&context,
-    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x10\x20\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", &n, 0))
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x10\x20\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", &n, NULL, 0))
     ABORT();
 
   assh_bignum_release(&context, &n);
   assh_bignum_init(&context, &n, 117);
 
   if (assh_bignum_convert(&context,
-    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x0f\x10\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00\x04", &n, 0))
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x0f\x10\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00\x04", &n, NULL, 0))
     ABORT();
   memset(buf, 0xaa, sizeof(buf));
   if (assh_bignum_convert(&context,
-    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MPINT, &n, buf, 0))
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MPINT, &n, buf, NULL, 0))
     ABORT();
   if (memcmp(buf, "\x00\x00\x00\x0f\x10\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00\x04\xaa", 20))
     ABORT();
 
 
   if (assh_bignum_convert(&context,
-    ASSH_BIGNUM_MSB_RAW, ASSH_BIGNUM_NATIVE, "\x90\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00\x04", &n, 0))
+    ASSH_BIGNUM_MSB_RAW, ASSH_BIGNUM_NATIVE, "\x90\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00\x04", &n, NULL, 0))
     ABORT();
   memset(buf, 0xaa, sizeof(buf));
   if (assh_bignum_convert(&context,
-    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MPINT, &n, buf, 0))
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MPINT, &n, buf, NULL, 0))
     ABORT();
   if (memcmp(buf, "\x00\x00\x00\x0f\x10\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00\x04\xaa", 20))
     ABORT();
 
 
   if (assh_bignum_convert(&context,
-    ASSH_BIGNUM_LSB_RAW, ASSH_BIGNUM_NATIVE, "\x04\x00\x00\x00\x03\x00\x00\x00\x02\x00\x00\x00\x01\x00\x10", &n, 0))
+    ASSH_BIGNUM_LSB_RAW, ASSH_BIGNUM_NATIVE, "\x04\x00\x00\x00\x03\x00\x00\x00\x02\x00\x00\x00\x01\x00\x10", &n, NULL, 0))
     ABORT();
   memset(buf, 0xaa, sizeof(buf));
   if (assh_bignum_convert(&context,
-    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MPINT, &n, buf, 0))
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MPINT, &n, buf, NULL, 0))
     ABORT();
   if (memcmp(buf, "\x00\x00\x00\x0f\x10\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00\x04\xaa", 20))
     ABORT();
 
   memset(buf, 0xaa, sizeof(buf));
   if (assh_bignum_convert(&context,
-    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_LSB_RAW, &n, buf, 0))
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_LSB_RAW, &n, buf, NULL, 0))
     ABORT();
   if (memcmp(buf, "\x04\x00\x00\x00\x03\x00\x00\x00\x02\x00\x00\x00\x01\x00\x10\xaa", 16))
     ABORT();
 
   memset(buf, 0xaa, sizeof(buf));
   if (assh_bignum_convert(&context,
-    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MSB_RAW, &n, buf, 0))
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MSB_RAW, &n, buf, NULL, 0))
     ABORT();
   if (memcmp(buf, "\x10\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00\x04\xaa", 16))
     ABORT();
@@ -172,39 +172,39 @@ assh_error_t test_convert()
   /* value to large */
   assh_bignum_init(&context, &m, 64);
   if (!assh_bignum_convert(&context,
-    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_NATIVE, &n, &m, 0))
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_NATIVE, &n, &m, NULL, 0))
     ABORT();
 
   if (assh_bignum_convert(&context,
-    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x09\x01\xf0\x00\x00\x00\xf0\x00\x00\x00", &n, 0))
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x09\x01\xf0\x00\x00\x00\xf0\x00\x00\x00", &n, NULL, 0))
     ABORT();
   if (!assh_bignum_convert(&context,
-    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_NATIVE, &n, &m, 0))
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_NATIVE, &n, &m, NULL, 0))
     ABORT();
 
   if (assh_bignum_convert(&context,
-    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x09\x00\xf0\x00\x00\x00\xf0\x00\x00\x00", &n, 0))
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x09\x00\xf0\x00\x00\x00\xf0\x00\x00\x00", &n, NULL, 0))
     ABORT();
   if (assh_bignum_convert(&context,
-    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_NATIVE, &n, &m, 0))
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_NATIVE, &n, &m, NULL, 0))
     ABORT();
 
   assh_bignum_release(&context, &m);
   assh_bignum_init(&context, &m, 60);
 
   if (!assh_bignum_convert(&context,
-    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_NATIVE, &n, &m, 0))
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_NATIVE, &n, &m, NULL, 0))
     ABORT();
 
   if (assh_bignum_convert(&context,
-    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x08\x0f\x00\x00\x00\xf0\x00\x00\x00", &n, 0))
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x08\x0f\x00\x00\x00\xf0\x00\x00\x00", &n, NULL, 0))
     ABORT();
   if (assh_bignum_convert(&context,
-    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_NATIVE, &n, &m, 0))
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_NATIVE, &n, &m, NULL, 0))
     ABORT();
   memset(buf, 0xaa, sizeof(buf));
   if (assh_bignum_convert(&context,
-    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MPINT, &n, buf, 0))
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MPINT, &n, buf, NULL, 0))
     ABORT();
   if (memcmp(buf, "\x00\x00\x00\x08\x0f\x00\x00\x00\xf0\x00\x00\x00\xaa", 9))
     ABORT();
