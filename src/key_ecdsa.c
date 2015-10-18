@@ -84,6 +84,9 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_ecdsa_output)
   const struct assh_weierstrass_curve_s *curve = k->id->curve;
   assh_error_t err;
 
+  assert(curve->bits == assh_bignum_bits(&k->xn));
+  assert(curve->bits == assh_bignum_bits(&k->yn));
+
   size_t n = ASSH_ALIGN8(curve->bits) / 8;
   size_t tlen = strlen(k->id->name);
   size_t dlen = strlen(curve->name);
@@ -94,8 +97,6 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_ecdsa_output)
   switch (format)
     {
     case ASSH_KEY_FMT_PUB_RFC4253_6_6: {
-      assert(curve->bits == assh_bignum_bits(&k->xn));
-      assert(curve->bits == assh_bignum_bits(&k->yn));
 
       if (blob != NULL)
         {
@@ -125,8 +126,6 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_ecdsa_output)
     }
 
     case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY: {
-      assert(curve->bits == assh_bignum_bits(&k->xn));
-      assert(curve->bits == assh_bignum_bits(&k->yn));
       ASSH_CHK_RET(assh_bignum_isempty(&k->sn), ASSH_ERR_NOTSUP);
       assert(curve->bits == assh_bignum_bits(&k->sn));
 
@@ -163,12 +162,54 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_ecdsa_output)
       return ASSH_OK;
     }
 
-#if 0
     case ASSH_KEY_FMT_PV_PEM_ASN1: {
-      ASSH_CHK_RET(!k->private, ASSH_ERR_NOTSUP);
+      ASSH_CHK_RET(assh_bignum_isempty(&k->sn), ASSH_ERR_NOTSUP);
+      assert(curve->bits == assh_bignum_bits(&k->sn));
+
+      size_t pub_len = 2 + 2 * n;
+      size_t oid_len = k->id->oid[0];
+      size_t oid_clen = assh_asn1_headlen(oid_len) + oid_len;
+      size_t pub_clen = assh_asn1_headlen(pub_len) + pub_len;
+      size_t pem_clen = /* version */ 3 +
+        /* pvkey */ assh_asn1_headlen(n) + n +
+        /* oid */ assh_asn1_headlen(oid_clen) + oid_clen +
+        /* pubkey */ assh_asn1_headlen(pub_clen) + pub_clen;
+      size_t pem_len = assh_asn1_headlen(pem_clen) + pem_clen;
+
+      if (blob != NULL)
+        {
+          uint8_t *b = blob;
+          ASSH_CHK_RET(pem_len > *blob_len, ASSH_ERR_OUTPUT_OVERFLOW);
+
+          /* sequence */
+          assh_append_asn1(&b, 0x30, pem_clen);
+          /* version */
+          *b++ = 0x02;
+          *b++ = 0x01;
+          *b++ = 0x01;
+          /* pvkey */
+          assh_append_asn1(&b, 0x04, n);
+          ASSH_ERR_RET(assh_bignum_convert(c, ASSH_BIGNUM_NATIVE,
+                         ASSH_BIGNUM_MSB_RAW, &k->sn, b, &b, 0));
+          /* oid */
+          assh_append_asn1(&b, 0xa0, oid_clen);
+          assh_append_asn1(&b, 0x06, oid_len);
+          memcpy(b, k->id->oid + 1, oid_len);
+          b += oid_len;
+          /* pubkey */
+          assh_append_asn1(&b, 0xa1, pub_clen);
+          assh_append_asn1(&b, 0x03, pub_len);
+          *b++ = 0x00;
+          *b++ = 0x04;
+          ASSH_ERR_RET(assh_bignum_convert(c, ASSH_BIGNUM_NATIVE,
+                         ASSH_BIGNUM_MSB_RAW, &k->xn, b, &b, 0));
+          ASSH_ERR_RET(assh_bignum_convert(c, ASSH_BIGNUM_NATIVE,
+                         ASSH_BIGNUM_MSB_RAW, &k->yn, b, &b, 0));
+        }
+
+      *blob_len = pem_len;
       return ASSH_OK;
     }
-#endif
 
     default:
       ASSH_ERR_RET(ASSH_ERR_NOTSUP);
