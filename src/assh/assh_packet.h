@@ -262,6 +262,19 @@ ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_check_asn1(const uint8_t *buffer, size_t buffer_len, const uint8_t *str,
                 uint8_t **value, uint8_t **next, uint8_t id);
 
+/** @internal @This append ASN1 identifier and length bytes to a
+    buffer. This will write at most 6 bytes to the buffer. */
+void assh_append_asn1(uint8_t **dst, uint8_t id, size_t len);
+
+/** @internal @This computes the size an ASN1 header from the
+    specified ASN1 content length. */
+ASSH_INLINE size_t
+assh_asn1_headlen(size_t len)
+{
+  return 2 + (len >= 0x80) + (len >= 0x100)
+           + (len >= 0x10000) + (len >= 0x1000000);
+}
+
 /** @internal @This checks that a string is well inside packet
     bounds. @see assh_check_string */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t

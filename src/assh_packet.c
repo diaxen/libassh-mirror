@@ -277,3 +277,29 @@ assh_ssh_string_copy(const uint8_t *ssh_str, char *nul_str, size_t max_len)
   nul_str[len] = '\0';
   return ASSH_OK;
 }
+
+void
+assh_append_asn1(uint8_t **dst, uint8_t id, size_t len)
+{
+  uint8_t *d = *dst;
+  *d++ = id;
+  if (len < 0x80)
+    {
+      *d++ = len;
+    }
+  else
+    {
+      uint_fast8_t i = 0;
+      if (len & 0xff000000)
+        d[++i] = len >> 24;
+      if (len & 0xffff0000)
+        d[++i] = len >> 16;
+      if (len & 0xffffff00)
+        d[++i] = len >> 8;
+      d[++i] = len;
+      d[0] = 0x80 | i;
+      d += i + 1;
+    }
+  *dst = d;
+}
+

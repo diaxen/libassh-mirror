@@ -69,20 +69,77 @@ assh_error_t test_convert()
 {
   struct assh_bignum_s n, m;
   uint8_t buf[32];
+  uint8_t *next;
 
   assh_bignum_init(&context, &n, 128);
 
   /********************/
-  memset(buf, 0xaa, sizeof(buf));
   if (assh_bignum_convert(&context,
     ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x01\x55", &n, NULL, 0))
     ABORT();
 
+  memset(buf, 0xaa, sizeof(buf));
   if (assh_bignum_convert(&context,
-    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MPINT, &n, buf, NULL, 0))
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MPINT, &n, buf, &next, 0))
+    ABORT();
+  if (memcmp(buf, "\x00\x00\x00\x01\x55\xaa", 6) || next != buf + 5)
     ABORT();
 
-  if (memcmp(buf, "\x00\x00\x00\x01\x55\xaa", 6))
+  if (assh_bignum_convert(&context,
+    ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE, "\x02\x01\x55", &n, NULL, 0))
+    ABORT();
+
+  memset(buf, 0xaa, sizeof(buf));
+  if (assh_bignum_convert(&context,
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_ASN1, &n, buf, &next, 0))
+    ABORT();
+  if (memcmp(buf, "\x02\x01\x55\xaa", 4) || next != buf + 3)
+    ABORT();
+
+  if (assh_bignum_convert(&context,
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x02\x00\x85", &n, NULL, 0))
+    ABORT();
+
+  memset(buf, 0xaa, sizeof(buf));
+  if (assh_bignum_convert(&context,
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MPINT, &n, buf, &next, 0))
+    ABORT();
+  if (memcmp(buf, "\x00\x00\x00\x02\x00\x85\xaa", 7) || next != buf + 6)
+    ABORT();
+
+  if (assh_bignum_convert(&context,
+    ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE, "\x02\x02\x00\x85", &n, NULL, 0))
+    ABORT();
+
+  memset(buf, 0xaa, sizeof(buf));
+  if (assh_bignum_convert(&context,
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_ASN1, &n, buf, &next, 0))
+    ABORT();
+  assh_hexdump("asn1", buf, 32);
+  if (memcmp(buf, "\x02\x02\x00\x85\xaa", 5) || next != buf + 4)
+    ABORT();
+
+  if (assh_bignum_convert(&context,
+    ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE, "\x00\x00\x00\x00", &n, NULL, 0))
+    ABORT();
+
+  memset(buf, 0xaa, sizeof(buf));
+  if (assh_bignum_convert(&context,
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MPINT, &n, buf, &next, 0))
+    ABORT();
+  if (memcmp(buf, "\x00\x00\x00\x00\xaa", 5) || next != buf + 4)
+    ABORT();
+
+  if (assh_bignum_convert(&context,
+    ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE, "\x02\x01\x00", &n, NULL, 0))
+    ABORT();
+
+  memset(buf, 0xaa, sizeof(buf));
+  if (assh_bignum_convert(&context,
+    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_ASN1, &n, buf, &next, 0))
+    ABORT();
+  assh_hexdump("n", buf, 32);
+  if (memcmp(buf, "\x02\x01\x00\xaa", 4) || next != buf + 3)
     ABORT();
 
   if (!assh_bignum_convert(&context,

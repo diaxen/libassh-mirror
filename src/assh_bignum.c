@@ -48,10 +48,7 @@ size_t assh_bignum_size_of_bits(enum assh_bignum_fmt_e fmt, size_t bits)
       l = n;
       break;
     case ASSH_BIGNUM_ASN1:
-      l = n < (1 << 7)  ? n + 2 :
-          n < (1 << 8)  ? n + 3 :
-          n < (1 << 16) ? n + 4 :
-          n < (1 << 24) ? n + 5 : n + 6;
+      l = assh_asn1_headlen(1 + n) + /* 00 sign */ 1 + /* data */ n;
       break;
     case ASSH_BIGNUM_HEX:
       l = n * 2;
@@ -146,7 +143,6 @@ assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
 
     case ASSH_BIGNUM_ASN1: {
       const uint8_t *asn1 = data;
-      ASSH_CHK_RET(*asn1 != 0x02, ASSH_ERR_BAD_DATA);
       assh_asn1_size(asn1, &l, &n);
       asn1 += l;
       ASSH_CHK_RET(n == 0, ASSH_ERR_BAD_DATA);

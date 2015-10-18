@@ -198,14 +198,26 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_gcrypt_convert)
                        ASSH_ERR_NUM_OVERFLOW);
           break;
         case ASSH_BIGNUM_ASN1: {
-          assh_bool_t insert_zero = s == 0 || gcry_mpi_test_bit(srcn->n, s * 8 - 1);
-          size_t asn1_len = insert_zero + s;
-          assh_append_asn1(&dst, 0x02, asn_len);
-          if (insert_zero)
-            *dst++ = 0;
-          ASSH_CHK_RET(gcry_mpi_print(GCRYMPI_FMT_USG, dst, s, NULL, srcn->n),
+          size_t hl = assh_asn1_headlen(s);
+          uint8_t *d = dst;
+          uint8_t *e = (uint8_t*)dst + hl;
+          ASSH_CHK_RET(gcry_mpi_print(GCRYMPI_FMT_STD, e, s, &z, srcn->n),
                        ASSH_ERR_NUM_OVERFLOW);
-          goto no_pad;
+          if (!z)
+            {
+              *d++ = 0x02;
+              *d++ = 0x01;
+              *d++ = 0x00;
+            }
+          else
+            {
+              assh_append_asn1(&d, 0x02, z);
+              if (d < e)
+                memmove(d, e, z);
+            }
+          if (next)
+            *next = d + z;
+          return ASSH_OK;
         }
         default:
           ASSH_ERR_RET(ASSH_ERR_NOTSUP);

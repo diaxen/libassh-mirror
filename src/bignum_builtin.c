@@ -235,10 +235,19 @@ assh_bignum_to_buffer(const struct assh_bignum_s *bn,
   size_t i, l = ASSH_ALIGN8(bn->bits) / 8;
   assh_bnword_t *n = bn->n;
   uint8_t *m = in;
+  assh_bool_t skip_zero = 0;
 
-  if (format == ASSH_BIGNUM_MPINT ||
-      format == ASSH_BIGNUM_STRING)
-    m += 4;
+  switch (format)
+    {
+    case ASSH_BIGNUM_ASN1:
+      m -= 2;
+    case ASSH_BIGNUM_MPINT:
+      skip_zero = 1;
+    case ASSH_BIGNUM_STRING:
+      m += 4;
+    default:
+      break;
+    }
 
   uint8_t *p = m;
 
@@ -251,7 +260,7 @@ assh_bignum_to_buffer(const struct assh_bignum_s *bn,
       {
         uint8_t b = n[i / sizeof(assh_bnword_t)]
           >> ((i % sizeof(assh_bnword_t)) * 8);
-        if (p == m && format == ASSH_BIGNUM_MPINT)
+        if (skip_zero && p == m)
           {
             if (!b)
               continue;
@@ -261,8 +270,28 @@ assh_bignum_to_buffer(const struct assh_bignum_s *bn,
         *p++ = b;
       }
 
-  if (in < m)
-    assh_store_u32(in, p - m);
+  switch (format)
+    {
+    case ASSH_BIGNUM_STRING:
+    case ASSH_BIGNUM_MPINT:
+      assh_store_u32(in, p - m);
+      break;
+    case ASSH_BIGNUM_ASN1: {
+      uint8_t h_[4], *h = h_;
+      if (p == m)
+        *p++ = 0;
+      l = p - m;
+      assh_append_asn1(&h, 0x02, l);
+      i = h - h_;
+      if (i > 2)
+        memmove(m + i - 2, m, l);
+      memcpy(in, h_, i);
+      p = in + i + l;
+    }
+    default:
+      break;
+    }
+
   if (end)
     *end = p;
 }
@@ -1842,6 +1871,7 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_builtin_convert)
         case ASSH_BIGNUM_STRING:
         case ASSH_BIGNUM_MSB_RAW:
         case ASSH_BIGNUM_LSB_RAW:
+        case ASSH_BIGNUM_ASN1:
           assert(!srcn->mt_num);
           assh_bignum_to_buffer(srcn, dst, next, dstfmt);
           break;
