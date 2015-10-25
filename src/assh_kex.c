@@ -662,7 +662,7 @@ assh_kex_client_get_key(struct assh_session_s *s,
   const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
 
   ASSH_ERR_RET(assh_key_load(s->ctx, host_key, sign_algo->algo.key, ASSH_ALGO_SIGN,
-                             ASSH_KEY_FMT_PUB_RFC4253_6_6, ks_str + 4,
+                             ASSH_KEY_FMT_PUB_RFC4253, ks_str + 4,
                              assh_load_u32(ks_str))
                | ASSH_ERRSV_DISCONNECT);
 
@@ -757,7 +757,7 @@ assh_kex_server_hash1(struct assh_session_s *s, size_t kex_len,
   /* alloc reply packet */
   size_t ks_len;
   ASSH_ERR_RET(assh_key_output(c, hk, NULL, &ks_len,
-	         ASSH_KEY_FMT_PUB_RFC4253_6_6)
+	         ASSH_KEY_FMT_PUB_RFC4253)
 	       | ASSH_ERRSV_DISCONNECT);
 
   ASSH_ERR_RET(assh_sign_generate(c, sign_algo, hk, 0, NULL, NULL, NULL, sign_len)
@@ -771,7 +771,7 @@ assh_kex_server_hash1(struct assh_session_s *s, size_t kex_len,
   uint8_t *ks_str;
   ASSH_ASSERT(assh_packet_add_string(*pout, ks_len, &ks_str));
   ASSH_ERR_GTO(assh_key_output(c, hk, ks_str, &ks_len,
-		ASSH_KEY_FMT_PUB_RFC4253_6_6)
+		ASSH_KEY_FMT_PUB_RFC4253)
 	       | ASSH_ERRSV_DISCONNECT, err_p);
 
   assh_packet_shrink_string(*pout, ks_str, ks_len);

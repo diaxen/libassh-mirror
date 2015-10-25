@@ -39,7 +39,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_rsa_output)
 
   switch (format)
     {
-    case ASSH_KEY_FMT_PUB_RFC4253_6_6: {
+    case ASSH_KEY_FMT_PUB_RFC4253: {
       /* add algo identifier */
       size_t l = ASSH_RSA_ID_LEN;
       if (blob != NULL)
@@ -251,7 +251,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
   /* parse the key blob */
   switch (format)
     {
-    case ASSH_KEY_FMT_PUB_RFC4253_6_6: {
+    case ASSH_KEY_FMT_PUB_RFC4253: {
 
       ASSH_CHK_RET(blob_len < ASSH_RSA_ID_LEN, ASSH_ERR_INPUT_OVERFLOW);
       ASSH_CHK_RET(memcmp(ASSH_RSA_ID, blob, ASSH_RSA_ID_LEN), ASSH_ERR_BAD_DATA);
@@ -309,7 +309,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
   /* convert numbers from blob representation */
   switch (format)
     {
-    case ASSH_KEY_FMT_PUB_RFC4253_6_6:
+    case ASSH_KEY_FMT_PUB_RFC4253:
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
                                        n_str, &k->nn, NULL, 0), err_num);
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,

@@ -96,7 +96,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_ecdsa_output)
 
   switch (format)
     {
-    case ASSH_KEY_FMT_PUB_RFC4253_6_6: {
+    case ASSH_KEY_FMT_PUB_RFC4253: {
 
       if (blob != NULL)
         {
@@ -390,7 +390,7 @@ assh_key_ecdsa_load(struct assh_context_s *c,
   /* parse the key blob */
   switch (format)
     {
-    case ASSH_KEY_FMT_PUB_RFC4253_6_6:
+    case ASSH_KEY_FMT_PUB_RFC4253:
     case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY: {
 
       /* lookup key type */
@@ -508,7 +508,7 @@ assh_key_ecdsa_load(struct assh_context_s *c,
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
                                        s_str, &k->sn, NULL, 1), err_key);
 
-    case ASSH_KEY_FMT_PUB_RFC4253_6_6:
+    case ASSH_KEY_FMT_PUB_RFC4253:
     pub:
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MSB_RAW, ASSH_BIGNUM_NATIVE,
                                        x_str, &k->xn, NULL, 0), err_key);

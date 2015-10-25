@@ -311,7 +311,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
 
       size_t blob_len;
       ASSH_ERR_RET(assh_key_output(s->ctx, pv->pub_key,
-                     NULL, &blob_len, ASSH_KEY_FMT_PUB_RFC4253_6_6) | ASSH_ERRSV_DISCONNECT);
+                     NULL, &blob_len, ASSH_KEY_FMT_PUB_RFC4253) | ASSH_ERRSV_DISCONNECT);
 
       struct assh_packet_s *pout;
       ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_USERAUTH_PK_OK,
@@ -326,7 +326,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
       uint8_t *blob;
       ASSH_ASSERT(assh_packet_add_string(pout, blob_len, &blob));
       ASSH_ERR_GTO(assh_key_output(s->ctx, pv->pub_key,
-                     blob, &blob_len, ASSH_KEY_FMT_PUB_RFC4253_6_6)
+                     blob, &blob_len, ASSH_KEY_FMT_PUB_RFC4253)
 		   | ASSH_ERRSV_DISCONNECT, err_packet);
       assh_packet_shrink_string(pout, blob, blob_len);
 
@@ -388,7 +388,7 @@ static assh_error_t assh_userauth_server_req_pubkey(struct assh_session_s *s,
 
   /* load the public key from the client provided blob */
   ASSH_ERR_RET(assh_key_load(s->ctx, &pub_key, algo->key, ASSH_ALGO_SIGN,
-                 ASSH_KEY_FMT_PUB_RFC4253_6_6, pub_blob + 4,
+                 ASSH_KEY_FMT_PUB_RFC4253, pub_blob + 4,
                  sign - pub_blob - 4) | ASSH_ERRSV_DISCONNECT);
 
   /* check if the key can be used by the algorithm */

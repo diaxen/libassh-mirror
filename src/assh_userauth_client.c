@@ -186,7 +186,7 @@ static assh_error_t assh_userauth_client_pck_pubkey(struct assh_session_s *s,
 
   size_t blob_len;
   ASSH_ERR_RET(assh_key_output(s->ctx, pub_key,
-           NULL, &blob_len, ASSH_KEY_FMT_PUB_RFC4253_6_6) | ASSH_ERRSV_DISCONNECT);
+           NULL, &blob_len, ASSH_KEY_FMT_PUB_RFC4253) | ASSH_ERRSV_DISCONNECT);
 
   ASSH_ERR_RET(assh_userauth_client_pck_head(s, pout, "publickey",
                  1 + 4 + algo_name_len + 4 + blob_len + extra_len) | ASSH_ERRSV_DISCONNECT);
@@ -205,7 +205,7 @@ static assh_error_t assh_userauth_client_pck_pubkey(struct assh_session_s *s,
   uint8_t *blob;
   ASSH_ASSERT(assh_packet_add_string(*pout, blob_len, &blob));
   ASSH_ERR_GTO(assh_key_output(s->ctx, pub_key, blob, &blob_len,
-                 ASSH_KEY_FMT_PUB_RFC4253_6_6) | ASSH_ERRSV_DISCONNECT, err_packet);
+                 ASSH_KEY_FMT_PUB_RFC4253) | ASSH_ERRSV_DISCONNECT, err_packet);
   assh_packet_shrink_string(*pout, blob, blob_len);
 
   return ASSH_OK;

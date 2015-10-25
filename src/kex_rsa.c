@@ -158,7 +158,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
   const struct assh_key_s *t_key_ = NULL;
 
   ASSH_ERR_RET(assh_key_load(c, &t_key_, &assh_key_rsa, ASSH_ALGO_ANY,
-    ASSH_KEY_FMT_PUB_RFC4253_6_6, t_str + 4, assh_load_u32(t_str))
+    ASSH_KEY_FMT_PUB_RFC4253, t_str + 4, assh_load_u32(t_str))
                | ASSH_ERRSV_DISCONNECT);
 
   const struct assh_key_rsa_s *t_key = (const void*)t_key_;
@@ -362,12 +362,12 @@ static assh_error_t assh_kex_rsa_server_send_pubkey(struct assh_session_s *s)
   /* alloc reply packet */
   size_t ks_len;
   ASSH_ERR_RET(assh_key_output(c, hk, NULL, &ks_len,
-	         ASSH_KEY_FMT_PUB_RFC4253_6_6)
+	         ASSH_KEY_FMT_PUB_RFC4253)
 	       | ASSH_ERRSV_DISCONNECT);
 
   size_t t_len;
   ASSH_ERR_RET(assh_key_output(c, pv->t_key, NULL, &t_len,
-	         ASSH_KEY_FMT_PUB_RFC4253_6_6)
+	         ASSH_KEY_FMT_PUB_RFC4253)
 	       | ASSH_ERRSV_DISCONNECT);
 
   struct assh_packet_s *pout;
@@ -379,7 +379,7 @@ static assh_error_t assh_kex_rsa_server_send_pubkey(struct assh_session_s *s)
   uint8_t *ks_str;
   ASSH_ASSERT(assh_packet_add_string(pout, ks_len, &ks_str));
   ASSH_ERR_GTO(assh_key_output(c, hk, ks_str, &ks_len,
-		ASSH_KEY_FMT_PUB_RFC4253_6_6)
+		ASSH_KEY_FMT_PUB_RFC4253)
 	       | ASSH_ERRSV_DISCONNECT, err_p);
 
   assh_packet_shrink_string(pout, ks_str, ks_len);
@@ -387,7 +387,7 @@ static assh_error_t assh_kex_rsa_server_send_pubkey(struct assh_session_s *s)
   uint8_t *t_str;
   ASSH_ASSERT(assh_packet_add_string(pout, t_len, &t_str));
   ASSH_ERR_GTO(assh_key_output(c, pv->t_key, t_str, &t_len,
-		ASSH_KEY_FMT_PUB_RFC4253_6_6)
+		ASSH_KEY_FMT_PUB_RFC4253)
 	       | ASSH_ERRSV_DISCONNECT, err_p);
 
   assh_packet_shrink_string(pout, t_str, t_len);

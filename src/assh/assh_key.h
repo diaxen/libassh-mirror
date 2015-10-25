@@ -38,22 +38,30 @@ enum assh_key_format_e
 {
   ASSH_KEY_FMT_NONE,
 
-  /** Public key in rfc4716, base64 ascii format. */
+  /** Public key in standard base64 format as described in rfc4716. */
   ASSH_KEY_FMT_PUB_RFC4716,
-  /** Public key in rfc4253, section 6.6 binary format. */
-  ASSH_KEY_FMT_PUB_RFC4253_6_6,
-  /** Public key in openssh base64 format with underlying rfc4253 binary format. */
+  /** Public key in standard binary format as described in rfc4253
+      section 6.6. */
+  ASSH_KEY_FMT_PUB_RFC4253,
+  /** Public key in legacy openssh base64 format. */
   ASSH_KEY_FMT_PUB_OPENSSH,
+  /** Public key in rfc2440 like format.
+      Base64 encoding of @ref ASSH_KEY_FMT_PUB_PEM_ASN1. */
+  ASSH_KEY_FMT_PUB_PEM,
+  /** Public key in PEM Asn1 DER format. */
+  ASSH_KEY_FMT_PUB_PEM_ASN1,
 
   /** Keys openssh-key-v1 base64 format */
-  ASSH_KEY_FMT_OPENSSH_V1,
+  ASSH_KEY_FMT_PV_OPENSSH_V1,
   /** Keys blob openssh-key-v1 binary format */
-  ASSH_KEY_FMT_OPENSSH_V1_BLOB,
-  /** Private key used inside openssh-key-v1 binary format */
+  ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB,
+  /** Single private key encoding used as part of the @ref
+      ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB format. */
   ASSH_KEY_FMT_PV_OPENSSH_V1_KEY,
-  /** Private key in rfc2440 like, base64 ascii format with PEM Asn1 inside. */
-  ASSH_KEY_FMT_PV_RFC2440_PEM_ASN1,
-  /** Private key in PEM Asn1 DER binary format. */
+  /** Private key in rfc2440 like format.
+      Base64 encoding of @ref ASSH_KEY_FMT_PV_PEM_ASN1. */
+  ASSH_KEY_FMT_PV_PEM,
+  /** Private key in PEM Asn1 DER format. */
   ASSH_KEY_FMT_PV_PEM_ASN1,
 
   ASSH_KEY_FMT_LAST = ASSH_KEY_FMT_PV_PEM_ASN1,
@@ -178,7 +186,7 @@ assh_key_create(struct assh_context_s *c,
     to what is needed to hold the blob.
 
     This function may only support the @ref
-    ASSH_KEY_FMT_PUB_RFC4253_6_6 format.
+    ASSH_KEY_FMT_PUB_RFC4253 format.
 */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_key_output(struct assh_context_s *c,

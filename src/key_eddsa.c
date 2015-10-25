@@ -47,7 +47,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_eddsa_output)
 
   switch (format)
     {
-    case ASSH_KEY_FMT_PUB_RFC4253_6_6: {
+    case ASSH_KEY_FMT_PUB_RFC4253: {
       size_t len = 4 + tlen + 4 + n;
 
       if (blob != NULL)
@@ -285,7 +285,7 @@ assh_key_eddsa_load(struct assh_context_s *c,
   /* parse the key blob */
   switch (format)
     {
-    case ASSH_KEY_FMT_PUB_RFC4253_6_6: {
+    case ASSH_KEY_FMT_PUB_RFC4253: {
       size_t len = 4 + tlen + 4 + n;
       ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_key_eddsa_s) + n,
                               ASSH_ALLOC_SECUR, (void**)&k));

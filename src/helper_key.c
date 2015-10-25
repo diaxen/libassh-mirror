@@ -225,22 +225,22 @@ assh_error_t assh_load_key_file(struct assh_context_s *c,
     {
     case ASSH_KEY_FMT_PUB_RFC4716:
       assh_load_rfc4716(file, blob, &blob_len);
-      format = ASSH_KEY_FMT_PUB_RFC4253_6_6;
+      format = ASSH_KEY_FMT_PUB_RFC4253;
       break;
 
     case ASSH_KEY_FMT_PUB_OPENSSH:
       assh_load_pub_openssh(file, blob, &blob_len);
-      format = ASSH_KEY_FMT_PUB_RFC4253_6_6;
+      format = ASSH_KEY_FMT_PUB_RFC4253;
       break;
 
-    case ASSH_KEY_FMT_PV_RFC2440_PEM_ASN1:
+    case ASSH_KEY_FMT_PV_PEM:
       assh_load_rfc4716(file, blob, &blob_len);
       format = ASSH_KEY_FMT_PV_PEM_ASN1;
       break;
 
-    case ASSH_KEY_FMT_OPENSSH_V1:
+    case ASSH_KEY_FMT_PV_OPENSSH_V1:
       assh_load_rfc4716(file, blob, &blob_len);
-      format = ASSH_KEY_FMT_OPENSSH_V1_BLOB;
+      format = ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB;
       break;
 
     default:

@@ -39,7 +39,7 @@ assh_key_algo_guess(struct assh_context_s *c,
 
   switch (format)
     {
-    case ASSH_KEY_FMT_PUB_RFC4253_6_6: {
+    case ASSH_KEY_FMT_PUB_RFC4253: {
       uint8_t *end;
       if (assh_check_string(blob, blob_len, blob, &end))
         return NULL;

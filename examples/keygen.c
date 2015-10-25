@@ -46,19 +46,21 @@ struct assh_keygen_format_s
 };
 
 static const struct assh_keygen_format_s formats[] = {
-  { "rfc4716", "public key in ASCII format",
+  { "rfc4716", "ssh standard ASCII public key",
     ASSH_KEY_FMT_PUB_RFC4716, 1 },
-  { "rfc4716_bin", "rfc4716 underlying binary key format",
-    ASSH_KEY_FMT_PUB_RFC4253_6_6, 1 },
-  { "openssh_pub", "openssh public key format",
+  { "rfc4253", "ssh standard binary public key",
+    ASSH_KEY_FMT_PUB_RFC4253, 1 },
+  { "openssh_pub", "openssh legacy ASCII public key",
     ASSH_KEY_FMT_PUB_OPENSSH, 1 },
-  { "openssh_v1", "",
-    ASSH_KEY_FMT_OPENSSH_V1 },
-  { "openssh_v1_bin", "",
-    ASSH_KEY_FMT_OPENSSH_V1_BLOB },
-  { "pem", "",
-    ASSH_KEY_FMT_PV_RFC2440_PEM_ASN1 },
-  { "pem_bin", "",
+  { "openssh_v1", "openssh v1 ASCII private keys",
+    ASSH_KEY_FMT_PV_OPENSSH_V1 },
+  { "openssh_v1_bin", "openssh_v1 underlying binary",
+    ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB },
+  { "openssh_v1_pv", "openssh_v1_bin underlying single private key",
+    ASSH_KEY_FMT_PV_OPENSSH_V1_KEY },
+  { "pem_pv", "PEM ASCII private key",
+    ASSH_KEY_FMT_PV_PEM },
+  { "pem_pv_bin", "PEM private key underlying binary",
     ASSH_KEY_FMT_PV_PEM_ASN1 },
   { NULL }
 };
@@ -158,7 +160,7 @@ int main(int argc, char *argv[])
   int opt;
   size_t bits = 0;
   const struct assh_keygen_format_s *ifmt = NULL;
-  const struct assh_keygen_format_s *ofmt = lookup_format(ASSH_KEY_FMT_OPENSSH_V1);
+  const struct assh_keygen_format_s *ofmt = lookup_format(ASSH_KEY_FMT_PV_OPENSSH_V1);
   const struct assh_key_ops_s *ops = NULL;
   FILE *ifile = NULL;
   FILE *ofile = NULL;
