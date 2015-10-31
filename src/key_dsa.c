@@ -36,61 +36,80 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_dsa_output)
 
   assert(key->algo == &assh_key_dsa);
 
-  struct assh_bignum_s *bn_[6] = { &k->pn, &k->qn, &k->gn, &k->yn, &k->xn };
+  struct assh_bignum_s *bn_[6] = { &k->pn, &k->qn, &k->gn, &k->yn, NULL, NULL };
 
   switch (format)
     {
+    case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY:
+      ASSH_CHK_RET(assh_bignum_isempty(&k->xn), ASSH_ERR_MISSING_KEY);
+      bn_[4] = &k->xn;
     case ASSH_KEY_FMT_PUB_RFC4253: {
       /* add algo identifier */
       size_t l = ASSH_DSA_ID_LEN;
       if (blob != NULL)
         {
-          ASSH_CHK_RET(ASSH_DSA_ID_LEN > *blob_len, ASSH_ERR_OUTPUT_OVERFLOW);
           memcpy(blob, ASSH_DSA_ID, ASSH_DSA_ID_LEN);
-          *blob_len -= ASSH_DSA_ID_LEN;
           blob += ASSH_DSA_ID_LEN;
         }
 
       /* add key integers */
-      uint_fast8_t i;
-      for (i = 0; i < 4; i++)
+      struct assh_bignum_s **bn = bn_;
+      if (blob == NULL)
         {
-          struct assh_bignum_s *bn = bn_[i];
-          size_t s = assh_bignum_size_of_num(ASSH_BIGNUM_MPINT, bn);
-          if (blob != NULL)
-            {
-              ASSH_CHK_RET(s > *blob_len, ASSH_ERR_OUTPUT_OVERFLOW);
+          for (bn = bn_; *bn != NULL; bn++)
+            l += assh_bignum_size_of_num(ASSH_BIGNUM_MPINT, *bn);
+        }
+      else
+        {
+          uint8_t *b = blob;
+          for (bn = bn_; *bn != NULL; bn++)
               ASSH_ERR_RET(assh_bignum_convert(c, ASSH_BIGNUM_NATIVE,
-                             ASSH_BIGNUM_MPINT, bn, blob, NULL, 0));
-              s = assh_load_u32(blob) + 4;
-              *blob_len -= s;
-              blob += s;
-            }
-          l += s;
+                             ASSH_BIGNUM_MPINT, *bn, b, &b, 0));
+          l += b - blob;
         }
       *blob_len = l;
       return ASSH_OK;
     }
 
-#warning dsa key output
-#if 0
     case ASSH_KEY_FMT_PV_PEM_ASN1: {
-      ASSH_CHK_RET(assh_bignum_isempty(&k->xn), ASSH_ERR_NOTSUP);
-      uint_fast8_t i;
-      for (i = 0; i < 5; i++)
+      ASSH_CHK_RET(assh_bignum_isempty(&k->xn), ASSH_ERR_MISSING_KEY);
+      bn_[4] = &k->xn;
+      uint8_t *b = blob + 4;
+      uint8_t *s = b;
+      size_t l = /* seq */ 4 + /* version */ 3;
+
+      /* version */
+      if (blob != NULL)
         {
-          struct assh_bignum_s *bn = bn_[i];
-          size_t s = assh_bignum_size_of_num(ASSH_BIGNUM_ASN1, bn);
-          if (blob != NULL)
-            {
-              ASSH_CHK_RET(s > *blob_len, ASSH_ERR_OUTPUT_OVERFLOW);
-              ASSH_ERR_RET(assh_bignum_convert(c, ASSH_BIGNUM_NATIVE,
-                             ASSH_BIGNUM_MPINT, bn, blob, 0));
-            }
+          *b++ = 0x02;
+          *b++ = 0x01;
+          *b++ = 0x00;
         }
+
+      struct assh_bignum_s **bn = bn_;
+      if (blob == NULL)
+        {
+          for (bn = bn_; *bn != NULL; bn++)
+            l += assh_bignum_size_of_num(ASSH_BIGNUM_ASN1, *bn);
+        }
+      else
+        {
+          /* add key integers */
+          for (bn = bn_; *bn != NULL; bn++)
+              ASSH_ERR_RET(assh_bignum_convert(c, ASSH_BIGNUM_NATIVE,
+                             ASSH_BIGNUM_ASN1, *bn, b, &b, 0));
+          l = b - s;
+          /* sequence header */
+          b = blob;
+          assh_append_asn1(&b, 0x30, l);
+          if (b < s)
+            memmove(b, s, l);
+          l += b - blob;
+        }
+      *blob_len = l;
+
       return ASSH_OK;
     }
-#endif
 
     default:
       ASSH_ERR_RET(ASSH_ERR_NOTSUP);
@@ -413,11 +432,12 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
   assh_error_t err;
 
   size_t l, n;
-  const uint8_t *p_str, *q_str, *g_str, *y_str, *x_str;
+  uint8_t *p_str, *q_str, *g_str, *y_str, *x_str;
 
   /* parse the key blob */
   switch (format)
     {
+    case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY:
     case ASSH_KEY_FMT_PUB_RFC4253: {
 
       ASSH_CHK_RET(blob_len < ASSH_DSA_ID_LEN, ASSH_ERR_INPUT_OVERFLOW);
@@ -429,8 +449,12 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
       ASSH_ERR_RET(assh_check_string(blob, blob_len, q_str, &g_str));
       ASSH_ERR_RET(assh_bignum_size_of_data(ASSH_BIGNUM_MPINT, q_str, NULL, NULL, &n));
       ASSH_ERR_RET(assh_check_string(blob, blob_len, g_str, &y_str));
-      ASSH_ERR_RET(assh_check_string(blob, blob_len, y_str, NULL));
-      x_str = NULL;
+      ASSH_ERR_RET(assh_check_string(blob, blob_len, y_str, &x_str));
+
+      if (format == ASSH_KEY_FMT_PV_OPENSSH_V1_KEY)
+        ASSH_ERR_RET(assh_check_string(blob, blob_len, x_str, NULL));
+      else
+        x_str = NULL;
       break;
     }
 
@@ -478,6 +502,9 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
   /* convert numbers from blob representation */
   switch (format)
     {
+    case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY:
+      ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
+                                       x_str, &k->xn, NULL, 0), err_xn);
     case ASSH_KEY_FMT_PUB_RFC4253:
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
                                        p_str, &k->pn, NULL, 0), err_xn);
