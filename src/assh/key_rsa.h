@@ -43,6 +43,11 @@ struct assh_key_rsa_s
   struct assh_bignum_s en;
   /** RSA exponent */
   struct assh_bignum_s dn;
+  struct assh_bignum_s pn;
+  struct assh_bignum_s qn;
+  struct assh_bignum_s in;      /* inv(q, p) */
+  struct assh_bignum_s dpn;     /* d % (p-1) */
+  struct assh_bignum_s dqn;     /* d % (q-1) */
 };
 
 ASSH_FIRST_FIELD_ASSERT(assh_key_rsa_s, key);
