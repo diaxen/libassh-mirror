@@ -69,14 +69,20 @@ static const struct assh_keygen_format_s formats[] = {
   { NULL }
 };
 
-static const struct assh_key_ops_s *types[] = {
-  &assh_key_dsa,
-  &assh_key_rsa,
-  &assh_key_ed25519,
-  &assh_key_eddsa_e382,
-  &assh_key_eddsa_e521,
-  &assh_key_ecdsa_nistp,
-  NULL
+struct assh_keygen_type_s
+{
+  const struct assh_key_ops_s *ops;
+  enum assh_key_format_e format;
+};
+
+static const struct assh_keygen_type_s types[] = {
+  { &assh_key_dsa, ASSH_KEY_FMT_PV_PEM },
+  { &assh_key_rsa, ASSH_KEY_FMT_PV_PEM },
+  { &assh_key_ed25519, ASSH_KEY_FMT_PV_OPENSSH_V1 },
+  { &assh_key_eddsa_e382, ASSH_KEY_FMT_PV_OPENSSH_V1 },
+  { &assh_key_eddsa_e521, ASSH_KEY_FMT_PV_OPENSSH_V1 },
+  { &assh_key_ecdsa_nistp, ASSH_KEY_FMT_PV_PEM },
+  { NULL }
 };
 
 enum assh_keygen_action_e
@@ -122,16 +128,16 @@ static FILE * get_file(const char *file, const char *mode)
   exit(1);
 }
 
-static const struct assh_key_ops_s * get_type(const char *type)
+static const struct assh_keygen_type_s * get_type(const char *type)
 {
   unsigned i;
   if (type)
-    for (i = 0; types[i] != NULL; i++)
-      if (!strcmp(types[i]->type, type))
-        return types[i];
+    for (i = 0; types[i].ops != NULL; i++)
+      if (!strcmp(types[i].ops->type, type))
+        return types + i;
   fprintf(stderr, "Supported key types:\n");
-  for (i = 0; types[i] != NULL; i++)
-    fprintf(stderr, "  %s\n", types[i]->type);
+  for (i = 0; types[i].ops != NULL; i++)
+    fprintf(stderr, "  %s\n", types[i].ops->type);
   if (type)
     exit(1);
   return NULL;
@@ -148,12 +154,6 @@ static void usage(const char *program)
   exit(1);
 }
 
-const struct assh_key_ops_s *key_ops[] =
-{
-  &assh_key_dsa,
-  &assh_key_rsa,
-};
-
 int main(int argc, char *argv[])
 {
 #ifdef CONFIG_ASSH_USE_GCRYPT
@@ -164,8 +164,8 @@ int main(int argc, char *argv[])
   int opt;
   size_t bits = 0;
   const struct assh_keygen_format_s *ifmt = NULL;
-  const struct assh_keygen_format_s *ofmt = lookup_format(ASSH_KEY_FMT_PV_OPENSSH_V1);
-  const struct assh_key_ops_s *ops = NULL;
+  const struct assh_keygen_format_s *ofmt = NULL;
+  const struct assh_keygen_type_s *type = NULL;
   FILE *ifile = NULL;
   FILE *ofile = NULL;
 
@@ -189,7 +189,9 @@ int main(int argc, char *argv[])
           ifile = get_file(optarg, "rb");
           break;
         case 't':
-          ops = get_type(optarg);
+          type = get_type(optarg);
+          if (ofmt == NULL)
+            ofmt = lookup_format(type->format);
           break;
         default:
           usage(argv[0]);
@@ -227,7 +229,7 @@ int main(int argc, char *argv[])
 
   const struct assh_key_s *key;
 
-  if (ops == NULL)
+  if (type == NULL)
     ERROR("Missing -t option\n");
 
   if (action_mask & ASSH_KEYGEN_CREATE)
@@ -238,8 +240,8 @@ int main(int argc, char *argv[])
         ERROR("Missing -b option\n");
 
       fprintf(stderr, "Generating key...\n");
-      if (assh_key_create(context, &key, bits, ops, ASSH_ALGO_ANY))
-        ERROR("unable to create %zu bits key of type %s\n", bits, ops->type);
+      if (assh_key_create(context, &key, bits, type->ops, ASSH_ALGO_ANY))
+        ERROR("unable to create %zu bits key of type %s\n", bits, type->ops->type);
     }
 
   if (action_mask & ASSH_KEYGEN_LOAD)
@@ -255,7 +257,7 @@ int main(int argc, char *argv[])
           for (f = ASSH_KEY_FMT_NONE + 1; f <= ASSH_KEY_FMT_PV_PEM_ASN1; f++)
             {
               fseek(ifile, 0, SEEK_SET);
-              if (!assh_load_key_file(context, &key, ops, ASSH_ALGO_ANY, ifile, f))
+              if (!assh_load_key_file(context, &key, type->ops, ASSH_ALGO_ANY, ifile, f))
                 goto done;
             }
           ERROR("Unable to guess input key format\n");
@@ -264,7 +266,7 @@ int main(int argc, char *argv[])
         }
       else
         {
-          if (assh_load_key_file(context, &key, ops, ASSH_ALGO_ANY, ifile, ifmt->format))
+          if (assh_load_key_file(context, &key, type->ops, ASSH_ALGO_ANY, ifile, ifmt->format))
             ERROR("Unable to load key\n");
         }
     }
@@ -285,7 +287,7 @@ int main(int argc, char *argv[])
       if (assh_key_output(context, key, NULL, &len, ofmt->format))
         ERROR("Unable to save key in %s format.\n", ofmt->name);
 
-      fprintf(stderr, "Saving key...\n");
+      fprintf(stderr, "Saving key in %s format...\n", ofmt->name);
       uint8_t *data = malloc(len);
       if (data == NULL || key->algo->f_output(context, key, data, &len, ofmt->format))
         ERROR("Unable to save key using specified format.\n");
