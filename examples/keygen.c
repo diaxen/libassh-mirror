@@ -62,6 +62,10 @@ static const struct assh_keygen_format_s formats[] = {
     ASSH_KEY_FMT_PV_PEM },
   { "pem_pv_bin", "PEM private key underlying binary",
     ASSH_KEY_FMT_PV_PEM_ASN1 },
+  { "pem_pub", "PEM ASCII public key",
+    ASSH_KEY_FMT_PUB_PEM },
+  { "pem_pub_bin", "PEM public key underlying binary",
+    ASSH_KEY_FMT_PUB_PEM_ASN1 },
   { NULL }
 };
 

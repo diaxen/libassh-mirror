@@ -238,6 +238,11 @@ assh_error_t assh_load_key_file(struct assh_context_s *c,
       format = ASSH_KEY_FMT_PV_PEM_ASN1;
       break;
 
+    case ASSH_KEY_FMT_PUB_PEM:
+      assh_load_rfc4716(file, blob, &blob_len);
+      format = ASSH_KEY_FMT_PUB_PEM_ASN1;
+      break;
+
     case ASSH_KEY_FMT_PV_OPENSSH_V1:
       assh_load_rfc4716(file, blob, &blob_len);
       format = ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB;
