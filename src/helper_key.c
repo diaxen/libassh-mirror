@@ -163,9 +163,10 @@ assh_error_t assh_load_key_file(struct assh_context_s *c,
       break;
     }
 
-  ASSH_ERR_GTO(assh_key_load(c, head, algo, role, format, blob, blob_len), err_sc);
 
   err = ASSH_OK;
+  const uint8_t *key_blob = blob;
+  ASSH_ERR_GTO(assh_key_load(c, head, algo, role, format, &key_blob, blob_len), err_sc);
 
  err_sc:
   ASSH_SCRATCH_FREE(c, blob);

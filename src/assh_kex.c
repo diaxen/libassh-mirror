@@ -661,8 +661,9 @@ assh_kex_client_get_key(struct assh_session_s *s,
   /* load key */
   const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
 
+  const uint8_t *key_blob = ks_str + 4;
   ASSH_ERR_RET(assh_key_load(s->ctx, host_key, sign_algo->algo.key, ASSH_ALGO_SIGN,
-                             ASSH_KEY_FMT_PUB_RFC4253, ks_str + 4,
+                             ASSH_KEY_FMT_PUB_RFC4253, &key_blob,
                              assh_load_u32(ks_str))
                | ASSH_ERRSV_DISCONNECT);
 

@@ -70,12 +70,12 @@ assh_error_t assh_key_load(struct assh_context_s *c,
                            const struct assh_key_ops_s *algo,
                            enum assh_algo_class_e role,
                            enum assh_key_format_e format,
-                           const uint8_t *blob, size_t blob_len)
+                           const uint8_t **blob, size_t blob_len)
 {
   assh_error_t err;
 
   if (algo == NULL)
-    algo = assh_key_algo_guess(c, format, blob, blob_len, role);
+    algo = assh_key_algo_guess(c, format, *blob, blob_len, role);
   ASSH_CHK_RET(algo == NULL, ASSH_ERR_MISSING_ALGO);
 
   struct assh_key_s *k;

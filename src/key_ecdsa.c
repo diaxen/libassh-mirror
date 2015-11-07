@@ -347,16 +347,12 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_ecdsa_validate)
   return ASSH_OK;
 }
 
-static assh_error_t
-assh_key_ecdsa_load(struct assh_context_s *c,
-                    const struct assh_key_ops_s *algo,
-                    const uint8_t *blob, size_t blob_len,
-                    struct assh_key_s **key,
-                    enum assh_key_format_e format)
+static ASSH_KEY_LOAD_FCN(assh_key_ecdsa_load)
 {
   assh_error_t err;
   const struct assh_key_ecdsa_id_s *id = NULL;
   const uint8_t *x_str, *y_str, *s_str = NULL;
+  const uint8_t *blob = *blob_;
 
   /* parse the key blob */
   switch (format)
@@ -407,12 +403,13 @@ assh_key_ecdsa_load(struct assh_context_s *c,
       ASSH_CHK_RET(blob[4] != 4, ASSH_ERR_NOTSUP);
       x_str = blob + 4 + 1;
       y_str = blob + 4 + 1 + n;
+      s_str = blob + 4 + kp_len;
 
       if (format == ASSH_KEY_FMT_PV_OPENSSH_V1_KEY)
-        {
-          s_str = blob + 4 + kp_len;
-          ASSH_ERR_RET(assh_check_string(blob, blob_len, s_str, NULL));
-        }
+        ASSH_ERR_RET(assh_check_string(blob, blob_len, s_str, blob_));
+      else
+        *blob_ = s_str;
+
       break;
     }
 
@@ -450,6 +447,7 @@ assh_key_ecdsa_load(struct assh_context_s *c,
       x_str += 2;
       y_str = x_str + n;
 
+      *blob_ = y_str + n;
       break;
     }
 

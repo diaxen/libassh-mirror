@@ -261,12 +261,13 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_eddsa_validate)
 static assh_error_t
 assh_key_eddsa_load(struct assh_context_s *c,
                     const struct assh_key_ops_s *algo,
-                    const uint8_t *blob, size_t blob_len,
+                    const uint8_t **blob_, size_t blob_len,
                     struct assh_key_s **key,
                     enum assh_key_format_e format,
                     const struct assh_edward_curve_s *curve,
                     const struct assh_hash_algo_s *hash)
 {
+  const uint8_t *blob = *blob_;
   assh_error_t err;
 
   /* allocate key structure */
@@ -290,6 +291,8 @@ assh_key_eddsa_load(struct assh_context_s *c,
       const uint8_t *p = (uint8_t*)blob + 4 + tlen;
       ASSH_CHK_GTO(assh_load_u32(p) != n, ASSH_ERR_BAD_DATA, err_key);
       memcpy(k->data, p + 4, n);
+
+      *blob_ = p + 4 + n;
       break;
     }
 
@@ -309,6 +312,8 @@ assh_key_eddsa_load(struct assh_context_s *c,
       ASSH_CHK_GTO(assh_load_u32(s) != 2 * n, ASSH_ERR_BAD_DATA, err_key);
       ASSH_CHK_GTO(memcmp(p + 4, s + 4 + n, n), ASSH_ERR_BAD_DATA, err_key);
       memcpy(k->data + n, s + 4, n);
+
+      *blob_ = s + 4 + 2 * n;
       break;
     }
 
@@ -364,7 +369,7 @@ const struct assh_edward_curve_s assh_ed25519_curve =
 
 static ASSH_KEY_LOAD_FCN(assh_key_ed25519_load)
 {
-  return assh_key_eddsa_load(c, algo, blob, blob_len, key, format,
+  return assh_key_eddsa_load(c, algo, blob_, blob_len, key, format,
                               &assh_ed25519_curve, &assh_hash_sha512);
 }
 
@@ -411,7 +416,7 @@ const struct assh_edward_curve_s assh_e382_curve =
 
 static ASSH_KEY_LOAD_FCN(assh_key_eddsa_e382_load)
 {
-  return assh_key_eddsa_load(c, algo, blob, blob_len, key, format,
+  return assh_key_eddsa_load(c, algo, blob_, blob_len, key, format,
                              &assh_e382_curve, &assh_hash_shake_256);
 }
 
@@ -467,7 +472,7 @@ const struct assh_edward_curve_s assh_e521_curve =
 
 static ASSH_KEY_LOAD_FCN(assh_key_eddsa_e521_load)
 {
-  return assh_key_eddsa_load(c, algo, blob, blob_len, key, format,
+  return assh_key_eddsa_load(c, algo, blob_, blob_len, key, format,
                              &assh_e521_curve, &assh_hash_shake_256);
 }
 

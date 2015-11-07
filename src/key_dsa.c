@@ -429,6 +429,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
 
 static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
 {
+  const uint8_t *blob = *blob_;
   assh_error_t err;
 
   size_t l, n;
@@ -451,10 +452,14 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
       ASSH_ERR_RET(assh_check_string(blob, blob_len, g_str, &y_str));
       ASSH_ERR_RET(assh_check_string(blob, blob_len, y_str, &x_str));
 
-      if (format == ASSH_KEY_FMT_PV_OPENSSH_V1_KEY)
-        ASSH_ERR_RET(assh_check_string(blob, blob_len, x_str, NULL));
-      else
-        x_str = NULL;
+      if (format != ASSH_KEY_FMT_PV_OPENSSH_V1_KEY)
+        {
+          *blob_ = x_str;
+          x_str = NULL;
+          break;
+        }
+
+      ASSH_ERR_RET(assh_check_string(blob, blob_len, x_str, blob_));
       break;
     }
 
@@ -473,7 +478,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
       ASSH_ERR_RET(assh_bignum_size_of_data(ASSH_BIGNUM_ASN1, q_str, NULL, NULL, &n));
       ASSH_ERR_RET(assh_check_asn1(blob, blob_len, g_str, NULL, &y_str, 0x02));
       ASSH_ERR_RET(assh_check_asn1(blob, blob_len, y_str, NULL, &x_str, 0x02));
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, x_str, NULL, NULL, 0x02));
+      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, x_str, NULL, blob_, 0x02));
       break;
     }
 

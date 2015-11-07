@@ -387,8 +387,9 @@ static assh_error_t assh_userauth_server_req_pubkey(struct assh_session_s *s,
   const struct assh_key_s *pub_key = NULL;
 
   /* load the public key from the client provided blob */
+  const uint8_t *key_blob = pub_blob + 4;
   ASSH_ERR_RET(assh_key_load(s->ctx, &pub_key, algo->key, ASSH_ALGO_SIGN,
-                 ASSH_KEY_FMT_PUB_RFC4253, pub_blob + 4,
+                 ASSH_KEY_FMT_PUB_RFC4253, &key_blob,
                  sign - pub_blob - 4) | ASSH_ERRSV_DISCONNECT);
 
   /* check if the key can be used by the algorithm */

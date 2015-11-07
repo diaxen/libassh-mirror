@@ -156,16 +156,22 @@ int test(const struct assh_algo_kex_s *kex,
 	return -1;
 
       if (i == 0 && sign_key->key_algo != NULL)
-	if (assh_key_load(c, &c->keys,
-			  sign_key->key_algo, ASSH_ALGO_SIGN, sign_key->key_blob[0],
-			  sign_key->key_blob + 1, sign_key->key_size))
-	  return -1;
+	{
+	  const uint8_t *key_blob = sign_key->key_blob + 1;
+	  if (assh_key_load(c, &c->keys,
+			    sign_key->key_algo, ASSH_ALGO_SIGN, sign_key->key_blob[0],
+			    &key_blob, sign_key->key_size))
+	    return -1;
+	}
 
       if (i == 0 && kex_key->key_algo != NULL)
-	if (assh_key_load(c, &c->keys,
-			  kex_key->key_algo, ASSH_ALGO_KEX, kex_key->key_blob[0],
-			  kex_key->key_blob + 1, kex_key->key_size))
-	  return -1;
+	{
+	  const uint8_t *key_blob = kex_key->key_blob + 1;
+	  if (assh_key_load(c, &c->keys,
+			    kex_key->key_algo, ASSH_ALGO_KEX, kex_key->key_blob[0],
+			    &key_blob, kex_key->key_size))
+	    return -1;
+	}
 
       if (assh_session_init(c, &session[i]) != ASSH_OK)
 	return -1;

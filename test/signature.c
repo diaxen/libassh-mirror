@@ -163,8 +163,9 @@ assh_error_t test_const()
       memcpy(key_blob, algos[i].key, sizeof(key_blob));
 
       fprintf(stderr, "L");
+      const uint8_t *kb = key_blob + 1;
       ASSH_ERR_RET(assh_key_load(&context, &key, a->algo.key, ASSH_ALGO_SIGN,
-		 key_blob[0], key_blob + 1, sizeof(key_blob) - 1));
+		 key_blob[0], &kb, sizeof(key_blob) - 1));
 
       size_t sign_len;
 
@@ -228,8 +229,9 @@ assh_error_t test_loop()
       memcpy(key_blob, algos[i].key, sizeof(key_blob));
 
       fprintf(stderr, "L");
+      const uint8_t *kb = key_blob + 1;
       ASSH_ERR_RET(assh_key_load(&context, &key2, a->algo.key, ASSH_ALGO_SIGN,
-				 key_blob[0], key_blob + 1, sizeof(key_blob) - 1));
+				 key_blob[0], &kb, sizeof(key_blob) - 1));
       ASSH_ERR_RET(assh_key_validate(&context, key2));
 
       TEST_ASSERT(assh_key_cmp(&context, key2, key2, 0));
@@ -368,8 +370,9 @@ assh_error_t test_loop()
 	    }
 
 	  fprintf(stderr, "l");
+	  const uint8_t *kb = key_blob + 1;
 	  err = assh_key_load(&context, &key, a->algo.key, ASSH_ALGO_SIGN,
-			      key_blob[0], key_blob + 1, sizeof(key_blob) - 1);
+			      key_blob[0], &kb, sizeof(key_blob) - 1);
 
 	  if (!bad)
 	    TEST_ASSERT(err == ASSH_OK);
