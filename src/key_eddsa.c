@@ -65,7 +65,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_eddsa_output)
     }
 
     case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY: {
-      ASSH_CHK_RET(!k->private, ASSH_ERR_NOTSUP);
+      ASSH_CHK_RET(!k->private, ASSH_ERR_MISSING_KEY);
 
       size_t len = 4 + tlen + 4 + n + 4 + 2 * n;
 
@@ -87,13 +87,6 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_eddsa_output)
 
       return ASSH_OK;
     }
-
-#if 0
-    case ASSH_KEY_FMT_PV_PEM_ASN1: {
-      ASSH_CHK_RET(!k->private, ASSH_ERR_NOTSUP);
-      return ASSH_OK;
-    }
-#endif
 
     default:
       ASSH_ERR_RET(ASSH_ERR_NOTSUP);
