@@ -22,6 +22,7 @@
 */
 
 #include <assh/helper_key.h>
+#include <assh/helper_base64.h>
 #include <assh/assh_context.h>
 #include <assh/assh_packet.h>
 #include <assh/assh_alloc.h>
@@ -30,97 +31,6 @@
 #include <stdio.h>
 #include <ctype.h>
 
-struct assh_base64_ctx_s
-{
-  uint8_t *out, *out_start, *out_end;
-  int in, pad;
-  uint32_t x;
-};
-
-static void assh_base64_init(struct assh_base64_ctx_s *ctx, uint8_t *out,
-			     size_t out_len)
-{
-  ctx->out_start = ctx->out = out;
-  ctx->out_end = out + out_len;
-  ctx->pad = ctx->in = 0;
-  ctx->x = 0;
-}
-
-static assh_error_t assh_base64_update(struct assh_base64_ctx_s *ctx,
-				       const uint8_t *b64, size_t b64_len)
-{
-  static const int8_t codes[128] =
-    {
-      -4, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2,  /* blanks */
-      -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2,
-      -2, -2, -2, -2, -2, -2, -2, -2, -2, -1, -1, -1,
-      -1, -1, -1, -1, -1, -1, -1,
-      62, -1, -1, -1, 63,                              /* '+' and '/' */
-      52, 53, 54, 55, 56, 57, 58, 59, 60, 61,          /* '0' to '9'  */
-      -1, -1, -1, -3, -1, -1, -1,                      /* '=' */
-      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,    /* A to Z */
-      14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
-      -1, -1, -1, -1, -1, -1,
-      26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, /* a to z */
-      39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51,
-      -1, -1, -1, -1, -1
-    };
-
-  assh_error_t err;
-
-  while (b64_len--)
-    {
-      int8_t x = *b64++, c = codes[(x | (x >> 7)) & 0x7f];
-      switch (c)
-        {
-        case -1:
-          ASSH_ERR_RET(ASSH_ERR_BAD_DATA);
-        case -3:     /* padding char = */
-          ASSH_CHK_RET(ctx->pad++ >= 2, ASSH_ERR_BAD_DATA);
-        case -2:
-          continue;  /* ignore blank chars */
-        case -4:
-	  return ASSH_OK;  /* NUL termination */
-        default:
-	  ASSH_CHK_RET(ctx->pad > 0, ASSH_ERR_BAD_DATA);
-          ctx->x = (ctx->x << 6) | c;
-	  if ((++ctx->in & 3) != 0)
-	    continue;
-	  ASSH_CHK_RET(ctx->out + 2 >= ctx->out_end, ASSH_ERR_OUTPUT_OVERFLOW);
-	  *ctx->out++ = ctx->x >> 16;
-	  *ctx->out++ = ctx->x >> 8;
-	  *ctx->out++ = ctx->x;
-	  ctx->x = 0;
-        }
-    }
-  return ASSH_OK;
-}
-
-static assh_error_t assh_base64_final(struct assh_base64_ctx_s *ctx)
-{
-  assh_error_t err;
-
-  ASSH_CHK_RET((ctx->in + ctx->pad) & 3, ASSH_ERR_BAD_DATA);
-
-  ASSH_CHK_RET(ctx->out + ((2 - ctx->pad) % 2) >= ctx->out_end,
-	       ASSH_ERR_OUTPUT_OVERFLOW);
-  switch (ctx->pad)
-    {
-    case 2:
-      *ctx->out++ = ctx->x >> 4;
-      break;
-    case 1:
-      *ctx->out++ = ctx->x >> 10;
-      *ctx->out++ = ctx->x >> 2;
-    case 0:;
-    }
-  return ASSH_OK;
-}
-
-static inline size_t assh_base64_size(struct assh_base64_ctx_s *ctx)
-{
-  return ctx->out - ctx->out_start;
-}
 
 static assh_error_t assh_load_rfc4716(FILE *file, uint8_t *kdata, size_t *klen)
 {
@@ -160,11 +70,11 @@ static assh_error_t assh_load_rfc4716(FILE *file, uint8_t *kdata, size_t *klen)
 	    break;
 	  ASSH_CHK_RET(!strstr(l, "END "), ASSH_ERR_BAD_DATA);
 	  state = 0;
-	  ASSH_ERR_RET(assh_base64_final(&ctx));
-	  *klen = assh_base64_size(&ctx);
+	  ASSH_ERR_RET(assh_base64_decode_final(&ctx));
+	  *klen = assh_base64_outsize(&ctx);
 	  return ASSH_OK;
 	}
-      ASSH_ERR_RET(assh_base64_update(&ctx, (const uint8_t*)l, len));
+      ASSH_ERR_RET(assh_base64_decode_update(&ctx, (const uint8_t*)l, len));
     }
 
   ASSH_ERR_RET(ASSH_ERR_BAD_DATA);
@@ -196,12 +106,12 @@ static assh_error_t assh_load_pub_openssh(FILE *file, uint8_t *kdata, size_t *kl
 	case 2:
 	  if (isspace(in))
 	    {
-	      ASSH_ERR_RET(assh_base64_final(&ctx));
-	      *klen = assh_base64_size(&ctx);
+	      ASSH_ERR_RET(assh_base64_decode_final(&ctx));
+	      *klen = assh_base64_outsize(&ctx);
 	      return ASSH_OK;
 	    }
 	  uint8_t in8 = in;
-	  ASSH_ERR_RET(assh_base64_update(&ctx, &in8, 1));
+	  ASSH_ERR_RET(assh_base64_decode_update(&ctx, &in8, 1));
 	  break;
 	}
     }

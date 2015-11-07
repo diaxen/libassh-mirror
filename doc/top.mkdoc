@@ -36,6 +36,10 @@ assh/assh_userauth_client.h
 assh/assh_userauth_server.h
 assh/helper_fd.h
 assh/helper_key.h
+assh/helper_bcrypt.h
+assh/helper_interactive.h
+assh/helper_client.h
+assh/helper_base64.h
 assh/key_dsa.h
 assh/key_eddsa.h
 assh/key_ecdsa.h
