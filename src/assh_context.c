@@ -77,6 +77,20 @@ static ASSH_ALLOCATOR(assh_default_allocator)
 #endif
 }
 
+assh_error_t assh_strdup(struct assh_context_s *c, char **r,
+                         const char *str, enum assh_alloc_type_e type)
+{
+  assh_error_t err;
+  *r = NULL;
+  if (str != NULL)
+    {
+      size_t l = strlen(str) + 1;
+      ASSH_ERR_RET(assh_alloc(c, l, type, (void**)r));
+      memcpy(*r, str, l);
+    }
+  return ASSH_OK;
+}
+
 void assh_context_init(struct assh_context_s *c,
                        enum assh_context_type_e type,
 		       assh_allocator_t *alloc,
