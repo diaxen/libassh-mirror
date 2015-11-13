@@ -147,6 +147,7 @@ struct assh_key_ops_s
     structures inherit from this type. */
 struct assh_key_s
 {
+  const char *type;
   /* Next key in the list */
   const struct assh_key_s *next;
 

@@ -242,6 +242,7 @@ assh_key_ecdsa_create(struct assh_context_s *c,
   ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_key_ecdsa_s),
                           ASSH_ALLOC_INTERNAL, (void**)&k));
 
+  k->key.type = id->name;
   k->key.algo = algo;
   k->id = id;
 
@@ -489,6 +490,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_ecdsa_load)
       break;
     }
 
+  k->key.type = id->name;
   k->key.algo = algo;
   k->id = id;
 

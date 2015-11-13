@@ -132,6 +132,7 @@ assh_key_eddsa_create(struct assh_context_s *c,
                           ASSH_ALLOC_SECUR, (void**)&k));
 
   k->key.algo = algo;
+  k->key.type = algo->type;
   k->curve = curve;
   k->hash = hash;
 
@@ -322,6 +323,7 @@ assh_key_eddsa_load(struct assh_context_s *c,
     }
 
   k->key.algo = algo;
+  k->key.type = algo->type;
   k->curve = curve;
   k->hash = hash;
 

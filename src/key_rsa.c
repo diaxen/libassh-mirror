@@ -223,6 +223,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
                           ASSH_ALLOC_INTERNAL, (void**)&k));
 
   k->key.algo = &assh_key_rsa;
+  k->key.type = "ssh-rsa";
 
   /* init numbers */
   assh_bignum_init(c, &k->nn, bits);
@@ -438,6 +439,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
                           ASSH_ALLOC_INTERNAL, (void**)&k));
 
   k->key.algo = &assh_key_rsa;
+  k->key.type = "ssh-rsa";
 
   /* init numbers */
   assh_bignum_init(c, &k->nn, n_len);

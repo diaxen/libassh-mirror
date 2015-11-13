@@ -248,6 +248,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
                           ASSH_ALLOC_INTERNAL, (void**)&k));
 
   k->key.algo = &assh_key_dsa;
+  k->key.type = "ssh-dss";
 
   /* init numbers */
   assh_bignum_init(c, &k->pn, l);
@@ -496,6 +497,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
                           ASSH_ALLOC_INTERNAL, (void**)&k));
 
   k->key.algo = &assh_key_dsa;
+  k->key.type = "ssh-dss";
 
   /* init numbers */
   assh_bignum_init(c, &k->pn, l);

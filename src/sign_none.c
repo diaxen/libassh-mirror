@@ -60,6 +60,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_none_load)
   struct assh_key_s *k = *key;
 
   k->algo = &assh_key_none;
+  k->type = "none";
 
   return ASSH_OK;
 }
@@ -72,6 +73,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_none_create)
   struct assh_key_s *k = *key;
 
   k->algo = &assh_key_none;
+  k->type = "none";
 
   return ASSH_OK;
 }
