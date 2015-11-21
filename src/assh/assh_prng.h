@@ -119,6 +119,13 @@ assh_prng_get(struct assh_context_s *c,
   return c->prng->f_get(c, rdata, rdata_len, quality);
 }
 
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_prng_feed(struct assh_context_s *c,
+               uint8_t *rdata, size_t rdata_len)
+{
+  return c->prng->f_feed(c, rdata, rdata_len);
+}
+
 /** @multiple @This is a prng algorithm implementation descriptor. */
 extern const struct assh_prng_s assh_prng_xswap;
 

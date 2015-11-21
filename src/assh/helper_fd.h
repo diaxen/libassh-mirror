@@ -45,4 +45,10 @@ ASSH_EVENT_HANDLER_FCN(assh_fd_event_read);
 ASSH_EVENT_HANDLER_FCN(assh_fd_event_write);
 ASSH_EVENT_HANDLER_FCN(assh_fd_event_prng_feed);
 
+assh_error_t assh_prng_fd_feed(struct assh_context_s *c,
+                               int fd, size_t len);
+
+assh_error_t assh_prng_file_feed(struct assh_context_s *c,
+                                 const char *filename, size_t len);
+
 #endif

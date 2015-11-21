@@ -23,10 +23,12 @@
 
 #include <unistd.h>
 #include <errno.h>
+#include <sys/fcntl.h>
 
 #include <assh/assh_session.h>
 #include <assh/assh_transport.h>
 #include <assh/assh_prng.h>
+#include <assh/assh_alloc.h>
 
 #include <assh/helper_fd.h>
 
@@ -106,5 +108,44 @@ void assh_fd_events_register(struct assh_event_hndl_table_s *t,
       assh_event_table_register(t, ASSH_EVENT_PRNG_FEED, &ctx->h_prng_feed,
 				assh_fd_event_prng_feed, ctx);
     }
+}
+
+assh_error_t assh_prng_fd_feed(struct assh_context_s *c,
+                               int fd, size_t len)
+{
+  assh_error_t err;
+  ASSH_SCRATCH_ALLOC(c, uint8_t, sc, len, ASSH_ERRSV_CONTINUE, err_);
+  uint8_t *d = sc;
+  size_t l = len;
+
+  while (l)
+    {
+      int r = read(fd, d, l);
+      ASSH_CHK_RET(r <= 0, ASSH_ERR_IO);
+      l -= r;
+      d += r;
+    }
+
+  ASSH_ERR_RET(assh_prng_feed(c, sc, len));
+
+  err = ASSH_OK;
+ err_:
+  ASSH_SCRATCH_FREE(c, sc);
+  return err;
+}
+
+assh_error_t assh_prng_file_feed(struct assh_context_s *c,
+                                 const char *filename, size_t len)
+{
+  assh_error_t err;
+  int rand_fd = open(filename, O_RDONLY);
+
+  ASSH_CHK_RET(rand_fd < 0, ASSH_ERR_IO);
+  ASSH_ERR_GTO(assh_prng_fd_feed(c, rand_fd, len), err_);
+
+  err = ASSH_OK;
+ err_:
+  close(rand_fd);
+  return err;
 }
 
