@@ -123,7 +123,8 @@ assh_error_t assh_load_key_file(struct assh_context_s *c,
 				const struct assh_key_s **head,
 				const struct assh_key_ops_s *algo,
 				enum assh_algo_class_e role,
-				FILE *file, enum assh_key_format_e format)
+				FILE *file, enum assh_key_format_e format,
+				const char *passphrase)
 {
   assh_error_t err;
   size_t blob_len = 4096;
@@ -179,14 +180,15 @@ assh_error_t assh_load_key_filename(struct assh_context_s *c,
 				    const struct assh_key_ops_s *algo,
 				    enum assh_algo_class_e role,
 				    const char *filename,
-				    enum assh_key_format_e format)
+				    enum assh_key_format_e format,
+				    const char *passphrase)
 {
   assh_error_t err;
 
   FILE *file = fopen(filename, "r");
   ASSH_CHK_RET(file == NULL, ASSH_ERR_IO);
 
-  ASSH_ERR_GTO(assh_load_key_file(c, head, algo, role, file, format), err_);
+  ASSH_ERR_GTO(assh_load_key_file(c, head, algo, role, file, format, passphrase), err_);
 
  err_:
   fclose(file);
@@ -201,7 +203,7 @@ assh_error_t assh_load_hostkey_file(struct assh_context_s *c,
 {
 #ifdef CONFIG_ASSH_SERVER
   if (c->type == ASSH_SERVER)
-    return assh_load_key_file(c, &c->keys, algo, role, file, format);
+    return assh_load_key_file(c, &c->keys, algo, role, file, format, NULL);
 #endif
   return ASSH_ERR_NOTSUP;
 }
@@ -214,7 +216,7 @@ assh_error_t assh_load_hostkey_filename(struct assh_context_s *c,
 {
 #ifdef CONFIG_ASSH_SERVER
   if (c->type == ASSH_SERVER)
-    return assh_load_key_filename(c, &c->keys, algo, role, filename, format);
+    return assh_load_key_filename(c, &c->keys, algo, role, filename, format, NULL);
 #endif
   return ASSH_ERR_NOTSUP;
 }

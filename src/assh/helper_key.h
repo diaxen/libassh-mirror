@@ -42,7 +42,8 @@ assh_load_key_file(struct assh_context_s *c,
 		   const struct assh_key_s **head,
 		   const struct assh_key_ops_s *algo,	
 		   enum assh_algo_class_e role,
-		   FILE *file, enum assh_key_format_e format);
+		   FILE *file, enum assh_key_format_e format,
+		   const char *passphrase);
 
 /** @internal @This loads a key from a file name and inserts the key
     in a linked list. This function relies on @ref
@@ -53,7 +54,8 @@ assh_load_key_filename(struct assh_context_s *c,
 		       const struct assh_key_ops_s *algo,
 		       enum assh_algo_class_e role,
 		       const char *filename,
-		       enum assh_key_format_e format);
+		       enum assh_key_format_e format,
+		       const char *passphrase);
 
 /** @This loads a key from a file handler and register the key on the
     library context. @see assh_load_key_file */

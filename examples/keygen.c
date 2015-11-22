@@ -150,7 +150,9 @@ static void usage(const char *program)
           "    -o file    specify the output file name\n"
           "    -i file    specify the input file name\n"
           "    -g format  specify the input key format\n"
-          "    -f format  specify the output key format\n", program);
+          "    -f format  specify the output key format\n\n"
+          "    -p pass    specify key encryption passphrase\n",
+          program);
   exit(1);
 }
 
@@ -166,10 +168,11 @@ int main(int argc, char *argv[])
   const struct assh_keygen_format_s *ifmt = NULL;
   const struct assh_keygen_format_s *ofmt = NULL;
   const struct assh_keygen_type_s *type = NULL;
+  const char *passphrase = NULL;
   FILE *ifile = NULL;
   FILE *ofile = NULL;
 
-  while ((opt = getopt(argc, argv, "b:f:g:o:i:t:")) != -1)
+  while ((opt = getopt(argc, argv, "b:f:g:o:i:t:p:")) != -1)
     {
       switch (opt)
         {
@@ -192,6 +195,8 @@ int main(int argc, char *argv[])
           type = get_type(optarg);
           if (ofmt == NULL)
             ofmt = lookup_format(type->format);
+        case 'p':
+          passphrase = optarg;
           break;
         default:
           usage(argv[0]);
@@ -257,7 +262,7 @@ int main(int argc, char *argv[])
           for (f = ASSH_KEY_FMT_NONE + 1; f <= ASSH_KEY_FMT_PV_PEM_ASN1; f++)
             {
               fseek(ifile, 0, SEEK_SET);
-              if (!assh_load_key_file(context, &key, type->ops, ASSH_ALGO_ANY, ifile, f))
+              if (!assh_load_key_file(context, &key, type->ops, ASSH_ALGO_ANY, ifile, f, passphrase))
                 goto done;
             }
           ERROR("Unable to guess input key format\n");
@@ -266,7 +271,7 @@ int main(int argc, char *argv[])
         }
       else
         {
-          if (assh_load_key_file(context, &key, type->ops, ASSH_ALGO_ANY, ifile, ifmt->format))
+          if (assh_load_key_file(context, &key, type->ops, ASSH_ALGO_ANY, ifile, ifmt->format, passphrase))
             ERROR("Unable to load key\n");
         }
     }

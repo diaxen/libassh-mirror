@@ -138,12 +138,12 @@ int main(int argc, char **argv)
 
               if (assh_load_key_filename(context, &event.userauth_client.methods.pub_keys,
                                          &assh_key_dsa, ASSH_ALGO_SIGN, "dsa_user_key",
-                                         ASSH_KEY_FMT_PV_PEM) != ASSH_OK)
+                                         ASSH_KEY_FMT_PV_PEM, NULL) != ASSH_OK)
                 fprintf(stderr, "unable to load user dsa key\n");
 
               if (assh_load_key_filename(context, &event.userauth_client.methods.pub_keys,
                                          &assh_key_rsa, ASSH_ALGO_SIGN, "rsa_user_key",
-                                         ASSH_KEY_FMT_PV_PEM) != ASSH_OK)
+                                         ASSH_KEY_FMT_PV_PEM, NULL) != ASSH_OK)
                 fprintf(stderr, "unable to load user rsa key\n");
             }
 
