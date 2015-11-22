@@ -26,6 +26,7 @@
 #include <assh/assh_algo.h>
 #include <assh/assh_packet.h>
 #include <assh/assh_context.h>
+#include <assh/assh_alloc.h>
 
 #include <string.h>
 
@@ -84,6 +85,7 @@ assh_error_t assh_key_load(struct assh_context_s *c,
 
   k->role = role;
   k->next = *key;
+  k->comment = NULL;
   *key = k;
 
   return ASSH_OK;
@@ -102,8 +104,20 @@ assh_key_create(struct assh_context_s *c,
 
   k->role = role;
   k->next = *key;
+  k->comment = NULL;
   *key = k;
 
+  return ASSH_OK;
+}
+
+assh_error_t
+assh_key_comment(struct assh_context_s *c,
+                 const struct assh_key_s *key,
+                 const char *comment)
+{
+  assh_error_t err;
+  assh_free(c, key->comment);
+  ASSH_ERR_RET(assh_strdup(c, &key->comment, comment, ASSH_ALLOC_INTERNAL));
   return ASSH_OK;
 }
 
@@ -114,6 +128,7 @@ void assh_key_drop(struct assh_context_s *c,
   if (k == NULL)
     return;
   *head = k->next;
+  assh_free(c, k->comment);
   k->algo->f_cleanup(c, (struct assh_key_s *)k);
 }
 

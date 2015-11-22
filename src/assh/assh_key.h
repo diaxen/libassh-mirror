@@ -148,6 +148,8 @@ struct assh_key_ops_s
 struct assh_key_s
 {
   const char *type;
+  char *comment;
+
   /* Next key in the list */
   const struct assh_key_s *next;
 
@@ -177,6 +179,12 @@ assh_key_create(struct assh_context_s *c,
                 const struct assh_key_s **key, size_t bits,
                 const struct assh_key_ops_s *algo,
                 enum assh_algo_class_e role);
+
+/** @This changes the key comment string. */
+assh_error_t
+assh_key_comment(struct assh_context_s *c,
+                 const struct assh_key_s *key,
+                 const char *comment);
 
 /** @internal This function write the key in blob representation to
     the @tt blob buffer. The @tt blob_len parameter indicates the size
