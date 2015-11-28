@@ -421,14 +421,13 @@ static ASSH_KEY_LOAD_FCN(assh_key_ecdsa_load)
                                    /* seq */ 0x30));
 
       /* version */
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, seq, &val, &next,
+      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, seq, &val, &s_str,
                                    /* integer */ 0x02));
-      ASSH_CHK_RET(val + 1 != next || val[0] != 1, ASSH_ERR_BAD_DATA);
+      ASSH_CHK_RET(val + 1 != s_str || val[0] != 1, ASSH_ERR_BAD_DATA);
 
       /* private key */
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, next, (uint8_t**)&s_str, &next,
+      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, s_str, NULL, &next,
                                    /* octet string */ 0x04));
-      size_t psize = next - s_str;
 
       /* domain parameters */
       ASSH_ERR_RET(assh_check_asn1(blob, blob_len, next, &val, &next, 0xa0));
@@ -437,7 +436,6 @@ static ASSH_KEY_LOAD_FCN(assh_key_ecdsa_load)
 
       ASSH_CHK_RET(id == NULL, ASSH_ERR_NOTSUP);
       size_t n = ASSH_ALIGN8(id->curve->bits) / 8;
-      ASSH_CHK_RET(n != psize, ASSH_ERR_BAD_DATA);
 
       /* public key */
       ASSH_ERR_RET(assh_check_asn1(blob, blob_len, next, &val, NULL, 0xa1));
@@ -470,7 +468,9 @@ static ASSH_KEY_LOAD_FCN(assh_key_ecdsa_load)
   switch (format)
     {
     case ASSH_KEY_FMT_PV_PEM_ASN1:
-      ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MSB_RAW, ASSH_BIGNUM_NATIVE,
+      /* Some buggy implementations skip leading zero bytes in the
+         fixed size ASN1 octet string, so we load it as an ASN1 number instead. */
+      ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE,
                                        s_str, &k->sn, NULL, 1), err_key);
       goto pub;
 
