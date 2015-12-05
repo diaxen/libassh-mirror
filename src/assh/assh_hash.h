@@ -170,23 +170,37 @@ assh_hash_cleanup(struct assh_hash_ctx_s *hctx)
   hctx->algo->f_cleanup(hctx);
 }
 
-/** @multiple @internal @This is an hash algorithm implementation
+#ifdef CONFIG_ASSH_HASH_MD5
+/** @internal @This is the md5 hash algorithm implementation
     descriptor. */
 extern const struct assh_hash_algo_s assh_hash_md5;
+#endif
 
+#ifdef CONFIG_ASSH_HASH_SHA1
+/** @internal @This is the sha1 hash algorithm implementation
+    descriptor. */
 extern const struct assh_hash_algo_s assh_hash_sha1;
+#endif
 
+#ifdef CONFIG_ASSH_HASH_SHA2
+/** @multiple @internal @This is a sha2 hash algorithm implementation
+    descriptor. */
 extern const struct assh_hash_algo_s assh_hash_sha224;
 extern const struct assh_hash_algo_s assh_hash_sha256;
 extern const struct assh_hash_algo_s assh_hash_sha384;
 extern const struct assh_hash_algo_s assh_hash_sha512;
+#endif
 
+#ifdef CONFIG_ASSH_HASH_SHA3
+/** @multiple @internal @This is a sha3 hash algorithm implementation
+    descriptor. */
 extern const struct assh_hash_algo_s assh_hash_sha3_224;
 extern const struct assh_hash_algo_s assh_hash_sha3_256;
 extern const struct assh_hash_algo_s assh_hash_sha3_384;
 extern const struct assh_hash_algo_s assh_hash_sha3_512;
 extern const struct assh_hash_algo_s assh_hash_shake_128;
 extern const struct assh_hash_algo_s assh_hash_shake_256;
+#endif
 
 #endif
 

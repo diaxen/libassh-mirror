@@ -217,55 +217,99 @@ const struct assh_algo_s *assh_algo_table[] = {
   &assh_sign_nistp384.algo,
   &assh_sign_nistp521.algo,
   /* ciphers */
-#ifdef CONFIG_ASSH_USE_GCRYPT_CIPHERS
+
+# ifdef CONFIG_ASSH_CIPHER_TDES
   &assh_cipher_tdes_cbc.algo,
+#  ifdef CONFIG_ASSH_MODE_CTR
   &assh_cipher_tdes_ctr.algo,
+#  endif
+# endif
+
+# ifdef CONFIG_ASSH_CIPHER_CAST128
   &assh_cipher_cast128_cbc.algo,
+#  ifdef CONFIG_ASSH_MODE_CTR
   &assh_cipher_cast128_ctr.algo,
+#  endif
+# endif
+
+# ifdef CONFIG_ASSH_CIPHER_BLOWFISH
   &assh_cipher_blowfish_cbc.algo,
+#  ifdef CONFIG_ASSH_MODE_CTR
   &assh_cipher_blowfish_ctr.algo,
+#  endif
+# endif
+
+# ifdef CONFIG_ASSH_CIPHER_TWOFISH
   &assh_cipher_twofish128_cbc.algo,
   &assh_cipher_twofish256_cbc.algo,
+#  ifdef CONFIG_ASSH_MODE_CTR
   &assh_cipher_twofish128_ctr.algo,
   &assh_cipher_twofish256_ctr.algo,
+#  endif
+#  ifdef CONFIG_ASSH_MODE_GCM
+  &assh_cipher_twofish128_gcm.algo,
+  &assh_cipher_twofish256_gcm.algo,
+#  endif
+# endif
+
+# ifdef CONFIG_ASSH_CIPHER_SERPENT
   &assh_cipher_serpent128_cbc.algo,
   &assh_cipher_serpent192_cbc.algo,
   &assh_cipher_serpent256_cbc.algo,
+#  ifdef CONFIG_ASSH_MODE_CTR
   &assh_cipher_serpent128_ctr.algo,
   &assh_cipher_serpent192_ctr.algo,
   &assh_cipher_serpent256_ctr.algo,
-  &assh_cipher_aes128_gcm.algo,
-  &assh_cipher_aes256_gcm.algo,
+#  endif
+#  ifdef CONFIG_ASSH_MODE_GCM
   &assh_cipher_serpent128_gcm.algo,
   &assh_cipher_serpent256_gcm.algo,
-  &assh_cipher_twofish128_gcm.algo,
-  &assh_cipher_twofish256_gcm.algo,
-#endif
+#  endif
+# endif
+
+# ifdef CONFIG_ASSH_CIPHER_ARCFOUR
   &assh_cipher_arc4.algo,
   &assh_cipher_arc4_128.algo,
   &assh_cipher_arc4_256.algo,
+# endif
+
+# ifdef CONFIG_ASSH_CIPHER_AES
   &assh_cipher_aes128_cbc.algo,
   &assh_cipher_aes192_cbc.algo,
   &assh_cipher_aes256_cbc.algo,
+#  ifdef CONFIG_ASSH_MODE_CTR
   &assh_cipher_aes128_ctr.algo,
   &assh_cipher_aes192_ctr.algo,
   &assh_cipher_aes256_ctr.algo,
+#  endif
+#  ifdef CONFIG_ASSH_MODE_GCM
+  &assh_cipher_aes128_gcm.algo,
+  &assh_cipher_aes256_gcm.algo,
+#  endif
+# endif
+
   /* mac */
+# ifdef CONFIG_ASSH_HASH_MD5
   &assh_hmac_md5.algo,
   &assh_hmac_md5_96.algo,
-  &assh_hmac_sha1.algo,
-  &assh_hmac_sha1_96.algo,
-  &assh_hmac_sha256.algo,
-  &assh_hmac_sha512.algo,
   &assh_hmac_md5_etm.algo,
   &assh_hmac_md5_96_etm.algo,
+# endif
+# ifdef CONFIG_ASSH_HASH_SHA1
+  &assh_hmac_sha1.algo,
+  &assh_hmac_sha1_96.algo,
   &assh_hmac_sha1_etm.algo,
   &assh_hmac_sha1_96_etm.algo,
+# endif
+# ifdef CONFIG_ASSH_HASH_SHA2
+  &assh_hmac_sha256.algo,
+  &assh_hmac_sha512.algo,
   &assh_hmac_sha256_etm.algo,
   &assh_hmac_sha512_etm.algo,
-#ifdef CONFIG_ASSH_USE_GCRYPT_HASH
+# endif
+# ifdef CONFIG_ASSH_HASH_RIPEMD160
   &assh_hmac_ripemd160.algo,
-#endif
+# endif
   /* compress */
   &assh_compress_none.algo,
   NULL

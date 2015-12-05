@@ -99,50 +99,81 @@ ASSH_FIRST_FIELD_ASSERT(assh_algo_cipher_s, algo);
 /** Dummy cipher algorithm. */
 extern const struct assh_algo_cipher_s assh_cipher_none;
 
-/** @multiple @This is a cipher algorithm implementation descriptor. */
+# ifdef CONFIG_ASSH_CIPHER_ARCFOUR
+/** @multiple @This is a cipher algorithm implementation descriptor for the Arc4 implementation. */
 extern const struct assh_algo_cipher_s assh_cipher_arc4;
 extern const struct assh_algo_cipher_s assh_cipher_arc4_128;
 extern const struct assh_algo_cipher_s assh_cipher_arc4_256;
+# endif
 
+# ifdef CONFIG_ASSH_CIPHER_AES
+/** @multiple @This is a cipher algorithm descriptor for the AES implementation. */
 extern const struct assh_algo_cipher_s assh_cipher_aes128_cbc;
 extern const struct assh_algo_cipher_s assh_cipher_aes192_cbc;
 extern const struct assh_algo_cipher_s assh_cipher_aes256_cbc;
+#  ifdef CONFIG_ASSH_MODE_CTR
 extern const struct assh_algo_cipher_s assh_cipher_aes128_ctr;
 extern const struct assh_algo_cipher_s assh_cipher_aes192_ctr;
 extern const struct assh_algo_cipher_s assh_cipher_aes256_ctr;
+#  endif
+#  ifdef CONFIG_ASSH_MODE_GCM
+extern const struct assh_algo_cipher_s assh_cipher_aes128_gcm;
+extern const struct assh_algo_cipher_s assh_cipher_aes256_gcm;
+#  endif
+# endif
 
-#ifdef CONFIG_ASSH_USE_GCRYPT_CIPHERS
-
-/** @multiple @This is a cipher algorithm implementation descriptor. */
+# ifdef CONFIG_ASSH_CIPHER_TDES
+/** @multiple @This is a cipher algorithm descriptor for the Triple DES implementation. */
 extern const struct assh_algo_cipher_s assh_cipher_tdes_cbc;
+#  ifdef CONFIG_ASSH_MODE_CTR
 extern const struct assh_algo_cipher_s assh_cipher_tdes_ctr;
+#  endif
+# endif
 
+# ifdef CONFIG_ASSH_CIPHER_CAST128
+/** @multiple @This is a cipher algorithm descriptor for the CAST128 implementation. */
 extern const struct assh_algo_cipher_s assh_cipher_cast128_cbc;
+#  ifdef CONFIG_ASSH_MODE_CTR
 extern const struct assh_algo_cipher_s assh_cipher_cast128_ctr;
+#  endif
+# endif
 
+# ifdef CONFIG_ASSH_CIPHER_BLOWFISH
+/** @multiple @This is a cipher algorithm descriptor for the Blowfish implementation. */
 extern const struct assh_algo_cipher_s assh_cipher_blowfish_cbc;
 extern const struct assh_algo_cipher_s assh_cipher_blowfish_ctr;
+# endif
 
+# ifdef CONFIG_ASSH_CIPHER_TWOFISH
+/** @multiple @This is a cipher algorithm descriptor for the Twofish implementation. */
 extern const struct assh_algo_cipher_s assh_cipher_twofish128_cbc;
 extern const struct assh_algo_cipher_s assh_cipher_twofish256_cbc;
+#  ifdef CONFIG_ASSH_MODE_CTR
 extern const struct assh_algo_cipher_s assh_cipher_twofish128_ctr;
 extern const struct assh_algo_cipher_s assh_cipher_twofish256_ctr;
+#  endif
+#  ifdef CONFIG_ASSH_MODE_GCM
 extern const struct assh_algo_cipher_s assh_cipher_twofish128_gcm;
 extern const struct assh_algo_cipher_s assh_cipher_twofish256_gcm;
+#  endif
+# endif
 
+# ifdef CONFIG_ASSH_CIPHER_SERPENT
+/** @multiple @This is a cipher algorithm descriptor for the Serpent implementation. */
 extern const struct assh_algo_cipher_s assh_cipher_serpent128_cbc;
 extern const struct assh_algo_cipher_s assh_cipher_serpent192_cbc;
 extern const struct assh_algo_cipher_s assh_cipher_serpent256_cbc;
+#  ifdef CONFIG_ASSH_MODE_CTR
 extern const struct assh_algo_cipher_s assh_cipher_serpent128_ctr;
 extern const struct assh_algo_cipher_s assh_cipher_serpent192_ctr;
 extern const struct assh_algo_cipher_s assh_cipher_serpent256_ctr;
+#  endif
+#  ifdef CONFIG_ASSH_MODE_GCM
 extern const struct assh_algo_cipher_s assh_cipher_serpent128_gcm;
 extern const struct assh_algo_cipher_s assh_cipher_serpent256_gcm;
+#  endif
+# endif
 
-extern const struct assh_algo_cipher_s assh_cipher_aes128_gcm;
-extern const struct assh_algo_cipher_s assh_cipher_aes256_gcm;
-
-#endif
 #endif
 
 

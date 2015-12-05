@@ -82,6 +82,7 @@ if test x$enable_gcrypt = xyes ; then
 
       if test x$enable_gcrypt_hash = xyes ; then
 	AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_HASH], [], [use of gcrypt hash algorithms])
+        AC_DEFINE([CONFIG_ASSH_HASH_RIPEMD160], [], [RIPE-MD-160 message digest available])
       fi
 
       if test x$enable_gcrypt_bignum = xyes ; then
@@ -98,6 +99,13 @@ if test x$enable_gcrypt = xyes ; then
 
       if test x$enable_gcrypt_ciphers = xyes ; then
 	AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_CIPHERS], [], [use of gcrypt cipherss])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_TDES], [], [Triple-DES cipher available])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_BLOWFISH], [], [Blowfish cipher available])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_TWOFISH], [], [Twofish cipher available])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_SERPENT], [], [Serpent cipher available])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_CAST128], [], [CAST128 cipher available])
+        AC_DEFINE([CONFIG_ASSH_MODE_GCM], [], [GCM cipher mode available])
+        AC_DEFINE([CONFIG_ASSH_HASH_RIPEMD160], [], [RIPE-MD-160 message digest available])
       fi
 
     ])
@@ -112,6 +120,13 @@ else
    AC_DEFINE([CONFIG_ASSH_MAX_ALGORITHMS], 64, [Maximum number of registered algorithms])
 fi
 
+AC_DEFINE([CONFIG_ASSH_CIPHER_AES], [], [AES cipher available])
+AC_DEFINE([CONFIG_ASSH_CIPHER_ARCFOUR], [], [Arcfour cipher available])
+AC_DEFINE([CONFIG_ASSH_MODE_CTR], [], [Counter cipher mode available])
+AC_DEFINE([CONFIG_ASSH_HASH_MD5], [], [MD5 message digest available])
+AC_DEFINE([CONFIG_ASSH_HASH_SHA1], [], [SHA1 message digest available])
+AC_DEFINE([CONFIG_ASSH_HASH_SHA2], [], [SHA2 message digest available])
+AC_DEFINE([CONFIG_ASSH_HASH_SHA3], [], [SHA3 message digest available])
 
 AM_CONDITIONAL(COND_server,  [test x$enable_server = xyes])
 AM_CONDITIONAL(COND_client,  [test x$enable_client = xyes])
