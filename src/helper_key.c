@@ -23,10 +23,12 @@
 
 #include <assh/helper_key.h>
 #include <assh/helper_base64.h>
+#include <assh/helper_bcrypt.h>
 #include <assh/assh_context.h>
 #include <assh/assh_packet.h>
 #include <assh/assh_alloc.h>
 #include <assh/assh_prng.h>
+#include <assh/assh_cipher.h>
 
 #include <string.h>
 #include <stdio.h>
@@ -34,7 +36,8 @@
 
 #define OPENSSH_V1_AUTH_MAGIC "openssh-key-v1"
 
-static assh_error_t assh_load_rfc4716(FILE *file, uint8_t *kdata, size_t *klen)
+static ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_load_rfc4716(FILE *file, uint8_t *kdata, size_t *klen)
 {
   struct assh_base64_ctx_s ctx;
   assh_error_t err;
@@ -82,7 +85,8 @@ static assh_error_t assh_load_rfc4716(FILE *file, uint8_t *kdata, size_t *klen)
   ASSH_ERR_RET(ASSH_ERR_BAD_DATA);
 }
 
-static assh_error_t assh_load_pub_openssh(FILE *file, uint8_t *kdata, size_t *klen)
+static ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_load_pub_openssh(FILE *file, uint8_t *kdata, size_t *klen)
 {
   struct assh_base64_ctx_s ctx;
   assh_error_t err;
@@ -121,6 +125,116 @@ static assh_error_t assh_load_pub_openssh(FILE *file, uint8_t *kdata, size_t *kl
   ASSH_ERR_RET(ASSH_ERR_BAD_DATA);
 }
 
+static ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_load_openssh_v1_blob(struct assh_context_s *c,
+			  const struct assh_key_s **head,
+			  const struct assh_key_ops_s *algo,
+			  enum assh_algo_class_e role,
+			  const uint8_t *blob, size_t blob_len,
+			  const char *passphrase)
+{
+  assh_error_t err = ASSH_OK;
+
+  ASSH_CHK_RET(blob_len < sizeof(OPENSSH_V1_AUTH_MAGIC), ASSH_ERR_INPUT_OVERFLOW);
+  ASSH_CHK_RET(memcmp(blob, OPENSSH_V1_AUTH_MAGIC, sizeof(OPENSSH_V1_AUTH_MAGIC)),
+	       ASSH_ERR_BAD_DATA);
+
+  uint8_t *cipher_name = blob + sizeof(OPENSSH_V1_AUTH_MAGIC);
+  uint8_t *kdf_name, *kdf_opts, *k_nums, *pub_str, *enc_str;
+
+  ASSH_ERR_RET(assh_check_string(blob, blob_len, cipher_name, &kdf_name));
+  ASSH_ERR_RET(assh_check_string(blob, blob_len, kdf_name, &kdf_opts));
+  ASSH_ERR_RET(assh_check_string(blob, blob_len, kdf_opts, &k_nums));
+  ASSH_ERR_RET(assh_check_array(blob, blob_len, k_nums, 4, &pub_str));
+  ASSH_ERR_RET(assh_check_string(blob, blob_len, pub_str, &enc_str));
+  ASSH_ERR_RET(assh_check_string(blob, blob_len, enc_str, NULL));
+
+  size_t nums = assh_load_u32(k_nums);
+  ASSH_CHK_RET(nums != 1, ASSH_ERR_NOTSUP);
+
+  size_t pv_len, enc_len = assh_load_u32(enc_str);
+  uint8_t *enc = enc_str + 4;
+  uint8_t *pv_str, *cmt_str;
+
+  if (assh_ssh_string_compare(cipher_name, "none"))
+    {
+      ASSH_CHK_RET(assh_ssh_string_compare(kdf_name, "bcrypt"), ASSH_ERR_NOTSUP);
+
+      const struct assh_algo_cipher_s *cipher;
+      ASSH_ERR_RET(assh_algo_by_name(c, ASSH_ALGO_CIPHER,
+		     (const char*)cipher_name + 4, assh_load_u32(cipher_name),
+		     (const struct assh_algo_s **)&cipher));
+
+      ASSH_CHK_RET(enc_len % cipher->block_size, ASSH_ERR_BAD_DATA);
+
+      ASSH_CHK_RET(passphrase == NULL, ASSH_ERR_MISSING_KEY);
+
+      size_t kdf_opts_len = assh_load_u32(kdf_opts);
+      uint8_t *salt_str = kdf_opts + 4;
+      uint8_t *rounds_u32;
+
+      ASSH_ERR_RET(assh_check_string(salt_str, kdf_opts_len, salt_str, &rounds_u32));
+      ASSH_ERR_RET(assh_check_array(salt_str, kdf_opts_len, rounds_u32, 4, NULL));
+
+      ASSH_SCRATCH_ALLOC(c, uint8_t, sc, cipher->ctx_size +
+			 cipher->key_size + cipher->iv_size,
+			 ASSH_ERRSV_CONTINUE, err_);
+
+      uint8_t *cipher_ctx = sc;
+      uint8_t *key = sc + cipher->ctx_size;
+      uint8_t *iv = key + cipher->key_size;
+
+      ASSH_ERR_GTO(assh_bcrypt_pbkdf(c, passphrase, strlen(passphrase),
+			salt_str + 4, assh_load_u32(salt_str),
+			key, cipher->key_size + cipher->iv_size,
+			assh_load_u32(rounds_u32)), err_sc);
+
+      assh_hexdump("bcrypt out", key, cipher->key_size + cipher->iv_size);
+      assh_hexdump("cipher in", enc, enc_len);
+      ASSH_ERR_GTO(cipher->f_init(c, cipher_ctx, key, iv, 0), err_sc);
+      ASSH_ERR_GTO(cipher->f_process(cipher_ctx, enc, enc_len, ASSH_CIPHER_PCK_TAIL), err_sc);
+      cipher->f_cleanup(c, cipher_ctx);
+      assh_hexdump("cipher out", enc, enc_len);
+
+      goto ok;
+    err_sc:
+      ASSH_SCRATCH_FREE(c, sc);
+      return err;
+    }
+ ok:
+
+  ASSH_ERR_RET(assh_check_array(enc, enc_len, enc, 8, &pv_str));
+  ASSH_CHK_RET(assh_load_u32(enc) != assh_load_u32(enc + 4), ASSH_ERR_BAD_DATA);
+
+#if 0
+  /* what is specified in openssh PROTOCOL.key */
+  ASSH_ERR_RET(assh_check_string(enc, enc_len, pv_str, &cmt_str));
+  pv_len = assh_load_u32(pv_str);
+  pv_str += 4;
+
+  const uint8_t *key_blob = pv_str;
+  ASSH_ERR_RET(assh_key_load(c, head, algo, role, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY,
+			     &key_blob, pv_len));
+#else
+  /* what is actually implemented in openssh */
+  pv_len = blob + blob_len - pv_str;
+
+  const uint8_t *key_blob = pv_str;
+  ASSH_DEBUG("blob %p\n", key_blob);
+  ASSH_ERR_RET(assh_key_load(c, head, algo, role, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY,
+			     &key_blob, pv_len));
+  ASSH_DEBUG("blob %p\n", key_blob);
+
+  cmt_str = key_blob;
+  assh_hexdump("end", cmt_str, 8);
+#endif
+
+  ASSH_ERR_RET(assh_check_string(enc, enc_len, cmt_str, NULL));
+
+ err_:
+  return ASSH_OK;
+}
+
 assh_error_t assh_load_key_file(struct assh_context_s *c,
 				const struct assh_key_s **head,
 				const struct assh_key_ops_s *algo,
@@ -128,8 +242,13 @@ assh_error_t assh_load_key_file(struct assh_context_s *c,
 				FILE *file, enum assh_key_format_e format,
 				const char *passphrase)
 {
-  assh_error_t err;
-  size_t blob_len = 4096;
+  assh_error_t err = ASSH_OK;
+
+  ASSH_CHK_RET(fseek(file, 0, SEEK_END), ASSH_ERR_IO);
+  size_t blob_len = ftell(file);
+
+  ASSH_CHK_RET(blob_len > 4096, ASSH_ERR_INPUT_OVERFLOW);
+  fseek(file, 0, SEEK_SET);
 
   ASSH_SCRATCH_ALLOC(c, uint8_t, blob, blob_len,
                      ASSH_ERRSV_CONTINUE, err_);
@@ -137,37 +256,36 @@ assh_error_t assh_load_key_file(struct assh_context_s *c,
   switch (format)
     {
     case ASSH_KEY_FMT_PUB_RFC4716:
-      assh_load_rfc4716(file, blob, &blob_len);
+      ASSH_ERR_GTO(assh_load_rfc4716(file, blob, &blob_len), err_sc);
       format = ASSH_KEY_FMT_PUB_RFC4253;
       break;
 
     case ASSH_KEY_FMT_PUB_OPENSSH:
-      assh_load_pub_openssh(file, blob, &blob_len);
+      ASSH_ERR_GTO(assh_load_pub_openssh(file, blob, &blob_len), err_sc);
       format = ASSH_KEY_FMT_PUB_RFC4253;
       break;
 
     case ASSH_KEY_FMT_PV_PEM:
-      assh_load_rfc4716(file, blob, &blob_len);
+      ASSH_ERR_GTO(assh_load_rfc4716(file, blob, &blob_len), err_sc);
       format = ASSH_KEY_FMT_PV_PEM_ASN1;
       break;
 
     case ASSH_KEY_FMT_PUB_PEM:
-      assh_load_rfc4716(file, blob, &blob_len);
+      ASSH_ERR_GTO(assh_load_rfc4716(file, blob, &blob_len), err_sc);
       format = ASSH_KEY_FMT_PUB_PEM_ASN1;
       break;
 
     case ASSH_KEY_FMT_PV_OPENSSH_V1:
-      assh_load_rfc4716(file, blob, &blob_len);
-      format = ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB;
-      break;
+      ASSH_ERR_GTO(assh_load_rfc4716(file, blob, &blob_len), err_sc);
+      ASSH_ERR_GTO(assh_load_openssh_v1_blob(c, head, algo, role,
+					     blob, blob_len, passphrase), err_sc);
+      goto err_sc;
 
     default:
       blob_len = fread(blob, 1, blob_len, file);
       break;
     }
 
-
-  err = ASSH_OK;
   const uint8_t *key_blob = blob;
   ASSH_ERR_GTO(assh_key_load(c, head, algo, role, format, &key_blob, blob_len), err_sc);
 
@@ -187,7 +305,7 @@ assh_error_t assh_load_key_filename(struct assh_context_s *c,
 {
   assh_error_t err;
 
-  FILE *file = fopen(filename, "r");
+  FILE *file = fopen(filename, "rb");
   ASSH_CHK_RET(file == NULL, ASSH_ERR_IO);
 
   ASSH_ERR_GTO(assh_load_key_file(c, head, algo, role, file, format, passphrase), err_);
