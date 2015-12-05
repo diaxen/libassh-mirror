@@ -90,50 +90,52 @@ static void assh_keccak(struct assh_hash_sha3_context_s *ctx)
     };
 
   uint_fast8_t n, i, j, k;
+  uint64_t * __restrict__ a = ctx->a;
 
   for (n = 0; n < 24; n++)
     {
       uint64_t c[5], b[25];
 
       ASSH_KECCAK_LOOP(i, {
-	c[i] = ctx->a[ASSH_KECCAK_WRAP2(i, 0)] ^ ctx->a[ASSH_KECCAK_WRAP2(i, 1)]
-	     ^ ctx->a[ASSH_KECCAK_WRAP2(i, 2)] ^ ctx->a[ASSH_KECCAK_WRAP2(i, 3)]
-             ^ ctx->a[ASSH_KECCAK_WRAP2(i, 4)];
+	c[i] = a[ASSH_KECCAK_WRAP2(i, 0)] ^ a[ASSH_KECCAK_WRAP2(i, 1)]
+	     ^ a[ASSH_KECCAK_WRAP2(i, 2)] ^ a[ASSH_KECCAK_WRAP2(i, 3)]
+             ^ a[ASSH_KECCAK_WRAP2(i, 4)];
       });
 
       ASSH_KECCAK_LOOP(i, {
 	  uint64_t d = c[ASSH_KECCAK_WRAP(i + 4)]
 	             ^ keccak_rotate(c[ASSH_KECCAK_WRAP(i + 1)], 1);
 	  ASSH_KECCAK_LOOP(j, {
-              ctx->a[ASSH_KECCAK_WRAP2(i, j)] ^= d;
+              a[ASSH_KECCAK_WRAP2(i, j)] ^= d;
 	  });
       });
 
       ASSH_KECCAK_LOOP(i, {
 	  ASSH_KECCAK_LOOP(j, {
               k = ASSH_KECCAK_WRAP2(i, j);
-              b[ASSH_KECCAK_WRAP2(j, i * 2 + j * 3)] = keccak_rotate(ctx->a[k], r[k]);
+              b[ASSH_KECCAK_WRAP2(j, i * 2 + j * 3)] = keccak_rotate(a[k], r[k]);
 	  });
       });
 
       ASSH_KECCAK_LOOP(i, {
 	  ASSH_KECCAK_LOOP(j, {
               k = ASSH_KECCAK_WRAP2(i, j);
-              ctx->a[k] = b[k] ^ (~b[ASSH_KECCAK_WRAP2(i + 1, j)]
+              a[k] = b[k] ^ (~b[ASSH_KECCAK_WRAP2(i + 1, j)]
                                  & b[ASSH_KECCAK_WRAP2(i + 2, j)]);
 	  });
       });
 
-      ctx->a[0] ^= rc[n];
+      a[0] ^= rc[n];
     }
 }
 
 static void assh_keccak_xorin(struct assh_hash_sha3_context_s *ctx)
 {
   uint_fast8_t i;
+  uint64_t * __restrict__ a = ctx->a;
 
   for (i = 0; i < ctx->ctx.algo->block_size / 8; i++)
-    ctx->a[i] ^= assh_load_u64le(ctx->buf + i * 8);
+    a[i] ^= assh_load_u64le(ctx->buf + i * 8);
 
   assh_keccak(ctx);
 }
