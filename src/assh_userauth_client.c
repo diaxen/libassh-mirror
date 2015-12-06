@@ -65,7 +65,7 @@ struct assh_userauth_context_s
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY
   const struct assh_algo_s *algo;
   uint_fast16_t algo_idx;
-  const struct assh_key_s *pub_keys;
+  struct assh_key_s *pub_keys;
 #endif
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PASSWORD
   char password[CONFIG_ASSH_AUTH_PASSWORD_LEN];
@@ -179,7 +179,7 @@ static assh_error_t assh_userauth_client_pck_pubkey(struct assh_session_s *s,
                                                     size_t extra_len)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  const struct assh_key_s *pub_key = pv->pub_keys;
+  struct assh_key_s *pub_key = pv->pub_keys;
   assh_error_t err;
 
   size_t algo_name_len = strlen(pv->algo->name);
@@ -327,13 +327,13 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_methods_done)
 #endif
 
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY
-  const struct assh_key_s *k = e->userauth_client.methods.pub_keys;
+  struct assh_key_s *k = e->userauth_client.methods.pub_keys;
 
   while (k != NULL)
     {
       /* check usable keys */
       pv->algo_idx = 0;
-      const struct assh_key_s *next = k->next;
+      struct assh_key_s *next = k->next;
 
       /* insert provided keys in internal list */
       if (assh_algo_by_key(s->ctx, k, &pv->algo_idx, &pv->algo) == ASSH_OK)

@@ -61,12 +61,12 @@ struct assh_kex_rsa_private_s
 
   size_t minklen;
   const uint8_t *lhash;
-  const struct assh_key_s *host_key;
+  struct assh_key_s *host_key;
 
   union {
 #ifdef CONFIG_ASSH_SERVER
     struct {
-      const struct assh_key_s *t_key;
+      struct assh_key_s *t_key;
       void *hash_ctx;
     };
 #endif
@@ -155,7 +155,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
   ASSH_ASSERT(assh_packet_check_string(p, ks_str, &t_str));
 
   /* load transient RSA key */
-  const struct assh_key_s *t_key_ = NULL;
+  struct assh_key_s *t_key_ = NULL;
 
   const uint8_t *key_blob = t_str + 4;
   ASSH_ERR_RET(assh_key_load(c, &t_key_, &assh_key_rsa, ASSH_ALGO_ANY,
@@ -355,7 +355,7 @@ static assh_error_t assh_kex_rsa_server_send_pubkey(struct assh_session_s *s)
 
   /* look for an host key pair which can be used with the selected algorithm. */
 
-  const struct assh_key_s *hk;
+  struct assh_key_s *hk;
   ASSH_CHK_RET(assh_key_lookup(c, &hk, &s->host_sign_algo->algo) != ASSH_OK,
                ASSH_ERR_MISSING_KEY | ASSH_ERRSV_DISCONNECT);
   pv->host_key = hk;
@@ -506,7 +506,7 @@ static assh_error_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
   ASSH_CHK_RET(em + elen - ps != 4 + assh_load_u32(ps), ASSH_ERR_BAD_DATA);
 
   /* send signature packet */
-  const struct assh_key_s *hk = pv->host_key;
+  struct assh_key_s *hk = pv->host_key;
 
   size_t sign_len;
   const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;

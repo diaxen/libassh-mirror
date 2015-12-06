@@ -151,7 +151,7 @@ struct assh_key_s
   char *comment;
 
   /* Next key in the list */
-  const struct assh_key_s *next;
+  struct assh_key_s *next;
 
   /* Functions operating on this key */
   const struct assh_key_ops_s *algo;
@@ -166,7 +166,7 @@ struct assh_key_s
     functions. @see @assh/helper_key.h */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_key_load(struct assh_context_s *c,
-              const struct assh_key_s **key,
+              struct assh_key_s **key,
               const struct assh_key_ops_s *algo,
               enum assh_algo_class_e role,
               enum assh_key_format_e format,
@@ -176,14 +176,14 @@ assh_key_load(struct assh_context_s *c,
     size. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_key_create(struct assh_context_s *c,
-                const struct assh_key_s **key, size_t bits,
+                struct assh_key_s **key, size_t bits,
                 const struct assh_key_ops_s *algo,
                 enum assh_algo_class_e role);
 
 /** @This changes the key comment string. */
 assh_error_t
 assh_key_comment(struct assh_context_s *c,
-                 const struct assh_key_s *key,
+                 struct assh_key_s *key,
                  const char *comment);
 
 /** @internal This function write the key in blob representation to
@@ -218,13 +218,13 @@ assh_key_cmp(struct assh_context_s *c, const struct assh_key_s *key,
 
 /** @This releases the first key on the linked list. */
 void assh_key_drop(struct assh_context_s *c,
-                   const struct assh_key_s **head);
+                   struct assh_key_s **head);
 
 /** @This releases all the keys on the linked list
     and set the list head to @tt NULL. */
 ASSH_INLINE void
 assh_key_flush(struct assh_context_s *c,
-               const struct assh_key_s **head)
+               struct assh_key_s **head)
 {
   while (*head != NULL)
     assh_key_drop(c, head);
@@ -232,10 +232,10 @@ assh_key_flush(struct assh_context_s *c,
 
 /** @internal @This inserts a key in a list of keys. */
 ASSH_INLINE void
-assh_key_insert(const struct assh_key_s **head,
-                const struct assh_key_s *key)
+assh_key_insert(struct assh_key_s **head,
+                struct assh_key_s *key)
 {
-  ((struct assh_key_s *)key)->next = *head;
+  key->next = *head;
   *head = key;
 }
 
@@ -251,7 +251,7 @@ assh_key_validate(struct assh_context_s *c,
     among keys registered on the context. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_key_lookup(struct assh_context_s *c,
-                const struct assh_key_s **key,
+                struct assh_key_s **key,
                 const struct assh_algo_s *algo);
 
 /** Dummy key algorithm */

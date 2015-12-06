@@ -67,7 +67,7 @@ assh_key_algo_guess(struct assh_context_s *c,
 }
 
 assh_error_t assh_key_load(struct assh_context_s *c,
-                           const struct assh_key_s **key,
+                           struct assh_key_s **key,
                            const struct assh_key_ops_s *algo,
                            enum assh_algo_class_e role,
                            enum assh_key_format_e format,
@@ -93,7 +93,7 @@ assh_error_t assh_key_load(struct assh_context_s *c,
 
 assh_error_t
 assh_key_create(struct assh_context_s *c,
-                const struct assh_key_s **key, size_t bits,
+                struct assh_key_s **key, size_t bits,
                 const struct assh_key_ops_s *algo,
                 enum assh_algo_class_e role)
 {
@@ -112,7 +112,7 @@ assh_key_create(struct assh_context_s *c,
 
 assh_error_t
 assh_key_comment(struct assh_context_s *c,
-                 const struct assh_key_s *key,
+                 struct assh_key_s *key,
                  const char *comment)
 {
   assh_error_t err;
@@ -122,9 +122,9 @@ assh_key_comment(struct assh_context_s *c,
 }
 
 void assh_key_drop(struct assh_context_s *c,
-                   const struct assh_key_s **head)
+                   struct assh_key_s **head)
 {
-  const struct assh_key_s *k = *head;
+  struct assh_key_s *k = *head;
   if (k == NULL)
     return;
   *head = k->next;
@@ -134,10 +134,10 @@ void assh_key_drop(struct assh_context_s *c,
 
 assh_error_t
 assh_key_lookup(struct assh_context_s *c,
-                const struct assh_key_s **key,
+                struct assh_key_s **key,
                 const struct assh_algo_s *algo)
 {
-  const struct assh_key_s *k = c->keys;
+  struct assh_key_s *k = c->keys;
 
   while (k != NULL && !assh_algo_suitable_key(c, algo, k))
     k = k->next;

@@ -81,7 +81,7 @@ struct assh_context_s
   int prng_entropy;
 
   /** Head of loaded keys list */
-  const struct assh_key_s *keys;
+  struct assh_key_s *keys;
 
   /** Estimated size of the kex init packet, computed when new
       algorithm are registered. */

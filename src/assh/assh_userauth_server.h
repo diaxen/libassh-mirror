@@ -51,7 +51,7 @@
 struct assh_event_userauth_server_userkey_s
 {
   ASSH_EV_CONST struct assh_buffer_s      username;
-  const struct assh_key_s * ASSH_EV_CONST pub_key;
+  struct assh_key_s * ASSH_EV_CONST       pub_key;
   assh_bool_t                             found;
 };
 

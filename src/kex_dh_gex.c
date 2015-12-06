@@ -95,7 +95,7 @@ struct assh_kex_dh_gex_private_s
       struct assh_bignum_s gn;
       struct assh_bignum_s en;
       struct assh_bignum_s xn;
-      const struct assh_key_s *host_key;
+      struct assh_key_s *host_key;
       struct assh_packet_s *pck;
     };
 #endif
@@ -567,7 +567,7 @@ static assh_error_t assh_kex_dh_gex_server_wait_e(struct assh_session_s *s,
   ASSH_ERR_GTO(assh_hash_init(s->ctx, hash_ctx, pv->hash), err_scratch);
 
   struct assh_packet_s *pout;
-  const struct assh_key_s *hk;
+  struct assh_key_s *hk;
   size_t slen;
 
   ASSH_ERR_GTO(assh_kex_server_hash1(s, l, hash_ctx, &pout,

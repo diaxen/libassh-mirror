@@ -155,7 +155,7 @@ assh_error_t test_const()
   for (i = 0; algos[i].algo; i++)
     {
       const struct assh_algo_sign_s *a = algos[i].algo;
-      const struct assh_key_s *key;
+      struct assh_key_s *key;
 
       fprintf(stderr, "\n%s const sign/verify: ", a->algo.name);
 
@@ -221,7 +221,7 @@ assh_error_t test_loop()
   for (i = 0; algos[i].algo; i++)
     {
       const struct assh_algo_sign_s *a = algos[i].algo;
-      const struct assh_key_s *key, *key2;
+      struct assh_key_s *key, *key2;
 
       fprintf(stderr, "\n%s sign/verify: ", a->algo.name);
 
@@ -338,7 +338,7 @@ assh_error_t test_loop()
   for (i = 0; algos[i].algo; i++)
     {
       const struct assh_algo_sign_s *a = algos[i].algo;
-      const struct assh_key_s *key;
+      struct assh_key_s *key;
 
       fprintf(stderr, "\n%s key load/validate: ", a->algo.name);
 

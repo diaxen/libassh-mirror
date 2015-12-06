@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
       usage(argv[0]);
     }
 
-  const struct assh_key_s *key;
+  struct assh_key_s *key;
 
   if (type == NULL)
     ERROR("Missing -t option\n");

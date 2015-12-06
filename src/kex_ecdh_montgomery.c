@@ -75,7 +75,7 @@ struct assh_kex_ecdhmt_private_s
   enum assh_kex_ecdhmt_state_e state;
 
 #ifdef CONFIG_ASSH_CLIENT
-  const struct assh_key_s *host_key;
+  struct assh_key_s *host_key;
   struct assh_packet_s *pck;
 #endif
 
@@ -411,7 +411,7 @@ static assh_error_t assh_kex_ecdhmt_server_wait_pubkey(struct assh_session_s *s,
   ASSH_ERR_GTO(assh_hash_init(s->ctx, hash_ctx, pv->hash), err_sc);
 
   struct assh_packet_s *pout;
-  const struct assh_key_s *hk;
+  struct assh_key_s *hk;
   size_t slen;
 
   ASSH_ERR_GTO(assh_kex_server_hash1(s, 
