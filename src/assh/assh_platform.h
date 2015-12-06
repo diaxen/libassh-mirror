@@ -110,7 +110,7 @@ ASSH_INLINE uint32_t assh_load_u32(const uint8_t *s)
 #ifdef CONFIG_ASSH_NONALIGNED_ACCESS
   return htonl(*(const uint32_t*)s);
 #else
-  return s[3] + (s[2] << 8) + (s[1] << 16) + (s[0] << 24);
+  return s[3] | (s[2] << 8) | (s[1] << 16) | (s[0] << 24);
 #endif
 }
 
@@ -118,27 +118,27 @@ ASSH_INLINE uint32_t assh_load_u32(const uint8_t *s)
     byte order from a non-aligned location. */
 ASSH_INLINE uint32_t assh_load_u32le(const uint8_t *s)
 {
-  return s[0] + (s[1] << 8) + (s[2] << 16) + (s[3] << 24);
+  return s[0] | (s[1] << 8) | (s[2] << 16) | (s[3] << 24);
 }
 
 /** @internal @This loads a 64 bits value in network byte
     order from a non-aligned location. */
 ASSH_INLINE uint64_t assh_load_u64(const uint8_t *s)
 {
-  return ((uint64_t)s[7] << 0)  + ((uint64_t)s[6] << 8) +
-         ((uint64_t)s[5] << 16) + ((uint64_t)s[4] << 24) +
-         ((uint64_t)s[3] << 32) + ((uint64_t)s[2] << 40) +
-         ((uint64_t)s[1] << 48) + ((uint64_t)s[0] << 56);
+  return ((uint64_t)s[7] << 0)  | ((uint64_t)s[6] << 8)  |
+         ((uint64_t)s[5] << 16) | ((uint64_t)s[4] << 24) |
+         ((uint64_t)s[3] << 32) | ((uint64_t)s[2] << 40) |
+         ((uint64_t)s[1] << 48) | ((uint64_t)s[0] << 56);
 }
 
 /** @internal @This loads a 64 bits value in little endian
     byte order from a non-aligned location. */
 ASSH_INLINE uint64_t assh_load_u64le(const uint8_t *s)
 {
-  return ((uint64_t)s[0] << 0)  + ((uint64_t)s[1] << 8) +
-         ((uint64_t)s[2] << 16) + ((uint64_t)s[3] << 24) +
-         ((uint64_t)s[4] << 32) + ((uint64_t)s[5] << 40) +
-         ((uint64_t)s[6] << 48) + ((uint64_t)s[7] << 56);
+  return ((uint64_t)s[0] << 0)  | ((uint64_t)s[1] << 8)  |
+         ((uint64_t)s[2] << 16) | ((uint64_t)s[3] << 24) |
+         ((uint64_t)s[4] << 32) | ((uint64_t)s[5] << 40) |
+         ((uint64_t)s[6] << 48) | ((uint64_t)s[7] << 56);
 }
 
 /** @internal @This performs a byte swap of a 32 bits value. */
