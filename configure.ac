@@ -65,8 +65,8 @@ AC_ARG_ENABLE(gcrypt_hash, AC_HELP_STRING(--disable-gcrypt-hash, [Disable use of
 AC_ARG_ENABLE(gcrypt_bignum, AC_HELP_STRING(--enable-gcrypt-bignum, [Enable use of gcrypt big number functions]),
 		       enable_gcrypt_bignum=$enableval, enable_gcrypt_bignum=no)
 
-AC_ARG_ENABLE(gcrypt_prng, AC_HELP_STRING(--disable-gcrypt-prng, [Disable use of gcrypt random number generation]),
-		       enable_gcrypt_prng=$enableval, enable_gcrypt_prng=yes)
+AC_ARG_ENABLE(gcrypt_prng, AC_HELP_STRING(--enable-gcrypt-prng, [Enable use of gcrypt random number generation]),
+		       enable_gcrypt_prng=$enableval, enable_gcrypt_prng=no)
 
 AC_ARG_ENABLE(gcrypt_alloc, AC_HELP_STRING(--disable-gcrypt-alloc, [Disable use of gcrypt secur memory allocation]),
 		       enable_gcrypt_alloc=$enableval, enable_gcrypt_alloc=yes)
