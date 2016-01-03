@@ -39,7 +39,7 @@
     binary key blob. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_load_key_file(struct assh_context_s *c,
-		   const struct assh_key_s **head,
+		   struct assh_key_s **head,
 		   const struct assh_key_ops_s *algo,	
 		   enum assh_algo_class_e role,
 		   FILE *file, enum assh_key_format_e format,
@@ -50,7 +50,7 @@ assh_load_key_file(struct assh_context_s *c,
     assh_load_key_file. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_load_key_filename(struct assh_context_s *c,
-		       const struct assh_key_s **head,
+		       struct assh_key_s **head,
 		       const struct assh_key_ops_s *algo,
 		       enum assh_algo_class_e role,
 		       const char *filename,
@@ -80,7 +80,7 @@ ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_save_key_file(struct assh_context_s *c,
 		   const struct assh_key_s *head,
 		   FILE *file, enum assh_key_format_e format,
-		   const char *comment);
+		   const char *passphrase);
 
 /** @This saves one or more keys to a file. @see assh_save_key_file */
 ASSH_WARN_UNUSED_RESULT assh_error_t
@@ -88,7 +88,7 @@ assh_save_key_filename(struct assh_context_s *c,
 		       const struct assh_key_s *head,
 		       const char *filename,
 		       enum assh_key_format_e format,
-		       const char *comment);
+		       const char *passphrase);
 
 #endif
 

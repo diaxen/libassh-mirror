@@ -50,6 +50,8 @@ enum assh_cipher_op_e
   ASSH_CIPHER_PCK_HEAD,
   /** Process remaining packet data */
   ASSH_CIPHER_PCK_TAIL,
+  /** Process key blob */
+  ASSH_CIPHER_KEY,
 };
 
 /** @internal @see assh_cipher_process_t */

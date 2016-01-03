@@ -179,8 +179,7 @@ int test(int (*fend)(int, int), int n)
   for (i = 0; i < RQ_POSTPONED_SIZE; i++)
     rq_postponed[i] = NULL;
 
-  if (assh_load_hostkey_filename(&context[0], &assh_key_none, ASSH_ALGO_SIGN, "/dev/null",
-				 ASSH_KEY_FMT_PV_PEM_ASN1) != ASSH_OK)
+  if (assh_key_create(&context[0], &context[0].keys, 0, &assh_key_none, ASSH_ALGO_SIGN) != ASSH_OK)
     return -1;
 
   /********************* sessions test loop */
