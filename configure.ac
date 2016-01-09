@@ -168,5 +168,6 @@ AC_OUTPUT([
   src/assh/Makefile
   examples/Makefile
   test/Makefile
+  doc/Makefile
 ])
 

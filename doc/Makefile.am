@@ -14,13 +14,5 @@
 # License along with this program.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-SUBDIRS = src examples test doc
-ACLOCAL_AMFLAGS=-Im4
-
-doc: manual internals
-
-manual:
-	mkdoc -I doc/ -I src/ --conf-file manual.conf
-
-internals:
-	mkdoc -I doc/ -I src/ --conf-file internals.conf
+EXTRA_DIST = Makefile.am assh_config.h fdl-1.3.mkdoc internals.conf	\
+	manual.conf template.mkdoc top.mkdoc manual/html/* internals/html/*
