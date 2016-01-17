@@ -155,7 +155,7 @@ assh_error_t assh_packet_add_mpint(struct assh_context_s *ctx,
 
 assh_error_t
 assh_check_asn1(const uint8_t *buffer, size_t buffer_len, const uint8_t *str,
-                uint8_t **value, uint8_t **next, uint8_t id)
+                const uint8_t **value, const uint8_t **next, uint8_t id)
 {
   assh_error_t err;
 
@@ -174,15 +174,15 @@ assh_check_asn1(const uint8_t *buffer, size_t buffer_len, const uint8_t *str,
     }
   ASSH_CHK_RET(e - str < l, ASSH_ERR_INPUT_OVERFLOW);
   if (value != NULL)
-    *value = (uint8_t*)str;
+    *value = str;
   if (next != NULL)
-    *next = (uint8_t*)str + l;
+    *next = str + l;
   return ASSH_OK;
 }
 
 assh_error_t
 assh_check_string(const uint8_t *buffer, size_t buffer_len,
-                  const uint8_t *str, uint8_t **next)
+                  const uint8_t *str, const uint8_t **next)
 {
   assh_error_t err;
 
@@ -191,13 +191,13 @@ assh_check_string(const uint8_t *buffer, size_t buffer_len,
   uint32_t s = assh_load_u32(str);
   ASSH_CHK_RET(e - 4 - str < s, ASSH_ERR_INPUT_OVERFLOW);
   if (next != NULL)
-    *next = (uint8_t*)str + 4 + s;
+    *next = str + 4 + s;
   return ASSH_OK;
 }
 
 assh_error_t
 assh_check_array(const uint8_t *buffer, size_t buffer_len,
-                 const uint8_t *array, size_t array_len, uint8_t **next)
+                 const uint8_t *array, size_t array_len, const uint8_t **next)
 {
   assh_error_t err;
 
@@ -205,7 +205,7 @@ assh_check_array(const uint8_t *buffer, size_t buffer_len,
   ASSH_CHK_RET(array < buffer || array > e, ASSH_ERR_INPUT_OVERFLOW);
   ASSH_CHK_RET(e - array < array_len, ASSH_ERR_INPUT_OVERFLOW);
   if (next != NULL)
-    *next = (uint8_t*)array + array_len;
+    *next = array + array_len;
   return ASSH_OK;
 }
 

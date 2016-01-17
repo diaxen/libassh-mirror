@@ -310,7 +310,7 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
   /* get pointers to the 10 name-lists while checking bounds */
   lists[0] = p->head.end /* cookie */ + 16;
   for (i = 0; i < 10; i++)
-    ASSH_ERR_RET(assh_packet_check_string(p, lists[i], lists + i + 1)
+    ASSH_ERR_RET(assh_packet_check_string(p, lists[i], assh_uint8ptr_cast(lists + i + 1))
 		 | ASSH_ERRSV_DISCONNECT);
 
   ASSH_ERR_RET(assh_packet_check_array(p, lists[10], 1, NULL)

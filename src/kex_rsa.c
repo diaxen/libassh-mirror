@@ -150,8 +150,8 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
 
   /* SSH_MSG_KEXRSA_PUBKEY packet */
   struct assh_packet_s *p = pv->pck;
-  uint8_t *ks_str = p->head.end;
-  uint8_t *t_str;
+  const uint8_t *ks_str = p->head.end;
+  const uint8_t *t_str;
   ASSH_ASSERT(assh_packet_check_string(p, ks_str, &t_str));
 
   /* load transient RSA key */
@@ -280,8 +280,8 @@ static assh_error_t assh_kex_rsa_client_wait_pubkey(struct assh_session_s *s,
   ASSH_CHK_RET(p->head.msg != SSH_MSG_KEXRSA_PUBKEY, ASSH_ERR_PROTOCOL
 	       | ASSH_ERRSV_DISCONNECT);
 
-  uint8_t *ks_str = p->head.end;
-  uint8_t *t_str;
+  const uint8_t *ks_str = p->head.end;
+  const uint8_t *t_str;
 
   ASSH_ERR_RET(assh_packet_check_string(p, ks_str, &t_str)
 	       | ASSH_ERRSV_DISCONNECT);
@@ -304,8 +304,8 @@ static assh_error_t assh_kex_rsa_client_wait_sign(struct assh_session_s *s,
   assh_error_t err;
 
   /* SSH_MSG_KEXRSA_PUBKEY packet */
-  uint8_t *ks_str = pv->pck->head.end;
-  uint8_t *t_str;
+  const uint8_t *ks_str = pv->pck->head.end;
+  const uint8_t *t_str;
   ASSH_ASSERT(assh_packet_check_string(pv->pck, ks_str, &t_str));
 
   /* SSH_MSG_KEXRSA_DONE packet */

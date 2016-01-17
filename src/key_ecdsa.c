@@ -415,7 +415,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_ecdsa_load)
     }
 
     case ASSH_KEY_FMT_PV_PEM_ASN1: {
-      uint8_t *seq, *seq_end, *val, *next;
+      const uint8_t *seq, *seq_end, *val, *next;
 
       ASSH_ERR_RET(assh_check_asn1(blob, blob_len, blob, &seq, &seq_end,
                                    /* seq */ 0x30));
@@ -439,7 +439,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_ecdsa_load)
 
       /* public key */
       ASSH_ERR_RET(assh_check_asn1(blob, blob_len, next, &val, NULL, 0xa1));
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, val, (uint8_t**)&x_str, &next, 0x03));
+      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, val, &x_str, &next, 0x03));
 
       ASSH_CHK_RET(x_str + 2 + 2 * n != next, ASSH_ERR_BAD_DATA);
       ASSH_CHK_RET(x_str[1] != 0x04 /* no point compression */, ASSH_ERR_NOTSUP);

@@ -140,8 +140,8 @@ static assh_error_t assh_kex_dh_gex_client_wait_group(struct assh_session_s *s,
   ASSH_CHK_RET(p->head.msg != SSH_MSG_KEX_DH_GEX_GROUP, ASSH_ERR_PROTOCOL
 	       | ASSH_ERRSV_DISCONNECT);
 
-  uint8_t *p_str = p->head.end;
-  uint8_t *g_str;
+  const uint8_t *p_str = p->head.end;
+  const uint8_t *g_str;
 
   ASSH_ERR_RET(assh_packet_check_string(p, p_str, &g_str)
 	       | ASSH_ERRSV_DISCONNECT);
@@ -262,8 +262,8 @@ static ASSH_EVENT_DONE_FCN(assh_kex_dh_gex_host_key_lookup_done)
 
   struct assh_packet_s *p = pv->pck;
 
-  uint8_t *ks_str = p->head.end;
-  uint8_t *f_str, *h_str;
+  const uint8_t *ks_str = p->head.end;
+  const uint8_t *f_str, *h_str;
 
   ASSH_ERR_RET(assh_packet_check_string(p, ks_str, &f_str)
 	       | ASSH_ERRSV_DISCONNECT);
@@ -391,8 +391,8 @@ static assh_error_t assh_kex_dh_gex_client_wait_f(struct assh_session_s *s,
   ASSH_CHK_RET(p->head.msg != SSH_MSG_KEX_DH_GEX_REPLY, ASSH_ERR_PROTOCOL
 	       | ASSH_ERRSV_DISCONNECT);
 
-  uint8_t *ks_str = p->head.end;
-  uint8_t *f_str, *h_str;
+  const uint8_t *ks_str = p->head.end;
+  const uint8_t *f_str, *h_str;
 
   ASSH_ERR_RET(assh_packet_check_string(p, ks_str, &f_str)
 	       | ASSH_ERRSV_DISCONNECT);
@@ -419,7 +419,7 @@ static assh_error_t assh_kex_dh_gex_server_wait_size(struct assh_session_s *s,
   struct assh_context_s *c = s->ctx;
   assh_error_t err;
 
-  uint8_t *next = p->head.end;
+  const uint8_t *next = p->head.end;
   size_t min, max;
   pv->request_type = p->head.msg;
 

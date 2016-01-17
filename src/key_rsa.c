@@ -356,7 +356,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
   assh_error_t err;
 
   size_t n_len, e_len, d_len = 0, p_len = 0, q_len = 0;
-  uint8_t *n_str, *e_str, *d_str,
+  const uint8_t *n_str, *e_str, *d_str,
     *p_str, *q_str, *i_str, *dp_str, *dq_str;
 
   /* parse the key blob */
@@ -367,8 +367,8 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
       ASSH_CHK_RET(blob_len < ASSH_RSA_ID_LEN, ASSH_ERR_INPUT_OVERFLOW);
       ASSH_CHK_RET(memcmp(ASSH_RSA_ID, blob, ASSH_RSA_ID_LEN), ASSH_ERR_BAD_DATA);
 
-      e_str = (uint8_t*)blob + ASSH_RSA_ID_LEN;
-      ASSH_ERR_RET(assh_check_string(blob, blob_len, e_str, (uint8_t **)&n_str));
+      e_str = blob + ASSH_RSA_ID_LEN;
+      ASSH_ERR_RET(assh_check_string(blob, blob_len, e_str, &n_str));
       ASSH_ERR_RET(assh_bignum_size_of_data(ASSH_BIGNUM_MPINT, e_str, NULL, NULL, &e_len));
       ASSH_ERR_RET(assh_check_string(blob, blob_len, n_str, blob_));
       ASSH_ERR_RET(assh_bignum_size_of_data(ASSH_BIGNUM_MPINT, n_str, NULL, NULL, &n_len));
@@ -376,7 +376,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
       break;
 
     case ASSH_KEY_FMT_PUB_PEM_ASN1: {
-      const uint8_t *seq, *seq_end, *val;
+      const uint8_t *seq_end, *val;
       ASSH_ERR_RET(assh_check_asn1(blob, blob_len, blob, &n_str, &seq_end, /* seq */ 0x30));
       ASSH_ERR_RET(assh_check_asn1(blob, blob_len, n_str, NULL, &e_str, 0x02));
       ASSH_ERR_RET(assh_bignum_size_of_data(ASSH_BIGNUM_ASN1, n_str, NULL, NULL, &n_len));
@@ -390,15 +390,15 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
       ASSH_CHK_RET(blob_len < ASSH_RSA_ID_LEN, ASSH_ERR_INPUT_OVERFLOW);
       ASSH_CHK_RET(memcmp(ASSH_RSA_ID, blob, ASSH_RSA_ID_LEN), ASSH_ERR_BAD_DATA);
 
-      n_str = (uint8_t*)blob + ASSH_RSA_ID_LEN;
-      ASSH_ERR_RET(assh_check_string(blob, blob_len, n_str, (uint8_t **)&e_str));
+      n_str = blob + ASSH_RSA_ID_LEN;
+      ASSH_ERR_RET(assh_check_string(blob, blob_len, n_str, &e_str));
       ASSH_ERR_RET(assh_bignum_size_of_data(ASSH_BIGNUM_MPINT, n_str, NULL, NULL, &n_len));
-      ASSH_ERR_RET(assh_check_string(blob, blob_len, e_str, (uint8_t **)&d_str));
+      ASSH_ERR_RET(assh_check_string(blob, blob_len, e_str, &d_str));
       ASSH_ERR_RET(assh_bignum_size_of_data(ASSH_BIGNUM_MPINT, e_str, NULL, NULL, &e_len));
-      ASSH_ERR_RET(assh_check_string(blob, blob_len, d_str, (uint8_t **)&i_str));
+      ASSH_ERR_RET(assh_check_string(blob, blob_len, d_str, &i_str));
       ASSH_ERR_RET(assh_bignum_size_of_data(ASSH_BIGNUM_MPINT, d_str, NULL, NULL, &d_len));
-      ASSH_ERR_RET(assh_check_string(blob, blob_len, i_str, (uint8_t **)&p_str));
-      ASSH_ERR_RET(assh_check_string(blob, blob_len, p_str, (uint8_t **)&q_str));
+      ASSH_ERR_RET(assh_check_string(blob, blob_len, i_str, &p_str));
+      ASSH_ERR_RET(assh_check_string(blob, blob_len, p_str, &q_str));
       ASSH_ERR_RET(assh_bignum_size_of_data(ASSH_BIGNUM_MPINT, p_str, NULL, NULL, &p_len));
       ASSH_ERR_RET(assh_check_string(blob, blob_len, q_str, blob_));
       ASSH_ERR_RET(assh_bignum_size_of_data(ASSH_BIGNUM_MPINT, q_str, NULL, NULL, &q_len));

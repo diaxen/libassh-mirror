@@ -270,8 +270,8 @@ static ASSH_EVENT_DONE_FCN(assh_kex_ecdhmt_host_key_lookup_done)
 
   struct assh_packet_s *p = pv->pck;
 
-  uint8_t *ks_str = p->head.end;
-  uint8_t *qs_str, *h_str;
+  const uint8_t *ks_str = p->head.end;
+  const uint8_t *qs_str, *h_str;
 
   ASSH_ERR_RET(assh_packet_check_string(p, ks_str, &qs_str)
 	       | ASSH_ERRSV_DISCONNECT);
@@ -337,8 +337,8 @@ static assh_error_t assh_kex_ecdhmt_client_wait_reply(struct assh_session_s *s,
   ASSH_CHK_RET(p->head.msg != SSH_MSG_KEX_ECDH_REPLY, ASSH_ERR_PROTOCOL
 	       | ASSH_ERRSV_DISCONNECT);
 
-  uint8_t *ks_str = p->head.end;
-  uint8_t *qs_str, *h_str;
+  const uint8_t *ks_str = p->head.end;
+  const uint8_t *qs_str, *h_str;
 
   ASSH_ERR_RET(assh_packet_check_string(p, ks_str, &qs_str)
 	       | ASSH_ERRSV_DISCONNECT);

@@ -86,7 +86,7 @@ struct assh_userauth_context_s
   struct assh_key_s *pub_key;
   struct assh_algo_sign_s *algo;
   struct assh_packet_s *sign_pck;
-  uint8_t *sign;
+  const uint8_t *sign;
 #endif
 };
 
@@ -226,13 +226,13 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_password_done)
 static assh_error_t assh_userauth_server_req_password(struct assh_session_s *s,
                                                       struct assh_packet_s *p,
                                                       struct assh_event_s *e,
-                                                      uint8_t *auth_data)
+                                                      const uint8_t *auth_data)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
-  uint8_t *second = auth_data;
-  uint8_t *password;
+  const uint8_t *second = auth_data;
+  const uint8_t *password;
 
   ASSH_ERR_RET(assh_packet_check_array(p, second, 1, &password) | ASSH_ERRSV_DISCONNECT);
   ASSH_CHK_RET(*second != 0, ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
@@ -262,13 +262,13 @@ static assh_error_t assh_userauth_server_req_password(struct assh_session_s *s,
 #ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
 
 static assh_error_t assh_userauth_server_pubkey_check(struct assh_session_s *s,
-                                                       struct assh_packet_s *p,
-                                                       uint8_t *sign)
+                                                      struct assh_packet_s *p,
+                                                      const uint8_t *sign)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
-  uint8_t *end;
+  const uint8_t *end;
   ASSH_ERR_RET(assh_packet_check_string(p, sign, &end) | ASSH_ERRSV_DISCONNECT);
 
   uint8_t sid_len[4];   /* fake string header for session id */
@@ -362,13 +362,13 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
 static assh_error_t assh_userauth_server_req_pubkey(struct assh_session_s *s,
                                                     struct assh_packet_s *p,
                                                     struct assh_event_s *e,
-                                                    uint8_t *auth_data)
+                                                    const uint8_t *auth_data)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
-  uint8_t *second = auth_data;
-  uint8_t *algo_name, *pub_blob, *sign;
+  const uint8_t *second = auth_data;
+  const uint8_t *algo_name, *pub_blob, *sign;
 
   ASSH_ERR_RET(assh_packet_check_array(p, second, 1, &algo_name) | ASSH_ERRSV_DISCONNECT);
   ASSH_ERR_RET(assh_packet_check_string(p, algo_name, &pub_blob) | ASSH_ERRSV_DISCONNECT);
@@ -456,9 +456,9 @@ static assh_error_t assh_userauth_server_req_pubkey(struct assh_session_s *s,
 
 /* flush the authentication state on new request */
 static assh_error_t assh_userauth_server_req_new(struct assh_session_s *s,
-                                                 uint8_t *srv_name,
-                                                 uint8_t *username,
-                                                 uint8_t *method_name)
+                                                 const uint8_t *srv_name,
+                                                 const uint8_t *username,
+                                                 const uint8_t *method_name)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
@@ -506,7 +506,7 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_server_process)
                ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
 
   uint8_t *username = p->head.end;
-  uint8_t *srv_name, *method_name, *auth_data;
+  const uint8_t *srv_name, *method_name, *auth_data;
 
   ASSH_ERR_RET(assh_packet_check_string(p, username, &srv_name) | ASSH_ERRSV_DISCONNECT);
   ASSH_ERR_RET(assh_packet_check_string(p, srv_name, &method_name) | ASSH_ERRSV_DISCONNECT);

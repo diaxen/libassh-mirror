@@ -244,14 +244,14 @@ assh_packet_add_mpint(struct assh_context_s *ctx,
     point to the first byte following the array in the buffer. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_check_array(const uint8_t *buffer, size_t buffer_len,
-                 const uint8_t *array, size_t array_len, uint8_t **next);
+                 const uint8_t *array, size_t array_len, const uint8_t **next);
 
 /** @internal @This checks that a string is well inside a
     buffer. If no error is returned, the @tt next parameter is set to
     point to the first byte following the string in the buffer. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_check_string(const uint8_t *buffer, size_t buffer_len,
-                  const uint8_t *str, uint8_t **next);
+                  const uint8_t *str, const uint8_t **next);
 
 /** @internal @This checks that an asn1 DER value is well inside a
     buffer. If no error is returned, the @tt value parameter is set to
@@ -260,7 +260,7 @@ assh_check_string(const uint8_t *buffer, size_t buffer_len,
     value. Any of these two parameters may be @tt NULL. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_check_asn1(const uint8_t *buffer, size_t buffer_len, const uint8_t *str,
-                uint8_t **value, uint8_t **next, uint8_t id);
+                const uint8_t **value, const uint8_t **next, uint8_t id);
 
 /** @internal @This append ASN1 identifier and length bytes to a
     buffer. This will write at most 6 bytes to the buffer. */
@@ -279,7 +279,7 @@ assh_asn1_headlen(size_t len)
     bounds. @see assh_check_string */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_packet_check_string(const struct assh_packet_s *p, const uint8_t *str,
-                         uint8_t **next)
+                         const uint8_t **next)
 {
   return assh_check_string(p->data, p->data_size, str, next);
 }
@@ -288,7 +288,7 @@ assh_packet_check_string(const struct assh_packet_s *p, const uint8_t *str,
     bounds. @see assh_check_array */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_packet_check_array(const struct assh_packet_s *p, const uint8_t *array,
-                        size_t array_len, uint8_t **next)
+                        size_t array_len, const uint8_t **next)
 {
   return assh_check_array(p->data, p->data_size, array, array_len, next);
 }
@@ -297,8 +297,8 @@ assh_packet_check_array(const struct assh_packet_s *p, const uint8_t *array,
     inside packet bounds and converts the value from network byte
     order. @see assh_packet_check_array */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_packet_check_u32(struct assh_packet_s *p, uint32_t *u32,
-		      const uint8_t *data, uint8_t **next)
+assh_packet_check_u32(const struct assh_packet_s *p, uint32_t *u32,
+		      const uint8_t *data, const uint8_t **next)
 {
   assh_error_t err = assh_packet_check_array(p, data, 4, next);
   if (!err)

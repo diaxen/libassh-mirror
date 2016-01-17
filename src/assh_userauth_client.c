@@ -409,8 +409,8 @@ static assh_error_t assh_userauth_client_failure(struct assh_session_s *s,
       break;
     }
 
-  uint8_t *methods = p->head.end;
-  uint8_t *partial_success, *n;
+  const uint8_t *methods = p->head.end;
+  const uint8_t *partial_success, *n;
   ASSH_ERR_RET(assh_packet_check_string(p, methods, &partial_success)
 	       | ASSH_ERRSV_DISCONNECT);
   ASSH_ERR_RET(assh_packet_check_array(p, partial_success, 1, NULL)

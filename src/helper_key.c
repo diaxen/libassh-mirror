@@ -312,7 +312,7 @@ assh_load_openssh_v1_blob(struct assh_context_s *c,
 			  struct assh_key_s **head,
 			  const struct assh_key_ops_s *algo,
 			  enum assh_algo_class_e role,
-			  const uint8_t *blob, size_t blob_len,
+                          uint8_t *blob, size_t blob_len,
 			  const char *passphrase)
 {
   assh_error_t err = ASSH_OK;
@@ -322,7 +322,7 @@ assh_load_openssh_v1_blob(struct assh_context_s *c,
 	       ASSH_ERR_BAD_DATA);
 
   const uint8_t *cipher_name = blob + sizeof(OPENSSH_V1_AUTH_MAGIC);
-  uint8_t *kdf_name, *kdf_opts, *k_nums, *pub_str, *enc_str;
+  const uint8_t *kdf_name, *kdf_opts, *k_nums, *pub_str, *enc_str;
 
   ASSH_ERR_RET(assh_check_string(blob, blob_len, cipher_name, &kdf_name));
   ASSH_ERR_RET(assh_check_string(blob, blob_len, kdf_name, &kdf_opts));
@@ -335,8 +335,8 @@ assh_load_openssh_v1_blob(struct assh_context_s *c,
   ASSH_CHK_RET(nums != 1, ASSH_ERR_NOTSUP);
 
   size_t pv_len, enc_len = assh_load_u32(enc_str);
-  uint8_t *enc = enc_str + 4;
-  uint8_t *pv_str, *cmt_str;
+  uint8_t *enc = (uint8_t*)enc_str + 4;
+  const uint8_t *pv_str, *cmt_str;
 
   if (assh_ssh_string_compare(cipher_name, "none"))
     {
@@ -356,8 +356,8 @@ assh_load_openssh_v1_blob(struct assh_context_s *c,
       ASSH_CHK_RET(passphrase == NULL, ASSH_ERR_MISSING_KEY);
 
       size_t kdf_opts_len = assh_load_u32(kdf_opts);
-      uint8_t *salt_str = kdf_opts + 4;
-      uint8_t *rounds_u32;
+      const uint8_t *salt_str = kdf_opts + 4;
+      const uint8_t *rounds_u32;
 
       ASSH_ERR_RET(assh_check_string(salt_str, kdf_opts_len, salt_str, &rounds_u32));
       ASSH_ERR_RET(assh_check_array(salt_str, kdf_opts_len, rounds_u32, 4, NULL));
@@ -410,7 +410,7 @@ assh_load_openssh_v1_blob(struct assh_context_s *c,
   cmt_str = key_blob;
 #endif
 
-  uint8_t *cmt_end;
+  const uint8_t *cmt_end;
   ASSH_ERR_GTO(assh_check_string(enc, enc_len, cmt_str, &cmt_end), err_key);
   size_t clen = cmt_end - cmt_str - 4;
 
@@ -748,7 +748,7 @@ assh_save_rfc4716(struct assh_context_s *c,
   ASSH_ERR_RET(assh_base64_encode_final(&b64));
 
   size_t l = assh_base64_outsize(&b64);
-  char *s = tmp;
+  char *s = (char*)tmp;
 
   fprintf(file, "---- BEGIN SSH2 PUBLIC KEY ----\n");
   if (head->comment != NULL)

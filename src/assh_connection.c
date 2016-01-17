@@ -316,7 +316,7 @@ assh_connection_got_request(struct assh_session_s *s,
   struct assh_connection_context_s *pv = s->srv_pv;
 
   /* parse packet */
-  uint8_t *type, *want_reply, *data;
+  const uint8_t *type, *want_reply, *data;
   struct assh_channel_s *ch;
 
   /* parse packet */
@@ -391,7 +391,7 @@ assh_connection_got_request(struct assh_session_s *s,
 
   struct assh_buffer_s *rq_data = &e->connection.request.rq_data;
   rq_data->size = p->data + p->data_size - data;
-  rq_data->data = rq_data->size > 0 ? data : NULL;
+  rq_data->data = rq_data->size > 0 ? (uint8_t*)data : NULL;
 
   struct assh_buffer_s *rsp_data = &e->connection.request.rsp_data;
   rsp_data->data = NULL;
@@ -562,7 +562,7 @@ assh_connection_got_request_reply(struct assh_session_s *s,
 
   /* lookup channel */
   struct assh_channel_s *ch = NULL;
-  uint8_t *data = p->head.end;
+  const uint8_t *data = p->head.end;
   struct assh_queue_s *q = &pv->request_lqueue;
 
   if (!global)
@@ -618,7 +618,7 @@ assh_connection_got_request_reply(struct assh_session_s *s,
 
   struct assh_buffer_s *rsp_data = &e->connection.request_reply.rsp_data;
   rsp_data->size = global && success ? p->data + p->data_size - data : 0;
-  rsp_data->data = rsp_data->size > 0 ? data : NULL;
+  rsp_data->data = rsp_data->size > 0 ? (uint8_t*) data : NULL;
 
   /* keep packet for response data */
   if (rsp_data->size > 0)
@@ -761,7 +761,7 @@ assh_connection_got_channel_open(struct assh_session_s *s,
   struct assh_connection_context_s *pv = s->srv_pv;
 
   /* parse packet */
-  uint8_t *type = p->head.end, *data;
+  const uint8_t *type = p->head.end, *data;
   uint32_t rid = 0, win_size = 0, pkt_size = 0;
   ASSH_ERR_RET(assh_packet_check_string(p, type, &data)
 	       | ASSH_ERRSV_DISCONNECT);
@@ -806,7 +806,7 @@ assh_connection_got_channel_open(struct assh_session_s *s,
 
   struct assh_buffer_s *rq_data = &e->connection.channel_open.rq_data;
   rq_data->size = p->data + p->data_size - data;
-  rq_data->data = rq_data->size > 0 ? data : NULL;
+  rq_data->data = rq_data->size > 0 ? (uint8_t*)data : NULL;
 
   e->connection.channel_open.reply = ASSH_CONNECTION_REPLY_FAILED;
   e->connection.channel_open.reason = SSH_OPEN_UNKNOWN_CHANNEL_TYPE;
@@ -933,7 +933,7 @@ assh_connection_got_channel_open_reply(struct assh_session_s *s,
   struct assh_connection_context_s *pv = s->srv_pv;
 
   uint32_t ch_id = -1;
-  uint8_t *data;
+  const uint8_t *data;
   ASSH_ERR_RET(assh_packet_check_u32(p, &ch_id, p->head.end, &data)
 	       | ASSH_ERRSV_DISCONNECT);
 
@@ -962,7 +962,7 @@ assh_connection_got_channel_open_reply(struct assh_session_s *s,
       e->connection.channel_open_reply.reply = ASSH_CONNECTION_REPLY_SUCCESS;
 
       rsp_data->size = p->data + p->data_size - data;
-      rsp_data->data = rsp_data->size > 0 ? data : NULL;
+      rsp_data->data = rsp_data->size > 0 ? (uint8_t*)data : NULL;
 
       ch->status = ASSH_CHANNEL_ST_OPEN;
     }
@@ -1018,7 +1018,7 @@ assh_connection_got_channel_data(struct assh_session_s *s,
   struct assh_connection_context_s *pv = s->srv_pv;
 
   uint32_t ch_id = -1;
-  uint8_t *data;
+  const uint8_t *data;
   ASSH_ERR_RET(assh_packet_check_u32(p, &ch_id, p->head.end, &data)
 	       | ASSH_ERRSV_DISCONNECT);
 
@@ -1095,7 +1095,7 @@ assh_connection_got_channel_data(struct assh_session_s *s,
   e->connection.channel_data.ext_type = ext_type;
 
   e->connection.channel_data.data.size = size;
-  e->connection.channel_data.data.data = data;
+  e->connection.channel_data.data.data = (uint8_t*)data;
 
   /* keep packet for data buffer */
   pv->pck = assh_packet_refinc(p);
@@ -1114,7 +1114,7 @@ assh_connection_got_channel_window_adjust(struct assh_session_s *s,
   struct assh_connection_context_s *pv = s->srv_pv;
 
   uint32_t ch_id = -1, inc = 0;
-  uint8_t *data;
+  const uint8_t *data;
   ASSH_ERR_RET(assh_packet_check_u32(p, &ch_id, p->head.end, &data)
 	       | ASSH_ERRSV_DISCONNECT);
   ASSH_ERR_RET(assh_packet_check_u32(p, &inc, data, NULL)
@@ -1345,7 +1345,7 @@ assh_connection_got_channel_close(struct assh_session_s *s,
   struct assh_connection_context_s *pv = s->srv_pv;
 
   uint32_t ch_id = -1;
-  uint8_t *data;
+  const uint8_t *data;
   ASSH_ERR_RET(assh_packet_check_u32(p, &ch_id, p->head.end, &data)
 	       | ASSH_ERRSV_DISCONNECT);
 
@@ -1433,7 +1433,7 @@ assh_connection_got_channel_eof(struct assh_session_s *s,
   struct assh_connection_context_s *pv = s->srv_pv;
 
   uint32_t ch_id = -1;
-  uint8_t *data;
+  const uint8_t *data;
   ASSH_ERR_RET(assh_packet_check_u32(p, &ch_id, p->head.end, &data)
 	       | ASSH_ERRSV_DISCONNECT);
 

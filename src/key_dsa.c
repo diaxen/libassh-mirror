@@ -434,7 +434,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
   assh_error_t err;
 
   size_t l, n;
-  uint8_t *p_str, *q_str, *g_str, *y_str, *x_str;
+  const uint8_t *p_str, *q_str, *g_str, *y_str, *x_str;
 
   /* parse the key blob */
   switch (format)
@@ -445,7 +445,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
       ASSH_CHK_RET(blob_len < ASSH_DSA_ID_LEN, ASSH_ERR_INPUT_OVERFLOW);
       ASSH_CHK_RET(memcmp(ASSH_DSA_ID, blob, ASSH_DSA_ID_LEN), ASSH_ERR_BAD_DATA);
 
-      p_str = (uint8_t*)blob + ASSH_DSA_ID_LEN;
+      p_str = blob + ASSH_DSA_ID_LEN;
       ASSH_ERR_RET(assh_check_string(blob, blob_len, p_str, &q_str));
       ASSH_ERR_RET(assh_bignum_size_of_data(ASSH_BIGNUM_MPINT, p_str, NULL, NULL, &l));
       ASSH_ERR_RET(assh_check_string(blob, blob_len, q_str, &g_str));
@@ -465,7 +465,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
     }
 
     case ASSH_KEY_FMT_PV_PEM_ASN1: {
-      const uint8_t *seq, *seq_end, *val;
+      const uint8_t *seq, *seq_end;
       ASSH_ERR_RET(assh_check_asn1(blob, blob_len, blob, &seq, &seq_end,
                                    /* seq */ 0x30));
 

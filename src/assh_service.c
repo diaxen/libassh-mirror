@@ -123,7 +123,7 @@ assh_error_t assh_service_got_request(struct assh_session_s *s,
 
   ASSH_CHK_RET(s->srv != NULL, ASSH_ERR_PROTOCOL);
 
-  uint8_t *name = p->head.end, *name_end;
+  const uint8_t *name = p->head.end, *name_end;
   ASSH_ERR_RET(assh_packet_check_string(p, name, &name_end));
 
   size_t name_len = name_end - name - 4;
@@ -142,8 +142,9 @@ assh_error_t assh_service_got_request(struct assh_session_s *s,
   ASSH_ERR_GTO(srv->f_init(s), err_pkt);
 
   /* send accept packet */
-  ASSH_ASSERT(assh_packet_add_string(pout, name_len, &name));
-  memcpy(name, srv->name, name_len);
+  uint8_t *namep;
+  ASSH_ASSERT(assh_packet_add_string(pout, name_len, &namep));
+  memcpy(namep, srv->name, name_len);
   assh_transport_push(s, pout);
 
   return ASSH_OK;
@@ -162,7 +163,7 @@ assh_error_t assh_service_got_accept(struct assh_session_s *s,
   ASSH_CHK_RET(s->srv_rq == NULL || s->srv != NULL, ASSH_ERR_PROTOCOL);
 
   /* check accepted service name */
-  uint8_t *name = p->head.end, *name_end;
+  const uint8_t *name = p->head.end, *name_end;
   ASSH_ERR_RET(assh_packet_check_string(p, name, &name_end));
 
   ASSH_CHK_RET(assh_ssh_string_compare(name, s->srv_rq->name),

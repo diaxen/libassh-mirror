@@ -231,9 +231,9 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_ecdsa_check)
   ASSH_CHK_RET(tlen != assh_load_u32(sign), ASSH_ERR_BAD_DATA);
   ASSH_CHK_RET(memcmp(sign + 4, k->id->name, tlen), ASSH_ERR_BAD_DATA);
 
-  uint8_t *rs_str = (uint8_t*)sign + 4 + tlen;
-  uint8_t *r_mpint = rs_str + 4;
-  uint8_t *s_mpint, *s_end, *rs_end;
+  const uint8_t *rs_str = (uint8_t*)sign + 4 + tlen;
+  const uint8_t *r_mpint = rs_str + 4;
+  const uint8_t *s_mpint, *s_end, *rs_end;
 
   ASSH_ERR_RET(assh_check_string(sign, sign_len, rs_str, &rs_end));
   ASSH_ERR_RET(assh_check_string(sign, sign_len, r_mpint, &s_mpint));
