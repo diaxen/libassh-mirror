@@ -67,6 +67,18 @@ enum assh_key_format_e
   ASSH_KEY_FMT_LAST = ASSH_KEY_FMT_PV_PEM_ASN1,
 };
 
+/** @This returns true if the specified key format store public content only. */
+ASSH_INLINE assh_bool_t assh_key_pub_fmt(enum assh_key_format_e f)
+{
+  const uint32_t c = (1 << ASSH_KEY_FMT_PUB_RFC4716)
+    | (1 << ASSH_KEY_FMT_PUB_RFC4253)
+    | (1 << ASSH_KEY_FMT_PUB_OPENSSH)
+    | (1 << ASSH_KEY_FMT_PUB_PEM)
+    | (1 << ASSH_KEY_FMT_PUB_PEM_ASN1);
+
+  return (c >> f) & 1;
+}
+
 /** @internal @see assh_key_load_t */
 #define ASSH_KEY_LOAD_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t (n)   \
   (struct assh_context_s *c,                                            \
