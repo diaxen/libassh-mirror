@@ -173,9 +173,12 @@ struct assh_key_s
 };
 
 /** @internal @This allocates and intiailizes the key structure from
-    the passed key blob data. This function may only support some
-    binary key formats. Ascii formats are handled by helper
-    functions. @see @assh/helper_key.h */
+    the passed key blob data. The @tt blob pointer is updated so that
+    the key blob is skipped.
+
+    This function will only support some binary key formats specific
+    to a given key algorithm. More formats are handled by helper
+    functions provided by @ref @assh/helper_key.h */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_key_load(struct assh_context_s *c,
               struct assh_key_s **key,
@@ -199,16 +202,16 @@ assh_key_comment(struct assh_context_s *c,
                  const char *comment);
 
 /** @internal This function write the key in blob representation to
-    the @tt blob buffer. The @tt blob_len parameter indicates the size
-    of the buffer and is updated with the actual size of the key blob.
+    the @tt blob buffer. The @tt blob_len parameter is updated with
+    the actual size of the key blob.
 
     If the @tt blob parameter is @tt NULL, the function updates the
-    @tt blob_len parmeter with a size value which is greater or equal
-    to what is needed to hold the blob.
+    @tt blob_len parmeter with a size value which is equal or slightly
+    greater to what is needed to actually store the blob.
 
-    This function may only support the @ref
-    ASSH_KEY_FMT_PUB_RFC4253 format.
-*/
+    This function will only support some binary key formats specific
+    to a given key algorithm. More formats are handled by helper
+    functions provided by @ref @assh/helper_key.h */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_key_output(struct assh_context_s *c,
                 const struct assh_key_s *key,
