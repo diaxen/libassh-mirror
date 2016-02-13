@@ -1,5 +1,6 @@
 
 #include <stdlib.h>
+#include <assh/assh_prng.h>
 
 static ASSH_PRNG_INIT_FCN(assh_prng_weak_init)
 {
