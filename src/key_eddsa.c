@@ -52,7 +52,6 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_eddsa_output)
 
       if (blob != NULL)
         {
-          ASSH_CHK_RET(len > *blob_len, ASSH_ERR_OUTPUT_OVERFLOW);
           assh_store_u32(blob, tlen);  
           memcpy(blob + 4, k->key.algo->type, tlen);
           assh_store_u32(blob + 4 + tlen, n);
@@ -71,7 +70,6 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_eddsa_output)
 
       if (blob != NULL)
         {
-          ASSH_CHK_RET(len > *blob_len, ASSH_ERR_OUTPUT_OVERFLOW);
           assh_store_u32(blob, tlen);  
           memcpy(blob + 4, k->key.algo->type, tlen);
           uint8_t *p = blob + 4 + tlen;

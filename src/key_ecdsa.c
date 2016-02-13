@@ -107,7 +107,6 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_ecdsa_output)
       if (blob != NULL)
         {
           uint8_t *b = blob;
-          ASSH_CHK_RET(len > *blob_len, ASSH_ERR_OUTPUT_OVERFLOW);
 
           assh_store_u32(b, tlen);
           memcpy(b + 4, k->id->name, tlen);
@@ -153,7 +152,6 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_ecdsa_output)
       if (blob != NULL)
         {
           uint8_t *b = blob;
-          ASSH_CHK_RET(pem_len > *blob_len, ASSH_ERR_OUTPUT_OVERFLOW);
 
           /* sequence */
           assh_append_asn1(&b, 0x30, pem_clen);
@@ -377,17 +375,11 @@ static ASSH_KEY_LOAD_FCN(assh_key_ecdsa_load)
       size_t min_len = /* algo id*/ 4 + tlen
         + /* curve id */ 4 + dlen
         + /* curve point */ 4 + kp_len;
-      size_t max_len = min_len;
 
       if (format == ASSH_KEY_FMT_PV_OPENSSH_V1_KEY)
-        {
-          /* scalar mpint */
-          min_len += 4;
-          max_len += 4 + 1 + n;
-        }
+        min_len += 4;           /* scalar mpint */
 
-      ASSH_CHK_RET(blob_len < min_len || blob_len > max_len,
-                   ASSH_ERR_INPUT_OVERFLOW);
+      ASSH_CHK_RET(blob_len < min_len, ASSH_ERR_INPUT_OVERFLOW);
 
       ASSH_CHK_RET(assh_load_u32(blob) != tlen, ASSH_ERR_BAD_DATA);
       ASSH_CHK_RET(memcmp(id->name, blob + 4, tlen), ASSH_ERR_BAD_DATA);
