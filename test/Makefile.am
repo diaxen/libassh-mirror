@@ -64,6 +64,12 @@ dsa_CFLAGS = -I$(top_srcdir)/src
 
 ############################## signature tests
 
+noinst_PROGRAMS += key_io
+TESTS += key_io
+key_io_SOURCES = key_io.c
+key_io_LDADD = $(top_builddir)/src/libassh.la
+key_io_CFLAGS = -I$(top_srcdir)/src
+
 noinst_PROGRAMS += signature
 TESTS += signature
 signature_SOURCES = signature.c
