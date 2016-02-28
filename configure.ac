@@ -108,10 +108,16 @@ if test x$enable_gcrypt = xyes ; then
         AC_DEFINE([CONFIG_ASSH_HASH_RIPEMD160], [], [RIPE-MD-160 message digest available])
       fi
 
+    ], [
+      enable_gcrypt=no
     ])
+  ], [
+    enable_gcrypt=no
   ])
    AC_DEFINE([CONFIG_ASSH_MAX_ALGORITHMS], 96, [Maximum number of registered algorithms])
-else
+fi
+
+if test x$enable_gcrypt = xno ; then
    enable_gcrypt_hash=no
    enable_gcrypt_bignum=no
    enable_gcrypt_prng=no
