@@ -367,7 +367,7 @@ assh_error_t test_ops()
 
     enum bytecode_args_e
     {
-      A, B, R, M, A_mpint, B_mpint, R_mpint, M_mpint, MT
+      A, B, R, M, T, A_mpint, B_mpint, R_mpint, M_mpint, MT
     };
 
     static const assh_bignum_op_t bytecode_cmpeq[] = {
@@ -485,6 +485,51 @@ assh_error_t test_ops()
       ASSH_BOP_MOVE(	A,	A_mpint		),
       ASSH_BOP_ISPRIME(	A,	10,	0	),
       ASSH_BOP_CFAIL(	1,	0		),
+      ASSH_BOP_END(),
+    };
+
+    static const assh_bignum_op_t bytecode_nextprime[] = {
+      ASSH_BOP_SIZE(	M,	A		),
+      ASSH_BOP_UINT(	M,	0		),
+
+      ASSH_BOP_SIZE(	T,	A		),
+      ASSH_BOP_UINT(	T,	1		),
+
+      ASSH_BOP_MOVE(	A,	A_mpint		),
+      ASSH_BOP_LADINIT( A			),
+
+      ASSH_BOP_NEXTPRIME(	A,	ASSH_BOP_NOREG	),
+      ASSH_BOP_PRINT(	A,	'A'		),
+      ASSH_BOP_ADD(     A,	A,	T	),
+      ASSH_BOP_ADD(     M,	M,	A	),
+      ASSH_BOP_LADNEXT( 0			),
+      ASSH_BOP_CJMP(	-6,	0,	0	),
+
+      ASSH_BOP_PRINT(	M,	'R'		),
+      ASSH_BOP_MOVE(	R_mpint,	M	),
+      ASSH_BOP_END(),
+    };
+
+    static const assh_bignum_op_t bytecode_nextprime_step[] = {
+      ASSH_BOP_SIZE(	M,	A		),
+      ASSH_BOP_UINT(	M,	0		),
+
+      ASSH_BOP_MOVE(	B,	B_mpint		),
+      ASSH_BOP_NEXTPRIME(	B,	ASSH_BOP_NOREG	),
+      ASSH_BOP_PRINT(	B,	'B'		),
+
+      ASSH_BOP_MOVE(	A,	A_mpint		),
+      ASSH_BOP_LADINIT( A			),
+
+      ASSH_BOP_NEXTPRIME(	A,	B	),
+      ASSH_BOP_PRINT(	A,	'A'		),
+      ASSH_BOP_ADD(     A,	A,	B	),
+      ASSH_BOP_ADD(     M,	M,	A	),
+      ASSH_BOP_LADNEXT( 0			),
+      ASSH_BOP_CJMP(	-6,	0,	0	),
+
+      ASSH_BOP_PRINT(	M,	'R'		),
+      ASSH_BOP_MOVE(	R_mpint,	M	),
       ASSH_BOP_END(),
     };
 
@@ -815,6 +860,28 @@ assh_error_t test_ops()
 	"\x00\x00\x00\x5f"
       },
 
+      {
+	256, 0, 256, 0, bytecode_nextprime,
+	"\x00\x00\x00\x1f"
+        "\x7f\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff"
+        "\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff",
+	NULL,
+	"\x00\x00\x00\x21\x00"
+	"\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+	"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x5c\x42\x94"
+      },
+
+      {
+	256, 32, 256, 0, bytecode_nextprime_step,
+	"\x00\x00\x00\x1e"
+        "\x7f\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff"
+        "\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xf0\x0f\xff",
+	"\x00\x00\x00\x05"
+        "\x00\xff\xff\xf0\xfb",
+	"\x00\x00\x00\x20"
+	"\x00\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+	"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x52\x88\xa9\x1b\x05\x67\x0a"
+      },
       { 0 }
     };
 
@@ -831,7 +898,7 @@ assh_error_t test_ops()
 	assh_bignum_init(&context, &r, t->rbits);
 
 	memset(buf, 0, sizeof(buf));
-	assh_error_t e = assh_bignum_bytecode(&context, 0, t->bytecode, "NNNTMMMMm",
+	assh_error_t e = assh_bignum_bytecode(&context, 0, t->bytecode, "NNNTTMMMMm",
 					      &a, &b, &r, t->a, t->b, buf, t->m);
 
 	if (t->err)

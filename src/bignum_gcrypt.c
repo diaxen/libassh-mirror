@@ -1006,6 +1006,42 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
           break;
         }
 
+        case ASSH_BIGNUM_OP_NEXTPRIME: {
+          struct assh_bignum_s *dst = args[oc];
+          assert(!dst->mt_num);
+          gcry_mpi_t t = gcry_mpi_snew(dst->bits);
+          ASSH_CHK_GTO(t == NULL, ASSH_ERR_MEM, err_sc);
+
+          if (od != ASSH_BOP_NOREG)
+            {
+              struct assh_bignum_s *step = args[od];
+              gcry_mpi_set(t, step->n);
+              assert(gcry_mpi_test_bit(t, 0));
+              assert(step->bits <= dst->bits);
+              assert(!step->mt_num);
+              assert(!step->secret);
+              assert(!dst->secret);
+            }
+          else
+            {
+              gcry_mpi_set_ui(t, 1);
+            }
+
+          if (!gcry_mpi_test_bit(dst->n, 0))
+            gcry_mpi_add(dst->n, dst->n, t);
+          gcry_mpi_add(t, t, t);
+
+          while (gcry_prime_check(dst->n, 0))
+            gcry_mpi_add(dst->n, dst->n, t);
+          gcry_mpi_release(t);
+
+#if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
+          if (trace & 2)
+            assh_bignum_gcrypt_print(dst, ASSH_BIGNUM_NATIVE, 'R', pc);
+#endif
+          break;
+        }
+
         case ASSH_BIGNUM_OP_PRINT: {
           assh_bignum_gcrypt_print(args[od], format[od], oc, pc);
           break;

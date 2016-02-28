@@ -348,6 +348,7 @@ enum assh_bignum_opcode_e
   ASSH_BIGNUM_OP_MTTO,
   ASSH_BIGNUM_OP_MTFROM,
   ASSH_BIGNUM_OP_PRIME,
+  ASSH_BIGNUM_OP_NEXTPRIME,
   ASSH_BIGNUM_OP_ISPRIME,
   ASSH_BIGNUM_OP_BOOL,
   ASSH_BIGNUM_OP_PRIVACY,
@@ -364,8 +365,8 @@ enum assh_bignum_opcode_e
     "mtuint", "(c)jmp", "cfail",                \
     "ladinit", "ladtest", "ladnext", "cswap",   \
     "cmove", "mtinit", "mtto", "mtfrom",        \
-    "prime", "isprime", "bool", "privacy",      \
-    "print", "trace"                            \
+    "prime", "nextprime", "isprime", "bool",    \
+    "privacy", "print", "trace"                 \
 }
 
 /** @internal Reserved big number bytecode register id. */
@@ -540,7 +541,7 @@ enum assh_bignum_opcode_e
     data. A new value is generated until it does fall in the specified
     range. The @tt min and @tt max bounds can be @ref #ASSH_BOP_NOREG.
     The quality operand is of type @ref assh_prng_quality_e. The result
-    is flagged secret if the requested quality is not weak. */
+    is flagged secret depending on @tt{quality}. */
 #define ASSH_BOP_RAND(dst, min, max, quality)          \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_RAND, dst, min, max, quality)
 
@@ -649,6 +650,15 @@ enum assh_bignum_opcode_e
     generated number is large. */
 #define ASSH_BOP_PRIME(dst, min, max, quality)            \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_PRIME, dst, min, max, quality)
+
+/** @mgroup{Bytecode instructions}
+    @internal This instruction finds the next prime number starting
+    from the specified value. If @tt step is not @tt ASSH_BOP_NOREG,
+    it must hold a value used as increment. In the other case, the
+    step value is 1. When an increment is specified, it must be prime
+    and the value of @tt dst must not be a multiple of @tt step. */
+#define ASSH_BOP_NEXTPRIME(dst, step)                  \
+  ASSH_BOP_FMT2(ASSH_BIGNUM_OP_NEXTPRIME, dst, step)
 
 /** @mgroup{Bytecode instructions} @internal This instruction updates
     the condition flag. It is set if the number is a prime greater

@@ -159,6 +159,36 @@ static inline assh_bnword_t assh_bignum_lt(assh_bnword_t a, assh_bnword_t b)
   return (((assh_bnlong_t)a - (assh_bnlong_t)b) >> ASSH_BIGNUM_W) & 1;
 }
 
+static assh_bnword_t assh_bnword_egcd(assh_bnword_t a, assh_bnword_t b,
+                                      assh_bnword_t q)
+{
+  uint_fast8_t sh, i;
+  assh_bnword_t c, r = 1;
+
+  while (a)
+    {
+      if (a < b)
+        {
+          ASSH_SWAP(a, b);
+          ASSH_SWAP(r, q);
+        }
+      sh = assh_bn_clz(b) - assh_bn_clz(a);
+      c = b << sh;
+      i = (c > a);
+      a -= (c >> i);
+      r -= q << (sh - i);
+    }
+
+  return q;
+}
+
+static inline assh_bnword_t assh_bnword_modinv(assh_bnword_t a, assh_bnword_t b)
+{
+  assh_bnword_t q = assh_bnword_egcd(a, b, 0);
+  q += ((assh_bnsword_t)q >> 31) & b;
+  return q;
+}
+
 static inline size_t
 assh_bignum_words(size_t bits)
 {
@@ -1148,28 +1178,10 @@ assh_bignum_mul_mod(struct assh_context_s *ctx,
 
 /********************************************************* montgomery */
 
-static assh_bnword_t assh_bnword_mt_modinv(assh_bnword_t a)
+static inline assh_bnword_t assh_bnword_mt_modinv(assh_bnword_t a)
 {
-  uint_fast8_t i, sh = assh_bn_clz(a);
-  assh_bnword_t b = -(a << sh);
-  assh_bnword_t q = -((assh_bnword_t)1 << sh);
-  assh_bnword_t c, r = 1;
-
-  while (a)
-    {
-      if (a < b)
-        {
-          ASSH_SWAP(a, b);
-          ASSH_SWAP(r, q);
-        }
-      sh = assh_bn_clz(b) - assh_bn_clz(a);
-      c = b << sh;
-      i = (c > a);
-      a -= (c >> i);
-      r -= q << (sh - i);
-    }
-
-  return q;
+  uint_fast8_t sh = assh_bn_clz(a);
+  return assh_bnword_egcd(a, -(a << sh), -((assh_bnword_t)1 << sh));
 }
 
 static void
@@ -1385,7 +1397,6 @@ assh_bignum_mul_mod_mt(struct assh_context_s *ctx,
       assh_bignum_mt_mul(mt, r->n, a->n, b->n);
     }
 
- err:
   return err;
 }
 
@@ -1513,52 +1524,62 @@ struct assh_bignum_sieve_s
   uint16_t offsets[ASSH_SIEVE_PRIMES];
 };
 
-/* compute offsets of prime number sieve */
-static assh_error_t ASSH_WARN_UNUSED_RESULT
-assh_bignum_sieve_init(struct assh_context_s *ctx,
-                       struct assh_bignum_sieve_s * __restrict__ s,
-                       const struct assh_bignum_s *bn)
+/* compute bignum modulo a small prime */
+static uint16_t ASSH_WARN_UNUSED_RESULT
+assh_bignum_sieve_mod(const assh_bnword_t *n, size_t l, uint16_t p)
 {
-  size_t l = assh_bignum_words(bn->bits);
-  assh_bnword_t *n = bn->n;  
-  size_t i, k;
+  uint32_t o = n[0] % p;
+  uint16_t m = ASSH_BN_WORDMAX % p + 1;
+  uint16_t p2m = m;
+  size_t i;
 
-  /* compute n modulus some prime numbers */
+  for (i = 1; i < l; i++)
+    {
+      /* prevent overflow */
+      if ((i & 63) == 0)
+        o %= p;
+
+      /* update with the next big number word */
+      o += (uint32_t)m * (n[i] % p);
+      m = ((uint32_t)m * p2m) % p;
+    }
+
+  return o % p;
+}
+
+/* compute offsets of prime number sieve */
+static void
+assh_bignum_sieve_init(struct assh_bignum_sieve_s * __restrict__ s,
+                       const struct assh_bignum_s *bn,
+                       const struct assh_bignum_s *step)
+{
+  size_t nl = assh_bignum_words(bn->bits);
+  assh_bnword_t *n = bn->n;
+  size_t i;
+
   for (i = 0; i < ASSH_SIEVE_PRIMES; i++)
     {
-      uint32_t o = n[0] % assh_primes[i];
-      uint16_t m = ASSH_BN_WORDMAX % assh_primes[i] + 1;
       uint16_t p = assh_primes[i];
-      uint16_t p2m = m;
+      uint16_t o = assh_bignum_sieve_mod(bn->n, nl, p);
+      uint16_t v = 1;
 
-      for (k = 1; k < l; k++)
+      /* compute offset so that (bn + step * offset) % p == 0 */
+
+      if (step != NULL)         /* step != 1 */
         {
-          /* prevent overflow */
-          if ((k & 63) == 0)
-            o %= p;
-
-          /* update the sieve with the next big number word */
-          o += (uint32_t)m * (n[k] % p);
-          m = ((uint32_t)m * p2m) % p;
+          /* solve linear congruence */
+          size_t sl = assh_bignum_words(step->bits);
+          uint16_t m = assh_bignum_sieve_mod(step->n, sl, p);
+          v = assh_bnword_modinv(m, p);
         }
 
-      s->offsets[i] = o % p;
-    }
+      o = (v * (p - o)) % p;
 
-  /* adjust sieve values */
-  for (i = 0; i < ASSH_SIEVE_PRIMES; i++)
-    {
-      uint16_t o = s->offsets[i];
-      uint16_t p = assh_primes[i];
-      if (o)
-        o = p - o;
-      /* keep s->offsets[n] + bignum odd */
-      if ((o ^ n[0] ^ 1) & 1)
-        o += p;
+      /* keep offset + bignum odd */
+      o += p * ((o ^ n[0] ^ 1) & 1);
+
       s->offsets[i] = o;
     }
-
-  return ASSH_OK;
 }
 
 static assh_error_t ASSH_WARN_UNUSED_RESULT
@@ -1678,10 +1699,9 @@ assh_bignum_check_prime(struct assh_context_s *ctx,
                         const struct assh_bignum_s *bn,
                         size_t rounds, assh_bool_t *result)
 {
-  assh_error_t err = ASSH_OK;
+  assh_error_t err;
   size_t l = assh_bignum_words(bn->bits);
   assh_bnword_t *n = bn->n;
-  assh_bnword_t rn[l];
   size_t i;
 
   *result = 0;
@@ -1689,35 +1709,38 @@ assh_bignum_check_prime(struct assh_context_s *ctx,
   if (l == 0 || !(n[0] & 1))
     return ASSH_OK;
 
-  struct assh_bignum_sieve_s *sieve;
-  ASSH_ERR_RET(assh_alloc(ctx, sizeof(*sieve),
-                 bn->secret ? ASSH_ALLOC_SECUR : ASSH_ALLOC_INTERNAL,
-                 (void**)&sieve));
-
-  ASSH_ERR_GTO(assh_bignum_sieve_init(ctx, sieve, bn), err_);
-
+  /* test bn % small primes */
   assh_bool_t composite = 0;
-  for (i = 0; i < ASSH_SIEVE_PRIMES; i++)
-    composite |= assh_bignum_eqzero(sieve->offsets[i]);
+
+  if (!bn->secret)
+    {
+      for (i = 0; i < ASSH_SIEVE_PRIMES; i++)
+        {
+          uint16_t p = assh_primes[i];
+          uint16_t o = assh_bignum_sieve_mod(n, l, p);
+          composite |= assh_bignum_eqzero(o);
+        }
+    }
 
   if (!composite)
     {
-      /* generate random base for mr algorithm */
-      ASSH_ERR_GTO(ctx->prng->f_get(ctx, (uint8_t*)rn,
-                 sizeof(rn), ASSH_PRNG_QUALITY_NONCE), err_);
+      assh_bnword_t rn[l];
 
-      ASSH_ERR_GTO(assh_bignum_miller_rabin(ctx, sc, rn, bn, rounds, result), err_);
+      /* generate random base for mr algorithm */
+      ASSH_ERR_RET(ctx->prng->f_get(ctx, (uint8_t*)rn,
+                 sizeof(rn), ASSH_PRNG_QUALITY_NONCE));
+
+      ASSH_ERR_RET(assh_bignum_miller_rabin(ctx, sc, rn, bn, rounds, result));
     }
 
- err_:
-  assh_free(ctx, sieve);
-  return err;
+  return ASSH_OK;
 }
 
 static assh_error_t ASSH_WARN_UNUSED_RESULT
 assh_bignum_next_prime(struct assh_context_s *ctx,
                        struct assh_bignum_scratch_s *sc,
-                       struct assh_bignum_s *bn)
+                       struct assh_bignum_s *bn,
+                       struct assh_bignum_s *step)
 {
   assh_error_t err;
   const size_t l = assh_bignum_words(bn->bits);
@@ -1739,7 +1762,7 @@ assh_bignum_next_prime(struct assh_context_s *ctx,
                  bn->secret ? ASSH_ALLOC_SECUR : ASSH_ALLOC_INTERNAL,
                  (void**)&sieve));
 
-  ASSH_ERR_GTO(assh_bignum_sieve_init(ctx, sieve, bn), err_);
+  assh_bignum_sieve_init(sieve, bn, step);
 
   for (k = 0; k < max_prime_gap; k += 512)
     {
@@ -1770,8 +1793,20 @@ assh_bignum_next_prime(struct assh_context_s *ctx,
               assh_bnword_t c = o - offset;
               ASSH_CHK_GTO(c != o - offset, ASSH_ERR_NUM_OVERFLOW, err_);
               offset = o;
-              assh_bnlong_t t = (assh_bnlong_t)c << ASSH_BIGNUM_W;
-              for (j = 0; j < l; j++)
+              assh_bnlong_t t = 0;
+              j = 0;
+              if (step != NULL)
+                {
+                  assh_bnword_t *in = step->n;
+                  const size_t il = assh_bignum_words(step->bits);
+                  for (; j < il; j++)
+                    n[j] = t = n[j] + (assh_bnlong_t)in[j] * c + (t >> ASSH_BIGNUM_W);
+                }
+              else              /* step is 1 */
+                {
+                  t = (assh_bnlong_t)c << ASSH_BIGNUM_W;
+                }
+              for (; j < l; j++)
                 n[j] = t = (assh_bnlong_t)n[j] + (t >> ASSH_BIGNUM_W);
               ASSH_CHK_GTO((t >> ASSH_BIGNUM_W) != 0, ASSH_ERR_NUM_OVERFLOW, err_);
 
@@ -1806,7 +1841,7 @@ assh_bignum_gen_prime(struct assh_context_s *c,
   assh_error_t err;
 
   ASSH_ERR_RET(assh_bignum_rand(c, bn, min, max, quality));
-  ASSH_ERR_RET(assh_bignum_next_prime(c, sc, bn));
+  ASSH_ERR_RET(assh_bignum_next_prime(c, sc, bn, NULL));
 
   ASSH_CHK_RET(max != NULL && (assh_bignum_cmp(bn, max) & ASSH_BIGNUM_CMP_GT),
                ASSH_ERR_NUM_OVERFLOW);
@@ -2592,6 +2627,26 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
 #if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
           dst->mt_num = 0;
 #endif
+#if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
+          if (trace & 2)
+            assh_bignum_builtin_print(dst, ASSH_BIGNUM_NATIVE, 'R', pc, mt);
+#endif
+          break;
+        }
+
+        case ASSH_BIGNUM_OP_NEXTPRIME: {
+          struct assh_bignum_s *dst = args[oc];
+          assert(!dst->mt_num);
+          struct assh_bignum_s *step = NULL;
+          if (od != ASSH_BOP_NOREG)
+            {
+              step = args[od];
+              assert(step->bits <= dst->bits);
+              assert(!step->mt_num);
+              assert(!step->secret);
+              assert(!dst->secret);
+            }
+          ASSH_ERR_GTO(assh_bignum_next_prime(c, &sc, dst, step), err_sc);
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
           if (trace & 2)
             assh_bignum_builtin_print(dst, ASSH_BIGNUM_NATIVE, 'R', pc, mt);
