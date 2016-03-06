@@ -354,6 +354,9 @@ assh_error_t test_cmp()
   return ASSH_OK;
 }
 
+#undef ASSH_BOP_PRINT
+#define ASSH_BOP_PRINT(...) ASSH_BOP_NOP()
+
 assh_error_t test_ops()
 {
   {
@@ -959,26 +962,26 @@ assh_error_t test_add_sub(unsigned int count)
                                 ASSH_PRNG_QUALITY_WEAK  ),
         ASSH_BOP_RAND(  B,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
                                 ASSH_PRNG_QUALITY_WEAK  ),
-        // ASSH_BOP_PRINT( A,      'A'                     ),
+        ASSH_BOP_PRINT( A,      'A'                     ),
         ASSH_BOP_SHR(   A,      A,      0,      L       ),
-        // ASSH_BOP_PRINT( A,      'A'                     ),
+        ASSH_BOP_PRINT( A,      'A'                     ),
         ASSH_BOP_SHR(   B,      B,      0,      L       ),
 
         ASSH_BOP_MOVE(  C,      B                       ),
         ASSH_BOP_CMPEQ( C,      B,	0               ),
         ASSH_BOP_CFAIL( 1,	0                       ),
 
-        // ASSH_BOP_PRINT( A,      'A'                     ),
-        // ASSH_BOP_PRINT( B,      'B'                     ),
+        ASSH_BOP_PRINT( A,      'A'                     ),
+        ASSH_BOP_PRINT( B,      'B'                     ),
 
         ASSH_BOP_ADD(   B,      B,      A               ),
-      //ASSH_BOP_PRINT( B,      'B'                     ),
+	ASSH_BOP_PRINT( B,      'B'                     ),
         ASSH_BOP_CMPEQ( C,      B,	0               ),
         ASSH_BOP_CFAIL( 0,	0                       ),
 
         ASSH_BOP_SUB(   B,      B,      A               ),
-      //ASSH_BOP_PRINT( B,      'B'                     ),
-      //ASSH_BOP_PRINT( C,      'C'                     ),
+	ASSH_BOP_PRINT( B,      'B'                     ),
+	ASSH_BOP_PRINT( C,      'C'                     ),
         ASSH_BOP_CMPEQ( C,      B,	0               ),
         ASSH_BOP_CFAIL( 1,	0                       ),
 
@@ -991,10 +994,10 @@ assh_error_t test_add_sub(unsigned int count)
         ASSH_BOP_SIZEM( D,      S,      0,      2       ),
         ASSH_BOP_UINT(  C,      5                       ),
         ASSH_BOP_MUL(   D,      A,      C               ),
-     // ASSH_BOP_PRINT( A,      'A'                     ),
-     // ASSH_BOP_PRINT( B,      'B'                     ),
-     // ASSH_BOP_PRINT( C,      'C'                     ),
-     // ASSH_BOP_PRINT( D,      'D'                     ),
+	ASSH_BOP_PRINT( A,      'A'                     ),
+	ASSH_BOP_PRINT( B,      'B'                     ),
+	ASSH_BOP_PRINT( C,      'C'                     ),
+	ASSH_BOP_PRINT( D,      'D'                     ),
 
         ASSH_BOP_CMPEQ( D,      B,	0               ),
         ASSH_BOP_CFAIL( 1,	0                       ),
@@ -1077,13 +1080,13 @@ assh_error_t test_move(unsigned int count)
       assh_store_u32(mpb, s);
 
       static const assh_bignum_op_t bytecode[] = {
-      //ASSH_BOP_PRINT( A,      'A'                     ),
+	ASSH_BOP_PRINT( A,      'A'                     ),
 
         ASSH_BOP_SIZE(  A,      A_mpint                 ),
-      //ASSH_BOP_PRINT( A,      'A'                     ),
+	ASSH_BOP_PRINT( A,      'A'                     ),
 
         ASSH_BOP_MOVE(  A,      A_mpint                 ),
-      //ASSH_BOP_PRINT( A,      'A'                     ),
+	ASSH_BOP_PRINT( A,      'A'                     ),
 
         ASSH_BOP_MOVE(  B_mpint,        A               ),
 
@@ -1237,9 +1240,9 @@ assh_error_t test_expmod(unsigned int count)
                                 ASSH_PRNG_QUALITY_WEAK  ),
         ASSH_BOP_INV(   IA,     A,      P               ),
 
-        // ASSH_BOP_PRINT( X,     'X'                    ),
-        // ASSH_BOP_PRINT( E,     'E'                    ),
-        // ASSH_BOP_PRINT( P,     'P'                    ),
+        ASSH_BOP_PRINT( X,     'X'                    ),
+        ASSH_BOP_PRINT( E,     'E'                    ),
+        ASSH_BOP_PRINT( P,     'P'                    ),
 
         /* ((((a * x) % p)^e) % p) * ((inv(a)^e) % p) == x^e % p */
         ASSH_BOP_MULM(  R3,     A,      X,      P       ),
@@ -1256,8 +1259,8 @@ assh_error_t test_expmod(unsigned int count)
         ASSH_BOP_CMPEQ( R4,     R5,	0                      ),
         ASSH_BOP_CFAIL( 1,	0                               ),
 
-        // ASSH_BOP_PRINT( R4,     '4'                    ),
-        // ASSH_BOP_PRINT( R5,     '5'                    ),
+        ASSH_BOP_PRINT( R4,     '4'                    ),
+        ASSH_BOP_PRINT( R5,     '5'                    ),
 
         ASSH_BOP_END(),
       };

@@ -580,6 +580,10 @@ enum assh_bignum_opcode_e
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_JMP, 0, 1, 128 + pcdiff, 0)
 
 /** @mgroup{Bytecode instructions}
+    @internal This instruction does nothing. */
+#define ASSH_BOP_NOP() ASSH_BOP_JMP(0)
+
+/** @mgroup{Bytecode instructions}
     @internal This instruction jump to a different bytecode location
     if the condition flag is different from inv. */
 #define ASSH_BOP_CJMP(pcdiff, inv, condid)              \
