@@ -47,6 +47,7 @@ assh_gcrypt_bignum_randlevel(enum assh_prng_quality_e quality)
   switch (quality)
     {
     case ASSH_PRNG_QUALITY_WEAK:
+    case ASSH_PRNG_QUALITY_PUBLIC:
       return GCRY_WEAK_RANDOM;
       break;
     case ASSH_PRNG_QUALITY_NONCE:
@@ -74,7 +75,7 @@ assh_gcrypt_bignum_rand(struct assh_context_s *c,
 
   size_t bits = bn->bits;
 
-  bn->secret = quality != ASSH_PRNG_QUALITY_WEAK;
+  bn->secret = quality > ASSH_PRNG_QUALITY_PUBLIC;
 
   if (max != NULL)
     bits = ASSH_MIN(bits, gcry_mpi_get_nbits(max->n));

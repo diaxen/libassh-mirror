@@ -2415,7 +2415,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
 
         case ASSH_BIGNUM_OP_RAND: {
           struct assh_bignum_s *dst = args[oa];
-          ASSH_ERR_GTO(assh_bignum_realloc(c, dst, od != ASSH_PRNG_QUALITY_WEAK, 0), err_sc);
+          ASSH_ERR_GTO(assh_bignum_realloc(c, dst, od > ASSH_PRNG_QUALITY_PUBLIC, 0), err_sc);
           ASSH_ERR_GTO(assh_bignum_rand(c, dst,
                          ob == ASSH_BOP_NOREG ? NULL : args[ob],
                          oc == ASSH_BOP_NOREG ? NULL : args[oc],
@@ -2619,7 +2619,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
 
         case ASSH_BIGNUM_OP_PRIME: {
           struct assh_bignum_s *dst = args[oa];
-          ASSH_ERR_GTO(assh_bignum_realloc(c, dst, od != ASSH_PRNG_QUALITY_WEAK, 0), err_sc);
+          ASSH_ERR_GTO(assh_bignum_realloc(c, dst, od > ASSH_PRNG_QUALITY_PUBLIC, 0), err_sc);
           ASSH_ERR_GTO(assh_bignum_gen_prime(c, &sc, dst,
                          ob == ASSH_BOP_NOREG ? NULL : args[ob],
                          oc == ASSH_BOP_NOREG ? NULL : args[oc],

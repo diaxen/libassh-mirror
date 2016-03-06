@@ -39,6 +39,7 @@ static ASSH_PRNG_GET_FCN(assh_prng_gcrypt_get)
   switch (quality)
     {
     case ASSH_PRNG_QUALITY_WEAK:
+    case ASSH_PRNG_QUALITY_PUBLIC:
       gcry_create_nonce(rdata, rdata_len);
       break;
     case ASSH_PRNG_QUALITY_NONCE:

@@ -41,6 +41,8 @@ enum assh_prng_quality_e
 {
   /** weak random data for use in the testsuite */
   ASSH_PRNG_QUALITY_WEAK,
+  /** random data for use as public parameter */
+  ASSH_PRNG_QUALITY_PUBLIC,
   /** random data for use as nonce in signature algorithms */
   ASSH_PRNG_QUALITY_NONCE,
   /** random data for use in ephemeral key generation */
