@@ -53,16 +53,19 @@ static inline uint64_t keccak_rotate(uint64_t x, uint8_t n)
 
 #if defined(__OPTIMIZE_SIZE__)
 # define ASSH_KECCAK_LOOP(var, ...)		\
-  for (var = 0; var < 5; var++)			\
-    { __VA_ARGS__ }
+  do {						\
+    uint_fast8_t var;                           \
+    for (var = 0; var < 5; var++)               \
+      { __VA_ARGS__ }                           \
+  } while (0)
 #else
 # define ASSH_KECCAK_LOOP(var, ...)		\
   do {						\
-    var = 0; { __VA_ARGS__ }			\
-    var = 1; { __VA_ARGS__ }			\
-    var = 2; { __VA_ARGS__ }			\
-    var = 3; { __VA_ARGS__ }			\
-    var = 4; { __VA_ARGS__ }			\
+    { enum { var = 0 }; { __VA_ARGS__ } }       \
+    { enum { var = 1 }; { __VA_ARGS__ } }       \
+    { enum { var = 2 }; { __VA_ARGS__ } }       \
+    { enum { var = 3 }; { __VA_ARGS__ } }       \
+    { enum { var = 4 }; { __VA_ARGS__ } }       \
   } while (0)
 #endif
 
@@ -89,7 +92,7 @@ static void assh_keccak(struct assh_hash_sha3_context_s *ctx)
       18,  2, 61, 56, 14
     };
 
-  uint_fast8_t n, i, j, k;
+  uint_fast8_t n, k, l;
   uint64_t * __restrict__ a = ctx->a;
 
   for (n = 0; n < 24; n++)
@@ -113,8 +116,9 @@ static void assh_keccak(struct assh_hash_sha3_context_s *ctx)
       ASSH_KECCAK_LOOP(i, {
 	  ASSH_KECCAK_LOOP(j, {
               k = ASSH_KECCAK_WRAP2(i, j);
-              b[ASSH_KECCAK_WRAP2(j, i * 2 + j * 3)] = keccak_rotate(a[k], r[k]);
-	  });
+              l = ASSH_KECCAK_WRAP2(j, i * 2 + j * 3);
+              b[l] = r[k] ? keccak_rotate(a[k], r[k]) : a[k];
+          });
       });
 
       ASSH_KECCAK_LOOP(i, {
