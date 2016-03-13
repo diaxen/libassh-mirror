@@ -126,6 +126,11 @@ if test x$enable_gcrypt = xno ; then
    AC_DEFINE([CONFIG_ASSH_MAX_ALGORITHMS], 64, [Maximum number of registered algorithms])
 fi
 
+if test -e /dev/random ; then
+  AC_DEFINE([CONFIG_ASSH_USE_DEV_RANDOM], [], [use of unix /dev/u?random])
+  enable_dev_random=yes
+fi
+
 AC_DEFINE([CONFIG_ASSH_CIPHER_AES], [], [AES cipher available])
 AC_DEFINE([CONFIG_ASSH_CIPHER_ARCFOUR], [], [Arcfour cipher available])
 AC_DEFINE([CONFIG_ASSH_MODE_CTR], [], [Counter cipher mode available])
@@ -142,6 +147,8 @@ AM_CONDITIONAL(COND_gcrypt_bignum,  [test x$enable_gcrypt_bignum = xyes])
 AM_CONDITIONAL(COND_gcrypt_prng,    [test x$enable_gcrypt_prng = xyes])
 AM_CONDITIONAL(COND_gcrypt_alloc,   [test x$enable_gcrypt_alloc = xyes])
 AM_CONDITIONAL(COND_gcrypt_ciphers, [test x$enable_gcrypt_ciphers = xyes])
+
+AM_CONDITIONAL(COND_dev_random,  [test x$enable_dev_random = xyes])
 
 if test x$enable_server = xyes ; then
    AC_DEFINE([CONFIG_ASSH_SERVER], [], [SSH server support])

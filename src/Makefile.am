@@ -50,6 +50,10 @@ if COND_gcrypt_prng
 libassh_la_SOURCES +=	prng_gcrypt.c
 endif
 
+if COND_dev_random
+libassh_la_SOURCES +=	prng_dev_random.c
+endif
+
 if COND_gcrypt_ciphers
 libassh_la_SOURCES +=	cipher_gcrypt.c
 else
