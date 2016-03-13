@@ -76,7 +76,7 @@ static void xtea_cipher(const uint32_t key[4], uint32_t *v0_,
 
 static void assh_prng_xswap_round(struct assh_prng_pv_s *ctx)
 {
-  const uint32_t *s = ctx->s;
+  uint32_t *s = ctx->s;
   uint32_t s0 = s[0];
   uint32_t s1 = s[1];
   uint32_t s2 = s[2];
@@ -91,31 +91,60 @@ static void assh_prng_xswap_round(struct assh_prng_pv_s *ctx)
   xtea_cipher(s + 0, &s4, &s5, 0xb5c0fbcf);
   xtea_cipher(s + 0, &s6, &s7, 0xe9b5dba5);
 
-  ctx->s[0] ^= s0;
-  ctx->s[1] ^= s1;
-  ctx->s[2] ^= s2;
-  ctx->s[3] ^= s3;
-  ctx->s[4] ^= s4;
-  ctx->s[5] ^= s5;
-  ctx->s[6] ^= s6;
-  ctx->s[7] ^= s7;
+  s[0] ^= s0;
+  s[1] ^= s1;
+  s[2] ^= s2;
+  s[3] ^= s3;
+  s[4] ^= s4;
+  s[5] ^= s5;
+  s[6] ^= s6;
+  s[7] ^= s7;
 
   uint8_t *buf = ctx->buf;
-  assh_store_u32(buf + 0, s0);
-  assh_store_u32(buf + 4, s1);
-  assh_store_u32(buf + 8, s4);
-  assh_store_u32(buf + 12, s5);
+  assh_store_u32le(buf + 0, s0);
+  assh_store_u32le(buf + 4, s1);
+  assh_store_u32le(buf + 8, s4);
+  assh_store_u32le(buf + 12, s5);
 }
 
 static ASSH_PRNG_INIT_FCN(assh_prng_xswap_init)
 {
+  uint8_t *rdata = seed->data;
+  size_t rdata_len = seed->len;
   assh_error_t err;
 
-  ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_prng_pv_s), ASSH_ALLOC_SECUR, &c->prng_pv));
+  ASSH_CHK_RET(rdata_len < 16, ASSH_ERR_BAD_ARG);
+
+  ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_prng_pv_s),
+                          ASSH_ALLOC_SECUR, &c->prng_pv));
   struct assh_prng_pv_s *ctx = c->prng_pv;
 
-  c->prng_entropy = 0;
   memset(ctx, 0, sizeof(*ctx));
+
+  while (rdata_len >= 16)
+    {
+      ctx->s[4] ^= assh_load_u32le(rdata + 0);
+      ctx->s[5] ^= assh_load_u32le(rdata + 4);
+      ctx->s[6] ^= assh_load_u32le(rdata + 8);
+      ctx->s[7] ^= assh_load_u32le(rdata + 12);
+
+      assh_prng_xswap_round(ctx);
+      rdata += 16;
+      rdata_len -= 16;
+    }
+
+  if (rdata_len > 0)
+    {
+      uint8_t *buf = ctx->buf;
+      memcpy(buf, rdata, rdata_len);
+
+      ctx->s[4] ^= assh_load_u32le(buf + 0);
+      ctx->s[5] ^= assh_load_u32le(buf + 4);
+      ctx->s[6] ^= assh_load_u32le(buf + 8);
+      ctx->s[7] ^= assh_load_u32le(buf + 12);
+
+      assh_prng_xswap_round(ctx);
+    }
 
   return ASSH_OK;
 }
@@ -131,40 +160,13 @@ static ASSH_PRNG_GET_FCN(assh_prng_xswap_get)
       return ASSH_OK;
     }
 
-  c->prng_entropy -= rdata_len;
-
   while (rdata_len > 0)
     {
-      unsigned int n, l = ASSH_MIN(16, rdata_len);
+      uint_fast8_t l = ASSH_MIN(16, rdata_len);
       assh_prng_xswap_round(ctx);
-      for (n = 0; n < l; n++)
-	*rdata++ = ctx->buf[n];
+      memcpy(rdata, ctx->buf, l);
       rdata_len -= l;
-    }
-
-  return ASSH_OK;
-}
-
-static ASSH_PRNG_FEED_FCN(assh_prng_xswap_feed)
-{
-  struct assh_prng_pv_s *ctx = c->prng_pv;
-  uint8_t *buf = ctx->buf;
-
-  c->prng_entropy += rdata_len;
-
-  while (rdata_len > 0)
-    {
-      unsigned int n, l = ASSH_MIN(16, rdata_len);
-      for (n = 0; n < l; n++)
-        buf[n] = *rdata++;
-      rdata_len -= l;
-
-      ctx->s[4] ^= assh_load_u32(buf + 0);
-      ctx->s[5] ^= assh_load_u32(buf + 4);
-      ctx->s[6] ^= assh_load_u32(buf + 8);
-      ctx->s[7] ^= assh_load_u32(buf + 12);
-
-      assh_prng_xswap_round(ctx);
+      rdata += l;
     }
 
   return ASSH_OK;
@@ -180,7 +182,6 @@ const struct assh_prng_s assh_prng_xswap =
 {
   .f_init = assh_prng_xswap_init,
   .f_get = assh_prng_xswap_get,
-  .f_feed = assh_prng_xswap_feed,
   .f_cleanup = assh_prng_xswap_cleanup,  
 };
 

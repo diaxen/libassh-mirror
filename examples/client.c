@@ -72,7 +72,8 @@ int main(int argc, char **argv)
 
   struct assh_context_s *context;
 
-  if (assh_context_create(&context, ASSH_CLIENT, CONFIG_ASSH_MAX_ALGORITHMS, NULL, NULL))
+  if (assh_context_create(&context, ASSH_CLIENT, CONFIG_ASSH_MAX_ALGORITHMS,
+                          NULL, NULL, NULL, NULL))
     abort();
 
   if (assh_service_register_default(context) != ASSH_OK)
@@ -86,16 +87,13 @@ int main(int argc, char **argv)
   if (assh_session_create(context, &session) != ASSH_OK)
     return -1;
 
-  int rnd_fd = open("/dev/urandom", O_RDONLY);
-  assert(rnd_fd >= 0);
-
   assh_error_t err;
 
   struct assh_event_hndl_table_s ev_table;
   assh_event_table_init(&ev_table);
 
   struct assh_fd_context_s fd_ctx;
-  assh_fd_events_register(&ev_table, &fd_ctx, sock, rnd_fd);
+  assh_fd_events_register(&ev_table, &fd_ctx, sock);
 
   assh_bool_t auth_keys_done = 0;
 

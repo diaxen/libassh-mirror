@@ -43,9 +43,6 @@ enum assh_event_id_e
   /** @see assh_event_transport_write_s */
   ASSH_EVENT_WRITE,
 
-  /** @see assh_event_prng_feed_s */
-  ASSH_EVENT_PRNG_FEED,
-
   /** @see assh_event_kex_hostkey_lookup_s */
   ASSH_EVENT_KEX_HOSTKEY_LOOKUP,
 
@@ -92,7 +89,6 @@ enum assh_event_id_e
 typedef ASSH_EVENT_DONE_FCN(assh_event_done_t);
 
 union assh_event_transport_u;
-union assh_event_prng_u;
 union assh_event_kex_u;
 union assh_event_userauth_client_u;
 union assh_event_userauth_server_u;
@@ -114,10 +110,6 @@ struct assh_event_s
 
 #ifdef ASSH_TRANSPORT_H_
     union assh_event_transport_u transport;
-#endif
-
-#ifdef ASSH_PRNG_H_
-    union assh_event_prng_u prng;
 #endif
 
 #ifdef CONFIG_ASSH_CLIENT

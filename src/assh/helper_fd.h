@@ -30,25 +30,16 @@
 struct assh_fd_context_s
 {
   int ssh_fd;
-  int rand_fd;
 
   struct assh_event_hndl_s h_read;
   struct assh_event_hndl_s h_write;
-  struct assh_event_hndl_s h_prng_feed;
 };
 
 void assh_fd_events_register(struct assh_event_hndl_table_s *t,
 			     struct assh_fd_context_s *ctx,
-			     int ssh_fd, int rand_fd);
+			     int ssh_fd);
 
 ASSH_EVENT_HANDLER_FCN(assh_fd_event_read);
 ASSH_EVENT_HANDLER_FCN(assh_fd_event_write);
-ASSH_EVENT_HANDLER_FCN(assh_fd_event_prng_feed);
-
-assh_error_t assh_prng_fd_feed(struct assh_context_s *c,
-                               int fd, size_t len);
-
-assh_error_t assh_prng_file_feed(struct assh_context_s *c,
-                                 const char *filename, size_t len);
 
 #endif

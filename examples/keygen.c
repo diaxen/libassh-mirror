@@ -194,7 +194,6 @@ static void usage(const char *program, assh_bool_t opts)
           "    -p pass    specify key encryption passphrase\n"
           "    -P         don't use passphrase for the output\n\n"
           "    -c comment specify key comment string\n"
-          "    -r file    specify the random pool input file\n"
           "    -h         show help\n");
 
   exit(1);
@@ -213,7 +212,6 @@ int main(int argc, char *argv[])
   const struct assh_keygen_format_s *ifmt = NULL;
   const struct assh_keygen_format_s *ofmt = NULL;
   const struct assh_keygen_type_s *type = NULL;
-  const char *rand_filename = "/dev/random";
   const char *passphrase = NULL;
   const char *comment = NULL;
   FILE *ifile = NULL;
@@ -245,9 +243,6 @@ int main(int argc, char *argv[])
           if (bits == 0)
             bits = type->bits;
           break;
-        case 'r':
-          rand_filename = optarg;
-          break;
         case 'p':
           passphrase = optarg;
           break;
@@ -269,8 +264,8 @@ int main(int argc, char *argv[])
 
   struct assh_context_s *context;
 
-  if (assh_context_create(&context, ASSH_SERVER, CONFIG_ASSH_MAX_ALGORITHMS, NULL, NULL)
-      || context == NULL || assh_context_prng(context, NULL))
+  if (assh_context_create(&context, ASSH_SERVER, CONFIG_ASSH_MAX_ALGORITHMS,
+                          NULL, NULL, NULL, NULL))
     ERROR("Unable to create context.\n");
 
   const struct assh_algo_s *key_ciphers[] = {
@@ -320,10 +315,6 @@ int main(int argc, char *argv[])
         ERROR("Missing -b option\n");
       if (ofile == NULL)
         ERROR("Missing -o option\n");
-
-      fprintf(stderr, "Feeding random pool...\n");
-      if (assh_prng_file_feed(context, rand_filename, 32))
-        ERROR("Unable to get random data.\n");
 
       fprintf(stderr, "Generating key...\n");
       if (assh_key_create(context, &key, bits, type->ops, ASSH_ALGO_ANY))

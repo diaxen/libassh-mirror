@@ -91,11 +91,15 @@ assh_error_t assh_strdup(struct assh_context_s *c, char **r,
   return ASSH_OK;
 }
 
-void assh_context_init(struct assh_context_s *c,
-                       enum assh_context_type_e type,
-		       assh_allocator_t *alloc,
-		       void *alloc_pv)
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_context_init(struct assh_context_s *c,
+                  enum assh_context_type_e type,
+                  assh_allocator_t *alloc, void *alloc_pv,
+                  const struct assh_prng_s *prng,
+                  const struct assh_buffer_s *prng_seed)
 {
+  assh_error_t err;
+
   c->session_count = 0;
 
   assert(
@@ -114,7 +118,19 @@ void assh_context_init(struct assh_context_s *c,
   c->f_alloc = alloc;
   c->alloc_pv = alloc_pv;
 
-  c->prng = NULL;
+  if (prng == NULL)
+    {
+#ifdef CONFIG_ASSH_USE_GCRYPT_PRNG
+      prng = &assh_prng_gcrypt;
+#elif defined(CONFIG_ASSH_USE_DEV_RANDOM)
+      prng = &assh_prng_dev_random;
+#else
+      prng = &assh_prng_xswap;
+#endif
+    }
+  c->prng = prng;
+  ASSH_ERR_RET(prng->f_init(c, prng_seed));
+
   c->keys = NULL;
   c->kex_init_size = 0;
 
@@ -140,12 +156,16 @@ void assh_context_init(struct assh_context_s *c,
 #else
   c->bignum = &assh_bignum_builtin;
 #endif
+
+  return ASSH_OK;
 }
 
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_context_create(struct assh_context_s **ctx,
 		    enum assh_context_type_e type, size_t algo_max,
-		    assh_allocator_t *alloc, void *alloc_pv)
+		    assh_allocator_t *alloc, void *alloc_pv,
+                    const struct assh_prng_s *prng,
+                    const struct assh_buffer_s *prng_seed)
 {
   assh_error_t err;
 
@@ -160,10 +180,13 @@ assh_context_create(struct assh_context_s **ctx,
                      sizeof(**ctx) - sizeof((*ctx)->algos) + algo_max * sizeof(void*)
                      , ASSH_ALLOC_INTERNAL));
 
-  assh_context_init(*ctx, type, alloc, alloc_pv);
+  ASSH_ERR_GTO(assh_context_init(*ctx, type, alloc, alloc_pv, prng, prng_seed), err);
   (*ctx)->algo_max = algo_max;
 
   return ASSH_OK;
+ err:
+  alloc(alloc_pv, (void**)ctx, 0, ASSH_ALLOC_INTERNAL);
+  return err;
 }
 
 void assh_context_release(struct assh_context_s *ctx)
@@ -202,33 +225,7 @@ void assh_context_cleanup(struct assh_context_s *c)
 
   assh_key_flush(c, &c->keys);
 
-  if (c->prng != NULL)
-    c->prng->f_cleanup(c);
-}
-
-assh_error_t assh_context_prng(struct assh_context_s *c,
-			       const struct assh_prng_s *prng)
-{
-  assh_error_t err;
-
-  if (prng == NULL)
-    {
-      if (c->prng != NULL)
-	return ASSH_OK;
-#ifdef CONFIG_ASSH_USE_GCRYPT_PRNG
-      prng = &assh_prng_gcrypt;
-#else
-      prng = &assh_prng_xswap;
-#endif
-    }
-
-  if (c->prng != NULL)
-    c->prng->f_cleanup(c);
-
-  c->prng = prng;
-  ASSH_ERR_RET(prng->f_init(c));
-
-  return ASSH_OK;
+  c->prng->f_cleanup(c);
 }
 
 #ifdef CONFIG_ASSH_DEBUG

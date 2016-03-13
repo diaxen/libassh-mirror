@@ -74,11 +74,10 @@ struct assh_context_s
   /** Pseudo random number generator private data, allocated by the
       @ref assh_prng_init_t function and freed by @ref
       assh_prng_cleanup_t. */
-  void *prng_pv;
-  /** Current amount of entropy in the prng pool. a negative value
-      will make the @ref assh_event_get function return an @ref
-      ASSH_EVENT_PRNG_FEED event.  */
-  int prng_entropy;
+  union {
+    void *prng_pv;
+    long prng_pvl;
+  };
 
   /** Head of loaded keys list */
   struct assh_key_s *keys;
@@ -118,22 +117,31 @@ struct assh_context_s
 /** @This allocates and initializes a context. The maximum number of
     registered algorithms should be @ref #CONFIG_ASSH_MAX_ALGORITHMS
     if the @ref assh_algo_register_default function is used. The @tt
-    alloc parameter may be @tt NULL. @see assh_context_init */
+    alloc and @tt prng parameters may be @tt NULL.
+    @see assh_context_init */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_context_create(struct assh_context_s **ctx,
 		    enum assh_context_type_e type, size_t algo_max,
-		    assh_allocator_t *alloc, void *alloc_pv);
+		    assh_allocator_t *alloc, void *alloc_pv,
+                    const struct assh_prng_s *prng,
+                    const struct assh_buffer_s *prng_seed);
 
 /** @This initializes a context for use as a client or server. This
     can be used to initialize a statically allocated context
-    object. The @tt alloc parameter may be @tt NULL. 
+    object.
+
+    If the @tt alloc parameter is @tt NULL, a default memory allocator
+    will be used. If the @tt prng parameter is @tt NULL, a default
+    random generator will be used.
 
     When a stable ABI is needed, use the @ref assh_context_create
     function instead. */
-void assh_context_init(struct assh_context_s *ctx,
-                       enum assh_context_type_e type,
-		       assh_allocator_t *alloc,
-		       void *alloc_pv);
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_context_init(struct assh_context_s *ctx,
+                  enum assh_context_type_e type,
+                  assh_allocator_t *alloc, void *alloc_pv,
+                  const struct assh_prng_s *prng,
+                  const struct assh_buffer_s *prng_seed);
 
 /** @This releases resources associated with a context. All existing
     @ref assh_session_s objects must have been released when calling
@@ -160,18 +168,6 @@ assh_context_get_pv(struct assh_context_s *ctx)
 {
   return ctx->user_pv;
 }
-
-/** @This setups the pseudo-random number generator for use with
-    this context. If an other prng has already been setup, it will be
-    released.
-
-    If this function is called with @tt NULL as @tt prng parameter and
-    no prng has already been registered, a default prng is setup.
-    This is performed automatically when calling the @ref
-    assh_session_init function. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_context_prng(struct assh_context_s *s,
-		  const struct assh_prng_s *prng);
 
 #endif
 

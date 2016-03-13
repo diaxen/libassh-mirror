@@ -82,7 +82,8 @@ int main()
   /** init a server context */
   struct assh_context_s *context;
 
-  if (assh_context_create(&context, ASSH_SERVER, CONFIG_ASSH_MAX_ALGORITHMS, NULL, NULL))
+  if (assh_context_create(&context, ASSH_SERVER, CONFIG_ASSH_MAX_ALGORITHMS,
+			  NULL, NULL, NULL, NULL))
     abort();
 
   /** register authentication and connection services */
@@ -120,11 +121,6 @@ int main()
 
   signal(SIGPIPE, SIG_IGN);
 
-  /** random data source */
-  int rnd_fd = open("/dev/urandom", O_RDONLY);
-  if (rnd_fd < 0)
-    return -1;
-
   while (1)
     {
       struct sockaddr_in con_addr;
@@ -147,7 +143,7 @@ int main()
       /** register helper event handlers to process io events using
 	  file descriptors. */
       struct assh_fd_context_s fd_ctx;
-      assh_fd_events_register(&ev_table, &fd_ctx, conn, rnd_fd);
+      assh_fd_events_register(&ev_table, &fd_ctx, conn);
 
 #if 0
       /** register helper event handlers to process ssh-connection

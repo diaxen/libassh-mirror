@@ -29,10 +29,6 @@
 #ifndef ASSH_PRNG_H_
 #define ASSH_PRNG_H_
 
-#ifdef ASSH_EVENT_H_
-# warning The assh/assh_event.h header should be included after assh_prng.h
-#endif
-
 #include "assh_algo.h"
 #include "assh_context.h"
 
@@ -51,26 +47,10 @@ enum assh_prng_quality_e
   ASSH_PRNG_QUALITY_LONGTERM_KEY,
 };
 
-/** The @ref ASSH_EVENT_PRNG_FEED event is returned when the prng
-    module needs some entropy input. The @ref buf buffer must be
-    updated to point to random data before calling the @ref
-    assh_event_done function. The @ref size field gives the requested
-    amount of random data. */
-struct assh_event_prng_feed_s
-{
-  size_t       size;       //< input/output
-  uint8_t      buf[32];    //< output
-};
-
-/** @internal */
-union assh_event_prng_u
-{
-  struct assh_event_prng_feed_s feed;  
-};
-
 /** @internal @see assh_prng_init_t */
 #define ASSH_PRNG_INIT_FCN(n) \
-  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_context_s *c)
+  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_context_s *c, \
+                                const struct assh_buffer_s *seed)
 
 /** @internal @This defines the function type for the initialization
     operation of the prng module interface. The prng can store its private
@@ -86,15 +66,6 @@ typedef ASSH_PRNG_INIT_FCN(assh_prng_init_t);
     operation of the prng module interface. @see assh_prng_get */
 typedef ASSH_PRNG_GET_FCN(assh_prng_get_t);
 
-/** @internal @see assh_prng_feed_t */
-#define ASSH_PRNG_FEED_FCN(n) \
-  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_context_s *c,    \
-                                           const uint8_t *rdata, size_t rdata_len)
-
-/** @internal @This defines the function type for the entry feed
-    operation of the prng module interface. */
-typedef ASSH_PRNG_FEED_FCN(assh_prng_feed_t);
-
 /** @internal @see assh_prng_cleanup_t */
 #define ASSH_PRNG_CLEANUP_FCN(n) void (n)(struct assh_context_s *c)
 
@@ -108,7 +79,6 @@ struct assh_prng_s
 {
   assh_prng_init_t    *f_init;
   assh_prng_get_t     *f_get;
-  assh_prng_feed_t    *f_feed;
   assh_prng_cleanup_t *f_cleanup;
 };
 
@@ -121,18 +91,15 @@ assh_prng_get(struct assh_context_s *c,
   return c->prng->f_get(c, rdata, rdata_len, quality);
 }
 
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_prng_feed(struct assh_context_s *c,
-               uint8_t *rdata, size_t rdata_len)
-{
-  return c->prng->f_feed(c, rdata, rdata_len);
-}
-
 /** @multiple @This is a prng algorithm implementation descriptor. */
 extern const struct assh_prng_s assh_prng_xswap;
 
 #ifdef CONFIG_ASSH_USE_GCRYPT_PRNG
 extern const struct assh_prng_s assh_prng_gcrypt;
+#endif
+
+#ifdef CONFIG_ASSH_USE_DEV_RANDOM
+extern const struct assh_prng_s assh_prng_dev_random;
 #endif
 
 #endif

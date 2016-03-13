@@ -32,7 +32,7 @@ libassh_la_SOURCES = assh_context.c assh_session.c assh_packet.c	\
 	sign_dsa.c sign_rsa.c sign_eddsa.c sign_ecdsa.c sign_none.c	\
 	compress_none.c							\
 	helper_key.c helper_fd.c helper_base64.c helper_bcrypt.c	\
-	hash_sha3_builtin.c
+	hash_sha3_builtin.c prng_xswap_builtin.c
 
 if COND_gcrypt_hash
 libassh_la_SOURCES +=   hash_gcrypt.c mac_gcrypt.c
@@ -48,8 +48,6 @@ endif
 
 if COND_gcrypt_prng
 libassh_la_SOURCES +=	prng_gcrypt.c
-else
-libassh_la_SOURCES +=	prng_xswap_builtin.c
 endif
 
 if COND_gcrypt_ciphers

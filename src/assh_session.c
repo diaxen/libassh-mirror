@@ -37,7 +37,6 @@ assh_error_t assh_session_init(struct assh_context_s *c,
 {
   assh_error_t err;
 
-  ASSH_ERR_RET(assh_context_prng(c, NULL));
   s->ctx = c;
 
   assh_transport_state(s, ASSH_TR_KEX_INIT);

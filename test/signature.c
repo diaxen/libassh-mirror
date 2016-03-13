@@ -403,8 +403,8 @@ int main(int argc, char **argv)
     return -1;
 #endif
 
-  assh_context_init(&context, ASSH_SERVER, NULL, NULL);
-  ASSH_ERR_RET(assh_context_prng(&context, &assh_prng_weak));
+  if (assh_context_init(&context, ASSH_SERVER, NULL, NULL, &assh_prng_weak, NULL))
+    return -1;
 
   for (i = 0; algos[i].algo; i++)
     ASSH_ERR_RET(assh_algo_register_va(&context, 0, 0, algos[i].algo, NULL));

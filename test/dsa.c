@@ -227,7 +227,7 @@ int main()
     return -1;
 #endif
 
-  assh_context_init(&context, ASSH_SERVER, NULL, NULL);
+  assh_context_init(&context, ASSH_SERVER, NULL, NULL, NULL, NULL);
 
   struct assh_bignum_s rn;
   struct assh_bignum_s sn;

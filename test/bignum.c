@@ -31,7 +31,7 @@
 # include <gcrypt.h>
 #endif
 
-#include "prng_weak.c"
+#include "prng_weak.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -1282,8 +1282,8 @@ int main(int argc, char **argv)
     return -1;
 #endif
 
-  assh_context_init(&context, ASSH_SERVER, NULL, NULL);
-  ASSH_ERR_RET(assh_context_prng(&context, &assh_prng_weak));
+  if (assh_context_init(&context, ASSH_SERVER, NULL, NULL, &assh_prng_weak, NULL))
+    return -1;
 
   test_convert();
   test_cmp();

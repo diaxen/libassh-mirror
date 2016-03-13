@@ -28,18 +28,10 @@
 #include <assh/assh_packet.h>
 #include <assh/assh_session.h>
 #include <assh/assh_kex.h>
-#include <assh/assh_prng.h>
 #include <assh/assh_service.h>
 #include <assh/assh_event.h>
 
 #include <assert.h>
-
-static ASSH_EVENT_DONE_FCN(assh_event_random_done)
-{
-  return s->ctx->prng->f_feed(s->ctx, e->prng.feed.buf,
-			      e->prng.feed.size);
-  return ASSH_OK;
-}
 
 assh_error_t assh_event_get(struct assh_session_s *s,
 			    struct assh_event_s *event)
@@ -48,16 +40,6 @@ assh_error_t assh_event_get(struct assh_session_s *s,
 
   ASSH_CHK_RET(s->tr_st == ASSH_TR_CLOSED,
 	       ASSH_ERR_CLOSED | ASSH_ERRSV_FIN);
-
-  /* need to get some entropy for the prng */
-  if (s->ctx->prng_entropy < 0)
-    {
-      event->id = ASSH_EVENT_PRNG_FEED;
-      event->f_done = &assh_event_random_done;
-      event->prng.feed.size = ASSH_MIN(-s->ctx->prng_entropy,
-				       sizeof (event->prng.feed.buf));
-      goto done;
-    }
 
   event->id = ASSH_EVENT_INVALID;
 
