@@ -182,14 +182,14 @@ int main()
 #warning validate key ? keys should be validated once when added to the list
 
 	      event.userauth_server.userkey.found = 1;
-	      err = assh_event_done(session, &event);
+	      err = assh_event_done(session, &event, ASSH_OK);
 	      break;
 	    }
 
 	    case ASSH_EVENT_USERAUTH_SERVER_PASSWORD:
 	      /* XXX check that event user/password pair matches. */
 	      event.userauth_server.password.success = 1;
-	      err = assh_event_done(session, &event);
+	      err = assh_event_done(session, &event, ASSH_OK);
 	      break;
 
 	    case ASSH_EVENT_CHANNEL_OPEN: {
@@ -199,7 +199,7 @@ int main()
 		{
 		  co_e->reply = ASSH_CONNECTION_REPLY_SUCCESS;
 		}
-	      err = assh_event_done(session, &event);
+	      err = assh_event_done(session, &event, ASSH_OK);
 	      break;
 	    }
 
@@ -214,7 +214,7 @@ int main()
 		{
 		  rq_e->reply = ASSH_CONNECTION_REPLY_SUCCESS;
 		}
-	      err = assh_event_done(session, &event);
+	      err = assh_event_done(session, &event, ASSH_OK);
 	      break;
 	    }
 
@@ -231,7 +231,7 @@ int main()
 		memcpy(data, dt_e->data.data, size);
 
 	      /* acknowledge input data event before sending */
-	      err = assh_event_done(session, &event);
+	      err = assh_event_done(session, &event, ASSH_OK);
 
 	      if (perr == ASSH_OK)  /* send output data */
 		err = assh_channel_data_send(dt_e->ch, size);
@@ -240,7 +240,7 @@ int main()
 
 	    default:
 	      printf("Don't know how to handle event %u\n", event.id);
-	      err = assh_event_done(session, &event);
+	      err = assh_event_done(session, &event, ASSH_OK);
 	    }
 
 	  if (err != ASSH_OK)

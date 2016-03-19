@@ -221,7 +221,7 @@ int test(const struct assh_algo_kex_s *kex,
 	      ASSH_DEBUG("event %u not handled\n", event.id);
 	    }
 
-	  err = assh_event_done(&session[i], &event);
+	  err = assh_event_done(&session[i], &event, ASSH_OK);
 	  if (err != ASSH_OK)
 	    return 1;
 	}

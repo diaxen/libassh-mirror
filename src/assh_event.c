@@ -91,7 +91,8 @@ assh_error_t assh_event_get(struct assh_session_s *s,
 
 assh_error_t
 assh_event_done(struct assh_session_s *s,
-                struct assh_event_s *e)
+                struct assh_event_s *e,
+                assh_error_t inerr)
 {
   assh_error_t err;
 
@@ -103,13 +104,15 @@ assh_event_done(struct assh_session_s *s,
     ASSH_DEBUG("ctx=%p session=%p event done id=%u\n", s->ctx, s, e->id);
 #endif
 
-  if (e->f_done == NULL)
+  if (e->f_done != NULL)
+    err = e->f_done(s, e);
+
+  if (ASSH_ERR_SEVERITY(inerr) >= ASSH_ERR_SEVERITY(err))
+    err = inerr;
+
+  if (!err)
     return ASSH_OK;
 
-  ASSH_ERR_GTO(e->f_done(s, e), err);
-
-  return ASSH_OK;
- err:
   return assh_session_error(s, err);
 }
 
@@ -148,14 +151,7 @@ assh_event_table_run(struct assh_session_s *s,
       if (h == NULL)
         return ASSH_OK;
 
-      err = h->f_handler(s, e, h->ctx);
-
-      ASSH_ERR_RET(assh_event_done(s, e));
-
-      ASSH_ERR_GTO(err, err);
+      ASSH_ERR_RET(assh_event_done(s, e, h->f_handler(s, e, h->ctx)));
     }
-
- err:
-  return assh_session_error(s, err);
 }
 

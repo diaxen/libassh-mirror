@@ -768,8 +768,8 @@ int test(int (*fend)(int, int), int n)
 	      printf("Don't know how to handle event %u (context %u)\n", event.id, i);
 	      return 21;
 	    }
-	  
-	  err = assh_event_done(&session[i], &event);
+
+	  err = assh_event_done(&session[i], &event, ASSH_OK);
 	  if (ASSH_ERR_ERROR(err) != ASSH_OK)
 	    {
 	      fprintf(stderr, "assh error %i in main loop (errno=%i) (context %u)\n", err, errno, i);

@@ -166,10 +166,15 @@ assh_event_get(struct assh_session_s *s,
                struct assh_event_s *e);
 
 /** @This acknowledges the last event returned by the @ref
-    assh_event_get function. */
+    assh_event_get function.
+
+    If an error occurred during event processing, it should be
+    reported to this function, especially if communication with the
+    remote side is not possible anymore. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_event_done(struct assh_session_s *s,
-                struct assh_event_s *e);
+                struct assh_event_s *e,
+                assh_error_t err);
 
 /** @internal @see assh_event_hndl_func_t */
 #define ASSH_EVENT_HANDLER_FCN(n) \
