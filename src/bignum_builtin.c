@@ -562,7 +562,6 @@ static assh_error_t ASSH_WARN_UNUSED_RESULT
 assh_bignum_addsub(struct assh_bignum_s *dst,
                    const struct assh_bignum_s *a,
                    const struct assh_bignum_s *b,
-                   const struct assh_bignum_s *mod,
                    assh_bnword_t smask /* 0:add, -1:sub */)
 {
   assh_error_t err;
@@ -578,15 +577,15 @@ assh_bignum_addsub(struct assh_bignum_s *dst,
   size_t dl = assh_bignum_words(dst->bits);
   size_t al = assh_bignum_words(a->bits);
   size_t bl = assh_bignum_words(b->bits);
+  assert(dl >= al);
+
   const assh_bnword_t *an = a->n;
   const assh_bnword_t *bn = b->n;
   assh_bnword_t *dn = dst->n;
-
-  assert(dl >= al);
-
-  assh_bnlong_t t = (assh_bnlong_t)(smask & 1) << ASSH_BIGNUM_W;
   assh_bnword_t bmask = amask ^ smask;
   size_t i;
+
+  assh_bnlong_t t = (assh_bnlong_t)(smask & 1) << ASSH_BIGNUM_W;
 
   /* add/sub numbers */
   for (i = 0; i < bl; i++)
@@ -596,37 +595,13 @@ assh_bignum_addsub(struct assh_bignum_s *dst,
   for (; i < dl; i++)
     dn[i] = t = smask + (t >> ASSH_BIGNUM_W);
 
+  /* handle overflow condition */
   t ^= (assh_bnlong_t)(smask & 1) << ASSH_BIGNUM_W;
 
-  /* handle overflow condition */
-
-  if (mod)
-    {
-      assert(dst->bits == mod->bits);
-      assh_bnword_t q = ((t >> ASSH_BIGNUM_W) ^ 1) - 1;
-      assh_bnword_t *m;
-
-      struct assh_bignum_mt_s *mt = (void*)mod;
-      assh_bnword_t *r1 = (assh_bnword_t*)mt->mod.n + 2 * dl;
-#warning FIXME add either r%n or n-r%n depending on compare of the first word?
-      /* add/sub r%n on overflow */
-      m = r1;
-      /* switch between add/sub */
-      smask = ~smask;
-
-      /* masked reduce */
-      t = (assh_bnlong_t)(q & 1 & ~smask) << ASSH_BIGNUM_W;
-      for (i = 0; i < dl; i++)
-        dn[i] = t = (assh_bnlong_t)dn[i] + (q & (m[i] ^ (assh_bnword_t)~smask))
-          + (t >> ASSH_BIGNUM_W);
-    }
-  else
-    {
-      size_t l = dst->bits % ASSH_BIGNUM_W;
-      if (!l)
-        l = ASSH_BIGNUM_W;
-      ASSH_CHK_RET(t >> l != 0, ASSH_ERR_NUM_OVERFLOW);
-    }
+  size_t l = dst->bits % ASSH_BIGNUM_W;
+  if (!l)
+    l = ASSH_BIGNUM_W;
+  ASSH_CHK_RET(t >> l != 0, ASSH_ERR_NUM_OVERFLOW);
 
   return ASSH_OK;
 }
@@ -1177,6 +1152,107 @@ assh_bignum_mul_mod(struct assh_context_s *ctx,
 }
 
 /********************************************************* montgomery */
+
+static void
+assh_bignum_mt_add(struct assh_bignum_s *dst,
+                   const struct assh_bignum_s *a,
+                   const struct assh_bignum_s *b,
+                   const struct assh_bignum_s *mod)
+{
+  struct assh_bignum_mt_s *mt = (void*)mod;
+
+  assert(dst->bits == a->bits);
+  assert(dst->bits == b->bits);
+  assert(dst->bits == mod->bits);
+
+  size_t i, dl = assh_bignum_words(dst->bits);
+  if (dl)
+    {
+      /* We want to add two numbers in montgomery representation. When
+         an overflow is detected, we need to add 1 in montgomery
+         representation. Since we use a redundant montgomery
+         representation, accounting for the first overflow may
+         generate a second overflow. At most two overflows can be
+         generated which would require 3 loops in order to perform the
+         whole operation in constant time: a + b; +1?; +1?.
+
+         Instead we merge the first two loops: a + b + 1?; +1?.
+         This is achieved by predicting the first overflow by only
+         summing the most significant word of each number. In case of
+         misprediction, we correct the result thanks to the second
+         loop. This works because misprediction and double overflow
+         conditions can't occur at the same time. */
+      const assh_bnword_t *an = a->n;
+      const assh_bnword_t *bn = b->n;
+      const assh_bnword_t *r1 = (assh_bnword_t*)mt->mod.n + 2 * dl;
+      assh_bnword_t *dn = dst->n;
+
+      /* compute the 1st mask by predicting the first overflow */
+      assh_bnword_t q = ((assh_bnlong_t)an[dl - 1] + bn[dl - 1]) >> ASSH_BIGNUM_W;
+      q = (q ^ 1) - 1;
+
+      /* add the numbers and conditionally add montgomery(1) */
+      assh_bnlong_t t = 0;
+      for (i = 0; i < dl; i++)
+        dn[i] = t = (assh_bnlong_t)an[i] + bn[i] + (q & r1[i]) + (t >> ASSH_BIGNUM_W);
+
+      /* compute 2nd mask:
+         1st mask   carry    2nd mask
+         0          0        0       no overflow
+         1          0                not possible
+         0          1        1       mispredicted single overflow
+         1          1        0       single overflow
+         0          2                not possible
+         1          2        1       double overflow
+      */
+      q = (assh_bnword_t)(1 & ((t >> ASSH_BIGNUM_W) ^ q ^ 1)) - 1;
+
+      /* conditionally add montgomery(1) */
+      t = 0;
+      for (t = i = 0; i < dl; i++)
+        dn[i] = t = (assh_bnlong_t)dn[i] + (q & r1[i]) + (t >> ASSH_BIGNUM_W);
+    }
+}
+
+static void
+assh_bignum_mt_sub(struct assh_bignum_s *dst,
+                   const struct assh_bignum_s *a,
+                   const struct assh_bignum_s *b,
+                   const struct assh_bignum_s *mod)
+{
+  struct assh_bignum_mt_s *mt = (void*)mod;
+
+  assert(dst->bits == a->bits);
+  assert(dst->bits == b->bits);
+  assert(dst->bits == mod->bits);
+
+  size_t i, dl = assh_bignum_words(dst->bits);
+  if (dl)
+    {
+      /* see assh_bignum_mt_add for explanations */
+      const assh_bnword_t *an = a->n;
+      const assh_bnword_t *bn = b->n;
+      const assh_bnword_t *r1 = (assh_bnword_t*)mt->mod.n + 2 * dl;
+      assh_bnword_t *dn = dst->n;
+
+      /* compute the 1st mask by predicting the first overflow */
+      assh_bnword_t q = ((assh_bnlong_t)an[dl - 1] - bn[dl - 1]) >> ASSH_BIGNUM_W;
+      q = (1 & q ^ 1) - 1;
+
+      /* subtract numbers and conditionally subtract montgomery(1) */
+      assh_bnslong_t t = 0;
+      for (i = 0; i < dl; i++)
+        dn[i] = t = (assh_bnlong_t)an[i] - bn[i] - (q & r1[i]) + (t >> ASSH_BIGNUM_W);
+
+      /* compute 2nd mask */
+      q = (assh_bnword_t)(1 & ((t >> ASSH_BIGNUM_W) ^ q ^ 1)) - 1;
+
+      /* conditionally subtract montgomery(1) */
+      t = 0;
+      for (i = 0; i < dl; i++)
+        dn[i] = t = (assh_bnlong_t)dn[i] - (q & r1[i]) + (t >> ASSH_BIGNUM_W);
+    }
+}
 
 static inline assh_bnword_t assh_bnword_mt_modinv(assh_bnword_t a)
 {
@@ -2174,17 +2250,20 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           struct assh_bignum_s *src1 = args[ob];
           struct assh_bignum_s *src2 = args[oc];
           ASSH_ERR_GTO(assh_bignum_realloc(c, dst, src1->secret | src2->secret, 1), err_sc);
-          assh_bnword_t mask = (assh_bnword_t)(op == ASSH_BIGNUM_OP_ADD) - 1;
           if (od != ASSH_BOP_NOREG)
             {
               struct assh_bignum_s *mod = args[od];
               assert(mod->mt_mod && src1->mt_num && src2->mt_num);
-              ASSH_ERR_GTO(assh_bignum_addsub(dst, src1, src2, mod, mask), err_sc);
+              if (op == ASSH_BIGNUM_OP_ADD)
+                assh_bignum_mt_add(dst, src1, src2, mod);
+              else
+                assh_bignum_mt_sub(dst, src1, src2, mod);
             }
           else
             {
               assert(!src1->mt_num && !src2->mt_num);
-              ASSH_ERR_GTO(assh_bignum_addsub(dst, src1, src2, NULL, mask), err_sc);
+              assh_bnword_t mask = (assh_bnword_t)(op == ASSH_BIGNUM_OP_ADD) - 1;
+              ASSH_ERR_GTO(assh_bignum_addsub(dst, src1, src2, mask), err_sc);
             }
 #if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
           dst->mt_num = src1->mt_num;
