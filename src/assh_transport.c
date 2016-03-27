@@ -144,7 +144,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
       if (!k->mac->etm)
 	ASSH_ERR_RET(k->cipher->f_process(k->cipher_ctx,
 		       s->stream_in_pck_head, hsize,
-		       ASSH_CIPHER_PCK_HEAD) | ASSH_ERRSV_DISCONNECT);
+		       ASSH_CIPHER_PCK_HEAD, s->in_seq) | ASSH_ERRSV_DISCONNECT);
 
       /* adjust length */
       size_t len = assh_load_u32(s->stream_in_pck_head);
@@ -179,7 +179,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
       if (k->cipher->auth_size)	/* Authenticated cipher */
 	{
 	  ASSH_ERR_RET(k->cipher->f_process(k->cipher_ctx, p->data,
-					    p->data_size, ASSH_CIPHER_PCK_TAIL)
+				       p->data_size, ASSH_CIPHER_PCK_TAIL, s->in_seq)
 		       | ASSH_ERRSV_DISCONNECT);
 	}
       else if (k->mac->etm)	/* Encrypt then Mac */
@@ -190,13 +190,13 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 		       | ASSH_ERRSV_DISCONNECT);
 
 	  ASSH_ERR_RET(k->cipher->f_process(k->cipher_ctx, p->data + 4,
-				  p->data_size - mac_len - 4, ASSH_CIPHER_PCK_HEAD)
+				  p->data_size - mac_len - 4, ASSH_CIPHER_PCK_HEAD, s->in_seq)
 		       | ASSH_ERRSV_DISCONNECT);
 	}
       else			/* Mac and Encrypt */
 	{
 	  ASSH_ERR_RET(k->cipher->f_process(k->cipher_ctx, p->data + hsize,
-				  p->data_size - hsize - mac_len, ASSH_CIPHER_PCK_TAIL)
+				  p->data_size - hsize - mac_len, ASSH_CIPHER_PCK_TAIL, s->in_seq)
 		       | ASSH_ERRSV_DISCONNECT);
 
 	  ASSH_ERR_RET(k->mac->f_check(k->mac_ctx, s->in_seq, p->data,
@@ -404,13 +404,13 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 	{
 	  assert(k->cipher->auth_size != 0);
 	  ASSH_ERR_RET(k->cipher->f_process(k->cipher_ctx, p->data,
-			    p->data_size, ASSH_CIPHER_PCK_TAIL)
+			    p->data_size, ASSH_CIPHER_PCK_TAIL, s->out_seq)
 		       | ASSH_ERRSV_FIN);
 	}
       else if (k->mac->etm)	/* Encrypt then Mac */
 	{
 	  ASSH_ERR_RET(k->cipher->f_process(k->cipher_ctx, p->data + 4,
-			    p->data_size - mac_len - 4, ASSH_CIPHER_PCK_TAIL)
+			    p->data_size - mac_len - 4, ASSH_CIPHER_PCK_TAIL, s->out_seq)
 		       | ASSH_ERRSV_FIN);
 
 	  ASSH_ERR_RET(k->mac->f_compute(k->mac_ctx, s->out_seq, p->data,
@@ -423,7 +423,7 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 			 p->data_size - mac_len, mac_ptr) | ASSH_ERRSV_FIN);
 
 	  ASSH_ERR_RET(k->cipher->f_process(k->cipher_ctx, p->data,
-			    p->data_size - mac_len, ASSH_CIPHER_PCK_TAIL)
+			    p->data_size - mac_len, ASSH_CIPHER_PCK_TAIL, s->out_seq)
 		       | ASSH_ERRSV_FIN);
 	}
 

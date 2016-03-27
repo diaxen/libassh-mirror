@@ -224,7 +224,7 @@ assh_load_rfc4716_rfc1421(struct assh_context_s *c, FILE *file,
 
       /* decipher */
       ASSH_ERR_GTO(cipher->f_init(c, cipher_ctx, key, iv, 0), err_sc);
-      ASSH_ERR_GTO(cipher->f_process(cipher_ctx, kdata, len, ASSH_CIPHER_KEY), err_cipher);
+      ASSH_ERR_GTO(cipher->f_process(cipher_ctx, kdata, len, ASSH_CIPHER_KEY, 0), err_cipher);
 
       /* check padding content */
       uint8_t j = kdata[len - 1];
@@ -377,7 +377,7 @@ assh_load_openssh_v1_blob(struct assh_context_s *c,
 
       /* decipher */
       ASSH_ERR_GTO(cipher->f_init(c, cipher_ctx, key, iv, 0), err_sc);
-      ASSH_ERR_GTO(cipher->f_process(cipher_ctx, enc, enc_len, ASSH_CIPHER_KEY), err_cipher);
+      ASSH_ERR_GTO(cipher->f_process(cipher_ctx, enc, enc_len, ASSH_CIPHER_KEY, 0), err_cipher);
 
     err_cipher:
       cipher->f_cleanup(c, cipher_ctx);
@@ -689,7 +689,7 @@ assh_save_openssh_v1_blob(struct assh_context_s *c,
                                          rounds), err_sc);
 
           ASSH_ERR_GTO(cipher->f_init(c, cipher_ctx, key, iv, 1), err_sc);
-          ASSH_ERR_GTO(cipher->f_process(cipher_ctx, enc + 4, enc_len, ASSH_CIPHER_KEY), err_cipher);
+          ASSH_ERR_GTO(cipher->f_process(cipher_ctx, enc + 4, enc_len, ASSH_CIPHER_KEY, 0), err_cipher);
 
         err_cipher:
           cipher->f_cleanup(c, cipher_ctx);
@@ -814,7 +814,7 @@ assh_save_rfc1421(struct assh_context_s *c,
 
       /* encipher */
       ASSH_ERR_GTO(cipher->f_init(c, cipher_ctx, key, iv, 1), err_sc);
-      ASSH_ERR_GTO(cipher->f_process(cipher_ctx, blob, blob_len, ASSH_CIPHER_KEY), err_cipher);
+      ASSH_ERR_GTO(cipher->f_process(cipher_ctx, blob, blob_len, ASSH_CIPHER_KEY, 0), err_cipher);
     err_cipher:
       cipher->f_cleanup(c, cipher_ctx);
     err_sc:

@@ -57,7 +57,7 @@ enum assh_cipher_op_e
 /** @internal @see assh_cipher_process_t */
 #define ASSH_CIPHER_PROCESS_FCN(n) \
   ASSH_WARN_UNUSED_RESULT assh_error_t (n)(void *ctx_, uint8_t *data, size_t len, \
-                                           enum assh_cipher_op_e op)
+                                           enum assh_cipher_op_e op, uint32_t seq)
 
 /** @internal @This defines the function type for the data processing
     operation of the cipher module interface. */
@@ -174,6 +174,12 @@ extern const struct assh_algo_cipher_s assh_cipher_serpent256_ctr;
 extern const struct assh_algo_cipher_s assh_cipher_serpent128_gcm;
 extern const struct assh_algo_cipher_s assh_cipher_serpent256_gcm;
 #  endif
+# endif
+
+# ifdef CONFIG_ASSH_CIPHER_CHACHAPOLY
+/** @multiple @This is a cipher algorithm descriptor for the openssh
+    Chacha20-Poly1305 authenticated cipher implementation. */
+extern const struct assh_algo_cipher_s assh_cipher_chachapoly;
 # endif
 
 #endif

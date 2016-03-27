@@ -133,6 +133,7 @@ fi
 
 AC_DEFINE([CONFIG_ASSH_CIPHER_AES], [], [AES cipher available])
 AC_DEFINE([CONFIG_ASSH_CIPHER_ARCFOUR], [], [Arcfour cipher available])
+AC_DEFINE([CONFIG_ASSH_CIPHER_CHACHAPOLY], [], [Chacha20-Poly1305 cipher available])
 AC_DEFINE([CONFIG_ASSH_MODE_CTR], [], [Counter cipher mode available])
 AC_DEFINE([CONFIG_ASSH_HASH_MD5], [], [MD5 message digest available])
 AC_DEFINE([CONFIG_ASSH_HASH_SHA1], [], [SHA1 message digest available])

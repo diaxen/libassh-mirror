@@ -287,6 +287,9 @@ const struct assh_algo_s *assh_algo_table[] = {
   &assh_cipher_aes256_gcm.algo,
 #  endif
 # endif
+# ifdef CONFIG_ASSH_CIPHER_CHACHAPOLY
+  &assh_cipher_chachapoly.algo,
+# endif
 
   /* mac */
 # ifdef CONFIG_ASSH_HASH_MD5

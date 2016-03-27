@@ -292,6 +292,7 @@ assh_config.h
     skipped instead when an authenticated cipher is selected.
 
     @list
+      @item @tt {chacha20-poly1305@openssh.com},
       @item @tt {aes128-cbc},  @tt {aes192-cbc},    @tt {aes256-cbc},
       @item @tt {aes128-ctr},  @tt {aes192-ctr},    @tt {aes256-ctr},
       @item @tt {arcfour},     @tt {arcfour128},    @tt {arcfour256}.
