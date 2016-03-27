@@ -225,6 +225,7 @@ enum assh_error_e
 
 /** @internal */
 # define ASSH_DEBUG(...)
+# define ASSH_DEBUG_(...)
 
 /** @internal */
 ASSH_INLINE void
@@ -243,6 +244,7 @@ assh_hexdump(const char *name, const void *data, unsigned int len)
 
 /** @internal */
 # define ASSH_DEBUG(...) fprintf(stderr, "assh_debug: " __VA_ARGS__)
+# define ASSH_DEBUG_(...) fprintf(stderr, __VA_ARGS__)
 
 /** @internal */
 void assh_hexdump(const char *name, const void *data, unsigned int len);

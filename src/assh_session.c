@@ -32,6 +32,11 @@
 #include <assh/assh_transport.h>
 #include <assh/assh_alloc.h>
 
+static ASSH_KEX_FILTER_FCN(assh_session_kex_filter)
+{
+  return 1;
+}
+
 assh_error_t assh_session_init(struct assh_context_s *c,
 			       struct assh_session_s *s)
 {
@@ -49,6 +54,7 @@ assh_error_t assh_session_init(struct assh_context_s *c,
   s->kex_pv = NULL;
   s->kex_bytes = 0;
   s->kex_max_bytes = ASSH_REKEX_THRESHOLD;
+  s->kex_filter = assh_session_kex_filter;
 
 #ifdef CONFIG_ASSH_CLIENT
   s->srv_rq = NULL;
@@ -263,3 +269,20 @@ uint_fast8_t assh_session_safety(struct assh_session_s *s)
                   s->cur_keys_in->safety);
 }
 
+assh_error_t
+assh_session_algo_filter(struct assh_session_s *s,
+                         assh_kex_filter_t *filter)
+{
+  assh_error_t err;
+
+  switch (s->tr_st)
+    {
+    case ASSH_TR_KEX_WAIT:
+    case ASSH_TR_SERVICE_KEX:
+      ASSH_ERR_RET(ASSH_ERR_STATE);
+    default:
+      s->kex_filter = filter != NULL
+        ? filter : assh_session_kex_filter;
+      return ASSH_OK;
+    }
+}

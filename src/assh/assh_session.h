@@ -32,6 +32,22 @@
 #include "assh_transport.h"
 #include "assh_queue.h"
 
+/** @see assh_kex_filter_t */
+#define ASSH_KEX_FILTER_FCN(n)                          \
+  assh_bool_t (n)(struct assh_session_s *s,             \
+  const struct assh_algo_s *algo, assh_bool_t out)
+
+/** This is a per session algorithm filtering function.
+
+    True must be returned in order to make the algorithm available for
+    the session. The result of this function must not vary for a given
+    algorithm unless the @ref assh_session_algo_filter function has
+    been called successfully.
+
+    The @tt out parameter specifies the direction and is relevant for
+    cipher, mac and compression algorithms. */
+typedef ASSH_KEX_FILTER_FCN(assh_kex_filter_t);
+
 /** @internalmembers @This is the session context structure. */
 struct assh_session_s
 {
@@ -68,6 +84,9 @@ struct assh_session_s
   /** This flag indicates if we have to skip the first kex packet from
       the remote side. */
   assh_bool_t kex_bad_guess;
+
+  /** per session algorithm filter */
+  assh_kex_filter_t *kex_filter;
 
   /** Session id is first "exchange hash" H */
   uint8_t session_id[ASSH_MAX_HASH_SIZE];
@@ -207,6 +226,13 @@ assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t err);
     @see assh_algo_register_va
 */
 uint_fast8_t assh_session_safety(struct assh_session_s *s);
+
+/** @This setups a per session algorithm filter. The @tt filter
+    parameter may be @tt NULL to disable filtering. It will fail if a
+    key exchange in ongoing. */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_session_algo_filter(struct assh_session_s *s,
+                         assh_kex_filter_t *filter);
 
 #endif
 
