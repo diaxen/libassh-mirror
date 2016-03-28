@@ -320,11 +320,13 @@ typedef ASSH_ALLOCATOR(assh_allocator_t);
   typedef int field##_must_be_the_first_field_in_struct_##struct_name \
   [-(int)offsetof(struct struct_name, field)];
 
+/** @internal */
 ASSH_INLINE const char ** assh_charptr_cast(char **p)
 {
   return (const char **)p;
 }
 
+/** @internal */
 ASSH_INLINE const uint8_t ** assh_uint8ptr_cast(uint8_t **p)
 {
   return (const uint8_t **)p;

@@ -90,7 +90,7 @@ struct assh_algo_s
    is [0, 99]. Algorithms with a safety factor less than @tt
    min_safety are skipped.
 
-   The Safety factor is defined follow:
+   The Safety factor is defined as follow:
 
    @list
      @item 0-19: weak, broken

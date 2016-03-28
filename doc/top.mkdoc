@@ -210,7 +210,7 @@ assh_config.h
       The original ssh @invoke{4253}rfc only specifies use of 1024
       bits DSA keys. The last version of the DSA standard specifies
       larger key sizes, implemented here as extensions. The additional
-      algorithms accept any key size grater than their base key size
+      algorithms accept any key size greater than their base key size
       and reject lower key sizes.
 
       @list
