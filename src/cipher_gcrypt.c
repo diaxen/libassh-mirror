@@ -298,3 +298,43 @@ ASSH_GCRYPT_CIPHER(serpent256_gcm,  SERPENT256, GCM,
 # endif
 #endif
 
+#ifdef CONFIG_ASSH_CIPHER_CAMELLIA
+ASSH_GCRYPT_CIPHER(camellia128_cbc,  CAMELLIA128, CBC,
+                   16, 16, 16, 16, 0, 55, 40,
+                   { ASSH_ALGO_STD_PRIVATE,
+                     "camellia128-cbc@openssh.com" },
+                   { ASSH_ALGO_STD_PRIVATE,
+                     "camellia128-cbc" });
+ASSH_GCRYPT_CIPHER(camellia192_cbc,  CAMELLIA192, CBC,
+                   16, 16, 16, 24, 0, 65, 40,
+                   { ASSH_ALGO_STD_PRIVATE,
+                     "camellia192-cbc@openssh.com" },
+                   { ASSH_ALGO_STD_PRIVATE,
+                     "camellia192-cbc" });
+ASSH_GCRYPT_CIPHER(camellia256_cbc,  CAMELLIA256, CBC,
+                   16, 16, 16, 32, 0, 75, 40,
+                   { ASSH_ALGO_STD_PRIVATE,
+                     "camellia256-cbc@openssh.com" },
+                   { ASSH_ALGO_STD_PRIVATE,
+                     "camellia256-cbc" });
+# ifdef CONFIG_ASSH_MODE_CTR
+ASSH_GCRYPT_CIPHER(camellia128_ctr,  CAMELLIA128, CTR,
+                   16, 16, 16, 16, 0, 55, 40,
+                   { ASSH_ALGO_STD_PRIVATE,
+                     "camellia128-ctr@openssh.com" },
+                   { ASSH_ALGO_STD_PRIVATE,
+                     "camellia128-ctr" });
+ASSH_GCRYPT_CIPHER(camellia192_ctr,  CAMELLIA192, CTR,
+                   16, 16, 16, 24, 0, 65, 40,
+                   { ASSH_ALGO_STD_PRIVATE,
+                     "camellia192-ctr@openssh.com" },
+                   { ASSH_ALGO_STD_PRIVATE,
+                     "camellia192-ctr" });
+ASSH_GCRYPT_CIPHER(camellia256_ctr,  CAMELLIA256, CTR,
+                   16, 16, 16, 32, 0, 75, 40,
+                   { ASSH_ALGO_STD_PRIVATE,
+                     "camellia256-ctr@openssh.com" },
+                   { ASSH_ALGO_STD_PRIVATE,
+                     "camellia256-ctr" });
+# endif
+#endif

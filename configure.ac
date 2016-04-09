@@ -104,6 +104,7 @@ if test x$enable_gcrypt = xyes ; then
         AC_DEFINE([CONFIG_ASSH_CIPHER_TWOFISH], [], [Twofish cipher available])
         AC_DEFINE([CONFIG_ASSH_CIPHER_SERPENT], [], [Serpent cipher available])
         AC_DEFINE([CONFIG_ASSH_CIPHER_CAST128], [], [CAST128 cipher available])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_CAMELLIA], [], [Camellia cipher available])
         AC_DEFINE([CONFIG_ASSH_MODE_GCM], [], [GCM cipher mode available])
         AC_DEFINE([CONFIG_ASSH_HASH_RIPEMD160], [], [RIPE-MD-160 message digest available])
       fi

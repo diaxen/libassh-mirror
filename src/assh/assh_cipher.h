@@ -176,6 +176,18 @@ extern const struct assh_algo_cipher_s assh_cipher_serpent256_gcm;
 #  endif
 # endif
 
+# ifdef CONFIG_ASSH_CIPHER_CAMELLIA
+/** @multiple @This is a cipher algorithm descriptor for the Camellia implementation. */
+extern const struct assh_algo_cipher_s assh_cipher_camellia128_cbc;
+extern const struct assh_algo_cipher_s assh_cipher_camellia192_cbc;
+extern const struct assh_algo_cipher_s assh_cipher_camellia256_cbc;
+#  ifdef CONFIG_ASSH_MODE_CTR
+extern const struct assh_algo_cipher_s assh_cipher_camellia128_ctr;
+extern const struct assh_algo_cipher_s assh_cipher_camellia192_ctr;
+extern const struct assh_algo_cipher_s assh_cipher_camellia256_ctr;
+#  endif
+# endif
+
 # ifdef CONFIG_ASSH_CIPHER_CHACHAPOLY
 /** @multiple @This is a cipher algorithm descriptor for the openssh
     Chacha20-Poly1305 authenticated cipher implementation. */

@@ -297,6 +297,18 @@ const struct assh_algo_s *assh_algo_table[] = {
   &assh_cipher_aes256_gcm.algo,
 #  endif
 # endif
+
+# ifdef CONFIG_ASSH_CIPHER_CAMELLIA
+  &assh_cipher_camellia128_cbc.algo,
+  &assh_cipher_camellia192_cbc.algo,
+  &assh_cipher_camellia256_cbc.algo,
+#  ifdef CONFIG_ASSH_MODE_CTR
+  &assh_cipher_camellia128_ctr.algo,
+  &assh_cipher_camellia192_ctr.algo,
+  &assh_cipher_camellia256_ctr.algo,
+#  endif
+# endif
+
 # ifdef CONFIG_ASSH_CIPHER_CHACHAPOLY
   &assh_cipher_chachapoly.algo,
 # endif
