@@ -140,6 +140,14 @@ extern const struct assh_algo_cipher_s assh_cipher_cast128_ctr;
 #  endif
 # endif
 
+# ifdef CONFIG_ASSH_CIPHER_IDEA
+/** @multiple @This is a cipher algorithm descriptor for the IDEA implementation. */
+extern const struct assh_algo_cipher_s assh_cipher_idea_cbc;
+#  ifdef CONFIG_ASSH_MODE_CTR
+extern const struct assh_algo_cipher_s assh_cipher_idea_ctr;
+#  endif
+# endif
+
 # ifdef CONFIG_ASSH_CIPHER_BLOWFISH
 /** @multiple @This is a cipher algorithm descriptor for the Blowfish implementation. */
 extern const struct assh_algo_cipher_s assh_cipher_blowfish_cbc;

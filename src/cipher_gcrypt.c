@@ -209,6 +209,12 @@ ASSH_GCRYPT_CIPHER(cast128_ctr, CAST5, CTR,
                    8, 8, 8, 16, 0, 26, 50,
                    { ASSH_ALGO_STD_IETF, "cast128-ctr" });
 
+ASSH_GCRYPT_CIPHER(idea_cbc,  IDEA, CBC,
+                   8, 8, 8, 16, 0, 25, 50,
+                   { ASSH_ALGO_STD_IETF, "idea-cbc" });
+ASSH_GCRYPT_CIPHER(idea_ctr,  IDEA, CTR,
+                   8, 8, 8, 16, 0, 26, 50,
+                   { ASSH_ALGO_STD_IETF, "idea-ctr" });
 
 ASSH_GCRYPT_CIPHER(blowfish_cbc, BLOWFISH, CBC,
                    8,  8,  8,  16, 0, 30, 60,

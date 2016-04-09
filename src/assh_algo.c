@@ -242,6 +242,13 @@ const struct assh_algo_s *assh_algo_table[] = {
 #  endif
 # endif
 
+# ifdef CONFIG_ASSH_CIPHER_IDEA
+  &assh_cipher_idea_cbc.algo,
+#  ifdef CONFIG_ASSH_MODE_CTR
+  &assh_cipher_idea_ctr.algo,
+#  endif
+# endif
+
 # ifdef CONFIG_ASSH_CIPHER_BLOWFISH
   &assh_cipher_blowfish_cbc.algo,
 #  ifdef CONFIG_ASSH_MODE_CTR
