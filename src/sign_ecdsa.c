@@ -375,12 +375,12 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_nistp256_suitable_key)
 
 const struct assh_algo_sign_s assh_sign_nistp256 =
 {
-  .algo = {
-    .name = "ecdsa-sha2-nistp256", .class_ = ASSH_ALGO_SIGN,
-    .safety = 50, .speed = 90,
+  ASSH_ALGO_BASE(SIGN, 21, 90,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
+	              "ecdsa-sha2-nistp256" }),
     .f_suitable_key = assh_sign_nistp256_suitable_key,
     .key = &assh_key_ecdsa_nistp,
-  },
+  ),
   .f_generate = assh_sign_ecdsa_generate,
   .f_check = assh_sign_ecdsa_check,
 };
@@ -398,12 +398,12 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_nistp384_suitable_key)
 
 const struct assh_algo_sign_s assh_sign_nistp384 =
 {
-  .algo = {
-    .name = "ecdsa-sha2-nistp384", .class_ = ASSH_ALGO_SIGN,
-    .safety = 50, .speed = 90,
+  ASSH_ALGO_BASE(SIGN, 23, 80,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
+	              "ecdsa-sha2-nistp384" }),
     .f_suitable_key = assh_sign_nistp384_suitable_key,
     .key = &assh_key_ecdsa_nistp,
-  },
+  ),
   .f_generate = assh_sign_ecdsa_generate,
   .f_check = assh_sign_ecdsa_check,
 };
@@ -421,12 +421,12 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_nistp521_suitable_key)
 
 const struct assh_algo_sign_s assh_sign_nistp521 =
 {
-  .algo = {
-    .name = "ecdsa-sha2-nistp521", .class_ = ASSH_ALGO_SIGN,
-    .safety = 50, .speed = 90,
+  ASSH_ALGO_BASE(SIGN, 25, 70,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
+                      "ecdsa-sha2-nistp521" }),
     .f_suitable_key = assh_sign_nistp521_suitable_key,
     .key = &assh_key_ecdsa_nistp,
-  },
+  ),
   .f_generate = assh_sign_ecdsa_generate,
   .f_check = assh_sign_ecdsa_check,
 };

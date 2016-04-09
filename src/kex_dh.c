@@ -549,8 +549,10 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_group1_sha1_init)
 
 const struct assh_algo_kex_s assh_kex_dh_group1_sha1 =
 {
-  .algo = { .name = "diffie-hellman-group1-sha1",
-            .class_ = ASSH_ALGO_KEX, .safety = 10, .speed = 40 },
+  ASSH_ALGO_BASE(KEX, 10, 40,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
+                      "diffie-hellman-group1-sha1" })
+  ),
   .f_init = assh_kex_dh_group1_sha1_init,
   .f_cleanup = assh_kex_dh_cleanup,
   .f_process = assh_kex_dh_process,
@@ -586,8 +588,10 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_group14_sha1_init)
 
 const struct assh_algo_kex_s assh_kex_dh_group14_sha1 =
 {
-  .algo = { .name = "diffie-hellman-group14-sha1",
-            .class_ = ASSH_ALGO_KEX, .safety = 20, .speed = 30 },
+  ASSH_ALGO_BASE(KEX, 20, 30,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
+                      "diffie-hellman-group14-sha1" })
+  ),
   .f_init = assh_kex_dh_group14_sha1_init,
   .f_cleanup = assh_kex_dh_cleanup,
   .f_process = assh_kex_dh_process,

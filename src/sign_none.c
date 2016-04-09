@@ -110,12 +110,12 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_none_suitable_key)
 
 const struct assh_algo_sign_s assh_sign_none =
 {
-  .algo = {
-    .name = "none@libassh.org", .class_ = ASSH_ALGO_SIGN,
-    .safety = 0, .speed = 99,
+  ASSH_ALGO_BASE(SIGN, 0, 99,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
+                      "none@libassh.org" }),
     .f_suitable_key = assh_sign_none_suitable_key,
     .key = &assh_key_none,
-  },
+  ),
   .f_generate = assh_sign_none_generate,
   .f_check = assh_sign_none_check,
 };

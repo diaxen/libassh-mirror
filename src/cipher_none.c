@@ -39,7 +39,10 @@ static ASSH_CIPHER_CLEANUP_FCN(assh_none_cleanup)
 
 const struct assh_algo_cipher_s assh_cipher_none =
 {
-  .algo = { .name = "none", .class_ = ASSH_ALGO_CIPHER, .safety = 0, .speed = 99 },
+  ASSH_ALGO_BASE(CIPHER, 0, 99,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
+                      "none" })
+  ),
   .ctx_size = 0,
   .block_size = 8,
   .head_size = 4,

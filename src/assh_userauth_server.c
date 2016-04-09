@@ -84,7 +84,8 @@ struct assh_userauth_context_s
 #ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
   enum assh_userauth_pubkey_state_e pubkey_state;
   struct assh_key_s *pub_key;
-  struct assh_algo_sign_s *algo;
+  const struct assh_algo_sign_s *algo;
+  const struct assh_algo_name_s *algo_name;
   struct assh_packet_s *sign_pck;
   const uint8_t *sign;
 #endif
@@ -307,7 +308,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
         }
 
       /* alloc packet */
-      size_t algo_name_len = strlen(pv->algo->algo.name);
+      size_t algo_name_len = strlen(pv->algo_name->name);
 
       size_t blob_len;
       ASSH_ERR_RET(assh_key_output(s->ctx, pv->pub_key,
@@ -320,7 +321,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
       /* add sign algorithm name */
       uint8_t *algo_name;
       ASSH_ASSERT(assh_packet_add_string(pout, algo_name_len, &algo_name));
-      memcpy(algo_name, pv->algo->algo.name, algo_name_len);
+      memcpy(algo_name, pv->algo_name->name, algo_name_len);
 
       /* add public key blob */
       uint8_t *blob;
@@ -378,7 +379,7 @@ static assh_error_t assh_userauth_server_req_pubkey(struct assh_session_s *s,
 
   /* check if we support the requested signature algorithm */
   if (assh_algo_by_name(s->ctx, ASSH_ALGO_SIGN, (char*)algo_name + 4,
-			pub_blob - algo_name - 4, &algo) != ASSH_OK)
+			pub_blob - algo_name - 4, &algo, &pv->algo_name) != ASSH_OK)
     {
       ASSH_ERR_RET(assh_userauth_server_failure(s) | ASSH_ERRSV_DISCONNECT);
       return ASSH_OK;

@@ -35,7 +35,9 @@
 /** @see assh_kex_filter_t */
 #define ASSH_KEX_FILTER_FCN(n)                          \
   assh_bool_t (n)(struct assh_session_s *s,             \
-  const struct assh_algo_s *algo, assh_bool_t out)
+                  const struct assh_algo_s *algo,       \
+                  const struct assh_algo_name_s *name,  \
+                  assh_bool_t out)
 
 /** This is a per session algorithm filtering function.
 

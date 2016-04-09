@@ -370,8 +370,10 @@ static ASSH_CIPHER_CLEANUP_FCN(assh_aes_cleanup)
 
 const struct assh_algo_cipher_s assh_cipher_aes128_cbc =
 {
-  .algo = { .name = "aes128-cbc", .class_ = ASSH_ALGO_CIPHER,
-	    .safety = 40, .speed = 70 },
+  ASSH_ALGO_BASE(CIPHER, 40, 70,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
+                      "aes128-cbc" })
+  ),
   .ctx_size = sizeof(struct assh_cipher_aes_context_s),
   .block_size = 16,
   .head_size = 16,
@@ -384,8 +386,10 @@ const struct assh_algo_cipher_s assh_cipher_aes128_cbc =
 
 const struct assh_algo_cipher_s assh_cipher_aes192_cbc =
 {
-  .algo = { .name = "aes192-cbc", .class_ = ASSH_ALGO_CIPHER,
-	    .safety = 50, .speed = 65 },
+  ASSH_ALGO_BASE(CIPHER, 50, 65,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
+                      "aes192-cbc" })
+  ),
   .ctx_size = sizeof(struct assh_cipher_aes_context_s),
   .block_size = 16,
   .head_size = 16,
@@ -398,8 +402,10 @@ const struct assh_algo_cipher_s assh_cipher_aes192_cbc =
 
 const struct assh_algo_cipher_s assh_cipher_aes256_cbc =
 {
-  .algo = { .name = "aes256-cbc", .class_ = ASSH_ALGO_CIPHER,
-	    .safety = 60, .speed = 60 },
+  ASSH_ALGO_BASE(CIPHER, 60, 60,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
+                      "aes256-cbc" })
+  ),
   .ctx_size = sizeof(struct assh_cipher_aes_context_s),
   .block_size = 16,
   .head_size = 16,
@@ -412,8 +418,10 @@ const struct assh_algo_cipher_s assh_cipher_aes256_cbc =
 
 const struct assh_algo_cipher_s assh_cipher_aes128_ctr =
 {
-  .algo = { .name = "aes128-ctr", .class_ = ASSH_ALGO_CIPHER,
-	    .safety = 41, .speed = 70 },
+  ASSH_ALGO_BASE(CIPHER, 41, 70,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
+                      "aes128-ctr" })
+  ),
   .ctx_size = sizeof(struct assh_cipher_aes_context_s),
   .block_size = 16,
   .head_size = 16,
@@ -426,8 +434,10 @@ const struct assh_algo_cipher_s assh_cipher_aes128_ctr =
 
 const struct assh_algo_cipher_s assh_cipher_aes192_ctr =
 {
-  .algo = { .name = "aes192-ctr", .class_ = ASSH_ALGO_CIPHER,
-	    .safety = 51, .speed = 65 },
+  ASSH_ALGO_BASE(CIPHER, 51, 65,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
+                      "aes192-ctr" })
+  ),
   .ctx_size = sizeof(struct assh_cipher_aes_context_s),
   .block_size = 16,
   .head_size = 16,
@@ -440,8 +450,10 @@ const struct assh_algo_cipher_s assh_cipher_aes192_ctr =
 
 const struct assh_algo_cipher_s assh_cipher_aes256_ctr =
 {
-  .algo = { .name = "aes256-ctr", .class_ = ASSH_ALGO_CIPHER,
-	    .safety = 61, .speed = 60 },
+  ASSH_ALGO_BASE(CIPHER, 61, 60,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
+                      "aes256-ctr" })
+  ),
   .ctx_size = sizeof(struct assh_cipher_aes_context_s),
   .block_size = 16,
   .head_size = 16,

@@ -314,13 +314,12 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate_sha1)
 
 const struct assh_algo_sign_s assh_sign_rsa_sha1_md5 =
 {
-  .algo = {
-    .name = "ssh-rsa", .variant = "sha*, md5, 768+ bits keys",
-    .class_ = ASSH_ALGO_SIGN,
-    .priority = 2, .safety = 15, .speed = 40,
+  ASSH_ALGO_BASE(SIGN, 15, 40,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "ssh-rsa" }),
+    ASSH_ALGO_VARIANT( 2, "sha*, md5, 768+ bits keys" ),
     .f_suitable_key = assh_sign_rsa_suitable_key_768,
     .key = &assh_key_rsa,
-  },
+  ),
   .f_generate = assh_sign_rsa_generate_sha1,
   .f_check = assh_sign_rsa_check_sha1_md5,
 };
@@ -348,13 +347,12 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_rsa_check_sha1)
 
 const struct assh_algo_sign_s assh_sign_rsa_sha1 =
 {
-  .algo = {
-    .name = "ssh-rsa",  .variant = "sha*, 1024+ bits keys",
-    .class_ = ASSH_ALGO_SIGN,
-    .priority = 1, .safety = 20, .speed = 40,
+  ASSH_ALGO_BASE(SIGN, 20, 40,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "ssh-rsa" }),
+    ASSH_ALGO_VARIANT( 1, "sha*, 1024+ bits keys" ),
     .f_suitable_key = assh_sign_rsa_suitable_key_1024,
     .key = &assh_key_rsa,
-  },
+  ),
   .f_generate = assh_sign_rsa_generate_sha1,
   .f_check = assh_sign_rsa_check_sha1,
 };
@@ -373,13 +371,12 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_2048)
 
 const struct assh_algo_sign_s assh_sign_rsa_sha1_2048 =
 {
-  .algo = {
-    .name = "ssh-rsa", .variant = "sha1, 2048+ bits keys",
-    .class_ = ASSH_ALGO_SIGN,
-    .priority = 0, .safety = 25, .speed = 30,
+  ASSH_ALGO_BASE(SIGN, 25, 30,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "ssh-rsa" }),
+    ASSH_ALGO_VARIANT( 0, "sha*, 2048+ bits keys" ),
     .f_suitable_key = assh_sign_rsa_suitable_key_2048,
     .key = &assh_key_rsa,
-  },
+  ),
   .f_generate = assh_sign_rsa_generate_sha1,
   .f_check = assh_sign_rsa_check_sha1,
 };
@@ -402,13 +399,12 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate_sha256)
 
 const struct assh_algo_sign_s assh_sign_rsa_sha256_2048 =
 {
-  .algo = {
-    .name = "rsa2048-sha256@libassh.org",
-    .class_ = ASSH_ALGO_SIGN,
-    .safety = 40, .speed = 30,
+  ASSH_ALGO_BASE(SIGN, 40, 30,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
+                      "rsa2048-sha256@libassh.org" }),
     .f_suitable_key = assh_sign_rsa_suitable_key_2048,
     .key = &assh_key_rsa,
-  },
+  ),
   .f_generate = assh_sign_rsa_generate_sha256,
   .f_check = assh_sign_rsa_check_sha256,
 };
@@ -427,13 +423,12 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_3072)
 
 const struct assh_algo_sign_s assh_sign_rsa_sha256_3072 =
 {
-  .algo = {
-    .name = "rsa3072-sha256@libassh.org",
-    .class_ = ASSH_ALGO_SIGN,
-    .safety = 50, .speed = 20,
+  ASSH_ALGO_BASE(SIGN, 50, 20,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
+                      "rsa3072-sha256@libassh.org" }),
     .f_suitable_key = assh_sign_rsa_suitable_key_3072,
     .key = &assh_key_rsa,
-  },
+  ),
   .f_generate = assh_sign_rsa_generate_sha256,
   .f_check = assh_sign_rsa_check_sha256,
 };

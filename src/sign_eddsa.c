@@ -521,12 +521,12 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_ed25519_suitable_key)
 
 const struct assh_algo_sign_s assh_sign_ed25519 =
 {
-  .algo = {
-    .name = "ssh-ed25519", .class_ = ASSH_ALGO_SIGN,
-    .safety = 50, .speed = 90,
+  ASSH_ALGO_BASE(SIGN, 50, 90,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,
+                      "ssh-ed25519" }),
     .f_suitable_key = assh_sign_ed25519_suitable_key,
     .key = &assh_key_ed25519,
-  },
+  ),
   .f_generate = assh_sign_eddsa_generate,
   .f_check = assh_sign_eddsa_check,
 };
@@ -541,12 +541,12 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_eddsa_e382_suitable_key)
 
 const struct assh_algo_sign_s assh_sign_eddsa_e382 =
 {
-  .algo = {
-    .name = "eddsa-e382-shake256@libassh.org", .class_ = ASSH_ALGO_SIGN,
-    .safety = 70, .speed = 80,
+  ASSH_ALGO_BASE(SIGN, 70, 80,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
+                      "eddsa-e382-shake256@libassh.org" }),
     .f_suitable_key = assh_sign_eddsa_e382_suitable_key,
     .key = &assh_key_eddsa_e382,
-  },
+  ),
   .f_generate = assh_sign_eddsa_generate,
   .f_check = assh_sign_eddsa_check,
 };
@@ -561,12 +561,12 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_eddsa_e521_suitable_key)
 
 const struct assh_algo_sign_s assh_sign_eddsa_e521 =
 {
-  .algo = {
-    .name = "eddsa-e521-shake256@libassh.org", .class_ = ASSH_ALGO_SIGN,
-    .safety = 90, .speed = 70,
+  ASSH_ALGO_BASE(SIGN, 90, 70,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
+                      "eddsa-e521-shake256@libassh.org" }),
     .f_suitable_key = assh_sign_eddsa_e521_suitable_key,
     .key = &assh_key_eddsa_e521,
-  },
+  ),
   .f_generate = assh_sign_eddsa_generate,
   .f_check = assh_sign_eddsa_check,
 };

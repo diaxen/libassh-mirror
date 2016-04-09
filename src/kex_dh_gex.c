@@ -854,9 +854,10 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_gex_sha1_init)
 
 const struct assh_algo_kex_s assh_kex_dh_gex_sha1 =
 {
-  .algo = { .name = "diffie-hellman-group-exchange-sha1",
-            .class_ = ASSH_ALGO_KEX,
-            .safety = 20, .speed = 30 },
+  ASSH_ALGO_BASE(KEX, 20, 30,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
+                      "diffie-hellman-group-exchange-sha1" })
+  ),
   .f_init = assh_kex_dh_gex_sha1_init,
   .f_cleanup = assh_kex_dh_gex_cleanup,
   .f_process = assh_kex_dh_gex_process,
@@ -870,10 +871,11 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_gex_sha256_12_init)
 
 const struct assh_algo_kex_s assh_kex_dh_gex_sha256_12 =
 {
-  .algo = { .name = "diffie-hellman-group-exchange-sha256",
-            .variant = "n^2/12 bits modulus",
-            .class_ = ASSH_ALGO_KEX,
-            .priority = 10, .safety = 20, .speed = 30 },
+  ASSH_ALGO_BASE(KEX, 20, 30,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
+                      "diffie-hellman-group-exchange-sha256" }),
+    ASSH_ALGO_VARIANT(10, "n^2/12 bits modulus")
+  ),
   .f_init = assh_kex_dh_gex_sha256_12_init,
   .f_cleanup = assh_kex_dh_gex_cleanup,
   .f_process = assh_kex_dh_gex_process,
@@ -887,10 +889,11 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_gex_sha256_8_init)
 
 const struct assh_algo_kex_s assh_kex_dh_gex_sha256_8 =
 {
-  .algo = { .name = "diffie-hellman-group-exchange-sha256",
-            .variant = "n^2/8 bits modulus",
-            .class_ = ASSH_ALGO_KEX,
-            .priority = 9, .safety = 25, .speed = 20 },
+  ASSH_ALGO_BASE(KEX, 25, 20,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
+                      "diffie-hellman-group-exchange-sha256" }),
+    ASSH_ALGO_VARIANT(9, "n^2/8 bits modulus")
+  ),
   .f_init = assh_kex_dh_gex_sha256_8_init,
   .f_cleanup = assh_kex_dh_gex_cleanup,
   .f_process = assh_kex_dh_gex_process,
@@ -904,10 +907,11 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_gex_sha256_4_init)
 
 const struct assh_algo_kex_s assh_kex_dh_gex_sha256_4 =
 {
-  .algo = { .name = "diffie-hellman-group-exchange-sha256",
-            .variant = "n^2/4 bits modulus",
-            .class_ = ASSH_ALGO_KEX,
-            .priority = 8, .safety = 40, .speed = 10 },
+  ASSH_ALGO_BASE(KEX, 40, 10,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
+                      "diffie-hellman-group-exchange-sha256" }),
+    ASSH_ALGO_VARIANT(8, "n^2/4 bits modulus")
+  ),
   .f_init = assh_kex_dh_gex_sha256_4_init,
   .f_cleanup = assh_kex_dh_gex_cleanup,
   .f_process = assh_kex_dh_gex_process,

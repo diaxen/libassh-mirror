@@ -568,8 +568,10 @@ static ASSH_KEX_INIT_FCN(assh_kex_curve25519_init)
 
 const struct assh_algo_kex_s assh_kex_curve25519_sha256 =
 {
-  .algo = { .name = "curve25519-sha256@libssh.org",
-	    .class_ = ASSH_ALGO_KEX, .safety = 50, .speed = 90 },
+  ASSH_ALGO_BASE(KEX, 50, 90,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,
+                      "curve25519-sha256@libssh.org" })
+  ),
   .f_init = assh_kex_curve25519_init,
   .f_cleanup = assh_kex_ecdhmt_cleanup,
   .f_process = assh_kex_ecdhmt_process,
@@ -601,8 +603,10 @@ static ASSH_KEX_INIT_FCN(assh_kex_m383_init)
 
 const struct assh_algo_kex_s assh_kex_m383_sha384 =
 {
-  .algo = { .name = "m383-sha384@libassh.org",
-	    .class_ = ASSH_ALGO_KEX, .safety = 70, .speed = 80 },
+  ASSH_ALGO_BASE(KEX, 70, 80,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
+                      "m383-sha384@libassh.org" })
+  ),
   .f_init = assh_kex_m383_init,
   .f_cleanup = assh_kex_ecdhmt_cleanup,
   .f_process = assh_kex_ecdhmt_process,
@@ -635,8 +639,10 @@ static ASSH_KEX_INIT_FCN(assh_kex_m511_init)
 
 const struct assh_algo_kex_s assh_kex_m511_sha512 =
 {
-  .algo = { .name = "m511-sha512@libassh.org",
-	    .class_ = ASSH_ALGO_KEX, .safety = 90, .speed = 70 },
+  ASSH_ALGO_BASE(KEX, 90, 70,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
+                      "m511-sha512@libassh.org" })
+  ),
   .f_init = assh_kex_m511_init,
   .f_cleanup = assh_kex_ecdhmt_cleanup,
   .f_process = assh_kex_ecdhmt_process,

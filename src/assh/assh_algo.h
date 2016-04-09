@@ -53,31 +53,82 @@ enum assh_algo_class_e
   ASSH_ALGO_ANY,
 };
 
+/** @This specifies various algorithm specification status. */
+enum assh_algo_spec_e
+{
+  /** The algorithm is specified in an approved IETF standard. */
+  ASSH_ALGO_STD_IETF = 0x01,
+  /** The algorithm is specified in an IETF draft document. */
+  ASSH_ALGO_STD_DRAFT = 0x02,
+  /** The algorithm is private and specified as an extension of some
+      ssh implementations. */
+  ASSH_ALGO_STD_PRIVATE = 0x04,
+  /** The algorithm is private and specified as an extension of assh. */
+  ASSH_ALGO_ASSH = 0x08,
+  /** The algorithm is common under this name. */
+  ASSH_ALGO_COMMON = 0x10,
+  /** The algorithm is private under this name but is now available
+      under a different name specified as an approved IETF standard. */
+  ASSH_ALGO_OLDNAME = 0x20,
+};
+
+/** @internal @see assh_algo_s */
+struct assh_algo_name_s
+{
+  /** Specification status flags */
+  enum assh_algo_spec_e spec:8;
+  /** algorithm name */
+  const char *name;
+};
+
+#define ASSH_ALGO_NAMES(...) \
+  .names = (const struct assh_algo_name_s[]){ __VA_ARGS__, { 0 } }
+
+#define ASSH_ALGO_VARIANT(priority_, description_)                        \
+  .priority = priority_,                                                  \
+  .variant = description_
+
+#define ASSH_ALGO_API_VERSION 0
+
+/** @internal @This initializes the fields of the @ref assh_algo_s structure */
+#define ASSH_ALGO_BASE(class__, safety_, speed_, ...)                   \
+  .algo = {                                                             \
+    .class_ = ASSH_ALGO_##class__,                                      \
+    .api = ASSH_ALGO_API_VERSION,                                       \
+    .safety = safety_,                                                  \
+    .speed = speed_,                                                    \
+    __VA_ARGS__                                                         \
+  }
+
 /** @internalmembers @This is the generic algorithm descriptor
     structure. Other algorithm descriptor structures iherit from this
     type. */
 struct assh_algo_s
 {
-  /** SSH algorithm identifier, used during key exchange */
-  const char *name;
+  /** module API version */
+  uint8_t api;
+
+  /** Class of algorithm */
+  enum assh_algo_class_e class_:3;
+  /** used to choose between entries with the same name */
+  uint8_t priority:5;
+
+  /** safety factor in range [0, 99] */
+  uint8_t safety;
+  /** speed factor in range [0, 99] */
+  uint8_t speed;
+
+  /** List of SSH algorithm identifiers, used during key exchange */
+  const struct assh_algo_name_s *names;
 
   /** Variant description string, used when multiple declarations of
       the same algorithm name exist. */
   const char *variant;
 
-  /** Class of algorithm */
-  enum assh_algo_class_e class_;
-
-  /** safety factor in range [0, 99] */
-  int_fast16_t safety;
-  /** speed factor in range [0, 99] */
-  int_fast16_t speed;
   /** Pointer to associated key operations, may be @tt NULL. */
   const struct assh_key_ops_s *key;
   /** Test if a key can be used with the algorithm, may be @tt NULL. */
   assh_algo_suitable_key_t *f_suitable_key;
-  /** used to choose between entries with the same name */
-  int_fast8_t priority;
 };
 
 /**
@@ -140,12 +191,20 @@ assh_algo_register_default(struct assh_context_s *c,
 /** Unregister all algorithms */
 void assh_algo_unregister(struct assh_context_s *c);
 
+/** @This returns the algorithm default name */
+ASSH_INLINE const char * assh_algo_name(const struct assh_algo_s *algo)
+{
+  return algo->names[0].name;
+}
+
 /** @internal @This finds a registered algorithm with matching class
-    and name. */
+    and name. If the @tt namep parameter is not @tt NULL, the matched
+    algorithm name is returned. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_by_name(struct assh_context_s *c,
 		  enum assh_algo_class_e class_, const char *name,
-                  size_t name_len, const struct assh_algo_s **algo);
+                  size_t name_len, const struct assh_algo_s **algo,
+                  const struct assh_algo_name_s **namep);
 
 /** @internal @This finds a registered algorithm which can be used
     with the given key. If the @tt pos parameter is not @tt NULL, it

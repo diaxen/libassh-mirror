@@ -326,12 +326,11 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key)
 
 const struct assh_algo_sign_s assh_sign_dsa =
 {
-  .algo = {
-    .name = "ssh-dss", .class_ = ASSH_ALGO_SIGN,
-    .safety = 20, .speed = 40,
+  ASSH_ALGO_BASE(SIGN, 20, 40,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "ssh-dss" }),
     .f_suitable_key = assh_sign_dsa_suitable_key,
     .key = &assh_key_dsa,
-  },
+  ),
   .f_generate = assh_sign_dsa_generate,
   .f_check = assh_sign_dsa_check,
 };
@@ -349,12 +348,12 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key_2048_224)
 
 const struct assh_algo_sign_s assh_sign_dsa2048_sha224 =
 {
-  .algo = {
-    .name = "dsa2048-sha224@libassh.org", .class_ = ASSH_ALGO_SIGN,
-    .safety = 35, .speed = 30,
+  ASSH_ALGO_BASE(SIGN, 35, 30,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
+	              "dsa2048-sha224@libassh.org" }),
     .f_suitable_key = assh_sign_dsa_suitable_key_2048_224,
     .key = &assh_key_dsa,
-  },
+  ),
   .f_generate = assh_sign_dsa_generate,
   .f_check = assh_sign_dsa_check,
 };
@@ -372,12 +371,12 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key_2048_256)
 
 const struct assh_algo_sign_s assh_sign_dsa2048_sha256 =
 {
-  .algo = {
-    .name = "dsa2048-sha256@libassh.org", .class_ = ASSH_ALGO_SIGN,
-    .safety = 40, .speed = 30,
+  ASSH_ALGO_BASE(SIGN, 40, 30,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
+	              "dsa2048-sha256@libassh.org" }),
     .f_suitable_key = assh_sign_dsa_suitable_key_2048_256,
     .key = &assh_key_dsa,
-  },
+  ),
   .f_generate = assh_sign_dsa_generate,
   .f_check = assh_sign_dsa_check,
 };
@@ -395,12 +394,12 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key_3072_256)
 
 const struct assh_algo_sign_s assh_sign_dsa3072_sha256 =
 {
-  .algo = {
-    .name = "dsa3072-sha256@libassh.org", .class_ = ASSH_ALGO_SIGN,
-    .safety = 50, .speed = 30,
+  ASSH_ALGO_BASE(SIGN, 50, 30,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
+	              "dsa3072-sha256@libassh.org" }),
     .f_suitable_key = assh_sign_dsa_suitable_key_3072_256,
     .key = &assh_key_dsa,
-  },
+  ),
   .f_generate = assh_sign_dsa_generate,
   .f_check = assh_sign_dsa_check,
 };

@@ -68,27 +68,31 @@ assh_kex_list(struct assh_session_s *s, struct assh_packet_s *p,
       if (a->class_ != class_)
         break;
 
-      if (!s->kex_filter(s, a, out))
-        continue;
-
       /* check host key availability for this algorithm */
       if (assh_algo_suitable_key(c, a, NULL) &&
           assh_key_lookup(c, NULL, a) != ASSH_OK)
         continue;
 
-      /* append name to the list */
-      uint8_t *tail;
-      size_t l = strlen(a->name);
-      ASSH_ERR_RET(assh_packet_enlarge_string(p, list, first + l, &tail)
-                   | ASSH_ERRSV_DISCONNECT);
-      memcpy(tail + first, a->name, l);
-      if (first)
-        tail[0] = ',';
-      else if (class_ < 2)
-        s->kex_preferred[class_] = a; /* keep prefered algorithm */
+      const struct assh_algo_name_s *name;
+      for (name = a->names; name->spec; name++)
+        {
+          if (!s->kex_filter(s, a, name, out))
+            continue;
 
-      first = 1;
-      ASSH_DEBUG_("%s ", a->name);
+          /* append name to the list */
+          uint8_t *tail;
+          size_t l = strlen(name->name);
+          ASSH_ERR_RET(assh_packet_enlarge_string(p, list, first + l, &tail)
+                       | ASSH_ERRSV_DISCONNECT);
+          memcpy(tail + first, name->name, l);
+          if (first)
+            tail[0] = ',';
+          else if (class_ < 2)
+            s->kex_preferred[class_] = a; /* keep prefered algorithm */
+
+          first = 1;
+          ASSH_DEBUG_("%s ", name->name);
+        }
     }
 
   ASSH_DEBUG_("\n");
@@ -210,11 +214,12 @@ assh_kex_server_algos(struct assh_session_s *s, const uint8_t *lists[9],
 
           /* lookup in registered algorithms */
           const struct assh_algo_s *a;
+          const struct assh_algo_name_s *na;
           if (assh_algo_by_name(c, assh_kex_algos_classes[i],
-                                start, n - start, &a) != ASSH_OK)
+                                start, n - start, &a, &na) != ASSH_OK)
             goto next;
 
-          if (!s->kex_filter(s, a, 1 & i))
+          if (!s->kex_filter(s, a, na, 1 & i))
             goto next;
 
           /* check algorithm key availability */
@@ -295,39 +300,43 @@ assh_kex_client_algos(struct assh_session_s *s, const uint8_t *lists[9],
           ASSH_CHK_RET(a->class_ > assh_kex_algos_classes[i],
                        ASSH_ERR_MISSING_ALGO | ASSH_ERRSV_DISCONNECT);
 
-          if (!s->kex_filter(s, a, 1 & i ^ 1))
-            continue;
-
-          const char *start = (char*)(lists[i] + 4);
-          const char *end = (char*)lists[i+1];
-          assh_bool_t inval = 0;
-
-          /* iterate over name-list */
-          while (start < end)
+          const struct assh_algo_name_s *na;
+          for (na = a->names; na->spec; na++)
             {
-              const char *n = start;
-              while (*n != ',' && n < end)
-                n++;
+              if (!s->kex_filter(s, a, na, 1 & i ^ 1))
+                continue;
 
-              /* check algorithm name match */
-              if (!strncmp(start, a->name, n - start)
-                  && a->name[n - start] == '\0')
+              const char *start = (char*)(lists[i] + 4);
+              const char *end = (char*)lists[i+1];
+              assh_bool_t inval = 0;
+
+              /* iterate over name-list */
+              while (start < end)
                 {
-                  if (i < 2)
-                    {
-                      if (inval)            /* invalidate preferred */
-                        s->kex_preferred[i] = NULL;
-                      algos[i] = a;
-                    }
-                  else
-                    {
-                      algos[i ^ 1] = a;
-                    }
-                  goto done;
-                }
+                  const char *n = start;
+                  while (*n != ',' && n < end)
+                    n++;
 
-              inval = 1;
-              start = n + 1;
+                  /* check algorithm name match */
+                  if (!strncmp(start, na->name, n - start)
+                      && na->name[n - start] == '\0')
+                    {
+                      if (i < 2)
+                        {
+                          if (inval)            /* invalidate preferred */
+                            s->kex_preferred[i] = NULL;
+                          algos[i] = a;
+                        }
+                      else
+                        {
+                          algos[i ^ 1] = a;
+                        }
+                      goto done;
+                    }
+
+                  inval = 1;
+                  start = n + 1;
+                }
             }
         }
     done:;
@@ -404,11 +413,11 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
              "  cipher in: %s\n  cipher out: %s\n"
              "  mac in: %s\n  mac out: %s\n  comp in: %s\n  comp out: %s\n"
              "  guess: follows=%x good=%x\n",
-             kex->algo.name, kex->algo.variant,
-             sign->algo.name, sign->algo.variant,
-             cipher_in->algo.name, cipher_out->algo.name,
-             mac_in->algo.name, mac_out->algo.name,
-             cmp_in->algo.name, cmp_out->algo.name,
+             kex->algo.names[0].name, kex->algo.variant,
+             sign->algo.names[0].name, sign->algo.variant,
+             cipher_in->algo.names[0].name, cipher_out->algo.names[0].name,
+             mac_in->algo.names[0].name, mac_out->algo.names[0].name,
+             cmp_in->algo.names[0].name, cmp_out->algo.names[0].name,
              guess_follows, good_guess);
 #endif
 

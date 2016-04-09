@@ -346,7 +346,7 @@ assh_load_openssh_v1_blob(struct assh_context_s *c,
       const struct assh_algo_cipher_s *cipher;
       ASSH_CHK_RET(assh_algo_by_name(c, ASSH_ALGO_CIPHER,
                      (const char*)cipher_name + 4, assh_load_u32(cipher_name),
-                     (const struct assh_algo_s **)&cipher) != ASSH_OK,
+                     (const struct assh_algo_s **)&cipher, NULL) != ASSH_OK,
                    ASSH_ERR_MISSING_ALGO);
 
       /* check padding length */
@@ -578,7 +578,7 @@ assh_save_openssh_v1_blob(struct assh_context_s *c,
     {
       kdfname = "bcrypt";
       kdf_opt_len = 4 + salt_size + 4;
-      ciphername = cipher->algo.name;
+      ciphername = assh_algo_name(&cipher->algo);
     }
 
   if (blob == NULL)

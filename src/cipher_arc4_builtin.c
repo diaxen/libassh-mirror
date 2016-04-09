@@ -103,7 +103,10 @@ static ASSH_CIPHER_CLEANUP_FCN(assh_arc4_cleanup)
 
 const struct assh_algo_cipher_s assh_cipher_arc4 =
 {
-  .algo = { .name = "arcfour", .class_ = ASSH_ALGO_CIPHER, .safety = 5, .speed = 80 },
+  ASSH_ALGO_BASE(CIPHER, 5, 80,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
+                      "arcfour" })
+  ),
   .ctx_size = sizeof(struct assh_cipher_arc4_context_s),
   .block_size = 8,
   .head_size = 8,
@@ -115,7 +118,10 @@ const struct assh_algo_cipher_s assh_cipher_arc4 =
 
 const struct assh_algo_cipher_s assh_cipher_arc4_128 =
 {
-  .algo = { .name = "arcfour128", .class_ = ASSH_ALGO_CIPHER, .safety = 10, .speed = 80 },
+  ASSH_ALGO_BASE(CIPHER, 10, 80,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
+                      "arcfour128" })
+  ),
   .ctx_size = sizeof(struct assh_cipher_arc4_context_s),
   .block_size = 8,
   .head_size = 8,
@@ -127,7 +133,10 @@ const struct assh_algo_cipher_s assh_cipher_arc4_128 =
 
 const struct assh_algo_cipher_s assh_cipher_arc4_256 =
 {
-  .algo = { .name = "arcfour256", .class_ = ASSH_ALGO_CIPHER, .safety = 15, .speed = 80 },
+  ASSH_ALGO_BASE(CIPHER, 15, 80,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
+                      "arcfour256" })
+  ),
   .ctx_size = sizeof(struct assh_cipher_arc4_context_s),
   .block_size = 8,
   .head_size = 8,

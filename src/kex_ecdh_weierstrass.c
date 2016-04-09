@@ -502,8 +502,10 @@ static ASSH_KEX_INIT_FCN(assh_kex_nistp256_init)
 
 const struct assh_algo_kex_s assh_kex_sha2_nistp256 =
 {
-  .algo = { .name = "ecdh-sha2-nistp256",
-	    .class_ = ASSH_ALGO_KEX, .safety = 21, .speed = 80 },
+  ASSH_ALGO_BASE(KEX, 21, 80,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
+                      "ecdh-sha2-nistp256" })
+  ),
   .f_init = assh_kex_nistp256_init,
   .f_cleanup = assh_kex_ecdhws_cleanup,
   .f_process = assh_kex_ecdhws_process,
@@ -516,8 +518,9 @@ static ASSH_KEX_INIT_FCN(assh_kex_nistp384_init)
 
 const struct assh_algo_kex_s assh_kex_sha2_nistp384 =
 {
-  .algo = { .name = "ecdh-sha2-nistp384",
-	    .class_ = ASSH_ALGO_KEX, .safety = 23, .speed = 70 },
+  ASSH_ALGO_BASE(KEX, 23, 70,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF, "ecdh-sha2-nistp384" })
+  ),
   .f_init = assh_kex_nistp384_init,
   .f_cleanup = assh_kex_ecdhws_cleanup,
   .f_process = assh_kex_ecdhws_process,
@@ -530,8 +533,9 @@ static ASSH_KEX_INIT_FCN(assh_kex_nistp521_init)
 
 const struct assh_algo_kex_s assh_kex_sha2_nistp521 =
 {
-  .algo = { .name = "ecdh-sha2-nistp521",
-	    .class_ = ASSH_ALGO_KEX, .safety = 25, .speed = 60 },
+  ASSH_ALGO_BASE(KEX, 25, 60,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF, "ecdh-sha2-nistp521" })
+  ),
   .f_init = assh_kex_nistp521_init,
   .f_cleanup = assh_kex_ecdhws_cleanup,
   .f_process = assh_kex_ecdhws_process,

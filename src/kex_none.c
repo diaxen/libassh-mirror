@@ -62,8 +62,10 @@ static ASSH_KEX_INIT_FCN(assh_kex_none_init)
 
 const struct assh_algo_kex_s assh_kex_none =
 {
-  .algo = { .name = "none@libassh.org", .class_ = ASSH_ALGO_KEX,
-            .safety = 0, .speed = 99 },
+  ASSH_ALGO_BASE(KEX, 0, 99,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
+                      "none@libassh.org" })
+  ),
   .f_init = assh_kex_none_init,
   .f_cleanup = assh_kex_none_cleanup,
   .f_process = assh_kex_none_process,

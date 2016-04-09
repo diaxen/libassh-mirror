@@ -138,8 +138,9 @@ int test(const struct assh_algo_kex_s *kex,
   uint_fast8_t i;
 
   fprintf(stderr, "==== %s, %s, %s, %s, %s ====\n",
-	  kex->algo.name, sign->algo.name, cipher->algo.name,
-	  mac->algo.name, comp->algo.name);
+	  assh_algo_name(&kex->algo), assh_algo_name(&sign->algo),
+	  assh_algo_name(&cipher->algo), assh_algo_name(&mac->algo),
+	  assh_algo_name(&comp->algo));
 
   for (i = 0; i < 2; i++)
     {

@@ -76,8 +76,14 @@ static void assh_algo_udpate(struct assh_context_s *c,
 	    c->algos[k] = b;
 	  else if (d)
 	    goto next;
-	  if (d || strcmp(a->name, b->name))
-	    k++;
+          const struct assh_algo_name_s *na, *nb;
+          if (!d++)
+            for (na = a->names; d && na->spec; na++)
+              for (nb = b->names; d && nb->spec; nb++)
+                if (!strcmp(na->name, nb->name))
+                  d = 0;
+          if (d)
+            k++;
 	  else if (a->priority < b->priority)
 	    ASSH_SWAP(c->algos[k], c->algos[i]);
 	}
@@ -97,7 +103,9 @@ static void assh_algo_udpate(struct assh_context_s *c,
 	l++;	/* strlen(",") */
       else
 	l += 4;	/* string header */
-      l += strlen(a->name);
+      const struct assh_algo_name_s *n;
+      for (n = a->names; n->spec; n++)
+        l += strlen(n->name);
       switch (a->class_)
 	{
 	case ASSH_ALGO_KEX:
@@ -128,6 +136,7 @@ assh_error_t assh_algo_register(struct assh_context_s *c, unsigned int safety,
   for (i = 0; table[i] != NULL; i++)
     {
       const struct assh_algo_s *algo = table[i];
+      ASSH_CHK_RET(algo->api != ASSH_ALGO_API_VERSION, ASSH_ERR_BAD_ARG);
       if (algo->safety < min_safety)
 	continue;
       ASSH_CHK_RET(count == c->algo_max, ASSH_ERR_MEM);
@@ -165,6 +174,7 @@ assh_error_t assh_algo_register_va(struct assh_context_s *c, unsigned int safety
       struct assh_algo_s *algo = va_arg(ap, void*);
       if (algo == NULL)
         break;
+      ASSH_CHK_RET(algo->api != ASSH_ALGO_API_VERSION, ASSH_ERR_BAD_ARG);
       if (algo->safety < min_safety)
 	continue;
       ASSH_CHK_GTO(count == c->algo_max, ASSH_ERR_MEM, err_);
@@ -320,7 +330,8 @@ const struct assh_algo_s *assh_algo_table[] = {
 
 assh_error_t assh_algo_by_name(struct assh_context_s *c,
 			       enum assh_algo_class_e class_, const char *name,
-			       size_t name_len, const struct assh_algo_s **algo)
+			       size_t name_len, const struct assh_algo_s **algo,
+                               const struct assh_algo_name_s **namep)
 {
   uint_fast16_t i;
   const struct assh_algo_s *a;
@@ -329,17 +340,23 @@ assh_error_t assh_algo_by_name(struct assh_context_s *c,
     {
       a = c->algos[i];
 
-      if (a->class_ == class_ &&
-          !strncmp(name, a->name, name_len) && 
-          a->name[name_len] == '\0')
-	break;
+      if (a->class_ == class_)
+        {
+          const struct assh_algo_name_s *n;
+          for (n = a->names; n->spec; n++)
+            {
+              if (!strncmp(name, n->name, name_len) && 
+                  n->name[name_len] == '\0')
+                {
+                  *algo = a;
+                  if (namep != NULL)
+                    *namep = n;
+                  return ASSH_OK;
+                }
+            }
+        }
     }
-
-  if (i == c->algo_cnt)
-    return ASSH_NOT_FOUND;
-
-  *algo = a;
-  return ASSH_OK;
+  return ASSH_NOT_FOUND;
 }
 
 assh_error_t assh_algo_by_key(struct assh_context_s *c,

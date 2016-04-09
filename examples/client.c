@@ -46,6 +46,12 @@
 #include <assert.h>
 #include <stdlib.h>
 
+static ASSH_KEX_FILTER_FCN(algo_filter)
+{
+  return (name->spec & ASSH_ALGO_ASSH) ||
+         (name->spec & ASSH_ALGO_COMMON);
+}
+
 int main(int argc, char **argv)
 {
 #ifdef CONFIG_ASSH_USE_GCRYPT
@@ -85,6 +91,9 @@ int main(int argc, char **argv)
   struct assh_session_s *session;
 
   if (assh_session_create(context, &session) != ASSH_OK)
+    return -1;
+
+  if (assh_session_algo_filter(session, &algo_filter))
     return -1;
 
   assh_error_t err;
