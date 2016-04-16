@@ -45,6 +45,8 @@ enum assh_event_id_e
 
   /** @see assh_event_kex_hostkey_lookup_s */
   ASSH_EVENT_KEX_HOSTKEY_LOOKUP,
+  /** @see assh_event_kex_done_s */
+  ASSH_EVENT_KEX_DONE,
 
   /** @see assh_event_userauth_client_user_s */
   ASSH_EVENT_USERAUTH_CLIENT_USER,
@@ -112,11 +114,11 @@ struct assh_event_s
     union assh_event_transport_u transport;
 #endif
 
-#ifdef CONFIG_ASSH_CLIENT
-# ifdef ASSH_KEX_H_
+#ifdef ASSH_KEX_H_
     union assh_event_kex_u kex;
-# endif
+#endif
 
+#ifdef CONFIG_ASSH_CLIENT
 # ifdef ASSH_SRV_USERAUTH_CLIENT_H_
     union assh_event_userauth_client_u userauth_client;
 # endif

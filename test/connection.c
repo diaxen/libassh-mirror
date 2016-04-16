@@ -744,6 +744,7 @@ int test(int (*fend)(int, int), int n)
 
 	    case ASSH_EVENT_KEX_HOSTKEY_LOOKUP:
 	      event.kex.hostkey_lookup.accept = 1;
+	    case ASSH_EVENT_KEX_DONE:
 	      break;
 
 	    case ASSH_EVENT_READ: {

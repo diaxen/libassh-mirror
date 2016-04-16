@@ -252,10 +252,21 @@ struct assh_event_kex_hostkey_lookup_s
   assh_bool_t               accept;             //< output
 };
 
+/**
+   The @ref ASSH_EVENT_KEX_DONE event is returned when a kex exchange
+   has completed.
+*/
+struct assh_event_kex_done_s
+{
+};
+
 /** @internal */
 union assh_event_kex_u
 {
+#ifdef CONFIG_ASSH_CLIENT
   struct assh_event_kex_hostkey_lookup_s hostkey_lookup;
+#endif
+  struct assh_event_kex_done_s done;
 };
 
 /** @internalmembers This defines the interface of a pluggable key

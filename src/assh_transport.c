@@ -558,6 +558,9 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
       msg = 0;
 
       assh_transport_state(s, ASSH_TR_SERVICE);
+      e->id = ASSH_EVENT_KEX_DONE;
+      e->f_done = NULL;
+      goto done;
 
     /* service is running or have to be started */
     service:
