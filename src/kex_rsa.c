@@ -697,7 +697,9 @@ const struct assh_algo_kex_s assh_kex_rsa1024_sha1 =
 {
   ASSH_ALGO_BASE(KEX, 10, 30,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF, "rsa1024-sha1" }),
-    .f_suitable_key = assh_kex_rsa1024_suitable_key),
+    .f_suitable_key = assh_kex_rsa1024_suitable_key,
+    .key = &assh_key_rsa
+  ),
   .f_init = assh_kex_rsa1024_sha1_init,
   .f_cleanup = assh_kex_rsa_cleanup,
   .f_process = assh_kex_rsa_process,
@@ -726,7 +728,9 @@ const struct assh_algo_kex_s assh_kex_rsa2048_sha256 =
 {
   ASSH_ALGO_BASE(KEX, 20, 20,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF, "rsa2048-sha256"}),
-    .f_suitable_key = assh_kex_rsa2048_suitable_key),
+    .f_suitable_key = assh_kex_rsa2048_suitable_key,
+    .key = &assh_key_rsa
+  ),
   .f_init = assh_kex_rsa2048_sha256_init,
   .f_cleanup = assh_kex_rsa_cleanup,
   .f_process = assh_kex_rsa_process,
