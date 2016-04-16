@@ -279,7 +279,7 @@ int main(int argc, char *argv[])
     NULL
   };
 
-  if (assh_algo_register(context, 99, 0, key_ciphers) != ASSH_OK)
+  if (assh_algo_register(context, 99, 0, 0, key_ciphers) != ASSH_OK)
     ERROR("Unable to register ciphers.\n");
 
   const char *action = argv[optind];

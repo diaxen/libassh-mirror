@@ -46,7 +46,8 @@ static int assh_algo_order(const struct assh_algo_s *a,
 
 static void assh_algo_udpate(struct assh_context_s *c,
 			     unsigned int safety,
-			     unsigned int min_safety)
+			     unsigned int min_safety,
+			     unsigned int min_speed)
 {
   /* sort algorithms by class and safety/speed factor */
   int_fast16_t i, j, k;
@@ -126,7 +127,8 @@ static void assh_algo_udpate(struct assh_context_s *c,
 }
 
 assh_error_t assh_algo_register(struct assh_context_s *c, unsigned int safety,
-				unsigned int min_safety, const struct assh_algo_s *table[])
+				unsigned int min_safety, unsigned int min_speed,
+                                const struct assh_algo_s *table[])
 {
   assh_error_t err = ASSH_OK;
   size_t i, count = c->algo_cnt;
@@ -137,14 +139,14 @@ assh_error_t assh_algo_register(struct assh_context_s *c, unsigned int safety,
     {
       const struct assh_algo_s *algo = table[i];
       ASSH_CHK_RET(algo->api != ASSH_ALGO_API_VERSION, ASSH_ERR_BAD_ARG);
-      if (algo->safety < min_safety)
+      if (algo->safety < min_safety || algo->speed < min_speed)
 	continue;
       ASSH_CHK_RET(count == c->algo_max, ASSH_ERR_MEM);
       c->algos[count++] = algo;
     }
 
   c->algo_cnt = count;
-  assh_algo_udpate(c, safety, min_safety);
+  assh_algo_udpate(c, safety, min_safety, min_speed);
 
   return ASSH_OK;
 }
@@ -158,7 +160,7 @@ assh_algo_registered(struct assh_context_s *c, uint_fast16_t i)
 }
 
 assh_error_t assh_algo_register_va(struct assh_context_s *c, unsigned int safety,
-				   unsigned int min_safety, ...)
+				   unsigned int min_safety, unsigned int min_speed, ...)
 {
   assh_error_t err = ASSH_OK;
   va_list ap;
@@ -166,7 +168,7 @@ assh_error_t assh_algo_register_va(struct assh_context_s *c, unsigned int safety
 
   ASSH_CHK_RET(safety > 99, ASSH_ERR_BAD_ARG);
 
-  va_start(ap, min_safety);
+  va_start(ap, min_speed);
 
   /* append algorithms to the array */
   while (1)
@@ -175,14 +177,14 @@ assh_error_t assh_algo_register_va(struct assh_context_s *c, unsigned int safety
       if (algo == NULL)
         break;
       ASSH_CHK_RET(algo->api != ASSH_ALGO_API_VERSION, ASSH_ERR_BAD_ARG);
-      if (algo->safety < min_safety)
+      if (algo->safety < min_safety || algo->speed < min_speed)
 	continue;
       ASSH_CHK_GTO(count == c->algo_max, ASSH_ERR_MEM, err_);
       c->algos[count++] = algo;
     }
 
   c->algo_cnt = count;
-  assh_algo_udpate(c, safety, min_safety);
+  assh_algo_udpate(c, safety, min_safety, min_speed);
 
  err_:
   va_end(ap);

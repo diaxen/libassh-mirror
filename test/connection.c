@@ -161,10 +161,10 @@ int test(int (*fend)(int, int), int n)
 	return -1;
 
 #if 0
-      if (assh_algo_register_default(&context[i], 99, 10) != ASSH_OK)
+      if (assh_algo_register_default(&context[i], 99, 10, 0) != ASSH_OK)
 	return -1;
 #else
-      if (assh_algo_register_va(&context[i], 0, 0, &assh_kex_none, &assh_sign_none,
+      if (assh_algo_register_va(&context[i], 0, 0, 0, &assh_kex_none, &assh_sign_none,
 				&assh_cipher_none, &assh_hmac_none, &assh_compress_none, NULL) != ASSH_OK)
 	return -1;
 #endif

@@ -407,7 +407,7 @@ int main(int argc, char **argv)
     return -1;
 
   for (i = 0; algos[i].algo; i++)
-    ASSH_ERR_RET(assh_algo_register_va(&context, 0, 0, algos[i].algo, NULL));
+    ASSH_ERR_RET(assh_algo_register_va(&context, 0, 0, 0, algos[i].algo, NULL));
 
   int t = time(0);
   srand(t);

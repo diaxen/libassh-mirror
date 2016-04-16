@@ -138,8 +138,8 @@ struct assh_algo_s
    The algorithms are sorted depending on their safety factor and
    speed factor. The @tt safety parameter indicates how algorithms
    safety must be favored over speed. Valid range for this parameter
-   is [0, 99]. Algorithms with a safety factor less than @tt
-   min_safety are skipped.
+   is [0, 99]. Algorithms with a safety factor or speed factor less
+   than @tt min_safety and  @tt min_speed are skipped.
 
    The Safety factor is defined as follow:
 
@@ -158,7 +158,7 @@ struct assh_algo_s
 */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_register_va(struct assh_context_s *c, unsigned int safety,
-		      unsigned int min_safety, ...);
+		      unsigned int min_safety, unsigned int min_speed, ...);
 
 /**
    @This registers the specified @ref assh_algo_s objects for use by
@@ -167,7 +167,8 @@ assh_algo_register_va(struct assh_context_s *c, unsigned int safety,
 */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_register(struct assh_context_s *c, unsigned int safety,
-		   unsigned int min_safety, const struct assh_algo_s *table[]);
+		   unsigned int min_safety, unsigned int min_speed,
+                   const struct assh_algo_s *table[]);
 
 /** NULL terminated array of available algorithms. */
 extern const struct assh_algo_s *assh_algo_table[];
@@ -183,9 +184,10 @@ assh_algo_registered(struct assh_context_s *c, uint_fast16_t i);
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_register_default(struct assh_context_s *c,
                            unsigned int safety,
-			   unsigned int min_safety)
+			   unsigned int min_safety,
+                           unsigned int min_speed)
 {
-  return assh_algo_register(c, safety, min_safety, assh_algo_table);
+  return assh_algo_register(c, safety, min_safety, min_speed, assh_algo_table);
 }
 
 /** Unregister all algorithms */

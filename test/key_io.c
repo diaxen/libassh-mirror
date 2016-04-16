@@ -267,7 +267,7 @@ int main(int argc, char **argv)
   if (assh_context_init(&context, ASSH_SERVER, NULL, NULL, &assh_prng_weak, NULL))
     return -1;
 
-  if (assh_algo_register_default(&context, 99, 10) != ASSH_OK)
+  if (assh_algo_register_default(&context, 99, 10, 0) != ASSH_OK)
     return -1;
 
   size_t k, count = argc > 1 ? atoi(argv[1]) : 10;

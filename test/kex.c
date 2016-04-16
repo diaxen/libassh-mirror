@@ -151,7 +151,7 @@ int test(const struct assh_algo_kex_s *kex,
       if (assh_service_register_va(c, &assh_service_connection, NULL))
 	return -1;
 
-      if (assh_algo_register_va(c, 0, 0, kex, sign, cipher, mac, comp, NULL) != ASSH_OK)
+      if (assh_algo_register_va(c, 0, 0, 0, kex, sign, cipher, mac, comp, NULL) != ASSH_OK)
 	return -1;
 
       if (i == 0 && sign_key->key_algo != NULL)

@@ -97,7 +97,7 @@ int main()
     return -1;
 
   /** register algorithms */
-  if (assh_algo_register_default(context, 99, 10) != ASSH_OK)
+  if (assh_algo_register_default(context, 99, 10, 0) != ASSH_OK)
     return -1;
 
   /** load host key */
