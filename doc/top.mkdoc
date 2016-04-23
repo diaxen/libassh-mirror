@@ -227,13 +227,13 @@ assh_config.h
 
       The original RSA signature algorithm specified in @invoke{4253}rfc
       relies on @em{md5} and @em{sha1} hashes. Additional algorithms
-      using the @em{sha2-256} hash and enforcing a key size limit are
-      provided:
+      using the @em{sha2-256} and the @em{sha2-512} hashes are
+      implemented as proposed in @em{IETF draft-rsa-dsa-sha2-256-03}.
 
       @list
         @item @tt {ssh-rsa},
-        @item @tt {rsa2048-sha256@libassh.org},
-        @item @tt {rsa3072-sha256@libassh.org}.
+        @item @tt {rsa-sha2-256} (key size >= 2048 bits),
+        @item @tt {rsa-sha2-512} (key size >= 2048 bits).
       @end list
 
       Variants of the @tt {ssh-rsa} algorithms are proposed which

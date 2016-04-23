@@ -126,11 +126,11 @@ extern const struct assh_algo_sign_s assh_sign_rsa_sha1_2048;
 
 /** Accept sha2, RSA signatures, generate sha256 signatures. 
     Reject keys with modulus size less than 2048 bits. */
-extern const struct assh_algo_sign_s assh_sign_rsa_sha256_2048;
+extern const struct assh_algo_sign_s assh_sign_rsa_sha256;
 
-/** Accept sha2 RSA signatures, generate sha256 signatures. 
-    Reject keys with modulus size less than 3072 bits. */
-extern const struct assh_algo_sign_s assh_sign_rsa_sha256_3072;
+/** Accept sha2 RSA signatures, generate sha512 signatures. 
+    Reject keys with modulus size less than 2048 bits. */
+extern const struct assh_algo_sign_s assh_sign_rsa_sha512;
 
 /** The ssh-ed25519 algorithm as implemented by openssh. This offerrs
     125 bits security and relies on an Edward elliptic curve. 

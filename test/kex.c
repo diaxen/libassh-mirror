@@ -87,8 +87,8 @@ static const struct algo_with_key_s sign_list[] =
     { &assh_sign_rsa_sha1_md5,      &assh_key_rsa, rsa1024_key, sizeof(rsa1024_key) - 1 },
     { &assh_sign_rsa_sha1,          &assh_key_rsa, rsa1024_key, sizeof(rsa1024_key) - 1 },
     { &assh_sign_rsa_sha1_2048,     &assh_key_rsa, rsa2048_key, sizeof(rsa2048_key) - 1 },
-    { &assh_sign_rsa_sha256_2048,   &assh_key_rsa, rsa2048_key, sizeof(rsa2048_key) - 1 },
-    { &assh_sign_rsa_sha256_3072,   &assh_key_rsa, rsa3072_key, sizeof(rsa3072_key) - 1 },
+    { &assh_sign_rsa_sha256,        &assh_key_rsa, rsa2048_key, sizeof(rsa2048_key) - 1 },
+    { &assh_sign_rsa_sha512,        &assh_key_rsa, rsa3072_key, sizeof(rsa3072_key) - 1 },
     { &assh_sign_ed25519,           &assh_key_ed25519, ed25519_key, sizeof(ed25519_key) - 1 },
     { NULL }
   };
