@@ -81,11 +81,23 @@ struct assh_event_userauth_client_methods_s
   struct assh_key_s          *pub_keys;    //< output
 };
 
+/** This event is reported when the client-side user authentication
+    service is running and a banner message is received.
+
+    @see ASSH_EVENT_USERAUTH_CLIENT_BANNER
+*/
+struct assh_event_userauth_client_banner_s
+{
+  ASSH_EV_CONST struct assh_buffer_s text; //< output
+  ASSH_EV_CONST struct assh_buffer_s lang;   //< output
+};
+
 /** @This contains all client side user authentication related events */
 union assh_event_userauth_client_u
 {
   struct assh_event_userauth_client_user_s    user;
   struct assh_event_userauth_client_methods_s methods;
+  struct assh_event_userauth_client_banner_s  banner;
 };
 
 /** @This implements the standard client side @tt ssh-userauth service. */

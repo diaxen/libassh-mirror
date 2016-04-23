@@ -59,6 +59,7 @@ struct assh_userauth_context_s
 {
   enum assh_userauth_state_e state;  
   const struct assh_service_s *srv;
+  struct assh_packet_s *pbanner;
   char username[CONFIG_ASSH_AUTH_USERNAME_LEN];
   size_t username_len;
 
@@ -98,6 +99,7 @@ static ASSH_SERVICE_INIT_FCN(assh_userauth_client_init)
 
   /* get next client requested service */
   pv->srv = s->ctx->srvs[s->srv_index];
+  pv->pbanner = NULL;
 
   return ASSH_OK;
 }
@@ -109,6 +111,9 @@ static ASSH_SERVICE_CLEANUP_FCN(assh_userauth_client_cleanup)
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY
   assh_key_flush(s->ctx, &pv->pub_keys);
 #endif
+
+  if (pv->pbanner != NULL)
+    assh_packet_release(pv->pbanner);
 
   assh_free(s->ctx, pv);
 
@@ -488,6 +493,44 @@ static assh_error_t assh_userauth_client_failure(struct assh_session_s *s,
   return ASSH_OK;
 }
 
+static ASSH_EVENT_DONE_FCN(assh_userauth_client_banner_done)
+{
+  struct assh_userauth_context_s *pv = s->srv_pv;
+  assh_error_t err;
+
+  assh_packet_release(pv->pbanner);
+  pv->pbanner = NULL;
+
+  return ASSH_OK;
+}
+
+static assh_error_t assh_userauth_client_banner(struct assh_session_s *s,
+                                                struct assh_packet_s *p,
+                                                struct assh_event_s *e)
+{
+  struct assh_userauth_context_s *pv = s->srv_pv;
+  assh_error_t err;
+
+  const uint8_t *text = p->head.end;
+  const uint8_t *lang;
+  ASSH_ERR_RET(assh_packet_check_string(p, text, &lang)
+	       | ASSH_ERRSV_DISCONNECT);
+  ASSH_ERR_RET(assh_packet_check_string(p, lang, NULL)
+	       | ASSH_ERRSV_DISCONNECT);
+
+  e->id = ASSH_EVENT_USERAUTH_CLIENT_BANNER;
+  e->f_done = &assh_userauth_client_banner_done;
+  e->userauth_client.banner.text.str = (char*)text + 4;
+  e->userauth_client.banner.text.len = assh_load_u32(text);
+  e->userauth_client.banner.lang.str = (char*)lang + 4;
+  e->userauth_client.banner.lang.len = assh_load_u32(lang);
+
+  assh_packet_refinc(p);
+  pv->pbanner = p;
+
+  return ASSH_OK;
+}
+
 static ASSH_SERVICE_PROCESS_FCN(assh_userauth_client_process)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
@@ -519,6 +562,10 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_client_process)
 
       switch (p->head.msg)
         {
+        case SSH_MSG_USERAUTH_BANNER:
+          ASSH_ERR_RET(assh_userauth_client_banner(s, p, e) | ASSH_ERRSV_DISCONNECT);
+          return ASSH_OK;
+
         case SSH_MSG_USERAUTH_SUCCESS:
           ASSH_ERR_RET(assh_userauth_client_success(s) | ASSH_ERRSV_DISCONNECT);
           return ASSH_OK;
@@ -543,6 +590,10 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_client_process)
 
       switch(p->head.msg)
         {
+        case SSH_MSG_USERAUTH_BANNER:
+          ASSH_ERR_RET(assh_userauth_client_banner(s, p, e) | ASSH_ERRSV_DISCONNECT);
+          return ASSH_OK;
+
         case SSH_MSG_USERAUTH_PK_OK:
           ASSH_ERR_RET(assh_userauth_client_req_pubkey_sign(s) | ASSH_ERRSV_DISCONNECT);
           return ASSH_OK;

@@ -164,6 +164,12 @@ int main(int argc, char **argv)
           break;
         }
 
+        case ASSH_EVENT_USERAUTH_CLIENT_BANNER: {
+          fwrite(event.userauth_client.banner.text.str,
+                 event.userauth_client.banner.text.len, 1, stderr);
+          break;
+        }
+
         default:
           printf("Don't know how to handle event %u\n", event.id);
         }
