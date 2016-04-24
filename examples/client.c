@@ -105,6 +105,7 @@ int main(int argc, char **argv)
   assh_fd_events_register(&ev_table, &fd_ctx, sock);
 
   assh_bool_t auth_keys_done = 0;
+  uint_fast8_t safety = 0;
 
   while (1)
     {
@@ -132,6 +133,12 @@ int main(int argc, char **argv)
           break;
         }
 
+        case ASSH_EVENT_KEX_DONE: {
+          safety = event.kex.done.safety;
+          fprintf(stderr, "kex safety factor: %u\n", safety);
+          break;
+        }
+
         case ASSH_EVENT_USERAUTH_CLIENT_USER: {
           event.userauth_client.user.username.str = "test";
           event.userauth_client.user.username.len = 4;
@@ -155,7 +162,7 @@ int main(int argc, char **argv)
             }
 
           if (event.userauth_client.methods.use_password &&
-              assh_session_safety(session) > 25)
+              safety > 25)
             {
               fprintf(stderr, "password input\n");
               event.userauth_client.methods.password.str = "test";

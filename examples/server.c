@@ -26,6 +26,7 @@
 #include <assh/assh_service.h>
 #include <assh/assh_userauth_server.h>
 #include <assh/assh_connection.h>
+#include <assh/assh_kex.h>
 #include <assh/assh_event.h>
 #include <assh/assh_algo.h>
 #include <assh/assh_packet.h>
@@ -184,6 +185,11 @@ int main()
 	  /** we still have to process events not handled in the table */
 	  switch (event.id)
 	    {
+	    case ASSH_EVENT_KEX_DONE: {
+	      fprintf(stderr, "kex safety factor: %u\n", event.kex.done.safety);
+	      break;
+	    }
+
 	    case ASSH_EVENT_USERAUTH_SERVER_USERKEY: {
 	      /* XXX check that event public key is in the list of
 		 user authorized keys. */

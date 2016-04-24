@@ -258,6 +258,7 @@ struct assh_event_kex_hostkey_lookup_s
 */
 struct assh_event_kex_done_s
 {
+  uint_fast8_t ASSH_EV_CONST safety;  //< input
 };
 
 /** @internal */
