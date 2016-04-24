@@ -53,6 +53,10 @@ enum assh_algo_class_e
   ASSH_ALGO_ANY,
 };
 
+/** @internal @see assh_algo_class_e */
+#define ASSH_ALGO_CLASS_NAMES \
+  { "KEX", "SIGN", "CIPHER", "MAC", "COMPRESS", "ANY" }
+
 /** @This specifies various algorithm specification status. */
 enum assh_algo_spec_e
 {

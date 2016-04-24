@@ -76,6 +76,12 @@ signature_SOURCES = signature.c
 signature_LDADD = $(top_builddir)/src/libassh.la
 signature_CFLAGS = -I$(top_srcdir)/src
 
+noinst_PROGRAMS += algo_list
+TESTS += algo_list
+algo_list_SOURCES = algo_list.c
+algo_list_LDADD = $(top_builddir)/src/libassh.la
+algo_list_CFLAGS = -I$(top_srcdir)/src
+
 EXTRA_DIST = \
 fifo.h \
 keys.h \
