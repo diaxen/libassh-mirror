@@ -241,6 +241,7 @@ void assh_hexdump(const char *name, const void *data, unsigned int len)
   fprintf(stderr, "--- %s (%u bytes) ---\n", name, len);
   for (i = 0; i < len; i += width)
     {
+#if 1
       for (j = 0; j < width && i + j < len; j++)
         fprintf(stderr, "%02x ", data_[i + j]);
       for (; j < width; j++)
@@ -248,6 +249,13 @@ void assh_hexdump(const char *name, const void *data, unsigned int len)
       for (j = 0; j < width && i + j < len; j++)
         fprintf(stderr, "%c", (unsigned)data_[i + j] - 32 < 96 ? data_[i + j] : '.');
       fputc('\n', stderr);
+#else
+      fputc('"', stderr);
+      for (j = 0; j < width && i + j < len; j++)
+        fprintf(stderr, "\\x%02x", data_[i + j]);
+      fputc('"', stderr);
+      fputc('\n', stderr);
+#endif
     }
   fputc('\n', stderr);
 }
