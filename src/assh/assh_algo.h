@@ -104,6 +104,10 @@ struct assh_algo_name_s
     __VA_ARGS__                                                         \
   }
 
+/** @internal map prime field size to assh safety factor,
+    See @sourcelink doc/dh @see assh_algo_register_va */
+#define ASSH_SAFETY_PRIMEFIELD(n) ((n) / 128 + 12)
+
 /** @internalmembers @This is the generic algorithm descriptor
     structure. Other algorithm descriptor structures iherit from this
     type. */

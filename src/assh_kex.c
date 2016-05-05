@@ -449,12 +449,6 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
 
   size_t key_size = ASSH_MAX(cipher_in->key_size, cipher_out->key_size) * 8;
 
-  /* initialize key exchange algorithm */
-  ASSH_ERR_GTO(kex->f_init(s, key_size) | ASSH_ERRSV_DISCONNECT, err_kout);
-
-  s->kex = kex;
-  s->host_sign_algo = sign;
-
   /* initialize input keys structure */
   kin->cmp_ctx = kin->mac_ctx = kin->cipher_ctx = NULL;
   kin->cipher = cipher_in;
@@ -473,13 +467,27 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
   assh_kex_keys_cleanup(s, s->new_keys_out);
   s->new_keys_out = kout;
 
+  /* initialize key exchange algorithm */
+  ASSH_ERR_GTO(kex->f_init(s, key_size) | ASSH_ERRSV_DISCONNECT, err);
+
+  s->kex = kex;
+  s->host_sign_algo = sign;
+
   return ASSH_OK;
 
  err_kout:
   assh_free(s->ctx, kout);
  err_kin:
   assh_free(s->ctx, kin);
+ err:
   return err;
+}
+
+void assh_kex_lower_safety(struct assh_session_s *s, uint_fast8_t safety)
+{
+  ASSH_DEBUG("lowering safety to %u\n", safety);
+  s->new_keys_in->safety = ASSH_MIN(safety, s->new_keys_in->safety);
+  s->new_keys_out->safety = ASSH_MIN(safety, s->new_keys_out->safety);
 }
 
 /* derive cipher/mac/iv key from shared secret */

@@ -40,7 +40,14 @@
 #include <string.h>
 #include <stdlib.h>
 
+/* The kex safety is lowered depending on the retained group size. The
+   safety factor declared in the algorithm descriptor corresponds to
+   smallest allowed group size for the retained algorithm variant. */
+
 #define DH_MAX_GRSIZE 16384
+
+/* derive group size from symmetric key size, see doc/dh/ */
+#define ASSH_DH_GEX_GRPSIZE(n, div) ((n) * (n) / (div))
 
 enum assh_kex_dh_gex_state_e
 {
@@ -160,6 +167,8 @@ static assh_error_t assh_kex_dh_gex_client_wait_group(struct assh_session_s *s,
   ASSH_CHK_RET(n > DH_MAX_GRSIZE, ASSH_ERR_NOTSUP | ASSH_ERRSV_DISCONNECT);
 
   pv->server_n = n;
+
+  assh_kex_lower_safety(s, ASSH_SAFETY_PRIMEFIELD(n));
 
   size_t e_size = assh_bignum_size_of_bits(ASSH_BIGNUM_MPINT, n);
 
@@ -472,6 +481,7 @@ static assh_error_t assh_kex_dh_gex_server_wait_size(struct assh_session_s *s,
   r = r % (max - min + 1);
   r -= r % 8;
   pv->server_n = min + r;
+  assh_kex_lower_safety(s, ASSH_SAFETY_PRIMEFIELD(pv->server_n));
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
   ASSH_DEBUG("kex_dh_gex client requested group size %u in [%u, %u]\n",
@@ -748,13 +758,12 @@ static ASSH_KEX_PROCESS_FCN(assh_kex_dh_gex_process)
 static assh_error_t assh_kex_dh_gex_init(struct assh_session_s *s,
                                          const struct assh_hash_algo_s *hash,
                                          size_t cipher_key_size,
-                                         uint_fast8_t ldiv, uint_fast8_t hdiv)
+                                         uint_fast8_t ldiv, uint_fast16_t algo_min)
 {
   assh_error_t err;
   struct assh_kex_dh_gex_private_s *pv;
 
-  if (cipher_key_size < 64)
-    cipher_key_size = 64;
+  cipher_key_size = ASSH_MIN(ASSH_MAX(cipher_key_size, 64), 256);
 
   size_t exp_n = cipher_key_size * 2;
 
@@ -780,8 +789,9 @@ static assh_error_t assh_kex_dh_gex_init(struct assh_session_s *s,
 
   s->kex_pv = pv;
   pv->hash = hash;
-  pv->algo_min = ASSH_MIN(ASSH_MAX(cipher_key_size * cipher_key_size / hdiv, 1024), DH_MAX_GRSIZE);
-  pv->algo_n = ASSH_MIN(ASSH_MAX(cipher_key_size * cipher_key_size / ldiv, 1024), DH_MAX_GRSIZE);
+  pv->algo_min = ASSH_MIN(algo_min, DH_MAX_GRSIZE);
+  pv->algo_n = ASSH_MIN(ASSH_MAX(ASSH_DH_GEX_GRPSIZE(cipher_key_size, ldiv),
+                                 algo_min), DH_MAX_GRSIZE);
   pv->exp_n = cipher_key_size * 2;
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
@@ -849,12 +859,12 @@ static ASSH_KEX_CLEANUP_FCN(assh_kex_dh_gex_cleanup)
 
 static ASSH_KEX_INIT_FCN(assh_kex_dh_gex_sha1_init)
 {
-  return assh_kex_dh_gex_init(s, &assh_hash_sha1, cipher_key_size, 12, 16);
+  return assh_kex_dh_gex_init(s, &assh_hash_sha1, cipher_key_size, 12, 1024);
 }
 
 const struct assh_algo_kex_s assh_kex_dh_gex_sha1 =
 {
-  ASSH_ALGO_BASE(KEX, 20, 30,
+  ASSH_ALGO_BASE(KEX, 25, 30,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                       "diffie-hellman-group-exchange-sha1" })
   ),
@@ -866,15 +876,15 @@ const struct assh_algo_kex_s assh_kex_dh_gex_sha1 =
 
 static ASSH_KEX_INIT_FCN(assh_kex_dh_gex_sha256_12_init)
 {
-  return assh_kex_dh_gex_init(s, &assh_hash_sha256, cipher_key_size, 12, 16);
+  return assh_kex_dh_gex_init(s, &assh_hash_sha256, cipher_key_size, 12, 1024);
 }
 
 const struct assh_algo_kex_s assh_kex_dh_gex_sha256_12 =
 {
-  ASSH_ALGO_BASE(KEX, 20, 30,
+  ASSH_ALGO_BASE(KEX, ASSH_SAFETY_PRIMEFIELD(1024), 30,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                       "diffie-hellman-group-exchange-sha256" }),
-    ASSH_ALGO_VARIANT(10, "n^2/12 bits modulus")
+    ASSH_ALGO_VARIANT(10, "group size >= 1024, preferred n^2/12")
   ),
   .f_init = assh_kex_dh_gex_sha256_12_init,
   .f_cleanup = assh_kex_dh_gex_cleanup,
@@ -884,15 +894,15 @@ const struct assh_algo_kex_s assh_kex_dh_gex_sha256_12 =
 
 static ASSH_KEX_INIT_FCN(assh_kex_dh_gex_sha256_8_init)
 {
-  return assh_kex_dh_gex_init(s, &assh_hash_sha256, cipher_key_size, 8, 12);
+  return assh_kex_dh_gex_init(s, &assh_hash_sha256, cipher_key_size, 8, 2048);
 }
 
 const struct assh_algo_kex_s assh_kex_dh_gex_sha256_8 =
 {
-  ASSH_ALGO_BASE(KEX, 25, 20,
+  ASSH_ALGO_BASE(KEX, ASSH_SAFETY_PRIMEFIELD(2048), 20,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                       "diffie-hellman-group-exchange-sha256" }),
-    ASSH_ALGO_VARIANT(9, "n^2/8 bits modulus")
+    ASSH_ALGO_VARIANT(9, "group size >= 2048, preferred n^2/8")
   ),
   .f_init = assh_kex_dh_gex_sha256_8_init,
   .f_cleanup = assh_kex_dh_gex_cleanup,
@@ -902,15 +912,15 @@ const struct assh_algo_kex_s assh_kex_dh_gex_sha256_8 =
 
 static ASSH_KEX_INIT_FCN(assh_kex_dh_gex_sha256_4_init)
 {
-  return assh_kex_dh_gex_init(s, &assh_hash_sha256, cipher_key_size, 4, 8);
+  return assh_kex_dh_gex_init(s, &assh_hash_sha256, cipher_key_size, 4, 4096);
 }
 
 const struct assh_algo_kex_s assh_kex_dh_gex_sha256_4 =
 {
-  ASSH_ALGO_BASE(KEX, 40, 10,
+  ASSH_ALGO_BASE(KEX, ASSH_SAFETY_PRIMEFIELD(4096), 10,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                       "diffie-hellman-group-exchange-sha256" }),
-    ASSH_ALGO_VARIANT(8, "n^2/4 bits modulus")
+    ASSH_ALGO_VARIANT(8, "group size >= 4096, preferred n^2/4")
   ),
   .f_init = assh_kex_dh_gex_sha256_4_init,
   .f_cleanup = assh_kex_dh_gex_cleanup,

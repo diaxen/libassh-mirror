@@ -91,6 +91,12 @@ assh_kex_send_init(struct assh_session_s *s);
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p);
 
+/** @internal This helper function can be used during the key exchange
+    to lower the safety factor of the current session. This is used
+    when algorithm parameters are further negotiated after the
+    algorithm selection phase. */
+void assh_kex_lower_safety(struct assh_session_s *s, uint_fast8_t safety);
+
 #ifdef CONFIG_ASSH_CLIENT
 
 /** @internal This client side helper function can be used in
