@@ -37,6 +37,7 @@ AC_C_INLINE
 AC_CHECK_SIZEOF(long)
 AC_CHECK_TYPE(long long, [bnlong_size=8], [bnlong_size=$ac_cv_sizeof_long])
 AC_CHECK_TYPE(__int128,  [bnlong_size=x])
+AC_CHECK_LIB(c, qsort_r, AC_DEFINE(CONFIG_ASSH_QSORTR, 1, [qsort_r available]))
 
 case "${ac_cv_sizeof_long}_${bnlong_size}" in
     8_x)

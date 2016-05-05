@@ -21,7 +21,6 @@
 
 */
 
-
 #include <assh/assh_context.h>
 #include <assh/assh_algo.h>
 #include <assh/assh_kex.h>
@@ -32,39 +31,33 @@
 
 #include <string.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
-static int assh_algo_order(const struct assh_algo_s *a,
-			   const struct assh_algo_s *b,
-			   unsigned int safety)
+static int_fast16_t assh_algo_order(const struct assh_algo_s *a,
+                                    const struct assh_algo_s *b,
+                                    uint_fast8_t safety)
 {
-  safety++;
   if (a->class_ != b->class_)
     return a->class_ - b->class_;
-  return ((b->speed * (101 - safety) + b->safety * safety) -
-	  (a->speed * (101 - safety) + a->safety * safety));
+  return ASSH_ALGO_SCORE(b, safety) - ASSH_ALGO_SCORE(a, safety);
 }
 
-static void assh_algo_udpate(struct assh_context_s *c,
-			     unsigned int safety,
-			     unsigned int min_safety,
-			     unsigned int min_speed)
+#ifdef CONFIG_ASSH_QSORTR
+static int assh_algo_qsort_cmp(const void *a, const void *b, void *arg)
 {
-  /* sort algorithms by class and safety/speed factor */
-  int_fast16_t i, j, k;
-  for (i = 0; i < c->algo_cnt; i++)
-    {
-      const struct assh_algo_s *a = c->algos[i];
-      for (j = i - 1; j >= 0; j--)
-	{
-	  const struct assh_algo_s *b = c->algos[j];
-	  if (assh_algo_order(a, b, safety) > 0)
-	    break;
-	  c->algos[j + 1] = b;
-	}
-      c->algos[j + 1] = a;
-    }
+  struct assh_algo_s * const *a_ = a;
+  struct assh_algo_s * const *b_ = b;
+  uint_fast8_t *s = arg;
+  return assh_algo_order(*a_, *b_, *s);
+}
+#endif
 
+static void assh_algo_filter_variants(struct assh_context_s *c,
+                                      uint_fast8_t min_safety,
+                                      uint_fast8_t min_speed)
+{
   /* remove duplicated names in the same class */
+  int_fast16_t i, j, k;
   for (i = 0; i < c->algo_cnt; i++)
     {
       for (k = j = i + 1; j < c->algo_cnt; j++)
@@ -85,12 +78,44 @@ static void assh_algo_udpate(struct assh_context_s *c,
                   d = 0;
           if (d)
             k++;
-	  else if (a->priority < b->priority)
+	  else if (a->priority < b->priority ||
+                   a->safety < min_safety ||
+                   a->speed < min_speed)
 	    ASSH_SWAP(c->algos[k], c->algos[i]);
 	}
       c->algo_cnt = k;
     next:;
     }
+}
+
+static void assh_algo_sort(struct assh_context_s *c,
+                           uint_fast8_t safety,
+                           uint_fast8_t min_safety,
+                           uint_fast8_t min_speed)
+{
+  int_fast16_t i;
+
+  assh_algo_filter_variants(c, min_safety, min_speed);
+
+  /* sort algorithms by class and safety/speed factor */
+#ifdef CONFIG_ASSH_QSORTR
+  qsort_r(c->algos, c->algo_cnt, sizeof(void*), assh_algo_qsort_cmp, &safety);
+#else
+  for (i = 0; i < c->algo_cnt; i++)
+    {
+      const struct assh_algo_s *a = c->algos[i];
+      int_fast16_t j;
+
+      for (j = i - 1; j >= 0; j--)
+	{
+	  const struct assh_algo_s *b = c->algos[j];
+	  if (assh_algo_order(a, b, safety) > 0)
+	    break;
+	  c->algos[j + 1] = b;
+	}
+      c->algos[j + 1] = a;
+    }
+#endif
 
   /* estimate size of the kex init packet */
   size_t kex_init_size = /* random cookie */ 16;
@@ -146,7 +171,7 @@ assh_error_t assh_algo_register(struct assh_context_s *c, unsigned int safety,
     }
 
   c->algo_cnt = count;
-  assh_algo_udpate(c, safety, min_safety, min_speed);
+  assh_algo_sort(c, safety, min_safety, min_speed);
 
   return ASSH_OK;
 }
@@ -184,7 +209,7 @@ assh_error_t assh_algo_register_va(struct assh_context_s *c, unsigned int safety
     }
 
   c->algo_cnt = count;
-  assh_algo_udpate(c, safety, min_safety, min_speed);
+  assh_algo_sort(c, safety, min_safety, min_speed);
 
  err_:
   va_end(ap);

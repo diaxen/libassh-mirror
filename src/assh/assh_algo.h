@@ -85,6 +85,9 @@ struct assh_algo_name_s
   const char *name;
 };
 
+#define ASSH_ALGO_SCORE(algo_, safety_) \
+  ((algo_)->speed * (100 - (safety_)) + (algo_)->safety * ((safety_) + 1))
+
 #define ASSH_ALGO_NAMES(...) \
   .names = (const struct assh_algo_name_s[]){ __VA_ARGS__, { 0 } }
 
