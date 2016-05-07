@@ -60,7 +60,7 @@ static ASSH_HASH_CLEANUP_FCN(assh_gcrypt_hash_cleanup)
   gcry_md_close(gctx->hd);
 }
 
-#define ASSH_GCRYPT_HASH(id_, algo_, hsize_, bsize_)                    \
+#define ASSH_GCRYPT_HASH(id_, algo_, hsize_, bsize_, safety_)           \
                                                                         \
 static ASSH_HASH_INIT_FCN(assh_gcrypt_hash_##id_##_init)                \
 {                                                                       \
@@ -89,6 +89,7 @@ const struct assh_hash_algo_s assh_hash_##id_ =                         \
   .ctx_size = sizeof(struct assh_hash_gcrypt_context_s),                \
   .hash_size = hsize_,                                                  \
   .block_size = bsize_,                                                 \
+  .safety = safety_,                                                    \
   .f_init = assh_gcrypt_hash_##id_##_init,                              \
   .f_copy = assh_gcrypt_hash_copy,                                      \
   .f_update = assh_gcrypt_hash_update,                                  \
@@ -96,10 +97,10 @@ const struct assh_hash_algo_s assh_hash_##id_ =                         \
   .f_cleanup = assh_gcrypt_hash_cleanup,                                \
 };
 
-ASSH_GCRYPT_HASH(md5, GCRY_MD_MD5, 16, 64);
-ASSH_GCRYPT_HASH(sha1, GCRY_MD_SHA1, 20, 64);
-ASSH_GCRYPT_HASH(sha224, GCRY_MD_SHA224, 28, 64);
-ASSH_GCRYPT_HASH(sha256, GCRY_MD_SHA256, 32, 64);
-ASSH_GCRYPT_HASH(sha384, GCRY_MD_SHA384, 48, 128);
-ASSH_GCRYPT_HASH(sha512, GCRY_MD_SHA512, 64, 128);
+ASSH_GCRYPT_HASH(md5,    GCRY_MD_MD5,    16, 64,  ASSH_SAFETY_MD5);
+ASSH_GCRYPT_HASH(sha1,   GCRY_MD_SHA1,   20, 64,  ASSH_SAFETY_SHA1);
+ASSH_GCRYPT_HASH(sha224, GCRY_MD_SHA224, 28, 64,  ASSH_SAFETY_SHA2_224);
+ASSH_GCRYPT_HASH(sha256, GCRY_MD_SHA256, 32, 64,  ASSH_SAFETY_SHA2_256);
+ASSH_GCRYPT_HASH(sha384, GCRY_MD_SHA384, 48, 128, ASSH_SAFETY_SHA2_384);
+ASSH_GCRYPT_HASH(sha512, GCRY_MD_SHA512, 64, 128, ASSH_SAFETY_SHA2_512);
 

@@ -98,6 +98,7 @@ struct assh_hash_algo_s
   size_t hash_size;
   /** Hash algorithm block size. */
   size_t block_size;
+  uint_fast8_t safety;
 };
 
 /** @internal @This hashes a ssh string. The string must contain a
@@ -169,6 +170,20 @@ assh_hash_cleanup(struct assh_hash_ctx_s *hctx)
 {
   hctx->algo->f_cleanup(hctx);
 }
+
+/** @multiple @internal safety factor of common hash functions */
+#define ASSH_SAFETY_MD5      15
+#define ASSH_SAFETY_SHA1     25
+#define ASSH_SAFETY_SHA2_224 43
+#define ASSH_SAFETY_SHA2_256 50
+#define ASSH_SAFETY_SHA2_384 75
+#define ASSH_SAFETY_SHA2_512 99
+#define ASSH_SAFETY_SHA3_224 43
+#define ASSH_SAFETY_SHA3_256 50
+#define ASSH_SAFETY_SHA3_384 75
+#define ASSH_SAFETY_SHA3_512 99
+#define ASSH_SAFETY_SHAKE128 50
+#define ASSH_SAFETY_SHAKE256 99
 
 #ifdef CONFIG_ASSH_HASH_MD5
 /** @internal @This is the md5 hash algorithm implementation

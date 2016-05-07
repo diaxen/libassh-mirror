@@ -213,6 +213,7 @@ const struct assh_hash_algo_s assh_hash_md5 =
   .ctx_size = sizeof(struct assh_hash_md5_context_s),
   .hash_size = 16,
   .block_size = 64,
+  .safety = ASSH_SAFETY_MD5,
   .f_init = assh_md5_init,
   .f_copy = assh_md5_copy,
   .f_update = assh_md5_update,
