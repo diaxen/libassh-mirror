@@ -49,7 +49,7 @@ typedef ASSH_SIGN_GENERATE_FCN(assh_sign_generate_t);
   (struct assh_context_s *c,						\
    const struct assh_key_s *key, size_t data_count,			\
    const uint8_t * const data[], size_t const data_len[],		\
-   const uint8_t *sign, size_t sign_len)
+   const uint8_t *sign, size_t sign_len, uint_fast8_t *safety)
 
 /** @internal @This defines the function type for the signature
     checking operation of the signature module interface.
@@ -92,9 +92,10 @@ ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_sign_check(struct assh_context_s *c, const struct assh_algo_sign_s *algo,
                  const struct assh_key_s *key, size_t data_count,
                  const uint8_t * const data[], size_t const data_len[],
-                 const uint8_t *sign, size_t sign_len)
+                 const uint8_t *sign, size_t sign_len, uint_fast8_t *safety)
 {
-  return algo->f_check(c, key, data_count, data, data_len, sign, sign_len);
+  *safety = ASSH_MIN(algo->algo.safety, key->safety);
+  return algo->f_check(c, key, data_count, data, data_len, sign, sign_len, safety);
 }
 
 /** Dummy signature algorithm */

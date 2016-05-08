@@ -100,6 +100,8 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_none_generate)
 
 static ASSH_SIGN_CHECK_FCN(assh_sign_none_check)
 {
+  *safety = 0;
+
   return ASSH_OK;
 }
 

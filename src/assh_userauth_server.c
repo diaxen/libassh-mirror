@@ -281,9 +281,12 @@ static assh_error_t assh_userauth_server_pubkey_check(struct assh_session_s *s,
   size_t sign_sizes[3]        =
     { 4,       s->session_id_len, sign - &p->head.msg };
 
+  uint_fast8_t sign_safety;
+#warning report safety
+
   /* check the signature */
   if (assh_sign_check(s->ctx, pv->algo, pv->pub_key, 3,
-        sign_ptrs, sign_sizes, sign + 4, end - sign - 4) == ASSH_OK)
+        sign_ptrs, sign_sizes, sign + 4, end - sign - 4, &sign_safety) == ASSH_OK)
     ASSH_ERR_RET(assh_userauth_server_success(s) | ASSH_ERRSV_DISCONNECT);
   else
     ASSH_ERR_RET(assh_userauth_server_failure(s) | ASSH_ERRSV_DISCONNECT);

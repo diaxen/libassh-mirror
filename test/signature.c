@@ -199,13 +199,17 @@ assh_error_t test_const()
 	}
 
       fprintf(stderr, "v");
-      if (assh_sign_check(&context, a, key, 3, ptr, sz, sign, sign_len))
+      uint_fast8_t sign_safety;
+      if (assh_sign_check(&context, a, key, 3, ptr, sz, sign, sign_len, &sign_safety))
+	abort();
+
+      if (sign_safety > a->algo.safety || sign_safety > key->safety)
 	abort();
 
       data[rand() % sizeof(data)]++;
 
       fprintf(stderr, "V");
-      if (!assh_sign_check(&context, a, key, 3, ptr, sz, sign, sign_len))
+      if (!assh_sign_check(&context, a, key, 3, ptr, sz, sign, sign_len, &sign_safety))
 	abort();
 
       assh_key_drop(&context, &key);
@@ -292,8 +296,13 @@ assh_error_t test_loop()
 
           fprintf(stderr, "v");
 
-	  err = assh_sign_check(&context, a, key, c, ptr, sz, sign, sign_len);
+	  uint_fast8_t sign_safety;
+
+	  err = assh_sign_check(&context, a, key, c, ptr, sz, sign, sign_len, &sign_safety);
 	  TEST_ASSERT(err == ASSH_OK);
+
+	  if (sign_safety > a->algo.safety || sign_safety > key->safety)
+	    abort();
 
           unsigned int r1 = rand() % sign_len;
           unsigned char r2 = rand();
@@ -307,13 +316,16 @@ assh_error_t test_loop()
 
           fprintf(stderr, "V");
 
-	  err = assh_sign_check(&context, a, key, c, ptr, sz, sign, sign_len);
+	  err = assh_sign_check(&context, a, key, c, ptr, sz, sign, sign_len, &sign_safety);
 	  TEST_ASSERT(err != ASSH_OK);
 
 	  sign[r1] ^= r2;
 
-	  err = assh_sign_check(&context, a, key, c, ptr, sz, sign, sign_len);
+	  err = assh_sign_check(&context, a, key, c, ptr, sz, sign, sign_len, &sign_safety);
 	  TEST_ASSERT(err == ASSH_OK);
+
+	  if (sign_safety > a->algo.safety || sign_safety > key->safety)
+	    abort();
 
 	  if (size)
 	    {
@@ -325,7 +337,7 @@ assh_error_t test_loop()
 #endif
 	      data[r1] ^= r2;
 
-	      err = assh_sign_check(&context, a, key, c, ptr, sz, sign, sign_len);
+	      err = assh_sign_check(&context, a, key, c, ptr, sz, sign, sign_len, &sign_safety);
 	      TEST_ASSERT(err != ASSH_OK);
 	    }
 

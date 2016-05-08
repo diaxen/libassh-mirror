@@ -305,6 +305,8 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_dsa_check)
                  /* D */ rs_str + 4, rs_str + 4 + n, msgh,
                  /* N */ &k->pn, &k->qn, &k->gn, &k->yn), err_scratch);
 
+  *safety = ASSH_MIN(*safety, algo->safety);
+
   err = ASSH_OK;
 
  err_scratch:

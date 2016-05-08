@@ -778,9 +778,10 @@ assh_kex_client_hash2(struct assh_session_s *s,
   size_t sign_sizes[1] = { hash_size };
 
   const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
+  uint_fast8_t sign_safety;
 
   ASSH_CHK_RET(assh_sign_check(c, sign_algo, host_key, 1, sign_ptrs, sign_sizes,
-                h_str + 4, assh_load_u32(h_str)) != ASSH_OK,
+                h_str + 4, assh_load_u32(h_str), &sign_safety) != ASSH_OK,
                ASSH_ERR_HOSTKEY_SIGNATURE | ASSH_ERRSV_DISCONNECT);
 
   /* setup new keys */
