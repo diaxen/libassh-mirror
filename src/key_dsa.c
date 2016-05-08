@@ -29,6 +29,10 @@
 
 #include <string.h>
 
+#define ASSH_DSA_SAFETY(l, n)                           \
+  ASSH_MIN(ASSH_SAFETY_PRIMEFIELD(l),                   \
+           99 * (n) / 512)
+
 static ASSH_KEY_OUTPUT_FCN(assh_key_dsa_output)
 {
   struct assh_key_dsa_s *k = (void*)key;
@@ -186,6 +190,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
 
   k->key.algo = &assh_key_dsa;
   k->key.type = "ssh-dss";
+  k->key.safety = ASSH_DSA_SAFETY(l, n);
 
   /* init numbers */
   assh_bignum_init(c, &k->pn, l);
@@ -434,6 +439,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
 
   k->key.algo = &assh_key_dsa;
   k->key.type = "ssh-dss";
+  k->key.safety = ASSH_DSA_SAFETY(l, n);
 
   /* init numbers */
   assh_bignum_init(c, &k->pn, l);

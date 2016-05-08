@@ -242,6 +242,7 @@ assh_key_ecdsa_create(struct assh_context_s *c,
 
   k->key.type = id->name;
   k->key.algo = algo;
+  k->key.safety = id->curve->safety;
   k->id = id;
 
   assh_bignum_init(c, &k->xn, curve->bits);
@@ -484,6 +485,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_ecdsa_load)
 
   k->key.type = id->name;
   k->key.algo = algo;
+  k->key.safety = id->curve->safety;
   k->id = id;
 
   *key = &k->key;

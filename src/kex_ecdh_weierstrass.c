@@ -502,7 +502,7 @@ static ASSH_KEX_INIT_FCN(assh_kex_nistp256_init)
 
 const struct assh_algo_kex_s assh_kex_sha2_nistp256 =
 {
-  ASSH_ALGO_BASE(KEX, 21, 80,
+  ASSH_ALGO_BASE(KEX, ASSH_NISTP256_SAFETY, 80,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                       "ecdh-sha2-nistp256" })
   ),
@@ -518,7 +518,7 @@ static ASSH_KEX_INIT_FCN(assh_kex_nistp384_init)
 
 const struct assh_algo_kex_s assh_kex_sha2_nistp384 =
 {
-  ASSH_ALGO_BASE(KEX, 23, 70,
+  ASSH_ALGO_BASE(KEX, ASSH_NISTP384_SAFETY, 70,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF, "ecdh-sha2-nistp384" })
   ),
   .f_init = assh_kex_nistp384_init,
@@ -533,7 +533,7 @@ static ASSH_KEX_INIT_FCN(assh_kex_nistp521_init)
 
 const struct assh_algo_kex_s assh_kex_sha2_nistp521 =
 {
-  ASSH_ALGO_BASE(KEX, 25, 60,
+  ASSH_ALGO_BASE(KEX, ASSH_NISTP521_SAFETY, 60,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF, "ecdh-sha2-nistp521" })
   ),
   .f_init = assh_kex_nistp521_init,

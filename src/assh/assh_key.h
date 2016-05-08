@@ -169,7 +169,9 @@ struct assh_key_s
   const struct assh_key_ops_s *algo;
 
   /* Class of algorithm the key is intended to be used with */
-  enum assh_algo_class_e role;
+  enum assh_algo_class_e role:3;
+
+  uint8_t safety;
 };
 
 /** @internal @This allocates and intiailizes the key structure from

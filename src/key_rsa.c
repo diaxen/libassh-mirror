@@ -224,6 +224,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
 
   k->key.algo = &assh_key_rsa;
   k->key.type = "ssh-rsa";
+  k->key.safety = ASSH_SAFETY_PRIMEFIELD(bits);
 
   /* init numbers */
   assh_bignum_init(c, &k->nn, bits);
@@ -440,6 +441,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
 
   k->key.algo = &assh_key_rsa;
   k->key.type = "ssh-rsa";
+  k->key.safety = ASSH_SAFETY_PRIMEFIELD(n_len);
 
   /* init numbers */
   assh_bignum_init(c, &k->nn, n_len);

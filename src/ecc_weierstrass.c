@@ -45,6 +45,7 @@ const struct assh_weierstrass_curve_s assh_nistp256_curve =
     "\x2b\xce\x33\x57\x6b\x31\x5e\xce\xcb\xb6\x40\x68\x37\xbf\x51\xf5",
     .bits = 256,
     .cofactor = 1,
+    .safety = ASSH_NISTP256_SAFETY
   };
 
 const struct assh_weierstrass_curve_s assh_nistp384_curve =
@@ -72,6 +73,7 @@ const struct assh_weierstrass_curve_s assh_nistp384_curve =
     "\x0a\x60\xb1\xce\x1d\x7e\x81\x9d\x7a\x43\x1d\x7c\x90\xea\x0e\x5f",
     .bits = 384,
     .cofactor = 1,
+    .safety = ASSH_NISTP384_SAFETY
   };
 
 const struct assh_weierstrass_curve_s assh_nistp521_curve =
@@ -109,5 +111,6 @@ const struct assh_weierstrass_curve_s assh_nistp521_curve =
     "\x35\x3c\x70\x86\xa2\x72\xc2\x40\x88\xbe\x94\x76\x9f\xd1\x66\x50",
     .bits = 521,
     .cofactor = 1,
+    .safety = ASSH_NISTP521_SAFETY
   };
 

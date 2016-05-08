@@ -131,6 +131,7 @@ assh_key_eddsa_create(struct assh_context_s *c,
 
   k->key.algo = algo;
   k->key.type = algo->type;
+  k->key.safety = curve->safety;
   k->curve = curve;
   k->hash = hash;
 
@@ -322,6 +323,7 @@ assh_key_eddsa_load(struct assh_context_s *c,
 
   k->key.algo = algo;
   k->key.type = algo->type;
+  k->key.safety = curve->safety;
   k->curve = curve;
   k->hash = hash;
 
@@ -365,6 +367,7 @@ const struct assh_edward_curve_s assh_ed25519_curve =
         "\x2f\x43\x18\x06\xad\x2f\xe4\x78\xc4\xee\x1b\x27\x4a\x0e\xa0\xb0",
   .bits = 255,
   .cofactor = 8,
+  .safety = 50
 };
 
 static ASSH_KEY_LOAD_FCN(assh_key_ed25519_load)
@@ -412,6 +415,7 @@ const struct assh_edward_curve_s assh_e382_curve =
         "\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xf8\xe1",
   .bits = 382,
   .cofactor = 4,
+  .safety = 70
 };
 
 static ASSH_KEY_LOAD_FCN(assh_key_eddsa_e382_load)
@@ -468,6 +472,7 @@ const struct assh_edward_curve_s assh_e521_curve =
         "\x43\x31",
   .bits = 521,
   .cofactor = 4,
+  .safety = 90
 };
 
 static ASSH_KEY_LOAD_FCN(assh_key_eddsa_e521_load)

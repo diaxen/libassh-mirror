@@ -37,11 +37,16 @@ struct assh_weierstrass_curve_s
   const uint8_t *gy;
   uint_fast16_t bits;
   uint_fast8_t cofactor;
+  uint8_t safety;
 };
 
 extern const struct assh_weierstrass_curve_s assh_nistp256_curve;
 extern const struct assh_weierstrass_curve_s assh_nistp384_curve;
 extern const struct assh_weierstrass_curve_s assh_nistp521_curve;
+
+#define ASSH_NISTP256_SAFETY 21
+#define ASSH_NISTP384_SAFETY 23
+#define ASSH_NISTP521_SAFETY 25
 
 /* weierstrass point doubling,
     from http://www.hyperelliptic.org/EFD dbl-2007-bl-2 */

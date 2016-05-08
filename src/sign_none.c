@@ -61,6 +61,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_none_load)
 
   k->algo = &assh_key_none;
   k->type = "none";
+  k->safety = 0;
 
   return ASSH_OK;
 }
@@ -74,6 +75,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_none_create)
 
   k->algo = &assh_key_none;
   k->type = "none";
+  k->safety = 0;
 
   return ASSH_OK;
 }
