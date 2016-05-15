@@ -784,6 +784,8 @@ assh_kex_client_hash2(struct assh_session_s *s,
                 h_str + 4, assh_load_u32(h_str), &sign_safety) != ASSH_OK,
                ASSH_ERR_HOSTKEY_SIGNATURE | ASSH_ERRSV_DISCONNECT);
 
+  assh_kex_lower_safety(s, sign_safety);
+
   /* setup new keys */
   ASSH_ERR_RET(assh_kex_new_keys(s, hash_ctx->algo, ex_hash, secret_str)
                | ASSH_ERRSV_DISCONNECT);
@@ -809,6 +811,8 @@ assh_kex_server_hash1(struct assh_session_s *s, size_t kex_len,
   ASSH_CHK_RET(assh_key_lookup(c, host_key, &s->host_sign_algo->algo) != ASSH_OK,
                ASSH_ERR_MISSING_KEY | ASSH_ERRSV_DISCONNECT);
   const struct assh_key_s *hk = *host_key;
+
+  assh_kex_lower_safety(s, hk->safety);
 
   /* alloc reply packet */
   size_t ks_len;
