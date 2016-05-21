@@ -35,7 +35,7 @@
 
 static int_fast16_t assh_algo_order(const struct assh_algo_s *a,
                                     const struct assh_algo_s *b,
-                                    uint_fast8_t safety)
+                                    assh_safety_t safety)
 {
   if (a->class_ != b->class_)
     return a->class_ - b->class_;
@@ -53,7 +53,7 @@ static int assh_algo_qsort_cmp(const void *a, const void *b, void *arg)
 #endif
 
 static void assh_algo_filter_variants(struct assh_context_s *c,
-                                      uint_fast8_t min_safety,
+                                      assh_safety_t min_safety,
                                       uint_fast8_t min_speed)
 {
   /* remove duplicated names in the same class */
@@ -89,8 +89,8 @@ static void assh_algo_filter_variants(struct assh_context_s *c,
 }
 
 static void assh_algo_sort(struct assh_context_s *c,
-                           uint_fast8_t safety,
-                           uint_fast8_t min_safety,
+                           assh_safety_t safety,
+                           assh_safety_t min_safety,
                            uint_fast8_t min_speed)
 {
   int_fast16_t i;

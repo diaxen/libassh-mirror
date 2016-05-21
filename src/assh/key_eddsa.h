@@ -46,7 +46,7 @@ struct assh_edward_curve_s
   const uint8_t *i; /* sqrt(-1), used when p%8 == 5 */
   size_t bits;
   uint_fast8_t cofactor;
-  uint8_t safety;
+  assh_safety_t safety;
 };
 
 /** @internal EdDSA key storage */

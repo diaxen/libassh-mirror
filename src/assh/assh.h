@@ -84,6 +84,8 @@ typedef char assh_bool_t;
 /** error code type */
 typedef int assh_error_t;
 
+typedef uint8_t assh_safety_t;
+
 /** @This specify the error severity and must be used along with error
     code constants (@ref assh_error_e).
 

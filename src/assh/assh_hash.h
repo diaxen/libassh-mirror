@@ -98,7 +98,7 @@ struct assh_hash_algo_s
   size_t hash_size;
   /** Hash algorithm block size. */
   size_t block_size;
-  uint_fast8_t safety;
+  assh_safety_t safety;
 };
 
 /** @internal @This hashes a ssh string. The string must contain a

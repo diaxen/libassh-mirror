@@ -105,7 +105,7 @@ int main(int argc, char **argv)
   assh_fd_events_register(&ev_table, &fd_ctx, sock);
 
   assh_bool_t auth_keys_done = 0;
-  uint_fast8_t safety = 0;
+  assh_safety_t safety = 0;
 
   while (1)
     {

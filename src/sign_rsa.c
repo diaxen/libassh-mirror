@@ -184,7 +184,7 @@ static ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_sign_rsa_check(struct assh_context_s *c,
                      const struct assh_key_s *key, size_t data_count,
                      const uint8_t * const data[], size_t const data_len[],
-                     const uint8_t *sign, size_t sign_len, uint_fast8_t *safety,
+                     const uint8_t *sign, size_t sign_len, assh_safety_t *safety,
                      uint8_t digest_mask, const char *algo_id)
 {
   const struct assh_key_rsa_s *k = (const void*)key;

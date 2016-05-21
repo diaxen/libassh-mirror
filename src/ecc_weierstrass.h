@@ -24,7 +24,7 @@
 #ifndef _ECC_WEIERSTRASS_H_
 #define _ECC_WEIERSTRASS_H_
 
-#include <stdint.h>
+#include <assh/assh.h>
 
 struct assh_weierstrass_curve_s
 {
@@ -37,7 +37,7 @@ struct assh_weierstrass_curve_s
   const uint8_t *gy;
   uint_fast16_t bits;
   uint_fast8_t cofactor;
-  uint8_t safety;
+  assh_safety_t safety;
 };
 
 extern const struct assh_weierstrass_curve_s assh_nistp256_curve;

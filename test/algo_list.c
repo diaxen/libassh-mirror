@@ -76,7 +76,7 @@ static void show_table()
     }
 }
 
-static void show_order(uint_fast8_t safety)
+static void show_order(assh_safety_t safety)
 {
   struct assh_context_s *c;
 

@@ -399,12 +399,12 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
   const struct assh_algo_compress_s *cmp_in   = (const void *)algos[6];
   const struct assh_algo_compress_s *cmp_out  = (const void *)algos[7];
 
-  uint_fast8_t kin_safety = kex->algo.safety;
+  assh_safety_t kin_safety = kex->algo.safety;
 
   if (!kex->implicit_auth)
     kin_safety = ASSH_MIN(kin_safety, sign->algo.safety);
 
-  uint_fast8_t kout_safety = kin_safety;
+  assh_safety_t kout_safety = kin_safety;
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
   ASSH_DEBUG("kex algorithms:\n"
@@ -483,7 +483,7 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
   return err;
 }
 
-void assh_kex_lower_safety(struct assh_session_s *s, uint_fast8_t safety)
+void assh_kex_lower_safety(struct assh_session_s *s, assh_safety_t safety)
 {
   ASSH_DEBUG("lowering safety to %u\n", safety);
   s->new_keys_in->safety = ASSH_MIN(safety, s->new_keys_in->safety);
@@ -778,7 +778,7 @@ assh_kex_client_hash2(struct assh_session_s *s,
   size_t sign_sizes[1] = { hash_size };
 
   const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
-  uint_fast8_t sign_safety;
+  assh_safety_t sign_safety;
 
   ASSH_CHK_RET(assh_sign_check(c, sign_algo, host_key, 1, sign_ptrs, sign_sizes,
                 h_str + 4, assh_load_u32(h_str), &sign_safety) != ASSH_OK,

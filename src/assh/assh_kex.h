@@ -95,7 +95,7 @@ assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p);
     to lower the safety factor of the current session. This is used
     when algorithm parameters are further negotiated after the
     algorithm selection phase. */
-void assh_kex_lower_safety(struct assh_session_s *s, uint_fast8_t safety);
+void assh_kex_lower_safety(struct assh_session_s *s, assh_safety_t safety);
 
 #ifdef CONFIG_ASSH_CLIENT
 
@@ -243,7 +243,7 @@ struct assh_kex_keys_s
   void *mac_ctx;
   const struct assh_algo_compress_s *cmp;
   void *cmp_ctx;
-  uint_fast8_t safety;
+  assh_safety_t safety;
 };
 
 /**
@@ -264,7 +264,7 @@ struct assh_event_kex_hostkey_lookup_s
 */
 struct assh_event_kex_done_s
 {
-  uint_fast8_t ASSH_EV_CONST safety;  //< input
+  assh_safety_t ASSH_EV_CONST safety;  //< input
 };
 
 /** @internal */

@@ -281,7 +281,7 @@ static assh_error_t assh_userauth_server_pubkey_check(struct assh_session_s *s,
   size_t sign_sizes[3]        =
     { 4,       s->session_id_len, sign - &p->head.msg };
 
-  uint_fast8_t sign_safety;
+  assh_safety_t sign_safety;
 #warning report safety
 
   /* check the signature */

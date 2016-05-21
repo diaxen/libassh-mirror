@@ -199,7 +199,7 @@ assh_error_t test_const()
 	}
 
       fprintf(stderr, "v");
-      uint_fast8_t sign_safety;
+      assh_safety_t sign_safety;
       if (assh_sign_check(&context, a, key, 3, ptr, sz, sign, sign_len, &sign_safety))
 	abort();
 
@@ -296,7 +296,7 @@ assh_error_t test_loop()
 
           fprintf(stderr, "v");
 
-	  uint_fast8_t sign_safety;
+	  assh_safety_t sign_safety;
 
 	  err = assh_sign_check(&context, a, key, c, ptr, sz, sign, sign_len, &sign_safety);
 	  TEST_ASSERT(err == ASSH_OK);

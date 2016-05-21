@@ -125,7 +125,7 @@ struct assh_algo_s
   uint8_t priority:5;
 
   /** safety factor in range [0, 99] */
-  uint8_t safety;
+  assh_safety_t safety;
   /** speed factor in range [0, 99] */
   uint8_t speed;
 
