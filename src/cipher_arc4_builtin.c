@@ -33,11 +33,11 @@ static void assh_arc4_set_key(struct assh_cipher_arc4_context_s *ctx,
 			     const uint8_t *key, size_t klen)
 {
   ctx->a = ctx->b = 0;
-  unsigned int i;
+  uint_fast16_t i;
   for (i = 0; i < 256; i++)
     ctx->s[i] = i;
 
-  unsigned int a, b;
+  uint_fast16_t a, b;
   for (a = b = 0; a < 256; a++)
     {
       uint8_t tmp = ctx->s[a];
@@ -50,7 +50,7 @@ static void assh_arc4_set_key(struct assh_cipher_arc4_context_s *ctx,
 static void assh_arc4_run(struct assh_cipher_arc4_context_s *ctx,
 			  uint8_t *data, size_t len)
 {
-  unsigned int a = ctx->a, b = ctx->b;
+  uint_fast8_t a = ctx->a, b = ctx->b;
 
   while (len--)
     {

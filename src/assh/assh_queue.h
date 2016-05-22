@@ -42,7 +42,7 @@ struct assh_queue_entry_s
 struct assh_queue_s
 {
   struct assh_queue_entry_s head;
-  int count;
+  size_t count;
 };
 
 /** @internal */

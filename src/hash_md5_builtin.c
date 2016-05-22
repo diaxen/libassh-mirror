@@ -179,7 +179,7 @@ static ASSH_HASH_FINAL_FCN(assh_md5_final)
 
   uint8_t count[8];
   size_t padlen;
-  int i;
+  uint_fast8_t i;
 
   assh_store_u64le(count, ctx->count);
 

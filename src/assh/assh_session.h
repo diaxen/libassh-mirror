@@ -98,14 +98,14 @@ struct assh_session_s
   /** Copy of the ident string sent by the remote host. */
   uint8_t ident_str[255];
   /** Size of the ident string sent by the remote host. */
-  int ident_len;
+  uint8_t ident_len;
 
   /** Host keys signature algorithm */
   const struct assh_algo_sign_s *host_sign_algo;
 
 #ifdef CONFIG_ASSH_CLIENT
   /** Index of the next service to request in the context services array. */
-  unsigned int srv_index;
+  uint8_t srv_index;
   /** Requested service. */
   const struct assh_service_s *srv_rq;
 #endif

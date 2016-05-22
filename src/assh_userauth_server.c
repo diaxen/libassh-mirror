@@ -71,7 +71,7 @@ enum assh_userauth_pubkey_state_e
 struct assh_userauth_context_s
 {
   enum assh_userauth_state_e state;
-  unsigned int retry;
+  uint_fast8_t retry;
 
   const struct assh_service_s *srv;
   char method_name[10];

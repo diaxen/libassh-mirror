@@ -288,8 +288,8 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
    * SP 800-89 section 5.3.1
    */
 
-  unsigned int l = assh_bignum_bits(&k->pn);
-  unsigned int n = assh_bignum_bits(&k->qn);
+  uint_fast16_t l = assh_bignum_bits(&k->pn);
+  uint_fast16_t n = assh_bignum_bits(&k->qn);
 
   /* check key size */
   ASSH_CHK_RET(l < 1024 || n < 160 || l > 4096 || n > 256 || l % 8 || n % 8,

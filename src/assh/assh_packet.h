@@ -319,7 +319,7 @@ assh_memcmp(const uint8_t *nula, const uint8_t *nulb, size_t len)
 
 /** @internal @This compares a ssh string with a size header to a @tt
     NUL terminated string. No bound checking is performed. */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT int
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_bool_t
 assh_ssh_string_compare(const uint8_t *ssh_str, const char *nul_str)
 {
   size_t l = assh_load_u32(ssh_str);

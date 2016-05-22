@@ -108,7 +108,7 @@ assh_sign_rsa_generate(struct assh_context_s *c,
   ASSH_CHK_RET(digest->algo == NULL, ASSH_ERR_NOTSUP);
 
   /* build encoded message buffer */
-  unsigned int ps_len = n - 3 - digest->oid_len - digest->algo->hash_size;
+  size_t ps_len = n - 3 - digest->oid_len - digest->algo->hash_size;
 
   ASSH_CHK_RET(ps_len < 8, ASSH_ERR_BAD_DATA);
 

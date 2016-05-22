@@ -55,12 +55,12 @@ static ASSH_HASH_CLEANUP_FCN(assh_sha2_cleanup)
  *  based on PUBLIC DOMAIN sha256 by Christophe Devine
  */
 
-static inline uint32_t ror32(uint32_t value, unsigned int bits)
+static inline uint32_t ror32(uint32_t value, uint_fast8_t bits)
 {
   return (((value) >> (bits)) | ((value) << (32 - (bits))));
 }
 
-static inline uint64_t ror64(uint64_t value, unsigned int bits)
+static inline uint64_t ror64(uint64_t value, uint_fast8_t bits)
 {
   return (((value) >> (bits)) | ((value) << (64 - (bits))));
 }

@@ -141,7 +141,7 @@ struct assh_event_s
 #endif
 
     /** @internal Padding */
-    long params[10];
+    uintptr_t params[11];
   };
 
 };

@@ -495,7 +495,7 @@ assh_bignum_rand(struct assh_context_s *c,
 static assh_error_t ASSH_WARN_UNUSED_RESULT
 assh_bignum_rshift(struct assh_bignum_s *dst,
                    const struct assh_bignum_s *src,
-                   uint_fast16_t n)
+                   uint_fast32_t n)
 {
   assert(src->bits == dst->bits);
   assert(n < src->bits);
@@ -527,7 +527,7 @@ assh_bignum_rshift(struct assh_bignum_s *dst,
 static assh_error_t ASSH_WARN_UNUSED_RESULT
 assh_bignum_lshift(struct assh_bignum_s *dst,
                    const struct assh_bignum_s *src,
-                   uint_fast16_t n)
+                   uint_fast32_t n)
 {
   assert(src->bits == dst->bits);
   assert(n < src->bits);
@@ -608,13 +608,14 @@ assh_bignum_addsub(struct assh_bignum_s *dst,
 
 /*********************************************************************** div, modinv */
 
-static inline int assh_bignum_div_cmp(const assh_bnword_t *a, unsigned int alen,
-				      const assh_bnword_t *b, unsigned int blen)
+static inline int_fast32_t
+assh_bignum_div_cmp(const assh_bnword_t *a, uint_fast32_t alen,
+                    const assh_bnword_t *b, uint_fast32_t blen)
 {
   if (alen != blen)
     return blen - alen;
 
-  int i;
+  int_fast32_t i;
   for (i = blen - 1; i >= 0; i--)
     {
       if (a[i] < b[i])
@@ -628,7 +629,7 @@ static inline int assh_bignum_div_cmp(const assh_bnword_t *a, unsigned int alen,
 
 /** reduce size to strip leading nul words */
 static inline assh_bool_t
-assh_bignum_div_strip(unsigned int *len, const assh_bnword_t *x)
+assh_bignum_div_strip(uint_fast32_t *len, const assh_bnword_t *x)
 {
   while (*len > 0 && x[*len - 1] == 0)
     (*len)--;
@@ -637,8 +638,8 @@ assh_bignum_div_strip(unsigned int *len, const assh_bnword_t *x)
 
 /** find number of leading zero bits and get a word full of msb significant bits */
 static inline void
-assh_bignum_div_clz(unsigned int len, const assh_bnword_t *x,
-                    unsigned int *z, unsigned int *l, assh_bnword_t *t)
+assh_bignum_div_clz(uint_fast32_t len, const assh_bnword_t *x,
+                    uint_fast32_t *z, uint_fast32_t *l, assh_bnword_t *t)
 {
   *z = assh_bn_clz(x[len - 1]);
   *l = ASSH_BIGNUM_W - *z + (len - 1) * ASSH_BIGNUM_W;
@@ -651,7 +652,7 @@ assh_bignum_div_clz(unsigned int len, const assh_bnword_t *x,
 /** find suitable factor and left shift amount for subtraction of the divisor */
 static inline assh_bnword_t
 assh_bignum_div_factor(assh_bnword_t at, assh_bnword_t bt,
-                       unsigned int d, unsigned int *sa, unsigned int *da)
+                       uint_fast32_t d, uint_fast32_t *sa, uint_fast32_t *da)
 {
   assh_bnword_t bi = bt + 1;
   if (bi != 0)
@@ -675,14 +676,14 @@ assh_bignum_div_factor(assh_bnword_t at, assh_bnword_t bt,
 
 /** compute r = r - (b << (sa + da * W)) * q */
 static inline void
-assh_bignum_div_update_r(unsigned int b_len, const assh_bnword_t * __restrict__ b,
-                         unsigned int r_len, assh_bnword_t * __restrict__ r,
-                         assh_bnword_t q, unsigned int sa, unsigned int da)
+assh_bignum_div_update_r(uint_fast32_t b_len, const assh_bnword_t * __restrict__ b,
+                         uint_fast32_t r_len, assh_bnword_t * __restrict__ r,
+                         assh_bnword_t q, uint_fast32_t sa, uint_fast32_t da)
 {
   assh_bnlong_t t = (assh_bnlong_t)1 << ASSH_BIGNUM_W;
   assh_bnlong_t m = 0;
   assh_bnword_t bo = 0;
-  unsigned int i;
+  uint_fast32_t i;
 
   assert(b_len + da <= r_len);
 
@@ -706,11 +707,11 @@ assh_bignum_div_update_r(unsigned int b_len, const assh_bnword_t * __restrict__ 
 
 /** compute d = d + q << (sa + da * W) */
 static inline void
-assh_bignum_div_update_q(unsigned int d_len, assh_bnword_t * __restrict__ d,
-                         assh_bnword_t q, unsigned int sa, unsigned int da)
+assh_bignum_div_update_q(uint_fast32_t d_len, assh_bnword_t * __restrict__ d,
+                         assh_bnword_t q, uint_fast32_t sa, uint_fast32_t da)
 {
   assh_bnlong_t t, carry = (assh_bnlong_t)q << sa;
-  unsigned int i;
+  uint_fast32_t i;
   for (i = da; carry != 0 && i < d_len; i++)
     {
       d[i] = t = (assh_bnlong_t)d[i] + carry;
@@ -720,14 +721,14 @@ assh_bignum_div_update_q(unsigned int d_len, assh_bnword_t * __restrict__ d,
 
 static assh_error_t ASSH_WARN_UNUSED_RESULT
 assh_bignum_div_euclidean(assh_bnword_t * __restrict__ r,
-                          unsigned int r_len,
+                          uint_fast32_t r_len,
                           assh_bnword_t * __restrict__ d,
-                          unsigned int d_len,
+                          uint_fast32_t d_len,
                           const assh_bnword_t * __restrict__ b,
-                          unsigned int b_len)
+                          uint_fast32_t b_len)
 {
   assh_error_t err;
-  unsigned int az, al, bz, bl, da, sa;
+  uint_fast32_t az, al, bz, bl, da, sa;
   assh_bnword_t at, bt, q;
 
   /* div by zero */
@@ -854,7 +855,7 @@ assh_bignum_modinv(struct assh_context_s *ctx,
   memset(un + 1, 0, (ul - 1) * sizeof(assh_bnword_t));
   un[0] = 1;
 
-  unsigned int rl = ml, pl = ml;
+  uint_fast32_t rl = ml, pl = ml;
   assh_bnword_t *xr = r, *xp = p, *xu = un, *xv = v;
 
   ASSH_CHK_RET(assh_bignum_div_strip(&rl, xr) ||
@@ -863,7 +864,7 @@ assh_bignum_modinv(struct assh_context_s *ctx,
 
   while (1)
     {
-      unsigned int az, as, bz, bs, da, sa;
+      uint_fast32_t az, as, bz, bs, da, sa;
       assh_bnword_t at, bt, q;
 
       /* find factor */
@@ -929,7 +930,7 @@ assh_bignum_gcd(struct assh_context_s *ctx,
   memmove(xr, an, al * sizeof(assh_bnword_t));
   memmove(xp, bn, bl * sizeof(assh_bnword_t));
 
-  unsigned int rl = al, pl = al;
+  uint_fast32_t rl = al, pl = al;
 
   ASSH_CHK_RET(assh_bignum_div_strip(&rl, xr) ||
 	       assh_bignum_div_strip(&pl, xp),
@@ -937,10 +938,10 @@ assh_bignum_gcd(struct assh_context_s *ctx,
 
   while (1)
     {
-      unsigned int az, al, bz, bl, da, sa;
+      uint_fast32_t az, al, bz, bl, da, sa;
       assh_bnword_t at, bt, q;
 
-      int c = assh_bignum_div_cmp(xr, rl, xp, pl);
+      int8_t c = assh_bignum_div_cmp(xr, rl, xp, pl);
       if (c == 0)
         break;
       if (c > 0)
@@ -968,12 +969,12 @@ assh_bignum_gcd(struct assh_context_s *ctx,
 
 static void
 assh_bignum_school_mul(assh_bnword_t * __restrict__ r,
-                       const assh_bnword_t *a, unsigned int alen,
-                       const assh_bnword_t *b, unsigned int blen)
+                       const assh_bnword_t *a, uint_fast32_t alen,
+                       const assh_bnword_t *b, uint_fast32_t blen)
 {
   memset(r, 0, alen * sizeof(assh_bnword_t));
 
-  unsigned int j, i;
+  uint_fast32_t j, i;
   assh_bnlong_t t;
 
   for (j = 0; j < blen; j++)
@@ -988,7 +989,7 @@ assh_bignum_school_mul(assh_bnword_t * __restrict__ r,
 static void
 assh_bignum_karatsuba(assh_bnword_t * __restrict__ r,
                       const assh_bnword_t *a, const assh_bnword_t *b,
-                      assh_bnword_t *scratch, unsigned int l)
+                      assh_bnword_t *scratch, uint_fast32_t l)
 {
   if (l < ASSH_BIGNUM_KARATSUBA_THRESHOLD || (l & 1))
     {
@@ -1006,7 +1007,7 @@ assh_bignum_karatsuba(assh_bnword_t * __restrict__ r,
 #define ASSH_KARA_SCRATCH(len) (len * 4)
           /* + log2(len) - ASSH_KARA_SCRATCH(ASSH_BIGNUM_KARATSUBA_THRESHOLD) */
 
-  unsigned int i, h = l / 2;
+  uint_fast32_t i, h = l / 2;
   assh_bnlong_t tx = 0, ty = 0;
   assh_bnword_t cx, cy;
 
@@ -1499,7 +1500,7 @@ assh_bignum_expmod_mt(struct assh_context_s *ctx,
   assh_bnword_t *tmp = sq + ml;
   assh_bnword_t *bn = b->n;
   assh_bnword_t *rn = r->n;
-  uint_fast16_t i = 0, j = b->bits;
+  uint_fast32_t i = 0, j = b->bits;
 
   memcpy(sq, a->n, ml * sizeof(assh_bnword_t));
 
@@ -1560,7 +1561,7 @@ assh_bignum_modinv_mt(struct assh_context_s *ctx,
   ASSH_ERR_RET(assh_bignum_scratch_expand(ctx, &sq, sc, ml * 2, r->secret | a->secure));
 
   assh_bnword_t *tmp = sq + ml;
-  uint_fast16_t i = 0;
+  uint_fast32_t i = 0;
   assh_bnword_t *rn = r->n;
 
   /* prime modulus - 2 */
@@ -2096,7 +2097,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
   assh_error_t err;
   uint_fast8_t i, j, k;
   uint_fast16_t pc = 0;
-  uint_fast16_t lad_index = 0;
+  uint_fast32_t lad_index = 0;
   uint8_t cond_secret = 0;
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
   uint8_t trace = 0;

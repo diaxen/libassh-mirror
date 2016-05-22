@@ -32,7 +32,7 @@
 #include <string.h>
 
 static assh_error_t
-assh_sign_dsa_hash_algo(const struct assh_hash_algo_s **algo, unsigned int n)
+assh_sign_dsa_hash_algo(const struct assh_hash_algo_s **algo, uint_fast16_t n)
 {
   assh_error_t err;
 
@@ -62,8 +62,8 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
   /* check availability of the private key */
   ASSH_CHK_RET(assh_bignum_isempty(&k->xn), ASSH_ERR_MISSING_KEY);
 
-  //  unsigned int l = assh_bignum_bits(&k->pn);
-  unsigned int n = assh_bignum_bits(&k->qn);
+  //  uint_fast16_t l = assh_bignum_bits(&k->pn);
+  uint_fast16_t n = assh_bignum_bits(&k->qn);
 
   const struct assh_hash_algo_s *algo;
   ASSH_ERR_RET(assh_sign_dsa_hash_algo(&algo, n));
@@ -96,7 +96,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
   void *hash_ctx2 = scratch + algo->ctx_size;
   uint8_t *nonce = scratch + algo->ctx_size * 2;
   uint8_t *msgh = nonce + n * 2;
-  unsigned int i;
+  uint_fast8_t i;
 
   /* message hash */
   ASSH_ERR_GTO(assh_hash_init(c, hash_ctx1, algo), err_scratch);
@@ -207,8 +207,8 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_dsa_check)
   const struct assh_key_dsa_s *k = (const void*)key;
   assh_error_t err;
 
-  //  unsigned int l = assh_bignum_bits(&k->pn);
-  unsigned int n = assh_bignum_bits(&k->qn);
+  //  uint_fast16_t l = assh_bignum_bits(&k->pn);
+  uint_fast16_t n = assh_bignum_bits(&k->qn);
 
   const struct assh_hash_algo_s *algo;
   ASSH_ERR_RET(assh_sign_dsa_hash_algo(&algo, n));
@@ -230,7 +230,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_dsa_check)
   /* message hash */
   void *hash_ctx = (void*)scratch;
   uint8_t *msgh = scratch + algo->ctx_size;
-  unsigned int i;
+  uint_fast8_t i;
 
   ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, algo), err_scratch);
   for (i = 0; i < data_count; i++)

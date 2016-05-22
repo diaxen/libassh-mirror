@@ -50,7 +50,8 @@ static const enum assh_algo_class_e assh_kex_algos_classes[8] = {
 
 static assh_error_t
 assh_kex_list(struct assh_session_s *s, struct assh_packet_s *p,
-              unsigned int *algoidx, unsigned int class_, assh_bool_t out)
+              uint_fast16_t *algoidx, enum assh_algo_class_e class_,
+              assh_bool_t out)
 {
   assh_error_t err;
   struct assh_context_s *c = s->ctx;
@@ -118,10 +119,10 @@ assh_error_t assh_kex_send_init(struct assh_session_s *s)
 	       | ASSH_ERRSV_DISCONNECT, err_pck);
 
   /* lists of algorithms */
-  unsigned int i = 0, j;
+  uint_fast16_t i = 0, j;
   for (j = ASSH_ALGO_KEX; j <= ASSH_ALGO_COMPRESS; j++)
     {
-      unsigned int k = i;
+      uint_fast16_t k = i;
       ASSH_ERR_GTO(assh_kex_list(s, p, &i, j, c->type == ASSH_CLIENT)
                    | ASSH_ERRSV_DISCONNECT, err_pck);
 
@@ -172,7 +173,7 @@ assh_kex_server_algos(struct assh_session_s *s, const uint8_t *lists[9],
 {
   struct assh_context_s *c = s->ctx;
   assh_error_t err;
-  unsigned int i;
+  uint_fast8_t i;
 
   for (i = 0; i < 8; i++)
     {
@@ -251,7 +252,7 @@ assh_kex_client_algos(struct assh_session_s *s, const uint8_t *lists[9],
 {
   struct assh_context_s *c = s->ctx;
   assh_error_t err;
-  unsigned int i, j, k;
+  uint_fast16_t i, j, k;
 
   for (j = i = 0; i < 8; i++)
     {

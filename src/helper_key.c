@@ -114,7 +114,7 @@ assh_load_rfc4716_rfc1421(struct assh_context_s *c, FILE *file,
   struct assh_base64_ctx_s ctx;
   assh_error_t err = ASSH_OK;
   char in[80], *l;
-  int state = 0;
+  uint_fast8_t state = 0;
   const struct assh_algo_cipher_s *cipher = NULL;
   uint8_t iv[16];
 

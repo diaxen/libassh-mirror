@@ -79,10 +79,10 @@ enum assh_ssh_msg_e;
 enum assh_algo_class_e;
 
 /** boolean type */
-typedef char assh_bool_t;
+typedef uint8_t assh_bool_t;
 
 /** error code type */
-typedef int assh_error_t;
+typedef int_fast16_t assh_error_t;
 
 typedef uint8_t assh_safety_t;
 
@@ -232,7 +232,7 @@ enum assh_error_e
 
 /** @internal */
 ASSH_INLINE void
-assh_hexdump(const char *name, const void *data, unsigned int len)
+assh_hexdump(const char *name, const void *data, size_t len)
 {
 }
 
@@ -250,7 +250,7 @@ assh_hexdump(const char *name, const void *data, unsigned int len)
 # define ASSH_DEBUG_(...) fprintf(stderr, __VA_ARGS__)
 
 /** @internal */
-void assh_hexdump(const char *name, const void *data, unsigned int len);
+void assh_hexdump(const char *name, const void *data, size_t len);
 
 /** @internal */
 # define ASSH_ERR_GTO(expr, label)					\

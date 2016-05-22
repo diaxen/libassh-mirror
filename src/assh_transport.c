@@ -76,7 +76,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 {
   assh_error_t err;
   struct assh_kex_keys_s *k = s->cur_keys_in;
-  unsigned int hsize = k->cipher->head_size;
+  uint_fast8_t hsize = k->cipher->head_size;
 
   size_t rd_size = e->transport.read.transferred;
   assert(rd_size <= e->transport.read.buf.size);
@@ -86,7 +86,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
     {
     /* process ident text lines */
     case ASSH_TR_IN_IDENT_DONE: {
-      unsigned int i;
+      uint_fast16_t i;
 
       /* look for End of Line */
       for (i = s->stream_in_size - rd_size; i < s->stream_in_size; i++)
@@ -366,7 +366,7 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
       /* compute various length and payload pointer values */
       struct assh_kex_keys_s *k = s->cur_keys_out;
 
-      unsigned int align = ASSH_MAX(k->cipher->block_size, 8);
+      uint_fast8_t align = ASSH_MAX(k->cipher->block_size, 8);
       size_t mac_len = k->mac->mac_size + k->cipher->auth_size;
 
       size_t cipher_len = p->data_size;

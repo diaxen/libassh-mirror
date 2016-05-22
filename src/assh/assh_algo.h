@@ -168,8 +168,8 @@ struct assh_algo_s
    filtered by the value of @tt min_safety.
 */
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_algo_register_va(struct assh_context_s *c, unsigned int safety,
-		      unsigned int min_safety, unsigned int min_speed, ...);
+assh_algo_register_va(struct assh_context_s *c, assh_safety_t safety,
+		      assh_safety_t min_safety, uint8_t min_speed, ...);
 
 /**
    @This registers the specified @ref assh_algo_s objects for use by
@@ -177,8 +177,8 @@ assh_algo_register_va(struct assh_context_s *c, unsigned int safety,
    @see assh_algo_register_va
 */
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_algo_register(struct assh_context_s *c, unsigned int safety,
-		   unsigned int min_safety, unsigned int min_speed,
+assh_algo_register(struct assh_context_s *c, assh_safety_t safety,
+		   assh_safety_t min_safety, uint8_t min_speed,
                    const struct assh_algo_s *table[]);
 
 /** NULL terminated array of available algorithms. */
@@ -194,9 +194,9 @@ assh_algo_registered(struct assh_context_s *c, uint_fast16_t i);
     assh_algo_register_va function. */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_register_default(struct assh_context_s *c,
-                           unsigned int safety,
-			   unsigned int min_safety,
-                           unsigned int min_speed)
+                           assh_safety_t safety,
+			   assh_safety_t min_safety,
+                           uint8_t min_speed)
 {
   return assh_algo_register(c, safety, min_safety, min_speed, assh_algo_table);
 }

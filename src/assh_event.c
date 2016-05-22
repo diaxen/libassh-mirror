@@ -118,7 +118,7 @@ assh_event_done(struct assh_session_s *s,
 
 void assh_event_table_init(struct assh_event_hndl_table_s *t)
 {
-  unsigned int i;
+  uint_fast8_t i;
   for (i = 0; i < ASSH_EVENT_COUNT; i++)
     t->table[i] = NULL;
 }

@@ -30,7 +30,7 @@ struct assh_hmac_gcrypt_context_s
 {
   const struct assh_algo_mac_s *mac;
   gcry_mac_hd_t hd;
-  unsigned int gcry_mac_len;
+  uint_fast8_t gcry_mac_len;
 };
 
 static ASSH_MAC_CLEANUP_FCN(assh_hmac_gcrypt_cleanup)

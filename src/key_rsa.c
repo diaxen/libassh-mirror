@@ -314,7 +314,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_rsa_validate)
   struct assh_key_rsa_s *k = (void*)key;
   assh_error_t err = ASSH_OK;
 
-  unsigned int n = assh_bignum_bits(&k->nn);
+  uint_fast16_t n = assh_bignum_bits(&k->nn);
 
   /* check key size */
   ASSH_CHK_RET(n < 768 || n > 8192, ASSH_ERR_BAD_DATA);

@@ -35,7 +35,7 @@
 static inline struct assh_packet_pool_s *
 assh_packet_pool(struct assh_context_s *c, uint32_t size)
 {
-  int i = sizeof(int) * 8 - ASSH_CLZ32(size) - ASSH_PCK_POOL_MIN;
+  int_fast8_t i = 32 - ASSH_CLZ32(size) - ASSH_PCK_POOL_MIN;
   if (i < 0)
     i = 0;
   else if (i >= ASSH_PCK_POOL_SIZE)
@@ -164,10 +164,10 @@ assh_check_asn1(const uint8_t *buffer, size_t buffer_len, const uint8_t *str,
   ASSH_CHK_RET(id != 0 && str[0] != id, ASSH_ERR_BAD_DATA);
 
   str++; /* discard type identifer */
-  unsigned int l = *str++;
+  uint_fast32_t l = *str++;
   if (l & 0x80)  /* long length form ? */
     {
-      unsigned int ll = l & 0x7f;
+      uint8_t ll = l & 0x7f;
       ASSH_CHK_RET(e - str < ll, ASSH_ERR_INPUT_OVERFLOW);
       for (l = 0; ll > 0; ll--)
         l = (l << 8) | *str++;
@@ -188,7 +188,7 @@ assh_check_string(const uint8_t *buffer, size_t buffer_len,
 
   const uint8_t *e = buffer + buffer_len;
   ASSH_CHK_RET(str < buffer || str > e - 4, ASSH_ERR_INPUT_OVERFLOW);
-  uint32_t s = assh_load_u32(str);
+  size_t s = assh_load_u32(str);
   ASSH_CHK_RET(e - 4 - str < s, ASSH_ERR_INPUT_OVERFLOW);
   if (next != NULL)
     *next = str + 4 + s;

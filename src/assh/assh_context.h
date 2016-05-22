@@ -59,7 +59,7 @@ struct assh_context_s
   void *user_pv;
 
   /** Number of initialized sessions attached to this context. */
-  unsigned int session_count;
+  size_t session_count;
 
   /** Client/server context type. */
   enum assh_context_type_e type;

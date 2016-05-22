@@ -137,7 +137,7 @@ static ASSH_MAC_CHECK_FCN(assh_hmac_check)
 {
   struct assh_hmac_context_s *ctx = ctx_;
   assh_error_t err;
-  unsigned int l = ctx->mac->mac_size;
+  uint_fast8_t l = ctx->mac->mac_size;
   uint8_t buf[l];
 
   ASSH_ERR_RET(assh_hmac_compute(ctx, seq, data, len, buf));

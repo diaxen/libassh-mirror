@@ -427,7 +427,7 @@ static assh_error_t assh_userauth_client_failure(struct assh_session_s *s,
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY
   e->userauth_client.methods.use_pub_key = 0;
 #endif
-  int count = 0;
+  uint_fast8_t count = 0;
 
   for (methods += 4; methods < partial_success; methods = n + 1)
     {

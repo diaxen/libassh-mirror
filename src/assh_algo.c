@@ -65,7 +65,7 @@ static void assh_algo_filter_variants(struct assh_context_s *c,
 	  const struct assh_algo_s *a = c->algos[i];
 	  const struct assh_algo_s *b = c->algos[j];
 
-	  int d = a->class_ != b->class_;
+	  assh_bool_t d = a->class_ != b->class_;
 	  if (k < j)
 	    c->algos[k] = b;
 	  else if (d)
@@ -151,8 +151,8 @@ static void assh_algo_sort(struct assh_context_s *c,
   c->kex_init_size = kex_init_size;
 }
 
-assh_error_t assh_algo_register(struct assh_context_s *c, unsigned int safety,
-				unsigned int min_safety, unsigned int min_speed,
+assh_error_t assh_algo_register(struct assh_context_s *c, assh_safety_t safety,
+				assh_safety_t min_safety, uint8_t min_speed,
                                 const struct assh_algo_s *table[])
 {
   assh_error_t err = ASSH_OK;
@@ -184,8 +184,8 @@ assh_algo_registered(struct assh_context_s *c, uint_fast16_t i)
   return c->algos[i];
 }
 
-assh_error_t assh_algo_register_va(struct assh_context_s *c, unsigned int safety,
-				   unsigned int min_safety, unsigned int min_speed, ...)
+assh_error_t assh_algo_register_va(struct assh_context_s *c, assh_safety_t safety,
+				   assh_safety_t min_safety, uint8_t min_speed, ...)
 {
   assh_error_t err = ASSH_OK;
   va_list ap;

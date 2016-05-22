@@ -47,7 +47,7 @@ static ASSH_HASH_CLEANUP_FCN(assh_sha1_cleanup)
 
 ASSH_FIRST_FIELD_ASSERT(assh_hash_sha1_context_s, ctx);
 
-static inline uint32_t rol(uint32_t value, unsigned int bits)
+static inline uint32_t rol(uint32_t value, uint_fast8_t bits)
 {
   return (((value) << (bits)) | ((value) >> (32 - (bits))));
 }
@@ -177,7 +177,7 @@ static ASSH_HASH_FINAL_FCN(assh_sha1_final)
 
   assert(len == 20);
 
-  unsigned int i;
+  uint_fast8_t i;
   uint8_t count[8];
   uint8_t c;
 

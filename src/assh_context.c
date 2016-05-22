@@ -137,7 +137,7 @@ assh_context_init(struct assh_context_s *c,
   c->algo_cnt = 0;
   c->algo_max = CONFIG_ASSH_MAX_ALGORITHMS;
 
-  int i;
+  size_t i;
   for (i = 0; i < ASSH_PCK_POOL_SIZE; i++)
     {
       c->pool[i].pck = NULL;
@@ -197,7 +197,7 @@ void assh_context_release(struct assh_context_s *ctx)
 
 static void assh_pck_pool_cleanup(struct assh_context_s *c)
 {
-  int i;
+  size_t i;
   for (i = 0; i < ASSH_PCK_POOL_SIZE; i++)
     {
       struct assh_packet_s *n, *p;
@@ -232,11 +232,11 @@ void assh_context_cleanup(struct assh_context_s *c)
 
 #include <stdio.h>
 
-void assh_hexdump(const char *name, const void *data, unsigned int len)
+void assh_hexdump(const char *name, const void *data, size_t len)
 {
-  int i, j;
+  size_t i, j;
   const uint8_t *data_ = data;
-  const int width = 32;
+  const size_t width = 32;
 
   fprintf(stderr, "--- %s (%u bytes) ---\n", name, len);
   for (i = 0; i < len; i += width)

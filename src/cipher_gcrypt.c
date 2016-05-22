@@ -74,7 +74,7 @@ assh_cipher_gcrypt_init(const struct assh_algo_cipher_s *cipher,
 	  cipher == &assh_cipher_arc4_256)
 	{
 	  uint8_t dummy[128];
-	  unsigned int i;
+	  uint_fast16_t i;
 
 	  memset(dummy, 0, sizeof(dummy));
 	  for (i = 0; i < 1536; i += sizeof(dummy))

@@ -76,7 +76,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
   uint8_t *az = hram + 2 * n;
   uint8_t *rx = az + 2;
 
-  unsigned int i;
+  uint_fast8_t i;
 
   ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, hash), err_scratch);
   assh_hash_update(hash_ctx, ks, n);
@@ -281,7 +281,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
   uint8_t *rx = hram + 2 * n;
   uint8_t *ry = rx + n;
 
-  unsigned int i;
+  uint_fast8_t i;
 
   ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, hash), err_scratch);
   assh_hash_update(hash_ctx, rs_str + 4, n);

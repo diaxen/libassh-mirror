@@ -103,7 +103,7 @@ void assh_map_iter(struct assh_map_entry_s *root, void *ctx,
 		   void (*iter)(struct assh_map_entry_s *, void *))
 {
   struct assh_map_entry_s *stack[sizeof(assh_map_id_t) * 8], *next, *l1;
-  int i = 0;
+  uint_fast8_t i = 0;
 
   while (1)
     {

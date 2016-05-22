@@ -97,7 +97,7 @@ assh_error_t assh_service_by_name(struct assh_context_s *c,
                                   size_t name_len, const char *name,
                                   const struct assh_service_s **srv_)
 {
-  unsigned int i;
+  uint_fast8_t i;
 
   /* lookup service name */
   for (i = 0; i < c->srvs_count; i++)
