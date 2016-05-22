@@ -496,7 +496,6 @@ static assh_error_t assh_userauth_client_failure(struct assh_session_s *s,
 static ASSH_EVENT_DONE_FCN(assh_userauth_client_banner_done)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
 
   assh_packet_release(pv->pbanner);
   pv->pbanner = NULL;

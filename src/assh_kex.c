@@ -304,7 +304,7 @@ assh_kex_client_algos(struct assh_session_s *s, const uint8_t *lists[9],
           const struct assh_algo_name_s *na;
           for (na = a->names; na->spec; na++)
             {
-              if (!s->kex_filter(s, a, na, 1 & i ^ 1))
+              if (!s->kex_filter(s, a, na, (1 & i) ^ 1))
                 continue;
 
               const char *start = (char*)(lists[i] + 4);
@@ -476,8 +476,6 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
 
   return ASSH_OK;
 
- err_kout:
-  assh_free(s->ctx, kout);
  err_kin:
   assh_free(s->ctx, kin);
  err:

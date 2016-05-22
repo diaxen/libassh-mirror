@@ -40,8 +40,6 @@ static ASSH_KEX_FILTER_FCN(assh_session_kex_filter)
 assh_error_t assh_session_init(struct assh_context_s *c,
 			       struct assh_session_s *s)
 {
-  assh_error_t err;
-
   s->ctx = c;
 
   assh_transport_state(s, ASSH_TR_KEX_INIT);
