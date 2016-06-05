@@ -74,18 +74,18 @@ typedef ASSH_MAC_CLEANUP_FCN(assh_mac_cleanup_t);
 struct assh_algo_mac_s
 {
   struct assh_algo_s algo;
-  /** Size of the context structure needed to initialize the algorithm. */
-  size_t ctx_size;
-  /** Mac key size in bytes. */
-  size_t key_size;
-  /** Authentication tag size. */
-  size_t mac_size;
-  /** This is set if encrypt must be performed before mac */
-  assh_bool_t etm;
   assh_mac_init_t    *f_init;
   assh_mac_compute_t *f_compute;
   assh_mac_check_t  *f_check;
   assh_mac_cleanup_t *f_cleanup;
+  /** Size of the context structure needed to initialize the algorithm. */
+  uint16_t ctx_size;
+  /** Mac key size in bytes. */
+  uint8_t key_size:7;
+  /** This is set if encrypt must be performed before mac */
+  assh_bool_t etm:1;
+  /** Authentication tag size. */
+  uint8_t mac_size;
 };
 
 /** @multiple @This is a mac algorithm implementation descriptor. */

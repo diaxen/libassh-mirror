@@ -93,11 +93,11 @@ struct assh_hash_algo_s
   assh_hash_final_t *f_final;
   assh_hash_cleanup_t *f_cleanup;
   /** Size of the context structure needed to initialize the algorithm. */
-  size_t ctx_size;
+  uint16_t ctx_size;
   /** Hash function output size, 0 for variable size output. */
-  size_t hash_size;
+  uint8_t hash_size;
   /** Hash algorithm block size. */
-  size_t block_size;
+  uint8_t block_size;
   assh_safety_t safety;
 };
 

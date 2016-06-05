@@ -406,7 +406,7 @@ assh_error_t assh_algo_by_name(struct assh_context_s *c,
 }
 
 assh_error_t assh_algo_by_key(struct assh_context_s *c,
-			      const struct assh_key_s *key, uint_fast16_t *pos,
+			      const struct assh_key_s *key, uint16_t *pos,
 			      const struct assh_algo_s **algo)
 {
   uint_fast16_t i = pos == NULL ? 0 : *pos;

@@ -225,7 +225,7 @@ assh_algo_by_name(struct assh_context_s *c,
     with the index of the matching entry. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_by_key(struct assh_context_s *c,
-                 const struct assh_key_s *key, uint_fast16_t *pos,
+                 const struct assh_key_s *key, uint16_t *pos,
                  const struct assh_algo_s **algo);
 
 /** @internal @This returns true if the provided key can be used with

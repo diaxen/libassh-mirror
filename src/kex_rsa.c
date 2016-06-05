@@ -56,10 +56,8 @@ enum assh_kex_rsa_state_e
 
 struct assh_kex_rsa_private_s
 {
-  enum assh_kex_rsa_state_e state;
   const struct assh_hash_algo_s *hash;
 
-  size_t minklen;
   const uint8_t *lhash;
   struct assh_key_s *host_key;
 
@@ -77,6 +75,9 @@ struct assh_kex_rsa_private_s
     };
 #endif
   };
+
+  enum assh_kex_rsa_state_e state:8;
+  uint16_t minklen;
 };
 
 static assh_error_t assh_kex_rsa_mgf1(struct assh_context_s *c,

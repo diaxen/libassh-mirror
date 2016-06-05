@@ -67,11 +67,11 @@ struct assh_request_s
 {
   struct assh_queue_entry_s qentry;
 
-  enum assh_request_status_e status;
   struct assh_session_s *session;
   struct assh_channel_s *ch;
   struct assh_packet_s *reply_pck;
   void *pv;
+  enum assh_request_status_e status:8;
 };
 
 ASSH_FIRST_FIELD_ASSERT(assh_request_s, qentry);
@@ -121,7 +121,6 @@ struct assh_channel_s
     struct assh_map_entry_s mentry;
   };
 
-  enum assh_channel_status_e status;
   struct assh_session_s *session;
   struct assh_packet_s *data_pck;
   void *pv;
@@ -136,6 +135,8 @@ struct assh_channel_s
 
   uint32_t rwin_left;           //< remote window bytes left
   uint32_t lwin_left;           //< local window bytes left
+
+  enum assh_channel_status_e status:8;
 };
 
 ASSH_FIRST_FIELD_ASSERT(assh_channel_s, qentry);

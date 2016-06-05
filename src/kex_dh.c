@@ -40,9 +40,9 @@
 
 struct assh_kex_dh_group_s
 {
-  size_t size;
   const uint8_t *generator;
   const uint8_t *prime;
+  uint16_t size;
 };
 
 enum assh_kex_dh_state_e
@@ -60,12 +60,11 @@ enum assh_kex_dh_state_e
 struct assh_kex_dh_private_s
 {
   const struct assh_kex_dh_group_s *group;
-  enum assh_kex_dh_state_e state;
 
   union {
 #ifdef CONFIG_ASSH_SERVER
     struct {
-      size_t exp_n;
+      uint16_t exp_n;
     };
 #endif
 #ifdef CONFIG_ASSH_CLIENT
@@ -77,6 +76,8 @@ struct assh_kex_dh_private_s
     };
 #endif
   };
+
+  enum assh_kex_dh_state_e state:8;
 };
 
 #ifdef CONFIG_ASSH_CLIENT

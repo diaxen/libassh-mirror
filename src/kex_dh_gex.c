@@ -71,19 +71,19 @@ extern const uint32_t assh_kex_dh_gex_groups[(DH_MAX_GRSIZE-1024) / 8];
 
 struct assh_kex_dh_gex_private_s
 {
-  const struct assh_hash_algo_s *hash;
+  enum assh_kex_dh_gex_state_e state:8;
 
   /* minimum and favorite group sizes */
-  size_t algo_min;
-  size_t algo_n;
+  uint16_t algo_min;
+  uint16_t algo_n;
 
   /* server retained group size */
-  size_t server_n;
+  uint16_t server_n;
 
   /* exponent size */
-  size_t exp_n;
+  uint16_t exp_n;
 
-  enum assh_kex_dh_gex_state_e state;
+  const struct assh_hash_algo_s *hash;
 
   struct assh_bignum_s pn;
 

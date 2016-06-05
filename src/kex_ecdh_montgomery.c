@@ -72,16 +72,16 @@ struct assh_kex_ecdhmt_private_s
 {
   const struct assh_montgomery_curve_s *curve;
   const struct assh_hash_algo_s *hash;
-  enum assh_kex_ecdhmt_state_e state;
 
 #ifdef CONFIG_ASSH_CLIENT
   struct assh_key_s *host_key;
   struct assh_packet_s *pck;
 #endif
 
-  size_t size;
   uint8_t *pubkey;
   uint8_t *pvkey;
+  enum assh_kex_ecdhmt_state_e state:8;
+  size_t size;
 };
 
 /* addition on montgomery curve, single coordinate. 18ops */

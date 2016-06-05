@@ -35,8 +35,8 @@ struct assh_weierstrass_curve_s
   const uint8_t *b;
   const uint8_t *gx;
   const uint8_t *gy;
-  uint_fast16_t bits;
-  uint_fast8_t cofactor;
+  uint16_t bits;
+  uint8_t cofactor;
   assh_safety_t safety;
 };
 

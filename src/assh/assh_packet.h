@@ -58,13 +58,13 @@ struct assh_packet_s
   struct assh_context_s *ctx;
 
   /** Size of the allocated packet data buffer. */
-  uint_fast32_t alloc_size;
+  uint32_t alloc_size;
   /** Amount of valid packet data. This value is increased when adding
       data to the packet and is used when the packet is finally sent out. */
-  uint_fast32_t data_size;
+  uint32_t data_size;
 
   /** Number of references to this packet. */
-  uint_fast16_t ref_count;
+  uint8_t ref_count;
 
   union {
     uint8_t                   data[0];

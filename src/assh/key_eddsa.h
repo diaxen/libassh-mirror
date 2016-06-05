@@ -44,8 +44,8 @@ struct assh_edward_curve_s
   const uint8_t *a;
   const uint8_t *d;
   const uint8_t *i; /* sqrt(-1), used when p%8 == 5 */
-  size_t bits;
-  uint_fast8_t cofactor;
+  uint16_t bits;
+  uint8_t cofactor;
   assh_safety_t safety;
 };
 

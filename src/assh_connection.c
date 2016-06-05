@@ -52,8 +52,6 @@ enum assh_connection_state_e
 
 struct assh_connection_context_s
 {
-  enum assh_connection_state_e state;
-
   struct assh_queue_s request_rqueue; //< global requests we have to acknowledge
   struct assh_queue_s request_lqueue; //< global requests waiting for a reply from the remote host
 
@@ -63,6 +61,7 @@ struct assh_connection_context_s
   struct assh_queue_s closing_queue;  //< closing channels with some pending requests left
 
   uint32_t ch_id_counter;
+  enum assh_connection_state_e state:8;
 };
 
 static uint32_t

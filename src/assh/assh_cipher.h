@@ -77,8 +77,11 @@ typedef ASSH_CIPHER_CLEANUP_FCN(assh_cipher_cleanup_t);
 struct assh_algo_cipher_s
 {
   struct assh_algo_s algo;
+  assh_cipher_init_t *f_init;
+  assh_cipher_process_t *f_process;
+  assh_cipher_cleanup_t *f_cleanup;
   /** Size of the context structure needed to initialize the algorithm. */
-  size_t ctx_size;
+  uint16_t ctx_size;
   /** Cipher block size in bytes, not less than 8. */
   uint8_t block_size;
   /** Cipher IV size, may be 0. */
@@ -90,10 +93,6 @@ struct assh_algo_cipher_s
   /** Number of packet bytes which must be fetched in order to
       decipher the packet length word. greater or equal to 4. */
   uint8_t head_size;
-
-  assh_cipher_init_t *f_init;
-  assh_cipher_process_t *f_process;
-  assh_cipher_cleanup_t *f_cleanup;
 };
 
 ASSH_FIRST_FIELD_ASSERT(assh_algo_cipher_s, algo);

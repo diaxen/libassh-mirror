@@ -57,20 +57,21 @@ enum assh_userauth_state_e
 
 struct assh_userauth_context_s
 {
-  enum assh_userauth_state_e state;  
   const struct assh_service_s *srv;
   struct assh_packet_s *pbanner;
   char username[CONFIG_ASSH_AUTH_USERNAME_LEN];
-  size_t username_len;
 
-#ifdef CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY
-  const struct assh_algo_s *algo;
-  uint_fast16_t algo_idx;
-  struct assh_key_s *pub_keys;
-#endif
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PASSWORD
   char password[CONFIG_ASSH_AUTH_PASSWORD_LEN];
-  size_t password_len;
+  size_t password_len:16;
+#endif
+  size_t username_len:16;
+
+  enum assh_userauth_state_e state:8;
+#ifdef CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY
+  uint16_t algo_idx;
+  const struct assh_algo_s *algo;
+  struct assh_key_s *pub_keys;
 #endif
 };
 

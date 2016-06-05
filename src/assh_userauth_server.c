@@ -70,9 +70,6 @@ enum assh_userauth_pubkey_state_e
 
 struct assh_userauth_context_s
 {
-  enum assh_userauth_state_e state;
-  uint_fast8_t retry;
-
   const struct assh_service_s *srv;
   char method_name[10];
   char username[CONFIG_ASSH_AUTH_USERNAME_LEN + 1];
@@ -81,8 +78,11 @@ struct assh_userauth_context_s
   char password[CONFIG_ASSH_AUTH_PASSWORD_LEN + 1];
 #endif
 
+  uint_fast8_t retry;
+  enum assh_userauth_state_e state:8;
+
 #ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
-  enum assh_userauth_pubkey_state_e pubkey_state;
+  enum assh_userauth_pubkey_state_e pubkey_state:8;
   struct assh_key_s *pub_key;
   const struct assh_algo_sign_s *algo;
   const struct assh_algo_name_s *algo_name;

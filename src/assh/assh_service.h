@@ -88,10 +88,10 @@ typedef ASSH_SERVICE_PROCESS_FCN(assh_service_process_t);
 struct assh_service_s
 {
   const char *name;
-  enum assh_context_type_e side;
   assh_service_init_t *f_init;
   assh_service_cleanup_t *f_cleanup;
   assh_service_process_t *f_process;
+  enum assh_context_type_e side:2;
 };
 
 /** @This function registers a single @ref assh_service_s for use by

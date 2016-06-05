@@ -58,12 +58,6 @@ struct assh_context_s
   /** User private data */
   void *user_pv;
 
-  /** Number of initialized sessions attached to this context. */
-  size_t session_count;
-
-  /** Client/server context type. */
-  enum assh_context_type_e type;
-
   /** Memory allocator function */
   assh_allocator_t *f_alloc;
   /** Memory allocator private data */
@@ -76,39 +70,46 @@ struct assh_context_s
       assh_prng_cleanup_t. */
   union {
     void *prng_pv;
-    long prng_pvl;
+    intptr_t prng_pvl;
   };
+
+  /** Big number engine */
+  const struct assh_bignum_algo_s *bignum;
 
   /** Head of loaded keys list */
   struct assh_key_s *keys;
 
-  /** Estimated size of the kex init packet, computed when new
-      algorithm are registered. */
-  size_t kex_init_size;
-
   /** Packet pool maximum allocated size in a single bucket. */
-  size_t pck_pool_max_bsize;
+  uint32_t pck_pool_max_bsize;
   /** Packet pool maximum allocated size. */
-  size_t pck_pool_max_size;
+  uint32_t pck_pool_max_size;
   /** Packet pool current allocated size. */
-  size_t pck_pool_size;
+  uint32_t pck_pool_size;
 
   /** Packet pool buckets of spare packets by size. */
   struct assh_packet_pool_s pool[ASSH_PCK_POOL_SIZE];
 
   /** Registered services. */
   const struct assh_service_s *srvs[CONFIG_ASSH_MAX_SERVICES];
-  /** Number of registered services */
-  size_t srvs_count;
 
-  /** Big number engine */
-  const struct assh_bignum_algo_s *bignum;
+  /** Client/server context type. */
+  enum assh_context_type_e type:2;
+
+  /** Number of registered services */
+  size_t srvs_count:6;
+
+  /** Number of initialized sessions attached to this context. */
+  size_t session_count:8;
 
   /** Number of algorithm slots */
-  uint16_t algo_max;
+  size_t algo_max:16;
 
   /** Number of registered algorithms */
-  uint16_t algo_cnt;
+  size_t algo_cnt:16;
+
+  /** Estimated size of the kex init packet, computed when new
+      algorithms are registered. */
+  size_t kex_init_size:16;
 
   /** Registered algorithms */
   const struct assh_algo_s *algos[CONFIG_ASSH_MAX_ALGORITHMS];
