@@ -173,6 +173,7 @@ AC_DEFINE([CONFIG_ASSH_AUTH_PASSWORD_LEN], [32], [SSH authentication max passwor
 
 AC_DEFINE([CONFIG_ASSH_MAX_SERVICES], [4], [Maximum number of registered services])
 
+AC_DEFINE([CONFIG_ASSH_PACKET_POOL], [], [Use a packet allocation pool])
 #AC_DEFINE([CONFIG_ASSH_ALLOCA], [], [Enable storing key related material on stack])
 
 if test "$GCC" = "yes" ; then

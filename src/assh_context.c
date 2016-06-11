@@ -137,6 +137,7 @@ assh_context_init(struct assh_context_s *c,
   c->algo_cnt = 0;
   c->algo_max = CONFIG_ASSH_MAX_ALGORITHMS;
 
+#ifdef CONFIG_ASSH_PACKET_POOL
   size_t i;
   for (i = 0; i < ASSH_PCK_POOL_SIZE; i++)
     {
@@ -148,6 +149,7 @@ assh_context_init(struct assh_context_s *c,
   c->pck_pool_max_size = 1 << 20;
   c->pck_pool_max_bsize = c->pck_pool_max_size / ASSH_PCK_POOL_SIZE;
   c->pck_pool_size = 0;
+#endif
 
   c->srvs_count = 0;
 
@@ -195,6 +197,7 @@ void assh_context_release(struct assh_context_s *ctx)
   assh_free(ctx, ctx);
 }
 
+#ifdef CONFIG_ASSH_PACKET_POOL
 static void assh_pck_pool_cleanup(struct assh_context_s *c)
 {
   size_t i;
@@ -216,12 +219,15 @@ static void assh_pck_pool_cleanup(struct assh_context_s *c)
       pl->pck = NULL;
     }
 }
+#endif
 
 void assh_context_cleanup(struct assh_context_s *c)
 {
   assert(c->session_count == 0);
 
+#ifdef CONFIG_ASSH_PACKET_POOL
   assh_pck_pool_cleanup(c);
+#endif
 
   assh_key_flush(c, &c->keys);
 

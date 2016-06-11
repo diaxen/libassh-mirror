@@ -50,8 +50,10 @@ struct assh_packet_s
   union {
     /** Packet queue entry, valid when packet is allocated. */
     struct assh_queue_entry_s entry;
+#ifdef CONFIG_ASSH_PACKET_POOL
     /** Spare packet pool entry, valid when packet has been released. */
     struct assh_packet_s *pool_next;
+#endif
   };
 
   /** Associated assh context */

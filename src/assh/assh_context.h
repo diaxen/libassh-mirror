@@ -79,6 +79,7 @@ struct assh_context_s
   /** Head of loaded keys list */
   struct assh_key_s *keys;
 
+#ifdef CONFIG_ASSH_PACKET_POOL
   /** Packet pool maximum allocated size in a single bucket. */
   uint32_t pck_pool_max_bsize;
   /** Packet pool maximum allocated size. */
@@ -88,6 +89,7 @@ struct assh_context_s
 
   /** Packet pool buckets of spare packets by size. */
   struct assh_packet_pool_s pool[ASSH_PCK_POOL_SIZE];
+#endif
 
   /** Registered services. */
   const struct assh_service_s *srvs[CONFIG_ASSH_MAX_SERVICES];

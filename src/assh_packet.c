@@ -30,6 +30,7 @@
 #include <assert.h>
 #include <string.h>
 
+#ifdef CONFIG_ASSH_PACKET_POOL
 /* This function returns the index of the bucket associated to a given
    packet size in the allocator pool. */
 static inline struct assh_packet_pool_s *
@@ -42,6 +43,7 @@ assh_packet_pool(struct assh_context_s *c, uint32_t size)
     i = ASSH_PCK_POOL_SIZE - 1;
   return c->pool + i;
 }
+#endif
 
 assh_error_t
 assh_packet_alloc(struct assh_context_s *c,
@@ -66,6 +68,8 @@ assh_packet_alloc2(struct assh_context_s *c,
 {
   struct assh_packet_s *p, **r;
   assh_error_t err;
+
+#ifdef CONFIG_ASSH_PACKET_POOL
   struct assh_packet_pool_s *pl = assh_packet_pool(c, size);
 
   /* get from pool */
@@ -82,6 +86,7 @@ assh_packet_alloc2(struct assh_context_s *c,
 
   /* fallback to alloc */
   if (p == NULL)
+#endif
     {
       ASSH_ERR_RET(assh_alloc(c, sizeof(*p) + size, ASSH_ALLOC_PACKET, (void*)&p));
       p->alloc_size = size;
@@ -106,12 +111,15 @@ void assh_packet_release(struct assh_packet_s *p)
   assert(p->ref_count == 0);
 
   struct assh_context_s *c = p->ctx;
+#ifdef CONFIG_ASSH_PACKET_POOL
   struct assh_packet_pool_s *pl = assh_packet_pool(c, p->alloc_size);
 
   if (pl->size + p->alloc_size >= c->pck_pool_max_bsize ||
       c->pck_pool_size + p->alloc_size >= c->pck_pool_max_size)
     {
+#endif
       assh_free(c, p);
+#ifdef CONFIG_ASSH_PACKET_POOL
     }
   else
     {
@@ -120,6 +128,7 @@ void assh_packet_release(struct assh_packet_s *p)
       pl->count++;
       pl->size += p->alloc_size;
     }
+#endif
 }
 
 ASSH_WARN_UNUSED_RESULT assh_error_t
