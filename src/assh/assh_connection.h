@@ -111,6 +111,14 @@ enum assh_channel_status_e
     Channels are created either by calling the @ref assh_channel_open
     function or when the @ref ASSH_EVENT_CHANNEL_OPEN event is reported.
     The library user does not have to destroy channel objects.
+    Channels are detroyed at various times:
+    @list
+      @item when the @ref ASSH_EVENT_CHANNEL_OPEN_REPLY event reports a failure,
+      @item when the @ref ASSH_EVENT_CHANNEL_OPEN event is rejected,
+      @item when the assh_channel_open_failed_reply function is called,
+      @item when the @ref ASSH_EVENT_CHANNEL_CLOSE event is reported.
+      @item when the @ref assh_session_cleanup function is called.
+    @end list
 */
 struct assh_channel_s
 {
@@ -486,7 +494,7 @@ assh_channel_open_success_reply(struct assh_channel_s *ch,
    replied yet due to the use of the @ref ASSH_CONNECTION_REPLY_POSTPONED
    value in the @tt reply field of the @ref ASSH_EVENT_CHANNEL_OPEN event.
 
-   Channel open replies can be send in any order.
+   Channel open replies can be sent in any order.
 
    This function will fail if either the @tt ssh-connection service is
    not started or the last event has not been acknowledged by calling
@@ -543,7 +551,7 @@ assh_channel_open2(struct assh_session_s *s,
    channel open request.
 
    The @tt data and @tt data_len parameters allow sending some channel
-   type specific data may along with the channel open message.
+   type specific data along with the channel open message.
 
    Even if a disconnection occurs, the expected event will be reported
    at some point by the @ref assh_event_get function.
