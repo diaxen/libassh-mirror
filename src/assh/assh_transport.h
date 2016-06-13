@@ -35,6 +35,14 @@
 
 #include "assh.h"
 
+/** @internal This changes the current transport state */
+#define assh_transport_state(s, st)                                     \
+do {                                                                    \
+  ASSH_DEBUG(__FILE__ ":%u:transport state: session=%p %u -> %u\n",     \
+             __LINE__, (s), (s)->tr_st, st);                            \
+  (s)->tr_st = (st);                                                    \
+ } while (0)
+
 /** @internal @This specifies the transport status of an ssh session. */
 enum assh_transport_state_e
 {

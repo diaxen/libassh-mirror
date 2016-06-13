@@ -177,16 +177,6 @@ assh_session_get_pv(struct assh_session_s *ctx)
   return ctx->user_pv;
 }
 
-/** @internal This changes the current transport state */
-ASSH_INLINE void assh_transport_state(struct assh_session_s *s,
-                                        enum assh_transport_state_e st)
-{
-#ifdef CONFIG_ASSH_DEBUG_PROTOCOL
-  ASSH_DEBUG("transport state=%u\n", st);
-#endif
-  s->tr_st = st;
-}
-
 /** @This initializes a new ssh session object. When a stable ABI is
     needed, use the @ref assh_context_create function instead. This
     can be used to initialize a statically allocated session
