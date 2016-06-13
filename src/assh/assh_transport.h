@@ -46,6 +46,8 @@ do {                                                                    \
 /** @internal @This specifies the transport status of an ssh session. */
 enum assh_transport_state_e
 {
+  /** Wait for end of identification string exchange */
+  ASSH_TR_IDENT,
   /** send a @ref SSH_MSG_KEXINIT packet then go to @ref ASSH_TR_KEX_WAIT */
   ASSH_TR_KEX_INIT,
   /** We wait for a @ref SSH_MSG_KEXINIT packet. */
@@ -58,6 +60,8 @@ enum assh_transport_state_e
   ASSH_TR_SERVICE,
   /** Key re-exchange packet sent but not received, service packets are allowed. */
   ASSH_TR_SERVICE_KEX,
+  /** Only outgoing packets are processed so that a disconnection packet can be sent. */
+  ASSH_TR_DISCONNECT,
   /** Do not exchange packets with the remote side anymore. Report last events. */
   ASSH_TR_FIN,
   /** Session closed, no more event will be reported. */

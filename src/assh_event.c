@@ -50,24 +50,28 @@ assh_error_t assh_event_get(struct assh_session_s *s,
     goto done;
 
   /* key re-exchange should have occured at this point */
-  ASSH_CHK_RET(s->kex_bytes > ASSH_REKEX_THRESHOLD + ASSH_MAX_PCK_LEN * 16,
-	       ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+  ASSH_CHK_GTO(s->tr_st < ASSH_TR_DISCONNECT &&
+               s->kex_bytes > ASSH_REKEX_THRESHOLD + ASSH_MAX_PCK_LEN * 16,
+               ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT, err);
 
   /* initiate key re-exchange */
   if (s->tr_st == ASSH_TR_SERVICE && s->kex_bytes > s->kex_max_bytes)
     {
-      ASSH_ERR_RET(assh_kex_send_init(s) | ASSH_ERRSV_DISCONNECT);
+      ASSH_ERR_GTO(assh_kex_send_init(s) | ASSH_ERRSV_DISCONNECT, err);
       assh_transport_state(s, ASSH_TR_SERVICE_KEX);
     }
 
   /* run the state machine which converts output packets to enciphered
      ssh stream */
-  ASSH_ERR_GTO(assh_transport_write(s, event), err);
+  if (s->tr_st < ASSH_TR_FIN)
+    {
+      ASSH_ERR_GTO(assh_transport_write(s, event), err);
 
-  if (event->id != ASSH_EVENT_INVALID)
-    goto done;
+      if (event->id != ASSH_EVENT_INVALID)
+        goto done;
+    }
 
-  if (s->tr_st == ASSH_TR_FIN)
+  if (s->tr_st >= ASSH_TR_DISCONNECT)
     {
       /* all events have been reported, end of session. */
       assh_transport_state(s, ASSH_TR_CLOSED);

@@ -53,6 +53,7 @@ void assh_transport_push(struct assh_session_s *s,
 
   switch (s->tr_st)
     {
+    case ASSH_TR_IDENT:
     case ASSH_TR_KEX_INIT:
     case ASSH_TR_KEX_WAIT:
     case ASSH_TR_KEX_RUNNING:
@@ -62,6 +63,7 @@ void assh_transport_push(struct assh_session_s *s,
 	q = &s->alt_queue;
 
     case ASSH_TR_SERVICE:
+    case ASSH_TR_DISCONNECT:
       assh_queue_push_back(q, &p->entry);
       break;
 
@@ -108,6 +110,8 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 		if (s->ident_str[i - 1] == '\r')
 		  i--;
 		s->ident_len = i;
+
+		assh_transport_state(s, ASSH_TR_KEX_INIT);
 
 		/* we might still have enough bytes to start packet decode */
 		if (s->stream_in_size >= hsize)
@@ -481,7 +485,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 {
   assh_error_t err = ASSH_OK;
   enum assh_ssh_msg_e msg = SSH_MSG_INVALID;
-  struct assh_packet_s *p = s->tr_st < ASSH_TR_FIN ? s->in_pck : NULL;
+  struct assh_packet_s *p = s->tr_st < ASSH_TR_DISCONNECT ? s->in_pck : NULL;
 
   if (p != NULL)
     {
@@ -507,6 +511,9 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
   /* transport protocol state machine */
   switch (s->tr_st)
     {
+    case ASSH_TR_IDENT:
+      return ASSH_OK;
+
     /* send first kex init packet during session init */
     case ASSH_TR_KEX_INIT:
       ASSH_ERR_RET(assh_kex_send_init(s) | ASSH_ERRSV_DISCONNECT);
@@ -610,6 +617,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 	goto kex_init;
       goto service;
 
+    case ASSH_TR_DISCONNECT:
     case ASSH_TR_FIN:
       if (s->srv == NULL)
 	return ASSH_OK;

@@ -1670,7 +1670,7 @@ static ASSH_SERVICE_PROCESS_FCN(assh_connection_process)
     }
 
   /* move all channels to the closing queue */
-  if (s->tr_st == ASSH_TR_FIN && pv->channel_map != NULL)
+  if (s->tr_st >= ASSH_TR_DISCONNECT && pv->channel_map != NULL)
     {
       assh_map_iter(pv->channel_map, pv, &assh_channel_force_close_i);
       pv->channel_map = NULL;
@@ -1696,7 +1696,7 @@ static ASSH_SERVICE_PROCESS_FCN(assh_connection_process)
     }
 
   /* flush global requests */
-  if (s->tr_st == ASSH_TR_FIN)
+  if (s->tr_st >= ASSH_TR_DISCONNECT)
     {
       /* pop a pending global request and report an event */
       if (assh_request_reply_flush(s, NULL, e))

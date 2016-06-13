@@ -42,7 +42,7 @@ assh_error_t assh_session_init(struct assh_context_s *c,
 {
   s->ctx = c;
 
-  assh_transport_state(s, ASSH_TR_KEX_INIT);
+  assh_transport_state(s, ASSH_TR_IDENT);
 
   s->ident_len = 0;
   s->session_id_len = 0;
@@ -145,7 +145,8 @@ assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t inerr)
       return inerr | ASSH_ERRSV_FATAL;
     }
 
-  if ((inerr & ASSH_ERRSV_FIN) || s->tr_st == ASSH_TR_FIN)
+  if ((inerr & ASSH_ERRSV_FIN) || s->tr_st == ASSH_TR_FIN ||
+      ((inerr & ASSH_ERRSV_DISCONNECT) && s->tr_st == ASSH_TR_DISCONNECT))
     {
       assh_transport_state(s, ASSH_TR_FIN);
       return inerr | ASSH_ERRSV_FIN;
@@ -237,6 +238,7 @@ assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t inerr)
     return inerr;
 
   ASSH_DEBUG("disconnect packet reason: %u (%s)\n", reason, desc);
+  assh_transport_state(s, ASSH_TR_DISCONNECT);
 
   struct assh_packet_s *pout;
   size_t sz = 0;
@@ -257,7 +259,6 @@ assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t inerr)
       assh_transport_push(s, pout);
     }
 
-  assh_transport_state(s, ASSH_TR_FIN);
   return inerr | ASSH_ERRSV_FIN;
 }
 

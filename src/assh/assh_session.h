@@ -155,7 +155,7 @@ struct assh_session_s
   enum assh_stream_in_state_e stream_in_st:3;
 
   /** Current state of the transport layer. */
-  enum assh_transport_state_e tr_st:3;
+  enum assh_transport_state_e tr_st:4;
 
   /** This flag indicates if we have to skip the first kex packet from
       the remote side. */

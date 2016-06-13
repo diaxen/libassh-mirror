@@ -536,7 +536,7 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_client_process)
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
-  if (s->tr_st >= ASSH_TR_FIN)
+  if (s->tr_st >= ASSH_TR_DISCONNECT)
     return ASSH_OK;
 
   switch (pv->state)
