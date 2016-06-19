@@ -52,6 +52,8 @@ enum assh_transport_state_e
   ASSH_TR_KEX_INIT,
   /** We wait for a @ref SSH_MSG_KEXINIT packet. */
   ASSH_TR_KEX_WAIT,
+  /** The next received SSH_MSG_KEXINIT packet must be ignored due to a bad guess. */
+  ASSH_TR_KEX_SKIP,
   /** Both @ref SSH_MSG_KEXINIT packet were sent, the key exchange is taking place. */
   ASSH_TR_KEX_RUNNING,
   /** The key exchange is over and a @ref SSH_MSG_NEWKEYS packet is expected. */

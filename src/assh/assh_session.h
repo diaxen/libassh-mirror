@@ -165,10 +165,6 @@ struct assh_session_s
 
   /** Current state of the transport layer. */
   enum assh_transport_state_e tr_st:4;
-
-  /** This flag indicates if we have to skip the first kex packet from
-      the remote side. */
-  assh_bool_t kex_bad_guess:1;
 };
 
 /** @This set the user private pointer of the session. */

@@ -56,6 +56,7 @@ void assh_transport_push(struct assh_session_s *s,
     case ASSH_TR_IDENT:
     case ASSH_TR_KEX_INIT:
     case ASSH_TR_KEX_WAIT:
+    case ASSH_TR_KEX_SKIP:
     case ASSH_TR_KEX_RUNNING:
     case ASSH_TR_NEWKEY:
     case ASSH_TR_SERVICE_KEX:
@@ -540,8 +541,6 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
       s->deadline = s->time + ASSH_TIMEOUT_KEX;
       ASSH_ERR_RET(assh_kex_got_init(s, p) | ASSH_ERRSV_DISCONNECT);
 
-      /* switch to key exchange running state */
-      assh_transport_state(s, ASSH_TR_KEX_RUNNING);
       p = NULL;
       msg = 0;
 
@@ -552,13 +551,16 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
       ASSH_CHK_RET(msg > 49 || msg == SSH_MSG_SERVICE_REQUEST || msg == SSH_MSG_SERVICE_ACCEPT,
 		   ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
 
-      if (!s->kex_bad_guess || msg == SSH_MSG_INVALID)
-	ASSH_ERR_RET(s->kex->f_process(s, p, e) | ASSH_ERRSV_DISCONNECT);
-      else
-	s->kex_bad_guess = 0;
+      ASSH_ERR_RET(s->kex->f_process(s, p, e) | ASSH_ERRSV_DISCONNECT);
       goto done;
 
-    /* kex exchange is over, NEWKEYS packet expected */
+    /* the first kex init packet must be ignored */
+    case ASSH_TR_KEX_SKIP:
+      if (p)
+	assh_transport_state(s, ASSH_TR_KEX_RUNNING);
+      goto done;
+
+      /* kex exchange is over, NEWKEYS packet expected */
     case ASSH_TR_NEWKEY:
       if (msg == SSH_MSG_INVALID)
 	goto done;

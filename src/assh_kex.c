@@ -389,8 +389,6 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
   assh_bool_t good_guess = s->kex_preferred[0] == algos[0] &&
                            s->kex_preferred[1] == algos[1];
 
-  s->kex_bad_guess = guess_follows && !good_guess;
-
   const struct assh_algo_kex_s *kex           = (const void *)algos[0];
   const struct assh_algo_sign_s *sign         = (const void *)algos[1];
   const struct assh_algo_cipher_s *cipher_in  = (const void *)algos[2];
@@ -473,6 +471,10 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
 
   s->kex = kex;
   s->host_sign_algo = sign;
+
+  /* switch to key exchange running state */
+  assh_transport_state(s, guess_follows && !good_guess
+                       ? ASSH_TR_KEX_SKIP : ASSH_TR_KEX_RUNNING);
 
   return ASSH_OK;
 
