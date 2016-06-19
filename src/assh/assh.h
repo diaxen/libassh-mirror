@@ -173,6 +173,8 @@ enum assh_error_e
   ASSH_ERR_CLOSED                  = 0x118,
   /** Algorithm or key security level is below defined threshold. */
   ASSH_ERR_WEAK_ALGORITHM          = 0x119,
+  /** Protocol timeout. */
+  ASSH_ERR_TIMEOUT                 = 0x120,
 };
 
 /** @This extracts the @ref assh_error_e part of an error code
@@ -220,6 +222,14 @@ enum assh_error_e
   (ASSH_MAX_PCK_LEN - /* sizeof(struct assh_packet_head_s) */ 6 \
    - ASSH_MAX_MAC_SIZE - ASSH_MAX_BLOCK_SIZE)
 
+/** remote identification string protocol timeout in seconds */
+#define ASSH_TIMEOUT_IDENT 10
+/** kex exchange protocol timeout in seconds */
+#define ASSH_TIMEOUT_KEX 10
+/** user authentication protocol timeout in seconds */
+#define ASSH_TIMEOUT_USERAUTH 60
+/** connection service keepalive inteval in seconds */
+#define ASSH_TIMEOUT_KEEPALIVE 600
 
 /** @internal */
 #define ASSH_ASSERT(expr) do { assh_error_t _e_ = (expr); assert((_e_ & 0xfff) == ASSH_OK); } while(0)

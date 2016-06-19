@@ -120,6 +120,15 @@ struct assh_session_s
   /** Pointer to next input keys and algorithms on SSH_MSG_NEWKEYS received. */
   struct assh_kex_keys_s *new_keys_in;
 
+  /** Current date as reported by the last IO request. */
+  assh_time_t time;
+  /** The session will terminate with the @ref ASSH_ERR_TIMEOUT error
+      if this field contains a value less then the @ref time
+      field. It is updated by the transport layer during key exchange
+      and by the @ref assh_service_process_t function of the running
+      service. */
+  assh_time_t deadline;
+
   /** Size of valid data in the @ref stream_in_pck packet */
   size_t stream_in_size:32;
   /** Size of already sent data of the top packet in the @ref out_queue queue. */

@@ -89,6 +89,7 @@ struct assh_userauth_context_s
   struct assh_packet_s *sign_pck;
   const uint8_t *sign;
 #endif
+  assh_time_t deadline;
 };
 
 static ASSH_SERVICE_INIT_FCN(assh_userauth_server_init)
@@ -101,6 +102,7 @@ static ASSH_SERVICE_INIT_FCN(assh_userauth_server_init)
 
   s->srv = &assh_service_userauth_server;
   s->srv_pv = pv;
+  pv->deadline = s->time + ASSH_TIMEOUT_USERAUTH;
 
   pv->state = ASSH_USERAUTH_WAIT_RQ;
   pv->retry = 10;
@@ -499,6 +501,8 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_server_process)
 
   if (s->tr_st >= ASSH_TR_DISCONNECT)
     return ASSH_OK;
+
+  s->deadline = pv->deadline;
 
   if (p == NULL)
     return ASSH_OK;

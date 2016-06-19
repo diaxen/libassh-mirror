@@ -60,6 +60,9 @@ assh_error_t assh_session_init(struct assh_context_s *c,
 #endif
   s->srv = NULL;
 
+  s->time = 0;
+  s->deadline = 0;
+
   s->stream_out_st = ASSH_TR_OUT_IDENT;
   assh_queue_init(&s->out_queue);
   assh_queue_init(&s->alt_queue);
@@ -232,6 +235,10 @@ assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t inerr)
       desc = "weak key or algorithm parameters";
       reason = SSH_DISCONNECT_RESERVED;
       break;
+    case ASSH_ERR_TIMEOUT:
+      desc = "protocol timeout";
+      reason = SSH_DISCONNECT_PROTOCOL_ERROR;
+      break;
     }
 
   if (!(inerr & ASSH_ERRSV_DISCONNECT))
@@ -257,6 +264,8 @@ assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t inerr)
       ASSH_ASSERT(assh_packet_add_string(pout, 0, NULL)); /* language */
 
       assh_transport_push(s, pout);
+
+      s->deadline = s->time + 1;
     }
 
   return inerr | ASSH_ERRSV_FIN;

@@ -539,6 +539,9 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_client_process)
   if (s->tr_st >= ASSH_TR_DISCONNECT)
     return ASSH_OK;
 
+  if (p != NULL)
+    s->deadline = s->time + ASSH_TIMEOUT_USERAUTH;
+
   switch (pv->state)
     {
     case ASSH_USERAUTH_INIT:

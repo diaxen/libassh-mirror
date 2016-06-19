@@ -49,6 +49,11 @@ assh_error_t assh_event_get(struct assh_session_s *s,
   if (event->id != ASSH_EVENT_INVALID)
     goto done;
 
+  /* protocol timeout */
+  ASSH_CHK_GTO(s->tr_st < ASSH_TR_FIN &&
+               s->deadline != 0 && s->deadline <= s->time,
+               ASSH_ERR_TIMEOUT | ASSH_ERRSV_DISCONNECT, err);
+
   /* key re-exchange should have occured at this point */
   ASSH_CHK_GTO(s->tr_st < ASSH_TR_DISCONNECT &&
                s->kex_bytes > ASSH_REKEX_THRESHOLD + ASSH_MAX_PCK_LEN * 16,

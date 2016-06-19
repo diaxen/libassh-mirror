@@ -1586,6 +1586,7 @@ static ASSH_SERVICE_INIT_FCN(assh_connection_init)
   pv->channel_map = NULL;
   pv->pck = NULL;
   pv->ch_id_counter = 0;
+  s->deadline = s->time + ASSH_TIMEOUT_KEEPALIVE;
 
   s->srv = &assh_service_connection;
   s->srv_pv = pv;
@@ -1653,6 +1654,14 @@ static ASSH_SERVICE_PROCESS_FCN(assh_connection_process)
   assh_error_t err;
   struct assh_connection_context_s *pv = s->srv_pv;
 
+  if (s->deadline <= s->time && s->tr_st < ASSH_TR_DISCONNECT)
+    {
+      struct assh_packet_s *pout;
+      if (!assh_packet_alloc(s->ctx, SSH_MSG_IGNORE, 0, &pout))
+        assh_transport_push(s, pout);
+      s->deadline = s->time + ASSH_TIMEOUT_KEEPALIVE;
+    }
+
   switch (pv->state)
     {
     case ASSH_CONNECTION_ST_START:
@@ -1709,6 +1718,8 @@ static ASSH_SERVICE_PROCESS_FCN(assh_connection_process)
   /* handle incoming packet, if any */
   if (p == NULL)
     return ASSH_OK;
+
+  s->deadline = s->time + ASSH_TIMEOUT_KEEPALIVE;
 
   switch (p->head.msg)
     {

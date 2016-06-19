@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/fcntl.h>
+#include <poll.h>
 
 #include <assh/assh_session.h>
 #include <assh/assh_transport.h>
@@ -36,17 +37,36 @@ ASSH_EVENT_HANDLER_FCN(assh_fd_event_read)
   assh_error_t err;
   struct assh_fd_context_s *ctx_ = ctx;
   struct assh_event_transport_read_s *te = &e->transport.read;
-  ssize_t r = read(ctx_->ssh_fd, te->buf.data, te->buf.size);
-  switch (r)
+  struct pollfd p;
+  p.events = POLLIN | POLLPRI;
+  p.fd = ctx_->ssh_fd;
+
+  ASSH_DEBUG("read delay %u\n", te->delay);
+  switch (poll(&p, 1, (int)te->delay * 1000))
     {
-    case -1:
-      if (errno == EAGAIN || errno == EWOULDBLOCK)
-	break;
     case 0:
-      ASSH_ERR_RET(ASSH_ERR_IO | ASSH_ERRSV_FIN);
-    default:
-      te->transferred = r;
+      te->transferred = 0;
+      break;
+    case 1: {
+      ssize_t r = read(ctx_->ssh_fd, te->buf.data, te->buf.size);
+      switch (r)
+        {
+        case -1:
+          if (errno == EAGAIN || errno == EWOULDBLOCK)
+            break;
+        case 0:
+          ASSH_ERR_RET(ASSH_ERR_IO | ASSH_ERRSV_FIN);
+        default:
+          te->transferred = r;
+          break;
+        }
+      break;
     }
+    default:
+      ASSH_ERR_RET(ASSH_ERR_IO | ASSH_ERRSV_FIN);
+    }
+
+  te->time = time(NULL);
   return ASSH_OK;
 }
 
@@ -55,17 +75,36 @@ ASSH_EVENT_HANDLER_FCN(assh_fd_event_write)
   assh_error_t err;
   struct assh_fd_context_s *ctx_ = ctx;
   struct assh_event_transport_write_s *te = &e->transport.write;
-  ssize_t r = write(ctx_->ssh_fd, te->buf.data, te->buf.size);
-  switch (r)
+  struct pollfd p;
+  p.events = POLLOUT;
+  p.fd = ctx_->ssh_fd;
+
+  ASSH_DEBUG("write delay %u\n", te->delay);
+  switch (poll(&p, 1, (int)te->delay * 1000))
     {
-    case -1:
-      if (errno == EAGAIN || errno == EWOULDBLOCK)
-	break;
     case 0:
-      ASSH_ERR_RET(ASSH_ERR_IO | ASSH_ERRSV_FIN);
-    default:
-      te->transferred = r;
+      te->transferred = 0;
+      break;
+    case 1: {
+      ssize_t r = write(ctx_->ssh_fd, te->buf.data, te->buf.size);
+      switch (r)
+        {
+        case -1:
+          if (errno == EAGAIN || errno == EWOULDBLOCK)
+            break;
+        case 0:
+          ASSH_ERR_RET(ASSH_ERR_IO | ASSH_ERRSV_FIN);
+        default:
+          te->transferred = r;
+          break;
+        }
+      break;
     }
+    default:
+      ASSH_ERR_RET(ASSH_ERR_IO | ASSH_ERRSV_FIN);
+    }
+
+  te->time = time(NULL);
   return ASSH_OK;
 }
 

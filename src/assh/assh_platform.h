@@ -26,6 +26,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <sys/types.h>
+#include <time.h>
 
 /**
    @file
@@ -188,5 +189,7 @@ ASSH_INLINE void assh_clear(void *data, size_t len)
 
 /** @internal */
 #define ASSH_ALIGN8(x) ((((x) - 1) | 7) + 1)
+
+typedef time_t assh_time_t;
 
 #endif
