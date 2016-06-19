@@ -59,6 +59,10 @@ struct assh_packet_s
   /** Associated assh context */
   struct assh_context_s *ctx;
 
+#ifdef CONFIG_ASSH_PACKET_POOL
+  /** Size of the pre-allocated packet data buffer. */
+  uint32_t buffer_size;
+#endif
   /** Size of the allocated packet data buffer. */
   uint32_t alloc_size;
   /** Amount of valid packet data. This value is increased when adding

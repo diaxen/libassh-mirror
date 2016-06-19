@@ -75,10 +75,10 @@ assh_packet_alloc2(struct assh_context_s *c,
   /* get from pool */
   for (r = &pl->pck; (p = *r) != NULL; r = &(*r)->pool_next)
     {
-      if (p->alloc_size >= size)
+      if (p->buffer_size >= size)
 	{
 	  *r = p->pool_next;
-          pl->size -= p->alloc_size;
+          pl->size -= p->buffer_size;
           pl->count--;
 	  break;
 	}
@@ -89,14 +89,17 @@ assh_packet_alloc2(struct assh_context_s *c,
 #endif
     {
       ASSH_ERR_RET(assh_alloc(c, sizeof(*p) + size, ASSH_ALLOC_PACKET, (void*)&p));
-      p->alloc_size = size;
+#ifdef CONFIG_ASSH_PACKET_POOL
+      p->buffer_size = size;
+#endif
     }
 
   /* init */
   p->ref_count = 1;
   p->ctx = c;
   p->data_size = /* pck_len */ 4 + /* pad_len */ 1 + /* msg */ 1;
-  memset(p->data, 0, p->alloc_size);
+  p->alloc_size = size;
+  memset(p->data, 0, size);
   p->head.msg = msg;
 
   *result = p;
@@ -112,10 +115,10 @@ void assh_packet_release(struct assh_packet_s *p)
 
   struct assh_context_s *c = p->ctx;
 #ifdef CONFIG_ASSH_PACKET_POOL
-  struct assh_packet_pool_s *pl = assh_packet_pool(c, p->alloc_size);
+  struct assh_packet_pool_s *pl = assh_packet_pool(c, p->buffer_size);
 
-  if (pl->size + p->alloc_size >= c->pck_pool_max_bsize ||
-      c->pck_pool_size + p->alloc_size >= c->pck_pool_max_size)
+  if (pl->size + p->buffer_size >= c->pck_pool_max_bsize ||
+      c->pck_pool_size + p->buffer_size >= c->pck_pool_max_size)
     {
 #endif
       assh_free(c, p);
@@ -126,7 +129,7 @@ void assh_packet_release(struct assh_packet_s *p)
       p->pool_next = pl->pck;
       pl->pck = p;
       pl->count++;
-      pl->size += p->alloc_size;
+      pl->size += p->buffer_size;
     }
 #endif
 }

@@ -209,7 +209,7 @@ static void assh_pck_pool_cleanup(struct assh_context_s *c)
       for (p = pl->pck; p != NULL; p = n)
         {
           n = p->pool_next;
-          pl->size -= p->alloc_size;
+          pl->size -= p->buffer_size;
           pl->count--;
           assh_free(c, p);
         }
