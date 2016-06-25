@@ -390,11 +390,22 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
       if (k->mac->etm || k->cipher->auth_size)
 	cipher_len -= 4;
 
-      size_t pad_len = align - cipher_len % align;
-      if (pad_len < 4)
-	pad_len += align;
+      size_t pad_len;
+      switch (p->padding)
+	{
+	case ASSH_PADDING_MIN:
+	  /* use minimal padding */
+	  pad_len = align - cipher_len % align;
+	  if (pad_len < 4)
+	    pad_len += align;
+	  break;
+	case ASSH_PADDING_MAX:
+	  pad_len = ASSH_MIN(255, p->alloc_size - p->data_size - mac_len);
+	  pad_len -= (pad_len + cipher_len) % align;
+	  break;
+	}
 
-      assert(pad_len >= 4 && pad_len < 255);
+      assert(pad_len >= 4 && pad_len <= 255);
 
       p->data_size += pad_len + mac_len;
       assert(p->data_size <= p->alloc_size);

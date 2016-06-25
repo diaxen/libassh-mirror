@@ -44,6 +44,17 @@ struct assh_packet_head_s
   uint8_t   end[0];
 };
 
+/** @internal Specifies the ssh packet padding size policy */
+enum assh_padding_policy_e
+{
+  /** Minimal padding size */
+  ASSH_PADDING_MIN,
+  /** Use maximal padding size according to allocated buffer
+      size. This allows hiding the size of actual data in the
+      enciphered packet. */
+  ASSH_PADDING_MAX,
+};
+
 /** @internal SSH packet object */
 struct assh_packet_s
 {
@@ -70,7 +81,10 @@ struct assh_packet_s
   uint32_t data_size;
 
   /** Number of references to this packet. */
-  uint8_t ref_count;
+  uint8_t ref_count:6;
+
+  /** Padding size policy */
+  enum assh_padding_policy_e padding:2;
 
   union {
     uint8_t                   data[0];

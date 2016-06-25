@@ -101,6 +101,7 @@ assh_packet_alloc2(struct assh_context_s *c,
   p->alloc_size = size;
   memset(p->data, 0, size);
   p->head.msg = msg;
+  p->padding = ASSH_PADDING_MIN;
 
   *result = p;
   return ASSH_OK;
