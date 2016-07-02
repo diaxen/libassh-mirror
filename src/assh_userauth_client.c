@@ -160,8 +160,15 @@ static assh_error_t assh_userauth_client_req_password(struct assh_session_s *s)
   uint8_t *bool_, *str;
 
   struct assh_packet_s *pout;
+
+  /* Any password with a length less than 128 bytes will result in a
+     packet of the same size. */
+  size_t pw_hidden_len = ASSH_MAX((size_t)pv->password_len, 128);
+
   ASSH_ERR_RET(assh_userauth_client_pck_head(s, &pout, "password",
-		   1 + 4 + pv->password_len) | ASSH_ERRSV_DISCONNECT);
+	           1 + 4 + pw_hidden_len) | ASSH_ERRSV_DISCONNECT);
+  pout->padding = ASSH_PADDING_MAX;
+
   ASSH_ASSERT(assh_packet_add_array(pout, 1, &bool_));
   *bool_ = 0; // FALSE
 
