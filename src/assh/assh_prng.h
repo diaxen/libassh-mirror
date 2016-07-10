@@ -39,6 +39,8 @@ enum assh_prng_quality_e
   ASSH_PRNG_QUALITY_WEAK,
   /** random data for use as public parameter */
   ASSH_PRNG_QUALITY_PUBLIC,
+  /** random data for use as ssh packet padding */
+  ASSH_PRNG_QUALITY_PADDING,
   /** random data for use as nonce in signature algorithms */
   ASSH_PRNG_QUALITY_NONCE,
   /** random data for use in ephemeral key generation */

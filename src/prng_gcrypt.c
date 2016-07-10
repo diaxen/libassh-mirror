@@ -41,6 +41,9 @@ static ASSH_PRNG_GET_FCN(assh_prng_gcrypt_get)
     case ASSH_PRNG_QUALITY_PUBLIC:
       gcry_create_nonce(rdata, rdata_len);
       break;
+    case ASSH_PRNG_QUALITY_PADDING:
+      gcry_randomize(rdata, rdata_len, GCRY_WEAK_RANDOM);
+      break;
     case ASSH_PRNG_QUALITY_NONCE:
     case ASSH_PRNG_QUALITY_EPHEMERAL_KEY:
       gcry_randomize(rdata, rdata_len, GCRY_STRONG_RANDOM);

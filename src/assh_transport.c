@@ -34,6 +34,7 @@
 #include <assh/assh_mac.h>
 #include <assh/assh_kex.h>
 #include <assh/assh_event.h>
+#include <assh/assh_prng.h>
 
 #include <assert.h>
 #include <string.h>
@@ -416,7 +417,7 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
       uint8_t *pad = mac_ptr - pad_len;
 
       if (pad_len > 0)
-	memset(pad, 42, pad_len);
+	assh_prng_get(s->ctx, pad, pad_len, ASSH_PRNG_QUALITY_PADDING);
 
 #warning FIXME compress
 
