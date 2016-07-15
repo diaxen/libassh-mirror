@@ -56,12 +56,6 @@ bignum_SOURCES = bignum.c
 bignum_LDADD = $(top_builddir)/src/libassh.la
 bignum_CFLAGS = -I$(top_srcdir)/src
 
-noinst_PROGRAMS += dsa
-TESTS += dsa
-dsa_SOURCES = dsa.c
-dsa_LDADD = $(top_builddir)/src/libassh.la
-dsa_CFLAGS = -I$(top_srcdir)/src
-
 ############################## signature tests
 
 noinst_PROGRAMS += key_io
