@@ -135,6 +135,18 @@ void assh_packet_release(struct assh_packet_s *p)
 #endif
 }
 
+void assh_packet_queue_cleanup(struct assh_queue_s *q)
+{
+  while (q->count > 0)
+    {
+      struct assh_queue_entry_s *e = assh_queue_front(q);
+      assh_queue_remove(q, e);
+
+      struct assh_packet_s *p = (struct assh_packet_s*)e;
+      assh_packet_release(p);
+    }
+}
+
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_packet_dup(struct assh_packet_s *p, struct assh_packet_s **copy)
 {

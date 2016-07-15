@@ -96,18 +96,6 @@ assh_error_t assh_session_create(struct assh_context_s *c,
   return err;
 }
 
-static void assh_pck_queue_cleanup(struct assh_queue_s *q)
-{
-  while (q->count > 0)
-    {
-      struct assh_queue_entry_s *e = assh_queue_front(q);
-      assh_queue_remove(q, e);
-
-      struct assh_packet_s *p = (struct assh_packet_s*)e;
-      assh_packet_release(p);
-    }
-}
-
 void assh_session_release(struct assh_session_s *s)
 {
   assh_session_cleanup(s);
@@ -126,8 +114,8 @@ void assh_session_cleanup(struct assh_session_s *s)
   assh_packet_release(s->kex_init_local);
   assh_packet_release(s->kex_init_remote);
 
-  assh_pck_queue_cleanup(&s->out_queue);
-  assh_pck_queue_cleanup(&s->alt_queue);
+  assh_packet_queue_cleanup(&s->out_queue);
+  assh_packet_queue_cleanup(&s->alt_queue);
 
   assh_kex_keys_cleanup(s, s->cur_keys_in);
   assh_kex_keys_cleanup(s, s->cur_keys_out);

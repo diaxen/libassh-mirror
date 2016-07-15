@@ -212,6 +212,10 @@ assh_packet_alloc(struct assh_context_s *c,
     zero. */
 void assh_packet_release(struct assh_packet_s *p);
 
+/** @internal @This removes all packets from the queue and calls the
+    @ref assh_packet_release function for each packet. */
+void assh_packet_queue_cleanup(struct assh_queue_s *q);
+
 /** @internal @This increase the reference counter of the packet. */
 ASSH_INLINE struct assh_packet_s *
 assh_packet_refinc(struct assh_packet_s *p)
