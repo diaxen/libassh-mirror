@@ -94,22 +94,40 @@ struct assh_packet_s
 
 ASSH_FIRST_FIELD_ASSERT(assh_packet_s, entry);
 
+/** @internal @This specifies ranges of ssh message ids. */
+enum assh_ssh_msg_ranges_e
+{
+  /** @multiple Transport layer generic messages */
+  SSH_MSG_TRGENERIC_FIRST = 1,
+  SSH_MSG_TRGENERIC_LAST  = 19,
+  /** @multiple Algorithm negotiation messages */
+  SSH_MSG_ALGONEG_FIRST   = 20,
+  SSH_MSG_ALGONEG_LAST    = 29,
+  /** @multiple Specific key exchange method messages */
+  SSH_MSG_KEXSPEC_FIRST   = 30,
+  SSH_MSG_KEXSPEC_LAST    = 49,
+  /** @multiple Service messages */
+  SSH_MSG_SERVICE_FIRST   = 50,
+};
+
 /** @internal @This specifies the standard values for ssh message ids. */
 enum assh_ssh_msg_e
 {
   SSH_MSG_INVALID                   =   0,
 
-  /** @multiple SSH transport related messages */
+  /** @multiple Transport layer generic messages */
   SSH_MSG_DISCONNECT                =   1,
   SSH_MSG_IGNORE                    =   2,
   SSH_MSG_UNIMPLEMENTED             =   3,
   SSH_MSG_DEBUG                     =   4,
   SSH_MSG_SERVICE_REQUEST           =   5,
   SSH_MSG_SERVICE_ACCEPT            =   6,
+
+  /** @multiple Algorithm negotiation messages */
   SSH_MSG_KEXINIT                   =  20,
   SSH_MSG_NEWKEYS                   =  21,
 
-  /** @multiple SSH key-exchange related messages */
+  /** @multiple Specific key exchange method messages */
   SSH_MSG_KEX_DH_REQUEST            =  30,
   SSH_MSG_KEX_DH_REPLY              =  31,
   SSH_MSG_KEX_ECDH_INIT             =  30,

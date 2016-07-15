@@ -47,8 +47,8 @@ void assh_transport_push(struct assh_session_s *s,
 {
   struct assh_queue_s *q = &s->out_queue;
 
-  /* service packets are postponed during kex */
-  assh_bool_t kex_msg = p->head.msg <= 49 &&
+  /* sending of service packets is postponed during kex */
+  assh_bool_t kex_msg = p->head.msg <= SSH_MSG_KEXSPEC_LAST &&
     p->head.msg != SSH_MSG_SERVICE_REQUEST &&
     p->head.msg != SSH_MSG_SERVICE_ACCEPT;
 
@@ -516,7 +516,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
     {
       msg = p->head.msg;
 
-      /* handle common packets */
+      /* handle transport layer generic messages */
       switch (msg)
 	{
 	case SSH_MSG_INVALID:
@@ -529,7 +529,13 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 	case SSH_MSG_IGNORE:
 	  goto done;
 	default:
-	  break;
+	  if (msg > SSH_MSG_TRGENERIC_LAST)
+	    {
+	    case SSH_MSG_SERVICE_REQUEST:
+	    case SSH_MSG_SERVICE_ACCEPT:
+	      break;
+	    }
+	  goto done;
 	}
     }
 
@@ -547,35 +553,52 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
     /* wait for initial kex init packet during session init */
     case ASSH_TR_KEX_WAIT:
       if (msg == SSH_MSG_INVALID)
-	goto done;
+	break;
       ASSH_CHK_RET(msg != SSH_MSG_KEXINIT, ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
     kex_init:
       s->deadline = s->time + ASSH_TIMEOUT_KEX;
       ASSH_ERR_RET(assh_kex_got_init(s, p) | ASSH_ERRSV_DISCONNECT);
 
       p = NULL;
-      msg = 0;
+      msg = SSH_MSG_INVALID;
 
     /* key exchange algorithm is running (session init or rekeying) */
     case ASSH_TR_KEX_RUNNING:
-        /* allowed msgs are 0 (no packet),
-	   1-4, 7-19, 20-29, 30-49 */
-      ASSH_CHK_RET(msg > 49 || msg == SSH_MSG_SERVICE_REQUEST || msg == SSH_MSG_SERVICE_ACCEPT,
-		   ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+      switch (msg)
+	{
+	case SSH_MSG_KEXINIT:
+	case SSH_MSG_NEWKEYS:
+	case SSH_MSG_SERVICE_REQUEST:
+	case SSH_MSG_SERVICE_ACCEPT:
+	  ASSH_ERR_RET(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
 
-      ASSH_ERR_RET(s->kex->f_process(s, p, e) | ASSH_ERRSV_DISCONNECT);
-      goto done;
+	default:
+	  ASSH_CHK_RET(msg >= SSH_MSG_SERVICE_FIRST,
+		       ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+	  if (msg >= SSH_MSG_KEXSPEC_FIRST)
+	    {
+	    case SSH_MSG_INVALID:
+	      ASSH_ERR_RET(s->kex->f_process(s, p, e) | ASSH_ERRSV_DISCONNECT);
+	      break;
+	    }
+	}
+      break;
 
     /* the first kex init packet must be ignored */
     case ASSH_TR_KEX_SKIP:
-      if (p)
-	assh_transport_state(s, ASSH_TR_KEX_RUNNING);
-      goto done;
+      if (msg != SSH_MSG_INVALID)
+	{
+	  ASSH_CHK_RET(msg < SSH_MSG_KEXSPEC_FIRST ||
+		       msg > SSH_MSG_KEXSPEC_LAST,
+		       ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+	  assh_transport_state(s, ASSH_TR_KEX_RUNNING);
+	}
+      break;
 
       /* kex exchange is over, NEWKEYS packet expected */
     case ASSH_TR_NEWKEY:
       if (msg == SSH_MSG_INVALID)
-	goto done;
+	break;
       ASSH_CHK_RET(msg != SSH_MSG_NEWKEYS, ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
 
       /* release the old input cipher/mac context and install the new one */
@@ -589,7 +612,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 
       /* switch to service running state */
       p = NULL;
-      msg = 0;
+      msg = SSH_MSG_INVALID;
 
       assh_transport_state(s, ASSH_TR_SERVICE);
       e->id = ASSH_EVENT_KEX_DONE;
@@ -597,10 +620,14 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
       e->kex.done.safety = ASSH_MIN(s->cur_keys_in->safety,
         s->new_keys_out != NULL ? s->new_keys_out->safety
 			        : s->cur_keys_out->safety);
-      goto done;
+      break;
 
-    /* service is running or have to be started */
-    service:
+    /* key re-exchange initiated, run service */
+    case ASSH_TR_SERVICE_KEX:
+      if (msg == SSH_MSG_KEXINIT)
+	goto kex_init;
+
+    /* handle service related packet, run service */
     case ASSH_TR_SERVICE:
       switch (msg)
 	{
@@ -632,68 +659,28 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 	  p = NULL;
 	  break;
 
-	/* dispatch packet to running service */
+	/* dispatch packet to service */
         default:
+	  ASSH_CHK_RET(msg >= SSH_MSG_ALGONEG_FIRST &&
+		       msg <= SSH_MSG_KEXSPEC_LAST,
+		       ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+	case SSH_MSG_INVALID:
 	  break;
 	}
-      break;
 
-    /* service is running, key re-exchange initiated */
-    case ASSH_TR_SERVICE_KEX:
-      if (msg == SSH_MSG_KEXINIT)
-	goto kex_init;
-      goto service;
+    case ASSH_TR_FIN:
+
+      /* run the service loop */
+      err = assh_service_loop(s, p, e);
+
+      if (err == ASSH_NO_DATA)
+	return ASSH_OK;	/* do not consume the input packet */
 
     case ASSH_TR_DISCONNECT:
-    case ASSH_TR_FIN:
-      if (s->srv == NULL)
-	return ASSH_OK;
       break;
 
     case ASSH_TR_CLOSED:
       ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
-    }
-
-  const struct assh_service_s *srv = s->srv;
-
-  while (1)
-    {
-      if (srv == NULL)
-	{
-	  ASSH_CHK_RET(p != NULL, ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
-
-#ifdef CONFIG_ASSH_CLIENT
-	  /* client send a service request if no service is currently running */
-	  if (s->ctx->type == ASSH_CLIENT && s->srv_rq == NULL)
-	    ASSH_ERR_RET(assh_service_send_request(s) | ASSH_ERRSV_DISCONNECT);
-#endif
-	  break;
-	}
-
-      /* call service processing function, with or without a packet */
-      err = srv->f_process(s, p, e);
-
-      /* we have an event to report */
-      if (e->id != ASSH_EVENT_INVALID)
-	{
-	  if (err == ASSH_NO_DATA)
-	    return ASSH_OK;
-	  break;
-	}
-
-      /* loop if the running service has changed */
-      if (srv != s->srv)
-	{
-	  srv = s->srv;
-	  if (err == ASSH_OK)
-	    {
-	      p = NULL;
-	      continue;
-	    }
-	}
-
-      if (err != ASSH_NO_DATA)
-	break;
     }
 
  done:

@@ -169,9 +169,9 @@ ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_transport_read(struct assh_session_s *s,
                     struct assh_event_s *e);
 
-/** @internal This function dispatches incoming packets depending on
-    packet message id and transport layer state. It is called from the
-    @ref assh_event_get function. */
+/** @internal This function dispatches an incoming packets to the
+    appropriate state machine (tranport, kex or service). It is called
+    from the @ref assh_event_get function. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_transport_dispatch(struct assh_session_s *s,
 			struct assh_event_s *e);

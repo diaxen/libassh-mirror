@@ -31,6 +31,7 @@
 #include <assh/assh_userauth_server.h>
 #include <assh/assh_connection.h>
 
+#include <assh/assh_event.h>
 #include <stdarg.h>
 #include <string.h>
 
@@ -205,3 +206,49 @@ assh_error_t assh_service_send_request(struct assh_session_s *s)
   return ASSH_OK;
 }
 #endif
+
+assh_error_t assh_service_loop(struct assh_session_s *s,
+                               struct assh_packet_s *p,
+                               struct assh_event_s *e)
+{
+  const struct assh_service_s *srv;
+  assh_error_t err;
+
+  do {
+    srv = s->srv;
+
+    if (srv == NULL)
+      {
+        /* do not start a service when disconnecting */
+        if (s->tr_st >= ASSH_TR_DISCONNECT)
+          break;
+
+        ASSH_CHK_RET(p != NULL, ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+
+#ifdef CONFIG_ASSH_CLIENT
+        /* client send a service request if no service is currently running */
+        if (s->ctx->type == ASSH_CLIENT && s->srv_rq == NULL)
+          ASSH_ERR_RET(assh_service_send_request(s) | ASSH_ERRSV_DISCONNECT);
+#endif
+        break;
+      }
+
+    /* call service processing function, p may be NULL */
+    ASSH_ERR_RET(srv->f_process(s, p, e));
+
+    /* we have an event to report */
+    if (e->id != ASSH_EVENT_INVALID)
+      {
+        if (p == NULL)
+          err = ASSH_OK;
+        return err;               /* err may be ASSH_OK or ASSH_NO_DATA */
+      }
+
+    if (err == ASSH_OK)
+      p = NULL;
+
+  } while (err == ASSH_NO_DATA || /* input packet not consumed by service */
+           srv != s->srv          /* service has changed */);
+
+  return ASSH_OK;
+}

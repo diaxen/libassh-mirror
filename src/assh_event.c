@@ -76,7 +76,12 @@ assh_error_t assh_event_get(struct assh_session_s *s,
         goto done;
     }
 
-  if (s->tr_st >= ASSH_TR_DISCONNECT)
+  if (s->tr_st == ASSH_TR_DISCONNECT)
+    {
+      assh_transport_state(s, ASSH_TR_FIN);
+      return assh_event_get(s, event);
+    }
+  else if (s->tr_st > ASSH_TR_DISCONNECT)
     {
       /* all events have been reported, end of session. */
       assh_transport_state(s, ASSH_TR_CLOSED);

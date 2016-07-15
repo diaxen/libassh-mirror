@@ -131,6 +131,12 @@ assh_service_got_accept(struct assh_session_s *s,
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_service_send_request(struct assh_session_s *s);
 
+/** @internal */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_service_loop(struct assh_session_s *s,
+                  struct assh_packet_s *p,
+                  struct assh_event_s *e);
+
 /** @This lookup a registered service. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_service_by_name(struct assh_context_s *c,
