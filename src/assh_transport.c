@@ -182,31 +182,32 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 	}
 
       size_t mac_len = k->mac->mac_size + k->cipher->auth_size;
+      uint32_t seq = s->in_seq;
 
       if (k->cipher->auth_size)	/* Authenticated cipher */
 	{
 	  ASSH_ERR_RET(k->cipher->f_process(k->cipher_ctx, p->data,
-				       p->data_size, ASSH_CIPHER_PCK_TAIL, s->in_seq)
+				       p->data_size, ASSH_CIPHER_PCK_TAIL, seq)
 		       | ASSH_ERRSV_DISCONNECT);
 	}
       else if (k->mac->etm)	/* Encrypt then Mac */
 	{
-	  ASSH_ERR_RET(k->mac->f_check(k->mac_ctx, s->in_seq, p->data,
+	  ASSH_ERR_RET(k->mac->f_check(k->mac_ctx, seq, p->data,
 				       p->data_size - mac_len,
 				       p->data + p->data_size - mac_len)
 		       | ASSH_ERRSV_DISCONNECT);
 
 	  ASSH_ERR_RET(k->cipher->f_process(k->cipher_ctx, p->data + 4,
-				  p->data_size - mac_len - 4, ASSH_CIPHER_PCK_HEAD, s->in_seq)
+				  p->data_size - mac_len - 4, ASSH_CIPHER_PCK_HEAD, seq)
 		       | ASSH_ERRSV_DISCONNECT);
 	}
       else			/* Mac and Encrypt */
 	{
 	  ASSH_ERR_RET(k->cipher->f_process(k->cipher_ctx, p->data + hsize,
-				  p->data_size - hsize - mac_len, ASSH_CIPHER_PCK_TAIL, s->in_seq)
+				  p->data_size - hsize - mac_len, ASSH_CIPHER_PCK_TAIL, seq)
 		       | ASSH_ERRSV_DISCONNECT);
 
-	  ASSH_ERR_RET(k->mac->f_check(k->mac_ctx, s->in_seq, p->data,
+	  ASSH_ERR_RET(k->mac->f_check(k->mac_ctx, seq, p->data,
 				       p->data_size - mac_len,
 				       p->data + p->data_size - mac_len)
 		       | ASSH_ERRSV_DISCONNECT);
@@ -226,6 +227,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 		   ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
 
       p->data_size -= mac_len + pad_len;
+      p->seq = seq;
 
       /* push completed incoming packet for dispatch */
       assert(s->in_pck == NULL);

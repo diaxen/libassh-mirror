@@ -80,6 +80,9 @@ struct assh_packet_s
       data to the packet and is used when the packet is finally sent out. */
   uint32_t data_size;
 
+  /** packet sequence number */
+  uint32_t seq;
+
   /** Number of references to this packet. */
   uint8_t ref_count:6;
 
