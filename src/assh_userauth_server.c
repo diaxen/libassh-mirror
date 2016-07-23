@@ -510,8 +510,19 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_server_process)
   ASSH_CHK_RET(pv->state != ASSH_USERAUTH_WAIT_RQ,
 	       ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
 
-  ASSH_CHK_RET(p->head.msg != SSH_MSG_USERAUTH_REQUEST,
-               ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+  switch (p->head.msg)
+    {
+    default:
+      if (p->head.msg < 80)
+        {
+          ASSH_ERR_RET(assh_transport_unimp(s, p));
+          return ASSH_OK;
+        }
+    case SSH_MSG_UNIMPLEMENTED:
+      ASSH_ERR_RET(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+    case SSH_MSG_USERAUTH_REQUEST:
+      break;
+    }
 
   uint8_t *username = p->head.end;
   const uint8_t *srv_name, *method_name, *auth_data;

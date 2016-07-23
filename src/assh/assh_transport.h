@@ -153,6 +153,12 @@ union assh_event_transport_u
 void assh_transport_push(struct assh_session_s *s,
 			 struct assh_packet_s *p);
 
+/** @internal This function sends an @ref SSH_MSG_UNIMPLEMENTED packet
+    in response to the @tt pin packet. */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_transport_unimp(struct assh_session_s *s,
+                     struct assh_packet_s *pin);
+
 /** @internal This function executes the transport output FSM code
     which enciphers packets and builds the output stream. It may
     report the @ref ASSH_EVENT_READ event. It is called from the @ref

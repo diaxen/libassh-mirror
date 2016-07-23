@@ -80,11 +80,21 @@ struct assh_packet_s
       data to the packet and is used when the packet is finally sent out. */
   uint32_t data_size;
 
-  /** packet sequence number */
+  /** For output packets, this is the output sequence number, valid
+      only after sending. For input packets, this is the input
+      sequence number. For input @ref SSH_MSG_UNIMPLEMENTED packets,
+      this is changed to the output sequence number of the associated
+      packet before dispatch to the service or kex layer. @see sent */
   uint32_t seq;
 
+  /** This is set when the packet has been sent, indicating that the
+      @ref seq field is valid. The packet is released when this
+      happens, unless the @ref assh_packet_refinc function has been
+      used. */
+  uint8_t sent:1;
+
   /** Number of references to this packet. */
-  uint8_t ref_count:6;
+  uint8_t ref_count:5;
 
   /** Padding size policy */
   enum assh_padding_policy_e padding:2;

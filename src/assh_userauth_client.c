@@ -589,8 +589,12 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_client_process)
           ASSH_ERR_RET(assh_userauth_client_failure(s, p, e) | ASSH_ERRSV_DISCONNECT);
           return ASSH_OK;
 
-        default:
+        case SSH_MSG_UNIMPLEMENTED:
           ASSH_ERR_RET(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+
+        default:
+          ASSH_ERR_RET(assh_transport_unimp(s, p));
+          return ASSH_OK;
         }
 
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY
@@ -612,8 +616,12 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_client_process)
           ASSH_ERR_RET(assh_userauth_client_failure(s, p, e) | ASSH_ERRSV_DISCONNECT);
           return ASSH_OK;
 
-        default:
+        case SSH_MSG_UNIMPLEMENTED:
           ASSH_ERR_RET(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+
+        default:
+          ASSH_ERR_RET(assh_transport_unimp(s, p));
+          return ASSH_OK;
         }
 #endif
 

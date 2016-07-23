@@ -96,6 +96,7 @@ assh_packet_alloc2(struct assh_context_s *c,
 
   /* init */
   p->ref_count = 1;
+  p->sent = 0;
   p->ctx = c;
   p->data_size = /* pck_len */ 4 + /* pad_len */ 1 + /* msg */ 1;
   p->alloc_size = size;

@@ -332,6 +332,9 @@ static ASSH_EVENT_DONE_FCN(assh_event_write_done)
 	  return ASSH_OK;
 	}
 
+      p->seq = s->out_seq++;
+      p->sent = 1;
+
       /* pop and release packet */
       assh_queue_remove(&s->out_queue, e);
       assh_packet_release(p);
@@ -430,31 +433,32 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 #endif
 
       assh_bool_t newkey = p->head.msg == SSH_MSG_NEWKEYS;
+      uint32_t seq = s->out_seq;
 
       if (k->cipher->auth_size)	/* Authenticated cipher */
 	{
 	  assert(k->cipher->auth_size != 0);
 	  ASSH_ERR_RET(k->cipher->f_process(k->cipher_ctx, p->data,
-			    p->data_size, ASSH_CIPHER_PCK_TAIL, s->out_seq)
+			    p->data_size, ASSH_CIPHER_PCK_TAIL, seq)
 		       | ASSH_ERRSV_FIN);
 	}
       else if (k->mac->etm)	/* Encrypt then Mac */
 	{
 	  ASSH_ERR_RET(k->cipher->f_process(k->cipher_ctx, p->data + 4,
-			    p->data_size - mac_len - 4, ASSH_CIPHER_PCK_TAIL, s->out_seq)
+			    p->data_size - mac_len - 4, ASSH_CIPHER_PCK_TAIL, seq)
 		       | ASSH_ERRSV_FIN);
 
-	  ASSH_ERR_RET(k->mac->f_compute(k->mac_ctx, s->out_seq, p->data,
+	  ASSH_ERR_RET(k->mac->f_compute(k->mac_ctx, seq, p->data,
 			 p->data_size - mac_len, mac_ptr)
 		       | ASSH_ERRSV_FIN);
 	}
       else			/* Mac and Encrypt */
 	{
-	  ASSH_ERR_RET(k->mac->f_compute(k->mac_ctx, s->out_seq, p->data,
+	  ASSH_ERR_RET(k->mac->f_compute(k->mac_ctx, seq, p->data,
 			 p->data_size - mac_len, mac_ptr) | ASSH_ERRSV_FIN);
 
 	  ASSH_ERR_RET(k->cipher->f_process(k->cipher_ctx, p->data,
-			    p->data_size - mac_len, ASSH_CIPHER_PCK_TAIL, s->out_seq)
+			    p->data_size - mac_len, ASSH_CIPHER_PCK_TAIL, seq)
 		       | ASSH_ERRSV_FIN);
 	}
 
@@ -470,7 +474,6 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 	}
 
       s->kex_bytes += p->data_size;
-      s->out_seq++;
 
       /* reinit output state */
       s->stream_out_size = 0;
@@ -507,6 +510,22 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
   return ASSH_OK;
 }
 
+assh_error_t assh_transport_unimp(struct assh_session_s *s,
+				  struct assh_packet_s *pin)
+{
+  assh_error_t err;
+  struct assh_packet_s *p;
+
+  if (pin->head.msg != SSH_MSG_UNIMPLEMENTED)
+    {
+      ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_UNIMPLEMENTED, 4, &p));
+      ASSH_ASSERT(assh_packet_add_u32(p, pin->seq));
+      assh_transport_push(s, p);
+    }
+
+  return ASSH_OK;
+}
+
 assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 				     struct assh_event_s *e)
 {
@@ -530,6 +549,19 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 	case SSH_MSG_DEBUG:
 	case SSH_MSG_IGNORE:
 	  goto done;
+
+	case SSH_MSG_UNIMPLEMENTED: {
+	  uint8_t *seqp = p->head.end;
+	  ASSH_ERR_RET(assh_packet_check_array(p, seqp, 4, NULL)
+		       | ASSH_ERRSV_DISCONNECT);
+	  p->seq = assh_load_u32(seqp);
+
+#ifdef CONFIG_ASSH_DEBUG_PROTOCOL
+	  ASSH_DEBUG("SSH_MSG_UNIMPLEMENTED: seq=%u\n", p->seq);
+#endif
+	  break;
+	}
+
 	default:
 	  if (msg > SSH_MSG_TRGENERIC_LAST)
 	    {
@@ -537,6 +569,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 	    case SSH_MSG_SERVICE_ACCEPT:
 	      break;
 	    }
+	  ASSH_ERR_RET(assh_transport_unimp(s, p));
 	  goto done;
 	}
     }
@@ -580,9 +613,11 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 	  if (msg >= SSH_MSG_KEXSPEC_FIRST)
 	    {
 	    case SSH_MSG_INVALID:
+	    case SSH_MSG_UNIMPLEMENTED:
 	      ASSH_ERR_RET(s->kex->f_process(s, p, e) | ASSH_ERRSV_DISCONNECT);
 	      break;
 	    }
+	  ASSH_ERR_RET(assh_transport_unimp(s, p));
 	}
       break;
 

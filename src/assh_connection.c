@@ -1765,8 +1765,13 @@ static ASSH_SERVICE_PROCESS_FCN(assh_connection_process)
     case SSH_MSG_CHANNEL_FAILURE:
       ASSH_ERR_RET(assh_connection_got_request_reply(s, p, e, 0, 0));
       break;
-    default:
+    case SSH_MSG_UNIMPLEMENTED:
+      /* this service only send standard messages which must be
+         supported by the remote side. */
       ASSH_ERR_RET(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+    default:
+      /* handle non-standard messages gracefully */
+      ASSH_ERR_RET(assh_transport_unimp(s, p));
     }
 
   return ASSH_OK;
