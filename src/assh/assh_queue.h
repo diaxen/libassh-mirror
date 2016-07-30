@@ -42,14 +42,18 @@ struct assh_queue_entry_s
 struct assh_queue_s
 {
   struct assh_queue_entry_s head;
-  size_t count;
 };
 
 /** @internal */
 ASSH_INLINE void assh_queue_init(struct assh_queue_s *q)
 {
   q->head.next = q->head.prev = &q->head;
-  q->count = 0;
+}
+
+/** @internal */
+ASSH_INLINE assh_bool_t assh_queue_isempty(struct assh_queue_s *q)
+{
+  return q->head.next == &q->head;
 }
 
 /** @internal */
@@ -81,12 +85,10 @@ assh_queue_prev(struct assh_queue_s *q, struct assh_queue_entry_s *e)
 }
 
 /** @internal */
-ASSH_INLINE void assh_queue_remove(struct assh_queue_s *q,
-                                     struct assh_queue_entry_s *e)
+ASSH_INLINE void assh_queue_remove(struct assh_queue_entry_s *e)
 {
   e->prev->next = e->next;
   e->next->prev = e->prev;
-  q->count--;
 }
 
 /** @internal */
@@ -98,7 +100,6 @@ ASSH_INLINE void assh_queue_push_front(struct assh_queue_s *q,
   a->next->prev = b;
   b->next = a->next;
   a->next = b;
-  q->count++;
 }
 
 /** @internal */
@@ -110,7 +111,6 @@ ASSH_INLINE void assh_queue_push_back(struct assh_queue_s *q,
   a->prev->next = b;
   b->prev = a->prev;
   a->prev = b;
-  q->count++;
 }
 
 /** @internal */
@@ -120,17 +120,15 @@ ASSH_INLINE void assh_queue_concat(struct assh_queue_s *q,
   struct assh_queue_entry_s *a = &q->head;
   struct assh_queue_entry_s *b = &r->head;
 
-  if (r->count == 0)
+  if (assh_queue_isempty(r))
     return;
 
   b->prev->next = a;
   b->next->prev = a->prev;
   a->prev->next = b->next;
   a->prev = b->prev;
-  q->count += r->count;
 
   b->next = b->prev = b;
-  r->count = 0;
 }
 
 #endif

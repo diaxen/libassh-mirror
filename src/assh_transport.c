@@ -319,7 +319,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_write_done)
 
     /* check if sending of packet has completed */
     case ASSH_TR_OUT_PACKETS_DONE: {
-      assert(s->out_queue.count > 0);
+      assert(!assh_queue_isempty(&s->out_queue));
 
       struct assh_queue_entry_s *e = assh_queue_front(&s->out_queue);
       struct assh_packet_s *p = (void*)e;
@@ -336,7 +336,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_write_done)
       p->sent = 1;
 
       /* pop and release packet */
-      assh_queue_remove(&s->out_queue, e);
+      assh_queue_remove(e);
       assh_packet_release(p);
 
       s->stream_out_st = ASSH_TR_OUT_PACKETS;
@@ -381,7 +381,7 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
     case ASSH_TR_OUT_PACKETS: {
 
       /* nothing to output, yield to input */
-      if (s->out_queue.count == 0)
+      if (assh_queue_isempty(&s->out_queue))
 	return ASSH_OK;
 
       struct assh_packet_s *p = (void*)assh_queue_front(&s->out_queue);
@@ -485,7 +485,7 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
     /* the write stream buffer is an already enciphered output packet */
     case ASSH_TR_OUT_PACKETS_ENCIPHERED: {
 
-      assert(s->out_queue.count != 0);
+      assert(!assh_queue_isempty(&s->out_queue));
       struct assh_packet_s *p = (void*)assh_queue_front(&s->out_queue);
 
       *data = p->data + s->stream_out_size;

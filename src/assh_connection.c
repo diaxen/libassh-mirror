@@ -79,14 +79,14 @@ assh_channel_next_id(struct assh_connection_context_s *pv)
 static void assh_request_queue_cleanup(struct assh_session_s *s,
 				       struct assh_queue_s *q)
 {
-  while (q->count > 0)
+  while (!assh_queue_isempty(q))
     {
       struct assh_queue_entry_s *rqe = assh_queue_back(q);
       struct assh_request_s *rq = (void*)rqe;
 
       assh_packet_release(rq->reply_pck);
 
-      assh_queue_remove(q, rqe);
+      assh_queue_remove(rqe);
       assh_free(s->ctx, rqe);
     }
 }
@@ -105,12 +105,12 @@ static void assh_channel_cleanup(struct assh_channel_s *ch)
 static void assh_channel_queue_cleanup(struct assh_session_s *s,
 				       struct assh_queue_s *q)
 {
-  while (q->count > 0)
+  while (!assh_queue_isempty(q))
     {
       struct assh_queue_entry_s *che = assh_queue_back(q);
       struct assh_channel_s *ch = (void*)che;
 
-      assh_queue_remove(q, che);
+      assh_queue_remove(che);
       assh_channel_cleanup(ch);
     }
 }
@@ -124,7 +124,7 @@ static void assh_request_dequeue(struct assh_session_s *s,
   struct assh_queue_s *q = ch == NULL ? &pv->request_rqueue : &ch->request_rqueue;
 
   /* send and release ready replies present on queue in the right order */
-  while (q->count > 0)
+  while (!assh_queue_isempty(q))
     {
       struct assh_queue_entry_s *rqe = assh_queue_back(q);
       struct assh_request_s *rq = (void*)rqe;
@@ -132,7 +132,7 @@ static void assh_request_dequeue(struct assh_session_s *s,
         return;
       assh_transport_push(s, rq->reply_pck);
       rq->reply_pck = NULL;
-      assh_queue_remove(q, rqe);
+      assh_queue_remove(rqe);
       assh_free(s->ctx, rq);
     }
 }
@@ -512,7 +512,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_request_reply_done)
   struct assh_request_s *rq = (void*)rqe;
   assert(e->connection.request_reply.rq == rq);
 
-  assh_queue_remove(q, rqe);
+  assh_queue_remove(rqe);
   assh_free(s->ctx, rq);
 
   return ASSH_OK;
@@ -527,7 +527,7 @@ static assh_bool_t assh_request_reply_flush(struct assh_session_s *s,
   struct assh_queue_s *q = ch == NULL
     ? &pv->request_lqueue : &ch->request_lqueue;
 
-  if (q->count == 0)
+  if (assh_queue_isempty(q))
     return 0;
 
   struct assh_request_s *rq = (void*)assh_queue_back(q);
@@ -599,7 +599,7 @@ assh_connection_got_request_reply(struct assh_session_s *s,
     }
 
   /* get next request in queue */
-  ASSH_CHK_RET(q->count == 0,
+  ASSH_CHK_RET(assh_queue_isempty(q),
 	       ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
 
   struct assh_request_s *rq = (void*)assh_queue_back(q);
@@ -1402,7 +1402,9 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_close_done)
 
   struct assh_channel_s *ch = e->connection.channel_close.ch;
 
-  assh_queue_remove(&pv->closing_queue, (void*)ch);
+  /* remove from pv->closing_queue */
+  assh_queue_remove((void*)ch);
+
   assh_channel_cleanup(ch);
 
   return ASSH_OK;
@@ -1686,7 +1688,7 @@ static ASSH_SERVICE_PROCESS_FCN(assh_connection_process)
     }
 
   /* report channel closing related events */
-  if (pv->closing_queue.count > 0)
+  if (!assh_queue_isempty(&pv->closing_queue))
     {
       struct assh_channel_s *ch = (void*)assh_queue_back(&pv->closing_queue);
 
