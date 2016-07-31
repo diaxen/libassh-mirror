@@ -62,7 +62,6 @@ static assh_error_t test_algo(struct assh_context_s *c)
       { NULL }
     };
 
-  assh_error_t err;
   const struct tests_s *t;
   const struct assh_key_ops_s *algo = NULL;
   size_t bits_min = 0, bits_max = 0;
@@ -201,7 +200,6 @@ static assh_error_t test_helper(struct assh_context_s *c)
       { NULL }
     };
 
-  assh_error_t err;
   const struct tests_s *t;
   const struct assh_key_ops_s *algo = NULL;
   size_t bits_min = 0, bits_max = 0;
@@ -256,7 +254,6 @@ static assh_error_t test_helper(struct assh_context_s *c)
 
 int main(int argc, char **argv)
 {
-  assh_error_t err;
   struct assh_context_s context;
 
 #ifdef CONFIG_ASSH_USE_GCRYPT

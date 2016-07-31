@@ -115,7 +115,8 @@ int main(int argc, char **argv)
       if (ASSH_ERR_ERROR(err) != ASSH_OK)
         {
           fprintf(stderr, "assh error %x sv %x in main loop (errno=%i)\n",
-                  ASSH_ERR_ERROR(err), ASSH_ERR_SEVERITY(err), errno);
+                  (unsigned)ASSH_ERR_ERROR(err),
+                  (unsigned)ASSH_ERR_SEVERITY(err), errno);
           if (ASSH_ERR_ERROR(err) == ASSH_ERR_CLOSED)
             goto err_;
           continue;
@@ -183,7 +184,8 @@ int main(int argc, char **argv)
 
       err = assh_event_done(session, &event, ASSH_OK);
       if (err != ASSH_OK)
-        fprintf(stderr, "assh error %x in main loop (errno=%i)\n", err, errno);
+        fprintf(stderr, "assh error %x in main loop (errno=%i)\n",
+                (unsigned)err, errno);
     }
 
  err_:

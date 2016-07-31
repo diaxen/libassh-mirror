@@ -1238,7 +1238,7 @@ assh_bignum_mt_sub(struct assh_bignum_s *dst,
 
       /* compute the 1st mask by predicting the first overflow */
       assh_bnword_t q = ((assh_bnlong_t)an[dl - 1] - bn[dl - 1]) >> ASSH_BIGNUM_W;
-      q = (1 & q ^ 1) - 1;
+      q = ((q & 1) ^ 1) - 1;
 
       /* subtract numbers and conditionally subtract montgomery(1) */
       assh_bnslong_t t = 0;

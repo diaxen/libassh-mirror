@@ -254,7 +254,7 @@ assh_kex_client_algos(struct assh_session_s *s, const uint8_t *lists[9],
   assh_error_t err;
   uint_fast16_t i, j, k;
 
-  for (j = i = 0; i < 8; i++)
+  for (k = j = i = 0; i < 8; i++)
     {
       switch (i)
         {

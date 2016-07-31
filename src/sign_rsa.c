@@ -92,7 +92,7 @@ assh_sign_rsa_generate(struct assh_context_s *c,
   size_t n = ASSH_ALIGN8(assh_bignum_bits(&k->nn)) / 8;
 
   /* check/return signature length */
-  size_t id_len = 4 + assh_load_u32(algo_id);
+  size_t id_len = 4 + assh_load_u32((const uint8_t*)algo_id);
   size_t len = id_len + 4 + n;
 
   if (sign == NULL)
@@ -192,7 +192,7 @@ assh_sign_rsa_check(struct assh_context_s *c,
 
   assert(key->algo == &assh_key_rsa);
 
-  size_t id_len = 4 + assh_load_u32(algo_id);
+  size_t id_len = 4 + assh_load_u32((const uint8_t*)algo_id);
   size_t n = ASSH_ALIGN8(assh_bignum_bits(&k->nn)) / 8;
 
   ASSH_CHK_RET(sign_len != id_len + 4 + n, ASSH_ERR_INPUT_OVERFLOW);

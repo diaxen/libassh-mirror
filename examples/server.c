@@ -171,7 +171,8 @@ int main()
 	  assh_error_t err = assh_event_table_run(session, &ev_table, &event);
 	  if (ASSH_ERR_ERROR(err) != ASSH_OK)
 	    {
-	      fprintf(stderr, "assh error %x in main loop (errno=%i)\n", err, errno);
+	      fprintf(stderr, "assh error %x in main loop (errno=%i)\n",
+		      (unsigned)err, errno);
 
 	      if (ASSH_ERR_ERROR(err) == ASSH_ERR_CLOSED)
 		{
@@ -259,7 +260,8 @@ int main()
 	    }
 
 	  if (err != ASSH_OK)
-	    fprintf(stderr, "assh error %i in main loop (errno=%i)\n", err, errno);
+	    fprintf(stderr, "assh error %i in main loop (errno=%i)\n",
+		    (unsigned)err, errno);
 	}
 
       assh_session_release(session);

@@ -177,7 +177,7 @@ AC_DEFINE([CONFIG_ASSH_PACKET_POOL], [], [Use a packet allocation pool])
 #AC_DEFINE([CONFIG_ASSH_ALLOCA], [], [Enable storing key related material on stack])
 
 if test "$GCC" = "yes" ; then
-    CFLAGS="-Wall $CFLAGS"
+    CFLAGS="-Wall -Wno-enum-compare $CFLAGS"
 fi
 
 AC_OUTPUT([

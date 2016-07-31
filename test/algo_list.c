@@ -54,7 +54,7 @@ static void show_table()
   const struct assh_algo_s *a;
   enum assh_algo_class_e cl = ASSH_ALGO_ANY;
 
-  for (i = 0; a = assh_algo_table[i]; i++)
+  for (i = 0; (a = assh_algo_table[i]) != NULL; i++)
     {
       const struct assh_algo_name_s *n = a->names;
 

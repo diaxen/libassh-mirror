@@ -422,7 +422,8 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
       uint8_t *pad = mac_ptr - pad_len;
 
       if (pad_len > 0)
-	assh_prng_get(s->ctx, pad, pad_len, ASSH_PRNG_QUALITY_PADDING);
+	ASSH_ERR_RET(assh_prng_get(s->ctx, pad, pad_len, ASSH_PRNG_QUALITY_PADDING)
+		     | ASSH_ERRSV_FIN);
 
 #warning FIXME compress
 
