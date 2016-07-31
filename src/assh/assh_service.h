@@ -54,6 +54,11 @@ typedef ASSH_SERVICE_INIT_FCN(assh_service_init_t);
     assh_session_s::srv_pv fields to @tt {NULL}. */
 typedef ASSH_SERVICE_CLEANUP_FCN(assh_service_cleanup_t);
 
+/** @internal @see assh_service_process_t */
+#define ASSH_SERVICE_PROCESS_FCN(n) assh_error_t (n)(struct assh_session_s *s, \
+                                                     struct assh_packet_s *p, \
+                                                     struct assh_event_s *e)
+
 /** @internal @This defines the function type for event processing of
     the ssh service module interface. This function is called from the
     @ref assh_transport_dispatch function when the current state of
@@ -63,8 +68,10 @@ typedef ASSH_SERVICE_CLEANUP_FCN(assh_service_cleanup_t);
     state is less than @ref ASSH_TR_DISCONNECT.
 
     A packet may be passed to the function for processing by the
-    running service. If no new received packet is available, the
-    parameter is @tt NULL.
+    running service. This function must be able to handle some @ref
+    SSH_MSG_UNIMPLEMENTED packets as well as packets with a message
+    id greater or equal to @ref SSH_MSG_SERVICE_FIRST. If no new
+    received packet is available, the parameter is @tt NULL.
 
     The function may initialize the passed event object, in this case
     the event will be reported to the caller of the @ref
@@ -81,9 +88,6 @@ typedef ASSH_SERVICE_CLEANUP_FCN(assh_service_cleanup_t);
     @ref ASSH_TR_FIN. If the function reports no event and return
     @ref ASSH_OK when the state is @ref ASSH_TR_FIN, the state will
     change to ASSH_TR_CLOSED and the function will not be called any more. */
-#define ASSH_SERVICE_PROCESS_FCN(n) assh_error_t (n)(struct assh_session_s *s, \
-                                                     struct assh_packet_s *p, \
-                                                     struct assh_event_s *e)
 typedef ASSH_SERVICE_PROCESS_FCN(assh_service_process_t);
 
 /** @This describes the implementation of an ssh service. */

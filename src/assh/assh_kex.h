@@ -212,6 +212,7 @@ typedef ASSH_KEX_INIT_FCN(assh_kex_init_t);
     context and set this field back to @tt NULL. */
 typedef ASSH_KEX_CLEANUP_FCN(assh_kex_cleanup_t);
 
+/** @internal @see assh_kex_process_t */
 #define ASSH_KEX_PROCESS_FCN(n) assh_error_t (n)(struct assh_session_s *s, \
                                                  struct assh_packet_s *p, \
                                                  struct assh_event_s *e)
@@ -222,7 +223,10 @@ typedef ASSH_KEX_CLEANUP_FCN(assh_kex_cleanup_t);
     of the transport layer is @ref ASSH_TR_KEX_RUNNING.
 
     A packet may be passed to the function for processing by the
-    key-exchange protocol. If no new received packet is available, the
+    key-exchange protocol. This function must be able to handle some
+    @ref SSH_MSG_UNIMPLEMENTED packets as well as packets with a
+    message id in the range [@ref SSH_MSG_KEXSPEC_FIRST, @ref
+    SSH_MSG_KEXSPEC_LAST]. If no new received packet is available, the
     parameter is @tt NULL. This is the case on the first call to this
     function after the key-exchange initialization.
 
