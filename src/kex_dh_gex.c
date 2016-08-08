@@ -752,7 +752,7 @@ static ASSH_KEX_PROCESS_FCN(assh_kex_dh_gex_process)
 #endif
     }
 
-  abort();
+  ASSH_UNREACHABLE();
 }
 
 static assh_error_t assh_kex_dh_gex_init(struct assh_session_s *s,
@@ -784,7 +784,7 @@ static assh_error_t assh_kex_dh_gex_init(struct assh_session_s *s,
       break;
 #endif
     default:
-      abort();
+      ASSH_UNREACHABLE();
     }
 
   s->kex_pv = pv;
@@ -819,7 +819,7 @@ static assh_error_t assh_kex_dh_gex_init(struct assh_session_s *s,
       break;
 #endif
     default:
-      abort();
+      ASSH_UNREACHABLE();
     }
 
   return ASSH_OK;
@@ -850,7 +850,7 @@ static ASSH_KEX_CLEANUP_FCN(assh_kex_dh_gex_cleanup)
 #endif
 
     default:
-      abort();
+      ASSH_UNREACHABLE();
     }
 
   assh_free(c, s->kex_pv);

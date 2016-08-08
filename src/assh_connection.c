@@ -1628,7 +1628,6 @@ static void assh_channel_force_close_i(struct assh_map_entry_s *ch_, void *pv_)
 
   switch (ch->status)
     {
-
     case ASSH_CHANNEL_ST_OPEN_SENT:
     case ASSH_CHANNEL_ST_OPEN_RECEIVED:
     case ASSH_CHANNEL_ST_OPEN:
@@ -1645,7 +1644,7 @@ static void assh_channel_force_close_i(struct assh_map_entry_s *ch_, void *pv_)
     case ASSH_CHANNEL_ST_CLOSING:
     case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
       /* can not be in channel map */
-      assert(0);
+      ASSH_UNREACHABLE();
     }
 
   assh_queue_push_front(&pv->closing_queue, &ch->qentry);

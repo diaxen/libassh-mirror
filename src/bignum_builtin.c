@@ -2129,7 +2129,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
         case ASSH_BIGNUM_SIZE:
           break;
         default:
-          abort();
+          ASSH_UNREACHABLE();
 #endif
         }
     }
@@ -2481,7 +2481,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
               ASSH_ERR_GTO(assh_bignum_lshift(dst, src, b + oc - 128), err_sc);
               break;
             default:
-              abort();
+              ASSH_UNREACHABLE();
             }
 #if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
           dst->mt_num = 0;

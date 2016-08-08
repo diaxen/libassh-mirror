@@ -58,7 +58,7 @@ size_t assh_bignum_size_of_bits(enum assh_bignum_fmt_e fmt, size_t bits)
       l = sizeof(intptr_t);
       break;
     default:
-      abort();
+      ASSH_UNREACHABLE();
     }
 
   return l;

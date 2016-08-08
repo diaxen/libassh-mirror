@@ -168,6 +168,8 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_rsa_output)
     default:
       ASSH_ERR_RET(ASSH_ERR_NOTSUP);
     }
+
+  ASSH_UNREACHABLE();
 }
 
 static ASSH_KEY_CMP_FCN(assh_key_rsa_cmp)

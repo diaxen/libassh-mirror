@@ -383,7 +383,7 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
       break;
 #endif
     default:
-      abort();
+      ASSH_UNREACHABLE();
     }
 
   assh_bool_t good_guess = s->kex_preferred[0] == algos[0] &&

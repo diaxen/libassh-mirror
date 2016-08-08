@@ -610,7 +610,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
                   gcry_mpi_mul(dst->n, src1->n, src2->n);
                   break;
                 default:
-                  abort();
+                  ASSH_UNREACHABLE();
                 }
             }
           else
@@ -641,7 +641,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
                   gcry_mpi_powm(dst->n, src1->n, src2->n, mod->n);
                   break;
                 default:
-                  abort();
+                  ASSH_UNREACHABLE();
                 }
             }
           dst->mt_num = src1->mt_num;
@@ -712,7 +712,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
               dst->mt_num = src1->mt_num;
               break;
             default:
-              abort();
+              ASSH_UNREACHABLE();
             }
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
           if (trace & 2)
@@ -744,7 +744,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
 	      gcry_mpi_clear_highbit(dst->n, dst->bits);
               break;
             default:
-              abort();
+              ASSH_UNREACHABLE();
             }
           dst->mt_num = 0;
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)

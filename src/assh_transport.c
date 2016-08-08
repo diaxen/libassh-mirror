@@ -409,6 +409,8 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 	  pad_len = ASSH_MIN(255, p->alloc_size - p->data_size - mac_len);
 	  pad_len -= (pad_len + cipher_len) % align;
 	  break;
+	default:
+	  ASSH_UNREACHABLE();
 	}
 
       assert(pad_len >= 4 && pad_len <= 255);

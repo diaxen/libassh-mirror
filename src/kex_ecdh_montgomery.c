@@ -539,7 +539,7 @@ assh_kex_ecdhmt_init(struct assh_session_s *s,
       break;
 #endif
     default:
-      abort();
+      ASSH_UNREACHABLE();
     }
 
   return ASSH_OK;
