@@ -54,6 +54,7 @@ enum assh_kex_dh_gex_state_e
 #ifdef CONFIG_ASSH_CLIENT
   ASSH_KEX_DH_GEX_CLIENT_SEND_SIZE,
   ASSH_KEX_DH_GEX_CLIENT_WAIT_GROUP,
+  ASSH_KEX_DH_GEX_CLIENT_WAIT_GROUP_OLD,
   ASSH_KEX_DH_GEX_CLIENT_WAIT_F,
   ASSH_KEX_DH_GEX_CLIENT_LOOKUP_HOST_KEY_WAIT,
 #endif
@@ -72,6 +73,7 @@ extern const uint32_t assh_kex_dh_gex_groups[(DH_MAX_GRSIZE-1024) / 8];
 struct assh_kex_dh_gex_private_s
 {
   enum assh_kex_dh_gex_state_e state:8;
+  uint8_t request_type;
 
   /* minimum and favorite group sizes */
   uint16_t algo_min;
@@ -94,7 +96,6 @@ struct assh_kex_dh_gex_private_s
       uint32_t client_min;
       uint32_t client_n;
       uint32_t client_max;
-      uint8_t request_type;
     };
 #endif
 #ifdef CONFIG_ASSH_CLIENT
@@ -118,23 +119,35 @@ static assh_error_t assh_kex_dh_gex_client_send_size(struct assh_session_s *s)
 
   struct assh_packet_s *p;
 
-#ifndef ASSH_USE_DH_GEX_REQUEST_OLD
-  ASSH_ERR_RET(assh_packet_alloc(c, SSH_MSG_KEX_DH_GEX_REQUEST, 3 * 4, &p)
+  pv->request_type = SSH_MSG_KEX_DH_GEX_REQUEST;
+  ASSH_ERR_RET(assh_packet_alloc(c, pv->request_type, 3 * 4, &p)
 	       | ASSH_ERRSV_DISCONNECT);
 
   ASSH_ASSERT(assh_packet_add_u32(p, pv->algo_min));
   ASSH_ASSERT(assh_packet_add_u32(p, pv->algo_n));
   ASSH_ASSERT(assh_packet_add_u32(p, DH_MAX_GRSIZE));
-#else
-  /* for test purpose */
-  ASSH_ERR_RET(assh_packet_alloc(c, SSH_MSG_KEX_DH_GEX_REQUEST_OLD, 4, &p)
-	       | ASSH_ERRSV_DISCONNECT);
-
-  ASSH_ASSERT(assh_packet_add_u32(p, pv->algo_n));
-#endif
 
   assh_transport_push(s, p);
   pv->state = ASSH_KEX_DH_GEX_CLIENT_WAIT_GROUP;
+  return ASSH_OK;
+}
+
+static assh_error_t assh_kex_dh_gex_client_send_size_old(struct assh_session_s *s)
+{
+  struct assh_kex_dh_gex_private_s *pv = s->kex_pv;
+  struct assh_context_s *c = s->ctx;
+  assh_error_t err;
+
+  struct assh_packet_s *p;
+
+  pv->request_type = SSH_MSG_KEX_DH_GEX_REQUEST_OLD;
+  ASSH_ERR_RET(assh_packet_alloc(c, pv->request_type, 4, &p)
+	       | ASSH_ERRSV_DISCONNECT);
+
+  ASSH_ASSERT(assh_packet_add_u32(p, pv->algo_n));
+
+  assh_transport_push(s, p);
+  pv->state = ASSH_KEX_DH_GEX_CLIENT_WAIT_GROUP_OLD;
   return ASSH_OK;
 }
 
@@ -359,11 +372,16 @@ static ASSH_EVENT_DONE_FCN(assh_kex_dh_gex_host_key_lookup_done)
   assh_store_u32(bit_sizes + 4, pv->algo_n);
   assh_store_u32(bit_sizes + 8, DH_MAX_GRSIZE);
 
-#ifndef ASSH_USE_DH_GEX_REQUEST_OLD
-  assh_hash_update(hash_ctx, bit_sizes, 12);
-#else
-  assh_hash_update(hash_ctx, bit_sizes + 4, 4);
-#endif
+  switch (pv->request_type)
+    {
+    case SSH_MSG_KEX_DH_GEX_REQUEST:
+      assh_hash_update(hash_ctx, bit_sizes, 12);
+      break;
+
+    case SSH_MSG_KEX_DH_GEX_REQUEST_OLD:
+      assh_hash_update(hash_ctx, bit_sizes + 4, 4);
+      break;
+    }
 
   ASSH_ERR_GTO(assh_hash_bignum(s->ctx, hash_ctx, &pv->pn)
 	       | ASSH_ERRSV_DISCONNECT, err_hash);
@@ -434,6 +452,7 @@ static assh_error_t assh_kex_dh_gex_server_wait_size(struct assh_session_s *s,
 
   switch (pv->request_type)
     {
+#if 1 /* disable this to test old gex requests  */
     case SSH_MSG_KEX_DH_GEX_REQUEST:
       ASSH_ERR_RET(assh_packet_check_u32(p, &pv->client_min, next, &next)
                    | ASSH_ERRSV_DISCONNECT);
@@ -454,6 +473,7 @@ static assh_error_t assh_kex_dh_gex_server_wait_size(struct assh_session_s *s,
       min = ASSH_MAX(pv->algo_min, pv->client_min);
       max = ASSH_MIN(pv->client_max, DH_MAX_GRSIZE);
       break;
+#endif
 
     case SSH_MSG_KEX_DH_GEX_REQUEST_OLD:
       ASSH_ERR_RET(assh_packet_check_u32(p, &pv->client_n, next, &next)
@@ -464,7 +484,8 @@ static assh_error_t assh_kex_dh_gex_server_wait_size(struct assh_session_s *s,
       break;
 
     default:
-      ASSH_ERR_RET(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+      ASSH_ERR_RET(assh_transport_unimp(s, p));
+      return ASSH_OK;
     }
 
   min = ASSH_MAX(min, pv->client_n - pv->client_n / 16);
@@ -718,6 +739,15 @@ static ASSH_KEX_PROCESS_FCN(assh_kex_dh_gex_process)
       return ASSH_OK;
 
     case ASSH_KEX_DH_GEX_CLIENT_WAIT_GROUP:
+      if (p == NULL)
+        return ASSH_OK;
+      if (p->head.msg == SSH_MSG_UNIMPLEMENTED)
+        {
+          ASSH_ERR_RET(assh_kex_dh_gex_client_send_size_old(s)
+                       | ASSH_ERRSV_DISCONNECT);
+          return ASSH_OK;
+        }
+    case ASSH_KEX_DH_GEX_CLIENT_WAIT_GROUP_OLD:
       if (p == NULL)
         return ASSH_OK;
       ASSH_ERR_RET(assh_kex_dh_gex_client_wait_group(s, p)
