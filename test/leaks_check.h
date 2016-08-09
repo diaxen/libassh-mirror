@@ -27,13 +27,13 @@
 #include <stdlib.h>
 
 static size_t alloc_size = 0;
+#define ALLOC_ALIGN 32
 
 static ASSH_ALLOCATOR(assh_leaks_allocator)
 {
   if (size == 0)
     {
-      size_t *bsize = *ptr;
-      bsize--;
+      size_t *bsize = (uint8_t*)*ptr - ALLOC_ALIGN;
       alloc_size -= *bsize;
       memset((void*)bsize, 0x5a, *bsize);
       free((void*)bsize);
@@ -41,10 +41,10 @@ static ASSH_ALLOCATOR(assh_leaks_allocator)
     }
   else if (*ptr == NULL)
     {
-      size_t *bsize = malloc(sizeof(size_t) + size);
+      size_t *bsize = malloc(ALLOC_ALIGN + size);
       if (bsize != NULL)
 	{
-	  *ptr = bsize + 1;
+	  *ptr = (uint8_t*)bsize + ALLOC_ALIGN;
 	  *bsize = size;
 	  alloc_size += size;
 	  memset(*ptr, 0xa5, size);
@@ -54,13 +54,13 @@ static ASSH_ALLOCATOR(assh_leaks_allocator)
     }
   else
     {
-      size_t *bsize = *ptr;
-      bsize = realloc(bsize - 1, sizeof(size_t) + size);
+      size_t *bsize = (uint8_t*)*ptr - ALLOC_ALIGN;
+      bsize = realloc(bsize, ALLOC_ALIGN + size);
       if (bsize != NULL)
 	{
 	  alloc_size -= *bsize;
 	  alloc_size += size;
-	  *ptr = bsize + 1;
+	  *ptr = (uint8_t*)bsize + ALLOC_ALIGN;
 	  *bsize = size;
 	  return ASSH_OK;
 	}
