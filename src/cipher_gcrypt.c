@@ -100,6 +100,11 @@ static ASSH_CIPHER_PROCESS_FCN(assh_cipher_gcrypt_process_GCM)
   assh_error_t err;
   struct assh_cipher_gcrypt_context_s *ctx = ctx_;
   size_t auth_size = ctx->cipher->auth_size;
+  size_t block_size = ctx->cipher->block_size;
+  size_t csize = len - 4 - auth_size;
+
+  ASSH_CHK_RET(csize & (block_size - 1),
+               ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
 
   if (op == ASSH_CIPHER_PCK_HEAD)
     return ASSH_OK;
@@ -110,14 +115,14 @@ static ASSH_CIPHER_PROCESS_FCN(assh_cipher_gcrypt_process_GCM)
   if (ctx->encrypt)
     {
       ASSH_CHK_RET(gcry_cipher_encrypt(ctx->hd, data + 4,
-				       len - 4 - auth_size, NULL, 0),
+				       csize, NULL, 0),
 		   ASSH_ERR_CRYPTO);
       gcry_cipher_gettag(ctx->hd, data + len - auth_size, auth_size);
     }
   else
     {
       ASSH_CHK_RET(gcry_cipher_decrypt(ctx->hd, data + 4,
-				       len - 4 - auth_size, NULL, 0),
+				       csize, NULL, 0),
 		   ASSH_ERR_CRYPTO);
       ASSH_CHK_RET(gcry_cipher_checktag(ctx->hd,
 					data + len - auth_size, auth_size),
@@ -136,7 +141,7 @@ static ASSH_CIPHER_PROCESS_FCN(assh_cipher_gcrypt_process)
   struct assh_cipher_gcrypt_context_s *ctx = ctx_;
   size_t block_size = ctx->cipher->block_size;
 
-  ASSH_CHK_RET(len % block_size,
+  ASSH_CHK_RET(len & (block_size - 1),
 	       ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
 
   if (ctx->encrypt)

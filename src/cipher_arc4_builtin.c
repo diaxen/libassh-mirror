@@ -93,6 +93,8 @@ static ASSH_CIPHER_INIT_FCN(assh_arc4_256_init)
 static ASSH_CIPHER_PROCESS_FCN(assh_arc4_process)
 {
   struct assh_cipher_arc4_context_s *ctx = ctx_;
+  assh_error_t err;
+  ASSH_CHK_RET(len & 7, ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
   assh_arc4_run(ctx, data, len);
   return ASSH_OK;
 }

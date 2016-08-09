@@ -211,16 +211,11 @@ enum assh_error_e
 /** @internal Maximum mac output size in bytes. */
 #define ASSH_MAX_MAC_SIZE 64
 
-/** @internal Maximum size of incoming packet length, including header and mac. */
-#define ASSH_MAX_PCK_LEN 35000
-
 /** @internal Default key re-echange threshold in bytes */
 #define ASSH_REKEX_THRESHOLD (1 << 31)
 
 /** @internal Maximum size of packet payload */
-#define ASSH_MAX_PCK_PAYLOAD_SIZE \
-  (ASSH_MAX_PCK_LEN - /* sizeof(struct assh_packet_head_s) */ 6 \
-   - ASSH_MAX_MAC_SIZE - ASSH_MAX_BLOCK_SIZE)
+#define ASSH_PACKET_MAX_PAYLOAD 35000
 
 /** remote identification string protocol timeout in seconds */
 #define ASSH_TIMEOUT_IDENT 10

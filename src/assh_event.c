@@ -56,7 +56,7 @@ assh_error_t assh_event_get(struct assh_session_s *s,
 
   /* key re-exchange should have occured at this point */
   ASSH_CHK_GTO(s->tr_st < ASSH_TR_DISCONNECT &&
-               s->kex_bytes > ASSH_REKEX_THRESHOLD + ASSH_MAX_PCK_LEN * 16,
+               s->kex_bytes > ASSH_REKEX_THRESHOLD + ASSH_PACKET_MAX_PAYLOAD * 16,
                ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT, err);
 
   /* initiate key re-exchange */

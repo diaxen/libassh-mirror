@@ -201,21 +201,51 @@ enum assh_ssh_disconnect_e
   SSH_DISCONNECT_ILLEGAL_USER_NAME              = 15,
 };
 
-/** @internal @This allocates a new packet. The @tt alloc_size
-    parameter specifies total allocated size. No range checking is
-    performed on the size parameter. */
+/** @internal @This allocates a new packet. The @tt buffer_size
+    parameter specifies total allocated size. The size is not limited. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_packet_alloc2(struct assh_context_s *c,
-                  uint8_t msg, size_t alloc_size,
-                  struct assh_packet_s **p);
+assh_packet_alloc_raw(struct assh_context_s *c, size_t raw_size,
+                   struct assh_packet_s **p);
 
-/** @internal @This allocates a new packet. The @tt
-    payload_size parameter specifies the amount of bytes needed
-    between the message id byte and the mac bytes. */
+/** @internal @This allocates a new packet is the specified size can't
+    be stored in the current packet. The original packet is not
+    released and the data are not copied. */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_packet_realloc_raw(struct assh_context_s *c,
+                        struct assh_packet_s **p_,
+                        size_t raw_size);
+
+/** @internal @This allocates a new packet. The @tt payload_size_m1
+    parameter specifies the size of the payload minus one. This is
+    amount of bytes between the message id and the padding. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_packet_alloc(struct assh_context_s *c,
-                  uint8_t msg, size_t payload_size,
+                  uint8_t msg, size_t payload_size_m1,
                   struct assh_packet_s **result);
+
+#define ASSH_PACKET_HEADLEN                             \
+   (/* pck_len field */ 4 + /* pad_len field */ 1)
+
+#define ASSH_PACKET_MIN_PADDING 4
+
+#define ASSH_PACKET_MAX_PADDING 255
+
+/** @This specifies the difference between the size of the
+    packet payload and the size of the whole packet buffer. */
+#define ASSH_PACKET_OVERHEAD(pad_len, mac_len)                          \
+  (ASSH_PACKET_HEADLEN + pad_len + mac_len)
+
+/** @This specifies the maximum difference between the size of the
+    packet payload and the size of the whole packet buffer. */
+#define ASSH_PACKET_MAX_OVERHEAD                                        \
+  ASSH_PACKET_OVERHEAD(255, ASSH_MAX_MAC_SIZE)
+
+/** @This specifies the maximum difference between the size of the
+    packet payload and the size of the whole packet buffer when
+    minimal padding policy is used. When the padding len is <= 3, we
+    will add at most ASSH_MAX_BLOCK_SIZE bytes. */
+#define ASSH_PACKET_MIN_OVERHEAD                                        \
+  ASSH_PACKET_OVERHEAD(ASSH_MAX_BLOCK_SIZE + 3, ASSH_MAX_MAC_SIZE)
 
 /** @internal @This decreases the reference counter of the
     packet and release the packet if the new counter value is

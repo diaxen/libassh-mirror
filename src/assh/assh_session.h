@@ -31,6 +31,7 @@
 
 #include "assh_transport.h"
 #include "assh_queue.h"
+#include "assh_packet.h"
 
 /** @see assh_kex_filter_t */
 #define ASSH_KEX_FILTER_FCN(n)                          \
@@ -140,7 +141,10 @@ struct assh_session_s
   uint32_t out_seq;
 
   /** Current input ssh stream header buffer. */
-  uint8_t stream_in_pck_head[ASSH_MAX_BLOCK_SIZE];
+  union  {
+    uint8_t data[ASSH_MAX_BLOCK_SIZE];
+    struct assh_packet_head_s head;
+  } stream_in_stub;
 
   /** Session id is first "exchange hash" H */
   uint8_t session_id[ASSH_MAX_HASH_SIZE];

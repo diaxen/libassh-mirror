@@ -47,35 +47,39 @@ assh_packet_pool(struct assh_context_s *c, uint32_t size)
 
 assh_error_t
 assh_packet_alloc(struct assh_context_s *c,
-                  uint8_t msg, size_t payload_size,
+                  uint8_t msg, size_t payload_size_m1,
                   struct assh_packet_s **result)
 {
   assh_error_t err; 
 
-  ASSH_CHK_RET(payload_size > ASSH_MAX_PCK_PAYLOAD_SIZE, ASSH_ERR_OUTPUT_OVERFLOW);
+  ASSH_CHK_RET(payload_size_m1 + 1 > ASSH_PACKET_MAX_PAYLOAD,
+               ASSH_ERR_OUTPUT_OVERFLOW);
 
-  size_t size = /* pck_len */ 4 + /* pad_len */ 1 + /* msg */ 1 + payload_size +
-          /* mac */ ASSH_MAX_MAC_SIZE + /* padding */ (4 + ASSH_MAX_BLOCK_SIZE - 1);
+  struct assh_packet_s *p;
+  ASSH_ERR_RET(assh_packet_alloc_raw(c, ASSH_PACKET_MIN_OVERHEAD +
+                 /* msg */ 1 + payload_size_m1, &p));
 
-  ASSH_ERR_RET(assh_packet_alloc2(c, msg, size, result));
+  p->data_size = ASSH_PACKET_HEADLEN + /* msg */ 1;
+  p->head.msg = msg;
+  *result = p;
+
   return ASSH_OK;
 }
 
 assh_error_t
-assh_packet_alloc2(struct assh_context_s *c,
-                   uint8_t msg, size_t size,
+assh_packet_alloc_raw(struct assh_context_s *c, size_t raw_size,
                    struct assh_packet_s **result)
 {
   struct assh_packet_s *p, **r;
   assh_error_t err;
 
 #ifdef CONFIG_ASSH_PACKET_POOL
-  struct assh_packet_pool_s *pl = assh_packet_pool(c, size);
+  struct assh_packet_pool_s *pl = assh_packet_pool(c, raw_size);
 
   /* get from pool */
   for (r = &pl->pck; (p = *r) != NULL; r = &(*r)->pool_next)
     {
-      if (p->buffer_size >= size)
+      if (p->buffer_size >= raw_size)
 	{
 	  *r = p->pool_next;
           pl->size -= p->buffer_size;
@@ -88,9 +92,10 @@ assh_packet_alloc2(struct assh_context_s *c,
   if (p == NULL)
 #endif
     {
-      ASSH_ERR_RET(assh_alloc(c, sizeof(*p) + size, ASSH_ALLOC_PACKET, (void*)&p));
+      ASSH_ERR_RET(assh_alloc(c, sizeof(*p) - sizeof(p->head) + raw_size,
+                              ASSH_ALLOC_PACKET, (void*)&p));
 #ifdef CONFIG_ASSH_PACKET_POOL
-      p->buffer_size = size;
+      p->buffer_size = raw_size;
 #endif
     }
 
@@ -98,13 +103,31 @@ assh_packet_alloc2(struct assh_context_s *c,
   p->ref_count = 1;
   p->sent = 0;
   p->ctx = c;
-  p->data_size = /* pck_len */ 4 + /* pad_len */ 1 + /* msg */ 1;
-  p->alloc_size = size;
-  memset(p->data, 0, size);
-  p->head.msg = msg;
+  p->data_size = 0;
+  p->alloc_size = raw_size;
+  memset(p->data, 0, raw_size);
   p->padding = ASSH_PADDING_MIN;
 
   *result = p;
+  return ASSH_OK;
+}
+
+/** @internal @This returns the size of the buffer */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_packet_realloc_raw(struct assh_context_s *c,
+                        struct assh_packet_s **p_,
+                        size_t raw_size)
+{
+  struct assh_packet_s *p = *p_;
+
+#ifdef CONFIG_ASSH_PACKET_POOL
+  if (raw_size > p->buffer_size || p->ref_count > 1)
+#else
+  if (raw_size > p->alloc_size || p->ref_count > 1)
+#endif
+    return assh_packet_alloc_raw(c, raw_size, p_);
+
+  p->alloc_size = raw_size;
   return ASSH_OK;
 }
 
@@ -153,7 +176,7 @@ assh_packet_dup(struct assh_packet_s *p, struct assh_packet_s **copy)
 {
   assh_error_t err;
 
-  ASSH_ERR_RET(assh_packet_alloc2(p->ctx, 0, p->alloc_size, copy));
+  ASSH_ERR_RET(assh_packet_alloc_raw(p->ctx, p->alloc_size, copy));
   struct assh_packet_s *r = *copy;
 
   memcpy(r->data, p->data, p->data_size);
@@ -240,7 +263,11 @@ assh_packet_add_array(struct assh_packet_s *p, size_t len, uint8_t **result)
 {
   assh_error_t err;
 
-  ASSH_CHK_RET(p->data_size + len > p->alloc_size, ASSH_ERR_OUTPUT_OVERFLOW);
+  static const size_t tail_len = ASSH_PACKET_MIN_OVERHEAD
+    - ASSH_PACKET_HEADLEN - /* msg */ 1;
+
+  ASSH_CHK_RET(p->data_size + len + tail_len >
+               p->alloc_size, ASSH_ERR_OUTPUT_OVERFLOW);
   uint8_t *d = p->data + p->data_size;
   p->data_size += len;
   *result = d;

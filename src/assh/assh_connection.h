@@ -174,7 +174,7 @@ enum assh_connection_reply_e
   ASSH_CONNECTION_REPLY_CLOSED,
 };
 
-#define ASSH_SRV_CN_DEFAULT_PKTSIZE (ASSH_MAX_PCK_PAYLOAD_SIZE - 8)
+#define ASSH_SRV_CN_DEFAULT_PKTSIZE (ASSH_PACKET_MAX_PAYLOAD - 8)
 #define ASSH_SRV_CN_DEFAULT_WINDOW  (ASSH_SRV_CN_DEFAULT_PKTSIZE * 3)
 
 /** This function sets the value of the channel private pointer. */

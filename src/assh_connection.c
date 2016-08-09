@@ -692,7 +692,7 @@ assh_channel_open_success_reply2(struct assh_channel_s *ch,
   ASSH_ERR_GTO(assh_packet_alloc(s->ctx, SSH_MSG_CHANNEL_OPEN_CONFIRMATION,
                  4 * 4 + rsp_data_len, &pout) | ASSH_ERRSV_CONTINUE, err);
 
-  ch->lpkt_size = ASSH_MIN(pkt_size, ASSH_MAX_PCK_PAYLOAD_SIZE
+  ch->lpkt_size = ASSH_MIN(pkt_size, ASSH_PACKET_MAX_PAYLOAD
                            - /* extended data message header */ 3 * 4);
   ch->lwin_size = ch->lwin_left = ASSH_MAX(win_size, ch->lpkt_size * 4);
   ch->status = ASSH_CHANNEL_ST_OPEN;
@@ -853,7 +853,7 @@ assh_channel_open2(struct assh_session_s *s,
   ASSH_ERR_GTO(assh_alloc(s->ctx, sizeof(*ch), ASSH_ALLOC_INTERNAL, (void**)&ch)
 	       | ASSH_ERRSV_CONTINUE, err_pkt);
 
-  ch->lpkt_size = ASSH_MIN(pkt_size, ASSH_MAX_PCK_PAYLOAD_SIZE
+  ch->lpkt_size = ASSH_MIN(pkt_size, ASSH_PACKET_MAX_PAYLOAD
                            - /* extended data message header */ 3 * 4);
   ch->lwin_size = ch->lwin_left = ASSH_MAX(win_size, ch->lpkt_size * 4);
   ch->mentry.id = assh_channel_next_id(pv);
