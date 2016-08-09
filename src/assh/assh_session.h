@@ -158,8 +158,10 @@ struct assh_session_s
 
 #ifdef CONFIG_ASSH_CLIENT
   /** Index of the next service to request in the context services array. */
-  size_t srv_index:6;
+  size_t srv_index:5;
 #endif
+
+  assh_bool_t auth_done:1;
 
   /** Currrent output ssh stream generator state. */
   enum assh_stream_out_state_e stream_out_st:3;

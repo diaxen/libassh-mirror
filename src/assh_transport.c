@@ -35,6 +35,7 @@
 #include <assh/assh_kex.h>
 #include <assh/assh_event.h>
 #include <assh/assh_prng.h>
+#include <assh/assh_compress.h>
 
 #include <assert.h>
 #include <string.h>
@@ -216,7 +217,6 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 				       data + data_size - mac_len)
 		       | ASSH_ERRSV_DISCONNECT);
 	}
-#warning FIXME decompress
 
       /* check and adjust packet data size */
       size_t len = assh_load_u32(p->head.pck_len);
@@ -237,12 +237,24 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
       p->seq = seq;
       assert(s->in_pck == NULL);
 
+      /* decompress payload */
+      struct assh_packet_s *p_ = p;
+      ASSH_ERR_RET(k->cmp->f_process(s->ctx, k->cmp_ctx, &p, s->auth_done)
+		   | ASSH_ERRSV_FIN);
+
+      if (p_ != p)
+	assh_packet_release(p_);
+
 #ifdef CONFIG_ASSH_DEBUG_PROTOCOL
       ASSH_DEBUG("incoming packet: session=%p tr_st=%i, size=%zu, msg=%u\n",
 		 s, s->tr_st, data_size, p->head.msg);
       assh_hexdump("in packet", data, data_size);
 #endif
 
+#ifdef CONFIG_ASSH_CLIENT
+      s->auth_done |= s->ctx->type == ASSH_CLIENT &&
+	p->head.msg == SSH_MSG_USERAUTH_SUCCESS;
+#endif
 
       s->kex_bytes += data_size;
       s->in_pck = p;
@@ -402,6 +414,25 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
       struct assh_kex_keys_s *k = s->cur_keys_out;
 
       assh_bool_t newkey = p->head.msg == SSH_MSG_NEWKEYS;
+      assh_bool_t auth = p->head.msg == SSH_MSG_USERAUTH_SUCCESS;
+
+#ifdef CONFIG_ASSH_DEBUG_PROTOCOL
+      ASSH_DEBUG("outgoing packet: session=%p tr_st=%i, size=%zu, msg=%u\n",
+		 s, s->tr_st, p->data_size, p->head.msg);
+      assh_hexdump("out packet", p->data, p->data_size);
+#endif
+
+      struct assh_packet_s *p_ = p;
+      /* compress payload */
+      ASSH_ERR_RET(k->cmp->f_process(s->ctx, k->cmp_ctx, &p, s->auth_done)
+		   | ASSH_ERRSV_FIN);
+
+      if (p_ != p)
+	{
+	  assh_queue_remove(&p_->entry);
+	  assh_packet_release(p_);
+	  assh_queue_push_front(q, &p->entry);
+	}
 
       /* compute various length and payload pointer values */
       uint_fast8_t align = ASSH_MAX(k->cipher->block_size, 8);
@@ -442,14 +473,6 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 	ASSH_ERR_RET(assh_prng_get(s->ctx, pad, pad_len, ASSH_PRNG_QUALITY_PADDING)
 		     | ASSH_ERRSV_FIN);
 
-#warning FIXME compress
-
-#ifdef CONFIG_ASSH_DEBUG_PROTOCOL
-      ASSH_DEBUG("outgoing packet: session=%p tr_st=%i, size=%zu, msg=%u\n",
-		 s, s->tr_st, p->data_size, p->head.msg);
-      assh_hexdump("out packet", p->data, p->data_size);
-#endif
-
       uint32_t seq = s->out_seq;
 
       if (k->cipher->auth_size)	/* Authenticated cipher */
@@ -480,6 +503,7 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 	}
 
       s->stream_out_st = ASSH_TR_OUT_PACKETS_DONE;
+      s->auth_done |= auth;
 
       if (newkey)
 	{

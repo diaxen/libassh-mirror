@@ -337,6 +337,17 @@ assh_config.h
     @end list
   @end section
 
+  @section T {Compression algorithms}
+    Compression declarations can be found in @ref{@assh/assh_compress.h}.
+
+    The following compression algorithms are supported:
+    @list
+      @item @tt {none},
+      @item @tt {zlib},
+      @item @tt {zlib@openssh.com}
+    @end list
+  @end section
+
 @end section
 
 @section TPe {API documentation}

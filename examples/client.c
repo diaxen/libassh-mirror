@@ -25,6 +25,7 @@
 #include <assh/assh_context.h>
 #include <assh/assh_service.h>
 #include <assh/assh_userauth_client.h>
+#include <assh/assh_compress.h>
 #include <assh/helper_key.h>
 #include <assh/assh_kex.h>
 #include <assh/helper_fd.h>
@@ -46,8 +47,14 @@
 #include <assert.h>
 #include <stdlib.h>
 
+assh_bool_t use_compression = 0;
+
 static ASSH_KEX_FILTER_FCN(algo_filter)
 {
+  if (algo->class_ == ASSH_ALGO_COMPRESS &&
+      use_compression == (algo == &assh_compress_none.algo))
+    return 0;
+
   return (name->spec & ASSH_ALGO_ASSH) ||
          (name->spec & ASSH_ALGO_COMMON);
 }

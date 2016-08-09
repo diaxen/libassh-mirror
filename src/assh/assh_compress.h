@@ -42,10 +42,13 @@ typedef ASSH_COMPRESS_INIT_FCN(assh_compress_init_t);
 
 /** @internal @see assh_compress_process_t */
 #define ASSH_COMPRESS_PROCESS_FCN(n) \
-  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(void *ctx_, struct assh_packet_s *p)
+  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_context_s *c, \
+                                           void *ctx_, struct assh_packet_s **p_, \
+                                           assh_bool_t auth_done)
 
 /** @internal @This defines the function type for the data processing
-    operation of the compression module interface. */
+    operation of the compression module interface. This function
+    should rely on the @ref assh_packet_realloc_raw function. */
 typedef ASSH_COMPRESS_PROCESS_FCN(assh_compress_process_t);
 
 /** @internal @see assh_compress_cleanup_t */
@@ -71,8 +74,11 @@ struct assh_algo_compress_s
 ASSH_FIRST_FIELD_ASSERT(assh_algo_compress_s, algo);
 
 extern const struct assh_algo_compress_s assh_compress_none;
+
+# ifdef CONFIG_ASSH_USE_ZLIB
 extern const struct assh_algo_compress_s assh_compress_zlib;
 extern const struct assh_algo_compress_s assh_compress_zlib_openssh;
+# endif
 
 #endif
 

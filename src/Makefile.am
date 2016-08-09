@@ -34,6 +34,10 @@ libassh_la_SOURCES = assh_context.c assh_session.c assh_packet.c	\
 	helper_key.c helper_fd.c helper_base64.c helper_bcrypt.c	\
 	hash_sha3_builtin.c prng_xswap_builtin.c
 
+if COND_zlib
+libassh_la_SOURCES +=   compress_zlib.c
+endif
+
 if COND_gcrypt_hash
 libassh_la_SOURCES +=   hash_gcrypt.c mac_gcrypt.c
 else

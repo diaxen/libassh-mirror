@@ -75,6 +75,9 @@ AC_ARG_ENABLE(gcrypt_alloc, AC_HELP_STRING(--disable-gcrypt-alloc, [Disable use 
 AC_ARG_ENABLE(gcrypt_ciphers, AC_HELP_STRING(--disable-gcrypt-ciphers, [Disable use of gcrypt ciphers]),
 		       enable_gcrypt_ciphers=$enableval, enable_gcrypt_ciphers=yes)
 
+AC_ARG_ENABLE(zlib, AC_HELP_STRING(--disable-zlib, [Disable use of the zlib library]),
+		       enable_zlib=$enableval, enable_zlib=yes)
+
 if test x$enable_gcrypt = xyes ; then
   AC_CHECK_LIB(gcrypt, gcry_check_version, [
     AC_CHECK_HEADERS(gcrypt.h, [
@@ -129,6 +132,20 @@ if test x$enable_gcrypt = xno ; then
    AC_DEFINE([CONFIG_ASSH_MAX_ALGORITHMS], 64, [Maximum number of registered algorithms])
 fi
 
+if test x$enable_zlib = xyes ; then
+  AC_CHECK_LIB(z, zlibVersion, [
+    AC_CHECK_HEADERS(zlib.h, [
+      LIBS="$LIBS -lz"
+      AC_DEFINE([CONFIG_ASSH_USE_ZLIB], [], [zlib support])
+      AC_DEFINE([CONFIG_ASSH_ZLIB_ALLOC], [ASSH_ALLOC_INTERNAL], [zlib storage type])
+    ], [
+      enable_zlib=no
+    ])
+  ], [
+    enable_zlib=no
+  ])
+fi
+
 if test -e /dev/random ; then
   AC_DEFINE([CONFIG_ASSH_USE_DEV_RANDOM], [], [use of unix /dev/u?random])
   enable_dev_random=yes
@@ -151,6 +168,8 @@ AM_CONDITIONAL(COND_gcrypt_bignum,  [test x$enable_gcrypt_bignum = xyes])
 AM_CONDITIONAL(COND_gcrypt_prng,    [test x$enable_gcrypt_prng = xyes])
 AM_CONDITIONAL(COND_gcrypt_alloc,   [test x$enable_gcrypt_alloc = xyes])
 AM_CONDITIONAL(COND_gcrypt_ciphers, [test x$enable_gcrypt_ciphers = xyes])
+
+AM_CONDITIONAL(COND_zlib,  [test x$enable_zlib = xyes])
 
 AM_CONDITIONAL(COND_dev_random,  [test x$enable_dev_random = xyes])
 

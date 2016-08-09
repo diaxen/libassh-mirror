@@ -373,6 +373,10 @@ const struct assh_algo_s *assh_algo_table[] = {
 # endif
   /* compress */
   &assh_compress_none.algo,
+# ifdef CONFIG_ASSH_USE_ZLIB
+  &assh_compress_zlib.algo,
+  &assh_compress_zlib_openssh.algo,
+# endif
   NULL
 };
 

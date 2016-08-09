@@ -893,6 +893,7 @@ const struct assh_kex_keys_s assh_keys_none =
 {
   .cipher = &assh_cipher_none,
   .mac = &assh_hmac_none,
+  .cmp = &assh_compress_none,
 };
 
 void assh_kex_keys_cleanup(struct assh_session_s *s, struct assh_kex_keys_s *keys)
