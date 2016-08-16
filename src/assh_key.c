@@ -85,6 +85,7 @@ assh_error_t assh_key_load(struct assh_context_s *c,
 
   k->role = role;
   k->next = *key;
+  k->ref_count = 1;
   k->comment = NULL;
   *key = k;
 
@@ -104,6 +105,7 @@ assh_key_create(struct assh_context_s *c,
 
   k->role = role;
   k->next = *key;
+  k->ref_count = 1;
   k->comment = NULL;
   *key = k;
 
@@ -125,11 +127,15 @@ void assh_key_drop(struct assh_context_s *c,
                    struct assh_key_s **head)
 {
   struct assh_key_s *k = *head;
-  if (k == NULL)
-    return;
-  *head = k->next;
-  assh_free(c, k->comment);
-  k->algo->f_cleanup(c, (struct assh_key_s *)k);
+  if (k != NULL)
+    {
+      *head = k->next;
+      if (!--k->ref_count)
+        {
+          assh_free(c, k->comment);
+          k->algo->f_cleanup(c, (struct assh_key_s *)k);
+        }
+    }
 }
 
 assh_error_t

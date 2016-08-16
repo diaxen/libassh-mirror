@@ -172,6 +172,7 @@ struct assh_key_s
   enum assh_algo_class_e role:3;
 
   assh_safety_t safety;
+  uint8_t ref_count;
 };
 
 /** @internal @This allocates and intiailizes the key structure from
@@ -233,7 +234,8 @@ assh_key_cmp(struct assh_context_s *c, const struct assh_key_s *key,
   return key->algo->f_cmp(c, key, b, pub);
 }
 
-/** @This releases the first key on the linked list. */
+/** @This remove the first key from the singly linked list. The key is
+    also released unless @ref assh_key_refinc has been called. */
 void assh_key_drop(struct assh_context_s *c,
                    struct assh_key_s **head);
 
@@ -254,6 +256,14 @@ assh_key_insert(struct assh_key_s **head,
 {
   key->next = *head;
   *head = key;
+}
+
+/** @This increases the reference counter of the key so that it is not
+    released by the next call to @ref assh_key_drop. */
+ASSH_INLINE void
+assh_key_refinc(struct assh_key_s *key)
+{
+  key->ref_count++;
 }
 
 /** @This checks the validity of the key. */
