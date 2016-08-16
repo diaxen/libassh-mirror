@@ -44,6 +44,20 @@
 #include "assh_userauth.h"
 
 /** This event is reported when the server-side user authentication
+    service has started and some authentication methods must be
+    selected. Some implemented methods are selected by default.
+
+    The default allowed number of authentication retries can be
+    changed as well.
+
+    @see ASSH_EVENT_USERAUTH_SERVER_METHODS */
+struct assh_event_userauth_server_methods_s
+{
+  enum assh_userauth_methods_e methods; //< output
+  uint_fast8_t retries;                 //< output
+};
+
+/** This event is reported when the server-side user authentication
     service is running. The user public key @tt pub_key must be
     searched in the list of authorized keys for the user on this
     server. The @tt found field must be updated accordingly before
@@ -51,9 +65,9 @@
     @see ASSH_EVENT_USERAUTH_SERVER_USERKEY */
 struct assh_event_userauth_server_userkey_s
 {
-  ASSH_EV_CONST struct assh_buffer_s      username;
-  struct assh_key_s * ASSH_EV_CONST       pub_key;
-  assh_bool_t                             found;
+  ASSH_EV_CONST struct assh_buffer_s      username;  //< input
+  struct assh_key_s * ASSH_EV_CONST       pub_key;   //< input
+  assh_bool_t                             found;     //< output
 };
 
 /** This event is reported when the server-side user authentication
@@ -63,16 +77,36 @@ struct assh_event_userauth_server_userkey_s
     ASSH_EVENT_USERAUTH_SERVER_PASSWORD */
 struct assh_event_userauth_server_password_s
 {
-  ASSH_EV_CONST struct assh_buffer_s username;
-  ASSH_EV_CONST struct assh_buffer_s password;
-  assh_bool_t                        success;
+  ASSH_EV_CONST struct assh_buffer_s username;    //< input
+  ASSH_EV_CONST struct assh_buffer_s password;    //< input
+  assh_bool_t                        success;     //< output
+};
+
+/** This event is reported when a user authentication request is
+    successful. The @tt method field indicates which method has been
+    used successfully.
+
+    The @tt methods field is initially set to zero but can be updated
+    in order to report a partial success to the client and continue
+    the authentication process.
+
+    The @tt sign_safety field indicates the lowest safety factor value
+    of user key signature seen at this point.
+    @see ASSH_EVENT_USERAUTH_SERVER_SUCCESS */
+struct assh_event_userauth_server_success_s
+{
+  ASSH_EV_CONST enum assh_userauth_methods_e method; //< input
+  enum assh_userauth_methods_e       methods;        //< output
+  ASSH_EV_CONST assh_safety_t        sign_safety;    //< input
 };
 
 /** @This contains all server side user authentication related events */
 union assh_event_userauth_server_u
 {
+  struct assh_event_userauth_server_methods_s methods;
   struct assh_event_userauth_server_userkey_s  userkey;
   struct assh_event_userauth_server_password_s password;
+  struct assh_event_userauth_server_success_s success;
 };
 
 /** @This implements the standard server side @tt ssh-userauth service. */

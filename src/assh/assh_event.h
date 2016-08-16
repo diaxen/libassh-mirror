@@ -55,10 +55,14 @@ enum assh_event_id_e
   /** @see assh_event_userauth_client_banner_s */
   ASSH_EVENT_USERAUTH_CLIENT_BANNER,
 
+  /** @see assh_event_userauth_server_methods_s */
+  ASSH_EVENT_USERAUTH_SERVER_METHODS,
   /** @see assh_event_userauth_server_userkey_s */
   ASSH_EVENT_USERAUTH_SERVER_USERKEY,
   /** @see assh_event_userauth_server_password_s */
   ASSH_EVENT_USERAUTH_SERVER_PASSWORD,
+  /** @see assh_event_userauth_server_success_s */
+  ASSH_EVENT_USERAUTH_SERVER_SUCCESS,
 
   /** @see assh_event_connection_start_s */
   ASSH_EVENT_CONNECTION_START,

@@ -29,13 +29,28 @@
 #ifndef ASSH_SRV_USERAUTH_H_
 #define ASSH_SRV_USERAUTH_H_
 
+#include "assh.h"
+
+/** @internal specifies authentication methods */
 enum assh_userauth_methods_e
 {
   ASSH_USERAUTH_METHOD_NONE       = 0x01,
   ASSH_USERAUTH_METHOD_PUBKEY     = 0x02,
   ASSH_USERAUTH_METHOD_PASSWORD   = 0x04,
   ASSH_USERAUTH_METHOD_HOSTBASED  = 0x08,
-  ASSH_USERAUTH_METHOD_KEYBOARD   = 0x10
+  ASSH_USERAUTH_METHOD_KEYBOARD   = 0x10,
+
+  /** mask of all methods with support enabled in configuration */
+  ASSH_USERAUTH_METHOD_IMPLEMENTED = 0
+#ifdef CONFIG_ASSH_SERVER_AUTH_NONE
+    | ASSH_USERAUTH_METHOD_NONE
+#endif
+#ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
+    | ASSH_USERAUTH_METHOD_PUBKEY
+#endif
+#ifdef CONFIG_ASSH_SERVER_AUTH_PASSWORD
+    | ASSH_USERAUTH_METHOD_PASSWORD
+#endif
 };
 
 #endif

@@ -49,14 +49,19 @@ ASSH_EVENT_SIZE_SASSERT(userauth_server);
 
 enum assh_userauth_state_e
 {
-  ASSH_USERAUTH_WAIT_RQ,   //< intial state
+  ASSH_USERAUTH_METHODS,   //< intial state
+  ASSH_USERAUTH_METHODS_DONE,
+  ASSH_USERAUTH_WAIT_RQ,
 #ifdef CONFIG_ASSH_SERVER_AUTH_PASSWORD
   ASSH_USERAUTH_PASSWORD,    //< the password event handler must check the user password
+  ASSH_USERAUTH_PASSWORD_SUCCESS,
 #endif
 #ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
   ASSH_USERAUTH_PUBKEY_PKOK,   //< the public key event handler may send PK_OK
   ASSH_USERAUTH_PUBKEY_VERIFY , //< the public key event handler may check the signature
+  ASSH_USERAUTH_PUBKEY_SUCCESS,
 #endif
+  ASSH_USERAUTH_SUCCESS_DONE,
 };
 
 #ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
@@ -78,8 +83,10 @@ struct assh_userauth_context_s
   char password[CONFIG_ASSH_AUTH_PASSWORD_LEN + 1];
 #endif
 
+  enum assh_userauth_methods_e methods:8;
   uint_fast8_t retry;
   enum assh_userauth_state_e state:8;
+  assh_safety_t safety;
 
 #ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
   enum assh_userauth_pubkey_state_e pubkey_state:8;
@@ -103,9 +110,10 @@ static ASSH_SERVICE_INIT_FCN(assh_userauth_server_init)
   s->srv = &assh_service_userauth_server;
   s->srv_pv = pv;
   pv->deadline = s->time + ASSH_TIMEOUT_USERAUTH;
+  pv->safety = 99;
+  pv->methods = 0;
 
-  pv->state = ASSH_USERAUTH_WAIT_RQ;
-  pv->retry = 10;
+  pv->state = ASSH_USERAUTH_METHODS;
   pv->srv = NULL;
 
 #ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
@@ -121,7 +129,6 @@ static void assh_userauth_server_flush_state(struct assh_session_s *s)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
 
-  pv->state = ASSH_USERAUTH_WAIT_RQ;
   pv->srv = NULL;
 
 #ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
@@ -145,51 +152,98 @@ static ASSH_SERVICE_CLEANUP_FCN(assh_userauth_server_cleanup)
   s->srv = NULL;
 }
 
+static assh_error_t assh_userauth_server_send_failure(struct assh_session_s *s,
+                                                      assh_bool_t partial)
+{
+  struct assh_userauth_context_s *pv = s->srv_pv;
+  assh_error_t err;
+
+  /* send the authentication failure packet */
+  struct assh_packet_s *pout;
+  ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_USERAUTH_FAILURE,
+		 4 + 64 + 1, &pout) | ASSH_ERRSV_DISCONNECT);
+
+  uint8_t *list, *partial_success;
+
+  ASSH_ASSERT(assh_packet_add_string(pout, 0, &list));
+
+  static const struct {
+    const char                   *name;
+    enum assh_userauth_methods_e method;
+  }                              array[] = {
+#ifdef CONFIG_ASSH_SERVER_AUTH_NONE
+    { ",none",      ASSH_USERAUTH_METHOD_NONE },
+#endif
+#ifdef CONFIG_ASSH_SERVER_AUTH_PASSWORD
+    { ",password",  ASSH_USERAUTH_METHOD_PASSWORD },
+#endif
+#ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
+    { ",publickey", ASSH_USERAUTH_METHOD_PUBKEY },
+#endif
+  };
+
+  uint_fast8_t i;
+  assh_bool_t first = 1;
+
+  for (i = 0; i < sizeof(array) / sizeof(array[0]); i++)
+    {
+      if (!(pv->methods & array[i].method))
+        continue;
+
+      const char *mname = array[i].name + first;
+      size_t mname_len = strlen(mname);
+      uint8_t *s;
+      ASSH_ASSERT(assh_packet_enlarge_string(pout, list, mname_len, &s));
+      memcpy(s, mname, mname_len);
+      first = 0;
+    }
+
+  ASSH_ASSERT(assh_packet_add_array(pout, 1, &partial_success));
+  *partial_success = partial;
+  assh_transport_push(s, pout);
+
+  return ASSH_OK;
+}
+
 /* handle authentication failure */
 static assh_error_t assh_userauth_server_failure(struct assh_session_s *s)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
-  /* flush state */
   assh_userauth_server_flush_state(s);
+  pv->state = ASSH_USERAUTH_WAIT_RQ;
 
   /* check auth attempts count */
-  ASSH_CHK_RET(pv->retry == 0, ASSH_ERR_NO_AUTH | ASSH_ERRSV_DISCONNECT);
+  ASSH_CHK_RET(pv->retry && --pv->retry == 0,
+               ASSH_ERR_NO_AUTH | ASSH_ERRSV_DISCONNECT);
 
-  /* send the authentication failure packet */
-  struct assh_packet_s *pout;
-#if defined(CONFIG_ASSH_SERVER_AUTH_PUBLICKEY) && defined(CONFIG_ASSH_SERVER_AUTH_PASSWORD)
-  const char *list_ = "publickey,password";
-#elif defined(CONFIG_ASSH_SERVER_AUTH_PUBLICKEY)
-  const char *list_ = "publickey";
-#elif defined(CONFIG_ASSH_SERVER_AUTH_PASSWORD)
-  const char *list_ = "password";
-#else
-  const char *list_ = "none";
-#endif
-  uint8_t *list, *partial_success;
-  size_t list_len = strlen(list_);
-
-  ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_USERAUTH_FAILURE,
-		 4 + list_len + 1, &pout) | ASSH_ERRSV_DISCONNECT);
-
-  ASSH_ASSERT(assh_packet_add_string(pout, list_len, &list));
-  memcpy(list, list_, list_len);
-  ASSH_ASSERT(assh_packet_add_array(pout, 1, &partial_success));
-  *partial_success = 0;
-  assh_transport_push(s, pout);
-  pv->retry--;
+  assh_userauth_server_send_failure(s, 0);
 
   return ASSH_OK;
 }
 
-/* handle authentication success */
-static assh_error_t assh_userauth_server_success(struct assh_session_s *s)
+static ASSH_EVENT_DONE_FCN(assh_userauth_server_success_done)
 {
-  assh_error_t err;
   struct assh_userauth_context_s *pv = s->srv_pv;
   const struct assh_service_s *srv = pv->srv;
+  assh_error_t err;
+
+  ASSH_CHK_RET(pv->state != ASSH_USERAUTH_SUCCESS_DONE,
+               ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+
+  pv->methods = e->userauth_server.success.methods;
+
+  if (pv->methods)              /* report partial success */
+    {
+      ASSH_CHK_RET(!(pv->methods & ASSH_USERAUTH_METHOD_IMPLEMENTED),
+                   ASSH_ERR_MISSING_ALGO | ASSH_ERRSV_DISCONNECT);
+
+      assh_userauth_server_flush_state(s);
+      pv->state = ASSH_USERAUTH_WAIT_RQ;
+      ASSH_ERR_RET(assh_userauth_server_send_failure(s, 1));
+      return ASSH_OK;
+    }
 
   /* cleanup the authentication service */
   assh_userauth_server_cleanup(s);
@@ -206,6 +260,23 @@ static assh_error_t assh_userauth_server_success(struct assh_session_s *s)
   return ASSH_OK;
 }
 
+/* handle authentication success */
+static assh_error_t assh_userauth_server_success(struct assh_session_s *s,
+                                                 struct assh_event_s *e,
+                                                 enum assh_userauth_methods_e method)
+{
+  struct assh_userauth_context_s *pv = s->srv_pv;
+
+  pv->state = ASSH_USERAUTH_SUCCESS_DONE;
+  e->id = ASSH_EVENT_USERAUTH_SERVER_SUCCESS;
+  e->f_done = assh_userauth_server_success_done;
+  e->userauth_server.success.method = method;
+  e->userauth_server.success.sign_safety = pv->safety;
+  e->userauth_server.success.methods = 0;
+
+  return ASSH_OK;
+}
+
 /******************************************************************* password */
 
 #ifdef CONFIG_ASSH_SERVER_AUTH_PASSWORD
@@ -218,7 +289,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_password_done)
   ASSH_CHK_RET(pv->state != ASSH_USERAUTH_PASSWORD, ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
 
   if (e->userauth_server.password.success)
-    ASSH_ERR_RET(assh_userauth_server_success(s) | ASSH_ERRSV_DISCONNECT);
+    pv->state = ASSH_USERAUTH_PASSWORD_SUCCESS;
   else
     ASSH_ERR_RET(assh_userauth_server_failure(s) | ASSH_ERRSV_DISCONNECT);
 
@@ -284,14 +355,14 @@ static assh_error_t assh_userauth_server_pubkey_check(struct assh_session_s *s,
     { 4,       s->session_id_len, sign - &p->head.msg };
 
   assh_safety_t sign_safety;
-#warning report safety
 
   /* check the signature */
-  if (assh_sign_check(s->ctx, pv->algo, pv->pub_key, 3,
-        sign_ptrs, sign_sizes, sign + 4, end - sign - 4, &sign_safety) == ASSH_OK)
-    ASSH_ERR_RET(assh_userauth_server_success(s) | ASSH_ERRSV_DISCONNECT);
-  else
-    ASSH_ERR_RET(assh_userauth_server_failure(s) | ASSH_ERRSV_DISCONNECT);
+  ASSH_ERR_RET(assh_sign_check(s->ctx, pv->algo, pv->pub_key, 3,
+        sign_ptrs, sign_sizes, sign + 4, end - sign - 4, &sign_safety)
+               | ASSH_ERRSV_DISCONNECT);
+
+  pv->safety = ASSH_MIN(sign_safety, pv->safety);
+  pv->state = ASSH_USERAUTH_PUBKEY_SUCCESS;
 
   return ASSH_OK;
 }
@@ -469,46 +540,36 @@ static assh_error_t assh_userauth_server_req_new(struct assh_session_s *s,
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
-  if (pv->srv == NULL ||
-      !assh_ssh_string_compare(srv_name, pv->srv->name) ||
-      !assh_ssh_string_compare(username, pv->username) ||
-      !assh_ssh_string_compare(method_name, pv->method_name))
-    {
-      assh_userauth_server_flush_state(s);
+  if (pv->srv != NULL)
+   {
+     if (!assh_ssh_string_compare(srv_name, pv->srv->name) &&
+         !assh_ssh_string_compare(username, pv->username)  &&
+         !assh_ssh_string_compare(method_name, pv->method_name))
+       return ASSH_OK;
 
-      /* lookup service name */
-      if (assh_service_by_name(s->ctx, assh_load_u32(srv_name),
-                               (char*)srv_name + 4, &pv->srv))
-        {
-          ASSH_ERR_RET(assh_userauth_server_failure(s) | ASSH_ERRSV_DISCONNECT);
-          return ASSH_OK;
-        }
+     assh_userauth_server_flush_state(s);
+   }
 
-      /* keep method name and user name */
-      ASSH_ERR_RET(assh_ssh_string_copy(username, pv->username, sizeof(pv->username))
-		   | ASSH_ERRSV_DISCONNECT);
-      ASSH_ERR_RET(assh_ssh_string_copy(method_name, pv->method_name, sizeof(pv->method_name))
-		   | ASSH_ERRSV_DISCONNECT);
-    }
+  /* lookup service name */
+  if (assh_service_by_name(s->ctx, assh_load_u32(srv_name),
+                           (char*)srv_name + 4, &pv->srv))
+    return ASSH_NO_DATA;
+
+  /* keep method name and user name */
+  ASSH_ERR_RET(assh_ssh_string_copy(username, pv->username, sizeof(pv->username))
+               | ASSH_ERRSV_DISCONNECT);
+  ASSH_ERR_RET(assh_ssh_string_copy(method_name, pv->method_name, sizeof(pv->method_name))
+               | ASSH_ERRSV_DISCONNECT);
 
   return ASSH_OK;
 }
 
-static ASSH_SERVICE_PROCESS_FCN(assh_userauth_server_process)
+static assh_error_t assh_userauth_server_req(struct assh_session_s *s,
+                                             struct assh_packet_s *p,
+                                             struct assh_event_s *e)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
-
-  if (s->tr_st >= ASSH_TR_DISCONNECT)
-    return ASSH_OK;
-
-  s->deadline = pv->deadline;
-
-  if (p == NULL)
-    return ASSH_OK;
-
-  ASSH_CHK_RET(pv->state != ASSH_USERAUTH_WAIT_RQ,
-	       ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
 
   switch (p->head.msg)
     {
@@ -535,11 +596,14 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_server_process)
     {
 #ifdef CONFIG_ASSH_SERVER_AUTH_NONE
     case 4:
-      if (!assh_ssh_string_compare(method_name, "none"))
+      if ((pv->methods & ASSH_USERAUTH_METHOD_NONE) &&
+          !assh_ssh_string_compare(method_name, "none"))
         {
           ASSH_ERR_RET(assh_userauth_server_req_new(s, srv_name, username, method_name)
 		       | ASSH_ERRSV_DISCONNECT);
-          ASSH_ERR_RET(assh_userauth_server_success(s)
+          if (err == ASSH_NO_DATA)
+            break;
+          ASSH_ERR_RET(assh_userauth_server_success(s, e, ASSH_USERAUTH_METHOD_NONE)
 		       | ASSH_ERRSV_DISCONNECT);
           return ASSH_OK;
         }
@@ -548,10 +612,13 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_server_process)
 
 #ifdef CONFIG_ASSH_SERVER_AUTH_PASSWORD
     case 8:
-      if (!assh_ssh_string_compare(method_name, "password"))
+      if ((pv->methods & ASSH_USERAUTH_METHOD_PASSWORD) &&
+          !assh_ssh_string_compare(method_name, "password"))
         {
           ASSH_ERR_RET(assh_userauth_server_req_new(s, srv_name, username, method_name)
 		       | ASSH_ERRSV_DISCONNECT);
+          if (err == ASSH_NO_DATA)
+            break;
           ASSH_ERR_RET(assh_userauth_server_req_password(s, p, e, auth_data)
 		       | ASSH_ERRSV_DISCONNECT);
           return ASSH_OK;
@@ -561,10 +628,13 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_server_process)
 
 #ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
     case 9:
-      if (!assh_ssh_string_compare(method_name, "publickey"))
+      if ((pv->methods & ASSH_USERAUTH_METHOD_PUBKEY) &&
+          !assh_ssh_string_compare(method_name, "publickey"))
         {
           ASSH_ERR_RET(assh_userauth_server_req_new(s, srv_name, username, method_name)
 		       | ASSH_ERRSV_DISCONNECT);
+          if (err == ASSH_NO_DATA)
+            break;
           ASSH_ERR_RET(assh_userauth_server_req_pubkey(s, p, e, auth_data)
 		       | ASSH_ERRSV_DISCONNECT);
           return ASSH_OK;
@@ -575,6 +645,81 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_server_process)
 
   ASSH_ERR_RET(assh_userauth_server_failure(s) | ASSH_ERRSV_DISCONNECT);
   return ASSH_OK;
+}
+
+static ASSH_EVENT_DONE_FCN(assh_userauth_server_methods_done)
+{
+  struct assh_userauth_context_s *pv = s->srv_pv;
+  assh_error_t err;
+
+  pv->methods = e->userauth_server.methods.methods;
+  pv->retry = e->userauth_server.methods.retries;
+
+  ASSH_CHK_RET(!(pv->methods & ASSH_USERAUTH_METHOD_IMPLEMENTED),
+               ASSH_ERR_MISSING_ALGO | ASSH_ERRSV_DISCONNECT);
+
+  pv->state = ASSH_USERAUTH_WAIT_RQ;
+
+  return ASSH_OK;
+}
+
+static assh_error_t assh_userauth_server_methods(struct assh_session_s *s,
+                                                 struct assh_event_s *e)
+{
+  struct assh_userauth_context_s *pv = s->srv_pv;
+  assh_error_t err;
+
+  pv->state = ASSH_USERAUTH_METHODS_DONE;
+  e->id = ASSH_EVENT_USERAUTH_SERVER_METHODS;
+  e->f_done = assh_userauth_server_methods_done;
+
+  e->userauth_server.methods.methods = ASSH_USERAUTH_METHOD_IMPLEMENTED &
+    (ASSH_USERAUTH_METHOD_PUBKEY |
+     ASSH_USERAUTH_METHOD_PASSWORD);
+
+  e->userauth_server.methods.retries = 10;
+
+  return ASSH_OK;
+}
+
+static ASSH_SERVICE_PROCESS_FCN(assh_userauth_server_process)
+{
+  struct assh_userauth_context_s *pv = s->srv_pv;
+  assh_error_t err;
+
+  if (s->tr_st >= ASSH_TR_DISCONNECT)
+    return ASSH_OK;
+
+  s->deadline = pv->deadline;
+
+  switch (pv->state)
+    {
+    case ASSH_USERAUTH_METHODS:
+      ASSH_ERR_RET(assh_userauth_server_methods(s, e) | ASSH_ERRSV_DISCONNECT);
+      return ASSH_NO_DATA;
+
+    case ASSH_USERAUTH_WAIT_RQ:
+      if (p != NULL)
+        ASSH_ERR_RET(assh_userauth_server_req(s, p, e) | ASSH_ERRSV_DISCONNECT);
+      return ASSH_OK;
+
+#ifdef CONFIG_ASSH_SERVER_AUTH_PASSWORD
+    case ASSH_USERAUTH_PASSWORD_SUCCESS:
+      ASSH_ERR_RET(assh_userauth_server_success(s, e, ASSH_USERAUTH_METHOD_PASSWORD)
+                   | ASSH_ERRSV_DISCONNECT);
+      return ASSH_NO_DATA;
+#endif
+
+#ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
+    case ASSH_USERAUTH_PUBKEY_SUCCESS:
+      ASSH_ERR_RET(assh_userauth_server_success(s, e, ASSH_USERAUTH_METHOD_PUBKEY)
+                   | ASSH_ERRSV_DISCONNECT);
+      return ASSH_NO_DATA;
+#endif
+
+    default:
+      ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+    }
 }
 
 const struct assh_service_s assh_service_userauth_server =
