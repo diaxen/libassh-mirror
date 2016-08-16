@@ -429,12 +429,7 @@ static assh_error_t assh_userauth_client_failure(struct assh_session_s *s,
   ASSH_ERR_RET(assh_packet_check_array(p, partial_success, 1, NULL)
 	       | ASSH_ERRSV_DISCONNECT);
 
-#ifdef CONFIG_ASSH_CLIENT_AUTH_PASSWORD
-  e->userauth_client.methods.use_password = 0;
-#endif
-#ifdef CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY
-  e->userauth_client.methods.use_pub_key = 0;
-#endif
+  e->userauth_client.methods.methods = 0;
   uint_fast8_t count = 0;
 
   for (methods += 4; methods < partial_success; methods = n + 1)
@@ -456,7 +451,7 @@ static assh_error_t assh_userauth_client_failure(struct assh_session_s *s,
 			       | ASSH_ERRSV_DISCONNECT);
                   return ASSH_OK;
                 }
-              e->userauth_client.methods.use_password = 1;
+              e->userauth_client.methods.methods |= ASSH_USERAUTH_METHOD_PASSWORD;
               count++;
             }
           break;
@@ -474,7 +469,7 @@ static assh_error_t assh_userauth_client_failure(struct assh_session_s *s,
                   return ASSH_OK;
                 }
 
-              e->userauth_client.methods.use_pub_key = 1;
+              e->userauth_client.methods.methods |= ASSH_USERAUTH_METHOD_PUBKEY;
               count++;
             }
 #endif

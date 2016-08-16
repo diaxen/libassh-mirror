@@ -154,7 +154,8 @@ int main(int argc, char **argv)
         }
 
         case ASSH_EVENT_USERAUTH_CLIENT_METHODS: {
-          if (event.userauth_client.methods.use_pub_key && !auth_keys_done)
+          if ((event.userauth_client.methods.methods & ASSH_USERAUTH_METHOD_PUBKEY)
+              && !auth_keys_done)
             {
               auth_keys_done = 1;
 
@@ -169,8 +170,8 @@ int main(int argc, char **argv)
                 fprintf(stderr, "unable to load user rsa key\n");
             }
 
-          if (event.userauth_client.methods.use_password &&
-              safety > 25)
+          if ((event.userauth_client.methods.methods & ASSH_USERAUTH_METHOD_PASSWORD)
+              && safety > 25)
             {
               fprintf(stderr, "password input\n");
               event.userauth_client.methods.password.str = "test";

@@ -34,6 +34,7 @@ assh/assh_sign.h
 assh/assh_transport.h
 assh/assh_userauth_client.h
 assh/assh_userauth_server.h
+assh/assh_userauth.h
 assh/helper_fd.h
 assh/helper_key.h
 assh/helper_bcrypt.h

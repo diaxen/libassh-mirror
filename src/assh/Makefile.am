@@ -23,8 +23,8 @@ pkginclude_HEADERS = assh.h assh_algo.h assh_alloc.h assh_bignum.h \
 	assh_cipher.h assh_compress.h assh_config.h assh_connection.h \
 	assh_context.h assh_event.h assh_hash.h assh_kex.h assh_key.h \
 	assh_mac.h assh_map.h assh_packet.h assh_platform.h assh_prng.h \
-	assh_queue.h assh_service.h assh_session.h assh_sign.h \
-	assh_transport.h assh_userauth_client.h assh_userauth_server.h \
+	assh_queue.h assh_service.h assh_session.h assh_sign.h assh_transport.h \
+	assh_userauth.h assh_userauth_client.h assh_userauth_server.h \
 	helper_fd.h helper_key.h helper_base64.h helper_bcrypt.h \
 	key_dsa.h key_eddsa.h key_ecdsa.h key_rsa.h safe_primes.h
 

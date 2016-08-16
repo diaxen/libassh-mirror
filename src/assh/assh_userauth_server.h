@@ -41,6 +41,7 @@
 #endif
 
 #include "assh.h"
+#include "assh_userauth.h"
 
 /** This event is reported when the server-side user authentication
     service is running. The user public key @tt pub_key must be
