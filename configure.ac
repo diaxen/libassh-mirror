@@ -146,6 +146,10 @@ if test x$enable_zlib = xyes ; then
   ])
 fi
 
+AC_CHECK_HEADERS(valgrind/memcheck.h, [
+  AC_DEFINE([CONFIG_ASSH_VALGRIND], [], [valgrind headers available])
+])
+
 if test -e /dev/random ; then
   AC_DEFINE([CONFIG_ASSH_USE_DEV_RANDOM], [], [use of unix /dev/u?random])
   enable_dev_random=yes

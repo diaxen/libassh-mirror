@@ -26,6 +26,10 @@
 
 #include <stdlib.h>
 
+#ifdef CONFIG_ASSH_VALGRIND
+# include <valgrind/memcheck.h>
+#endif
+
 static size_t alloc_size = 0;
 #define ALLOC_ALIGN 32
 
@@ -33,7 +37,7 @@ static ASSH_ALLOCATOR(assh_leaks_allocator)
 {
   if (size == 0)
     {
-      size_t *bsize = (uint8_t*)*ptr - ALLOC_ALIGN;
+      size_t *bsize = (void*)((uint8_t*)*ptr - ALLOC_ALIGN);
       alloc_size -= *bsize;
       memset((void*)bsize, 0x5a, *bsize);
       free((void*)bsize);
@@ -48,13 +52,16 @@ static ASSH_ALLOCATOR(assh_leaks_allocator)
 	  *bsize = size;
 	  alloc_size += size;
 	  memset(*ptr, 0xa5, size);
+#ifdef CONFIG_ASSH_VALGRIND
+	  VALGRIND_MAKE_MEM_UNDEFINED(*ptr, size);
+#endif
 	  return ASSH_OK;
 	}
       return ASSH_ERR_MEM;
     }
   else
     {
-      size_t *bsize = (uint8_t*)*ptr - ALLOC_ALIGN;
+      size_t *bsize = (void*)((uint8_t*)*ptr - ALLOC_ALIGN);
       bsize = realloc(bsize, ALLOC_ALIGN + size);
       if (bsize != NULL)
 	{
