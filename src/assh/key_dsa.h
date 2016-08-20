@@ -51,7 +51,7 @@ struct assh_key_dsa_s
 
 ASSH_FIRST_FIELD_ASSERT(assh_key_dsa_s, key);
 
-/** @internal Key operations descriptor for DSA keys */
+/** Key operations descriptor for DSA keys */
 extern const struct assh_key_ops_s assh_key_dsa;
 
 /** @internal */

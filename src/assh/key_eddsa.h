@@ -65,7 +65,7 @@ struct assh_key_eddsa_s
 
 ASSH_FIRST_FIELD_ASSERT(assh_key_eddsa_s, key);
 
-/** @multiple @internal Key operations descriptor for EdDSA keys */
+/** @multiple Key operations descriptor for EdDSA keys */
 extern const struct assh_key_ops_s assh_key_ed25519;
 extern const struct assh_key_ops_s assh_key_eddsa_e382;
 extern const struct assh_key_ops_s assh_key_eddsa_e521;

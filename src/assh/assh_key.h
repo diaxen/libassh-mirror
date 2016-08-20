@@ -249,7 +249,7 @@ assh_key_flush(struct assh_context_s *c,
     assh_key_drop(c, head);
 }
 
-/** @internal @This inserts a key in a list of keys. */
+/** @This inserts a key in a list of keys. */
 ASSH_INLINE void
 assh_key_insert(struct assh_key_s **head,
                 struct assh_key_s *key)
