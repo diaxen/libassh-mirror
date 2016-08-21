@@ -31,6 +31,9 @@
 #endif
 
 static size_t alloc_size = 0;
+static uint32_t alloc_fuzz = 0;
+static unsigned long alloc_fuzz_fails = 0;
+
 #define ALLOC_ALIGN 32
 
 static ASSH_ALLOCATOR(assh_leaks_allocator)
@@ -45,6 +48,11 @@ static ASSH_ALLOCATOR(assh_leaks_allocator)
     }
   else if (*ptr == NULL)
     {
+      if (alloc_fuzz && rand() % alloc_fuzz == 0)
+	{
+	  alloc_fuzz_fails++;
+	  return ASSH_ERR_MEM;
+	}
       size_t *bsize = malloc(ALLOC_ALIGN + size);
       if (bsize != NULL)
 	{
@@ -61,6 +69,11 @@ static ASSH_ALLOCATOR(assh_leaks_allocator)
     }
   else
     {
+      if (alloc_fuzz && rand() % alloc_fuzz == 0)
+	{
+	  alloc_fuzz_fails++;
+	  return ASSH_ERR_MEM;
+	}
       size_t *bsize = (void*)((uint8_t*)*ptr - ALLOC_ALIGN);
       bsize = realloc(bsize, ALLOC_ALIGN + size);
       if (bsize != NULL)
