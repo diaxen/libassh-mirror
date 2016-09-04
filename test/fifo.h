@@ -65,5 +65,31 @@ static inline size_t fifo_write(struct fifo_s *f, const uint8_t *data, size_t si
   return osize - size;
 }
 
+/* handle ssh stream between the client and server sessions */
+static assh_bool_t fifo_rw_event(struct fifo_s fifo[2], struct assh_event_s *e, uint8_t i)
+{
+  switch (e->id)
+    {
+    case ASSH_EVENT_READ: {
+      struct assh_event_transport_read_s *te = &e->transport.read;
+      assh_bool_t stalled = (fifo[i].size == 0);
+      te->transferred = fifo_read(&fifo[i], te->buf.data,
+				  te->buf.size % (rand() % FIFO_BUF_SIZE + 1));
+      return stalled;
+    }
+
+    case ASSH_EVENT_WRITE: {
+      struct assh_event_transport_write_s *te = &e->transport.write;
+      assh_bool_t stalled = (te->buf.size == 0);
+      te->transferred = fifo_write(&fifo[i ^ 1], te->buf.data,
+				   te->buf.size % (rand() % FIFO_BUF_SIZE + 1));
+      return stalled;
+    }
+
+    default:
+      abort();
+    }
+}
+
 #endif
 
