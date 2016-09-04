@@ -81,4 +81,5 @@ fifo.h \
 keys.h \
 test.h \
 leaks_check.h \
-prng_weak.h
+prng_weak.h \
+cipher_fuzz.h
