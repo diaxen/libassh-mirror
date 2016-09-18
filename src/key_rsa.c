@@ -212,6 +212,21 @@ static ASSH_KEY_CMP_FCN(assh_key_rsa_cmp)
     &k->nn, &l->nn, &k->en, &l->en, &k->dn, &l->dn) == 0;
 }
 
+static ASSH_KEY_CLEANUP_FCN(assh_key_rsa_cleanup)
+{
+  struct assh_key_rsa_s *k = (void*)key;
+
+  assh_bignum_release(c, &k->nn);
+  assh_bignum_release(c, &k->en);
+  assh_bignum_release(c, &k->dn);
+  assh_bignum_release(c, &k->pn);
+  assh_bignum_release(c, &k->qn);
+  assh_bignum_release(c, &k->in);
+  assh_bignum_release(c, &k->dpn);
+  assh_bignum_release(c, &k->dqn);
+  assh_free(c, k);
+}
+
 static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
 {
   assh_error_t err;
@@ -307,7 +322,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
   *key = &k->key;
   return ASSH_OK;
  err_key:
-  assh_free(c, k);
+  assh_key_rsa_cleanup(c, &k->key);
   return err;
 }
 
@@ -500,31 +515,8 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
   return ASSH_OK;
 
  err_num:
-  assh_bignum_release(c, &k->nn);
-  assh_bignum_release(c, &k->en);
-  assh_bignum_release(c, &k->dn);
-  assh_bignum_release(c, &k->pn);
-  assh_bignum_release(c, &k->qn);
-  assh_bignum_release(c, &k->in);
-  assh_bignum_release(c, &k->dpn);
-  assh_bignum_release(c, &k->dqn);
-  assh_free(c, k);
+  assh_key_rsa_cleanup(c, &k->key);
   return err;
-}
-
-static ASSH_KEY_CLEANUP_FCN(assh_key_rsa_cleanup)
-{
-  struct assh_key_rsa_s *k = (void*)key;
-
-  assh_bignum_release(c, &k->nn);
-  assh_bignum_release(c, &k->en);
-  assh_bignum_release(c, &k->dn);
-  assh_bignum_release(c, &k->pn);
-  assh_bignum_release(c, &k->qn);
-  assh_bignum_release(c, &k->in);
-  assh_bignum_release(c, &k->dpn);
-  assh_bignum_release(c, &k->dqn);
-  assh_free(c, k);
 }
 
 const struct assh_key_ops_s assh_key_rsa =

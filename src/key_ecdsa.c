@@ -229,6 +229,16 @@ static ASSH_KEY_CMP_FCN(assh_key_ecdsa_cmp)
     &k->xn, &l->xn, &k->yn, &l->yn, &k->sn, &l->sn) == 0;
 }
 
+static ASSH_KEY_CLEANUP_FCN(assh_key_ecdsa_cleanup)
+{
+  struct assh_key_ecdsa_s *k = (void*)key;
+
+  assh_bignum_release(c, &k->sn);
+  assh_bignum_release(c, &k->xn);
+  assh_bignum_release(c, &k->yn);
+  assh_free(c, k);
+}
+
 static assh_error_t
 assh_key_ecdsa_create(struct assh_context_s *c,
                       const struct assh_key_ops_s *algo,
@@ -303,7 +313,7 @@ assh_key_ecdsa_create(struct assh_context_s *c,
   return ASSH_OK;
 
  err_key:
-  assh_free(c, k);
+  assh_key_ecdsa_cleanup(c, &k->key);
   return err;
 }
 
@@ -495,21 +505,8 @@ static ASSH_KEY_LOAD_FCN(assh_key_ecdsa_load)
   return ASSH_OK;
 
  err_key:
-  assh_bignum_release(c, &k->sn);
-  assh_bignum_release(c, &k->xn);
-  assh_bignum_release(c, &k->yn);
-  assh_free(c, k);
+  assh_key_ecdsa_cleanup(c, &k->key);
   return err;
-}
-
-static ASSH_KEY_CLEANUP_FCN(assh_key_ecdsa_cleanup)
-{
-  struct assh_key_ecdsa_s *k = (void*)key;
-
-  assh_bignum_release(c, &k->sn);
-  assh_bignum_release(c, &k->xn);
-  assh_bignum_release(c, &k->yn);
-  assh_free(c, k);
 }
 
 static ASSH_KEY_CREATE_FCN(assh_key_ecdsa_nistp_create)
