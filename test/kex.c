@@ -37,6 +37,7 @@
 #include <assh/key_rsa.h>
 #include <assh/key_dsa.h>
 #include <assh/key_eddsa.h>
+#include <assh/key_ecdsa.h>
 
 #include "prng_weak.h"
 #include "leaks_check.h"
@@ -89,6 +90,9 @@ static const struct algo_with_key_s sign_list_long[] =
   { &assh_sign_none,              &assh_key_none, (const uint8_t*)"\0", 0 },
   { &assh_sign_dsa,               &assh_key_dsa, dsa1024_key, sizeof(dsa1024_key) - 1 },
   //    { &assh_sign_dsa2048_sha224,    &assh_key_dsa, dsa2048_key, sizeof(dsa2048_key) },
+  { &assh_sign_nistp256,          &assh_key_ecdsa_nistp, ecdsa_nistp256_key, sizeof(ecdsa_nistp256_key) - 1 },
+  { &assh_sign_nistp384,          &assh_key_ecdsa_nistp, ecdsa_nistp384_key, sizeof(ecdsa_nistp384_key) - 1 },
+  { &assh_sign_nistp521,          &assh_key_ecdsa_nistp, ecdsa_nistp521_key, sizeof(ecdsa_nistp521_key) - 1 },
   { &assh_sign_dsa2048_sha256,    &assh_key_dsa, dsa2048_key, sizeof(dsa2048_key) - 1 },
   { &assh_sign_dsa3072_sha256,    &assh_key_dsa, dsa3072_key, sizeof(dsa3072_key) - 1 },
   { &assh_sign_rsa_sha1_md5,      &assh_key_rsa, rsa1024_key, sizeof(rsa1024_key) - 1 },
