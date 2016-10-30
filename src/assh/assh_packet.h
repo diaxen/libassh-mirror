@@ -430,5 +430,14 @@ assh_buffer_strcmp(const struct assh_buffer_s *buf, const char *nul_str)
   return nul_str[i];
 }
 
+/** @internal @This initializes an @ref assh_buffer_s
+    object with a nul terminated string. */
+ASSH_INLINE void
+assh_buffer_strcpy(struct assh_buffer_s *buf, const char *nul_str)
+{
+  buf->str = (void*)nul_str;
+  buf->len = strlen(nul_str);
+}
+
 #endif
 
