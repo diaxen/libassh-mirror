@@ -211,7 +211,7 @@ int main()
 
 	    case ASSH_EVENT_USERAUTH_SERVER_PASSWORD:
 	      /* XXX check that event user/password pair matches. */
-	      event.userauth_server.password.success = 1;
+	      event.userauth_server.password.result = ASSH_SERVER_PWSTATUS_SUCCESS;
 	      err = assh_event_done(session, &event, ASSH_OK);
 	      break;
 

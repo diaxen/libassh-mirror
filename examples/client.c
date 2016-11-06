@@ -158,6 +158,7 @@ int main(int argc, char **argv)
               && !auth_keys_done)
             {
               auth_keys_done = 1;
+              event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_PUBKEY;
 
               if (assh_load_key_filename(context, &event.userauth_client.methods.pub_keys,
                                          &assh_key_dsa, ASSH_ALGO_SIGN, "dsa_user_key",
@@ -169,10 +170,10 @@ int main(int argc, char **argv)
                                          ASSH_KEY_FMT_PV_PEM, NULL) != ASSH_OK)
                 fprintf(stderr, "unable to load user rsa key\n");
             }
-
-          if ((event.userauth_client.methods.methods & ASSH_USERAUTH_METHOD_PASSWORD)
+          else if ((event.userauth_client.methods.methods & ASSH_USERAUTH_METHOD_PASSWORD)
               && safety > 25)
             {
+              event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_PASSWORD;
               fprintf(stderr, "password input\n");
               event.userauth_client.methods.password.str = "test";
               event.userauth_client.methods.password.len = 4;
@@ -185,6 +186,9 @@ int main(int argc, char **argv)
                  event.userauth_client.banner.text.len, 1, stderr);
           break;
         }
+
+        case ASSH_EVENT_USERAUTH_CLIENT_SUCCESS:
+          break;
 
         default:
           printf("Don't know how to handle event %u\n", event.id);

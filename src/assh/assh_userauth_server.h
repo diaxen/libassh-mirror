@@ -73,16 +73,34 @@ struct assh_event_userauth_server_userkey_s
   assh_bool_t                             found;     //< output
 };
 
+/** @see assh_event_userauth_server_password_s */
+enum assh_event_userauth_server_pwstatus_s
+{
+  ASSH_SERVER_PWSTATUS_FAILURE,
+  ASSH_SERVER_PWSTATUS_SUCCESS,
+  ASSH_SERVER_PWSTATUS_CHANGE,
+};
+
 /** This event is reported when the server-side user authentication
     service is running. The user name and password pair must be
     checked and the @tt success field must be updated accordingly
-    before calling the @ref assh_event_done function.  @see
-    ASSH_EVENT_USERAUTH_SERVER_PASSWORD */
+    before calling the @ref assh_event_done function.
+
+    The client requests a password change when the size of the @ref
+    new_password buffer is not 0. The server can require this behavior
+    for the next password event by setting the @ref pwchange field. In
+    this case the @ref prompt and @ref lang fields may also be
+    updated.
+
+    @see ASSH_EVENT_USERAUTH_SERVER_PASSWORD */
 struct assh_event_userauth_server_password_s
 {
   ASSH_EV_CONST struct assh_buffer_s username;    //< input
   ASSH_EV_CONST struct assh_buffer_s password;    //< input
-  assh_bool_t                        success;     //< output
+  ASSH_EV_CONST struct assh_buffer_s new_password; //< input
+  struct assh_buffer_s               change_prompt; //< output
+  struct assh_buffer_s               change_lang;   //< output
+  enum assh_event_userauth_server_pwstatus_s result; //< output
 };
 
 /** This event is reported when a user authentication request is

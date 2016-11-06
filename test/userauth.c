@@ -87,11 +87,22 @@ static const char * pass[TEST_PASS_COUNT] = {
 
 static unsigned long auth_done_count = 0;
 static unsigned long auth_stall_count = 0;
-static unsigned long auth_server_pubkey_count = 0;
-static unsigned long auth_server_password_count = 0;
+static unsigned long auth_server_pubkey_found_count = 0;
+static unsigned long auth_server_pubkey_wrong_count = 0;
+static unsigned long auth_server_password_ok_count = 0;
+static unsigned long auth_server_password_change_count = 0;
+static unsigned long auth_server_password_wrong_count = 0;
+static unsigned long auth_server_password_new_count = 0;
+static unsigned long auth_server_partial_success_count = 0;
 static unsigned long auth_server_success_count = 0;
 static unsigned long auth_server_err_count = 0;
 static unsigned long auth_server_err_ev_count = 0;
+static unsigned long auth_client_pubkey_count = 0;
+static unsigned long auth_client_password_count = 0;
+static unsigned long auth_client_password_change_count = 0;
+static unsigned long auth_client_password_skip_change_count = 0;
+static unsigned long auth_client_partial_success_count = 0;
+static unsigned long auth_client_success_count = 0;
 static unsigned long auth_client_err_count = 0;
 static unsigned long auth_client_err_ev_count = 0;
 
@@ -112,7 +123,9 @@ static int test()
       fifo_init(&fifo[i]);
     }
 
-  const char *username = NULL, *password = NULL;
+  const char *username = NULL;
+  const char *password = NULL;
+  const char *new_password = NULL;
 
   while (1)
     {
@@ -162,11 +175,15 @@ static int test()
 	  event.userauth_server.methods.retries = 0;
 	  break;
 
-	case ASSH_EVENT_USERAUTH_SERVER_USERKEY:
+	case ASSH_EVENT_USERAUTH_SERVER_USERKEY: {
 	  stall = 0;
+	  assh_bool_t found = rand() & 1;
 	  /* randomly report userkey found */
-	  event.userauth_server.userkey.found = rand() & 1;
-	  auth_server_pubkey_count++;
+	  event.userauth_server.userkey.found = found;
+	  if (found)
+	    auth_server_pubkey_found_count++;
+	  else
+	    auth_server_pubkey_wrong_count++;
 	  if (!packet_fuzz)
 	    {
 	      if (assh_buffer_strcmp(&event.userauth_server.userkey.username, username))
@@ -181,22 +198,53 @@ static int test()
 		TEST_FAIL("");
 	    }
 	  break;
+	}
 
 	case ASSH_EVENT_USERAUTH_SERVER_PASSWORD:
 	  stall = 0;
 	  /* randomly report password success */
-	  event.userauth_server.password.success = rand() & 1;
-	  auth_server_password_count++;
 	  if (!packet_fuzz)
 	    {
 	      if (assh_buffer_strcmp(&event.userauth_server.password.username, username) ||
 		  assh_buffer_strcmp(&event.userauth_server.password.password, password))
-		TEST_FAIL("");
+		TEST_FAIL("user %s password %s\n", username, password);
+	      if ((event.userauth_server.password.new_password.len == 0) !=
+		  (new_password == NULL) || (new_password &&
+		     assh_buffer_strcmp(&event.userauth_server.password.new_password, new_password)))
+		TEST_FAIL("user %s new_password %s\n", username, new_password);
+	    }
+
+	  if (event.userauth_server.password.new_password.len)
+	    auth_server_password_new_count++;
+
+	  switch (rand() % 8)
+	    {
+	    case 0:
+	      break;
+	    case 1:
+	    case 2:
+	      auth_server_password_wrong_count++;
+	      event.userauth_server.password.result = ASSH_SERVER_PWSTATUS_FAILURE;
+	      break;
+	    case 3:
+	    case 4:
+	    case 5:
+	      auth_server_password_ok_count++;
+	      event.userauth_server.password.result = ASSH_SERVER_PWSTATUS_SUCCESS;
+	      break;
+	    case 6:
+	      assh_buffer_strcpy(&event.userauth_server.password.change_prompt,
+				 "expired" + rand() % 7);
+	      assh_buffer_strcpy(&event.userauth_server.password.change_lang,
+				 "en" + rand() % 2);
+	    case 7:
+	      auth_server_password_change_count++;
+	      event.userauth_server.password.result = ASSH_SERVER_PWSTATUS_CHANGE;
+	      break;
 	    }
 	  break;
 
 	case ASSH_EVENT_USERAUTH_SERVER_SUCCESS:
-	  auth_server_success_count++;
 	  ASSH_DEBUG("=> success %u %u\n",
 		     event.userauth_server.success.method,
 		     event.userauth_server.success.sign_safety);
@@ -204,6 +252,12 @@ static int test()
 	  /* randomly request multi factors authentication */
 	  event.userauth_server.success.methods =
 	    rand() & ASSH_USERAUTH_METHOD_IMPLEMENTED;
+
+	  if (event.userauth_server.success.methods)
+	    auth_server_partial_success_count++;
+	  else
+	    auth_server_success_count++;
+
 	  break;
 
 	case ASSH_EVENT_CONNECTION_START:
@@ -262,11 +316,23 @@ static int test()
 
         case ASSH_EVENT_USERAUTH_CLIENT_METHODS: {
 	  stall = 0;
-	  assh_bool_t done = 0;
+	  new_password = NULL;
+	  if (event.userauth_client.methods.partial_success)
+	    auth_client_partial_success_count++;
 	  /* randomly try available authentication methods */
-	  while (!done)
+	  while (!event.userauth_client.methods.select)
 	    {
-	      if (event.userauth_client.methods.methods
+	      if ((event.userauth_client.methods.methods &
+		   ASSH_USERAUTH_METHOD_PASSWORD) && (rand() & 1))
+		{
+		  /* randomly pick a password */
+		  i = rand() % TEST_PASS_COUNT;
+		  password = pass[i];
+		  assh_buffer_strcpy(&event.userauth_client.methods.password, password);
+		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_PASSWORD;
+		  auth_client_password_count++;
+		}
+	      else if (event.userauth_client.methods.methods
 		  & ASSH_USERAUTH_METHOD_PUBKEY)
 		{
 		  /* use some of the available keys */
@@ -275,28 +341,39 @@ static int test()
 		      {
 			assh_key_refinc(keys[i].key_c);
 			assh_key_insert(&event.userauth_client.methods.pub_keys, keys[i].key_c);
-			done = 1;
+			event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_PUBKEY;
+			auth_client_pubkey_count++;
 		      }
 		}
-	      else if ((event.userauth_client.methods.methods &
-		   ASSH_USERAUTH_METHOD_PASSWORD))
-		{
-		  /* randomly pick a password */
-		  i = rand() % TEST_PASS_COUNT;
-		  password = pass[i];
-		  event.userauth_client.methods.password.str = (uint8_t*)password;
-		  event.userauth_client.methods.password.len = strlen(password);
-		  done = 1;
-		}
-	      else
-		break;
 	    }
           break;
+	}
+
+	case ASSH_EVENT_USERAUTH_CLIENT_PWCHANGE: {
+	  if (rand() & 1)
+	    {
+	      auth_client_password_skip_change_count++;
+	      break;
+	    }
+	  i = rand() % TEST_PASS_COUNT;
+	  password = pass[i];
+	  assh_buffer_strcpy(&event.userauth_client.pwchange.old_password,
+			     password);
+	  new_password = pass[(i + 1) % TEST_PASS_COUNT];
+	  assh_buffer_strcpy(&event.userauth_client.pwchange.new_password,
+			     new_password);
+	  auth_client_password_change_count++;
+	  break;
 	}
 
 	default:
 	  ASSH_DEBUG("client: don't know how to handle event %u\n", event.id);
 	  break;
+
+	case ASSH_EVENT_USERAUTH_CLIENT_SUCCESS:
+	  auth_client_success_count++;
+	  break;
+
 	case ASSH_EVENT_CONNECTION_START:
 	  done |= 2;
 	}
@@ -358,6 +435,7 @@ int main(int argc, char **argv)
 #endif
   unsigned int count = argc > 1 ? atoi(argv[1]) : 1000;
   unsigned int action = argc > 2 ? atoi(argv[2]) : 7;
+  unsigned int seed = argc > 3 ? atoi(argv[3]) : time(0);
 
   uint_fast8_t i;
   /* init server context */
@@ -423,7 +501,6 @@ int main(int argc, char **argv)
     TEST_FAIL("leak checking not working\n");
 
   unsigned int k;
-  unsigned int seed = time(0);
 
   /* run some ssh sessions */
   for (k = 0; k < count; )
@@ -480,11 +557,21 @@ int main(int argc, char **argv)
   fprintf(stderr, "Summary:\n"
 	  "  %8lu authentication completion count\n"
 	  "  %8lu protocol stall count\n"
-	  "  %8lu server public key count\n"
-	  "  %8lu server password count\n"
+	  "  %8lu server public key found count\n"
+	  "  %8lu server public key wrong count\n"
+	  "  %8lu server password ok count\n"
+	  "  %8lu server password change count\n"
+	  "  %8lu server password wrong count\n"
+	  "  %8lu server password new count\n"
+	  "  %8lu server partial success count\n"
 	  "  %8lu server success count\n"
 	  "  %8lu server fuzz error count\n"
 	  "  %8lu server fuzz event error count\n"
+	  "  %8lu client password count\n"
+	  "  %8lu client password change count\n"
+	  "  %8lu client password skip change count\n"
+	  "  %8lu client partial success count\n"
+	  "  %8lu client success count\n"
 	  "  %8lu client fuzz error count\n"
 	  "  %8lu client fuzz event error count\n"
 	  "  %8lu fuzz packet bit errors\n"
@@ -492,11 +579,21 @@ int main(int argc, char **argv)
 	  ,
 	  auth_done_count,
 	  auth_stall_count,
-	  auth_server_pubkey_count,
-	  auth_server_password_count,
+	  auth_server_pubkey_found_count,
+	  auth_server_pubkey_wrong_count,
+	  auth_server_password_ok_count,
+	  auth_server_password_change_count,
+	  auth_server_password_wrong_count,
+	  auth_server_password_new_count,
+	  auth_server_partial_success_count,
 	  auth_server_success_count,
 	  auth_server_err_count,
 	  auth_server_err_ev_count,
+	  auth_client_password_count,
+	  auth_client_password_change_count,
+	  auth_client_password_skip_change_count,
+	  auth_client_partial_success_count,
+	  auth_client_success_count,
 	  auth_client_err_count,
 	  auth_client_err_ev_count,
 	  packet_fuzz_bits,

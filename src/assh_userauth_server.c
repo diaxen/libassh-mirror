@@ -55,6 +55,7 @@ enum assh_userauth_state_e
 #ifdef CONFIG_ASSH_SERVER_AUTH_PASSWORD
   ASSH_USERAUTH_PASSWORD,    //< the password event handler must check the user password
   ASSH_USERAUTH_PASSWORD_SUCCESS,
+  ASSH_USERAUTH_PASSWORD_WAIT_CHANGE,
 #endif
 #ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
   ASSH_USERAUTH_PUBKEY_PKOK,   //< the public key event handler may send PK_OK
@@ -78,10 +79,6 @@ struct assh_userauth_context_s
   const struct assh_service_s *srv;
   char method_name[10];
   char username[CONFIG_ASSH_AUTH_USERNAME_LEN + 1];
-
-#ifdef CONFIG_ASSH_SERVER_AUTH_PASSWORD
-  char password[CONFIG_ASSH_AUTH_PASSWORD_LEN + 1];
-#endif
 
   enum assh_userauth_methods_e methods:8;
   uint_fast8_t retry;
@@ -281,6 +278,39 @@ static assh_error_t assh_userauth_server_success(struct assh_session_s *s,
 
 #ifdef CONFIG_ASSH_SERVER_AUTH_PASSWORD
 
+static assh_error_t
+assh_userauth_server_pwchange(struct assh_session_s *s,
+                              struct assh_event_s *e)
+{
+  struct assh_userauth_context_s *pv = s->srv_pv;
+  assh_error_t err;
+
+  ASSH_CHK_RET(pv->retry && --pv->retry == 0,
+               ASSH_ERR_NO_AUTH | ASSH_ERRSV_DISCONNECT);
+
+  size_t prompt_len = e->userauth_server.password.change_prompt.len;
+  size_t lang_len = e->userauth_server.password.change_lang.len;
+  struct assh_packet_s *pout;
+
+  ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_USERAUTH_PASSWD_CHANGEREQ,
+                 4 + prompt_len + 4 + lang_len, &pout) | ASSH_ERRSV_DISCONNECT);
+
+  uint8_t *str;
+  ASSH_ASSERT(assh_packet_add_string(pout, prompt_len, &str));
+  if (prompt_len)
+    memcpy(str, e->userauth_server.password.change_prompt.str, prompt_len);
+
+  ASSH_ASSERT(assh_packet_add_string(pout, lang_len, &str));
+  if (lang_len)
+    memcpy(str, e->userauth_server.password.change_lang.str, lang_len);
+
+  assh_transport_push(s, pout);
+
+  pv->state = ASSH_USERAUTH_PASSWORD_WAIT_CHANGE;
+
+  return ASSH_OK;
+}
+
 static ASSH_EVENT_DONE_FCN(assh_userauth_server_password_done)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
@@ -288,10 +318,18 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_password_done)
 
   ASSH_CHK_RET(pv->state != ASSH_USERAUTH_PASSWORD, ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
 
-  if (e->userauth_server.password.success)
-    pv->state = ASSH_USERAUTH_PASSWORD_SUCCESS;
-  else
-    ASSH_ERR_RET(assh_userauth_server_failure(s) | ASSH_ERRSV_DISCONNECT);
+  switch (e->userauth_server.password.result)
+    {
+    case ASSH_SERVER_PWSTATUS_FAILURE:
+      ASSH_ERR_RET(assh_userauth_server_failure(s) | ASSH_ERRSV_DISCONNECT);
+      break;
+    case ASSH_SERVER_PWSTATUS_SUCCESS:
+      pv->state = ASSH_USERAUTH_PASSWORD_SUCCESS;
+      break;
+    case ASSH_SERVER_PWSTATUS_CHANGE:
+      ASSH_ERR_RET(assh_userauth_server_pwchange(s, e) | ASSH_ERRSV_DISCONNECT);
+      break;
+    }
 
   return ASSH_OK;
 }
@@ -305,25 +343,43 @@ static assh_error_t assh_userauth_server_req_password(struct assh_session_s *s,
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
-  const uint8_t *second = auth_data;
-  const uint8_t *password;
+  const uint8_t *pwchange = auth_data;
+  const uint8_t *password, *new_password;
 
-  ASSH_ERR_RET(assh_packet_check_array(p, second, 1, &password) | ASSH_ERRSV_DISCONNECT);
-  ASSH_CHK_RET(*second != 0, ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+  ASSH_ERR_RET(assh_packet_check_array(p, pwchange, 1, &password)
+               | ASSH_ERRSV_DISCONNECT);
 
-  /* copy password */
-  ASSH_ERR_RET(assh_packet_check_string(p, password, NULL) | ASSH_ERRSV_DISCONNECT);
-  ASSH_ERR_RET(assh_ssh_string_copy(password, pv->password, sizeof(pv->password))
-	       | ASSH_ERRSV_DISCONNECT);
+  ASSH_ERR_RET(assh_packet_check_string(p, password, &new_password)
+               | ASSH_ERRSV_DISCONNECT);
 
-  /* return event to check the user password */
-  e->id = ASSH_EVENT_USERAUTH_SERVER_PASSWORD;
-  e->f_done = assh_userauth_server_password_done;
   e->userauth_server.password.username.str = pv->username;
   e->userauth_server.password.username.len = strlen(pv->username);
-  e->userauth_server.password.password.str = pv->password;
-  e->userauth_server.password.password.len = strlen(pv->password);
-  e->userauth_server.password.success = 0;
+  e->userauth_server.password.password.str = (char*)password + 4;
+  e->userauth_server.password.password.len = assh_load_u32(password);
+
+  if (*pwchange)
+    {
+      ASSH_ERR_RET(assh_packet_check_string(p, new_password, NULL)
+                   | ASSH_ERRSV_DISCONNECT);
+      e->userauth_server.password.new_password.str = (char*)new_password + 4;
+      e->userauth_server.password.new_password.len = assh_load_u32(new_password);
+    }
+  else if (pv->state == ASSH_USERAUTH_PASSWORD_WAIT_CHANGE)
+    {
+      ASSH_ERR_RET(assh_userauth_server_failure(s) | ASSH_ERRSV_DISCONNECT);
+      return ASSH_OK;
+    }
+  else
+    {
+      e->userauth_server.password.new_password.len = 0;
+    }
+
+  /* report a password checking event */
+  e->id = ASSH_EVENT_USERAUTH_SERVER_PASSWORD;
+  e->f_done = assh_userauth_server_password_done;
+  e->userauth_server.password.result = ASSH_SERVER_PWSTATUS_FAILURE;
+  e->userauth_server.password.change_prompt.len = 0;
+  e->userauth_server.password.change_lang.len = 0;
 
   pv->state = ASSH_USERAUTH_PASSWORD;
   return ASSH_OK;
@@ -612,9 +668,11 @@ static assh_error_t assh_userauth_server_req(struct assh_session_s *s,
 
 #ifdef CONFIG_ASSH_SERVER_AUTH_PASSWORD
     case 8:
-      if ((pv->methods & ASSH_USERAUTH_METHOD_PASSWORD) &&
-          !assh_ssh_string_compare(method_name, "password"))
+      if (!assh_ssh_string_compare(method_name, "password"))
         {
+          ASSH_CHK_RET(!(pv->methods & ASSH_USERAUTH_METHOD_PASSWORD),
+                       ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+
           ASSH_ERR_RET(assh_userauth_server_req_new(s, srv_name, username, method_name)
 		       | ASSH_ERRSV_DISCONNECT);
           if (err == ASSH_NO_DATA)
@@ -628,9 +686,11 @@ static assh_error_t assh_userauth_server_req(struct assh_session_s *s,
 
 #ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
     case 9:
-      if ((pv->methods & ASSH_USERAUTH_METHOD_PUBKEY) &&
-          !assh_ssh_string_compare(method_name, "publickey"))
+      if (!assh_ssh_string_compare(method_name, "publickey"))
         {
+          ASSH_CHK_RET(!(pv->methods & ASSH_USERAUTH_METHOD_PUBKEY),
+                       ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+
           ASSH_ERR_RET(assh_userauth_server_req_new(s, srv_name, username, method_name)
 		       | ASSH_ERRSV_DISCONNECT);
           if (err == ASSH_NO_DATA)
@@ -684,7 +744,6 @@ static assh_error_t assh_userauth_server_methods(struct assh_session_s *s,
                                                  struct assh_event_s *e)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
 
   pv->state = ASSH_USERAUTH_METHODS_DONE;
   e->id = ASSH_EVENT_USERAUTH_SERVER_METHODS;
@@ -718,17 +777,18 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_server_process)
       ASSH_ERR_RET(assh_userauth_server_methods(s, e) | ASSH_ERRSV_DISCONNECT);
       return ASSH_NO_DATA;
 
-    case ASSH_USERAUTH_WAIT_RQ:
-      if (p != NULL)
-        ASSH_ERR_RET(assh_userauth_server_req(s, p, e) | ASSH_ERRSV_DISCONNECT);
-      return ASSH_OK;
-
 #ifdef CONFIG_ASSH_SERVER_AUTH_PASSWORD
     case ASSH_USERAUTH_PASSWORD_SUCCESS:
       ASSH_ERR_RET(assh_userauth_server_success(s, e, ASSH_USERAUTH_METHOD_PASSWORD)
                    | ASSH_ERRSV_DISCONNECT);
       return ASSH_NO_DATA;
+
+    case ASSH_USERAUTH_PASSWORD_WAIT_CHANGE:
 #endif
+    case ASSH_USERAUTH_WAIT_RQ:
+      if (p != NULL)
+        ASSH_ERR_RET(assh_userauth_server_req(s, p, e) | ASSH_ERRSV_DISCONNECT);
+      return ASSH_OK;
 
 #ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
     case ASSH_USERAUTH_PUBKEY_SUCCESS:

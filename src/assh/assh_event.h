@@ -54,6 +54,9 @@ enum assh_event_id_e
   ASSH_EVENT_USERAUTH_CLIENT_METHODS,
   /** @see assh_event_userauth_client_banner_s */
   ASSH_EVENT_USERAUTH_CLIENT_BANNER,
+  /** @see assh_event_userauth_client_pwchange_s */
+  ASSH_EVENT_USERAUTH_CLIENT_PWCHANGE,
+  ASSH_EVENT_USERAUTH_CLIENT_SUCCESS,
 
   /** @see assh_event_userauth_server_methods_s */
   ASSH_EVENT_USERAUTH_SERVER_METHODS,
