@@ -36,7 +36,7 @@
 static inline struct assh_packet_pool_s *
 assh_packet_pool(struct assh_context_s *c, uint32_t size)
 {
-  int_fast8_t i = 32 - ASSH_CLZ32(size) - ASSH_PCK_POOL_MIN;
+  int_fast8_t i = 32 - assh_clz32(size) - ASSH_PCK_POOL_MIN;
   if (i < 0)
     i = 0;
   else if (i >= ASSH_PCK_POOL_SIZE)

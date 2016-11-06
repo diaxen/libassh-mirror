@@ -170,22 +170,42 @@ ASSH_INLINE void assh_clear(void *data, size_t len)
 
 #ifdef __GNUC__
 /** @internal */
-#define ASSH_CLZ8(x)  (__builtin_clz((uint8_t)(x)) + 8 - sizeof(int) * 8)
+#define assh_clz8(x)  (__builtin_clz((uint8_t)(x)) + 8 - sizeof(int) * 8)
 /** @internal */
-#define ASSH_CLZ16(x) (__builtin_clz((uint16_t)(x)) + 16 - sizeof(int) * 8)
+#define assh_clz16(x) (__builtin_clz((uint16_t)(x)) + 16 - sizeof(int) * 8)
 /** @internal */
-#define ASSH_CLZ32(x) (__builtin_clzl((uint32_t)(x)) + 32 - sizeof(long) * 8)
+#define assh_clz32(x) (__builtin_clzl((uint32_t)(x)) + 32 - sizeof(long) * 8)
 /** @internal */
-#define ASSH_CLZ64(x) (__builtin_clzll((uint64_t)(x)) + 64 - sizeof(long long) * 8)
+#define assh_clz64(x) (__builtin_clzll((uint64_t)(x)) + 64 - sizeof(long long) * 8)
 
 /** @internal */
-#define ASSH_CTZ8(x) __builtin_ctz(x)
+#define assh_ctz8(x) __builtin_ctz(x)
 /** @internal */
-#define ASSH_CTZ16(x) __builtin_ctz(x)
+#define assh_ctz16(x) __builtin_ctz(x)
 /** @internal */
-#define ASSH_CTZ32(x) __builtin_ctzl(x)
+#define assh_ctz32(x) __builtin_ctzl(x)
 /** @internal */
-#define ASSH_CTZ64(x) __builtin_ctzll(x)
+#define assh_ctz64(x) __builtin_ctzll(x)
+
+#else
+
+/** @internal */
+#define assh_clz8(x)  assh_ct_clz8(x)
+/** @internal */
+#define assh_clz16(x) assh_ct_clz16(x)
+/** @internal */
+#define assh_clz32(x) assh_ct_clz32(x)
+/** @internal */
+#define assh_clz64(x) assh_ct_clz64(x)
+
+/** @internal */
+#define assh_ctz8(x)  assh_ct_ctz8(x)
+/** @internal */
+#define assh_ctz16(x) assh_ct_ctz16(x)
+/** @internal */
+#define assh_ctz32(x) assh_ct_ctz32(x)
+/** @internal */
+#define assh_ctz64(x) assh_ct_ctz64(x)
 #endif
 
 /** @internal */

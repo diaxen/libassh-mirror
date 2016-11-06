@@ -340,5 +340,51 @@ ASSH_INLINE const uint8_t ** assh_uint8ptr_cast(uint8_t **p)
   return (const uint8_t **)p;
 }
 
+/** @internal @This generates contant time ctz and clz functions */
+#define ASSH_CT_CTLZ_GEN(n, l)                                        \
+/** @internal @This computes the number of trailing zero bits of a    \
+     n bits value in constant time */                                 \
+ASSH_INLINE uint_fast8_t assh_ct_ctz##n(uint##n##_t x)                \
+{                                                                     \
+  x &= -x;                                                            \
+  uint##n##_t c = (x & (uint##n##_t)0x5555555555555555ULL) - 1;       \
+  c = (c >> 1) ^ ((x & (uint##n##_t)0x3333333333333333ULL) - 1);      \
+  c = (c >> 1) ^ ((x & (uint##n##_t)0x0f0f0f0f0f0f0f0fULL) - 1);      \
+  if (n > 8)                                                          \
+    c = (c >> 1) ^ ((x & (uint##n##_t)0x00ff00ff00ff00ffULL) - 1);    \
+  if (n > 16)                                                         \
+    c = (c >> 1) ^ ((x & (uint##n##_t)0x0000ffff0000ffffULL) - 1);    \
+  if (n > 32)                                                         \
+    c = (c >> 1) ^ ((x & (uint##n##_t)0x00000000ffffffffULL) - 1);    \
+  return (c >> (n - l)) ^ (c >> (n - l + 1));                         \
+}                                                                     \
+                                                                      \
+/** @internal @This computes the number of leading zero bits of a     \
+    n bits value in constant time */                                  \
+ASSH_INLINE uint_fast8_t assh_ct_clz##n(uint##n##_t x)                \
+{                                                                     \
+  uint##n##_t a0, a1, a2, a3, a4, j = 0;                              \
+  a0 = x  | (( x & (uint##n##_t)0xaaaaaaaaaaaaaaaaULL) >> 1);         \
+  a1 = a0 | ((a0 & (uint##n##_t)0xccccccccccccccccULL) >> 2);         \
+  a2 = a1 | ((a1 & (uint##n##_t)0xf0f0f0f0f0f0f0f0ULL) >> 4);         \
+  a3 = a2 | ((a2 & (uint##n##_t)0xff00ff00ff00ff00ULL) >> 8);         \
+  a4 = a3 | ((a3 & (uint##n##_t)0xffff0000ffff0000ULL) >> 16);        \
+  if (n > 32)                                                         \
+    j |= (a4 >> (j + 32-5)) & 32;                                     \
+  if (n > 16)                                                         \
+    j |= (a3 >> (j + 16-4)) & 16;                                     \
+  if (n > 8)                                                          \
+    j |= (a2 >> (j + 8-3))  & 8;                                      \
+  j |= (a1 >> (j + 4-2))  & 4;                                        \
+  j |= (a0 >> (j + 2-1))  & 2;                                        \
+  j |= (x  >> (j + 1-0))  & 1;                                        \
+  return j ^ (n - 1);                                                 \
+}
+
+ASSH_CT_CTLZ_GEN(8, 3);
+ASSH_CT_CTLZ_GEN(16, 4);
+ASSH_CT_CTLZ_GEN(32, 5);
+ASSH_CT_CTLZ_GEN(64, 6);
+
 #endif
 

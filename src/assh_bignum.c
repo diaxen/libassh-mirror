@@ -125,7 +125,7 @@ assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
       ASSH_CHK_RET(n > 0 && mpint[4] == 0, ASSH_ERR_BAD_DATA);
       b = n * 8;
       if (n)
-        b -= ASSH_CLZ8(mpint[4]);
+        b -= assh_ct_clz8(mpint[4]);
       break;
     }
 
@@ -137,7 +137,7 @@ assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
         str++, n--;
       b = n * 8;
       if (n)
-        b -= ASSH_CLZ8(str[0]);
+        b -= assh_ct_clz8(str[0]);
       break;
     }
 
@@ -155,7 +155,7 @@ assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
         asn1++, n--;
       b = n * 8;
       if (n)
-        b -= ASSH_CLZ8(asn1[0]);
+        b -= assh_ct_clz8(asn1[0]);
       break;
     }
 
@@ -167,7 +167,7 @@ assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
         n--;
       b = n * 8;
       if (b)
-        b -= ASSH_CLZ8(raw[n - 1]);
+        b -= assh_ct_clz8(raw[n - 1]);
       break;
     }
 
@@ -179,7 +179,7 @@ assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
         raw++, n--;
       b = n * 8;
       if (b)
-        b -= ASSH_CLZ8(raw[0]);
+        b -= assh_ct_clz8(raw[0]);
       break;
     }
 

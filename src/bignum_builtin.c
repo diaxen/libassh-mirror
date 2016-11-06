@@ -45,8 +45,8 @@ typedef uint16_t assh_bnlong_t;
 typedef int16_t assh_bnslong_t;
 #define ASSH_BN_FMT "%02x"
 #define ASSH_BN_LFSR 0xb8
-#define assh_bn_clz(x) ASSH_CLZ8((assh_bnword_t)x)
-#define assh_bn_ctz(x) ASSH_CTZ8((assh_bnword_t)x)
+#define assh_bn_clz(x) assh_ct_clz8((assh_bnword_t)x)
+#define assh_bn_ctz(x) assh_ct_ctz8((assh_bnword_t)x)
 
 #elif CONFIG_ASSH_BIGNUM_WORD == 16
 typedef uint16_t assh_bnword_t;
@@ -55,8 +55,8 @@ typedef uint32_t assh_bnlong_t;
 typedef int32_t assh_bnslong_t;
 #define ASSH_BN_FMT "%04x"
 #define ASSH_BN_LFSR 0xb008
-#define assh_bn_clz(x) ASSH_CLZ16((assh_bnword_t)x)
-#define assh_bn_ctz(x) ASSH_CTZ16((assh_bnword_t)x)
+#define assh_bn_clz(x) assh_ct_clz16((assh_bnword_t)x)
+#define assh_bn_ctz(x) assh_ct_ctz16((assh_bnword_t)x)
 
 #elif CONFIG_ASSH_BIGNUM_WORD == 32
 typedef uint32_t assh_bnword_t;
@@ -65,8 +65,8 @@ typedef uint64_t assh_bnlong_t;
 typedef int64_t assh_bnslong_t;
 #define ASSH_BN_FMT "%08x"
 #define ASSH_BN_LFSR 0x80200003
-#define assh_bn_clz(x) ASSH_CLZ32((assh_bnword_t)x)
-#define assh_bn_ctz(x) ASSH_CTZ32((assh_bnword_t)x)
+#define assh_bn_clz(x) assh_ct_clz32((assh_bnword_t)x)
+#define assh_bn_ctz(x) assh_ct_ctz32((assh_bnword_t)x)
 
 #elif CONFIG_ASSH_BIGNUM_WORD == 64
 typedef uint64_t assh_bnword_t;
@@ -75,8 +75,8 @@ typedef unsigned __int128 assh_bnlong_t;
 typedef signed __int128 assh_bnslong_t;
 #define ASSH_BN_FMT "%016llx"
 #define ASSH_BN_LFSR 0xd800000000000000ULL
-#define assh_bn_clz(x) ASSH_CLZ64((assh_bnword_t)x)
-#define assh_bn_ctz(x) ASSH_CTZ64((assh_bnword_t)x)
+#define assh_bn_clz(x) assh_ct_clz64((assh_bnword_t)x)
+#define assh_bn_ctz(x) assh_ct_ctz64((assh_bnword_t)x)
 
 #endif
 
@@ -1863,7 +1863,7 @@ assh_bignum_next_prime(struct assh_context_s *ctx,
           uint32_t x;
           for (x = ~sieve_bits[i]; x; x &= (x - 1))
             {
-              uint32_t o = k + (i * 32 + ASSH_CTZ32(x)) * 2 + (sieve->offsets[0] & 1);
+              uint32_t o = k + (i * 32 + assh_ct_ctz32(x)) * 2 + (sieve->offsets[0] & 1);
               // ASSH_DEBUG("candidate prime at offset %u, mask is %x\n", o, x);
 
               /* advance big number to candidate prime */
