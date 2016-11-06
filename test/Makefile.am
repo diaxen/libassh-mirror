@@ -34,6 +34,12 @@ hash_CFLAGS = -I$(top_srcdir)/src
 if COND_server
 if COND_client
 
+noinst_PROGRAMS += userauth
+TESTS += userauth
+userauth_SOURCES = userauth.c
+userauth_LDADD = $(top_builddir)/src/libassh.la
+userauth_CFLAGS = -I$(top_srcdir)/src
+
 noinst_PROGRAMS += connection
 TESTS += connection
 connection_SOURCES = connection.c
