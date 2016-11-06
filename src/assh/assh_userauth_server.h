@@ -48,13 +48,16 @@
     selected. Some implemented methods are selected by default.
 
     The default allowed number of authentication retries can be
-    changed as well.
+    changed as well. A banner message will be sent if the @tt banner
+    buffer size is changed to a value greater than zero.
 
     @see ASSH_EVENT_USERAUTH_SERVER_METHODS */
 struct assh_event_userauth_server_methods_s
 {
   enum assh_userauth_methods_e methods; //< output
-  uint_fast8_t retries;                 //< output
+  uint_fast8_t                 retries; //< output
+  struct assh_buffer_s         banner;  //< output
+  struct assh_buffer_s         bnlang;  //< output
 };
 
 /** This event is reported when the server-side user authentication

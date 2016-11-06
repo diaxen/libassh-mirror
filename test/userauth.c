@@ -148,6 +148,9 @@ static int test()
 	  break;
 
 	case ASSH_EVENT_USERAUTH_SERVER_METHODS:
+	  event.userauth_server.methods.banner.size = 4 - rand() % 5;
+	  event.userauth_server.methods.banner.str = "test";
+
 	  do {
 	    /* randomly choose some initial allowed methods */
 	    event.userauth_server.methods.methods =

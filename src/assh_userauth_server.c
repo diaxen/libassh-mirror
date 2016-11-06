@@ -658,6 +658,23 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_methods_done)
   ASSH_CHK_RET(!(pv->methods & ASSH_USERAUTH_METHOD_IMPLEMENTED),
                ASSH_ERR_MISSING_ALGO | ASSH_ERRSV_DISCONNECT);
 
+  size_t bsize = e->userauth_server.methods.banner.size;
+  size_t lsize = e->userauth_server.methods.bnlang.size;
+
+  if (bsize)
+    {
+      struct assh_packet_s *pout;
+      ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_USERAUTH_BANNER,
+                                     4 + bsize + 4 + lsize, &pout)
+                   | ASSH_ERRSV_DISCONNECT);
+      uint8_t *str;
+      ASSH_ASSERT(assh_packet_add_string(pout, bsize, &str));
+      memcpy(str, e->userauth_server.methods.banner.str, bsize);
+      ASSH_ASSERT(assh_packet_add_string(pout, lsize, &str));
+      memcpy(str, e->userauth_server.methods.bnlang.str, lsize);
+      assh_transport_push(s, pout);
+    }
+
   pv->state = ASSH_USERAUTH_WAIT_RQ;
 
   return ASSH_OK;
@@ -672,6 +689,9 @@ static assh_error_t assh_userauth_server_methods(struct assh_session_s *s,
   pv->state = ASSH_USERAUTH_METHODS_DONE;
   e->id = ASSH_EVENT_USERAUTH_SERVER_METHODS;
   e->f_done = assh_userauth_server_methods_done;
+
+  e->userauth_server.methods.banner.size = 0;
+  e->userauth_server.methods.bnlang.size = 0;
 
   e->userauth_server.methods.methods = ASSH_USERAUTH_METHOD_IMPLEMENTED &
     (ASSH_USERAUTH_METHOD_PUBKEY |

@@ -191,6 +191,13 @@ int main()
 	      break;
 	    }
 
+	    case ASSH_EVENT_USERAUTH_SERVER_METHODS:
+	      event.userauth_server.methods.banner.size = 4;
+	      event.userauth_server.methods.banner.str = "test";
+
+	      err = assh_event_done(session, &event, ASSH_OK);
+	      break;
+
 	    case ASSH_EVENT_USERAUTH_SERVER_USERKEY: {
 	      /* XXX check that event public key is in the list of
 		 user authorized keys. */
