@@ -41,6 +41,7 @@
 #include <assh/key_ecdsa.h>
 
 #include "fifo.h"
+#include "prng_weak.h"
 #include "leaks_check.h"
 #include "test.h"
 #include "cipher_fuzz.h"
@@ -361,7 +362,7 @@ int main(int argc, char **argv)
   uint_fast8_t i;
   /* init server context */
   if (assh_context_init(&context[0], ASSH_SERVER,
-			assh_leaks_allocator, NULL, NULL, NULL) ||
+			assh_leaks_allocator, NULL, &assh_prng_weak, NULL) ||
       assh_service_register_va(&context[0], &assh_service_userauth_server,
 			       &assh_service_connection, NULL))
     TEST_FAIL("");
@@ -373,7 +374,7 @@ int main(int argc, char **argv)
 
   /* init client context */
   if (assh_context_init(&context[1], ASSH_CLIENT,
-			assh_leaks_allocator, NULL, NULL, NULL) ||
+			assh_leaks_allocator, NULL, &assh_prng_weak, NULL) ||
       assh_service_register_va(&context[1], &assh_service_userauth_client,
 			       &assh_service_connection, NULL))
     TEST_FAIL("");
