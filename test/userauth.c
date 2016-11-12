@@ -168,7 +168,7 @@ static int test()
 	  do {
 	    /* randomly choose some initial allowed methods */
 	    event.userauth_server.methods.methods =
-	      rand() & ASSH_USERAUTH_METHOD_IMPLEMENTED;
+	      rand() & ASSH_USERAUTH_METHOD_SERVER_IMPLEMENTED;
 	  } while (!event.userauth_server.methods.methods);
 
 	  /* unlimited retries */
@@ -251,7 +251,7 @@ static int test()
 
 	  /* randomly request multi factors authentication */
 	  event.userauth_server.success.methods =
-	    rand() & ASSH_USERAUTH_METHOD_IMPLEMENTED;
+	    rand() & ASSH_USERAUTH_METHOD_SERVER_IMPLEMENTED;
 
 	  if (event.userauth_server.success.methods)
 	    auth_server_partial_success_count++;
