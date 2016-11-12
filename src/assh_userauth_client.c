@@ -61,7 +61,7 @@ enum assh_userauth_state_e
 struct assh_userauth_context_s
 {
   const struct assh_service_s *srv;
-  struct assh_packet_s *pbanner;
+  struct assh_packet_s *pck;
   char username[CONFIG_ASSH_AUTH_USERNAME_LEN];
 
   size_t username_len:16;
@@ -98,7 +98,7 @@ static ASSH_SERVICE_INIT_FCN(assh_userauth_client_init)
 
   /* get next client requested service */
   pv->srv = s->ctx->srvs[s->srv_index];
-  pv->pbanner = NULL;
+  pv->pck = NULL;
 
   return ASSH_OK;
 }
@@ -106,15 +106,16 @@ static ASSH_SERVICE_INIT_FCN(assh_userauth_client_init)
 static ASSH_SERVICE_CLEANUP_FCN(assh_userauth_client_cleanup)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
+  struct assh_context_s *c = s->ctx;
 
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY
-  assh_key_flush(s->ctx, &pv->pub_keys);
+  assh_key_flush(c, &pv->pub_keys);
 #endif
 
-  if (pv->pbanner != NULL)
-    assh_packet_release(pv->pbanner);
 
-  assh_free(s->ctx, pv);
+  assh_packet_release(pv->pck);
+
+  assh_free(c, pv);
 
   s->srv_pv = NULL;
   s->srv = NULL;
@@ -200,6 +201,9 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_req_pwchange_done)
   ASSH_CHK_RET(pv->state != ASSH_USERAUTH_GET_PWCHANGE,
 	       ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
 
+  assh_packet_release(pv->pck);
+  pv->pck = NULL;
+
   if (e->userauth_client.pwchange.old_password.len &&
       e->userauth_client.pwchange.new_password.len)
     {
@@ -238,6 +242,9 @@ assh_userauth_client_req_pwchange(struct assh_session_s *s,
   e->id = ASSH_EVENT_USERAUTH_CLIENT_PWCHANGE;
   e->f_done = assh_userauth_client_req_pwchange_done;
   pv->state = ASSH_USERAUTH_GET_PWCHANGE;
+
+  assert(pv->pck == NULL);
+  pv->pck = assh_packet_refinc(p);
 
   return ASSH_OK;
 }
@@ -586,8 +593,8 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_banner_done)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
 
-  assh_packet_release(pv->pbanner);
-  pv->pbanner = NULL;
+  assh_packet_release(pv->pck);
+  pv->pck = NULL;
 
   return ASSH_OK;
 }
@@ -614,8 +621,7 @@ static assh_error_t assh_userauth_client_banner(struct assh_session_s *s,
   e->userauth_client.banner.lang.str = (char*)lang + 4;
   e->userauth_client.banner.lang.len = assh_load_u32(lang);
 
-  assh_packet_refinc(p);
-  pv->pbanner = p;
+  pv->pck = assh_packet_refinc(p);
 
   return ASSH_OK;
 }

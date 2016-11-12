@@ -77,6 +77,8 @@ enum assh_userauth_pubkey_state_e
 struct assh_userauth_context_s
 {
   const struct assh_service_s *srv;
+  struct assh_packet_s *pck;
+
   char method_name[10];
   char username[CONFIG_ASSH_AUTH_USERNAME_LEN + 1];
 
@@ -90,7 +92,6 @@ struct assh_userauth_context_s
   struct assh_key_s *pub_key;
   const struct assh_algo_sign_s *algo;
   const struct assh_algo_name_s *algo_name;
-  struct assh_packet_s *sign_pck;
   const uint8_t *sign;
 #endif
   assh_time_t deadline;
@@ -113,10 +114,11 @@ static ASSH_SERVICE_INIT_FCN(assh_userauth_server_init)
   pv->state = ASSH_USERAUTH_METHODS;
   pv->srv = NULL;
 
+  pv->pck = NULL;
+
 #ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
   pv->pub_key = NULL;
   pv->pubkey_state = ASSH_USERAUTH_PUBKEY_NONE;
-  pv->sign_pck = NULL;  
 #endif
 
   return ASSH_OK;
@@ -131,9 +133,6 @@ static void assh_userauth_server_flush_state(struct assh_session_s *s)
 #ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
   assh_key_flush(s->ctx, &pv->pub_key);
   pv->pubkey_state = ASSH_USERAUTH_PUBKEY_NONE;
-
-  assh_packet_release(pv->sign_pck);
-  pv->sign_pck = NULL;  
 #endif
 }
 
@@ -318,6 +317,9 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_password_done)
 
   ASSH_CHK_RET(pv->state != ASSH_USERAUTH_PASSWORD, ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
 
+  assh_packet_release(pv->pck);
+  pv->pck = NULL;
+
   switch (e->userauth_server.password.result)
     {
     case ASSH_SERVER_PWSTATUS_FAILURE:
@@ -382,6 +384,10 @@ static assh_error_t assh_userauth_server_req_password(struct assh_session_s *s,
   e->userauth_server.password.change_lang.len = 0;
 
   pv->state = ASSH_USERAUTH_PASSWORD;
+
+  assert(pv->pck == NULL);
+  pv->pck = assh_packet_refinc(p);
+
   return ASSH_OK;
 }
 
@@ -479,8 +485,12 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
         ASSH_ERR_RET(assh_userauth_server_failure(s)
 		     | ASSH_ERRSV_DISCONNECT);
       else
-        ASSH_ERR_RET(assh_userauth_server_pubkey_check(s, pv->sign_pck, pv->sign)
+        ASSH_ERR_RET(assh_userauth_server_pubkey_check(s, pv->pck, pv->sign)
 		     | ASSH_ERRSV_DISCONNECT);
+
+      assh_packet_release(pv->pck);
+      pv->pck = NULL;
+
       return ASSH_OK;
     }
 
@@ -559,8 +569,8 @@ static assh_error_t assh_userauth_server_req_pubkey(struct assh_session_s *s,
           return ASSH_OK;
         }
 
-      assh_packet_refinc(p);
-      pv->sign_pck = p;
+      assert(pv->pck == NULL);
+      pv->pck = assh_packet_refinc(p);
       pv->sign = sign;
 
       pv->state = ASSH_USERAUTH_PUBKEY_VERIFY;
