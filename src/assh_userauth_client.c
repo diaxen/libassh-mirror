@@ -54,6 +54,11 @@ enum assh_userauth_state_e
   ASSH_USERAUTH_GET_PWCHANGE,
   ASSH_USERAUTH_PWCHANGE_SKIP,
 #endif
+#ifdef CONFIG_ASSH_CLIENT_AUTH_KEYBOARD
+  ASSH_USERAUTH_KEYBOARD_SENT_RQ,
+  ASSH_USERAUTH_KEYBOARD_INFO,
+  ASSH_USERAUTH_KEYBOARD_SENT_INFO,
+#endif
   ASSH_USERAUTH_GET_METHODS,
   ASSH_USERAUTH_SUCCESS,
 };
@@ -72,6 +77,10 @@ struct assh_userauth_context_s
   uint16_t algo_idx;
   const struct assh_algo_s *algo;
   struct assh_key_s *pub_keys;
+#endif
+
+#ifdef CONFIG_ASSH_CLIENT_AUTH_KEYBOARD
+  struct assh_buffer_s *keyboard_array;
 #endif
 };
 
@@ -95,6 +104,9 @@ static ASSH_SERVICE_INIT_FCN(assh_userauth_client_init)
   pv->pub_keys = NULL;
 #endif
 
+#ifdef CONFIG_ASSH_CLIENT_AUTH_KEYBOARD
+  pv->keyboard_array = NULL;
+#endif
 
   /* get next client requested service */
   pv->srv = s->ctx->srvs[s->srv_index];
@@ -112,6 +124,9 @@ static ASSH_SERVICE_CLEANUP_FCN(assh_userauth_client_cleanup)
   assh_key_flush(c, &pv->pub_keys);
 #endif
 
+#ifdef CONFIG_ASSH_CLIENT_AUTH_KEYBOARD
+  assh_free(c, pv->keyboard_array);
+#endif
 
   assh_packet_release(pv->pck);
 
@@ -242,6 +257,152 @@ assh_userauth_client_req_pwchange(struct assh_session_s *s,
   e->id = ASSH_EVENT_USERAUTH_CLIENT_PWCHANGE;
   e->f_done = assh_userauth_client_req_pwchange_done;
   pv->state = ASSH_USERAUTH_GET_PWCHANGE;
+
+  assert(pv->pck == NULL);
+  pv->pck = assh_packet_refinc(p);
+
+  return ASSH_OK;
+}
+#endif
+
+/******************************************************************* keyboard */
+
+#ifdef CONFIG_ASSH_CLIENT_AUTH_KEYBOARD
+/* send a password authentication request */
+static assh_error_t
+assh_userauth_client_req_keyboard(struct assh_session_s *s,
+                                  const struct assh_event_s *e)
+{
+  struct assh_userauth_context_s *pv = s->srv_pv;
+  assh_error_t err;
+
+  uint8_t *bool_, *str;
+
+  struct assh_packet_s *pout;
+
+  size_t sub_len = e->userauth_client.methods.keyboard_sub.len;
+
+  ASSH_ERR_RET(assh_userauth_client_pck_head(s, &pout, "keyboard-interactive",
+                                             4 + 4 + sub_len) | ASSH_ERRSV_DISCONNECT);
+
+  ASSH_ASSERT(assh_packet_add_string(pout, 0, &str)); /* lang */
+  ASSH_ASSERT(assh_packet_add_string(pout, sub_len, &str)); /* sub methods */
+  memcpy(str, e->userauth_client.methods.keyboard_sub.str, sub_len);
+
+  assh_transport_push(s, pout);
+
+  pv->state = ASSH_USERAUTH_KEYBOARD_SENT_RQ;
+
+  return ASSH_OK;
+}
+
+static ASSH_EVENT_DONE_FCN(assh_userauth_client_keyboard_info_done)
+{
+  struct assh_context_s *c = s->ctx;
+  struct assh_userauth_context_s *pv = s->srv_pv;
+  assh_error_t err;
+
+  ASSH_CHK_RET(pv->state != ASSH_USERAUTH_KEYBOARD_INFO,
+	       ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+
+  assh_packet_release(pv->pck);
+  pv->pck = NULL;
+
+  struct assh_packet_s *pout;
+
+  size_t i, count = e->userauth_client.keyboard.count;
+
+  size_t psize = 4;
+  for (i = 0; i < count; i++)
+    psize += 4 + e->userauth_client.keyboard.responses[i].len;
+
+  ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_USERAUTH_INFO_RESPONSE,
+                                 ASSH_MAX(psize, 256), &pout)
+               | ASSH_ERRSV_DISCONNECT);
+  pout->padding = ASSH_PADDING_MAX;
+
+  uint8_t *str;
+  ASSH_ASSERT(assh_packet_add_array(pout, 4, &str));
+  assh_store_u32(str, count);
+
+  for (i = 0; i < count; i++)
+    {
+      size_t len = e->userauth_client.keyboard.responses[i].len;
+      ASSH_ASSERT(assh_packet_add_string(pout, len, &str));
+      memcpy(str, e->userauth_client.keyboard.responses[i].str, len);
+    }
+
+  assh_transport_push(s, pout);
+  pv->state = ASSH_USERAUTH_KEYBOARD_SENT_INFO;
+
+  assh_free(c, pv->keyboard_array);
+  pv->keyboard_array = NULL;
+
+  return ASSH_OK;
+}
+
+static assh_error_t
+assh_userauth_client_req_keyboard_info(struct assh_session_s *s,
+                                       struct assh_packet_s *p,
+                                       struct assh_event_s *e)
+{
+  struct assh_context_s *c = s->ctx;
+  struct assh_userauth_context_s *pv = s->srv_pv;
+  assh_error_t err;
+
+  const uint8_t *name = p->head.end;
+  const uint8_t *ins, *lang, *count_, *prompt, *echo;
+
+  ASSH_ERR_RET(assh_packet_check_string(p, name, &ins)
+	       | ASSH_ERRSV_DISCONNECT);
+  ASSH_ERR_RET(assh_packet_check_string(p, ins, &lang)
+	       | ASSH_ERRSV_DISCONNECT);
+  ASSH_ERR_RET(assh_packet_check_string(p, lang, &count_)
+	       | ASSH_ERRSV_DISCONNECT);
+
+  ASSH_ERR_RET(assh_packet_check_array(p, count_, 4, &prompt)
+	       | ASSH_ERRSV_DISCONNECT);
+
+  size_t i, count = assh_load_u32(count_);
+  ASSH_CHK_RET(count > 32, ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
+
+  struct assh_buffer_s *prompts = NULL;
+  uint32_t echos = 0;
+
+  if (count > 0)
+    {
+      ASSH_ERR_RET(assh_alloc(c, sizeof(*prompts) * count,
+                              ASSH_ALLOC_INTERNAL, (void**)&prompts));
+
+      assert(pv->keyboard_array == NULL);
+      pv->keyboard_array = prompts;
+
+      for (i = 0; i < count; i++)
+        {
+          ASSH_ERR_RET(assh_packet_check_string(p, prompt, &echo)
+                       | ASSH_ERRSV_DISCONNECT);
+          size_t len = assh_load_u32(prompt);
+          ASSH_CHK_RET(len == 0, ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+          prompts[i].str = (char*)prompt + 4;
+          prompts[i].len = len;
+
+          ASSH_ERR_RET(assh_packet_check_array(p, echo, 1, &prompt)
+                       | ASSH_ERRSV_DISCONNECT);
+
+          echos |= !!*echo << i;
+        }
+    }
+
+  e->id = ASSH_EVENT_USERAUTH_CLIENT_KEYBOARD;
+  e->f_done = &assh_userauth_client_keyboard_info_done;
+  e->userauth_client.keyboard.name.str = (char*)name + 4;
+  e->userauth_client.keyboard.name.len = assh_load_u32(name);
+  e->userauth_client.keyboard.instruction.str = (char*)ins + 4;
+  e->userauth_client.keyboard.instruction.len = assh_load_u32(ins);
+  e->userauth_client.keyboard.count = count;
+  e->userauth_client.keyboard.echos = echos;
+  e->userauth_client.keyboard.prompts = prompts;
+  pv->state = ASSH_USERAUTH_KEYBOARD_INFO;
 
   assert(pv->pck == NULL);
   pv->pck = assh_packet_refinc(p);
@@ -424,6 +585,15 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_methods_done)
     }
 #endif
 
+#ifdef CONFIG_ASSH_CLIENT_AUTH_KEYBOARD
+  if (select & ASSH_USERAUTH_METHOD_KEYBOARD)
+    {
+      ASSH_ERR_RET(assh_userauth_client_req_keyboard(s, e)
+                   | ASSH_ERRSV_DISCONNECT);
+      return ASSH_OK;
+    }
+#endif
+
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY
   if (select & ASSH_USERAUTH_METHOD_PUBKEY)
     {
@@ -556,6 +726,13 @@ assh_userauth_client_failure(struct assh_session_s *s,
         case 8:
           if (!strncmp((const char*)methods, "password", 8))
             m |= ASSH_USERAUTH_METHOD_PASSWORD;
+          break;
+#endif
+
+#ifdef CONFIG_ASSH_CLIENT_AUTH_KEYBOARD
+        case 20:
+          if (!strncmp((const char*)methods, "keyboard-interactive", 20))
+            m |= ASSH_USERAUTH_METHOD_KEYBOARD;
           break;
 #endif
 
@@ -694,6 +871,25 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_client_process)
       ASSH_ERR_RET(assh_userauth_client_methods(s, e, 0));
       return ASSH_NO_DATA;
 #endif
+
+#ifdef CONFIG_ASSH_CLIENT_AUTH_KEYBOARD
+    case ASSH_USERAUTH_KEYBOARD_SENT_RQ:
+    case ASSH_USERAUTH_KEYBOARD_SENT_INFO:
+      if (p == NULL)
+        return ASSH_OK;
+
+      switch(p->head.msg)
+        {
+        case SSH_MSG_USERAUTH_INFO_REQUEST:
+          ASSH_ERR_RET(assh_userauth_client_req_keyboard_info(s, p, e)
+                       | ASSH_ERRSV_DISCONNECT);
+          return ASSH_OK;
+
+        default:
+          goto any;
+        }
+#endif
+
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY
     case ASSH_USERAUTH_SENT_PUB_KEY:
       if (p == NULL)

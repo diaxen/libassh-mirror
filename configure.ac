@@ -181,6 +181,7 @@ if test x$enable_server = xyes ; then
    AC_DEFINE([CONFIG_ASSH_SERVER], [], [SSH server support])
    AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_PUBLICKEY], [], [SSH server authentication: public key support])
    AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_PASSWORD], [], [SSH server authentication: password support])
+   AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_KEYBOARD], [], [SSH server authentication: keyboard interactive])
    #AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_NONE], [], [SSH server authentication: bypassed, grant access directly])
 fi
 
@@ -189,6 +190,7 @@ if test x$enable_client = xyes ; then
    AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY], [], [SSH client authentication: public key support])
    AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_PASSWORD], [], [SSH client authentication: password support])
    AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_USE_PKOK], [], [SSH client authentication: public key signature is not sent directly])
+   AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_KEYBOARD], [], [SSH client authentication: keyboard interactive])
 fi
 
 AC_DEFINE([CONFIG_ASSH_AUTH_USERNAME_LEN], [32], [SSH authentication max username length])

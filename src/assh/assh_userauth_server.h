@@ -103,7 +103,68 @@ struct assh_event_userauth_server_password_s
   enum assh_event_userauth_server_pwstatus_s result; //< output
 };
 
-/** This event is reported when a user authentication request is
+/** This event is reported when the server-side user authentication
+    service is running and the client has selected the
+    keyboard interactive method.
+
+    Most fields are used to build the @ref
+    SSH_MSG_USERAUTH_INFO_REQUEST message that will be sent to the
+    client. An array of prompt strings must be provided when the @tt
+    count field is set to a value greater than 0. The @ref echos field
+    is a bitmap which indicates user entered values that should be
+    displayed.
+
+    The allocation of the array @b{is not} handled by the
+    library. This allows passing a statically allocated array of
+    prompts. It can be released after calling the @ref assh_event_done
+    function.
+
+    A keyboard responses event should follow, unless the client has
+    selected a new method.
+
+    @see ASSH_EVENT_USERAUTH_SERVER_KBINFO
+*/
+struct assh_event_userauth_server_kbinfo_s
+{
+  ASSH_EV_CONST struct assh_buffer_s username;  //< input
+  ASSH_EV_CONST struct assh_buffer_s sub; //< input
+  struct assh_buffer_s name; //< output
+  struct assh_buffer_s instruction; //< output
+  uint32_t             echos; //< output
+  uint_fast8_t         count; //< output
+  const struct assh_buffer_s *prompts; //< output
+};
+
+/** @see assh_event_userauth_server_kbstatus_s */
+enum assh_event_userauth_server_kbstatus_e
+{
+  ASSH_SERVER_KBSTATUS_FAILURE,
+  ASSH_SERVER_KBSTATUS_SUCCESS,
+  ASSH_SERVER_KBSTATUS_CONTINUE,
+};
+
+/** This event is reported when the server-side user authentication
+    service is running and the client has replied to a previous @ref
+    SSH_MSG_USERAUTH_INFO_REQUEST message by sending a @ref
+    SSH_MSG_USERAUTH_INFO_RESPONSE message.
+
+    The @ref result field must be updated in order to make the
+    authentication succeed or continue with an other info request.
+
+    The allocation of the responses array @b is handled by the
+    library.
+
+    @see ASSH_EVENT_USERAUTH_SERVER_KBRESPONSE
+    @see ASSH_EVENT_USERAUTH_SERVER_KBINFO
+*/
+struct assh_event_userauth_server_kbresponse_s
+{
+  ASSH_EV_CONST uint_fast8_t count; //< output
+  ASSH_EV_CONST struct assh_buffer_s * responses; //< output
+  enum assh_event_userauth_server_kbstatus_e result;
+};
+
+/** This event is reported when an user authentication request is
     successful. The @tt method field indicates which method has been
     used successfully.
 
@@ -127,6 +188,8 @@ union assh_event_userauth_server_u
   struct assh_event_userauth_server_methods_s methods;
   struct assh_event_userauth_server_userkey_s  userkey;
   struct assh_event_userauth_server_password_s password;
+  struct assh_event_userauth_server_kbinfo_s kbinfo;
+  struct assh_event_userauth_server_kbresponse_s kbresponse;
   struct assh_event_userauth_server_success_s success;
 };
 

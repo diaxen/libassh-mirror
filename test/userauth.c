@@ -93,6 +93,10 @@ static unsigned long auth_server_password_ok_count = 0;
 static unsigned long auth_server_password_change_count = 0;
 static unsigned long auth_server_password_wrong_count = 0;
 static unsigned long auth_server_password_new_count = 0;
+static unsigned long auth_server_keyboard_info_count = 0;
+static unsigned long auth_server_keyboard_success_count = 0;
+static unsigned long auth_server_keyboard_failure_count = 0;
+static unsigned long auth_server_keyboard_continue_count = 0;
 static unsigned long auth_server_partial_success_count = 0;
 static unsigned long auth_server_success_count = 0;
 static unsigned long auth_server_err_count = 0;
@@ -101,6 +105,8 @@ static unsigned long auth_client_pubkey_count = 0;
 static unsigned long auth_client_password_count = 0;
 static unsigned long auth_client_password_change_count = 0;
 static unsigned long auth_client_password_skip_change_count = 0;
+static unsigned long auth_client_keyboard_count = 0;
+static unsigned long auth_client_keyboard_resp_count = 0;
 static unsigned long auth_client_partial_success_count = 0;
 static unsigned long auth_client_success_count = 0;
 static unsigned long auth_client_err_count = 0;
@@ -196,6 +202,49 @@ static int test()
 		  break;
 	      if (i == TEST_KEYS_COUNT)
 		TEST_FAIL("");
+	    }
+	  break;
+	}
+
+	case ASSH_EVENT_USERAUTH_SERVER_KBINFO: {
+	  assh_buffer_strcpy(&event.userauth_server.kbinfo.name,
+			     "nametest" + rand() % 8);
+	  assh_buffer_strcpy(&event.userauth_server.kbinfo.instruction,
+			     "insttest" + rand() % 8);
+	  static const struct assh_buffer_s p[] = {
+	    { .str = "password: ", .len = 10 },
+	    { .str = "token: ", .len = 7 },
+	    { .str = "foo: ", .len = 5 },
+	    { .str = "bar: ", .len = 5 },
+	  };
+	  event.userauth_server.kbinfo.count = rand() % 4;
+	  event.userauth_server.kbinfo.prompts = p;
+	  auth_server_keyboard_info_count++;
+	  break;
+	}
+
+	case ASSH_EVENT_USERAUTH_SERVER_KBRESPONSE: {
+	  event.userauth_server.kbresponse.result = rand() % 3;
+	  switch (rand() % 8)
+	    {
+	    case 0:
+	      break;
+	    case 1:
+	    case 2:
+	      auth_server_keyboard_failure_count++;
+	      event.userauth_server.kbresponse.result = ASSH_SERVER_KBSTATUS_FAILURE;
+	      break;
+	    case 3:
+	    case 4:
+	    case 5:
+	      auth_server_keyboard_success_count++;
+	      event.userauth_server.kbresponse.result = ASSH_SERVER_KBSTATUS_SUCCESS;
+	      break;
+	    case 6:
+	    case 7:
+	      auth_server_keyboard_continue_count++;
+	      event.userauth_server.kbresponse.result = ASSH_SERVER_KBSTATUS_CONTINUE;
+	      break;
 	    }
 	  break;
 	}
@@ -332,6 +381,14 @@ static int test()
 		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_PASSWORD;
 		  auth_client_password_count++;
 		}
+	      else if ((event.userauth_client.methods.methods &
+			ASSH_USERAUTH_METHOD_KEYBOARD) && rand() & 1)
+		{
+		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_KEYBOARD;
+		  assh_buffer_strcpy(&event.userauth_client.methods.keyboard_sub,
+				     "method" + rand() % 6);
+		  auth_client_keyboard_count++;
+		}
 	      else if (event.userauth_client.methods.methods
 		  & ASSH_USERAUTH_METHOD_PUBKEY)
 		{
@@ -366,9 +423,17 @@ static int test()
 	  break;
 	}
 
-	default:
-	  ASSH_DEBUG("client: don't know how to handle event %u\n", event.id);
+        case ASSH_EVENT_USERAUTH_CLIENT_KEYBOARD: {
+          uint_fast8_t i;
+          for (i = 0; i < event.userauth_client.keyboard.count; i++)
+            {
+              const char *r = "azertyui" + rand() % 8;
+              event.userauth_client.keyboard.responses[i].str = r;
+              event.userauth_client.keyboard.responses[i].len = strlen(r);
+	      auth_client_keyboard_resp_count++;
+            }
 	  break;
+	}
 
 	case ASSH_EVENT_USERAUTH_CLIENT_SUCCESS:
 	  auth_client_success_count++;
@@ -376,6 +441,10 @@ static int test()
 
 	case ASSH_EVENT_CONNECTION_START:
 	  done |= 2;
+
+	default:
+	  ASSH_DEBUG("client: don't know how to handle event %u\n", event.id);
+	  break;
 	}
 
       err = assh_event_done(&session[1], &event, ASSH_OK);
@@ -563,6 +632,10 @@ int main(int argc, char **argv)
 	  "  %8lu server password change count\n"
 	  "  %8lu server password wrong count\n"
 	  "  %8lu server password new count\n"
+	  "  %8lu server keyboard info count\n"
+	  "  %8lu server keyboard success count\n"
+	  "  %8lu server keyboard failure count\n"
+	  "  %8lu server keyboard continue count\n"
 	  "  %8lu server partial success count\n"
 	  "  %8lu server success count\n"
 	  "  %8lu server fuzz error count\n"
@@ -570,6 +643,8 @@ int main(int argc, char **argv)
 	  "  %8lu client password count\n"
 	  "  %8lu client password change count\n"
 	  "  %8lu client password skip change count\n"
+	  "  %8lu client keyboard count\n"
+	  "  %8lu client keyboard response count\n"
 	  "  %8lu client partial success count\n"
 	  "  %8lu client success count\n"
 	  "  %8lu client fuzz error count\n"
@@ -585,6 +660,10 @@ int main(int argc, char **argv)
 	  auth_server_password_change_count,
 	  auth_server_password_wrong_count,
 	  auth_server_password_new_count,
+	  auth_server_keyboard_info_count,
+	  auth_server_keyboard_success_count,
+	  auth_server_keyboard_failure_count,
+	  auth_server_keyboard_continue_count,
 	  auth_server_partial_success_count,
 	  auth_server_success_count,
 	  auth_server_err_count,
@@ -592,6 +671,8 @@ int main(int argc, char **argv)
 	  auth_client_password_count,
 	  auth_client_password_change_count,
 	  auth_client_password_skip_change_count,
+	  auth_client_keyboard_count,
+	  auth_client_keyboard_resp_count,
 	  auth_client_partial_success_count,
 	  auth_client_success_count,
 	  auth_client_err_count,

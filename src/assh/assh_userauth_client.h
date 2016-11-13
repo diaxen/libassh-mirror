@@ -61,10 +61,18 @@ struct assh_event_userauth_client_user_s
     are accepted by the server. One of these methods must be selected
     by setting the @ref select field.
 
+    The @ref password, @ref pub_keys and @ref keyboard fields are
+    initially set to zero and have to be updated depending on the
+    retained authentication method.
+
     The @ref pub_keys linked list can be populated by calling either
     the @ref assh_key_load, @ref assh_load_key_file or @ref
     assh_load_key_filename functions. Multiple keys can be loaded. The
     assh library will take care of releasing the provided keys.
+
+    When the @em keyboard-interactive method is enabled, the @ref
+    keyboard_sub field will be used as @em submethods fields of the
+    request.
 
     This event may be reported multiple times before the
     authentication is successful. This occurs when a previous
@@ -82,6 +90,7 @@ struct assh_event_userauth_client_methods_s
   union {
     struct assh_buffer_s       password;     //< output
     struct assh_key_s          *pub_keys;    //< output
+    struct assh_buffer_s       keyboard_sub; //< output
   };
 };
 
@@ -113,6 +122,35 @@ struct assh_event_userauth_client_pwchange_s
   struct assh_buffer_s               new_password; //< input
 };
 
+
+/** This event is reported when the keyboard interactive
+    authentication has been selected and the server sent a @ref
+    SSH_MSG_USERAUTH_INFO_REQUEST message.
+
+    The @ref prompts array contains @ref count entries which must be
+    used to query the user. The @ref echos field is a bitmap which
+    indicates user entered values that should be displayed.
+
+    Pointers and lengths of user entered values must be stored in the
+    @ref responses array. The prompt array may be reused or a pointer
+    to an other array can be provided. In either cases, all entries must
+    be initialized with user provided response buffers. These buffers
+    can be released after calling the @ref assh_event_done function.
+
+    @see ASSH_EVENT_USERAUTH_CLIENT_KEYBOARD
+*/
+struct assh_event_userauth_client_keyboard_s
+{
+  ASSH_EV_CONST struct assh_buffer_s name; //< input
+  ASSH_EV_CONST struct assh_buffer_s instruction; //< input
+  ASSH_EV_CONST uint32_t             echos; //< input
+  ASSH_EV_CONST uint_fast8_t         count; //< input
+  union {
+    ASSH_EV_CONST struct assh_buffer_s * prompts; //< input
+    struct assh_buffer_s *responses; //< output
+  };
+};
+
 /** @This contains all client side user authentication related events */
 union assh_event_userauth_client_u
 {
@@ -120,6 +158,7 @@ union assh_event_userauth_client_u
   struct assh_event_userauth_client_methods_s methods;
   struct assh_event_userauth_client_banner_s  banner;
   struct assh_event_userauth_client_pwchange_s pwchange;
+  struct assh_event_userauth_client_keyboard_s keyboard;
 };
 
 /** @This implements the standard client side @tt ssh-userauth service. */

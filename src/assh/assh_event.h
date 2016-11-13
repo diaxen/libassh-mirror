@@ -56,6 +56,8 @@ enum assh_event_id_e
   ASSH_EVENT_USERAUTH_CLIENT_BANNER,
   /** @see assh_event_userauth_client_pwchange_s */
   ASSH_EVENT_USERAUTH_CLIENT_PWCHANGE,
+  /** @see assh_event_userauth_client_keyboard_s */
+  ASSH_EVENT_USERAUTH_CLIENT_KEYBOARD,
   ASSH_EVENT_USERAUTH_CLIENT_SUCCESS,
 
   /** @see assh_event_userauth_server_methods_s */
@@ -64,6 +66,10 @@ enum assh_event_id_e
   ASSH_EVENT_USERAUTH_SERVER_USERKEY,
   /** @see assh_event_userauth_server_password_s */
   ASSH_EVENT_USERAUTH_SERVER_PASSWORD,
+  /** @see assh_event_userauth_server_kbinfo_s */
+  ASSH_EVENT_USERAUTH_SERVER_KBINFO,
+  /** @see assh_event_userauth_server_kbresponse_s */
+  ASSH_EVENT_USERAUTH_SERVER_KBRESPONSE,
   /** @see assh_event_userauth_server_success_s */
   ASSH_EVENT_USERAUTH_SERVER_SUCCESS,
 
