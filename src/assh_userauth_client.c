@@ -42,25 +42,25 @@ ASSH_EVENT_SIZE_SASSERT(userauth_client);
 
 enum assh_userauth_state_e
 {
-  ASSH_USERAUTH_INIT,
-  ASSH_USERAUTH_GET_USERNAME,
-  ASSH_USERAUTH_SENT_NONE_RQ,
+  ASSH_USERAUTH_ST_INIT,
+  ASSH_USERAUTH_ST_GET_USERNAME,
+  ASSH_USERAUTH_ST_SENT_NONE_RQ,
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY
-  ASSH_USERAUTH_SENT_PUB_KEY_RQ,
-  ASSH_USERAUTH_SENT_PUB_KEY,
+  ASSH_USERAUTH_ST_SENT_PUBKEY_RQ,
+  ASSH_USERAUTH_ST_SENT_PUBKEY,
 #endif
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PASSWORD
-  ASSH_USERAUTH_SENT_PASSWORD_RQ,
-  ASSH_USERAUTH_GET_PWCHANGE,
-  ASSH_USERAUTH_PWCHANGE_SKIP,
+  ASSH_USERAUTH_ST_SENT_PASSWORD_RQ,
+  ASSH_USERAUTH_ST_GET_PWCHANGE,
+  ASSH_USERAUTH_ST_PWCHANGE_SKIP,
 #endif
 #ifdef CONFIG_ASSH_CLIENT_AUTH_KEYBOARD
-  ASSH_USERAUTH_KEYBOARD_SENT_RQ,
-  ASSH_USERAUTH_KEYBOARD_INFO,
-  ASSH_USERAUTH_KEYBOARD_SENT_INFO,
+  ASSH_USERAUTH_ST_KEYBOARD_SENT_RQ,
+  ASSH_USERAUTH_ST_KEYBOARD_INFO,
+  ASSH_USERAUTH_ST_KEYBOARD_SENT_INFO,
 #endif
-  ASSH_USERAUTH_GET_METHODS,
-  ASSH_USERAUTH_SUCCESS,
+  ASSH_USERAUTH_ST_GET_METHODS,
+  ASSH_USERAUTH_ST_SUCCESS,
 };
 
 struct assh_userauth_context_s
@@ -95,7 +95,7 @@ static ASSH_SERVICE_INIT_FCN(assh_userauth_client_init)
                     ASSH_ALLOC_SECUR, (void**)&pv));
 
   pv->methods = 0;
-  pv->state = ASSH_USERAUTH_INIT;
+  pv->state = ASSH_USERAUTH_ST_INIT;
 
   s->srv = &assh_service_userauth_client;
   s->srv_pv = pv;
@@ -203,7 +203,7 @@ assh_userauth_client_req_password(struct assh_session_s *s,
 
   assh_transport_push(s, pout);
 
-  pv->state = ASSH_USERAUTH_SENT_PASSWORD_RQ;
+  pv->state = ASSH_USERAUTH_ST_SENT_PASSWORD_RQ;
 
   return ASSH_OK;
 }
@@ -213,7 +213,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_req_pwchange_done)
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
-  ASSH_CHK_RET(pv->state != ASSH_USERAUTH_GET_PWCHANGE,
+  ASSH_CHK_RET(pv->state != ASSH_USERAUTH_ST_GET_PWCHANGE,
 	       ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
 
   assh_packet_release(pv->pck);
@@ -228,7 +228,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_req_pwchange_done)
     }
   else
     {
-      pv->state = ASSH_USERAUTH_PWCHANGE_SKIP;
+      pv->state = ASSH_USERAUTH_ST_PWCHANGE_SKIP;
     }
 
   return ASSH_OK;
@@ -256,7 +256,7 @@ assh_userauth_client_req_pwchange(struct assh_session_s *s,
 
   e->id = ASSH_EVENT_USERAUTH_CLIENT_PWCHANGE;
   e->f_done = assh_userauth_client_req_pwchange_done;
-  pv->state = ASSH_USERAUTH_GET_PWCHANGE;
+  pv->state = ASSH_USERAUTH_ST_GET_PWCHANGE;
 
   assert(pv->pck == NULL);
   pv->pck = assh_packet_refinc(p);
@@ -291,7 +291,7 @@ assh_userauth_client_req_keyboard(struct assh_session_s *s,
 
   assh_transport_push(s, pout);
 
-  pv->state = ASSH_USERAUTH_KEYBOARD_SENT_RQ;
+  pv->state = ASSH_USERAUTH_ST_KEYBOARD_SENT_RQ;
 
   return ASSH_OK;
 }
@@ -302,7 +302,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_keyboard_info_done)
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
-  ASSH_CHK_RET(pv->state != ASSH_USERAUTH_KEYBOARD_INFO,
+  ASSH_CHK_RET(pv->state != ASSH_USERAUTH_ST_KEYBOARD_INFO,
 	       ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
 
   assh_packet_release(pv->pck);
@@ -333,7 +333,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_keyboard_info_done)
     }
 
   assh_transport_push(s, pout);
-  pv->state = ASSH_USERAUTH_KEYBOARD_SENT_INFO;
+  pv->state = ASSH_USERAUTH_ST_KEYBOARD_SENT_INFO;
 
   assh_free(c, pv->keyboard_array);
   pv->keyboard_array = NULL;
@@ -402,7 +402,7 @@ assh_userauth_client_req_keyboard_info(struct assh_session_s *s,
   e->userauth_client.keyboard.count = count;
   e->userauth_client.keyboard.echos = echos;
   e->userauth_client.keyboard.prompts = prompts;
-  pv->state = ASSH_USERAUTH_KEYBOARD_INFO;
+  pv->state = ASSH_USERAUTH_ST_KEYBOARD_INFO;
 
   assert(pv->pck == NULL);
   pv->pck = assh_packet_refinc(p);
@@ -491,7 +491,7 @@ static assh_error_t assh_userauth_client_req_pubkey_sign(struct assh_session_s *
 
   assh_transport_push(s, pout);
 
-  pv->state = ASSH_USERAUTH_SENT_PUB_KEY_RQ;
+  pv->state = ASSH_USERAUTH_ST_SENT_PUBKEY_RQ;
   return ASSH_OK;
 
  err_packet:
@@ -511,7 +511,7 @@ assh_userauth_client_send_pubkey(struct assh_session_s *s)
   ASSH_ERR_RET(assh_userauth_client_pck_pubkey(s, &pout,
                  0, 0) | ASSH_ERRSV_DISCONNECT);
   assh_transport_push(s, pout);
-  pv->state = ASSH_USERAUTH_SENT_PUB_KEY;
+  pv->state = ASSH_USERAUTH_ST_SENT_PUBKEY;
 #else  /* compute and send the signature directly */
   ASSH_ERR_RET(assh_userauth_client_req_pubkey_sign(s) | ASSH_ERRSV_DISCONNECT);
 #endif
@@ -588,7 +588,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_username_done)
   assh_error_t err;
 
   struct assh_packet_s *pout;
-  ASSH_CHK_RET(pv->state != ASSH_USERAUTH_GET_USERNAME,
+  ASSH_CHK_RET(pv->state != ASSH_USERAUTH_ST_GET_USERNAME,
 	       ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
 
   /* keep username */
@@ -603,7 +603,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_username_done)
 	       | ASSH_ERRSV_DISCONNECT);
   assh_transport_push(s, pout);
 
-  pv->state = ASSH_USERAUTH_SENT_NONE_RQ;
+  pv->state = ASSH_USERAUTH_ST_SENT_NONE_RQ;
 
   return ASSH_OK;
 }
@@ -618,7 +618,7 @@ assh_userauth_client_username(struct assh_session_s *s,
   e->f_done = &assh_userauth_client_username_done;
   e->userauth_client.user.username.str = NULL;
   e->userauth_client.user.username.len = 0;
-  pv->state = ASSH_USERAUTH_GET_USERNAME;
+  pv->state = ASSH_USERAUTH_ST_GET_USERNAME;
 
   return ASSH_OK;
 }
@@ -628,7 +628,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_methods_done)
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
-  ASSH_CHK_RET(pv->state != ASSH_USERAUTH_GET_METHODS,
+  ASSH_CHK_RET(pv->state != ASSH_USERAUTH_ST_GET_METHODS,
 	       ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
 
   enum assh_userauth_methods_e select = e->userauth_client.methods.select;
@@ -679,7 +679,7 @@ assh_userauth_client_methods(struct assh_session_s *s,
   e->id = ASSH_EVENT_USERAUTH_CLIENT_METHODS;
   e->f_done = &assh_userauth_client_methods_done;
 
-  pv->state = ASSH_USERAUTH_GET_METHODS;
+  pv->state = ASSH_USERAUTH_ST_GET_METHODS;
 
   return ASSH_OK;
 }
@@ -690,7 +690,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_success_done)
   const struct assh_service_s *srv = pv->srv;
   assh_error_t err;
 
-  ASSH_CHK_RET(pv->state != ASSH_USERAUTH_SUCCESS,
+  ASSH_CHK_RET(pv->state != ASSH_USERAUTH_ST_SUCCESS,
 	       ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
 
   /* cleanup the authentication service and start the next service. */
@@ -711,7 +711,7 @@ assh_userauth_client_success(struct assh_session_s *s,
   e->id = ASSH_EVENT_USERAUTH_CLIENT_SUCCESS;
   e->f_done = &assh_userauth_client_success_done;
 
-  pv->state = ASSH_USERAUTH_SUCCESS;
+  pv->state = ASSH_USERAUTH_ST_SUCCESS;
 
   return ASSH_OK;
 }
@@ -832,14 +832,14 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_client_process)
 
   switch (pv->state)
     {
-    case ASSH_USERAUTH_INIT:
+    case ASSH_USERAUTH_ST_INIT:
       ASSH_CHK_RET(p != NULL, ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
       ASSH_ERR_RET(assh_userauth_client_username(s, e));
       return ASSH_OK;
 
-    case ASSH_USERAUTH_SENT_NONE_RQ:
+    case ASSH_USERAUTH_ST_SENT_NONE_RQ:
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY
-    case ASSH_USERAUTH_SENT_PUB_KEY_RQ:
+    case ASSH_USERAUTH_ST_SENT_PUBKEY_RQ:
 #endif
       if (p == NULL)
         return ASSH_OK;
@@ -868,7 +868,7 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_client_process)
         }
 
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PASSWORD
-    case ASSH_USERAUTH_SENT_PASSWORD_RQ:
+    case ASSH_USERAUTH_ST_SENT_PASSWORD_RQ:
       if (p == NULL)
         return ASSH_OK;
 
@@ -883,14 +883,14 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_client_process)
           goto any;
         }
 
-    case ASSH_USERAUTH_PWCHANGE_SKIP:
+    case ASSH_USERAUTH_ST_PWCHANGE_SKIP:
       ASSH_ERR_RET(assh_userauth_client_methods(s, e, 0));
       return ASSH_NO_DATA;
 #endif
 
 #ifdef CONFIG_ASSH_CLIENT_AUTH_KEYBOARD
-    case ASSH_USERAUTH_KEYBOARD_SENT_RQ:
-    case ASSH_USERAUTH_KEYBOARD_SENT_INFO:
+    case ASSH_USERAUTH_ST_KEYBOARD_SENT_RQ:
+    case ASSH_USERAUTH_ST_KEYBOARD_SENT_INFO:
       if (p == NULL)
         return ASSH_OK;
 
@@ -907,7 +907,7 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_client_process)
 #endif
 
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY
-    case ASSH_USERAUTH_SENT_PUB_KEY:
+    case ASSH_USERAUTH_ST_SENT_PUBKEY:
       if (p == NULL)
         return ASSH_OK;
 
