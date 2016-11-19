@@ -197,36 +197,12 @@ void assh_context_release(struct assh_context_s *ctx)
   assh_free(ctx, ctx);
 }
 
-#ifdef CONFIG_ASSH_PACKET_POOL
-static void assh_pck_pool_cleanup(struct assh_context_s *c)
-{
-  size_t i;
-  for (i = 0; i < ASSH_PCK_POOL_SIZE; i++)
-    {
-      struct assh_packet_s *n, *p;
-      struct assh_packet_pool_s *pl = c->pool + i;
-
-      for (p = pl->pck; p != NULL; p = n)
-        {
-          n = p->pool_next;
-          pl->size -= p->buffer_size;
-          pl->count--;
-          assh_free(c, p);
-        }
-
-      assert(pl->count == 0);
-      assert(pl->size == 0);
-      pl->pck = NULL;
-    }
-}
-#endif
-
 void assh_context_cleanup(struct assh_context_s *c)
 {
   assert(c->session_count == 0);
 
 #ifdef CONFIG_ASSH_PACKET_POOL
-  assh_pck_pool_cleanup(c);
+  assh_packet_collect(c);
 #endif
 
   assh_key_flush(c, &c->keys);

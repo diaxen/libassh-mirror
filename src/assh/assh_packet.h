@@ -225,6 +225,10 @@ assh_packet_alloc(struct assh_context_s *c,
                   uint8_t msg, size_t payload_size_m1,
                   struct assh_packet_s **result);
 
+/** @This forces garbage collect of packets. This does nothing when
+    @tt CONFIG_ASSH_PACKET_POOL is not defined. */
+void assh_packet_collect(struct assh_context_s *c);
+
 #define ASSH_PACKET_HEADLEN                             \
    (/* pck_len field */ 4 + /* pad_len field */ 1)
 

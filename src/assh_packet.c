@@ -112,6 +112,32 @@ assh_packet_alloc_raw(struct assh_context_s *c, size_t raw_size,
   return ASSH_OK;
 }
 
+void assh_packet_collect(struct assh_context_s *c)
+{
+#ifdef CONFIG_ASSH_PACKET_POOL
+  size_t i;
+  for (i = 0; i < ASSH_PCK_POOL_SIZE; i++)
+    {
+      struct assh_packet_s *n, *p;
+      struct assh_packet_pool_s *pl = c->pool + i;
+
+      for (p = pl->pck; p != NULL; p = n)
+        {
+          n = p->pool_next;
+          pl->size -= p->buffer_size;
+          pl->count--;
+          assh_free(c, p);
+        }
+
+      assert(pl->count == 0);
+      assert(pl->size == 0);
+      pl->pck = NULL;
+    }
+
+  c->pck_pool_size = 0;
+#endif
+}
+
 /** @internal @This returns the size of the buffer */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_packet_realloc_raw(struct assh_context_s *c,
