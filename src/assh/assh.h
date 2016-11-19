@@ -257,6 +257,8 @@ assh_hexdump(const char *name, const void *data, size_t len)
 /** @internal */
 void assh_hexdump(const char *name, const void *data, size_t len);
 
+# ifndef CONFIG_ASSH_CALLTRACE
+
 /** @internal */
 # define ASSH_ERR_GTO(expr, label)					\
   do {									\
@@ -269,8 +271,6 @@ void assh_hexdump(const char *name, const void *data, size_t len);
       }									\
     else {								\
       err &= 0xff;							\
-      /*    fprintf(stderr, "%s:%u:assh in %s.\n",			\
-	    __FILE__, __LINE__, __func__);      */			\
     }									\
   } while (0)
 
@@ -286,10 +286,51 @@ void assh_hexdump(const char *name, const void *data, size_t len);
       }									\
     else {								\
       err &= 0xff;							\
-      /*    fprintf(stderr, "%s:%u:assh in %s.\n",			\
-	    __FILE__, __LINE__, __func__);        */			\
     }									\
   } while (0)
+
+# else
+
+/** @internal */
+# define ASSH_ERR_GTO(expr, label)					\
+  do {									\
+    fprintf(stderr, "%s:%u:assh >>> in %s, expr:`%s'\n",                \
+            __FILE__, __LINE__, __func__, #expr);                  \
+    err = (expr);							\
+    if (err & 0x100)							\
+      {									\
+	fprintf(stderr, "%s:%u:assh ERROR %u in %s, expr:`%s'\n",	\
+		__FILE__, __LINE__, err, __func__, #expr);              \
+	goto label;							\
+      }									\
+    else {								\
+      err &= 0xff;							\
+      fprintf(stderr, "%s:%u:assh <<< in %s.\n",                        \
+              __FILE__, __LINE__, __func__);      			\
+    }									\
+  } while (0)
+
+/** @internal */
+# define ASSH_ERR_RET(expr)						\
+  do {									\
+    fprintf(stderr, "%s:%u:assh >>> in %s, expr:`%s'\n",                \
+            __FILE__, __LINE__, __func__, #expr);                       \
+    err = (expr);							\
+    if (err & 0x100)							\
+      {									\
+	fprintf(stderr, "%s:%u:assh ERROR %u in %s, expr:`%s'\n",	\
+		__FILE__, __LINE__, err, __func__, #expr);              \
+	return err;							\
+      }									\
+    else {								\
+      err &= 0xff;							\
+      fprintf(stderr, "%s:%u:assh <<< in %s.\n",                        \
+              __FILE__, __LINE__, __func__);                            \
+    }									\
+  } while (0)
+
+
+# endif
 
 #endif
 
