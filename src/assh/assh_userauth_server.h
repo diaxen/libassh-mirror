@@ -45,15 +45,22 @@
 
 /** This event is reported when the server-side user authentication
     service has started and some authentication methods must be
-    selected. Some implemented methods are selected by default.
+    selected.
 
-    The default allowed number of authentication retries can be
-    changed as well. A banner message will be sent if the @tt banner
-    buffer size is changed to a value greater than zero.
+    The @ref failed field indicates if this is the first time this
+    event is reported or if a failed authentication just occurred.
+
+    Some implemented methods are initially selected as default.
+    The number of authentication retries left can be checked and
+    changed.
+
+    A banner message will be sent if the @tt banner buffer size is
+    changed to a value greater than zero.
 
     @see ASSH_EVENT_USERAUTH_SERVER_METHODS */
 struct assh_event_userauth_server_methods_s
 {
+  ASSH_EV_CONST assh_bool_t    failed;  //< input
   enum assh_userauth_methods_e methods; //< output
   uint_fast8_t                 retries; //< output
   struct assh_buffer_s         banner;  //< output

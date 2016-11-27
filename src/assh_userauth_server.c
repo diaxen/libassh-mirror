@@ -51,6 +51,7 @@ enum assh_userauth_state_e
 {
   ASSH_USERAUTH_ST_METHODS,   //< intial state
   ASSH_USERAUTH_ST_METHODS_DONE,
+  ASSH_USERAUTH_ST_FAILURE,
   ASSH_USERAUTH_ST_WAIT_RQ,
 #ifdef CONFIG_ASSH_SERVER_AUTH_PASSWORD
   ASSH_USERAUTH_ST_PASSWORD,    //< the password event handler must check the user password
@@ -245,13 +246,11 @@ static assh_error_t assh_userauth_server_failure(struct assh_session_s *s)
   assh_error_t err;
 
   assh_userauth_server_flush_state(s);
-  pv->state = ASSH_USERAUTH_ST_WAIT_RQ;
+  pv->state = ASSH_USERAUTH_ST_FAILURE;
 
   /* check auth attempts count */
   ASSH_CHK_RET(pv->retry && --pv->retry == 0,
                ASSH_ERR_NO_AUTH | ASSH_ERRSV_DISCONNECT);
-
-  ASSH_ERR_RET(assh_userauth_server_send_failure(s, 0));
 
   return ASSH_OK;
 }
@@ -910,6 +909,9 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_get_methods_done)
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
+  ASSH_CHK_RET(pv->state != ASSH_USERAUTH_ST_METHODS_DONE,
+               ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+
   pv->methods = e->userauth_server.methods.methods;
   pv->retry = e->userauth_server.methods.retries;
 
@@ -933,6 +935,9 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_get_methods_done)
       assh_transport_push(s, pout);
     }
 
+  if (e->userauth_server.methods.failed)
+    ASSH_ERR_RET(assh_userauth_server_send_failure(s, 0));
+
   pv->state = ASSH_USERAUTH_ST_WAIT_RQ;
 
   return ASSH_OK;
@@ -948,6 +953,8 @@ assh_userauth_server_get_methods(struct assh_session_s *s,
   e->id = ASSH_EVENT_USERAUTH_SERVER_METHODS;
   e->f_done = assh_userauth_server_get_methods_done;
 
+  e->userauth_server.methods.failed = 0;
+
   e->userauth_server.methods.banner.size = 0;
   e->userauth_server.methods.bnlang.size = 0;
 
@@ -956,6 +963,27 @@ assh_userauth_server_get_methods(struct assh_session_s *s,
      ASSH_USERAUTH_METHOD_PASSWORD);
 
   e->userauth_server.methods.retries = 10;
+
+  return ASSH_OK;
+}
+
+static assh_error_t
+assh_userauth_server_get_methods_failed(struct assh_session_s *s,
+                                        struct assh_event_s *e)
+{
+  struct assh_userauth_context_s *pv = s->srv_pv;
+
+  pv->state = ASSH_USERAUTH_ST_METHODS_DONE;
+  e->id = ASSH_EVENT_USERAUTH_SERVER_METHODS;
+  e->f_done = assh_userauth_server_get_methods_done;
+
+  e->userauth_server.methods.failed = 1;
+
+  e->userauth_server.methods.banner.size = 0;
+  e->userauth_server.methods.bnlang.size = 0;
+
+  e->userauth_server.methods.methods = pv->methods;
+  e->userauth_server.methods.retries = pv->retry;
 
   return ASSH_OK;
 }
@@ -973,7 +1001,13 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_server_process)
   switch (pv->state)
     {
     case ASSH_USERAUTH_ST_METHODS:
-      ASSH_ERR_RET(assh_userauth_server_get_methods(s, e) | ASSH_ERRSV_DISCONNECT);
+      ASSH_ERR_RET(assh_userauth_server_get_methods(s, e)
+                   | ASSH_ERRSV_DISCONNECT);
+      return ASSH_NO_DATA;
+
+    case ASSH_USERAUTH_ST_FAILURE:
+      ASSH_ERR_RET(assh_userauth_server_get_methods_failed(s, e)
+                   | ASSH_ERRSV_DISCONNECT);
       return ASSH_NO_DATA;
 
     case ASSH_USERAUTH_ST_SUCCESS:

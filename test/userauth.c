@@ -97,6 +97,8 @@ static unsigned long auth_server_keyboard_info_count = 0;
 static unsigned long auth_server_keyboard_success_count = 0;
 static unsigned long auth_server_keyboard_failure_count = 0;
 static unsigned long auth_server_keyboard_continue_count = 0;
+static unsigned long auth_server_methods_count = 0;
+static unsigned long auth_server_failure_count = 0;
 static unsigned long auth_server_partial_success_count = 0;
 static unsigned long auth_server_success_count = 0;
 static unsigned long auth_server_err_count = 0;
@@ -179,6 +181,11 @@ static int test()
 
 	  /* unlimited retries */
 	  event.userauth_server.methods.retries = 0;
+
+	  if (event.userauth_server.methods.failed)
+	    auth_server_failure_count++;
+	  auth_server_methods_count++;
+
 	  break;
 
 	case ASSH_EVENT_USERAUTH_SERVER_USERKEY: {
@@ -640,6 +647,8 @@ int main(int argc, char **argv)
 	  "  %8lu server keyboard success count\n"
 	  "  %8lu server keyboard failure count\n"
 	  "  %8lu server keyboard continue count\n"
+	  "  %8lu server get methods count\n"
+	  "  %8lu server failure count\n"
 	  "  %8lu server partial success count\n"
 	  "  %8lu server success count\n"
 	  "  %8lu server fuzz error count\n"
@@ -668,6 +677,8 @@ int main(int argc, char **argv)
 	  auth_server_keyboard_success_count,
 	  auth_server_keyboard_failure_count,
 	  auth_server_keyboard_continue_count,
+	  auth_server_methods_count,
+	  auth_server_failure_count,
 	  auth_server_partial_success_count,
 	  auth_server_success_count,
 	  auth_server_err_count,
