@@ -149,6 +149,7 @@ unsigned long ch_close_count = 0;
 unsigned long ch_event_close_count = 0;
 unsigned long ch_eof_count = 0;
 unsigned long ch_event_eof_count = 0;
+unsigned long rekex_count = 0;
 
 int test(int (*fend)(int, int), int n, int evrate)
 {
@@ -156,6 +157,7 @@ int test(int (*fend)(int, int), int n, int evrate)
   unsigned int i, j;
   assh_bool_t started[2] = {};
   assh_bool_t closed[2] = {};
+  assh_bool_t kex_done = 0;
 
   /********************* intiailization */
 
@@ -215,8 +217,6 @@ int test(int (*fend)(int, int), int n, int evrate)
 
   for (j = 0; fend(j, n); j++)
     {
-      srand(seed);
-
       /* alternate between the two sessions */
       for (i = 0; i < 2; i++)
 	{
@@ -843,7 +843,12 @@ int test(int (*fend)(int, int), int n, int evrate)
 
 	    case ASSH_EVENT_KEX_HOSTKEY_LOOKUP:
 	      event.kex.hostkey_lookup.accept = 1;
+	      break;
+
 	    case ASSH_EVENT_KEX_DONE:
+	      if (kex_done)
+		rekex_count++;
+	      kex_done = 1;
 	      break;
 
 	    case ASSH_EVENT_READ: {
@@ -888,8 +893,6 @@ int test(int (*fend)(int, int), int n, int evrate)
 		ASSH_ERR_RET(err);
 	    }
 	}
-
-      seed++;
     }
 
   /********************* cleanup and memory leak checking */
@@ -940,11 +943,15 @@ int main(int argc, char **argv)
     return -1;
 #endif
 
-  unsigned int count = argc > 1 ? atoi(argv[1]) : 1000;
+  unsigned int count = argc > 1 ? atoi(argv[1]) : 100;
   unsigned int k;
+
+  seed = argc > 2 ? atoi(argv[2]) : time(0);
 
   for (k = 0; k < count; )
     {
+      srand(seed);
+
       putc('r', stderr);
       if (test(&end_no_more_requests, 10000, 0))
 	return 1;
@@ -957,9 +964,14 @@ int main(int argc, char **argv)
       if (test(&end_wait_error, 10000, rand() % 256 + 16))
 	return 1;
 
+      seed++;
+
       if (++k % 32 == 0)
 	fprintf(stderr, " seed=%u\n", seed);
     }
+
+  if (k % 32)
+    fputc('\n', stderr);
 
   fprintf(stderr, "Summary:\n"
 	  "  %8lu request calls\n"
@@ -979,6 +991,7 @@ int main(int argc, char **argv)
 	  "  %8lu channel close events\n"
 	  "  %8lu channel eof calls\n"
 	  "  %8lu channel eof events\n"
+	  "  %8lu rekex\n"
 	  ,
 	  rq_send_count, rq_reply_success, rq_reply_failed,
 	  rq_event_count, rq_event_success_count,
@@ -987,7 +1000,7 @@ int main(int argc, char **argv)
 	  ch_open_reply_success_count,
 	  ch_open_reply_failed_count, ch_postpone_count,
 	  ch_close_count, ch_event_close_count,
-	  ch_eof_count, ch_event_eof_count
+	  ch_eof_count, ch_event_eof_count, rekex_count
 	  );
 
   return 0;

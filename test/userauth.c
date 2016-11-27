@@ -488,10 +488,11 @@ static int test()
   for (i = 0; i < 2; i++)
     assh_session_cleanup(&session[i]);
 
-#ifndef CONFIG_ASSH_PACKET_POOL
+  assh_packet_collect(&context[0]);
+  assh_packet_collect(&context[1]);
+
   if (alloc_size != alloc_size_init)
     TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
-#endif
 
   return 0;
 }
@@ -502,7 +503,7 @@ int main(int argc, char **argv)
   if (!gcry_check_version(GCRYPT_VERSION))
     TEST_FAIL("");
 #endif
-  unsigned int count = argc > 1 ? atoi(argv[1]) : 1000;
+  unsigned int count = argc > 1 ? atoi(argv[1]) : 100;
   unsigned int action = argc > 2 ? atoi(argv[2]) : 7;
   unsigned int seed = argc > 3 ? atoi(argv[3]) : time(0);
 
@@ -607,6 +608,9 @@ int main(int argc, char **argv)
       if (++k % 32 == 0)
 	fprintf(stderr, " seed=%u\n", seed + k);
     }
+
+  if (k % 32)
+    fputc('\n', stderr);
 
   /* release user keys */
   for (i = 0; i < TEST_KEYS_COUNT; i++)
