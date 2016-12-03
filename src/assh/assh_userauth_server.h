@@ -44,7 +44,7 @@
 #include "assh_userauth.h"
 
 /** This event is reported when the server-side user authentication
-    service has started and some authentication methods must be
+    service is running and some authentication methods must be
     selected.
 
     The @ref failed field indicates if this is the first time this
@@ -53,6 +53,9 @@
     Some implemented methods are initially selected as default.
     The number of authentication retries left can be checked and
     changed.
+
+    This event is not reported again if the failure is due to the
+    client requesting a method which has not been selected.
 
     A banner message will be sent if the @tt banner buffer size is
     changed to a value greater than zero.

@@ -162,6 +162,24 @@ static assh_error_t assh_userauth_client_pck_head(struct assh_session_s *s,
   return ASSH_OK;
 }
 
+static assh_error_t
+assh_userauth_client_req_none(struct assh_session_s *s)
+{
+  struct assh_userauth_context_s *pv = s->srv_pv;
+  assh_error_t err;
+
+  struct assh_packet_s *pout;
+
+  ASSH_ERR_RET(assh_userauth_client_pck_head(s, &pout, "none",
+                                             0) | ASSH_ERRSV_DISCONNECT);
+
+  assh_transport_push(s, pout);
+
+  pv->state = ASSH_USERAUTH_ST_SENT_NONE_RQ;
+
+  return ASSH_OK;
+}
+
 /******************************************************************* password */
 
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PASSWORD
@@ -587,7 +605,6 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_username_done)
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
-  struct assh_packet_s *pout;
   ASSH_CHK_RET(pv->state != ASSH_USERAUTH_ST_GET_USERNAME,
 	       ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
 
@@ -598,12 +615,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_username_done)
   memcpy(pv->username, e->userauth_client.user.username.str,
 	 pv->username_len = ulen);
 
-  /* send auth request with the "none" method */
-  ASSH_ERR_RET(assh_userauth_client_pck_head(s, &pout, "none", 0)
-	       | ASSH_ERRSV_DISCONNECT);
-  assh_transport_push(s, pout);
-
-  pv->state = ASSH_USERAUTH_ST_SENT_NONE_RQ;
+  ASSH_ERR_RET(assh_userauth_client_req_none(s));
 
   return ASSH_OK;
 }
@@ -634,6 +646,13 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_methods_done)
   enum assh_userauth_methods_e select = e->userauth_client.methods.select;
   assert(!(select & ~e->userauth_client.methods.methods));
   assert(!(select & (select - 1)));
+
+  if (select & ASSH_USERAUTH_METHOD_NONE)
+    {
+      ASSH_ERR_RET(assh_userauth_client_req_none(s)
+                   | ASSH_ERRSV_DISCONNECT);
+      return ASSH_OK;
+    }
 
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PASSWORD
   if (select & ASSH_USERAUTH_METHOD_PASSWORD)
@@ -742,6 +761,11 @@ assh_userauth_client_failure(struct assh_session_s *s,
 
       switch (n - methods)
         {
+        case 4:
+          if (!strncmp((const char*)methods, "none", 4))
+            m |= ASSH_USERAUTH_METHOD_NONE;
+          break;
+
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PASSWORD
         case 8:
           if (!strncmp((const char*)methods, "password", 8))

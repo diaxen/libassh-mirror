@@ -240,13 +240,23 @@ assh_userauth_server_send_failure(struct assh_session_s *s,
 }
 
 /* handle authentication failure */
-static assh_error_t assh_userauth_server_failure(struct assh_session_s *s)
+static assh_error_t assh_userauth_server_failure(struct assh_session_s *s,
+                                                 assh_bool_t get_methods)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
   assh_userauth_server_flush_state(s);
-  pv->state = ASSH_USERAUTH_ST_FAILURE;
+
+  if (get_methods)
+    {
+      pv->state = ASSH_USERAUTH_ST_FAILURE;
+    }
+  else
+    {
+      ASSH_ERR_RET(assh_userauth_server_send_failure(s, 0));
+      pv->state = ASSH_USERAUTH_ST_WAIT_RQ;
+    }
 
   /* check auth attempts count */
   ASSH_CHK_RET(pv->retry && --pv->retry == 0,
@@ -367,7 +377,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_password_done)
   switch (e->userauth_server.password.result)
     {
     case ASSH_SERVER_PWSTATUS_FAILURE:
-      ASSH_ERR_RET(assh_userauth_server_failure(s) | ASSH_ERRSV_DISCONNECT);
+      ASSH_ERR_RET(assh_userauth_server_failure(s, 1) | ASSH_ERRSV_DISCONNECT);
       break;
     case ASSH_SERVER_PWSTATUS_SUCCESS:
       pv->state = ASSH_USERAUTH_ST_SUCCESS;
@@ -409,7 +419,7 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_password)
     }
   else if (pv->state == ASSH_USERAUTH_ST_PASSWORD_WAIT_CHANGE)
     {
-      ASSH_ERR_RET(assh_userauth_server_failure(s) | ASSH_ERRSV_DISCONNECT);
+      ASSH_ERR_RET(assh_userauth_server_failure(s, 1) | ASSH_ERRSV_DISCONNECT);
       return ASSH_OK;
     }
   else
@@ -455,7 +465,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_kbresponse_done)
   switch (e->userauth_server.kbresponse.result)
     {
     case ASSH_SERVER_KBSTATUS_FAILURE:
-      ASSH_ERR_RET(assh_userauth_server_failure(s) | ASSH_ERRSV_DISCONNECT);
+      ASSH_ERR_RET(assh_userauth_server_failure(s, 1) | ASSH_ERRSV_DISCONNECT);
       break;
     case ASSH_SERVER_KBSTATUS_SUCCESS:
       pv->state = ASSH_USERAUTH_ST_SUCCESS;
@@ -489,7 +499,7 @@ assh_userauth_server_kbresponse(struct assh_session_s *s,
 
   if (count != pv->keyboard_count)
     {
-      ASSH_ERR_RET(assh_userauth_server_failure(s) | ASSH_ERRSV_DISCONNECT);
+      ASSH_ERR_RET(assh_userauth_server_failure(s, 1) | ASSH_ERRSV_DISCONNECT);
       return ASSH_OK;
     }
 
@@ -685,7 +695,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
 
       if (!e->userauth_server.userkey.found)
         {
-          ASSH_ERR_RET(assh_userauth_server_failure(s) | ASSH_ERRSV_DISCONNECT);
+          ASSH_ERR_RET(assh_userauth_server_failure(s, 1) | ASSH_ERRSV_DISCONNECT);
           return ASSH_OK;
         }
 
@@ -726,7 +736,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
       pv->state = ASSH_USERAUTH_ST_WAIT_RQ;
 
       if (!e->userauth_server.userkey.found)
-        ASSH_ERR_RET(assh_userauth_server_failure(s)
+        ASSH_ERR_RET(assh_userauth_server_failure(s, 1)
 		     | ASSH_ERRSV_DISCONNECT);
       else
         ASSH_ERR_RET(assh_userauth_server_pubkey_check(s, pv->pck, pv->sign)
@@ -764,7 +774,7 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_pubkey)
   if (assh_algo_by_name(s->ctx, ASSH_ALGO_SIGN, (char*)algo_name + 4,
 			pub_blob - algo_name - 4, &algo, &pv->algo_name) != ASSH_OK)
     {
-      ASSH_ERR_RET(assh_userauth_server_failure(s) | ASSH_ERRSV_DISCONNECT);
+      ASSH_ERR_RET(assh_userauth_server_failure(s, 1) | ASSH_ERRSV_DISCONNECT);
       return ASSH_OK;
     }
 
@@ -780,7 +790,7 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_pubkey)
   if (!assh_algo_suitable_key(s->ctx, algo, pub_key))
     {
       assh_key_drop(s->ctx, &pub_key);
-      ASSH_ERR_RET(assh_userauth_server_failure(s) | ASSH_ERRSV_DISCONNECT);
+      ASSH_ERR_RET(assh_userauth_server_failure(s, 1) | ASSH_ERRSV_DISCONNECT);
       return ASSH_OK;
     }
 
@@ -900,7 +910,7 @@ static assh_error_t assh_userauth_server_req(struct assh_session_s *s,
       return ASSH_OK;
     }
 
-  ASSH_ERR_RET(assh_userauth_server_failure(s) | ASSH_ERRSV_DISCONNECT);
+  ASSH_ERR_RET(assh_userauth_server_failure(s, 0) | ASSH_ERRSV_DISCONNECT);
   return ASSH_OK;
 }
 
