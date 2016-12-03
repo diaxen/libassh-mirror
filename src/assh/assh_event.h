@@ -36,61 +36,61 @@ enum assh_event_id_e
 {
   /** @internal This event id is not valid and can be used to mark
       non-initialized event objects. */
-  ASSH_EVENT_INVALID,
+  ASSH_EVENT_INVALID                     = 0,
 
   /** @see assh_event_transport_read_s */
-  ASSH_EVENT_READ,
+  ASSH_EVENT_READ                        = 1,
   /** @see assh_event_transport_write_s */
-  ASSH_EVENT_WRITE,
+  ASSH_EVENT_WRITE                       = 2,
 
   /** @see assh_event_kex_hostkey_lookup_s */
-  ASSH_EVENT_KEX_HOSTKEY_LOOKUP,
+  ASSH_EVENT_KEX_HOSTKEY_LOOKUP          = 5,
   /** @see assh_event_kex_done_s */
-  ASSH_EVENT_KEX_DONE,
+  ASSH_EVENT_KEX_DONE                    = 6,
 
   /** @see assh_event_userauth_client_user_s */
-  ASSH_EVENT_USERAUTH_CLIENT_USER,
+  ASSH_EVENT_USERAUTH_CLIENT_USER        = 10,
   /** @see assh_event_userauth_client_methods_s */
-  ASSH_EVENT_USERAUTH_CLIENT_METHODS,
+  ASSH_EVENT_USERAUTH_CLIENT_METHODS     = 11,
   /** @see assh_event_userauth_client_banner_s */
-  ASSH_EVENT_USERAUTH_CLIENT_BANNER,
+  ASSH_EVENT_USERAUTH_CLIENT_BANNER      = 12,
   /** @see assh_event_userauth_client_pwchange_s */
-  ASSH_EVENT_USERAUTH_CLIENT_PWCHANGE,
+  ASSH_EVENT_USERAUTH_CLIENT_PWCHANGE    = 13,
   /** @see assh_event_userauth_client_keyboard_s */
-  ASSH_EVENT_USERAUTH_CLIENT_KEYBOARD,
-  ASSH_EVENT_USERAUTH_CLIENT_SUCCESS,
+  ASSH_EVENT_USERAUTH_CLIENT_KEYBOARD    = 14,
+  ASSH_EVENT_USERAUTH_CLIENT_SUCCESS     = 15,
 
   /** @see assh_event_userauth_server_methods_s */
-  ASSH_EVENT_USERAUTH_SERVER_METHODS,
+  ASSH_EVENT_USERAUTH_SERVER_METHODS     = 20,
   /** @see assh_event_userauth_server_userkey_s */
-  ASSH_EVENT_USERAUTH_SERVER_USERKEY,
+  ASSH_EVENT_USERAUTH_SERVER_USERKEY     = 21,
   /** @see assh_event_userauth_server_password_s */
-  ASSH_EVENT_USERAUTH_SERVER_PASSWORD,
+  ASSH_EVENT_USERAUTH_SERVER_PASSWORD    = 22,
   /** @see assh_event_userauth_server_kbinfo_s */
-  ASSH_EVENT_USERAUTH_SERVER_KBINFO,
+  ASSH_EVENT_USERAUTH_SERVER_KBINFO      = 23,
   /** @see assh_event_userauth_server_kbresponse_s */
-  ASSH_EVENT_USERAUTH_SERVER_KBRESPONSE,
+  ASSH_EVENT_USERAUTH_SERVER_KBRESPONSE  = 24,
   /** @see assh_event_userauth_server_success_s */
-  ASSH_EVENT_USERAUTH_SERVER_SUCCESS,
+  ASSH_EVENT_USERAUTH_SERVER_SUCCESS     = 25,
 
   /** @see assh_event_connection_start_s */
-  ASSH_EVENT_CONNECTION_START,
+  ASSH_EVENT_CONNECTION_START            = 30,
   /** @see assh_event_request_s */
-  ASSH_EVENT_REQUEST,
+  ASSH_EVENT_REQUEST                     = 31,
   /** @see assh_event_request_reply_s */
-  ASSH_EVENT_REQUEST_REPLY,
+  ASSH_EVENT_REQUEST_REPLY               = 32,
   /** @see assh_event_channel_open_s */
-  ASSH_EVENT_CHANNEL_OPEN,
+  ASSH_EVENT_CHANNEL_OPEN                = 33,
   /** @see assh_event_channel_open_reply_s */
-  ASSH_EVENT_CHANNEL_OPEN_REPLY,
+  ASSH_EVENT_CHANNEL_OPEN_REPLY          = 34,
   /** @see assh_event_channel_data_s */
-  ASSH_EVENT_CHANNEL_DATA,
+  ASSH_EVENT_CHANNEL_DATA                = 35,
   /** @see assh_event_channel_window_s */
-  ASSH_EVENT_CHANNEL_WINDOW,
+  ASSH_EVENT_CHANNEL_WINDOW              = 36,
   /** @see assh_event_channel_eof_s */
-  ASSH_EVENT_CHANNEL_EOF,
+  ASSH_EVENT_CHANNEL_EOF                 = 37,
   /** @see assh_event_channel_close_s */
-  ASSH_EVENT_CHANNEL_CLOSE,
+  ASSH_EVENT_CHANNEL_CLOSE               = 38,
 
   /** @internal */
   ASSH_EVENT_COUNT,
