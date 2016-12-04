@@ -103,6 +103,7 @@ static unsigned long auth_server_partial_success_count = 0;
 static unsigned long auth_server_success_count = 0;
 static unsigned long auth_server_err_count = 0;
 static unsigned long auth_server_err_ev_count = 0;
+static unsigned long auth_client_none_count = 0;
 static unsigned long auth_client_pubkey_count = 0;
 static unsigned long auth_client_password_count = 0;
 static unsigned long auth_client_password_change_count = 0;
@@ -379,6 +380,12 @@ static int test()
 	  while (!event.userauth_client.methods.select)
 	    {
 	      if ((event.userauth_client.methods.methods &
+		   ASSH_USERAUTH_METHOD_NONE) && !(rand() % 64))
+		{
+		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_NONE;
+		  auth_client_none_count++;
+		}
+	      else if ((event.userauth_client.methods.methods &
 		   ASSH_USERAUTH_METHOD_PASSWORD) && (rand() & 1))
 		{
 		  /* randomly pick a password */
@@ -653,6 +660,7 @@ int main(int argc, char **argv)
 	  "  %8lu server success count\n"
 	  "  %8lu server fuzz error count\n"
 	  "  %8lu server fuzz event error count\n"
+	  "  %8lu client none count\n"
 	  "  %8lu client password count\n"
 	  "  %8lu client password change count\n"
 	  "  %8lu client password skip change count\n"
@@ -683,6 +691,7 @@ int main(int argc, char **argv)
 	  auth_server_success_count,
 	  auth_server_err_count,
 	  auth_server_err_ev_count,
+	  auth_client_none_count,
 	  auth_client_password_count,
 	  auth_client_password_change_count,
 	  auth_client_password_skip_change_count,

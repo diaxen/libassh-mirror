@@ -57,10 +57,8 @@ enum assh_userauth_methods_e
   ,
 
   /** mask of all methods with support enabled in configuration */
-  ASSH_USERAUTH_METHOD_CLIENT_IMPLEMENTED = 0
-#ifdef CONFIG_ASSH_CLIENT_AUTH_NONE
-    | ASSH_USERAUTH_METHOD_NONE
-#endif
+  ASSH_USERAUTH_METHOD_CLIENT_IMPLEMENTED =
+      ASSH_USERAUTH_METHOD_NONE
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY
     | ASSH_USERAUTH_METHOD_PUBKEY
 #endif

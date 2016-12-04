@@ -182,7 +182,7 @@ if test x$enable_server = xyes ; then
    AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_PUBLICKEY], [], [SSH server authentication: public key support])
    AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_PASSWORD], [], [SSH server authentication: password support])
    AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_KEYBOARD], [], [SSH server authentication: keyboard interactive])
-   #AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_NONE], [], [SSH server authentication: bypassed, grant access directly])
+   AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_NONE], [], [SSH server authentication: bypassed, grant access directly])
 fi
 
 if test x$enable_client = xyes ; then

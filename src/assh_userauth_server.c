@@ -39,12 +39,6 @@
 
 ASSH_EVENT_SIZE_SASSERT(userauth_server);
 
-#ifdef CONFIG_ASSH_SERVER_AUTH_NONE
-# warning CONFIG_ASSH_SERVER_AUTH_NONE is defined, server authentication is bypassed
-# undef CONFIG_ASSH_SERVER_AUTH_PASSWORD
-# undef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
-#endif
-
 #include <stdlib.h>
 
 enum assh_userauth_state_e
@@ -1054,7 +1048,7 @@ const struct assh_userauth_server_method_s
 assh_userauth_server_methods[] = {
 #ifdef CONFIG_ASSH_SERVER_AUTH_NONE
     { ",none",
-      ASSH_USERAUTH_METHOD_NONE
+      ASSH_USERAUTH_METHOD_NONE,
       &assh_userauth_server_req_none },
 #endif
 #ifdef CONFIG_ASSH_SERVER_AUTH_PASSWORD
