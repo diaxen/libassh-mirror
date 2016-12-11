@@ -57,8 +57,6 @@ struct assh_key_eddsa_s
   const struct assh_edward_curve_s *curve;
   const struct assh_hash_algo_s *hash;
 
-  assh_bool_t private;
-
   /** public + secret key data */
   uint8_t data[0];
 };

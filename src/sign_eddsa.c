@@ -40,7 +40,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
   const struct assh_hash_algo_s *hash = k->hash;
 
   /* check availability of the private key */
-  ASSH_CHK_RET(!k->private, ASSH_ERR_MISSING_KEY);
+  ASSH_CHK_RET(!k->key.private, ASSH_ERR_MISSING_KEY);
 
   size_t n = ASSH_ALIGN8(k->curve->bits) / 8;
   size_t tlen = strlen(k->key.algo->type);

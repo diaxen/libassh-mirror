@@ -203,6 +203,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
   k->key.algo = &assh_key_dsa;
   k->key.type = "ssh-dss";
   k->key.safety = ASSH_DSA_SAFETY(l, n);
+  k->key.private = 1;
 
   /* init numbers */
   assh_bignum_init(c, &k->pn, l);
@@ -452,6 +453,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
   k->key.algo = &assh_key_dsa;
   k->key.type = "ssh-dss";
   k->key.safety = ASSH_DSA_SAFETY(l, n);
+  k->key.private = 0;
 
   /* init numbers */
   assh_bignum_init(c, &k->pn, l);
@@ -464,6 +466,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
   switch (format)
     {
     case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY:
+      k->key.private = 1;
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
                                        x_str, &k->xn, NULL, 0), err_xn);
     case ASSH_KEY_FMT_PUB_RFC4253:
@@ -478,6 +481,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
       break;
 
     case ASSH_KEY_FMT_PV_PEM_ASN1:
+      k->key.private = 1;
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE,
                                        p_str, &k->pn, NULL, 0), err_xn);
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE,

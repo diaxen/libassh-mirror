@@ -242,6 +242,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
   k->key.algo = &assh_key_rsa;
   k->key.type = "ssh-rsa";
   k->key.safety = ASSH_SAFETY_PRIMEFIELD(bits);
+  k->key.private = 1;
 
   /* init numbers */
   assh_bignum_init(c, &k->nn, bits);
@@ -459,6 +460,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
   k->key.algo = &assh_key_rsa;
   k->key.type = "ssh-rsa";
   k->key.safety = ASSH_SAFETY_PRIMEFIELD(n_len);
+  k->key.private = 0;
 
   /* init numbers */
   assh_bignum_init(c, &k->nn, n_len);
@@ -474,6 +476,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
   switch (format)
     {
     case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY:
+      k->key.private = 1;
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
                                        d_str, &k->dn, NULL, 1), err_num);
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
@@ -490,6 +493,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
       break;
 
     case ASSH_KEY_FMT_PV_PEM_ASN1:
+      k->key.private = 1;
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE,
                                        d_str, &k->dn, NULL, 1), err_num);
       ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE,

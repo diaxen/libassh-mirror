@@ -64,7 +64,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_eddsa_output)
     }
 
     case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY: {
-      ASSH_CHK_RET(!k->private, ASSH_ERR_MISSING_KEY);
+      ASSH_CHK_RET(!k->key.private, ASSH_ERR_MISSING_KEY);
 
       size_t len = 4 + tlen + 4 + n + 4 + 2 * n;
 
@@ -107,8 +107,8 @@ static ASSH_KEY_CMP_FCN(assh_key_eddsa_cmp)
 
   size_t n = ASSH_ALIGN8(k->curve->bits) / 8;
 
-  if (!pub && (!k->private || !l->private ||
-       (k->private && assh_memcmp(k->data + n, l->data + n, n))))
+  if (!pub && (!k->key.private || !l->key.private ||
+       (k->key.private && assh_memcmp(k->data + n, l->data + n, n))))
     return 0;
 
   return !assh_memcmp(k->data, l->data, n);
@@ -132,6 +132,7 @@ assh_key_eddsa_create(struct assh_context_s *c,
   k->key.algo = algo;
   k->key.type = algo->type;
   k->key.safety = curve->safety;
+  k->key.private = 1;
   k->curve = curve;
   k->hash = hash;
 
@@ -233,7 +234,6 @@ assh_key_eddsa_create(struct assh_context_s *c,
 
   assh_edward_encode(curve, kp, rx);
 
-  k->private = 1;
   *key = &k->key;
 
   ASSH_SCRATCH_FREE(c, sc);
@@ -250,7 +250,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_eddsa_validate)
 {
   struct assh_key_eddsa_s *k = (void*)key;
 
-  if (!k->private)
+  if (!k->key.private)
     return ASSH_OK;
 
 #warning eddsa key validate
@@ -284,7 +284,7 @@ assh_key_eddsa_load(struct assh_context_s *c,
       ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_key_eddsa_s) + n,
                               ASSH_ALLOC_SECUR, (void**)&k));
 
-      k->private = 0;
+      k->key.private = 0;
       ASSH_CHK_GTO(blob_len < len, ASSH_ERR_INPUT_OVERFLOW, err_key);
       ASSH_CHK_GTO(assh_load_u32(blob) != tlen, ASSH_ERR_BAD_DATA, err_key);
       ASSH_CHK_GTO(memcmp(algo->type, blob + 4, tlen), ASSH_ERR_BAD_DATA, err_key);
@@ -301,7 +301,7 @@ assh_key_eddsa_load(struct assh_context_s *c,
       ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_key_eddsa_s) + 2 * n,
                               ASSH_ALLOC_SECUR, (void**)&k));
 
-      k->private = 1;
+      k->key.private = 1;
       ASSH_CHK_GTO(blob_len < len, ASSH_ERR_INPUT_OVERFLOW, err_key);
       ASSH_CHK_GTO(assh_load_u32(blob) != tlen, ASSH_ERR_BAD_DATA, err_key);
       ASSH_CHK_GTO(memcmp(algo->type, blob + 4, tlen), ASSH_ERR_BAD_DATA, err_key);
