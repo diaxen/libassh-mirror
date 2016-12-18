@@ -511,7 +511,7 @@ static assh_error_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
 
   size_t sign_len;
   const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
-  ASSH_ERR_RET(assh_sign_generate(c, sign_algo, hk, 0, NULL, NULL, NULL, &sign_len)
+  ASSH_ERR_RET(assh_sign_generate(c, sign_algo, hk, 0, NULL, NULL, &sign_len)
 	       | ASSH_ERRSV_DISCONNECT);
 
   struct assh_packet_s *pout;

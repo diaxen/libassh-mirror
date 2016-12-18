@@ -659,16 +659,17 @@ static assh_error_t assh_userauth_server_pubkey_check(struct assh_session_s *s,
   assh_store_u32(sid_len, s->session_id_len);
 
   /* buffers that have been signed by the client */
-  const uint8_t *sign_ptrs[3] =
-    { sid_len, s->session_id,     &p->head.msg };
-  size_t sign_sizes[3]        =
-    { 4,       s->session_id_len, sign - &p->head.msg };
+  struct assh_cbuffer_s data[3] = {
+    { .data = sid_len,         .len = 4 },
+    { .data = s->session_id,   .len = s->session_id_len },
+    { .data = &p->head.msg,    .len = sign - &p->head.msg },
+  };
 
   assh_safety_t sign_safety;
 
   /* check the signature */
   ASSH_ERR_RET(assh_sign_check(s->ctx, pv->algo, pv->pub_key, 3,
-        sign_ptrs, sign_sizes, sign + 4, end - sign - 4, &sign_safety)
+        data, sign + 4, end - sign - 4, &sign_safety)
                | ASSH_ERRSV_DISCONNECT);
 
   pv->safety = ASSH_MIN(sign_safety, pv->safety);

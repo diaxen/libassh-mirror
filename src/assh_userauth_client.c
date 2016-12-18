@@ -594,7 +594,7 @@ static assh_error_t assh_userauth_client_req_pubkey_sign(struct assh_session_s *
 
   size_t sign_len;
   ASSH_ERR_RET(assh_sign_generate(s->ctx, algo, pv->pub_keys, 0,
-		NULL, NULL, NULL, &sign_len) | ASSH_ERRSV_DISCONNECT);
+		NULL, NULL, &sign_len) | ASSH_ERRSV_DISCONNECT);
 
   struct assh_packet_s *pout;
   ASSH_ERR_RET(assh_userauth_client_pck_pubkey(s, &pout,
@@ -604,16 +604,17 @@ static assh_error_t assh_userauth_client_req_pubkey_sign(struct assh_session_s *
   assh_store_u32(sid_len, s->session_id_len);
 
   /* buffers that must be signed by the client */
-  const uint8_t *sign_ptrs[3] =
-    { sid_len, s->session_id,     &pout->head.msg };
-  size_t sign_sizes[3]        =
-    { 4,       s->session_id_len, pout->data_size - 5 };
+  struct assh_cbuffer_s data[3] = {
+    { .data = sid_len,         .len = 4 },
+    { .data = s->session_id,   .len = s->session_id_len },
+    { .data = &pout->head.msg, .len = pout->data_size - 5 },
+  };
 
   /* append the signature */
   uint8_t *sign;
   ASSH_ASSERT(assh_packet_add_string(pout, sign_len, &sign));
   ASSH_ERR_GTO(assh_sign_generate(s->ctx, algo, pv->pub_keys,
-                 3, sign_ptrs, sign_sizes, sign, &sign_len)
+                 3, data, sign, &sign_len)
 	       | ASSH_ERRSV_DISCONNECT, err_packet);
   assh_packet_shrink_string(pout, sign, sign_len);
 

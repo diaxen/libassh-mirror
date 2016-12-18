@@ -171,13 +171,16 @@ assh_error_t test_const()
       size_t sign_len;
 
       uint8_t data[11 + 27 + 33];
-      const uint8_t * ptr[3] = { data, data + 11, data + 11 + 27 };
-      size_t sz[3] = { 11, 27, 33 };
+      struct assh_cbuffer_s d[3] = {
+	{ .data = data,           .len = 11 },
+	{ .data = data + 11,      .len = 27 },
+	{ .data = data + 11 + 27, .len = 33 }
+      };
       for (j = 0; j < sizeof(data); j++)
 	data[j] = j;
 
       fprintf(stderr, "g");
-      ASSH_ERR_RET(assh_sign_generate(&context, a, key, 3, ptr, sz, NULL, &sign_len));
+      ASSH_ERR_RET(assh_sign_generate(&context, a, key, 3, d, NULL, &sign_len));
 
       if (sign_len != algos[i].sign_len)
 	{
@@ -187,7 +190,7 @@ assh_error_t test_const()
 	}
 
       uint8_t sign[sign_len];
-      ASSH_ERR_RET(assh_sign_generate(&context, a, key, 3, ptr, sz, sign, &sign_len));
+      ASSH_ERR_RET(assh_sign_generate(&context, a, key, 3, d, sign, &sign_len));
 
       if (memcmp(algos[i].sign, sign, sign_len))
 	{
@@ -200,7 +203,7 @@ assh_error_t test_const()
 
       fprintf(stderr, "v");
       assh_safety_t sign_safety;
-      if (assh_sign_check(&context, a, key, 3, ptr, sz, sign, sign_len, &sign_safety))
+      if (assh_sign_check(&context, a, key, 3, d, sign, sign_len, &sign_safety))
 	abort();
 
       if (sign_safety > a->algo.safety || sign_safety > key->safety)
@@ -209,7 +212,7 @@ assh_error_t test_const()
       data[rand() % sizeof(data)]++;
 
       fprintf(stderr, "V");
-      if (!assh_sign_check(&context, a, key, 3, ptr, sz, sign, sign_len, &sign_safety))
+      if (!assh_sign_check(&context, a, key, 3, d, sign, sign_len, &sign_safety))
 	abort();
 
       assh_key_drop(&context, &key);
@@ -269,8 +272,7 @@ assh_error_t test_loop()
 	  ASSH_ERR_RET(context.prng->f_get(&context, data, size,
                                            ASSH_PRNG_QUALITY_WEAK));
 
-	  const uint8_t * ptr[8];
-	  size_t sz[8];
+	  struct assh_cbuffer_s d[8];
 	  int c = 0;
 	  int s = 0;
 	  while (s < size)
@@ -278,8 +280,8 @@ assh_error_t test_loop()
 	      int r = rand() % 128 + 128;
 	      if (s + r > size)
 		r = size - s;
-	      ptr[c] = data + s;
-	      sz[c] = r;
+	      d[c].data = data + s;
+	      d[c].size = r;
 	      s += r;
               c++;
 	    }
@@ -288,17 +290,17 @@ assh_error_t test_loop()
 
           fprintf(stderr, "g");
 
-	  ASSH_ERR_RET(assh_sign_generate(&context, a, key, c, ptr, sz, NULL, &sign_len));
+	  ASSH_ERR_RET(assh_sign_generate(&context, a, key, c, d, NULL, &sign_len));
 	  TEST_ASSERT(sign_len > 0);
 
 	  uint8_t sign[sign_len];
-	  ASSH_ERR_RET(assh_sign_generate(&context, a, key, c, ptr, sz, sign, &sign_len));
+	  ASSH_ERR_RET(assh_sign_generate(&context, a, key, c, d, sign, &sign_len));
 
           fprintf(stderr, "v");
 
 	  assh_safety_t sign_safety;
 
-	  err = assh_sign_check(&context, a, key, c, ptr, sz, sign, sign_len, &sign_safety);
+	  err = assh_sign_check(&context, a, key, c, d, sign, sign_len, &sign_safety);
 	  TEST_ASSERT(err == ASSH_OK);
 
 	  if (sign_safety > a->algo.safety || sign_safety > key->safety)
@@ -316,12 +318,12 @@ assh_error_t test_loop()
 
           fprintf(stderr, "V");
 
-	  err = assh_sign_check(&context, a, key, c, ptr, sz, sign, sign_len, &sign_safety);
+	  err = assh_sign_check(&context, a, key, c, d, sign, sign_len, &sign_safety);
 	  TEST_ASSERT(err != ASSH_OK);
 
 	  sign[r1] ^= r2;
 
-	  err = assh_sign_check(&context, a, key, c, ptr, sz, sign, sign_len, &sign_safety);
+	  err = assh_sign_check(&context, a, key, c, d, sign, sign_len, &sign_safety);
 	  TEST_ASSERT(err == ASSH_OK);
 
 	  if (sign_safety > a->algo.safety || sign_safety > key->safety)
@@ -337,7 +339,7 @@ assh_error_t test_loop()
 #endif
 	      data[r1] ^= r2;
 
-	      err = assh_sign_check(&context, a, key, c, ptr, sz, sign, sign_len, &sign_safety);
+	      err = assh_sign_check(&context, a, key, c, d, sign, sign_len, &sign_safety);
 	      TEST_ASSERT(err != ASSH_OK);
 	    }
 

@@ -775,13 +775,14 @@ assh_kex_client_hash2(struct assh_session_s *s,
   uint8_t ex_hash[hash_size];
   assh_hash_final(hash_ctx, ex_hash, hash_size);
 
-  const uint8_t *sign_ptrs[1] = { ex_hash };
-  size_t sign_sizes[1] = { hash_size };
+  struct assh_cbuffer_s data = {
+    .data = ex_hash, .size = hash_size
+  };
 
   const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
   assh_safety_t sign_safety;
 
-  ASSH_CHK_RET(assh_sign_check(c, sign_algo, host_key, 1, sign_ptrs, sign_sizes,
+  ASSH_CHK_RET(assh_sign_check(c, sign_algo, host_key, 1, &data,
                 h_str + 4, assh_load_u32(h_str), &sign_safety) != ASSH_OK,
                ASSH_ERR_HOSTKEY_SIGNATURE | ASSH_ERRSV_DISCONNECT);
 
@@ -821,7 +822,7 @@ assh_kex_server_hash1(struct assh_session_s *s, size_t kex_len,
 	         ASSH_KEY_FMT_PUB_RFC4253)
 	       | ASSH_ERRSV_DISCONNECT);
 
-  ASSH_ERR_RET(assh_sign_generate(c, sign_algo, hk, 0, NULL, NULL, NULL, sign_len)
+  ASSH_ERR_RET(assh_sign_generate(c, sign_algo, hk, 0, NULL, NULL, sign_len)
 	       | ASSH_ERRSV_DISCONNECT);
 
   ASSH_ERR_RET(assh_packet_alloc(c, msg,
@@ -869,15 +870,18 @@ assh_kex_server_hash2(struct assh_session_s *s,
   uint8_t ex_hash[hash_size];
   assh_hash_final(hash_ctx, ex_hash, hash_size);
 
-  const uint8_t *sign_ptrs[1] = { ex_hash };
-  size_t sign_sizes[1] = { hash_size };
+  /* append the signature */
+  struct assh_cbuffer_s data = {
+    .data = ex_hash,
+    .size = hash_size
+  };
 
   /* append the signature */
   uint8_t *sign;
   ASSH_ASSERT(assh_packet_add_string(pout, sign_len, &sign));
 
   ASSH_ERR_RET(assh_sign_generate(c, sign_algo, host_key, 1,
-		 sign_ptrs, sign_sizes, sign, &sign_len)
+		 &data, sign, &sign_len)
 	       | ASSH_ERRSV_DISCONNECT);
   assh_packet_shrink_string(pout, sign, sign_len);
 

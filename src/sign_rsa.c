@@ -75,8 +75,7 @@ static ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_sign_rsa_generate(struct assh_context_s *c,
                        const struct assh_key_s *key,
                        size_t data_count,
-                       const uint8_t * const data[],
-                       size_t const data_len[],
+                       const struct assh_cbuffer_s data[],
                        uint8_t *sign, size_t *sign_len,
                        enum assh_rsa_digest_e digest_id,
                        const char *algo_id)
@@ -132,7 +131,7 @@ assh_sign_rsa_generate(struct assh_context_s *c,
 
   ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, digest->algo), err_scratch);
   for (i = 0; i < data_count; i++)
-      assh_hash_update(hash_ctx, data[i], data_len[i]);
+    assh_hash_update(hash_ctx, data[i].data, data[i].len);
   assh_hash_final(hash_ctx, em, digest->algo->hash_size);
 
   assh_hash_cleanup(hash_ctx);
@@ -183,7 +182,7 @@ assh_sign_rsa_generate(struct assh_context_s *c,
 static ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_sign_rsa_check(struct assh_context_s *c,
                      const struct assh_key_s *key, size_t data_count,
-                     const uint8_t * const data[], size_t const data_len[],
+                     const struct assh_cbuffer_s data[],
                      const uint8_t *sign, size_t sign_len, assh_safety_t *safety,
                      uint8_t digest_mask, const char *algo_id)
 {
@@ -272,7 +271,7 @@ assh_sign_rsa_check(struct assh_context_s *c,
 
   ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, digest->algo), err_hash);
   for (i = 0; i < data_count; i++)
-    assh_hash_update(hash_ctx, data[i], data_len[i]);
+    assh_hash_update(hash_ctx, data[i].data, data[i].len);
   assh_hash_final(hash_ctx, hash, digest->algo->hash_size);
   assh_hash_cleanup(hash_ctx);
 
@@ -307,7 +306,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_768)
 
 static ASSH_SIGN_CHECK_FCN(assh_sign_rsa_check_sha1_md5)
 {
-  return assh_sign_rsa_check(c, key, data_count, data, data_len,
+  return assh_sign_rsa_check(c, key, data_count, data,
                               sign, sign_len, safety,
                                 (1 << RSA_DIGEST_SHA1)
                               | (1 << RSA_DIGEST_MD5)
@@ -318,7 +317,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_rsa_check_sha1_md5)
 
 static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate_sha1)
 {
-  return assh_sign_rsa_generate(c, key, data_count, data, data_len,
+  return assh_sign_rsa_generate(c, key, data_count, data,
                       sign, sign_len, RSA_DIGEST_SHA1, ASSH_RSA_ID);
 }
 
@@ -348,7 +347,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_1024)
 
 static ASSH_SIGN_CHECK_FCN(assh_sign_rsa_check_sha1)
 {
-  return assh_sign_rsa_check(c, key, data_count, data, data_len,
+  return assh_sign_rsa_check(c, key, data_count, data,
                               sign, sign_len, safety,
                                 (1 << RSA_DIGEST_SHA1)
                               | (1 << RSA_DIGEST_SHA256)
@@ -396,7 +395,7 @@ const struct assh_algo_sign_s assh_sign_rsa_sha1_2048 =
 
 static ASSH_SIGN_CHECK_FCN(assh_sign_rsa_check_sha256)
 {
-  return assh_sign_rsa_check(c, key, data_count, data, data_len,
+  return assh_sign_rsa_check(c, key, data_count, data,
                              sign, sign_len, safety,
                              (1 << RSA_DIGEST_SHA256),
                              ASSH_RSA_SHA256_ID);
@@ -404,7 +403,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_rsa_check_sha256)
 
 static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate_sha256)
 {
-  return assh_sign_rsa_generate(c, key, data_count, data, data_len,
+  return assh_sign_rsa_generate(c, key, data_count, data,
                                 sign, sign_len, RSA_DIGEST_SHA256,
                                 ASSH_RSA_SHA256_ID);
 }
@@ -424,7 +423,7 @@ const struct assh_algo_sign_s assh_sign_rsa_sha256 =
 
 static ASSH_SIGN_CHECK_FCN(assh_sign_rsa_check_sha512)
 {
-  return assh_sign_rsa_check(c, key, data_count, data, data_len,
+  return assh_sign_rsa_check(c, key, data_count, data,
                              sign, sign_len, safety,
                              (1 << RSA_DIGEST_SHA512),
                              ASSH_RSA_SHA512_ID);
@@ -432,7 +431,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_rsa_check_sha512)
 
 static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate_sha512)
 {
-  return assh_sign_rsa_generate(c, key, data_count, data, data_len,
+  return assh_sign_rsa_generate(c, key, data_count, data,
                                 sign, sign_len, RSA_DIGEST_SHA512,
                                 ASSH_RSA_SHA512_ID);
 }

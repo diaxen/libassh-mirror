@@ -36,8 +36,7 @@
 #define ASSH_SIGN_GENERATE_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t(n) \
   (struct assh_context_s *c,						\
    const struct assh_key_s *key, size_t data_count,			\
-   const uint8_t * const data[], size_t const data_len[],		\
-   uint8_t *sign, size_t *sign_len)
+   const struct assh_cbuffer_s data[], uint8_t *sign, size_t *sign_len)
 
 /** @internal @This defines the function type for the signature
     generation operation of the signature module interface.
@@ -48,7 +47,7 @@ typedef ASSH_SIGN_GENERATE_FCN(assh_sign_generate_t);
 #define ASSH_SIGN_CHECK_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t (n) \
   (struct assh_context_s *c,						\
    const struct assh_key_s *key, size_t data_count,			\
-   const uint8_t * const data[], size_t const data_len[],		\
+   const struct assh_cbuffer_s data[],                                  \
    const uint8_t *sign, size_t sign_len, assh_safety_t *safety)
 
 /** @internal @This defines the function type for the signature
@@ -79,10 +78,10 @@ struct assh_algo_sign_s
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_sign_generate(struct assh_context_s *c, const struct assh_algo_sign_s *algo,
                    const struct assh_key_s *key, size_t data_count,
-                   const uint8_t * const data[], size_t const data_len[],
+                   const struct assh_cbuffer_s data[],
                    uint8_t *sign, size_t *sign_len)
 {
-  return algo->f_generate(c, key, data_count, data, data_len, sign, sign_len);
+  return algo->f_generate(c, key, data_count, data, sign, sign_len);
 }
 
 /** @internal @This checks the signature of the passed data using the
@@ -90,12 +89,12 @@ assh_sign_generate(struct assh_context_s *c, const struct assh_algo_sign_s *algo
     data_count parameter must specify the number of data buffers used. */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_sign_check(struct assh_context_s *c, const struct assh_algo_sign_s *algo,
-                 const struct assh_key_s *key, size_t data_count,
-                 const uint8_t * const data[], size_t const data_len[],
-                 const uint8_t *sign, size_t sign_len, assh_safety_t *safety)
+                const struct assh_key_s *key, size_t data_count,
+                const struct assh_cbuffer_s data[],
+                const uint8_t *sign, size_t sign_len, assh_safety_t *safety)
 {
   *safety = ASSH_MIN(algo->algo.safety, key->safety);
-  return algo->f_check(c, key, data_count, data, data_len, sign, sign_len, safety);
+  return algo->f_check(c, key, data_count, data, sign, sign_len, safety);
 }
 
 /** Dummy signature algorithm */

@@ -94,7 +94,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
   ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, hash), err_scratch);
   assh_hash_update(hash_ctx, h + n, n);
   for (i = 0; i < data_count; i++)
-    assh_hash_update(hash_ctx, data[i], data_len[i]);
+    assh_hash_update(hash_ctx, data[i].data, data[i].len);
   assh_hash_final(hash_ctx, r, n * 2);
   assh_hash_cleanup(hash_ctx);
 
@@ -187,7 +187,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
   assh_hash_update(hash_ctx, r_str, n);
   assh_hash_update(hash_ctx, kp, n);
   for (i = 0; i < data_count; i++)
-    assh_hash_update(hash_ctx, data[i], data_len[i]);
+    assh_hash_update(hash_ctx, data[i].data, data[i].len);
   assh_hash_final(hash_ctx, hram, n * 2);
   assh_hash_cleanup(hash_ctx);
 
@@ -287,7 +287,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
   assh_hash_update(hash_ctx, rs_str + 4, n);
   assh_hash_update(hash_ctx, kp, n);
   for (i = 0; i < data_count; i++)
-    assh_hash_update(hash_ctx, data[i], data_len[i]);
+    assh_hash_update(hash_ctx, data[i].data, data[i].len);
   assh_hash_final(hash_ctx, hram, n * 2);
   assh_hash_cleanup(hash_ctx);
 

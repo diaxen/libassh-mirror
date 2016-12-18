@@ -80,7 +80,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_ecdsa_generate)
   /* message hash */
   ASSH_ERR_GTO(assh_hash_init(c, hash_ctx1, hash), err_scratch);
   for (i = 0; i < data_count; i++)
-    assh_hash_update(hash_ctx1, data[i], data_len[i]);
+    assh_hash_update(hash_ctx1, data[i].data, data[i].len);
   assh_hash_final(hash_ctx1, hm + nhsize - hsize, hsize);
   assh_hash_cleanup(hash_ctx1);
   memset(hm, 0, nhsize - hsize);    /* padding */
@@ -256,7 +256,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_ecdsa_check)
 
   ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, hash), err_scratch);
   for (i = 0; i < data_count; i++)
-    assh_hash_update(hash_ctx, data[i], data_len[i]);
+    assh_hash_update(hash_ctx, data[i].data, data[i].len);
   assh_hash_final(hash_ctx, hm + nhsize - hsize, hsize);
   assh_hash_cleanup(hash_ctx);
   memset(hm, 0, nhsize - hsize);    /* padding */

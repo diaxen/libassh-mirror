@@ -101,7 +101,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
   /* message hash */
   ASSH_ERR_GTO(assh_hash_init(c, hash_ctx1, algo), err_scratch);
   for (i = 0; i < data_count; i++)
-    assh_hash_update(hash_ctx1, data[i], data_len[i]);
+    assh_hash_update(hash_ctx1, data[i].data, data[i].len);
   assh_hash_final(hash_ctx1, msgh, n);
   assh_hash_cleanup(hash_ctx1);
 
@@ -234,7 +234,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_dsa_check)
 
   ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, algo), err_scratch);
   for (i = 0; i < data_count; i++)
-    assh_hash_update(hash_ctx, data[i], data_len[i]);
+    assh_hash_update(hash_ctx, data[i].data, data[i].len);
   assh_hash_final(hash_ctx, msgh, n);
   assh_hash_cleanup(hash_ctx);
 
