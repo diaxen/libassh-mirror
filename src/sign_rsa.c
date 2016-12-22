@@ -85,9 +85,6 @@ assh_sign_rsa_generate(struct assh_context_s *c,
 
   assert(key->algo == &assh_key_rsa);
 
-  /* check availability of the private key */
-  ASSH_CHK_RET(assh_bignum_isempty(&k->dn), ASSH_ERR_MISSING_KEY);
-
   size_t n = ASSH_ALIGN8(assh_bignum_bits(&k->nn)) / 8;
 
   /* check/return signature length */
@@ -99,6 +96,9 @@ assh_sign_rsa_generate(struct assh_context_s *c,
       *sign_len = len;
       return ASSH_OK;
     }
+
+  /* check availability of the private key */
+  ASSH_CHK_RET(assh_bignum_isempty(&k->dn), ASSH_ERR_MISSING_KEY);
 
   ASSH_CHK_RET(*sign_len < len, ASSH_ERR_OUTPUT_OVERFLOW);
   *sign_len = len;

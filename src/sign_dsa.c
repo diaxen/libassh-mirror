@@ -59,9 +59,6 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
   const struct assh_key_dsa_s *k = (const void*)key;
   assh_error_t err;
 
-  /* check availability of the private key */
-  ASSH_CHK_RET(assh_bignum_isempty(&k->xn), ASSH_ERR_MISSING_KEY);
-
   //  uint_fast16_t l = assh_bignum_bits(&k->pn);
   uint_fast16_t n = assh_bignum_bits(&k->qn);
 
@@ -77,6 +74,9 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
       *sign_len = len;
       return ASSH_OK;
     }
+
+  /* check availability of the private key */
+  ASSH_CHK_RET(assh_bignum_isempty(&k->xn), ASSH_ERR_MISSING_KEY);
 
   ASSH_CHK_RET(*sign_len < len, ASSH_ERR_OUTPUT_OVERFLOW);
   *sign_len = len;

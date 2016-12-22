@@ -41,9 +41,6 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_ecdsa_generate)
   const struct assh_weierstrass_curve_s *curve = k->id->curve;
   const struct assh_hash_algo_s *hash = k->id->hash;
 
-  /* check availability of the private key */
-  ASSH_CHK_RET(assh_bignum_isempty(&k->sn), ASSH_ERR_MISSING_KEY);
-
   size_t n = ASSH_ALIGN8(curve->bits) / 8;
   size_t tlen = strlen(k->id->name);
   size_t maxlen = 4 + tlen + 4 + 2 * (/* mpint */ (4 + 1 + n));
@@ -54,6 +51,9 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_ecdsa_generate)
       *sign_len = maxlen;
       return ASSH_OK;
     }
+
+  /* check availability of the private key */
+  ASSH_CHK_RET(assh_bignum_isempty(&k->sn), ASSH_ERR_MISSING_KEY);
 
   ASSH_CHK_RET(*sign_len < maxlen, ASSH_ERR_OUTPUT_OVERFLOW);
 

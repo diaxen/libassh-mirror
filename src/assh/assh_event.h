@@ -59,6 +59,8 @@ enum assh_event_id_e
   /** @see assh_event_userauth_client_keyboard_s */
   ASSH_EVENT_USERAUTH_CLIENT_KEYBOARD    = 14,
   ASSH_EVENT_USERAUTH_CLIENT_SUCCESS     = 15,
+  /** @see assh_event_userauth_client_sign_s */
+  ASSH_EVENT_USERAUTH_CLIENT_SIGN        = 16,
 
   /** @see assh_event_userauth_server_methods_s */
   ASSH_EVENT_USERAUTH_SERVER_METHODS     = 20,

@@ -56,7 +56,7 @@ static struct assh_session_s session[2];
 
 struct test_key_s
 {
-  struct assh_key_s *key_s, *key_c;
+  struct assh_key_s *key_s, *key_c, *key_cpub;
   uint8_t *blob;
   size_t blob_len;
 };
@@ -105,6 +105,7 @@ static unsigned long auth_server_err_count = 0;
 static unsigned long auth_server_err_ev_count = 0;
 static unsigned long auth_client_none_count = 0;
 static unsigned long auth_client_pubkey_count = 0;
+static unsigned long auth_client_pubkey_sign_count = 0;
 static unsigned long auth_client_password_count = 0;
 static unsigned long auth_client_password_change_count = 0;
 static unsigned long auth_client_password_skip_change_count = 0;
@@ -408,16 +409,41 @@ static int test()
 		{
 		  /* use some of the available keys */
 		  for (i = 0; i < TEST_KEYS_COUNT; i++)
-		    if (rand() & 1)
+		    switch (rand() & 3)
 		      {
+		      case 0:
+		      case 1:
+			break;
+		      case 2:
 			assh_key_refinc(keys[i].key_c);
-			assh_key_insert(&event.userauth_client.methods.pub_keys, keys[i].key_c);
+			assh_key_insert(&event.userauth_client.methods.keys, keys[i].key_c);
 			event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_PUBKEY;
 			auth_client_pubkey_count++;
+			break;
+		      case 3:
+			assh_key_refinc(keys[i].key_cpub);
+			assh_key_insert(&event.userauth_client.methods.keys, keys[i].key_cpub);
+			event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_PUBKEY;
+			auth_client_pubkey_sign_count++;
+			break;
 		      }
 		}
 	    }
           break;
+	}
+
+	case ASSH_EVENT_USERAUTH_CLIENT_SIGN: {
+	  struct assh_event_userauth_client_sign_s *e = &event.userauth_client.sign;
+	  for (i = 0; i < TEST_KEYS_COUNT; i++)
+	    if (keys[i].key_cpub == e->pub_key)
+	      {
+		if (assh_sign_generate(&context[1], e->algo, keys[i].key_c,
+				       1, &e->auth_data, e->sign.data, &e->sign.len)
+		    && !alloc_fuzz)
+		  TEST_FAIL("sign");
+		break;
+	      }
+	  break;
 	}
 
 	case ASSH_EVENT_USERAUTH_CLIENT_PWCHANGE: {
@@ -579,6 +605,11 @@ int main(int argc, char **argv)
       if (assh_key_load(&context[0], &k->key_s, keys_algo[i].algo, ASSH_ALGO_SIGN,
 			ASSH_KEY_FMT_PUB_RFC4253, &b, k->blob_len))
 	TEST_FAIL("");
+
+      b = k->blob;
+      if (assh_key_load(&context[1], &k->key_cpub, keys_algo[i].algo, ASSH_ALGO_SIGN,
+			ASSH_KEY_FMT_PUB_RFC4253, &b, k->blob_len))
+	TEST_FAIL("");
     }
 
   if (alloc_size == 0)
@@ -632,6 +663,7 @@ int main(int argc, char **argv)
       struct test_key_s *k = &keys[i];
       assh_key_drop(&context[0], &k->key_s);
       assh_key_drop(&context[1], &k->key_c);
+      assh_key_drop(&context[1], &k->key_cpub);
     }
 
   /* release contexts */
@@ -661,6 +693,8 @@ int main(int argc, char **argv)
 	  "  %8lu server fuzz error count\n"
 	  "  %8lu server fuzz event error count\n"
 	  "  %8lu client none count\n"
+	  "  %8lu client pubkey count\n"
+	  "  %8lu client pubkey sign count\n"
 	  "  %8lu client password count\n"
 	  "  %8lu client password change count\n"
 	  "  %8lu client password skip change count\n"
@@ -692,6 +726,8 @@ int main(int argc, char **argv)
 	  auth_server_err_count,
 	  auth_server_err_ev_count,
 	  auth_client_none_count,
+	  auth_client_pubkey_count,
+	  auth_client_pubkey_sign_count,
 	  auth_client_password_count,
 	  auth_client_password_change_count,
 	  auth_client_password_skip_change_count,

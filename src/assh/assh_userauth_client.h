@@ -68,7 +68,10 @@ struct assh_event_userauth_client_user_s
     The @ref pub_keys linked list can be populated by calling either
     the @ref assh_key_load, @ref assh_load_key_file or @ref
     assh_load_key_filename functions. Multiple keys can be loaded. The
-    assh library will take care of releasing the provided keys.
+    assh library will take care of releasing the provided keys. If a
+    public key is provided, the @ref ASSH_EVENT_USERAUTH_CLIENT_SIGN
+    event will be reported. The library will take care of generating
+    the signature when a private key is provided.
 
     When the @em keyboard-interactive method is enabled, the @ref
     keyboard_sub field will be used as @em submethods fields of the
@@ -89,9 +92,28 @@ struct assh_event_userauth_client_methods_s
   enum assh_userauth_methods_e select;       //< output
   union {
     struct assh_buffer_s       password;     //< output
-    struct assh_key_s          *pub_keys;    //< output
+    struct assh_key_s          *keys;        //< output
     struct assh_buffer_s       keyboard_sub; //< output
   };
+};
+
+/** This event is reported when the client-side user authentication
+    service is running and a @b public key has been provided for
+    public key authentication.
+
+    The private key must be used to generate a signature over the
+    provided authentication data. The @tt sign buffer is allocated by
+    the library. Its size must be reduced if the signature doesn't use
+    the entire provided storage.
+
+    @see ASSH_EVENT_USERAUTH_CLIENT_SIGN
+ */
+struct assh_event_userauth_client_sign_s
+{
+  struct assh_key_s * ASSH_EV_CONST pub_key;    //< input
+  const struct assh_algo_sign_s * ASSH_EV_CONST algo; //< input
+  ASSH_EV_CONST struct assh_cbuffer_s auth_data; //< input
+  struct assh_buffer_s sign;                    //< output
 };
 
 /** This event is reported when the client-side user authentication
@@ -159,6 +181,7 @@ union assh_event_userauth_client_u
   struct assh_event_userauth_client_banner_s  banner;
   struct assh_event_userauth_client_pwchange_s pwchange;
   struct assh_event_userauth_client_keyboard_s keyboard;
+  struct assh_event_userauth_client_sign_s    sign;
 };
 
 /** @This implements the standard client side @tt ssh-userauth service. */

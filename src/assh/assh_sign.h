@@ -64,7 +64,7 @@ struct assh_algo_sign_s
 };
 
 /** @internal @This computes the signature of the passed data using
-    the provided key then writes it to the @tt sign buffer. The @tt
+    the provided private key then writes it to the @tt sign buffer. The @tt
     sign_len parameter indicates the size of the buffer and is updated
     with the actual size of the signature blob.
 
@@ -74,7 +74,7 @@ struct assh_algo_sign_s
     If the @tt sign parameter is @tt NULL, the function updates the
     @tt sign_len parmeter with a size value which is greater or equal
     to what is needed to hold the signature blob. In this case, the
-    @tt data_* parameters are not used. */
+    @tt data_* parameters are not used and the key need not be private. */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_sign_generate(struct assh_context_s *c, const struct assh_algo_sign_s *algo,
                    const struct assh_key_s *key, size_t data_count,
