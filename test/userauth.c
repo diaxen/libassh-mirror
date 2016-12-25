@@ -105,7 +105,9 @@ static unsigned long auth_server_err_count = 0;
 static unsigned long auth_server_err_ev_count = 0;
 static unsigned long auth_client_none_count = 0;
 static unsigned long auth_client_pubkey_count = 0;
-static unsigned long auth_client_pubkey_sign_count = 0;
+static unsigned long auth_client_hostbased_count = 0;
+static unsigned long auth_client_int_sign_count = 0;
+static unsigned long auth_client_ext_sign_count = 0;
 static unsigned long auth_client_password_count = 0;
 static unsigned long auth_client_password_change_count = 0;
 static unsigned long auth_client_password_skip_change_count = 0;
@@ -115,6 +117,39 @@ static unsigned long auth_client_partial_success_count = 0;
 static unsigned long auth_client_success_count = 0;
 static unsigned long auth_client_err_count = 0;
 static unsigned long auth_client_err_ev_count = 0;
+
+/* use some of the available keys */
+static assh_bool_t use_keys(struct assh_key_s **k)
+{
+  uint_fast8_t i;
+  assh_bool_t done = 0;
+
+  for (i = 0; i < TEST_KEYS_COUNT; i++)
+    switch (rand() & 3)
+      {
+      case 0:
+      case 1:
+	break;
+      case 2:
+	if (keys[i].key_c->ref_count > 1)
+	  break;
+	done = 1;
+	assh_key_refinc(keys[i].key_c);
+	assh_key_insert(k, keys[i].key_c);
+	auth_client_int_sign_count++;
+	break;
+      case 3:
+	if (keys[i].key_cpub->ref_count > 1)
+	  break;
+	done = 1;
+	assh_key_refinc(keys[i].key_cpub);
+	assh_key_insert(k, keys[i].key_cpub);
+	auth_client_ext_sign_count++;
+	break;
+      }
+
+  return done;
+}
 
 static int test()
 {
@@ -302,6 +337,10 @@ static int test()
 	    }
 	  break;
 
+	case ASSH_EVENT_USERAUTH_SERVER_HOSTBASED:
+	  event.userauth_server.hostbased.found = rand() & 1;
+	  break;
+
 	case ASSH_EVENT_USERAUTH_SERVER_SUCCESS:
 	  ASSH_DEBUG("=> success %u %u\n",
 		     event.userauth_server.success.method,
@@ -380,53 +419,68 @@ static int test()
 	  /* randomly try available authentication methods */
 	  while (!event.userauth_client.methods.select)
 	    {
-	      if ((event.userauth_client.methods.methods &
-		   ASSH_USERAUTH_METHOD_NONE) && !(rand() % 64))
+	      switch (rand() % 8)
 		{
+		case 0:
+		  if (!(event.userauth_client.methods.methods &
+			ASSH_USERAUTH_METHOD_NONE))
+		    break;
 		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_NONE;
 		  auth_client_none_count++;
-		}
-	      else if ((event.userauth_client.methods.methods &
-		   ASSH_USERAUTH_METHOD_PASSWORD) && (rand() & 1))
-		{
+		  break;
+
+		case 1:
+		case 2:
+		  if (!(event.userauth_client.methods.methods &
+			ASSH_USERAUTH_METHOD_PASSWORD))
+		    break;
 		  /* randomly pick a password */
 		  i = rand() % TEST_PASS_COUNT;
 		  password = pass[i];
 		  assh_buffer_strcpy(&event.userauth_client.methods.password, password);
 		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_PASSWORD;
 		  auth_client_password_count++;
-		}
-	      else if ((event.userauth_client.methods.methods &
-			ASSH_USERAUTH_METHOD_KEYBOARD) && rand() & 1)
-		{
+		  break;
+
+		case 3:
+		  if (!(event.userauth_client.methods.methods &
+			ASSH_USERAUTH_METHOD_KEYBOARD))
+		    break;
 		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_KEYBOARD;
 		  assh_buffer_strcpy(&event.userauth_client.methods.keyboard_sub,
 				     "method" + rand() % 6);
 		  auth_client_keyboard_count++;
-		}
-	      else if (event.userauth_client.methods.methods
-		  & ASSH_USERAUTH_METHOD_PUBKEY)
-		{
-		  /* use some of the available keys */
-		  for (i = 0; i < TEST_KEYS_COUNT; i++)
-		    switch (rand() & 3)
-		      {
-		      case 0:
-		      case 1:
-			break;
-		      case 2:
-			assh_key_refinc(keys[i].key_c);
-			assh_key_insert(&event.userauth_client.methods.keys, keys[i].key_c);
-			event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_PUBKEY;
-			auth_client_pubkey_count++;
-			break;
-		      case 3:
-			assh_key_refinc(keys[i].key_cpub);
-			assh_key_insert(&event.userauth_client.methods.keys, keys[i].key_cpub);
-			event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_PUBKEY;
-			auth_client_pubkey_sign_count++;
-			break;
-		      }
+		  break;
+
+		case 4:
+		case 5:
+		case 6:
+		  if (!(event.userauth_client.methods.methods
+			& ASSH_USERAUTH_METHOD_PUBKEY))
+		    break;
+		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_PUBKEY;
+
+		  if (!use_keys(&event.userauth_client.methods.keys))
+		    event.userauth_client.methods.select = 0;
+		  else
+		    auth_client_pubkey_count++;
+		  break;
+
+		case 7:
+		  if (!(event.userauth_client.methods.methods
+			& ASSH_USERAUTH_METHOD_HOSTBASED))
+		    break;
+		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_HOSTBASED;
+		  assh_buffer_strcpy(&event.userauth_client.methods.host_name,
+				     "localhost" + rand() % 9);
+		  assh_buffer_strcpy(&event.userauth_client.methods.host_username,
+				     "test" + rand() % 4);
+
+		  if (!use_keys(&event.userauth_client.methods.keys))
+		    event.userauth_client.methods.select = 0;
+		  else
+		    auth_client_hostbased_count++;
+		  break;
 		}
 	    }
           break;
@@ -694,7 +748,9 @@ int main(int argc, char **argv)
 	  "  %8lu server fuzz event error count\n"
 	  "  %8lu client none count\n"
 	  "  %8lu client pubkey count\n"
-	  "  %8lu client pubkey sign count\n"
+	  "  %8lu client hostbased count\n"
+	  "  %8lu client internal signature count\n"
+	  "  %8lu client external signature count\n"
 	  "  %8lu client password count\n"
 	  "  %8lu client password change count\n"
 	  "  %8lu client password skip change count\n"
@@ -727,7 +783,9 @@ int main(int argc, char **argv)
 	  auth_server_err_ev_count,
 	  auth_client_none_count,
 	  auth_client_pubkey_count,
-	  auth_client_pubkey_sign_count,
+	  auth_client_hostbased_count,
+	  auth_client_int_sign_count,
+	  auth_client_ext_sign_count,
 	  auth_client_password_count,
 	  auth_client_password_change_count,
 	  auth_client_password_skip_change_count,

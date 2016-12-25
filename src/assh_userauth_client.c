@@ -60,6 +60,10 @@ enum assh_userauth_state_e
   ASSH_USERAUTH_ST_KEYBOARD_INFO,
   ASSH_USERAUTH_ST_KEYBOARD_SENT_INFO,
 #endif
+#ifdef CONFIG_ASSH_CLIENT_AUTH_HOSTBASED
+  ASSH_USERAUTH_ST_SENT_HOSTBASED_RQ,
+  ASSH_USERAUTH_ST_SEND_HOSTBASED,
+#endif
   ASSH_USERAUTH_ST_GET_METHODS,
   ASSH_USERAUTH_ST_SUCCESS,
 };
@@ -120,6 +124,14 @@ struct assh_userauth_context_s
   struct assh_userauth_keys_s pubkey;
 #endif
 
+#ifdef CONFIG_ASSH_CLIENT_AUTH_HOSTBASED
+  struct assh_userauth_keys_s hostkey;
+  char host_username[CONFIG_ASSH_AUTH_USERNAME_LEN];
+  char hostname[CONFIG_ASSH_AUTH_HOSTNAME_LEN];
+  size_t host_username_len:16;
+  size_t hostname_len:16;
+#endif
+
 #ifdef CONFIG_ASSH_CLIENT_AUTH_KEYBOARD
   struct assh_buffer_s *keyboard_array;
 #endif
@@ -158,6 +170,11 @@ static ASSH_SERVICE_INIT_FCN(assh_userauth_client_init)
   pv->pubkey.auth_data = NULL;
 #endif
 
+#ifdef CONFIG_ASSH_CLIENT_AUTH_HOSTBASED
+  pv->hostkey.keys = NULL;
+  pv->hostkey.auth_data = NULL;
+#endif
+
 #ifdef CONFIG_ASSH_CLIENT_AUTH_KEYBOARD
   pv->keyboard_array = NULL;
 #endif
@@ -177,6 +194,11 @@ static ASSH_SERVICE_CLEANUP_FCN(assh_userauth_client_cleanup)
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY
   assh_key_flush(c, &pv->pubkey.keys);
   assh_free(c, pv->pubkey.auth_data);
+#endif
+
+#ifdef CONFIG_ASSH_CLIENT_AUTH_HOSTBASED
+  assh_key_flush(c, &pv->hostkey.keys);
+  assh_free(c, pv->hostkey.auth_data);
 #endif
 
 #ifdef CONFIG_ASSH_CLIENT_AUTH_KEYBOARD
@@ -236,6 +258,8 @@ static ASSH_USERAUTH_CLIENT_REQ(assh_userauth_client_none_req)
   return ASSH_OK;
 }
 
+#if defined(CONFIG_ASSH_CLIENT_AUTH_HOSTBASED) || \
+  defined(CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY)
 
 /* drop used key before next authentications attempts */
 static void
@@ -349,6 +373,8 @@ assh_userauth_client_get_sign(struct assh_session_s *s,
 
   return ASSH_OK;
 }
+
+#endif
 
 /******************************************************************* password */
 
@@ -661,6 +687,195 @@ static ASSH_USERAUTH_CLIENT_PROCESS(assh_userauth_client_keyboard_process)
       return ASSH_OK;
     }
 }
+#endif
+
+/******************************************************************* hostbased */
+
+#ifdef CONFIG_ASSH_CLIENT_AUTH_HOSTBASED
+
+/* allocate a packet and append common fileds for a publickey request */
+static assh_error_t
+assh_userauth_client_pck_hostbased(struct assh_session_s *s,
+                                   struct assh_packet_s **pout,
+                                   size_t *sign_len)
+{
+  struct assh_userauth_context_s *pv = s->srv_pv;
+  struct assh_key_s *pub_key = pv->hostkey.keys;
+  assh_error_t err;
+
+  const struct assh_algo_sign_s *algo = (const void *)pv->hostkey.algo;
+
+  size_t algo_name_len = strlen(assh_algo_name(&algo->algo));
+
+  size_t blob_len;
+  ASSH_ERR_RET(assh_key_output(s->ctx, pub_key,
+           NULL, &blob_len, ASSH_KEY_FMT_PUB_RFC4253) | ASSH_ERRSV_DISCONNECT);
+
+  ASSH_ERR_RET(assh_sign_generate(s->ctx, algo, pv->hostkey.keys, 0,
+    	     NULL, NULL, sign_len) | ASSH_ERRSV_DISCONNECT);
+
+  ASSH_ERR_RET(assh_userauth_client_pck_head(s, pout, "hostbased",
+                 4 + algo_name_len + 4 + blob_len +
+                 4 + pv->hostname_len + 4 + pv->host_username_len +
+                 4 + *sign_len) | ASSH_ERRSV_DISCONNECT);
+
+  /* add signature algorithm name */
+  uint8_t *str;
+  ASSH_ASSERT(assh_packet_add_string(*pout, algo_name_len, &str));
+  memcpy(str, assh_algo_name(pv->hostkey.algo), algo_name_len);
+
+  /* add public key blob */
+  uint8_t *blob;
+  ASSH_ASSERT(assh_packet_add_string(*pout, blob_len, &blob));
+  ASSH_ERR_GTO(assh_key_output(s->ctx, pub_key, blob, &blob_len,
+                 ASSH_KEY_FMT_PUB_RFC4253) | ASSH_ERRSV_DISCONNECT, err_packet);
+  assh_packet_shrink_string(*pout, blob, blob_len);
+
+  /* add hostname */
+  ASSH_ASSERT(assh_packet_add_string(*pout, pv->hostname_len, &str));
+  memcpy(str, pv->hostname, pv->hostname_len);
+
+  /* add host username */
+  ASSH_ASSERT(assh_packet_add_string(*pout, pv->host_username_len, &str));
+  memcpy(str, pv->host_username, pv->host_username_len);
+
+  return ASSH_OK;
+
+ err_packet:
+  assh_packet_release(*pout);
+  return err;
+}
+
+static ASSH_EVENT_DONE_FCN(assh_userauth_client_hostbased_sign_done)
+{
+  struct assh_userauth_context_s *pv = s->srv_pv;
+  assh_error_t err;
+
+  struct assh_packet_s *pout = pv->pck;
+
+  assh_packet_shrink_string(pout, e->userauth_client.sign.sign.data,
+                            e->userauth_client.sign.sign.len);
+
+  assh_transport_push(s, pout);
+  pv->pck = NULL;
+
+  assh_free(s->ctx, pv->hostkey.auth_data);
+  pv->hostkey.auth_data = NULL;
+
+  pv->state = ASSH_USERAUTH_ST_SENT_HOSTBASED_RQ;
+
+  return ASSH_OK;
+}
+
+/* send a public key authentication probing request */
+static assh_error_t
+assh_userauth_client_send_hostbased(struct assh_session_s *s,
+                                    struct assh_event_s *e)
+{
+  struct assh_userauth_context_s *pv = s->srv_pv;
+  assh_error_t err;
+
+  struct assh_packet_s *pout;
+  size_t sign_len;
+
+  ASSH_ERR_RET(assh_userauth_client_pck_hostbased(s, &pout, &sign_len)
+               | ASSH_ERRSV_DISCONNECT);
+
+  struct assh_userauth_keys_s *k = &pv->hostkey;
+
+  if (k->keys->private)
+    {
+      ASSH_ERR_GTO(assh_userauth_client_send_sign(s, k, pout, sign_len)
+                   | ASSH_ERRSV_DISCONNECT, err_packet);
+    }
+  else
+    {
+      e->f_done = &assh_userauth_client_hostbased_sign_done;
+      e->id = ASSH_EVENT_USERAUTH_CLIENT_SIGN;
+
+      ASSH_ERR_GTO(assh_userauth_client_get_sign(s, e, k, pout, sign_len)
+                   | ASSH_ERRSV_DISCONNECT, err_packet);
+    }
+
+  pv->state = ASSH_USERAUTH_ST_SENT_HOSTBASED_RQ;
+
+  return ASSH_OK;
+
+ err_packet:
+  assh_packet_release(pout);
+  return err;
+}
+
+static ASSH_USERAUTH_CLIENT_RETRY(assh_userauth_client_hostbased_retry)
+{
+  struct assh_userauth_context_s *pv = s->srv_pv;
+  struct assh_userauth_keys_s *k = &pv->hostkey;
+  assh_error_t err;
+
+  assh_userauth_client_key_next(s, k);
+
+  if (k->keys == NULL)
+    return ASSH_NO_DATA;
+
+  /* some user keys are already available */
+  ASSH_ERR_RET(assh_userauth_client_send_hostbased(s, e)
+               | ASSH_ERRSV_DISCONNECT);
+  return ASSH_OK;
+}
+
+/* send a public key authentication probing request */
+static ASSH_USERAUTH_CLIENT_REQ(assh_userauth_client_hostbased_req)
+{
+  struct assh_userauth_context_s *pv = s->srv_pv;
+  struct assh_userauth_keys_s *k = &pv->hostkey;
+  assh_error_t err;
+
+  assh_userauth_client_key_get(s, k, e->userauth_client.methods.keys);
+
+  ASSH_CHK_RET(k->keys == NULL,
+               ASSH_ERR_NO_AUTH | ASSH_ERRSV_DISCONNECT);
+
+  size_t len = e->userauth_client.methods.host_name.len;
+  pv->hostname_len = len;
+  if (len)
+    {
+      ASSH_CHK_RET(len > sizeof(pv->hostname),
+                   ASSH_ERR_OUTPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
+      memcpy(pv->hostname, e->userauth_client.methods.host_name.str, len);
+    }
+
+  len = e->userauth_client.methods.host_username.len;
+  pv->host_username_len = len;
+  if (len)
+    {
+      ASSH_CHK_RET(len > sizeof(pv->host_username),
+                   ASSH_ERR_OUTPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
+      memcpy(pv->host_username, e->userauth_client.methods.host_username.str, len);
+    }
+
+  pv->state = ASSH_USERAUTH_ST_SEND_HOSTBASED;
+
+  return ASSH_OK;
+}
+
+static ASSH_USERAUTH_CLIENT_PROCESS(assh_userauth_client_hostbased_process)
+{
+  struct assh_userauth_context_s *pv = s->srv_pv;
+  assh_error_t err;
+
+  switch (pv->state)
+    {
+    case ASSH_USERAUTH_ST_SEND_HOSTBASED:
+      ASSH_CHK_RET(p != NULL, ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+      ASSH_ERR_RET(assh_userauth_client_send_hostbased(s, e) | ASSH_ERRSV_DISCONNECT);
+      return ASSH_OK;
+
+    default:
+      ASSH_ERR_RET(assh_userauth_client_default_process(s, p, e));
+      return ASSH_OK;
+    }
+}
+
 #endif
 
 /******************************************************************* public key */
@@ -1149,6 +1364,13 @@ assh_userauth_client_methods[] = {
       .f_req = &assh_userauth_client_pubkey_req,
       .f_process = &assh_userauth_client_pubkey_process,
       .f_retry = &assh_userauth_client_pubkey_retry },
+#endif
+#ifdef CONFIG_ASSH_CLIENT_AUTH_HOSTBASED
+    { "hostbased",
+      ASSH_USERAUTH_METHOD_HOSTBASED,
+      .f_req = assh_userauth_client_hostbased_req,
+      .f_process = assh_userauth_client_hostbased_process,
+      .f_retry = &assh_userauth_client_hostbased_retry },
 #endif
 #ifdef CONFIG_ASSH_CLIENT_AUTH_KEYBOARD
     { "keyboard-interactive",

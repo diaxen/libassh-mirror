@@ -155,9 +155,9 @@ int main(int argc, char **argv)
 
         case ASSH_EVENT_USERAUTH_CLIENT_METHODS: {
           if ((event.userauth_client.methods.methods & ASSH_USERAUTH_METHOD_PUBKEY)
-              && !auth_keys_done)
+              && !(auth_keys_done & 1))
             {
-              auth_keys_done = 1;
+              auth_keys_done |= 1;
               event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_PUBKEY;
 
               if (assh_load_key_filename(context, &event.userauth_client.methods.keys,
@@ -169,6 +169,20 @@ int main(int argc, char **argv)
                                          &assh_key_rsa, ASSH_ALGO_SIGN, "rsa_user_key",
                                          ASSH_KEY_FMT_PV_PEM, NULL) != ASSH_OK)
                 fprintf(stderr, "unable to load user rsa key\n");
+            }
+          else if ((event.userauth_client.methods.methods & ASSH_USERAUTH_METHOD_HOSTBASED)
+              && !(auth_keys_done & 2))
+            {
+              auth_keys_done |= 2;
+              event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_HOSTBASED;
+
+              if (assh_load_key_filename(context, &event.userauth_client.methods.keys,
+                                         &assh_key_rsa, ASSH_ALGO_SIGN, "ssh_host_rsa_key",
+                                         ASSH_KEY_FMT_PV_PEM, NULL) != ASSH_OK)
+                fprintf(stderr, "unable to load host rsa key\n");
+
+              assh_buffer_strcpy(&event.userauth_client.methods.host_name, "localhost");
+              assh_buffer_strcpy(&event.userauth_client.methods.host_username, "test");
             }
           else if ((event.userauth_client.methods.methods & ASSH_USERAUTH_METHOD_PASSWORD)
               && safety > 25)

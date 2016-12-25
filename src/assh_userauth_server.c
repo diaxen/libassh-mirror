@@ -55,6 +55,9 @@ enum assh_userauth_state_e
   ASSH_USERAUTH_ST_PUBKEY_PKOK,   //< the public key event handler may send PK_OK
   ASSH_USERAUTH_ST_PUBKEY_VERIFY , //< the public key event handler may check the signature
 #endif
+#ifdef CONFIG_ASSH_SERVER_AUTH_HOSTBASED
+  ASSH_USERAUTH_ST_HOSTBASED,
+#endif
 #ifdef CONFIG_ASSH_SERVER_AUTH_KEYBOARD
   ASSH_USERAUTH_ST_KEYBOARD_INFO,
   ASSH_USERAUTH_ST_KEYBOARD_INFO_SENT,
@@ -113,11 +116,16 @@ struct assh_userauth_context_s
 
 #ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
   enum assh_userauth_pubkey_state_e pubkey_state:8;
-  struct assh_key_s *pub_key;
-  const struct assh_algo_sign_s *algo;
   const struct assh_algo_name_s *algo_name;
+#endif
+
+#if defined(CONFIG_ASSH_SERVER_AUTH_HOSTBASED) || \
+  defined(CONFIG_ASSH_SERVER_AUTH_PUBLICKEY)
+  const struct assh_algo_sign_s *algo;
+  struct assh_key_s *pub_key;
   const uint8_t *sign;
 #endif
+
   assh_time_t deadline;
 };
 
@@ -141,8 +149,12 @@ static ASSH_SERVICE_INIT_FCN(assh_userauth_server_init)
 
   pv->pck = NULL;
 
-#ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
+#if defined(CONFIG_ASSH_SERVER_AUTH_HOSTBASED) || \
+  defined(CONFIG_ASSH_SERVER_AUTH_PUBLICKEY)
   pv->pub_key = NULL;
+#endif
+
+#ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
   pv->pubkey_state = ASSH_USERAUTH_PUBKEY_NONE;
 #endif
 
@@ -159,8 +171,12 @@ static void assh_userauth_server_flush_state(struct assh_session_s *s)
 
   pv->method = NULL;
 
-#ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
+#if defined(CONFIG_ASSH_SERVER_AUTH_HOSTBASED) || \
+  defined(CONFIG_ASSH_SERVER_AUTH_PUBLICKEY)
   assh_key_flush(s->ctx, &pv->pub_key);
+#endif
+
+#ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
   pv->pubkey_state = ASSH_USERAUTH_PUBKEY_NONE;
 #endif
 
@@ -312,6 +328,8 @@ static assh_error_t assh_userauth_server_success(struct assh_session_s *s,
   return ASSH_OK;
 }
 
+#if defined(CONFIG_ASSH_SERVER_AUTH_HOSTBASED) || \
+  defined(CONFIG_ASSH_SERVER_AUTH_PUBLICKEY)
 
 static assh_error_t
 assh_userauth_server_get_key(struct assh_session_s *s,
@@ -374,6 +392,8 @@ assh_userauth_server_sign_check(struct assh_session_s *s,
 
   return ASSH_OK;
 }
+
+#endif
 
 /******************************************************************* none */
 
@@ -497,6 +517,81 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_password)
   pv->pck = assh_packet_refinc(p);
 
   return ASSH_OK;
+}
+
+#endif
+
+/******************************************************************* hostbased */
+
+#ifdef CONFIG_ASSH_SERVER_AUTH_HOSTBASED
+
+static ASSH_EVENT_DONE_FCN(assh_userauth_server_hostbased_done)
+{
+  struct assh_userauth_context_s *pv = s->srv_pv;
+  assh_error_t err;
+
+  if (!e->userauth_server.hostbased.found)
+    {
+      ASSH_ERR_RET(assh_userauth_server_failure(s, 1)
+                   | ASSH_ERRSV_DISCONNECT);
+    }
+  else
+    {
+      ASSH_ERR_RET(assh_userauth_server_sign_check(s, pv->pck, pv->sign)
+                   | ASSH_ERRSV_DISCONNECT);
+
+      pv->state = ASSH_USERAUTH_ST_SUCCESS;
+    }
+
+  assh_packet_release(pv->pck);
+  pv->pck = NULL;
+
+  return ASSH_OK;
+}
+
+static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_hostbased)
+{
+  struct assh_userauth_context_s *pv = s->srv_pv;
+  assh_error_t err;
+
+  const uint8_t *algo_name = auth_data;
+  const uint8_t *pub_blob, *hostname, *husername, *sign;
+
+  ASSH_ERR_RET(assh_packet_check_string(p, algo_name, &pub_blob) | ASSH_ERRSV_DISCONNECT);
+  ASSH_ERR_RET(assh_packet_check_string(p, pub_blob, &hostname) | ASSH_ERRSV_DISCONNECT);
+  ASSH_ERR_RET(assh_packet_check_string(p, hostname, &husername) | ASSH_ERRSV_DISCONNECT);
+  ASSH_ERR_RET(assh_packet_check_string(p, husername, &sign) | ASSH_ERRSV_DISCONNECT);
+  ASSH_ERR_RET(assh_packet_check_string(p, sign, NULL) | ASSH_ERRSV_DISCONNECT);
+
+  const struct assh_algo_s *algo;
+  struct assh_key_s *pub_key = NULL;
+
+  ASSH_ERR_RET(assh_userauth_server_get_key(s, algo_name, pub_blob,
+                 &algo, &pub_key, NULL) | ASSH_ERRSV_DISCONNECT);
+
+  if (err == ASSH_NO_DATA)
+    {
+      ASSH_ERR_RET(assh_userauth_server_failure(s, 1) | ASSH_ERRSV_DISCONNECT);
+      return ASSH_OK;
+    }
+
+  pv->algo = (void*)algo;
+  pv->pub_key = pub_key;
+  pv->pck = assh_packet_refinc(p);
+  pv->sign = sign;
+
+  e->id = ASSH_EVENT_USERAUTH_SERVER_HOSTBASED;
+  e->f_done = assh_userauth_server_hostbased_done;
+  e->userauth_server.hostbased.username.str = pv->username;
+  e->userauth_server.hostbased.username.len = strlen(pv->username);
+  e->userauth_server.hostbased.host_key = pub_key;
+  e->userauth_server.hostbased.hostname.str = hostname + 4;
+  e->userauth_server.hostbased.hostname.len = assh_load_u32(hostname);
+  e->userauth_server.hostbased.host_username.str = husername + 4;
+  e->userauth_server.hostbased.host_username.len = assh_load_u32(husername);
+  e->userauth_server.hostbased.found = 0;
+
+  return err;
 }
 
 #endif
@@ -1086,6 +1181,11 @@ assh_userauth_server_methods[] = {
     { ",publickey",
       ASSH_USERAUTH_METHOD_PUBKEY,
       &assh_userauth_server_req_pubkey },
+#endif
+#ifdef CONFIG_ASSH_SERVER_AUTH_HOSTBASED
+    { ",hostbased",
+      ASSH_USERAUTH_METHOD_HOSTBASED,
+      &assh_userauth_server_req_hostbased },
 #endif
 #ifdef CONFIG_ASSH_SERVER_AUTH_KEYBOARD
     { ",keyboard-interactive",

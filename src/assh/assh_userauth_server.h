@@ -113,6 +113,15 @@ struct assh_event_userauth_server_password_s
   enum assh_event_userauth_server_pwstatus_s result; //< output
 };
 
+struct assh_event_userauth_server_hostbased_s
+{
+  ASSH_EV_CONST struct assh_buffer_s username;    //< input
+  struct assh_key_s * ASSH_EV_CONST  host_key;    //< input
+  ASSH_EV_CONST struct assh_buffer_s hostname;    //< input
+  ASSH_EV_CONST struct assh_buffer_s host_username; //< input
+  assh_bool_t                        found;     //< output
+};
+
 /** This event is reported when the server-side user authentication
     service is running and the client has selected the
     keyboard interactive method.
@@ -198,6 +207,7 @@ union assh_event_userauth_server_u
   struct assh_event_userauth_server_methods_s methods;
   struct assh_event_userauth_server_userkey_s  userkey;
   struct assh_event_userauth_server_password_s password;
+  struct assh_event_userauth_server_hostbased_s hostbased;
   struct assh_event_userauth_server_kbinfo_s kbinfo;
   struct assh_event_userauth_server_kbresponse_s kbresponse;
   struct assh_event_userauth_server_success_s success;

@@ -95,6 +95,8 @@ struct assh_event_userauth_client_methods_s
     struct assh_key_s          *keys;        //< output
     struct assh_buffer_s       keyboard_sub; //< output
   };
+  struct assh_buffer_s       host_name;   //< output
+  struct assh_buffer_s       host_username;   //< output
 };
 
 /** This event is reported when the client-side user authentication

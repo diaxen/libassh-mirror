@@ -215,6 +215,12 @@ int main()
 	      err = assh_event_done(session, &event, ASSH_OK);
 	      break;
 
+	    case ASSH_EVENT_USERAUTH_SERVER_HOSTBASED: {
+	      event.userauth_server.hostbased.found = 0;
+	      err = assh_event_done(session, &event, ASSH_OK);
+	      break;
+	    }
+
 	    case ASSH_EVENT_CHANNEL_OPEN: {
 	      struct assh_event_channel_open_s *co_e = &event.connection.channel_open;
 
