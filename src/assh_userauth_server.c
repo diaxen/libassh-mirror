@@ -312,6 +312,69 @@ static assh_error_t assh_userauth_server_success(struct assh_session_s *s,
   return ASSH_OK;
 }
 
+
+static assh_error_t
+assh_userauth_server_get_key(struct assh_session_s *s,
+                             const uint8_t *algo_name,
+                             const uint8_t *pub_blob,
+                             const struct assh_algo_s **algo,
+                             struct assh_key_s **pub_key,
+                             const struct assh_algo_name_s **namep)
+{
+  assh_error_t err;
+
+  /* check if we support the requested signature algorithm */
+  if (assh_algo_by_name(s->ctx, ASSH_ALGO_SIGN, (char*)algo_name + 4,
+			assh_load_u32(algo_name), algo, namep) != ASSH_OK)
+    return ASSH_NO_DATA;
+
+  /* load the public key from the client provided blob */
+  const uint8_t *key_blob = pub_blob + 4;
+  ASSH_ERR_RET(assh_key_load(s->ctx, pub_key, (*algo)->key, ASSH_ALGO_SIGN,
+                 ASSH_KEY_FMT_PUB_RFC4253, &key_blob,
+                 assh_load_u32(pub_blob)) | ASSH_ERRSV_DISCONNECT);
+
+  /* check if the key can be used by the algorithm */
+  if (!assh_algo_suitable_key(s->ctx, *algo, *pub_key))
+    {
+      assh_key_drop(s->ctx, pub_key);
+      ASSH_ERR_RET(assh_userauth_server_failure(s, 1) | ASSH_ERRSV_DISCONNECT);
+      return ASSH_NO_DATA;
+    }
+
+  return ASSH_OK;
+}
+
+static assh_error_t
+assh_userauth_server_sign_check(struct assh_session_s *s,
+                                struct assh_packet_s *p,
+                                const uint8_t *sign_str)
+{
+  struct assh_userauth_context_s *pv = s->srv_pv;
+  assh_error_t err;
+
+  uint8_t sid_len[4];   /* fake string header for session id */
+  assh_store_u32(sid_len, s->session_id_len);
+
+  /* buffers that have been signed by the client */
+  struct assh_cbuffer_s data[3] = {
+    { .data = sid_len,         .len = 4 },
+    { .data = s->session_id,   .len = s->session_id_len },
+    { .data = &p->head.msg,    .len = sign_str - &p->head.msg },
+  };
+
+  assh_safety_t sign_safety;
+
+  /* check the signature */
+  ASSH_ERR_RET(assh_sign_check(s->ctx, pv->algo, pv->pub_key, 3,
+                 data, sign_str + 4, assh_load_u32(sign_str), &sign_safety)
+               | ASSH_ERRSV_DISCONNECT);
+
+  pv->safety = ASSH_MIN(sign_safety, pv->safety);
+
+  return ASSH_OK;
+}
+
 /******************************************************************* none */
 
 #ifdef CONFIG_ASSH_SERVER_AUTH_NONE
@@ -645,39 +708,6 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_kbinfo)
 
 #ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
 
-static assh_error_t assh_userauth_server_pubkey_check(struct assh_session_s *s,
-                                                      struct assh_packet_s *p,
-                                                      const uint8_t *sign)
-{
-  struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
-
-  const uint8_t *end;
-  ASSH_ERR_RET(assh_packet_check_string(p, sign, &end) | ASSH_ERRSV_DISCONNECT);
-
-  uint8_t sid_len[4];   /* fake string header for session id */
-  assh_store_u32(sid_len, s->session_id_len);
-
-  /* buffers that have been signed by the client */
-  struct assh_cbuffer_s data[3] = {
-    { .data = sid_len,         .len = 4 },
-    { .data = s->session_id,   .len = s->session_id_len },
-    { .data = &p->head.msg,    .len = sign - &p->head.msg },
-  };
-
-  assh_safety_t sign_safety;
-
-  /* check the signature */
-  ASSH_ERR_RET(assh_sign_check(s->ctx, pv->algo, pv->pub_key, 3,
-        data, sign + 4, end - sign - 4, &sign_safety)
-               | ASSH_ERRSV_DISCONNECT);
-
-  pv->safety = ASSH_MIN(sign_safety, pv->safety);
-  pv->state = ASSH_USERAUTH_ST_SUCCESS;
-
-  return ASSH_OK;
-}
-
 static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
@@ -728,14 +758,19 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
     }
 
     case ASSH_USERAUTH_ST_PUBKEY_VERIFY: {
-      pv->state = ASSH_USERAUTH_ST_WAIT_RQ;
 
       if (!e->userauth_server.userkey.found)
-        ASSH_ERR_RET(assh_userauth_server_failure(s, 1)
-		     | ASSH_ERRSV_DISCONNECT);
+        {
+          ASSH_ERR_RET(assh_userauth_server_failure(s, 1)
+                       | ASSH_ERRSV_DISCONNECT);
+        }
       else
-        ASSH_ERR_RET(assh_userauth_server_pubkey_check(s, pv->pck, pv->sign)
-		     | ASSH_ERRSV_DISCONNECT);
+        {
+          ASSH_ERR_RET(assh_userauth_server_sign_check(s, pv->pck, pv->sign)
+                       | ASSH_ERRSV_DISCONNECT);
+
+          pv->state = ASSH_USERAUTH_ST_SUCCESS;
+        }
 
       assh_packet_release(pv->pck);
       pv->pck = NULL;
@@ -764,27 +799,13 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_pubkey)
   ASSH_ERR_RET(assh_packet_check_string(p, pub_blob, &sign) | ASSH_ERRSV_DISCONNECT);
 
   const struct assh_algo_s *algo;
-
-  /* check if we support the requested signature algorithm */
-  if (assh_algo_by_name(s->ctx, ASSH_ALGO_SIGN, (char*)algo_name + 4,
-			pub_blob - algo_name - 4, &algo, &pv->algo_name) != ASSH_OK)
-    {
-      ASSH_ERR_RET(assh_userauth_server_failure(s, 1) | ASSH_ERRSV_DISCONNECT);
-      return ASSH_OK;
-    }
-
   struct assh_key_s *pub_key = NULL;
 
-  /* load the public key from the client provided blob */
-  const uint8_t *key_blob = pub_blob + 4;
-  ASSH_ERR_RET(assh_key_load(s->ctx, &pub_key, algo->key, ASSH_ALGO_SIGN,
-                 ASSH_KEY_FMT_PUB_RFC4253, &key_blob,
-                 sign - pub_blob - 4) | ASSH_ERRSV_DISCONNECT);
+  ASSH_ERR_RET(assh_userauth_server_get_key(s, algo_name, pub_blob,
+                 &algo, &pub_key, &pv->algo_name) | ASSH_ERRSV_DISCONNECT);
 
-  /* check if the key can be used by the algorithm */
-  if (!assh_algo_suitable_key(s->ctx, algo, pub_key))
+  if (err == ASSH_NO_DATA)
     {
-      assh_key_drop(s->ctx, &pub_key);
       ASSH_ERR_RET(assh_userauth_server_failure(s, 1) | ASSH_ERRSV_DISCONNECT);
       return ASSH_OK;
     }
@@ -808,11 +829,15 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_pubkey)
   /* the packet contains a signature to check */
   if (*second)
     {
+      ASSH_ERR_RET(assh_packet_check_string(p, sign, NULL)
+                   | ASSH_ERRSV_DISCONNECT);
+
       if (pv->pubkey_state == ASSH_USERAUTH_PUBKEY_FOUND)
         {
-          ASSH_ERR_RET(assh_userauth_server_pubkey_check(s, p, sign)
+          ASSH_ERR_RET(assh_userauth_server_sign_check(s, p, sign)
 		       | ASSH_ERRSV_DISCONNECT);
-          return ASSH_OK;
+          ASSH_TAIL_CALL(assh_userauth_server_success(s, e)
+                         | ASSH_ERRSV_DISCONNECT);
         }
 
       assert(pv->pck == NULL);
