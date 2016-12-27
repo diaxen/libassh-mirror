@@ -144,7 +144,7 @@ struct algo_s algos[] = {
   { NULL },
 };
 
-#define TEST_SIZE 128
+#define TEST_STEP 4
 
 struct assh_context_s context;
 
@@ -221,10 +221,12 @@ assh_error_t test_const()
   return ASSH_OK;
 }
 
-assh_error_t test_loop()
+assh_error_t test_sign(unsigned int max_size)
 {
   assh_error_t err;
   int i;
+
+  max_size -= max_size % TEST_STEP;
 
   for (i = 0; algos[i].algo; i++)
     {
@@ -248,7 +250,7 @@ assh_error_t test_loop()
       key = key2;
 
       int size;
-      for (size = TEST_SIZE; size != 0; )
+      for (size = max_size; size != 0; )
 	{
 	  if (algos[i].gen_key)
 	    {
@@ -267,7 +269,7 @@ assh_error_t test_loop()
 	      TEST_ASSERT(!assh_key_cmp(&context, key, key2, 1));
             }
 
-	  size--;
+	  size -= TEST_STEP;
 	  uint8_t data[size];
 	  ASSH_ERR_RET(context.prng->f_get(&context, data, size,
                                            ASSH_PRNG_QUALITY_WEAK));
@@ -350,6 +352,14 @@ assh_error_t test_loop()
       assh_key_drop(&context, &key2);
     }
 
+  return ASSH_OK;
+}
+
+assh_error_t test_load(unsigned int max_size)
+{
+  assh_error_t err;
+  int i;
+
   for (i = 0; algos[i].algo; i++)
     {
       const struct assh_algo_sign_s *a = algos[i].algo;
@@ -361,7 +371,7 @@ assh_error_t test_loop()
 
       /* test key loading and validation */
       int j;
-      for (j = 0; j < TEST_SIZE; j++)
+      for (j = 0; j < max_size; j++)
 	{
           memcpy(key_blob, algos[i].key, sizeof(key_blob));
 	  int bad = j > 0;
@@ -410,6 +420,7 @@ assh_error_t test_loop()
 
 int main(int argc, char **argv)
 {
+  unsigned int s = argc > 1 ? atoi(argv[1]) : time(0);
   assh_error_t err;
   int i;
 
@@ -424,15 +435,17 @@ int main(int argc, char **argv)
   for (i = 0; algos[i].algo; i++)
     ASSH_ERR_RET(assh_algo_register_va(&context, 0, 0, 0, algos[i].algo, NULL));
 
-  int t = time(0);
-  srand(t);
-  fprintf(stderr, "\nSeed: %u\n", t);
+  srand(s);
+  fprintf(stderr, "\nSeed: %u\n", s);
 
   if (test_const())
     return 1;
 
-  if (test_loop())
-    return 1;
+  if (test_sign(128))
+    return 2;
+
+  if (test_load(128))
+    return 3;
 
   assh_context_cleanup(&context);
 
