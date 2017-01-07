@@ -105,7 +105,7 @@ assh_error_t assh_event_get(struct assh_session_s *s,
 
 assh_error_t
 assh_event_done(struct assh_session_s *s,
-                struct assh_event_s *e,
+                const struct assh_event_s *e,
                 assh_error_t inerr)
 {
   assh_error_t err;

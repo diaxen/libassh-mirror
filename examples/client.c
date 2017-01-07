@@ -132,9 +132,12 @@ int main(int argc, char **argv)
       switch (event.id)
         {
         case ASSH_EVENT_KEX_HOSTKEY_LOOKUP: {
+          struct assh_event_kex_hostkey_lookup_s *ev =
+            &event.kex.hostkey_lookup;
+
           /* XXX the key validity may be checked before adding
              the key to the list of known hosts. */
-          if (assh_key_validate(context, event.kex.hostkey_lookup.key))
+          if (assh_key_validate(context, ev->key))
             break;
 
           event.kex.hostkey_lookup.accept = 1;
@@ -142,66 +145,84 @@ int main(int argc, char **argv)
         }
 
         case ASSH_EVENT_KEX_DONE: {
-          safety = event.kex.done.safety;
+          struct assh_event_kex_done_s *ev = &event.kex.done;
+
+          safety = ev->safety;
+
           fprintf(stderr, "kex safety factor: %u\n", safety);
           break;
         }
 
         case ASSH_EVENT_USERAUTH_CLIENT_USER: {
-          event.userauth_client.user.username.str = "test";
-          event.userauth_client.user.username.len = 4;
+          struct assh_event_userauth_client_user_s *ev =
+            &event.userauth_client.user;
+
+          assh_buffer_strcpy(&ev->username, "test");
+
           break;
         }
 
         case ASSH_EVENT_USERAUTH_CLIENT_METHODS: {
-          if ((event.userauth_client.methods.methods & ASSH_USERAUTH_METHOD_PUBKEY)
+          struct assh_event_userauth_client_methods_s *ev =
+            &event.userauth_client.methods;
+
+          if ((ev->methods & ASSH_USERAUTH_METHOD_PUBKEY)
               && !(auth_keys_done & 1))
             {
               auth_keys_done |= 1;
-              event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_PUBKEY;
+              ev->select = ASSH_USERAUTH_METHOD_PUBKEY;
 
-              if (assh_load_key_filename(context, &event.userauth_client.methods.keys,
+              if (assh_load_key_filename(context, &ev->keys,
                                          &assh_key_dsa, ASSH_ALGO_SIGN, "dsa_user_key",
                                          ASSH_KEY_FMT_PV_PEM, NULL) != ASSH_OK)
                 fprintf(stderr, "unable to load user dsa key\n");
 
-              if (assh_load_key_filename(context, &event.userauth_client.methods.keys,
+              if (assh_load_key_filename(context, &ev->keys,
                                          &assh_key_rsa, ASSH_ALGO_SIGN, "rsa_user_key",
                                          ASSH_KEY_FMT_PV_PEM, NULL) != ASSH_OK)
                 fprintf(stderr, "unable to load user rsa key\n");
             }
-          else if ((event.userauth_client.methods.methods & ASSH_USERAUTH_METHOD_HOSTBASED)
+
+          else if ((ev->methods & ASSH_USERAUTH_METHOD_HOSTBASED)
               && !(auth_keys_done & 2))
             {
               auth_keys_done |= 2;
-              event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_HOSTBASED;
+              ev->select = ASSH_USERAUTH_METHOD_HOSTBASED;
 
-              if (assh_load_key_filename(context, &event.userauth_client.methods.keys,
+              if (assh_load_key_filename(context, &ev->keys,
                                          &assh_key_rsa, ASSH_ALGO_SIGN, "ssh_host_rsa_key",
                                          ASSH_KEY_FMT_PV_PEM, NULL) != ASSH_OK)
                 fprintf(stderr, "unable to load host rsa key\n");
 
-              assh_buffer_strcpy(&event.userauth_client.methods.host_name, "localhost");
-              assh_buffer_strcpy(&event.userauth_client.methods.host_username, "test");
+              assh_buffer_strcpy(&ev->host_name, "localhost");
+              assh_buffer_strcpy(&ev->host_username, "test");
             }
-          else if ((event.userauth_client.methods.methods & ASSH_USERAUTH_METHOD_PASSWORD)
+
+          else if ((ev->methods & ASSH_USERAUTH_METHOD_PASSWORD)
               && safety > 25)
             {
-              event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_PASSWORD;
+              ev->select = ASSH_USERAUTH_METHOD_PASSWORD;
               fprintf(stderr, "password input\n");
-              event.userauth_client.methods.password.str = "test";
-              event.userauth_client.methods.password.len = 4;
+              assh_buffer_strcpy(&ev->password, "test");
             }
           break;
         }
 
         case ASSH_EVENT_USERAUTH_CLIENT_BANNER: {
-          fwrite(event.userauth_client.banner.text.str,
-                 event.userauth_client.banner.text.len, 1, stderr);
+          struct assh_event_userauth_client_banner_s *ev =
+            &event.userauth_client.banner;
+
+          /* XXX terminal control chars should be filtered */
+          fwrite(ev->text.str, ev->text.len, 1, stderr);
           break;
         }
 
         case ASSH_EVENT_USERAUTH_CLIENT_SUCCESS:
+          fprintf(stderr, "userauth success\n");
+          break;
+
+        case ASSH_EVENT_CONNECTION_START:
+          /* may send channel related requests from this point */
           break;
 
         default:

@@ -123,7 +123,7 @@ ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_kex_client_get_key(struct assh_session_s *s, struct assh_key_s **key,
                         const uint8_t *ks_str, struct assh_event_s *e,
                         assh_error_t (*done)(struct assh_session_s *s,
-                                             struct assh_event_s *e), void *pv);
+                                             const struct assh_event_s *e), void *pv);
 #endif
 
 #ifdef CONFIG_ASSH_SERVER

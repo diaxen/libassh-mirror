@@ -284,7 +284,10 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_success_done)
   ASSH_CHK_RET(pv->state != ASSH_USERAUTH_ST_SUCCESS_DONE,
                ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
 
-  pv->methods = e->userauth_server.success.methods;
+  const struct assh_event_userauth_server_success_s *ev =
+    &e->userauth_server.success;
+
+  pv->methods = ev->methods;
 
   if (pv->methods)              /* report partial success */
     {
@@ -318,12 +321,17 @@ static assh_error_t assh_userauth_server_success(struct assh_session_s *s,
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
 
-  pv->state = ASSH_USERAUTH_ST_SUCCESS_DONE;
+  struct assh_event_userauth_server_success_s *ev =
+    &e->userauth_server.success;
+
+  ev->method = pv->method->mask;
+  ev->sign_safety = pv->safety;
+  ev->methods = 0;
+
   e->id = ASSH_EVENT_USERAUTH_SERVER_SUCCESS;
   e->f_done = assh_userauth_server_success_done;
-  e->userauth_server.success.method = pv->method->mask;
-  e->userauth_server.success.sign_safety = pv->safety;
-  e->userauth_server.success.methods = 0;
+
+  pv->state = ASSH_USERAUTH_ST_SUCCESS_DONE;
 
   return ASSH_OK;
 }
@@ -410,7 +418,7 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_none)
 
 static assh_error_t
 assh_userauth_server_pwchange(struct assh_session_s *s,
-                              struct assh_event_s *e)
+                              const struct assh_event_s *e)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
@@ -418,8 +426,11 @@ assh_userauth_server_pwchange(struct assh_session_s *s,
   ASSH_CHK_RET(pv->retry && --pv->retry == 0,
                ASSH_ERR_NO_AUTH | ASSH_ERRSV_DISCONNECT);
 
-  size_t prompt_len = e->userauth_server.password.change_prompt.len;
-  size_t lang_len = e->userauth_server.password.change_lang.len;
+  const struct assh_event_userauth_server_password_s *ev =
+    &e->userauth_server.password;
+
+  size_t prompt_len = ev->change_prompt.len;
+  size_t lang_len = ev->change_lang.len;
   struct assh_packet_s *pout;
 
   ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_USERAUTH_PASSWD_CHANGEREQ,
@@ -428,11 +439,11 @@ assh_userauth_server_pwchange(struct assh_session_s *s,
   uint8_t *str;
   ASSH_ASSERT(assh_packet_add_string(pout, prompt_len, &str));
   if (prompt_len)
-    memcpy(str, e->userauth_server.password.change_prompt.str, prompt_len);
+    memcpy(str, ev->change_prompt.str, prompt_len);
 
   ASSH_ASSERT(assh_packet_add_string(pout, lang_len, &str));
   if (lang_len)
-    memcpy(str, e->userauth_server.password.change_lang.str, lang_len);
+    memcpy(str, ev->change_lang.str, lang_len);
 
   assh_transport_push(s, pout);
 
@@ -451,7 +462,10 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_password_done)
   assh_packet_release(pv->pck);
   pv->pck = NULL;
 
-  switch (e->userauth_server.password.result)
+  const struct assh_event_userauth_server_password_s *ev =
+    &e->userauth_server.password;
+
+  switch (ev->result)
     {
     case ASSH_SERVER_PWSTATUS_FAILURE:
       ASSH_ERR_RET(assh_userauth_server_failure(s, 1) | ASSH_ERRSV_DISCONNECT);
@@ -482,17 +496,20 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_password)
   ASSH_ERR_RET(assh_packet_check_string(p, password, &new_password)
                | ASSH_ERRSV_DISCONNECT);
 
-  e->userauth_server.password.username.str = pv->username;
-  e->userauth_server.password.username.len = strlen(pv->username);
-  e->userauth_server.password.password.str = (char*)password + 4;
-  e->userauth_server.password.password.len = assh_load_u32(password);
+  struct assh_event_userauth_server_password_s *ev =
+    &e->userauth_server.password;
+
+  ev->username.str = pv->username;
+  ev->username.len = strlen(pv->username);
+  ev->password.data = password + 4;
+  ev->password.len = assh_load_u32(password);
 
   if (*pwchange)
     {
       ASSH_ERR_RET(assh_packet_check_string(p, new_password, NULL)
                    | ASSH_ERRSV_DISCONNECT);
-      e->userauth_server.password.new_password.str = (char*)new_password + 4;
-      e->userauth_server.password.new_password.len = assh_load_u32(new_password);
+      ev->new_password.data = new_password + 4;
+      ev->new_password.len = assh_load_u32(new_password);
     }
   else if (pv->state == ASSH_USERAUTH_ST_PASSWORD_WAIT_CHANGE)
     {
@@ -501,15 +518,16 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_password)
     }
   else
     {
-      e->userauth_server.password.new_password.len = 0;
+      ev->new_password.len = 0;
     }
 
   /* report a password checking event */
+  ev->result = ASSH_SERVER_PWSTATUS_FAILURE;
+  ev->change_prompt.len = 0;
+  ev->change_lang.len = 0;
+
   e->id = ASSH_EVENT_USERAUTH_SERVER_PASSWORD;
   e->f_done = assh_userauth_server_password_done;
-  e->userauth_server.password.result = ASSH_SERVER_PWSTATUS_FAILURE;
-  e->userauth_server.password.change_prompt.len = 0;
-  e->userauth_server.password.change_lang.len = 0;
 
   pv->state = ASSH_USERAUTH_ST_PASSWORD;
 
@@ -530,7 +548,10 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_hostbased_done)
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
-  if (!e->userauth_server.hostbased.found)
+  const struct assh_event_userauth_server_hostbased_s *ev =
+    &e->userauth_server.hostbased;
+
+  if (!ev->found)
     {
       ASSH_ERR_RET(assh_userauth_server_failure(s, 1)
                    | ASSH_ERRSV_DISCONNECT);
@@ -580,16 +601,20 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_hostbased)
   pv->pck = assh_packet_refinc(p);
   pv->sign = sign;
 
+  struct assh_event_userauth_server_hostbased_s *ev =
+    &e->userauth_server.hostbased;
+
+  ev->username.str = pv->username;
+  ev->username.len = strlen(pv->username);
+  ev->host_key = pub_key;
+  ev->hostname.data = hostname + 4;
+  ev->hostname.len = assh_load_u32(hostname);
+  ev->host_username.data = husername + 4;
+  ev->host_username.len = assh_load_u32(husername);
+  ev->found = 0;
+
   e->id = ASSH_EVENT_USERAUTH_SERVER_HOSTBASED;
   e->f_done = assh_userauth_server_hostbased_done;
-  e->userauth_server.hostbased.username.str = pv->username;
-  e->userauth_server.hostbased.username.len = strlen(pv->username);
-  e->userauth_server.hostbased.host_key = pub_key;
-  e->userauth_server.hostbased.hostname.str = hostname + 4;
-  e->userauth_server.hostbased.hostname.len = assh_load_u32(hostname);
-  e->userauth_server.hostbased.host_username.str = husername + 4;
-  e->userauth_server.hostbased.host_username.len = assh_load_u32(husername);
-  e->userauth_server.hostbased.found = 0;
 
   return err;
 }
@@ -614,7 +639,10 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_kbresponse_done)
   assh_packet_release(pv->pck);
   pv->pck = NULL;
 
-  switch (e->userauth_server.kbresponse.result)
+  const struct assh_event_userauth_server_kbresponse_s *ev =
+    &e->userauth_server.kbresponse;
+
+  switch (ev->result)
     {
     case ASSH_SERVER_KBSTATUS_FAILURE:
       ASSH_ERR_RET(assh_userauth_server_failure(s, 1) | ASSH_ERRSV_DISCONNECT);
@@ -670,16 +698,19 @@ assh_userauth_server_kbresponse(struct assh_session_s *s,
         {
           ASSH_ERR_RET(assh_packet_check_string(p, resp, &next)
                        | ASSH_ERRSV_DISCONNECT);
-          responses[i].str = (char*)resp + 4;
+          responses[i].data = resp + 4;
           responses[i].len = assh_load_u32(resp);
           resp = next;
         }
 
     }
 
-  e->userauth_server.kbresponse.count = count;
-  e->userauth_server.kbresponse.responses = responses;
-  e->userauth_server.kbresponse.result = ASSH_SERVER_KBSTATUS_FAILURE;
+  struct assh_event_userauth_server_kbresponse_s *ev =
+    &e->userauth_server.kbresponse;
+
+  ev->count = count;
+  ev->responses = responses;
+  ev->result = ASSH_SERVER_KBSTATUS_FAILURE;
 
   e->id = ASSH_EVENT_USERAUTH_SERVER_KBRESPONSE;
   e->f_done = assh_userauth_server_kbresponse_done;
@@ -703,19 +734,22 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_kbinfo_done)
   ASSH_CHK_RET(pv->state != ASSH_USERAUTH_ST_KEYBOARD_INFO,
                ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
 
-  size_t i, count = e->userauth_server.kbinfo.count;
+  const struct assh_event_userauth_server_kbinfo_s *ev =
+    &e->userauth_server.kbinfo;
+
+  size_t i, count = ev->count;
 
   ASSH_CHK_RET(count > 32,
                ASSH_ERR_OUTPUT_OVERFLOW | ASSH_ERRSV_FATAL);
 
   pv->keyboard_count = count;
 
-  size_t name_len = e->userauth_server.kbinfo.name.len;
-  size_t ins_len = e->userauth_server.kbinfo.instruction.len;
+  size_t name_len = ev->name.len;
+  size_t ins_len = ev->instruction.len;
   size_t psize = 4 + name_len + 4 + ins_len + 4 + 4;
 
   for (i = 0; i < count; i++)
-    psize += 4 + e->userauth_server.kbinfo.prompts[i].len + 1;
+    psize += 4 + ev->prompts[i].len + 1;
 
   struct assh_packet_s *pout;
   ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_USERAUTH_INFO_REQUEST,
@@ -724,10 +758,10 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_kbinfo_done)
   uint8_t *str;
 
   ASSH_ASSERT(assh_packet_add_string(pout, name_len, &str));
-  memcpy(str, e->userauth_server.kbinfo.name.str, name_len);
+  memcpy(str, ev->name.str, name_len);
 
   ASSH_ASSERT(assh_packet_add_string(pout, ins_len, &str));
-  memcpy(str, e->userauth_server.kbinfo.instruction.str, ins_len);
+  memcpy(str, ev->instruction.str, ins_len);
 
   ASSH_ASSERT(assh_packet_add_string(pout, 0, NULL)); /* empty lang */
 
@@ -736,12 +770,12 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_kbinfo_done)
 
   for (i = 0; i < count; i++)
     {
-      size_t len = e->userauth_server.kbinfo.prompts[i].len;
+      size_t len = ev->prompts[i].len;
       ASSH_ASSERT(assh_packet_add_string(pout, len, &str));
-      memcpy(str, e->userauth_server.kbinfo.prompts[i].str, len);
+      memcpy(str, ev->prompts[i].str, len);
 
       ASSH_ASSERT(assh_packet_add_array(pout, 1, &str));
-      *str = (e->userauth_server.kbinfo.echos >> i) & 1;
+      *str = (ev->echos >> i) & 1;
     }
 
   assh_transport_push(s, pout);
@@ -758,16 +792,19 @@ assh_userauth_server_kbinfo(struct assh_session_s *s,
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
 
-  e->userauth_server.kbinfo.username.str = pv->username;
-  e->userauth_server.kbinfo.username.len = strlen(pv->username);
-  e->userauth_server.kbinfo.sub.str = (char*)sub + 4;
-  e->userauth_server.kbinfo.sub.len = assh_load_u32(sub);
+  struct assh_event_userauth_server_kbinfo_s *ev =
+    &e->userauth_server.kbinfo;
 
-  e->userauth_server.kbinfo.name.len = 0;
-  e->userauth_server.kbinfo.instruction.len = 0;
-  e->userauth_server.kbinfo.echos = 0;
-  e->userauth_server.kbinfo.count = 0;
-  e->userauth_server.kbinfo.prompts = NULL;
+  ev->username.str = pv->username;
+  ev->username.len = strlen(pv->username);
+  ev->sub.data = sub + 4;
+  ev->sub.len = assh_load_u32(sub);
+
+  ev->name.len = 0;
+  ev->instruction.len = 0;
+  ev->echos = 0;
+  ev->count = 0;
+  ev->prompts = NULL;
 
   e->id = ASSH_EVENT_USERAUTH_SERVER_KBINFO;
   e->f_done = assh_userauth_server_kbinfo_done;
@@ -808,12 +845,15 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
+  const struct assh_event_userauth_server_userkey_s *ev =
+    &e->userauth_server.userkey;
+
   switch (pv->state)
     {
     case ASSH_USERAUTH_ST_PUBKEY_PKOK: {      /* may need to send PK_OK */
       pv->state = ASSH_USERAUTH_ST_WAIT_RQ;
 
-      if (!e->userauth_server.userkey.found)
+      if (!ev->found)
         {
           ASSH_ERR_RET(assh_userauth_server_failure(s, 1) | ASSH_ERRSV_DISCONNECT);
           return ASSH_OK;
@@ -854,7 +894,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
 
     case ASSH_USERAUTH_ST_PUBKEY_VERIFY: {
 
-      if (!e->userauth_server.userkey.found)
+      if (!ev->found)
         {
           ASSH_ERR_RET(assh_userauth_server_failure(s, 1)
                        | ASSH_ERRSV_DISCONNECT);
@@ -949,13 +989,17 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_pubkey)
       pv->state = ASSH_USERAUTH_ST_PUBKEY_PKOK;
     }
 
+  struct assh_event_userauth_server_userkey_s *ev =
+    &e->userauth_server.userkey;
+
+  ev->username.str = pv->username;
+  ev->username.len = strlen(pv->username);
+  ev->pub_key = pv->pub_key;
+  ev->found = 0;
+
   /* return an event to lookup the key in the list of authorized user keys */
   e->id = ASSH_EVENT_USERAUTH_SERVER_USERKEY;
   e->f_done = assh_userauth_server_userkey_done;
-  e->userauth_server.userkey.username.str = pv->username;
-  e->userauth_server.userkey.username.len = strlen(pv->username);
-  e->userauth_server.userkey.pub_key = pv->pub_key;
-  e->userauth_server.userkey.found = 0;
 
   return ASSH_OK;
 }
@@ -1037,14 +1081,17 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_get_methods_done)
   ASSH_CHK_RET(pv->state != ASSH_USERAUTH_ST_METHODS_DONE,
                ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
 
-  pv->methods = e->userauth_server.methods.methods;
-  pv->retry = e->userauth_server.methods.retries;
+  const struct assh_event_userauth_server_methods_s *ev =
+    &e->userauth_server.methods;
+
+  pv->methods = ev->methods;
+  pv->retry = ev->retries;
 
   ASSH_CHK_RET(!(pv->methods & ASSH_USERAUTH_METHOD_SERVER_IMPLEMENTED),
                ASSH_ERR_MISSING_ALGO | ASSH_ERRSV_DISCONNECT);
 
-  size_t bsize = e->userauth_server.methods.banner.size;
-  size_t lsize = e->userauth_server.methods.bnlang.size;
+  size_t bsize = ev->banner.size;
+  size_t lsize = ev->bnlang.size;
 
   if (bsize)
     {
@@ -1054,13 +1101,13 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_get_methods_done)
                    | ASSH_ERRSV_DISCONNECT);
       uint8_t *str;
       ASSH_ASSERT(assh_packet_add_string(pout, bsize, &str));
-      memcpy(str, e->userauth_server.methods.banner.str, bsize);
+      memcpy(str, ev->banner.str, bsize);
       ASSH_ASSERT(assh_packet_add_string(pout, lsize, &str));
-      memcpy(str, e->userauth_server.methods.bnlang.str, lsize);
+      memcpy(str, ev->bnlang.str, lsize);
       assh_transport_push(s, pout);
     }
 
-  if (e->userauth_server.methods.failed)
+  if (ev->failed)
     ASSH_ERR_RET(assh_userauth_server_send_failure(s, 0));
 
   pv->state = ASSH_USERAUTH_ST_WAIT_RQ;
@@ -1074,20 +1121,24 @@ assh_userauth_server_get_methods(struct assh_session_s *s,
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
 
-  pv->state = ASSH_USERAUTH_ST_METHODS_DONE;
-  e->id = ASSH_EVENT_USERAUTH_SERVER_METHODS;
-  e->f_done = assh_userauth_server_get_methods_done;
+  struct assh_event_userauth_server_methods_s *ev =
+    &e->userauth_server.methods;
 
-  e->userauth_server.methods.failed = 0;
+  ev->failed = 0;
 
-  e->userauth_server.methods.banner.size = 0;
-  e->userauth_server.methods.bnlang.size = 0;
+  ev->banner.size = 0;
+  ev->bnlang.size = 0;
 
-  e->userauth_server.methods.methods = ASSH_USERAUTH_METHOD_SERVER_IMPLEMENTED &
+  ev->methods = ASSH_USERAUTH_METHOD_SERVER_IMPLEMENTED &
     (ASSH_USERAUTH_METHOD_PUBKEY |
      ASSH_USERAUTH_METHOD_PASSWORD);
 
-  e->userauth_server.methods.retries = 10;
+  ev->retries = 10;
+
+  e->id = ASSH_EVENT_USERAUTH_SERVER_METHODS;
+  e->f_done = assh_userauth_server_get_methods_done;
+
+  pv->state = ASSH_USERAUTH_ST_METHODS_DONE;
 
   return ASSH_OK;
 }
@@ -1098,17 +1149,21 @@ assh_userauth_server_get_methods_failed(struct assh_session_s *s,
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
 
-  pv->state = ASSH_USERAUTH_ST_METHODS_DONE;
+  struct assh_event_userauth_server_methods_s *ev =
+    &e->userauth_server.methods;
+
+  ev->failed = 1;
+
+  ev->banner.size = 0;
+  ev->bnlang.size = 0;
+
+  ev->methods = pv->methods;
+  ev->retries = pv->retry;
+
   e->id = ASSH_EVENT_USERAUTH_SERVER_METHODS;
   e->f_done = assh_userauth_server_get_methods_done;
 
-  e->userauth_server.methods.failed = 1;
-
-  e->userauth_server.methods.banner.size = 0;
-  e->userauth_server.methods.bnlang.size = 0;
-
-  e->userauth_server.methods.methods = pv->methods;
-  e->userauth_server.methods.retries = pv->retry;
+  pv->state = ASSH_USERAUTH_ST_METHODS_DONE;
 
   return ASSH_OK;
 }

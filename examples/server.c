@@ -191,79 +191,93 @@ int main()
 	      break;
 	    }
 
-	    case ASSH_EVENT_USERAUTH_SERVER_METHODS:
-	      event.userauth_server.methods.banner.size = 4;
-	      event.userauth_server.methods.banner.str = "test";
+	    case ASSH_EVENT_USERAUTH_SERVER_METHODS: {
+	      struct assh_event_userauth_server_methods_s *ev =
+		&event.userauth_server.methods;
 
-	      err = assh_event_done(session, &event, ASSH_OK);
-	      break;
+	      assh_buffer_strcpy(&ev->banner, "welcome!");
 
-	    case ASSH_EVENT_USERAUTH_SERVER_USERKEY: {
-	      /* XXX check that event public key is in the list of
-		 user authorized keys. */
-
-#warning validate key ? keys should be validated once when added to the list
-
-	      event.userauth_server.userkey.found = 1;
 	      err = assh_event_done(session, &event, ASSH_OK);
 	      break;
 	    }
 
-	    case ASSH_EVENT_USERAUTH_SERVER_PASSWORD:
-	      /* XXX check that event user/password pair matches. */
-	      event.userauth_server.password.result = ASSH_SERVER_PWSTATUS_SUCCESS;
+	    case ASSH_EVENT_USERAUTH_SERVER_USERKEY: {
+	      struct assh_event_userauth_server_userkey_s *ev =
+		&event.userauth_server.userkey;
+
+#warning validate key ? keys should be validated once when added to the list
+
+	      /* XXX check that user public key is in the list of
+		 user authorized keys. */
+	      ev->found = 1;
+
 	      err = assh_event_done(session, &event, ASSH_OK);
 	      break;
+	    }
+
+	    case ASSH_EVENT_USERAUTH_SERVER_PASSWORD: {
+	      struct assh_event_userauth_server_password_s *ev =
+		&event.userauth_server.password;
+
+	      /* XXX check that user/password pair matches. */
+	      ev->result = ASSH_SERVER_PWSTATUS_SUCCESS;
+
+	      err = assh_event_done(session, &event, ASSH_OK);
+	      break;
+	    }
 
 	    case ASSH_EVENT_USERAUTH_SERVER_HOSTBASED: {
-	      event.userauth_server.hostbased.found = 0;
+	      struct assh_event_userauth_server_hostbased_s *ev =
+		&event.userauth_server.hostbased;
+
+	      /* XXX check that host public key is in the list of
+		 user authorized keys. */
+	      ev->found = 1;
+
 	      err = assh_event_done(session, &event, ASSH_OK);
 	      break;
 	    }
 
 	    case ASSH_EVENT_CHANNEL_OPEN: {
-	      struct assh_event_channel_open_s *co_e = &event.connection.channel_open;
+	      struct assh_event_channel_open_s *ev =
+		&event.connection.channel_open;
 
-	      if (!assh_buffer_strcmp(&co_e->type, "session"))
-		{
-		  co_e->reply = ASSH_CONNECTION_REPLY_SUCCESS;
-		}
+	      if (!assh_buffer_strcmp(&ev->type, "session"))
+		  ev->reply = ASSH_CONNECTION_REPLY_SUCCESS;
+
 	      err = assh_event_done(session, &event, ASSH_OK);
 	      break;
 	    }
 
 	    case ASSH_EVENT_REQUEST: {
-	      struct assh_event_request_s *rq_e = &event.connection.request;
+	      struct assh_event_request_s *ev = &event.connection.request;
 
-	      if (!assh_buffer_strcmp(&rq_e->type, "shell"))
-		{
-		  rq_e->reply = ASSH_CONNECTION_REPLY_SUCCESS;
-		}
-	      else if (!assh_buffer_strcmp(&rq_e->type, "pty-req"))
-		{
-		  rq_e->reply = ASSH_CONNECTION_REPLY_SUCCESS;
-		}
+	      if (!assh_buffer_strcmp(&ev->type, "shell"))
+		ev->reply = ASSH_CONNECTION_REPLY_SUCCESS;
+	      else if (!assh_buffer_strcmp(&ev->type, "pty-req"))
+		ev->reply = ASSH_CONNECTION_REPLY_SUCCESS;
+
 	      err = assh_event_done(session, &event, ASSH_OK);
 	      break;
 	    }
 
 	    case ASSH_EVENT_CHANNEL_DATA: {
-	      struct assh_event_channel_data_s *dt_e = &event.connection.channel_data;
+	      struct assh_event_channel_data_s *ev = &event.connection.channel_data;
 
 	      uint8_t *data;
-	      size_t size = dt_e->data.size;
+	      size_t size = ev->data.size;
 
 	      /* allocate output data packet */
-	      assh_error_t perr = assh_channel_data_alloc(dt_e->ch, &data, &size, size);
+	      assh_error_t perr = assh_channel_data_alloc(ev->ch, &data, &size, size);
 
 	      if (perr == ASSH_OK)  /* copy input data to output buffer */
-		memcpy(data, dt_e->data.data, size);
+		memcpy(data, ev->data.data, size);
 
 	      /* acknowledge input data event before sending */
 	      err = assh_event_done(session, &event, ASSH_OK);
 
 	      if (perr == ASSH_OK)  /* send output data */
-		err = assh_channel_data_send(dt_e->ch, size);
+		err = assh_channel_data_send(ev->ch, size);
 	      break;
 	    }
 

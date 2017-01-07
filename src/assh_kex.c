@@ -708,8 +708,7 @@ assh_kex_client_get_key(struct assh_session_s *s,
                         struct assh_key_s **host_key,
                         const uint8_t *ks_str,
                         struct assh_event_s *e,
-                        assh_error_t (*done)(struct assh_session_s *s,
-                                             struct assh_event_s *e), void *pv)
+                        assh_event_done_t *done, void *pv)
 {
   assh_error_t err;
 

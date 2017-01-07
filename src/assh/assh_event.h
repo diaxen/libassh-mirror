@@ -103,7 +103,7 @@ enum assh_event_id_e
 /** @internal @see assh_event_done_t */
 #define ASSH_EVENT_DONE_FCN(n)                                          \
   ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_session_s *s,    \
-                                           struct assh_event_s *e)
+                                           const struct assh_event_s *e)
 
 /** @internal @This is called when the event has been processed.
     @see assh_event_done */
@@ -194,7 +194,7 @@ assh_event_get(struct assh_session_s *s,
     remote side is not possible anymore. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_event_done(struct assh_session_s *s,
-                struct assh_event_s *e,
+                const struct assh_event_s *e,
                 assh_error_t err);
 
 /** @internal @see assh_event_hndl_func_t */
