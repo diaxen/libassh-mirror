@@ -71,10 +71,14 @@ struct assh_event_userauth_server_methods_s
 };
 
 /** This event is reported when the server-side user authentication
-    service is running. The user public key @tt pub_key must be
+    service is running and the client has selected the user public key
+    method.
+
+    The user public key @tt pub_key must be
     searched in the list of authorized keys for the user on this
     server. The @tt found field must be updated accordingly before
     calling the @ref assh_event_done function.
+
     @see ASSH_EVENT_USERAUTH_SERVER_USERKEY */
 struct assh_event_userauth_server_userkey_s
 {
@@ -92,7 +96,10 @@ enum assh_event_userauth_server_pwstatus_s
 };
 
 /** This event is reported when the server-side user authentication
-    service is running. The user name and password pair must be
+    service is running and the client has selected the password
+    method.
+
+    The user name and password pair must be
     checked and the @tt success field must be updated accordingly
     before calling the @ref assh_event_done function.
 
@@ -113,6 +120,16 @@ struct assh_event_userauth_server_password_s
   enum assh_event_userauth_server_pwstatus_s result; //< output
 };
 
+/** This event is reported when the server-side user authentication
+    service is running and the client has selected the hostbased
+    method.
+
+    The host public key @tt host_key must be searched in the list of
+    authorized keys for the spcified @tt hostname user on this
+    server. The @tt found field must be updated accordingly before
+    calling the @ref assh_event_done function.
+
+    @see ASSH_EVENT_USERAUTH_SERVER_HOSTBASED */
 struct assh_event_userauth_server_hostbased_s
 {
   ASSH_EV_CONST struct assh_buffer_s username;    //< input
