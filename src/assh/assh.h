@@ -71,6 +71,8 @@ struct assh_event_hndl_table_s;
 struct assh_event_s;
 struct assh_queue_entry_s;
 struct assh_queue_s;
+struct assh_buffer_s;
+struct assh_cbuffer_s;
 
 enum assh_alloc_type_e;
 enum assh_key_format_e;
@@ -339,40 +341,6 @@ void assh_hexdump(const char *name, const void *data, size_t len);
 
 /** @internal */
 # define ASSH_CHK_RET(cond, err) ASSH_ERR_RET(cond ? err : 0) 
-
-/** @This holds a pointer and a size value used as a string or buffer.
-    @see assh_cbuffer_s */
-struct assh_buffer_s
-{
-  union {
-    char *str;
-    uint8_t *data;
-  };
-  union {
-    size_t size;
-    size_t len;
-  };
-};
-
-/** @This holds a const pointer and a size value used as a string or buffer.
-    @see assh_buffer_s */
-struct assh_cbuffer_s
-{
-  union {
-    const char *str;
-    const uint8_t *data;
-  };
-  union {
-    size_t size;
-    size_t len;
-  };
-};
-
-ASSH_INLINE const struct assh_cbuffer_s *
-assh_cbuffer(const struct assh_buffer_s *b)
-{
-  return (void*)b;
-}
 
 /** @internal SSH implementation identification string */
 #define ASSH_IDENT "SSH-2.0-LIBASSH\r\n"

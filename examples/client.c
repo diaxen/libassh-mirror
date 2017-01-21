@@ -157,7 +157,7 @@ int main(int argc, char **argv)
           struct assh_event_userauth_client_user_s *ev =
             &event.userauth_client.user;
 
-          assh_buffer_strcpy(&ev->username, "test");
+          assh_buffer_strset(&ev->username, "test");
 
           break;
         }
@@ -194,8 +194,8 @@ int main(int argc, char **argv)
                                          ASSH_KEY_FMT_PV_PEM, NULL) != ASSH_OK)
                 fprintf(stderr, "unable to load host rsa key\n");
 
-              assh_buffer_strcpy(&ev->host_name, "localhost");
-              assh_buffer_strcpy(&ev->host_username, "test");
+              assh_buffer_strset(&ev->host_name, "localhost");
+              assh_buffer_strset(&ev->host_username, "test");
             }
 
           else if ((ev->methods & ASSH_USERAUTH_METHOD_PASSWORD)
@@ -203,7 +203,7 @@ int main(int argc, char **argv)
             {
               ev->select = ASSH_USERAUTH_METHOD_PASSWORD;
               fprintf(stderr, "password input\n");
-              assh_buffer_strcpy(&ev->password, "test");
+              assh_buffer_strset(&ev->password, "test");
             }
           break;
         }

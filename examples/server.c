@@ -195,7 +195,7 @@ int main()
 	      struct assh_event_userauth_server_methods_s *ev =
 		&event.userauth_server.methods;
 
-	      assh_buffer_strcpy(&ev->banner, "welcome!");
+	      assh_buffer_strset(&ev->banner, "welcome!");
 
 	      err = assh_event_done(session, &event, ASSH_OK);
 	      break;

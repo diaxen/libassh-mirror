@@ -34,6 +34,7 @@
 #endif
 
 #include "assh.h"
+#include "assh_buffer.h"
 
 /** @internal This changes the current transport state */
 #define assh_transport_state(s, st)                                     \
@@ -135,7 +136,7 @@ struct assh_event_transport_read_s
 */
 struct assh_event_transport_write_s
 {
-  ASSH_EV_CONST struct assh_buffer_s buf;         //< input
+  ASSH_EV_CONST struct assh_cbuffer_s buf;         //< input
   size_t                             transferred; //< output
   assh_time_t                        time;        //< output
   ASSH_EV_CONST uint16_t             delay;       //< input

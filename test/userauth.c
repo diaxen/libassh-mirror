@@ -251,11 +251,11 @@ static int test()
 	}
 
 	case ASSH_EVENT_USERAUTH_SERVER_KBINFO: {
-	  assh_buffer_strcpy(&event.userauth_server.kbinfo.name,
+	  assh_buffer_strset(&event.userauth_server.kbinfo.name,
 			     "nametest" + rand() % 8);
-	  assh_buffer_strcpy(&event.userauth_server.kbinfo.instruction,
+	  assh_buffer_strset(&event.userauth_server.kbinfo.instruction,
 			     "insttest" + rand() % 8);
-	  static const struct assh_buffer_s p[] = {
+	  static const struct assh_cbuffer_s p[] = {
 	    { .str = "password: ", .len = 10 },
 	    { .str = "token: ", .len = 7 },
 	    { .str = "foo: ", .len = 5 },
@@ -326,9 +326,9 @@ static int test()
 	      event.userauth_server.password.result = ASSH_SERVER_PWSTATUS_SUCCESS;
 	      break;
 	    case 6:
-	      assh_buffer_strcpy(&event.userauth_server.password.change_prompt,
+	      assh_buffer_strset(&event.userauth_server.password.change_prompt,
 				 "expired" + rand() % 7);
-	      assh_buffer_strcpy(&event.userauth_server.password.change_lang,
+	      assh_buffer_strset(&event.userauth_server.password.change_lang,
 				 "en" + rand() % 2);
 	    case 7:
 	      auth_server_password_change_count++;
@@ -408,7 +408,7 @@ static int test()
         case ASSH_EVENT_USERAUTH_CLIENT_USER:
 	  /* use a username of random len */
 	  username = "testtest" + rand() % 4;
-          assh_buffer_strcpy(&event.userauth_client.user.username, username);
+          assh_buffer_strset(&event.userauth_client.user.username, username);
           break;
 
         case ASSH_EVENT_USERAUTH_CLIENT_METHODS: {
@@ -437,7 +437,7 @@ static int test()
 		  /* randomly pick a password */
 		  i = rand() % TEST_PASS_COUNT;
 		  password = pass[i];
-		  assh_buffer_strcpy(&event.userauth_client.methods.password, password);
+		  assh_buffer_strset(&event.userauth_client.methods.password, password);
 		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_PASSWORD;
 		  auth_client_password_count++;
 		  break;
@@ -447,7 +447,7 @@ static int test()
 			ASSH_USERAUTH_METHOD_KEYBOARD))
 		    break;
 		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_KEYBOARD;
-		  assh_buffer_strcpy(&event.userauth_client.methods.keyboard_sub,
+		  assh_buffer_strset(&event.userauth_client.methods.keyboard_sub,
 				     "method" + rand() % 6);
 		  auth_client_keyboard_count++;
 		  break;
@@ -471,9 +471,9 @@ static int test()
 			& ASSH_USERAUTH_METHOD_HOSTBASED))
 		    break;
 		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_HOSTBASED;
-		  assh_buffer_strcpy(&event.userauth_client.methods.host_name,
+		  assh_buffer_strset(&event.userauth_client.methods.host_name,
 				     "localhost" + rand() % 9);
-		  assh_buffer_strcpy(&event.userauth_client.methods.host_username,
+		  assh_buffer_strset(&event.userauth_client.methods.host_username,
 				     "test" + rand() % 4);
 
 		  if (!use_keys(&event.userauth_client.methods.keys))
@@ -508,10 +508,10 @@ static int test()
 	    }
 	  i = rand() % TEST_PASS_COUNT;
 	  password = pass[i];
-	  assh_buffer_strcpy(&event.userauth_client.pwchange.old_password,
+	  assh_buffer_strset(&event.userauth_client.pwchange.old_password,
 			     password);
 	  new_password = pass[(i + 1) % TEST_PASS_COUNT];
-	  assh_buffer_strcpy(&event.userauth_client.pwchange.new_password,
+	  assh_buffer_strset(&event.userauth_client.pwchange.new_password,
 			     new_password);
 	  auth_client_password_change_count++;
 	  break;
@@ -521,9 +521,8 @@ static int test()
           uint_fast8_t i;
           for (i = 0; i < event.userauth_client.keyboard.count; i++)
             {
-              const char *r = "azertyui" + rand() % 8;
-              event.userauth_client.keyboard.responses[i].str = r;
-              event.userauth_client.keyboard.responses[i].len = strlen(r);
+              assh_buffer_strset(&event.userauth_client.keyboard.responses[i],
+				 "azertyui" + rand() % 8);
 	      auth_client_keyboard_resp_count++;
             }
 	  break;

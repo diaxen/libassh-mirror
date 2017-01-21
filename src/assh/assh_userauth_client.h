@@ -41,6 +41,7 @@
 #endif
 
 #include "assh.h"
+#include "assh_buffer.h"
 #include "assh_userauth.h"
 
 /** This event is reported when the client-side user authentication
@@ -51,7 +52,7 @@
 */
 struct assh_event_userauth_client_user_s
 {
-  struct assh_buffer_s    username;    //< output
+  struct assh_cbuffer_s    username;    //< output
 };
 
 /** This event is reported when the client-side user authentication
@@ -91,12 +92,12 @@ struct assh_event_userauth_client_methods_s
   ASSH_EV_CONST enum assh_userauth_methods_e methods; //< input
   enum assh_userauth_methods_e select;       //< output
   union {
-    struct assh_buffer_s       password;     //< output
+    struct assh_cbuffer_s       password;     //< output
     struct assh_key_s          *keys;        //< output
-    struct assh_buffer_s       keyboard_sub; //< output
+    struct assh_cbuffer_s       keyboard_sub; //< output
   };
-  struct assh_buffer_s       host_name;   //< output
-  struct assh_buffer_s       host_username;   //< output
+  struct assh_cbuffer_s       host_name;   //< output
+  struct assh_cbuffer_s       host_username;   //< output
 };
 
 /** This event is reported when the client-side user authentication
@@ -115,7 +116,7 @@ struct assh_event_userauth_client_sign_s
   struct assh_key_s * ASSH_EV_CONST pub_key;    //< input
   const struct assh_algo_sign_s * ASSH_EV_CONST algo; //< input
   ASSH_EV_CONST struct assh_cbuffer_s auth_data; //< input
-  struct assh_buffer_s sign;                    //< output
+  struct assh_buffer_s sign;       //< output
 };
 
 /** This event is reported when the client-side user authentication
@@ -125,8 +126,8 @@ struct assh_event_userauth_client_sign_s
 */
 struct assh_event_userauth_client_banner_s
 {
-  ASSH_EV_CONST struct assh_buffer_s text; //< output
-  ASSH_EV_CONST struct assh_buffer_s lang;   //< output
+  ASSH_EV_CONST struct assh_cbuffer_s text; //< output
+  ASSH_EV_CONST struct assh_cbuffer_s lang;   //< output
 };
 
 /** This event is reported when the client-side user authentication
@@ -140,10 +141,10 @@ struct assh_event_userauth_client_banner_s
 */
 struct assh_event_userauth_client_pwchange_s
 {
-  ASSH_EV_CONST struct assh_buffer_s prompt;       //< output
-  ASSH_EV_CONST struct assh_buffer_s lang;         //< output
-  struct assh_buffer_s               old_password; //< input
-  struct assh_buffer_s               new_password; //< input
+  ASSH_EV_CONST struct assh_cbuffer_s prompt;       //< output
+  ASSH_EV_CONST struct assh_cbuffer_s lang;         //< output
+  struct assh_cbuffer_s               old_password; //< input
+  struct assh_cbuffer_s               new_password; //< input
 };
 
 
@@ -165,13 +166,13 @@ struct assh_event_userauth_client_pwchange_s
 */
 struct assh_event_userauth_client_keyboard_s
 {
-  ASSH_EV_CONST struct assh_buffer_s name; //< input
-  ASSH_EV_CONST struct assh_buffer_s instruction; //< input
+  ASSH_EV_CONST struct assh_cbuffer_s name; //< input
+  ASSH_EV_CONST struct assh_cbuffer_s instruction; //< input
   ASSH_EV_CONST uint32_t             echos; //< input
   ASSH_EV_CONST uint_fast8_t         count; //< input
   union {
-    ASSH_EV_CONST struct assh_buffer_s * prompts; //< input
-    struct assh_buffer_s *responses; //< output
+    ASSH_EV_CONST struct assh_cbuffer_s * prompts; //< input
+    struct assh_cbuffer_s *responses; //< output
   };
 };
 

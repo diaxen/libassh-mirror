@@ -43,6 +43,7 @@
 
 #include "assh.h"
 #include "assh_map.h"
+#include "assh_buffer.h"
 #include "assh_queue.h"
 
 /** @This specifies request status */
@@ -301,10 +302,10 @@ struct assh_event_request_s
 {
   struct assh_channel_s * ASSH_EV_CONST ch;         //< input
   struct assh_request_s * ASSH_EV_CONST rq;         //< input
-  ASSH_EV_CONST struct assh_buffer_s    type;       //< input
-  ASSH_EV_CONST struct assh_buffer_s    rq_data;    //< input
+  ASSH_EV_CONST struct assh_cbuffer_s   type;       //< input
+  ASSH_EV_CONST struct assh_cbuffer_s   rq_data;    //< input
   enum assh_connection_reply_e          reply;      //< output
-  struct assh_buffer_s                  rsp_data;   //< output
+  struct assh_cbuffer_s                  rsp_data;   //< output
 };
 
 /**
@@ -367,7 +368,7 @@ struct assh_event_request_reply_s
   struct assh_channel_s      * ASSH_EV_CONST ch;        //< input
   struct assh_request_s      * ASSH_EV_CONST rq;        //< input
   ASSH_EV_CONST enum assh_connection_reply_e reply;     //< input
-  ASSH_EV_CONST struct assh_buffer_s         rsp_data;  //< input
+  ASSH_EV_CONST struct assh_cbuffer_s        rsp_data;  //< input
 };
 
 
@@ -442,13 +443,13 @@ assh_request(struct assh_session_s *s,
 struct assh_event_channel_open_s
 {
   struct assh_channel_s * ASSH_EV_CONST ch;       //< input
-  ASSH_EV_CONST struct assh_buffer_s    type;     //< input
-  ASSH_EV_CONST struct assh_buffer_s    rq_data;  //< input
+  ASSH_EV_CONST struct assh_cbuffer_s   type;     //< input
+  ASSH_EV_CONST struct assh_cbuffer_s   rq_data;  //< input
   enum assh_connection_reply_e          reply;    //< output
   enum assh_channel_open_reason_e       reason;   //< output
   uint32_t                              win_size; //< input/output
   uint32_t                              pkt_size; //< input/output
-  struct assh_buffer_s                  rsp_data; //< output
+  struct assh_cbuffer_s                 rsp_data; //< output
 };
 
 /**
@@ -526,7 +527,7 @@ struct assh_event_channel_open_reply_s
   struct assh_channel_s * ASSH_EV_CONST         ch;         //< input
   ASSH_EV_CONST enum assh_connection_reply_e    reply;      //< input
   ASSH_EV_CONST enum assh_channel_open_reason_e reason;     //< input
-  ASSH_EV_CONST struct assh_buffer_s            rsp_data;   //< input
+  ASSH_EV_CONST struct assh_cbuffer_s           rsp_data;   //< input
 };
 
 /**
@@ -587,7 +588,7 @@ struct assh_event_channel_data_s
   struct assh_channel_s * ASSH_EV_CONST   ch;         //< input
   ASSH_EV_CONST assh_bool_t               ext;        //< input
   ASSH_EV_CONST uint32_t                  ext_type;   //< input
-  ASSH_EV_CONST struct assh_buffer_s      data;       //< input
+  ASSH_EV_CONST struct assh_cbuffer_s     data;       //< input
 };
 
 /**

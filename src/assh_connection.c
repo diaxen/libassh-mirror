@@ -390,15 +390,15 @@ assh_connection_got_request(struct assh_session_s *s,
   ev->ch = ch;
   ev->rq = rq;
 
-  struct assh_buffer_s *type_ = &ev->type;
+  struct assh_cbuffer_s *type_ = &ev->type;
   type_->str = (char*)type + 4;
   type_->len = want_reply - type - 4;
 
-  struct assh_buffer_s *rq_data = &ev->rq_data;
+  struct assh_cbuffer_s *rq_data = &ev->rq_data;
   rq_data->size = p->data + p->data_size - data;
   rq_data->data = rq_data->size > 0 ? (uint8_t*)data : NULL;
 
-  struct assh_buffer_s *rsp_data = &ev->rsp_data;
+  struct assh_cbuffer_s *rsp_data = &ev->rsp_data;
   rsp_data->data = NULL;
   rsp_data->size = 0;
 
@@ -551,7 +551,7 @@ static assh_bool_t assh_request_reply_flush(struct assh_session_s *s,
   ev->rq = rq;
   ev->reply = ASSH_CONNECTION_REPLY_CLOSED;
 
-  struct assh_buffer_s *rsp_data = &ev->rsp_data;
+  struct assh_cbuffer_s *rsp_data = &ev->rsp_data;
   rsp_data->size = 0;
   rsp_data->data = NULL;
 
@@ -630,7 +630,7 @@ assh_connection_got_request_reply(struct assh_session_s *s,
   ev->reply = success ? ASSH_CONNECTION_REPLY_SUCCESS
                       : ASSH_CONNECTION_REPLY_FAILED;
 
-  struct assh_buffer_s *rsp_data = &ev->rsp_data;
+  struct assh_cbuffer_s *rsp_data = &ev->rsp_data;
   rsp_data->size = global && success ? p->data + p->data_size - data : 0;
   rsp_data->data = rsp_data->size > 0 ? (uint8_t*) data : NULL;
 
@@ -815,21 +815,21 @@ assh_connection_got_channel_open(struct assh_session_s *s,
 
   ev->ch = ch;
 
-  struct assh_buffer_s *type_ = &ev->type;
+  struct assh_cbuffer_s *type_ = &ev->type;
   type_->str = (char*)type + 4;
   type_->len = assh_load_u32(type);
 
   ev->win_size = win_size;
   ev->pkt_size = pkt_size;
 
-  struct assh_buffer_s *rq_data = &ev->rq_data;
+  struct assh_cbuffer_s *rq_data = &ev->rq_data;
   rq_data->size = p->data + p->data_size - data;
   rq_data->data = rq_data->size > 0 ? (uint8_t*)data : NULL;
 
   ev->reply = ASSH_CONNECTION_REPLY_FAILED;
   ev->reason = SSH_OPEN_UNKNOWN_CHANNEL_TYPE;
 
-  struct assh_buffer_s *rsp_data = &ev->rsp_data;
+  struct assh_cbuffer_s *rsp_data = &ev->rsp_data;
   rsp_data->data = NULL;
   rsp_data->size = 0;
 
@@ -967,7 +967,7 @@ assh_connection_got_channel_open_reply(struct assh_session_s *s,
   e->f_done = assh_event_channel_open_reply_done;
 
   ev->ch = ch;
-  struct assh_buffer_s *rsp_data = &ev->rsp_data;
+  struct assh_cbuffer_s *rsp_data = &ev->rsp_data;
 
   if (success)
     {

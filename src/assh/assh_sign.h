@@ -31,6 +31,7 @@
 
 #include "assh_algo.h"
 #include "assh_key.h"
+#include "assh_buffer.h"
 
 /** @internal @see assh_sign_generate_t */
 #define ASSH_SIGN_GENERATE_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t(n) \

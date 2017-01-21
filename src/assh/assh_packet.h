@@ -424,26 +424,5 @@ assh_ssh_string_compare(const uint8_t *ssh_str, const char *nul_str)
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_ssh_string_copy(const uint8_t *ssh_str, char *nul_str, size_t max_len);
 
-/** @internal @This compares the content of an @ref assh_buffer_s
-    object with a nul terminated string. */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT uint_fast8_t
-assh_buffer_strcmp(const struct assh_buffer_s *buf, const char *nul_str)
-{
-  uint_fast16_t i;
-  for (i = 0; i < buf->len; i++)
-    if (!nul_str[i] || buf->str[i] != nul_str[i])
-      return 1;
-  return nul_str[i];
-}
-
-/** @internal @This initializes an @ref assh_buffer_s
-    object with a nul terminated string. */
-ASSH_INLINE void
-assh_buffer_strcpy(struct assh_buffer_s *buf, const char *nul_str)
-{
-  buf->str = (void*)nul_str;
-  buf->len = strlen(nul_str);
-}
-
 #endif
 

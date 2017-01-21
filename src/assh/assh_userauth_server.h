@@ -41,6 +41,7 @@
 #endif
 
 #include "assh.h"
+#include "assh_buffer.h"
 #include "assh_userauth.h"
 
 /** This event is reported when the server-side user authentication
@@ -66,8 +67,8 @@ struct assh_event_userauth_server_methods_s
   ASSH_EV_CONST assh_bool_t    failed;  //< input
   enum assh_userauth_methods_e methods; //< output
   uint_fast8_t                 retries; //< output
-  struct assh_buffer_s         banner;  //< output
-  struct assh_buffer_s         bnlang;  //< output
+  struct assh_cbuffer_s        banner;  //< output
+  struct assh_cbuffer_s        bnlang;  //< output
 };
 
 /** This event is reported when the server-side user authentication
@@ -82,7 +83,7 @@ struct assh_event_userauth_server_methods_s
     @see ASSH_EVENT_USERAUTH_SERVER_USERKEY */
 struct assh_event_userauth_server_userkey_s
 {
-  ASSH_EV_CONST struct assh_buffer_s      username;  //< input
+  ASSH_EV_CONST struct assh_cbuffer_s     username;  //< input
   struct assh_key_s * ASSH_EV_CONST       pub_key;   //< input
   assh_bool_t                             found;     //< output
 };
@@ -112,11 +113,11 @@ enum assh_event_userauth_server_pwstatus_s
     @see ASSH_EVENT_USERAUTH_SERVER_PASSWORD */
 struct assh_event_userauth_server_password_s
 {
-  ASSH_EV_CONST struct assh_buffer_s username;    //< input
-  ASSH_EV_CONST struct assh_buffer_s password;    //< input
-  ASSH_EV_CONST struct assh_buffer_s new_password; //< input
-  struct assh_buffer_s               change_prompt; //< output
-  struct assh_buffer_s               change_lang;   //< output
+  ASSH_EV_CONST struct assh_cbuffer_s username;    //< input
+  ASSH_EV_CONST struct assh_cbuffer_s password;    //< input
+  ASSH_EV_CONST struct assh_cbuffer_s new_password; //< input
+  struct assh_cbuffer_s               change_prompt; //< output
+  struct assh_cbuffer_s               change_lang;   //< output
   enum assh_event_userauth_server_pwstatus_s result; //< output
 };
 
@@ -132,11 +133,11 @@ struct assh_event_userauth_server_password_s
     @see ASSH_EVENT_USERAUTH_SERVER_HOSTBASED */
 struct assh_event_userauth_server_hostbased_s
 {
-  ASSH_EV_CONST struct assh_buffer_s username;    //< input
-  struct assh_key_s * ASSH_EV_CONST  host_key;    //< input
-  ASSH_EV_CONST struct assh_buffer_s hostname;    //< input
-  ASSH_EV_CONST struct assh_buffer_s host_username; //< input
-  assh_bool_t                        found;     //< output
+  ASSH_EV_CONST struct assh_cbuffer_s username;    //< input
+  struct assh_key_s * ASSH_EV_CONST   host_key;    //< input
+  ASSH_EV_CONST struct assh_cbuffer_s hostname;    //< input
+  ASSH_EV_CONST struct assh_cbuffer_s host_username; //< input
+  assh_bool_t                         found;     //< output
 };
 
 /** This event is reported when the server-side user authentication
@@ -162,13 +163,13 @@ struct assh_event_userauth_server_hostbased_s
 */
 struct assh_event_userauth_server_kbinfo_s
 {
-  ASSH_EV_CONST struct assh_buffer_s username;  //< input
-  ASSH_EV_CONST struct assh_buffer_s sub; //< input
-  struct assh_buffer_s name; //< output
-  struct assh_buffer_s instruction; //< output
+  ASSH_EV_CONST struct assh_cbuffer_s username;  //< input
+  ASSH_EV_CONST struct assh_cbuffer_s sub; //< input
+  struct assh_cbuffer_s name; //< output
+  struct assh_cbuffer_s instruction; //< output
   uint32_t             echos; //< output
   uint_fast8_t         count; //< output
-  const struct assh_buffer_s *prompts; //< output
+  const struct assh_cbuffer_s *prompts; //< output
 };
 
 /** @see assh_event_userauth_server_kbstatus_s */
@@ -196,7 +197,7 @@ enum assh_event_userauth_server_kbstatus_e
 struct assh_event_userauth_server_kbresponse_s
 {
   ASSH_EV_CONST uint_fast8_t count; //< output
-  ASSH_EV_CONST struct assh_buffer_s * responses; //< output
+  ASSH_EV_CONST struct assh_cbuffer_s * responses; //< output
   enum assh_event_userauth_server_kbstatus_e result;
 };
 

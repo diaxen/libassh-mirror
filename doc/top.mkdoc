@@ -26,6 +26,7 @@ assh/assh_key.h
 assh/assh_mac.h
 assh/assh_map.h
 assh/assh_packet.h
+assh/assh_buffer.h
 assh/assh_prng.h
 assh/assh_queue.h
 assh/assh_service.h

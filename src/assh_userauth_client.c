@@ -133,7 +133,7 @@ struct assh_userauth_context_s
 #endif
 
 #ifdef CONFIG_ASSH_CLIENT_AUTH_KEYBOARD
-  struct assh_buffer_s *keyboard_array;
+  struct assh_cbuffer_s *keyboard_array;
 #endif
 };
 
@@ -382,8 +382,8 @@ assh_userauth_client_get_sign(struct assh_session_s *s,
 /* send a password authentication request */
 static assh_error_t
 assh_userauth_client_send_password(struct assh_session_s *s,
-                                   const struct assh_buffer_s *password,
-                                   const struct assh_buffer_s *new_password)
+                                   const struct assh_cbuffer_s *password,
+                                   const struct assh_cbuffer_s *new_password)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
@@ -624,7 +624,7 @@ assh_userauth_client_req_keyboard_info(struct assh_session_s *s,
   size_t i, count = assh_load_u32(count_);
   ASSH_CHK_RET(count > 32, ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
 
-  struct assh_buffer_s *prompts = NULL;
+  struct assh_cbuffer_s *prompts = NULL;
   uint32_t echos = 0;
 
   if (count > 0)

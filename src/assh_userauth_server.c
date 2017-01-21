@@ -103,7 +103,7 @@ struct assh_userauth_context_s
   struct assh_packet_s *pck;
 
 #ifdef CONFIG_ASSH_SERVER_AUTH_KEYBOARD
-  struct assh_buffer_s *keyboard_array;
+  struct assh_cbuffer_s *keyboard_array;
   uint_fast8_t keyboard_count;
 #endif
 
@@ -683,7 +683,7 @@ assh_userauth_server_kbresponse(struct assh_session_s *s,
       return ASSH_OK;
     }
 
-  struct assh_buffer_s *responses = NULL;
+  struct assh_cbuffer_s *responses = NULL;
 
   if (count > 0)
     {

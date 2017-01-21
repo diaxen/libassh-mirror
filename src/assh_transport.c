@@ -378,7 +378,7 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 				  struct assh_event_s *e)
 {
   assh_error_t err;
-  uint8_t **data = &e->transport.write.buf.data;
+  uint8_t const ** const data = &e->transport.write.buf.data;
   size_t *size = &e->transport.write.buf.size;
   e->transport.write.time = 0;
   e->transport.write.delay = s->time < s->deadline ?
