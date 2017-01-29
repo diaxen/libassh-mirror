@@ -184,7 +184,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_ecdsa_output)
     }
 
     default:
-      ASSH_ERR_RET(ASSH_ERR_NOTSUP);
+      ASSH_TAIL_CALL(ASSH_ERR_NOTSUP);
     }
 
   ASSH_UNREACHABLE();
@@ -354,10 +354,8 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_ecdsa_validate)
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_RET(assh_bignum_bytecode(c, 0, bytecode, "DDNNTTTTTTm",
+  ASSH_TAIL_CALL(assh_bignum_bytecode(c, 0, bytecode, "DDNNTTTTTTm",
                  curve->p, curve->b, &k->xn, &k->yn));
-
-  return ASSH_OK;
 }
 
 static ASSH_KEY_LOAD_FCN(assh_key_ecdsa_load)
@@ -457,7 +455,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_ecdsa_load)
     }
 
     default:
-      ASSH_ERR_RET(ASSH_ERR_NOTSUP);
+      ASSH_TAIL_CALL(ASSH_ERR_NOTSUP);
     }
 
   /* allocate key structure */
@@ -518,8 +516,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_ecdsa_nistp_create)
   assh_error_t err;
   const struct assh_key_ecdsa_id_s *id = assh_key_ecdsa_lookup_bits(bits);
   ASSH_CHK_RET(id == NULL, ASSH_ERR_NOTSUP);
-  ASSH_ERR_RET(assh_key_ecdsa_create(c, algo, key, id));
-  return ASSH_OK;
+  ASSH_TAIL_CALL(assh_key_ecdsa_create(c, algo, key, id));
 }
 
 const struct assh_key_ops_s assh_key_ecdsa_nistp =

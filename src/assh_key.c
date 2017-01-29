@@ -119,8 +119,7 @@ assh_key_comment(struct assh_context_s *c,
 {
   assh_error_t err;
   assh_free(c, key->comment);
-  ASSH_ERR_RET(assh_strdup(c, &key->comment, comment, ASSH_ALLOC_INTERNAL));
-  return ASSH_OK;
+  ASSH_TAIL_CALL(assh_strdup(c, &key->comment, comment, ASSH_ALLOC_INTERNAL));
 }
 
 void assh_key_drop(struct assh_context_s *c,

@@ -268,10 +268,8 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
     }
 
     default:
-      ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+      ASSH_TAIL_CALL(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
     }
-
-  return ASSH_OK;
 }
 
 assh_error_t assh_transport_read(struct assh_session_s *s,
@@ -313,7 +311,7 @@ assh_error_t assh_transport_read(struct assh_session_s *s,
     }
 
     default:
-      ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+      ASSH_TAIL_CALL(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
     }
 
   e->id = ASSH_EVENT_READ;
@@ -368,10 +366,8 @@ static ASSH_EVENT_DONE_FCN(assh_event_write_done)
     }
 
     default:
-      ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+      ASSH_TAIL_CALL(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
     }
-
-  return ASSH_OK;
 }
 
 assh_error_t assh_transport_write(struct assh_session_s *s,
@@ -541,7 +537,7 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
       return ASSH_OK;
 
     default:
-      ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+      ASSH_TAIL_CALL(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
     }
 
   /* a buffer is available for output, return a write event */
@@ -582,10 +578,10 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
       switch (msg)
 	{
 	case SSH_MSG_INVALID:
-	  ASSH_ERR_RET(ASSH_ERR_PROTOCOL | ASSH_ERRSV_FIN);
+	  ASSH_TAIL_CALL(ASSH_ERR_PROTOCOL | ASSH_ERRSV_FIN);
 
 	case SSH_MSG_DISCONNECT:
-	  ASSH_ERR_RET(ASSH_ERR_DISCONNECTED | ASSH_ERRSV_FIN);
+	  ASSH_TAIL_CALL(ASSH_ERR_DISCONNECTED | ASSH_ERRSV_FIN);
 
 	case SSH_MSG_DEBUG:
 	case SSH_MSG_IGNORE:
@@ -646,7 +642,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 	case SSH_MSG_NEWKEYS:
 	case SSH_MSG_SERVICE_REQUEST:
 	case SSH_MSG_SERVICE_ACCEPT:
-	  ASSH_ERR_RET(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+	  ASSH_TAIL_CALL(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
 
 	default:
 	  ASSH_CHK_RET(msg >= SSH_MSG_SERVICE_FIRST,
@@ -722,7 +718,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 	    ASSH_ERR_RET(assh_service_got_request(s, p) | ASSH_ERRSV_DISCONNECT);
 	  else
 #endif
-	    ASSH_ERR_RET(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+	    ASSH_TAIL_CALL(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
 	  p = NULL;
 	  break;
 
@@ -733,7 +729,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 	    ASSH_ERR_RET(assh_service_got_accept(s, p) | ASSH_ERRSV_DISCONNECT);
 	  else
 #endif
-	    ASSH_ERR_RET(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+	    ASSH_TAIL_CALL(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
 	  p = NULL;
 	  break;
 
@@ -758,13 +754,12 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
       break;
 
     case ASSH_TR_CLOSED:
-      ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+      ASSH_TAIL_CALL(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
     }
 
  done:
   assh_packet_release(s->in_pck);
   s->in_pck = NULL;
-  ASSH_ERR_RET(err | ASSH_ERRSV_DISCONNECT);
-  return ASSH_OK;
+  ASSH_TAIL_CALL(err | ASSH_ERRSV_DISCONNECT);
 }
 

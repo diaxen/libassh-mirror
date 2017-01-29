@@ -166,7 +166,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_rsa_output)
     }
 
     default:
-      ASSH_ERR_RET(ASSH_ERR_NOTSUP);
+      ASSH_TAIL_CALL(ASSH_ERR_NOTSUP);
     }
 
   ASSH_UNREACHABLE();
@@ -363,10 +363,8 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_rsa_validate)
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_RET(assh_bignum_bytecode(c, 0, bytecode, "NNNT",
+  ASSH_TAIL_CALL(assh_bignum_bytecode(c, 0, bytecode, "NNNT",
                                     &k->nn, &k->dn, &k->en));
-
-  return ASSH_OK;
 }
 
 static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
@@ -444,7 +442,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
     }
 
     default:
-      ASSH_ERR_RET(ASSH_ERR_NOTSUP);
+      ASSH_TAIL_CALL(ASSH_ERR_NOTSUP);
     }
 
   /* allocate key structure */

@@ -276,7 +276,7 @@ assh_session_algo_filter(struct assh_session_s *s,
     {
     case ASSH_TR_KEX_WAIT:
     case ASSH_TR_SERVICE_KEX:
-      ASSH_ERR_RET(ASSH_ERR_STATE);
+      ASSH_TAIL_CALL(ASSH_ERR_STATE);
     default:
       s->kex_filter = filter != NULL
         ? filter : assh_session_kex_filter;

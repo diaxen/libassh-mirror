@@ -85,7 +85,7 @@ assh_error_t assh_event_get(struct assh_session_s *s,
     {
       /* all events have been reported, end of session. */
       assh_transport_state(s, ASSH_TR_CLOSED);
-      ASSH_ERR_RET(ASSH_ERR_CLOSED | ASSH_ERRSV_FIN);
+      ASSH_TAIL_CALL(ASSH_ERR_CLOSED | ASSH_ERRSV_FIN);
     }
 
   /* run the state machine which extracts deciphered packets from the

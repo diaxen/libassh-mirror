@@ -301,7 +301,7 @@ assh_load_pub_openssh(struct assh_context_s *c, FILE *file,
   if (comment != NULL && clen)
     {
       cmt[clen] = 0;
-      ASSH_ERR_RET(assh_strdup(c, comment, cmt, ASSH_ALLOC_INTERNAL));
+      ASSH_TAIL_CALL(assh_strdup(c, comment, cmt, ASSH_ALLOC_INTERNAL));
     }
 
   return ASSH_OK;

@@ -48,7 +48,7 @@ assh_sign_dsa_hash_algo(const struct assh_hash_algo_s **algo, uint_fast16_t n)
       *algo = &assh_hash_sha256;
       break;
     default:
-      ASSH_ERR_RET(ASSH_ERR_NOTSUP);
+      ASSH_TAIL_CALL(ASSH_ERR_NOTSUP);
     }
 
   return ASSH_OK;

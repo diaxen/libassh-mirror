@@ -55,7 +55,7 @@ ASSH_EVENT_HANDLER_FCN(assh_fd_event_read)
           if (errno == EAGAIN || errno == EWOULDBLOCK)
             break;
         case 0:
-          ASSH_ERR_RET(ASSH_ERR_IO | ASSH_ERRSV_FIN);
+          ASSH_TAIL_CALL(ASSH_ERR_IO | ASSH_ERRSV_FIN);
         default:
           te->transferred = r;
           break;
@@ -63,7 +63,7 @@ ASSH_EVENT_HANDLER_FCN(assh_fd_event_read)
       break;
     }
     default:
-      ASSH_ERR_RET(ASSH_ERR_IO | ASSH_ERRSV_FIN);
+      ASSH_TAIL_CALL(ASSH_ERR_IO | ASSH_ERRSV_FIN);
     }
 
   te->time = time(NULL);
@@ -93,7 +93,7 @@ ASSH_EVENT_HANDLER_FCN(assh_fd_event_write)
           if (errno == EAGAIN || errno == EWOULDBLOCK)
             break;
         case 0:
-          ASSH_ERR_RET(ASSH_ERR_IO | ASSH_ERRSV_FIN);
+          ASSH_TAIL_CALL(ASSH_ERR_IO | ASSH_ERRSV_FIN);
         default:
           te->transferred = r;
           break;
@@ -101,7 +101,7 @@ ASSH_EVENT_HANDLER_FCN(assh_fd_event_write)
       break;
     }
     default:
-      ASSH_ERR_RET(ASSH_ERR_IO | ASSH_ERRSV_FIN);
+      ASSH_TAIL_CALL(ASSH_ERR_IO | ASSH_ERRSV_FIN);
     }
 
   te->time = time(NULL);

@@ -221,7 +221,7 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_gcrypt_convert)
           return ASSH_OK;
         }
         default:
-          ASSH_ERR_RET(ASSH_ERR_NOTSUP);
+          ASSH_TAIL_CALL(ASSH_ERR_NOTSUP);
         }
 
       /* shift and zero pad */
@@ -327,7 +327,7 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_gcrypt_convert)
         }
 
         default:
-          ASSH_ERR_RET(ASSH_ERR_NOTSUP);
+          ASSH_TAIL_CALL(ASSH_ERR_NOTSUP);
         }
 
       ASSH_CHK_RET(dstn->n == NULL, ASSH_ERR_MEM);

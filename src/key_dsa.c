@@ -116,10 +116,8 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_dsa_output)
     }
 
     default:
-      ASSH_ERR_RET(ASSH_ERR_NOTSUP);
+      ASSH_TAIL_CALL(ASSH_ERR_NOTSUP);
     }
-
-  return ASSH_OK;
 }
 
 static ASSH_KEY_CMP_FCN(assh_key_dsa_cmp)
@@ -376,10 +374,8 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_RET(assh_bignum_bytecode(c, 0, bytecode1, "NNNNNTTm",
+  ASSH_TAIL_CALL(assh_bignum_bytecode(c, 0, bytecode1, "NNNNNTTm",
                              &k->pn, &k->qn, &k->gn, &k->xn, &k->yn));
-
-  return ASSH_OK;
 }
 
 static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
@@ -438,7 +434,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
     }
 
     default:
-      ASSH_ERR_RET(ASSH_ERR_NOTSUP);
+      ASSH_TAIL_CALL(ASSH_ERR_NOTSUP);
     }
 
   /* allocate key structure */

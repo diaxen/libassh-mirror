@@ -236,7 +236,7 @@ assh_kex_server_algos(struct assh_session_s *s, const uint8_t *lists[9],
             s->kex_preferred[i] = NULL;
         }
 
-      ASSH_ERR_RET(ASSH_ERR_MISSING_ALGO | ASSH_ERRSV_DISCONNECT);
+      ASSH_TAIL_CALL(ASSH_ERR_MISSING_ALGO | ASSH_ERRSV_DISCONNECT);
     done:;
     }
 
@@ -788,10 +788,8 @@ assh_kex_client_hash2(struct assh_session_s *s,
   assh_kex_lower_safety(s, sign_safety);
 
   /* setup new keys */
-  ASSH_ERR_RET(assh_kex_new_keys(s, hash_ctx->algo, ex_hash, secret_str)
-               | ASSH_ERRSV_DISCONNECT);
-
-  return ASSH_OK;
+  ASSH_TAIL_CALL(assh_kex_new_keys(s, hash_ctx->algo, ex_hash, secret_str)
+                | ASSH_ERRSV_DISCONNECT);
 }
 #endif
 
@@ -885,10 +883,8 @@ assh_kex_server_hash2(struct assh_session_s *s,
   assh_packet_shrink_string(pout, sign, sign_len);
 
   /* setup new symmetric keys */
-  ASSH_ERR_RET(assh_kex_new_keys(s, hash_ctx->algo, ex_hash, secret_str)
-	       | ASSH_ERRSV_DISCONNECT);
-
-  return ASSH_OK;
+  ASSH_TAIL_CALL(assh_kex_new_keys(s, hash_ctx->algo, ex_hash, secret_str)
+                | ASSH_ERRSV_DISCONNECT);
 }
 #endif
 

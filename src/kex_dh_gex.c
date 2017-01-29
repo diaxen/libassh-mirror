@@ -277,10 +277,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_dh_gex_host_key_lookup_done)
                ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
 
   if (!e->kex.hostkey_lookup.accept)
-    {
-      ASSH_ERR_RET(assh_kex_end(s, 0) | ASSH_ERRSV_DISCONNECT);
-      return ASSH_OK;
-    }
+    ASSH_TAIL_CALL(assh_kex_end(s, 0) | ASSH_ERRSV_DISCONNECT);
 
   struct assh_packet_s *p = pv->pck;
 
@@ -484,8 +481,7 @@ static assh_error_t assh_kex_dh_gex_server_wait_size(struct assh_session_s *s,
       break;
 
     default:
-      ASSH_ERR_RET(assh_transport_unimp(s, p));
-      return ASSH_OK;
+      ASSH_TAIL_CALL(assh_transport_unimp(s, p));
     }
 
   min = ASSH_MAX(min, pv->client_n - pv->client_n / 16);
@@ -744,51 +740,44 @@ static ASSH_KEX_PROCESS_FCN(assh_kex_dh_gex_process)
 #ifdef CONFIG_ASSH_CLIENT
     case ASSH_KEX_DH_GEX_CLIENT_SEND_SIZE:
       assert(p == NULL);
-      ASSH_ERR_RET(assh_kex_dh_gex_client_send_size(s)
+      ASSH_TAIL_CALL(assh_kex_dh_gex_client_send_size(s)
 		   | ASSH_ERRSV_DISCONNECT);
-      return ASSH_OK;
 
     case ASSH_KEX_DH_GEX_CLIENT_WAIT_GROUP:
       if (p == NULL)
         return ASSH_OK;
       if (p->head.msg == SSH_MSG_UNIMPLEMENTED)
-        {
-          ASSH_ERR_RET(assh_kex_dh_gex_client_send_size_old(s)
-                       | ASSH_ERRSV_DISCONNECT);
-          return ASSH_OK;
-        }
+        ASSH_TAIL_CALL(assh_kex_dh_gex_client_send_size_old(s)
+                      | ASSH_ERRSV_DISCONNECT);
+
     case ASSH_KEX_DH_GEX_CLIENT_WAIT_GROUP_OLD:
       if (p == NULL)
         return ASSH_OK;
-      ASSH_ERR_RET(assh_kex_dh_gex_client_wait_group(s, p)
-		   | ASSH_ERRSV_DISCONNECT);
-      return ASSH_OK;
+      ASSH_TAIL_CALL(assh_kex_dh_gex_client_wait_group(s, p)
+                    | ASSH_ERRSV_DISCONNECT);
 
     case ASSH_KEX_DH_GEX_CLIENT_WAIT_F:
       if (p == NULL)
         return ASSH_OK;
-      ASSH_ERR_RET(assh_kex_dh_gex_client_wait_f(s, p, e)
-		   | ASSH_ERRSV_DISCONNECT);
-      return ASSH_OK;
+      ASSH_TAIL_CALL(assh_kex_dh_gex_client_wait_f(s, p, e)
+                    | ASSH_ERRSV_DISCONNECT);
 
     case ASSH_KEX_DH_GEX_CLIENT_LOOKUP_HOST_KEY_WAIT:
-      ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+      ASSH_TAIL_CALL(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
 #endif
 
 #ifdef CONFIG_ASSH_SERVER
     case ASSH_KEX_DH_GEX_SERVER_WAIT_SIZE:
       if (p == NULL)
         return ASSH_OK;
-      ASSH_ERR_RET(assh_kex_dh_gex_server_wait_size(s, p)
-		   | ASSH_ERRSV_DISCONNECT);
-      return ASSH_OK;
+      ASSH_TAIL_CALL(assh_kex_dh_gex_server_wait_size(s, p)
+                    | ASSH_ERRSV_DISCONNECT);
 
     case ASSH_KEX_DH_GEX_SERVER_WAIT_E:
       if (p == NULL)
         return ASSH_OK;
-      ASSH_ERR_RET(assh_kex_dh_gex_server_wait_e(s, p)
-		   | ASSH_ERRSV_DISCONNECT);
-      return ASSH_OK;
+      ASSH_TAIL_CALL(assh_kex_dh_gex_server_wait_e(s, p)
+                    | ASSH_ERRSV_DISCONNECT);
 #endif
     }
 

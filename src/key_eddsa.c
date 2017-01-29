@@ -87,10 +87,8 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_eddsa_output)
     }
 
     default:
-      ASSH_ERR_RET(ASSH_ERR_NOTSUP);
+      ASSH_TAIL_CALL(ASSH_ERR_NOTSUP);
     }
-
-  return ASSH_OK;
 }
 
 static ASSH_KEY_CMP_FCN(assh_key_eddsa_cmp)
@@ -318,7 +316,7 @@ assh_key_eddsa_load(struct assh_context_s *c,
     }
 
     default:
-      ASSH_ERR_RET(ASSH_ERR_NOTSUP);
+      ASSH_TAIL_CALL(ASSH_ERR_NOTSUP);
     }
 
   k->key.algo = algo;

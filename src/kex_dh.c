@@ -154,10 +154,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_dh_host_key_lookup_done)
                ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
 
   if (!e->kex.hostkey_lookup.accept)
-    {
-      ASSH_ERR_RET(assh_kex_end(s, 0) | ASSH_ERRSV_DISCONNECT);
-      return ASSH_OK;
-    }
+    ASSH_TAIL_CALL(assh_kex_end(s, 0) | ASSH_ERRSV_DISCONNECT);
 
   struct assh_packet_s *p = pv->pck;
 
@@ -413,28 +410,25 @@ static ASSH_KEX_PROCESS_FCN(assh_kex_dh_process)
 #ifdef CONFIG_ASSH_CLIENT
     case ASSH_KEX_DH_CLIENT_INIT:
       assert(p == NULL);
-      ASSH_ERR_RET(assh_kex_dh_client_send_expmod(s)
+      ASSH_TAIL_CALL(assh_kex_dh_client_send_expmod(s)
 		   | ASSH_ERRSV_DISCONNECT);
-      return ASSH_OK;
 
     case ASSH_KEX_DH_CLIENT_WAIT_F:
       if (p == NULL)
         return ASSH_OK;
-      ASSH_ERR_RET(assh_kex_dh_client_wait_f(s, p, e)
-		   | ASSH_ERRSV_DISCONNECT);
-      return ASSH_OK;
+      ASSH_TAIL_CALL(assh_kex_dh_client_wait_f(s, p, e)
+                    | ASSH_ERRSV_DISCONNECT);
 
     case ASSH_KEX_DH_CLIENT_LOOKUP_HOST_KEY_WAIT:
-      ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+      ASSH_TAIL_CALL(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
 #endif
 
 #ifdef CONFIG_ASSH_SERVER
     case ASSH_KEX_DH_SERVER_WAIT_E:
       if (p == NULL)
         return ASSH_OK;
-      ASSH_ERR_RET(assh_kex_dh_server_wait_e(s, p)
-		   | ASSH_ERRSV_DISCONNECT);
-      return ASSH_OK;
+      ASSH_TAIL_CALL(assh_kex_dh_server_wait_e(s, p)
+                    | ASSH_ERRSV_DISCONNECT);
 #endif
     }
 

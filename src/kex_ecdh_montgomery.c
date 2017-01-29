@@ -196,10 +196,8 @@ assh_montgomery_point_mul(struct assh_session_s *s, uint8_t *result,
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_RET(assh_bignum_bytecode(s->ctx, 0, bytecode, "dddMMTTTTTTTTTms",
+  ASSH_TAIL_CALL(assh_bignum_bytecode(s->ctx, 0, bytecode, "dddMMTTTTTTTTTms",
           result, basepoint, scalar, curve->prime, curve->a24, curve->bits));
-
-  return ASSH_OK;
 }
 
 static assh_error_t ASSH_WARN_UNUSED_RESULT
@@ -263,10 +261,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_ecdhmt_host_key_lookup_done)
                ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
 
   if (!e->kex.hostkey_lookup.accept)
-    {
-      ASSH_ERR_RET(assh_kex_end(s, 0) | ASSH_ERRSV_DISCONNECT);
-      return ASSH_OK;
-    }
+    ASSH_TAIL_CALL(assh_kex_end(s, 0) | ASSH_ERRSV_DISCONNECT);
 
   struct assh_packet_s *p = pv->pck;
 
@@ -465,21 +460,19 @@ static ASSH_KEX_PROCESS_FCN(assh_kex_ecdhmt_process)
     case ASSH_KEX_ECDHMT_CLIENT_SEND_PUB:
       if (p == NULL)
         return ASSH_OK;
-      ASSH_ERR_RET(assh_kex_ecdhmt_client_wait_reply(s, p, e)
-		   | ASSH_ERRSV_DISCONNECT);
-      return ASSH_OK;
+      ASSH_TAIL_CALL(assh_kex_ecdhmt_client_wait_reply(s, p, e)
+                    | ASSH_ERRSV_DISCONNECT);
 
     case ASSH_KEX_ECDHMT_CLIENT_LOOKUP_HOST_KEY_WAIT:
-      ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+      ASSH_TAIL_CALL(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
 #endif
 
 #ifdef CONFIG_ASSH_SERVER
     case ASSH_KEX_ECDHMT_SERVER_WAIT_E:
       if (p == NULL)
         return ASSH_OK;
-      ASSH_ERR_RET(assh_kex_ecdhmt_server_wait_pubkey(s, p)
-		   | ASSH_ERRSV_DISCONNECT);
-      return ASSH_OK;
+      ASSH_TAIL_CALL(assh_kex_ecdhmt_server_wait_pubkey(s, p)
+                    | ASSH_ERRSV_DISCONNECT);
 #endif
     }
 

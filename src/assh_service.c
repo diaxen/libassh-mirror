@@ -77,16 +77,14 @@ assh_error_t assh_service_register_default(struct assh_context_s *c)
     {
 #ifdef CONFIG_ASSH_CLIENT
     case ASSH_CLIENT:
-      ASSH_ERR_RET(assh_service_register_va(c, &assh_service_userauth_client,
+      ASSH_TAIL_CALL(assh_service_register_va(c, &assh_service_userauth_client,
 		    &assh_service_connection, NULL));
-      return ASSH_OK;
 #endif
 
 #ifdef CONFIG_ASSH_SERVER
     case ASSH_SERVER:
-      ASSH_ERR_RET(assh_service_register_va(c, &assh_service_userauth_server,
+      ASSH_TAIL_CALL(assh_service_register_va(c, &assh_service_userauth_server,
 		    &assh_service_connection, NULL));
-      return ASSH_OK;
 #endif
 
     default:
@@ -173,9 +171,8 @@ assh_error_t assh_service_got_accept(struct assh_session_s *s,
   /* init service */
   const struct assh_service_s *srv = s->srv_rq;
   s->srv_rq = NULL;
-  ASSH_ERR_RET(srv->f_init(s));
 
-  return ASSH_OK;
+  ASSH_TAIL_CALL(srv->f_init(s));
 }
 
 assh_error_t assh_service_send_request(struct assh_session_s *s)

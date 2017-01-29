@@ -286,25 +286,29 @@ static ASSH_EVENT_DONE_FCN(assh_event_request_done)
   switch (ev->reply)
     {
     case ASSH_CONNECTION_REPLY_SUCCESS:
-      if (rq != NULL)
-        ASSH_ERR_RET(assh_request_success_reply(rq,
+      if (rq == NULL)
+        return ASSH_OK;
+      ASSH_TAIL_CALL(assh_request_success_reply(rq,
                       ev->rsp_data.data,
                       ev->rsp_data.size)
 		     | ASSH_ERRSV_DISCONNECT);
       break;
     case ASSH_CONNECTION_REPLY_FAILED:
-      if (rq != NULL)
-        ASSH_ERR_RET(assh_request_failed_reply(rq)
-		     | ASSH_ERRSV_DISCONNECT);
+      if (rq == NULL)
+        return ASSH_OK;
+      ASSH_TAIL_CALL(assh_request_failed_reply(rq)
+                    | ASSH_ERRSV_DISCONNECT);
       break;
     case ASSH_CONNECTION_REPLY_POSTPONED:
       ASSH_CHK_RET(rq == NULL, ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
-      break;
-    case ASSH_CONNECTION_REPLY_CLOSED:
-      ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
-    }
+      return ASSH_OK;
 
-  return ASSH_OK;
+    case ASSH_CONNECTION_REPLY_CLOSED:
+      ASSH_TAIL_CALL(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+
+    default:
+      ASSH_UNREACHABLE();
+    }
 }
 
 /* setup an event from incoming request */
@@ -340,7 +344,7 @@ assh_connection_got_request(struct assh_session_s *s,
 	{
 	case ASSH_CHANNEL_ST_OPEN_SENT:
 	case ASSH_CHANNEL_ST_OPEN_RECEIVED:
-	  ASSH_ERR_RET(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+	  ASSH_TAIL_CALL(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
 
 	case ASSH_CHANNEL_ST_OPEN:
 	case ASSH_CHANNEL_ST_EOF_SENT:
@@ -357,7 +361,7 @@ assh_connection_got_request(struct assh_session_s *s,
 	case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
           /* This channel id has been removed from the channel map
              when the close packet was received. */
-	  ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+	  ASSH_TAIL_CALL(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
 	}
     }
 
@@ -589,7 +593,7 @@ assh_connection_got_request_reply(struct assh_session_s *s,
         {
         case ASSH_CHANNEL_ST_OPEN_SENT:
         case ASSH_CHANNEL_ST_OPEN_RECEIVED:
-          ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+          ASSH_TAIL_CALL(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
 
         case ASSH_CHANNEL_ST_OPEN:
         case ASSH_CHANNEL_ST_EOF_SENT:
@@ -606,7 +610,7 @@ assh_connection_got_request_reply(struct assh_session_s *s,
         case ASSH_CHANNEL_ST_CLOSING:
           /* This channel id has been removed from the channel map
              when the close packet was received. */
-          ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+          ASSH_TAIL_CALL(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
         }
     }
 
@@ -747,24 +751,26 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_open_done)
   switch (eo->reply)
     {
     case ASSH_CONNECTION_REPLY_SUCCESS:
-      ASSH_ERR_RET(assh_channel_open_success_reply2(eo->ch, eo->win_size,
+      ASSH_TAIL_CALL(assh_channel_open_success_reply2(eo->ch, eo->win_size,
                      eo->pkt_size, eo->rsp_data.data, eo->rsp_data.size)
 		   | ASSH_ERRSV_DISCONNECT);
-      break;
+
     case ASSH_CONNECTION_REPLY_FAILED:
-      ASSH_ERR_RET(assh_channel_open_failed_reply(eo->ch, eo->reason)
+      ASSH_TAIL_CALL(assh_channel_open_failed_reply(eo->ch, eo->reason)
 		   | ASSH_ERRSV_DISCONNECT);
-      break;
+
     case ASSH_CONNECTION_REPLY_POSTPONED:
       /* keep values for assh_channel_open_success_reply */
       eo->ch->lpkt_size = eo->pkt_size;
       eo->ch->lwin_size = eo->win_size;
-      break;
-    case ASSH_CONNECTION_REPLY_CLOSED:
-      ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
-    }
+      return ASSH_OK;
 
-  return ASSH_OK;      
+    case ASSH_CONNECTION_REPLY_CLOSED:
+      ASSH_TAIL_CALL(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+
+    default:
+      ASSH_UNREACHABLE();
+    }
 }
 
 static ASSH_WARN_UNUSED_RESULT assh_error_t
@@ -935,7 +941,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_open_reply_done)
       break;
 
     default:
-      ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+      ASSH_TAIL_CALL(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
     }
 
   return ASSH_OK;
@@ -1052,7 +1058,7 @@ assh_connection_got_channel_data(struct assh_session_s *s,
     case ASSH_CHANNEL_ST_OPEN_RECEIVED:
     case ASSH_CHANNEL_ST_EOF_RECEIVED:
     case ASSH_CHANNEL_ST_EOF_CLOSE:
-      ASSH_ERR_RET(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+      ASSH_TAIL_CALL(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
 
     case ASSH_CHANNEL_ST_CLOSE_CALLED:
     case ASSH_CHANNEL_ST_OPEN:
@@ -1061,7 +1067,7 @@ assh_connection_got_channel_data(struct assh_session_s *s,
 
     case ASSH_CHANNEL_ST_CLOSING:
     case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
-      ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+      ASSH_TAIL_CALL(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
     }
 
   uint32_t ext_type = 0;
@@ -1151,7 +1157,7 @@ assh_connection_got_channel_window_adjust(struct assh_session_s *s,
     {
     case ASSH_CHANNEL_ST_OPEN_SENT:
     case ASSH_CHANNEL_ST_OPEN_RECEIVED:
-      ASSH_ERR_RET(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+      ASSH_TAIL_CALL(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
 
     case ASSH_CHANNEL_ST_EOF_SENT:
     case ASSH_CHANNEL_ST_EOF_CLOSE:
@@ -1164,7 +1170,7 @@ assh_connection_got_channel_window_adjust(struct assh_session_s *s,
 
     case ASSH_CHANNEL_ST_CLOSING:
     case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
-      ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+      ASSH_TAIL_CALL(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
     }
 
   if (inc == 0)
@@ -1210,7 +1216,7 @@ assh_channel_data_alloc_chk(struct assh_channel_s *ch,
     case ASSH_CHANNEL_ST_EOF_CLOSE:
     case ASSH_CHANNEL_ST_CLOSE_CALLED:
     case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
-      ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+      ASSH_TAIL_CALL(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
 
     case ASSH_CHANNEL_ST_OPEN:
     case ASSH_CHANNEL_ST_EOF_RECEIVED:
@@ -1384,7 +1390,7 @@ assh_connection_got_channel_close(struct assh_session_s *s,
     {
     case ASSH_CHANNEL_ST_OPEN_SENT:
     case ASSH_CHANNEL_ST_OPEN_RECEIVED:
-      ASSH_ERR_RET(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+      ASSH_TAIL_CALL(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
 
     case ASSH_CHANNEL_ST_OPEN:
     case ASSH_CHANNEL_ST_EOF_SENT:
@@ -1406,7 +1412,7 @@ assh_connection_got_channel_close(struct assh_session_s *s,
     case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
       /* This channel id has been removed from the channel map
          when the close packet was received. */
-      ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+      ASSH_TAIL_CALL(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
     }
 
   /* move channel from id lookup map to closing queue */
@@ -1476,7 +1482,7 @@ assh_connection_got_channel_eof(struct assh_session_s *s,
     case ASSH_CHANNEL_ST_OPEN_RECEIVED:
     case ASSH_CHANNEL_ST_EOF_RECEIVED:
     case ASSH_CHANNEL_ST_EOF_CLOSE:
-      ASSH_ERR_RET(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+      ASSH_TAIL_CALL(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
 
     case ASSH_CHANNEL_ST_OPEN:
       ch->status = ASSH_CHANNEL_ST_EOF_RECEIVED;
@@ -1495,7 +1501,7 @@ assh_connection_got_channel_eof(struct assh_session_s *s,
     case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
       /* This channel id has been removed from the channel map
          when the close packet was received. */
-      ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+      ASSH_TAIL_CALL(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
     }
 
   struct assh_event_channel_eof_s *ev =
@@ -1528,7 +1534,7 @@ assh_channel_eof(struct assh_channel_s *ch)
     {
     case ASSH_CHANNEL_ST_OPEN_SENT:
     case ASSH_CHANNEL_ST_OPEN_RECEIVED:
-      ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+      ASSH_TAIL_CALL(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
 
     case ASSH_CHANNEL_ST_OPEN:
       ASSH_ERR_RET(assh_connection_send_channel_close(s, ch, SSH_MSG_CHANNEL_EOF)
@@ -1707,7 +1713,7 @@ static ASSH_SERVICE_PROCESS_FCN(assh_connection_process)
       break;
 
     default:
-      ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+      ASSH_TAIL_CALL(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
     }
 
   /* move all channels to the closing queue */
@@ -1759,57 +1765,57 @@ static ASSH_SERVICE_PROCESS_FCN(assh_connection_process)
   switch (p->head.msg)
     {
     case SSH_MSG_GLOBAL_REQUEST:
-      ASSH_ERR_RET(assh_connection_got_request(s, p, e, 1));
-      break;
+      ASSH_TAIL_CALL(assh_connection_got_request(s, p, e, 1));
+
     case SSH_MSG_REQUEST_SUCCESS:
-      ASSH_ERR_RET(assh_connection_got_request_reply(s, p, e, 1, 1));
-      break;
+      ASSH_TAIL_CALL(assh_connection_got_request_reply(s, p, e, 1, 1));
+
     case SSH_MSG_REQUEST_FAILURE:
-      ASSH_ERR_RET(assh_connection_got_request_reply(s, p, e, 1, 0));
-      break;
+      ASSH_TAIL_CALL(assh_connection_got_request_reply(s, p, e, 1, 0));
+
     case SSH_MSG_CHANNEL_OPEN:
-      ASSH_ERR_RET(assh_connection_got_channel_open(s, p, e));
-      break;
+      ASSH_TAIL_CALL(assh_connection_got_channel_open(s, p, e));
+
     case SSH_MSG_CHANNEL_OPEN_CONFIRMATION:
-      ASSH_ERR_RET(assh_connection_got_channel_open_reply(s, p, e, 1));
-      break;
+      ASSH_TAIL_CALL(assh_connection_got_channel_open_reply(s, p, e, 1));
+
     case SSH_MSG_CHANNEL_OPEN_FAILURE:
-      ASSH_ERR_RET(assh_connection_got_channel_open_reply(s, p, e, 0));
-      break;
+      ASSH_TAIL_CALL(assh_connection_got_channel_open_reply(s, p, e, 0));
+
     case SSH_MSG_CHANNEL_WINDOW_ADJUST:
-      ASSH_ERR_RET(assh_connection_got_channel_window_adjust(s, p, e));
-      break;
+      ASSH_TAIL_CALL(assh_connection_got_channel_window_adjust(s, p, e));
+
     case SSH_MSG_CHANNEL_DATA:
-      ASSH_ERR_RET(assh_connection_got_channel_data(s, p, e, 0));
-      break;
+      ASSH_TAIL_CALL(assh_connection_got_channel_data(s, p, e, 0));
+
     case SSH_MSG_CHANNEL_EXTENDED_DATA:
-      ASSH_ERR_RET(assh_connection_got_channel_data(s, p, e, 1));
-      break;
+      ASSH_TAIL_CALL(assh_connection_got_channel_data(s, p, e, 1));
+
     case SSH_MSG_CHANNEL_EOF:
-      ASSH_ERR_RET(assh_connection_got_channel_eof(s, p, e));
-      break;
+      ASSH_TAIL_CALL(assh_connection_got_channel_eof(s, p, e));
+
     case SSH_MSG_CHANNEL_CLOSE:
-      ASSH_ERR_RET(assh_connection_got_channel_close(s, p, e));
-      break;
+      ASSH_TAIL_CALL(assh_connection_got_channel_close(s, p, e));
+
     case SSH_MSG_CHANNEL_REQUEST:
-      ASSH_ERR_RET(assh_connection_got_request(s, p, e, 0));
-      break;
+      ASSH_TAIL_CALL(assh_connection_got_request(s, p, e, 0));
+
     case SSH_MSG_CHANNEL_SUCCESS:
-      ASSH_ERR_RET(assh_connection_got_request_reply(s, p, e, 0, 1));
-      break;
+      ASSH_TAIL_CALL(assh_connection_got_request_reply(s, p, e, 0, 1));
+
     case SSH_MSG_CHANNEL_FAILURE:
-      ASSH_ERR_RET(assh_connection_got_request_reply(s, p, e, 0, 0));
-      break;
+      ASSH_TAIL_CALL(assh_connection_got_request_reply(s, p, e, 0, 0));
+
     case SSH_MSG_UNIMPLEMENTED:
       /* this service only send standard messages which must be
          supported by the remote side. */
-      ASSH_ERR_RET(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+      ASSH_TAIL_CALL(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+
     default:
       /* handle non-standard messages gracefully */
-      ASSH_ERR_RET(assh_transport_unimp(s, p));
+      ASSH_TAIL_CALL(assh_transport_unimp(s, p));
     }
 
-  return ASSH_OK;
 }
 
 const struct assh_service_s assh_service_connection =

@@ -206,7 +206,7 @@ assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
       n = l = ASSH_ALIGN8(b) / 8;
       break;
     default:
-      ASSH_ERR_RET(ASSH_ERR_BAD_ARG);
+      ASSH_TAIL_CALL(ASSH_ERR_BAD_ARG);
     }
 
   if (size != NULL)

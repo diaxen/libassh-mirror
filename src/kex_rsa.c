@@ -144,10 +144,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
                ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
 
   if (!e->kex.hostkey_lookup.accept)
-    {
-      ASSH_ERR_RET(assh_kex_end(s, 0) | ASSH_ERRSV_DISCONNECT);
-      return ASSH_OK;
-    }
+    ASSH_TAIL_CALL(assh_kex_end(s, 0) | ASSH_ERRSV_DISCONNECT);
 
   /* SSH_MSG_KEXRSA_PUBKEY packet */
   struct assh_packet_s *p = pv->pck;
@@ -523,9 +520,8 @@ static assh_error_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
 
   assh_transport_push(s, pout);
 
-  ASSH_ERR_RET(assh_kex_end(s, 1) | ASSH_ERRSV_DISCONNECT);
+  ASSH_TAIL_CALL(assh_kex_end(s, 1) | ASSH_ERRSV_DISCONNECT);
 
-  return ASSH_OK;
  err_p:
   assh_packet_release(pout);
   return err;
@@ -541,35 +537,34 @@ static ASSH_KEX_PROCESS_FCN(assh_kex_rsa_process)
     {
 #ifdef CONFIG_ASSH_CLIENT
     case ASSH_KEX_RSA_CLIENT_WAIT_PUBKEY:
-      if (p != NULL)
-	ASSH_ERR_RET(assh_kex_rsa_client_wait_pubkey(s, p, e)
-		     | ASSH_ERRSV_DISCONNECT);
-      return ASSH_OK;
+      if (p == NULL)
+        return ASSH_OK;
+      ASSH_TAIL_CALL(assh_kex_rsa_client_wait_pubkey(s, p, e)
+                    | ASSH_ERRSV_DISCONNECT);
 
     case ASSH_KEX_RSA_CLIENT_LOOKUP_HOST_KEY_WAIT:
-      ASSH_ERR_RET(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+      ASSH_TAIL_CALL(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
       break;
 
     case ASSH_KEX_RSA_CLIENT_WAIT_SIGN:
-      if (p != NULL)
-	ASSH_ERR_RET(assh_kex_rsa_client_wait_sign(s, p)
-		     | ASSH_ERRSV_DISCONNECT);
-      return ASSH_OK;
+      if (p == NULL)
+        return ASSH_OK;
+      ASSH_TAIL_CALL(assh_kex_rsa_client_wait_sign(s, p)
+                    | ASSH_ERRSV_DISCONNECT);
 
 #endif
 
 #ifdef CONFIG_ASSH_SERVER
     case ASSH_KEX_RSA_SERVER_SEND_PUBKEY:
       assert(p == NULL);
-      ASSH_ERR_RET(assh_kex_rsa_server_send_pubkey(s)
-		   | ASSH_ERRSV_DISCONNECT);
-      return ASSH_OK;
+      ASSH_TAIL_CALL(assh_kex_rsa_server_send_pubkey(s)
+                    | ASSH_ERRSV_DISCONNECT);
 
     case ASSH_KEX_RSA_SERVER_WAIT_SECRET:
-      if (p != NULL)
-	ASSH_ERR_RET(assh_kex_rsa_server_wait_secret(s, p)
-		     | ASSH_ERRSV_DISCONNECT);
-      return ASSH_OK;
+      if (p == NULL)
+        return ASSH_OK;
+      ASSH_TAIL_CALL(assh_kex_rsa_server_wait_secret(s, p)
+                    | ASSH_ERRSV_DISCONNECT);
 #endif
     }
 

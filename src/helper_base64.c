@@ -97,7 +97,7 @@ assh_base64_decode_update(struct assh_base64_ctx_s *ctx,
       switch (c)
         {
         case -1:
-          ASSH_ERR_RET(ASSH_ERR_BAD_DATA);
+          ASSH_TAIL_CALL(ASSH_ERR_BAD_DATA);
         case -3:     /* padding char = */
           ASSH_CHK_RET(ctx->pad++ >= 2, ASSH_ERR_BAD_DATA);
         case -2:
