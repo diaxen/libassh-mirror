@@ -41,7 +41,7 @@ static ASSH_PRNG_GET_FCN(assh_prng_dev_random_get)
   if (fd < 0)
     {
       fd = open("/dev/random", O_RDONLY);
-      ASSH_CHK_RET(fd < 0, ASSH_ERR_IO);
+      ASSH_RET_IF_TRUE(fd < 0, ASSH_ERR_IO);
 
       struct pollfd fds = {
 	.fd = fd,
@@ -70,7 +70,7 @@ static ASSH_PRNG_GET_FCN(assh_prng_dev_random_get)
   while (l)
     {
       int r = read(fd, rdata, l);
-      ASSH_CHK_GTO(r <= 0, ASSH_ERR_IO, end);
+      ASSH_JMP_IF_TRUE(r <= 0, ASSH_ERR_IO, end);
       l -= r;
       rdata += r;
     }

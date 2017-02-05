@@ -51,9 +51,9 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
     }
 
   /* check availability of the private key */
-  ASSH_CHK_RET(!k->key.private, ASSH_ERR_MISSING_KEY);
+  ASSH_RET_IF_TRUE(!k->key.private, ASSH_ERR_MISSING_KEY);
 
-  ASSH_CHK_RET(*sign_len < len, ASSH_ERR_OUTPUT_OVERFLOW);
+  ASSH_RET_IF_TRUE(*sign_len < len, ASSH_ERR_OUTPUT_OVERFLOW);
   *sign_len = len;
 
   assh_store_u32(sign, tlen);
@@ -78,7 +78,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
 
   uint_fast8_t i;
 
-  ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, hash), err_scratch);
+  ASSH_JMP_ON_ERR(assh_hash_init(c, hash_ctx, hash), err_scratch);
   assh_hash_update(hash_ctx, ks, n);
   assh_hash_final(hash_ctx, h, n * 2);
   assh_hash_cleanup(hash_ctx);
@@ -91,7 +91,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
   assh_edward_adjust(curve, h);
 
   /* r */
-  ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, hash), err_scratch);
+  ASSH_JMP_ON_ERR(assh_hash_init(c, hash_ctx, hash), err_scratch);
   assh_hash_update(hash_ctx, h + n, n);
   for (i = 0; i < data_count; i++)
     assh_hash_update(hash_ctx, data[i].data, data[i].len);
@@ -168,7 +168,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
       ASSH_BOP_END(),
     };
 
-    ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode1,
+    ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode1,
       "MMMMMsdsddmTTTTTTTTTTTTTTTTT", curve->bx, curve->by,
       curve->a, curve->p, curve->d, curve->bits,
       r, n * 8 * 2,             /* scalar */
@@ -183,7 +183,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
 #endif
 
   /* hram */
-  ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, hash), err_scratch);
+  ASSH_JMP_ON_ERR(assh_hash_init(c, hash_ctx, hash), err_scratch);
   assh_hash_update(hash_ctx, r_str, n);
   assh_hash_update(hash_ctx, kp, n);
   for (i = 0; i < data_count; i++)
@@ -195,7 +195,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
   assh_hexdump("hram", hram, 2 * n);
 #endif
 
-  ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, hash), err_scratch);
+  ASSH_JMP_ON_ERR(assh_hash_init(c, hash_ctx, hash), err_scratch);
   assh_hash_update(hash_ctx, ks, n);
   assh_hash_final(hash_ctx, az, n * 2);
   assh_hash_cleanup(hash_ctx);
@@ -238,7 +238,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
       ASSH_BOP_END(),
     };
 
-    ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode2, "MddddsTTTTm",
+    ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode2, "MddddsTTTTm",
       curve->l, hram, az, r, s_str, n * 8), err_scratch);
   }
 
@@ -262,13 +262,13 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
   size_t n = ASSH_ALIGN8(k->curve->bits) / 8;
   size_t tlen = strlen(k->key.algo->type);
 
-  ASSH_CHK_RET(sign_len != 4 + tlen + 4 + 2 * n, ASSH_ERR_INPUT_OVERFLOW);
+  ASSH_RET_IF_TRUE(sign_len != 4 + tlen + 4 + 2 * n, ASSH_ERR_INPUT_OVERFLOW);
 
-  ASSH_CHK_RET(tlen != assh_load_u32(sign), ASSH_ERR_BAD_DATA);
-  ASSH_CHK_RET(memcmp(sign + 4, k->key.algo->type, tlen), ASSH_ERR_BAD_DATA);
+  ASSH_RET_IF_TRUE(tlen != assh_load_u32(sign), ASSH_ERR_BAD_DATA);
+  ASSH_RET_IF_TRUE(memcmp(sign + 4, k->key.algo->type, tlen), ASSH_ERR_BAD_DATA);
 
   uint8_t *rs_str = (uint8_t*)sign + 4 + tlen;
-  ASSH_CHK_RET(assh_load_u32(rs_str) != n * 2, ASSH_ERR_INPUT_OVERFLOW);
+  ASSH_RET_IF_TRUE(assh_load_u32(rs_str) != n * 2, ASSH_ERR_INPUT_OVERFLOW);
 
   const uint8_t *kp = k->data;
 
@@ -283,7 +283,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
 
   uint_fast8_t i;
 
-  ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, hash), err_scratch);
+  ASSH_JMP_ON_ERR(assh_hash_init(c, hash_ctx, hash), err_scratch);
   assh_hash_update(hash_ctx, rs_str + 4, n);
   assh_hash_update(hash_ctx, kp, n);
   for (i = 0; i < data_count; i++)
@@ -484,7 +484,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, kx_sign, bytecode,
+  ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, kx_sign, bytecode,
           "MMMMMMsdddsddTTTTTTTTTTTTTTTTTTTm", curve->bx, curve->by,
           curve->a, curve->p, curve->d, curve->i,
           curve->bits, kp,
@@ -500,7 +500,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
   assh_hexdump("rxy", ry, n);
 #endif
 
-  ASSH_CHK_GTO(assh_memcmp(rs_str + 4, ry, n),
+  ASSH_JMP_IF_TRUE(assh_memcmp(rs_str + 4, ry, n),
                ASSH_ERR_NUM_COMPARE_FAILED, err_scratch);
 
   err = ASSH_OK;

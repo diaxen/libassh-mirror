@@ -301,7 +301,7 @@ static ASSH_CIPHER_PROCESS_FCN(assh_aes_cbc_process)
   uint32_t b[4];
   uint_fast8_t i;
 
-  ASSH_CHK_RET(len & 15, ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_IF_TRUE(len & 15, ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
 
   if (ctx->encrypt)
     {
@@ -336,7 +336,7 @@ static ASSH_CIPHER_PROCESS_FCN(assh_aes_cbc_process)
 	}
     }
 
-  ASSH_CHK_RET(len != 0, ASSH_ERR_BAD_ARG);
+  ASSH_RET_IF_TRUE(len != 0, ASSH_ERR_BAD_ARG);
   return ASSH_OK;
 }
 
@@ -348,7 +348,7 @@ static ASSH_CIPHER_PROCESS_FCN(assh_aes_ctr_process)
   uint32_t *iv = ctx->iv;
   uint_fast8_t i;
 
-  ASSH_CHK_RET(len & 15, ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_IF_TRUE(len & 15, ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
 
   for ( ;len >= 16; len -= 16)
     {
@@ -364,7 +364,7 @@ static ASSH_CIPHER_PROCESS_FCN(assh_aes_ctr_process)
 	iv[3-i] = assh_swap_u32(t = (t >> 32) + assh_swap_u32(iv[3-i]));
     }
 
-  ASSH_CHK_RET(len != 0, ASSH_ERR_BAD_ARG);
+  ASSH_RET_IF_TRUE(len != 0, ASSH_ERR_BAD_ARG);
   return ASSH_OK;
 }
 

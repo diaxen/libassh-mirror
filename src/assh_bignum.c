@@ -54,7 +54,7 @@ size_t assh_bignum_size_of_bits(enum assh_bignum_fmt_e fmt, size_t bits)
       l = n * 2;
       break;
     case ASSH_BIGNUM_INT:
-      ASSH_CHK_RET(bits >= sizeof(intptr_t) * 8, ASSH_ERR_INPUT_OVERFLOW);
+      ASSH_RET_IF_TRUE(bits >= sizeof(intptr_t) * 8, ASSH_ERR_INPUT_OVERFLOW);
       l = sizeof(intptr_t);
       break;
     default:
@@ -114,15 +114,15 @@ assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
       l = n + 4;
       if (n > 0)
         {
-          ASSH_CHK_RET(mpint[4] & 0x80, ASSH_ERR_NUM_OVERFLOW);
+          ASSH_RET_IF_TRUE(mpint[4] & 0x80, ASSH_ERR_NUM_OVERFLOW);
           if (mpint[4] == 0)
             {
               mpint++, n--;
-              ASSH_CHK_RET(n == 0, ASSH_ERR_BAD_DATA);
-              ASSH_CHK_RET((mpint[4] & 0x80) == 0, ASSH_ERR_BAD_DATA);
+              ASSH_RET_IF_TRUE(n == 0, ASSH_ERR_BAD_DATA);
+              ASSH_RET_IF_TRUE((mpint[4] & 0x80) == 0, ASSH_ERR_BAD_DATA);
             }
         }
-      ASSH_CHK_RET(n > 0 && mpint[4] == 0, ASSH_ERR_BAD_DATA);
+      ASSH_RET_IF_TRUE(n > 0 && mpint[4] == 0, ASSH_ERR_BAD_DATA);
       b = n * 8;
       if (n)
         b -= assh_ct_clz8(mpint[4]);
@@ -145,11 +145,11 @@ assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
       const uint8_t *asn1 = data;
       assh_asn1_size(asn1, &l, &n);
       asn1 += l;
-      ASSH_CHK_RET(n == 0, ASSH_ERR_BAD_DATA);
+      ASSH_RET_IF_TRUE(n == 0, ASSH_ERR_BAD_DATA);
       l += n;
 #if 0
       /* this check is disabled as it does not work for octet/bit string content type */
-      ASSH_CHK_RET(asn1[0] & 0x80 /* negative integer */, ASSH_ERR_NUM_OVERFLOW);
+      ASSH_RET_IF_TRUE(asn1[0] & 0x80 /* negative integer */, ASSH_ERR_NUM_OVERFLOW);
 #endif
       while (n > 0 && asn1[0] == 0)
         asn1++, n--;
@@ -206,7 +206,7 @@ assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
       n = l = ASSH_ALIGN8(b) / 8;
       break;
     default:
-      ASSH_TAIL_CALL(ASSH_ERR_BAD_ARG);
+      ASSH_RETURN(ASSH_ERR_BAD_ARG);
     }
 
   if (size != NULL)

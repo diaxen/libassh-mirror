@@ -160,15 +160,15 @@ assh_error_t assh_algo_register(struct assh_context_s *c, assh_safety_t safety,
   assh_error_t err = ASSH_OK;
   size_t i, count = c->algo_cnt;
 
-  ASSH_CHK_RET(safety > 99, ASSH_ERR_BAD_ARG);
+  ASSH_RET_IF_TRUE(safety > 99, ASSH_ERR_BAD_ARG);
 
   for (i = 0; table[i] != NULL; i++)
     {
       const struct assh_algo_s *algo = table[i];
-      ASSH_CHK_RET(algo->api != ASSH_ALGO_API_VERSION, ASSH_ERR_BAD_ARG);
+      ASSH_RET_IF_TRUE(algo->api != ASSH_ALGO_API_VERSION, ASSH_ERR_BAD_ARG);
       if (algo->safety < min_safety || algo->speed < min_speed)
 	continue;
-      ASSH_CHK_RET(count == c->algo_max, ASSH_ERR_MEM);
+      ASSH_RET_IF_TRUE(count == c->algo_max, ASSH_ERR_MEM);
       c->algos[count++] = algo;
     }
 
@@ -193,7 +193,7 @@ assh_error_t assh_algo_register_va(struct assh_context_s *c, assh_safety_t safet
   va_list ap;
   size_t count = c->algo_cnt;
 
-  ASSH_CHK_RET(safety > 99, ASSH_ERR_BAD_ARG);
+  ASSH_RET_IF_TRUE(safety > 99, ASSH_ERR_BAD_ARG);
 
   va_start(ap, min_speed);
 
@@ -203,10 +203,10 @@ assh_error_t assh_algo_register_va(struct assh_context_s *c, assh_safety_t safet
       struct assh_algo_s *algo = va_arg(ap, void*);
       if (algo == NULL)
         break;
-      ASSH_CHK_RET(algo->api != ASSH_ALGO_API_VERSION, ASSH_ERR_BAD_ARG);
+      ASSH_RET_IF_TRUE(algo->api != ASSH_ALGO_API_VERSION, ASSH_ERR_BAD_ARG);
       if (algo->safety < min_safety || algo->speed < min_speed)
 	continue;
-      ASSH_CHK_GTO(count == c->algo_max, ASSH_ERR_MEM, err_);
+      ASSH_JMP_IF_TRUE(count == c->algo_max, ASSH_ERR_MEM, err_);
       c->algos[count++] = algo;
     }
 

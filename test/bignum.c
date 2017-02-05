@@ -1005,7 +1005,7 @@ assh_error_t test_add_sub(unsigned int count)
         ASSH_BOP_END(),
       };
 
-      ASSH_ERR_RET(assh_bignum_bytecode(&context, 0, bytecode, "TTTTss", s, l));
+      ASSH_RET_ON_ERR(assh_bignum_bytecode(&context, 0, bytecode, "TTTTss", s, l));
     }
 
   fprintf(stderr, "a");
@@ -1047,7 +1047,7 @@ assh_error_t test_div(unsigned int count)
         ASSH_BOP_END(),
       };
 
-      ASSH_ERR_RET(assh_bignum_bytecode(&context, 0, bytecode, "TTTTTs", (size_t)256));
+      ASSH_RET_ON_ERR(assh_bignum_bytecode(&context, 0, bytecode, "TTTTTs", (size_t)256));
     }
 
   fprintf(stderr, "d");
@@ -1093,10 +1093,10 @@ assh_error_t test_move(unsigned int count)
         ASSH_BOP_END(),
       };
 
-      ASSH_ERR_RET(assh_bignum_bytecode(&context, 0, bytecode, "TTsMM",
+      ASSH_RET_ON_ERR(assh_bignum_bytecode(&context, 0, bytecode, "TTsMM",
                                         (size_t)256, mpa, mpb));
 
-      ASSH_CHK_RET(memcmp(mpa, mpb, s+4), ASSH_ERR_BAD_DATA);
+      ASSH_RET_IF_TRUE(memcmp(mpa, mpb, s+4), ASSH_ERR_BAD_DATA);
     }
 
   fprintf(stderr, "c");
@@ -1141,7 +1141,7 @@ assh_error_t test_modinv(unsigned int count)
         ASSH_BOP_END(),
       };
 
-      ASSH_ERR_RET(assh_bignum_bytecode(&context, 0, bytecode, "TTTTsM",
+      ASSH_RET_ON_ERR(assh_bignum_bytecode(&context, 0, bytecode, "TTTTsM",
                                         (size_t)(rand() % 900 + 100),
                                         i % 2 ? prime1 : prime2));
     }
@@ -1193,7 +1193,7 @@ assh_error_t test_mt(unsigned int count)
         ASSH_BOP_END(),
       };
 
-      ASSH_ERR_RET(assh_bignum_bytecode(&context, 0, bytecode, "TTTTTmsM",
+      ASSH_RET_ON_ERR(assh_bignum_bytecode(&context, 0, bytecode, "TTTTTmsM",
                                         (size_t)1024 /*(rand() % 900 + 100)*/,
                                         i % 2 ? prime1 : prime2));
     }
@@ -1265,7 +1265,7 @@ assh_error_t test_expmod(unsigned int count)
         ASSH_BOP_END(),
       };
 
-      ASSH_ERR_RET(assh_bignum_bytecode(&context, 0, bytecode,
+      ASSH_RET_ON_ERR(assh_bignum_bytecode(&context, 0, bytecode,
                                         "TTTTTTTTTTMm", prime1));
     }
 
@@ -1295,12 +1295,12 @@ int main(int argc, char **argv)
 
   for (i = 0; count <= 0 || i < count; i++)
     {
-      ASSH_ERR_RET(test_add_sub(0x100));
-      ASSH_ERR_RET(test_div(0x100));
-      ASSH_ERR_RET(test_move(0x100));
-      ASSH_ERR_RET(test_modinv(0x1000));
-      ASSH_ERR_RET(test_mt(0x1000));
-      ASSH_ERR_RET(test_expmod(0x10));
+      ASSH_RET_ON_ERR(test_add_sub(0x100));
+      ASSH_RET_ON_ERR(test_div(0x100));
+      ASSH_RET_ON_ERR(test_move(0x100));
+      ASSH_RET_ON_ERR(test_modinv(0x1000));
+      ASSH_RET_ON_ERR(test_mt(0x1000));
+      ASSH_RET_ON_ERR(test_expmod(0x10));
     }
 
   assh_context_cleanup(&context);

@@ -56,7 +56,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_none_load)
 {
   assh_error_t err;
 
-  ASSH_ERR_RET(assh_alloc(c, sizeof(**key), ASSH_ALLOC_SECUR, (void**)key));
+  ASSH_RET_ON_ERR(assh_alloc(c, sizeof(**key), ASSH_ALLOC_SECUR, (void**)key));
   struct assh_key_s *k = *key;
 
   k->algo = &assh_key_none;
@@ -70,7 +70,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_none_create)
 {
   assh_error_t err;
 
-  ASSH_ERR_RET(assh_alloc(c, sizeof(**key), ASSH_ALLOC_SECUR, (void**)key));
+  ASSH_RET_ON_ERR(assh_alloc(c, sizeof(**key), ASSH_ALLOC_SECUR, (void**)key));
   struct assh_key_s *k = *key;
 
   k->algo = &assh_key_none;

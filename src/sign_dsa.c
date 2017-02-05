@@ -48,7 +48,7 @@ assh_sign_dsa_hash_algo(const struct assh_hash_algo_s **algo, uint_fast16_t n)
       *algo = &assh_hash_sha256;
       break;
     default:
-      ASSH_TAIL_CALL(ASSH_ERR_NOTSUP);
+      ASSH_RETURN(ASSH_ERR_NOTSUP);
     }
 
   return ASSH_OK;
@@ -63,7 +63,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
   uint_fast16_t n = assh_bignum_bits(&k->qn);
 
   const struct assh_hash_algo_s *algo;
-  ASSH_ERR_RET(assh_sign_dsa_hash_algo(&algo, n));
+  ASSH_RET_ON_ERR(assh_sign_dsa_hash_algo(&algo, n));
   n /= 8;
 
   /* check/return signature length */
@@ -76,9 +76,9 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
     }
 
   /* check availability of the private key */
-  ASSH_CHK_RET(assh_bignum_isempty(&k->xn), ASSH_ERR_MISSING_KEY);
+  ASSH_RET_IF_TRUE(assh_bignum_isempty(&k->xn), ASSH_ERR_MISSING_KEY);
 
-  ASSH_CHK_RET(*sign_len < len, ASSH_ERR_OUTPUT_OVERFLOW);
+  ASSH_RET_IF_TRUE(*sign_len < len, ASSH_ERR_OUTPUT_OVERFLOW);
   *sign_len = len;
 
   memcpy(sign, ASSH_DSA_ID, ASSH_DSA_ID_LEN);
@@ -99,7 +99,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
   uint_fast8_t i;
 
   /* message hash */
-  ASSH_ERR_GTO(assh_hash_init(c, hash_ctx1, algo), err_scratch);
+  ASSH_JMP_ON_ERR(assh_hash_init(c, hash_ctx1, algo), err_scratch);
   for (i = 0; i < data_count; i++)
     assh_hash_update(hash_ctx1, data[i].data, data[i].len);
   assh_hash_final(hash_ctx1, msgh, n);
@@ -107,11 +107,11 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
 
   /* Do not rely on prng, avoid leaking key bits.
      Use expand(hash(key|msgh) % q as nonce. */
-  ASSH_ERR_GTO(assh_hash_init(c, hash_ctx1, algo), err_scratch);
-  ASSH_ERR_GTO(assh_hash_bignum(c, hash_ctx1, &k->xn), err_hash);
+  ASSH_JMP_ON_ERR(assh_hash_init(c, hash_ctx1, algo), err_scratch);
+  ASSH_JMP_ON_ERR(assh_hash_bignum(c, hash_ctx1, &k->xn), err_hash);
   assh_hash_update(hash_ctx1, msgh, n);
 
-  ASSH_ERR_GTO(assh_hash_copy(hash_ctx2, hash_ctx1), err_hash);
+  ASSH_JMP_ON_ERR(assh_hash_copy(hash_ctx2, hash_ctx1), err_hash);
   assh_hash_update(hash_ctx1, "A", 1); /* first half */
   assh_hash_final(hash_ctx1, nonce, n);
   assh_hash_update(hash_ctx2, "B", 1); /* second half */
@@ -187,7 +187,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "DDDDNNNNTTTTTTTTm",
+  ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "DDDDNNNNTTTTTTTTm",
                   /* D */ nonce, r_str, s_str, msgh,
                   /* N */ &k->pn, &k->qn, &k->gn, &k->xn), err_scratch);
 
@@ -211,16 +211,16 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_dsa_check)
   uint_fast16_t n = assh_bignum_bits(&k->qn);
 
   const struct assh_hash_algo_s *algo;
-  ASSH_ERR_RET(assh_sign_dsa_hash_algo(&algo, n));
+  ASSH_RET_ON_ERR(assh_sign_dsa_hash_algo(&algo, n));
   n /= 8;
 
-  ASSH_CHK_RET(sign_len != ASSH_DSA_ID_LEN + 4 + n * 2, ASSH_ERR_INPUT_OVERFLOW);
+  ASSH_RET_IF_TRUE(sign_len != ASSH_DSA_ID_LEN + 4 + n * 2, ASSH_ERR_INPUT_OVERFLOW);
 
-  ASSH_CHK_RET(memcmp(sign, ASSH_DSA_ID, ASSH_DSA_ID_LEN), ASSH_ERR_BAD_DATA);
+  ASSH_RET_IF_TRUE(memcmp(sign, ASSH_DSA_ID, ASSH_DSA_ID_LEN), ASSH_ERR_BAD_DATA);
 
   /* check signature blob size */
   uint8_t *rs_str = (uint8_t*)sign + ASSH_DSA_ID_LEN;
-  ASSH_CHK_RET(assh_load_u32(rs_str) != n * 2, ASSH_ERR_INPUT_OVERFLOW);
+  ASSH_RET_IF_TRUE(assh_load_u32(rs_str) != n * 2, ASSH_ERR_INPUT_OVERFLOW);
 
   ASSH_SCRATCH_ALLOC(c, uint8_t, scratch,
 		     algo->ctx_size
@@ -232,7 +232,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_dsa_check)
   uint8_t *msgh = scratch + algo->ctx_size;
   uint_fast8_t i;
 
-  ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, algo), err_scratch);
+  ASSH_JMP_ON_ERR(assh_hash_init(c, hash_ctx, algo), err_scratch);
   for (i = 0; i < data_count; i++)
     assh_hash_update(hash_ctx, data[i].data, data[i].len);
   assh_hash_final(hash_ctx, msgh, n);
@@ -301,7 +301,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_dsa_check)
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "DDDNNNNTTTTTTTTTm",
+  ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "DDDNNNNTTTTTTTTTm",
                  /* D */ rs_str + 4, rs_str + 4 + n, msgh,
                  /* N */ &k->pn, &k->qn, &k->gn, &k->yn), err_scratch);
 

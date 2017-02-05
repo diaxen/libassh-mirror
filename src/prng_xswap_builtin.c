@@ -114,9 +114,9 @@ static ASSH_PRNG_INIT_FCN(assh_prng_xswap_init)
   size_t rdata_len = seed->len;
   assh_error_t err;
 
-  ASSH_CHK_RET(rdata_len < 16, ASSH_ERR_BAD_ARG);
+  ASSH_RET_IF_TRUE(rdata == NULL || rdata_len < 16, ASSH_ERR_BAD_ARG);
 
-  ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_prng_pv_s),
+  ASSH_RET_ON_ERR(assh_alloc(c, sizeof(struct assh_prng_pv_s),
                           ASSH_ALLOC_SECUR, &c->prng_pv));
   struct assh_prng_pv_s *ctx = c->prng_pv;
 

@@ -38,31 +38,31 @@ assh_error_t assh_event_get(struct assh_session_s *s,
 {
   assh_error_t err;
 
-  ASSH_CHK_RET(s->tr_st == ASSH_TR_CLOSED,
+  ASSH_RET_IF_TRUE(s->tr_st == ASSH_TR_CLOSED,
 	       ASSH_ERR_CLOSED | ASSH_ERRSV_FIN);
 
   event->id = ASSH_EVENT_INVALID;
 
   /* process the next incoming deciphered packet */
-  ASSH_ERR_GTO(assh_transport_dispatch(s, event), err);
+  ASSH_JMP_ON_ERR(assh_transport_dispatch(s, event), err);
 
   if (event->id != ASSH_EVENT_INVALID)
     goto done;
 
   /* protocol timeout */
-  ASSH_CHK_GTO(s->tr_st < ASSH_TR_FIN &&
+  ASSH_JMP_IF_TRUE(s->tr_st < ASSH_TR_FIN &&
                s->deadline != 0 && s->deadline <= s->time,
                ASSH_ERR_TIMEOUT | ASSH_ERRSV_DISCONNECT, err);
 
   /* key re-exchange should have occured at this point */
-  ASSH_CHK_GTO(s->tr_st < ASSH_TR_DISCONNECT &&
+  ASSH_JMP_IF_TRUE(s->tr_st < ASSH_TR_DISCONNECT &&
                s->kex_bytes > ASSH_REKEX_THRESHOLD + ASSH_PACKET_MAX_PAYLOAD * 16,
                ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT, err);
 
   /* initiate key re-exchange */
   if (s->tr_st == ASSH_TR_SERVICE && s->kex_bytes > s->kex_max_bytes)
     {
-      ASSH_ERR_GTO(assh_kex_send_init(s) | ASSH_ERRSV_DISCONNECT, err);
+      ASSH_JMP_ON_ERR(assh_kex_send_init(s) | ASSH_ERRSV_DISCONNECT, err);
       assh_transport_state(s, ASSH_TR_SERVICE_KEX);
     }
 
@@ -70,7 +70,7 @@ assh_error_t assh_event_get(struct assh_session_s *s,
      ssh stream */
   if (s->tr_st < ASSH_TR_FIN)
     {
-      ASSH_ERR_GTO(assh_transport_write(s, event), err);
+      ASSH_JMP_ON_ERR(assh_transport_write(s, event), err);
 
       if (event->id != ASSH_EVENT_INVALID)
         goto done;
@@ -85,12 +85,12 @@ assh_error_t assh_event_get(struct assh_session_s *s,
     {
       /* all events have been reported, end of session. */
       assh_transport_state(s, ASSH_TR_CLOSED);
-      ASSH_TAIL_CALL(ASSH_ERR_CLOSED | ASSH_ERRSV_FIN);
+      ASSH_RETURN(ASSH_ERR_CLOSED | ASSH_ERRSV_FIN);
     }
 
   /* run the state machine which extracts deciphered packets from the
      input ssh stream. */
-  ASSH_ERR_GTO(assh_transport_read(s, event), err);
+  ASSH_JMP_ON_ERR(assh_transport_read(s, event), err);
 
  done:
 #ifdef CONFIG_ASSH_DEBUG_EVENT
@@ -110,7 +110,7 @@ assh_event_done(struct assh_session_s *s,
 {
   assh_error_t err;
 
-  ASSH_CHK_RET(s->tr_st == ASSH_TR_CLOSED,
+  ASSH_RET_IF_TRUE(s->tr_st == ASSH_TR_CLOSED,
 	       ASSH_ERR_CLOSED | ASSH_ERRSV_FIN);
 
 #ifdef CONFIG_ASSH_DEBUG_EVENT
@@ -158,14 +158,14 @@ assh_event_table_run(struct assh_session_s *s,
 
   while (1)
     {
-      ASSH_ERR_RET(assh_event_get(s, e));
+      ASSH_RET_ON_ERR(assh_event_get(s, e));
 
       struct assh_event_hndl_s *h = t->table[e->id];
 
       if (h == NULL)
         return ASSH_OK;
 
-      ASSH_ERR_RET(assh_event_done(s, e, h->f_handler(s, e, h->ctx)));
+      ASSH_RET_ON_ERR(assh_event_done(s, e, h->f_handler(s, e, h->ctx)));
     }
 }
 

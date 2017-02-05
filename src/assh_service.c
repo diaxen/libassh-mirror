@@ -40,10 +40,10 @@ assh_error_t assh_service_register(struct assh_context_s *c,
 {
   assh_error_t err;
 
-  ASSH_CHK_RET(srv->side != ASSH_CLIENT_SERVER &&
+  ASSH_RET_IF_TRUE(srv->side != ASSH_CLIENT_SERVER &&
                srv->side != c->type, ASSH_ERR_NOTSUP);
 
-  ASSH_CHK_RET(c->srvs_count == CONFIG_ASSH_MAX_SERVICES, ASSH_ERR_MEM);
+  ASSH_RET_IF_TRUE(c->srvs_count == CONFIG_ASSH_MAX_SERVICES, ASSH_ERR_MEM);
 
   c->srvs[c->srvs_count++] = srv;
   return ASSH_OK;
@@ -61,7 +61,7 @@ assh_service_register_va(struct assh_context_s *c, ...)
       struct assh_service_s *srv = va_arg(ap, void*);
       if (srv == NULL)
         break;
-      ASSH_ERR_GTO(assh_service_register(c, srv), err_);
+      ASSH_JMP_ON_ERR(assh_service_register(c, srv), err_);
     }
  err_:
 
@@ -77,13 +77,13 @@ assh_error_t assh_service_register_default(struct assh_context_s *c)
     {
 #ifdef CONFIG_ASSH_CLIENT
     case ASSH_CLIENT:
-      ASSH_TAIL_CALL(assh_service_register_va(c, &assh_service_userauth_client,
+      ASSH_RETURN(assh_service_register_va(c, &assh_service_userauth_client,
 		    &assh_service_connection, NULL));
 #endif
 
 #ifdef CONFIG_ASSH_SERVER
     case ASSH_SERVER:
-      ASSH_TAIL_CALL(assh_service_register_va(c, &assh_service_userauth_server,
+      ASSH_RETURN(assh_service_register_va(c, &assh_service_userauth_server,
 		    &assh_service_connection, NULL));
 #endif
 
@@ -120,25 +120,25 @@ assh_error_t assh_service_got_request(struct assh_session_s *s,
 {
   assh_error_t err;
 
-  ASSH_CHK_RET(s->srv != NULL, ASSH_ERR_PROTOCOL);
+  ASSH_RET_IF_TRUE(s->srv != NULL, ASSH_ERR_PROTOCOL);
 
   const uint8_t *name = p->head.end, *name_end;
-  ASSH_ERR_RET(assh_packet_check_string(p, name, &name_end));
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, name, &name_end));
 
   size_t name_len = name_end - name - 4;
 
   /* lookup service */
   const struct assh_service_s *srv;
-  ASSH_CHK_RET(assh_service_by_name(s->ctx, name_len,
+  ASSH_RET_IF_TRUE(assh_service_by_name(s->ctx, name_len,
 		    (const char *)name + 4, &srv) != ASSH_OK,
                ASSH_ERR_SERVICE_NA);
 
   struct assh_packet_s *pout;
-  ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_SERVICE_ACCEPT,
+  ASSH_RET_ON_ERR(assh_packet_alloc(s->ctx, SSH_MSG_SERVICE_ACCEPT,
 				 name_len + 4, &pout));
 
   /* init service */
-  ASSH_ERR_GTO(srv->f_init(s), err_pkt);
+  ASSH_JMP_ON_ERR(srv->f_init(s), err_pkt);
 
   /* send accept packet */
   uint8_t *namep;
@@ -159,20 +159,20 @@ assh_error_t assh_service_got_accept(struct assh_session_s *s,
 {
   assh_error_t err;
 
-  ASSH_CHK_RET(s->srv_rq == NULL || s->srv != NULL, ASSH_ERR_PROTOCOL);
+  ASSH_RET_IF_TRUE(s->srv_rq == NULL || s->srv != NULL, ASSH_ERR_PROTOCOL);
 
   /* check accepted service name */
   const uint8_t *name = p->head.end, *name_end;
-  ASSH_ERR_RET(assh_packet_check_string(p, name, &name_end));
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, name, &name_end));
 
-  ASSH_CHK_RET(assh_ssh_string_compare(name, s->srv_rq->name),
+  ASSH_RET_IF_TRUE(assh_ssh_string_compare(name, s->srv_rq->name),
 	       ASSH_ERR_PROTOCOL);
 
   /* init service */
   const struct assh_service_s *srv = s->srv_rq;
   s->srv_rq = NULL;
 
-  ASSH_TAIL_CALL(srv->f_init(s));
+  ASSH_RETURN(srv->f_init(s));
 }
 
 assh_error_t assh_service_send_request(struct assh_session_s *s)
@@ -180,7 +180,7 @@ assh_error_t assh_service_send_request(struct assh_session_s *s)
   assh_error_t err;
 
   /** get next service to request */
-  ASSH_CHK_RET(s->srv_index >= s->ctx->srvs_count,
+  ASSH_RET_IF_TRUE(s->srv_index >= s->ctx->srvs_count,
 	       ASSH_ERR_NO_MORE_SERVICE | ASSH_ERRSV_DISCONNECT);
 
   const struct assh_service_s *srv = s->ctx->srvs[s->srv_index];
@@ -190,7 +190,7 @@ assh_error_t assh_service_send_request(struct assh_session_s *s)
   size_t name_len = strlen(srv->name);
   uint8_t *name;
 
-  ASSH_ERR_RET(assh_packet_alloc(s->ctx, SSH_MSG_SERVICE_REQUEST,
+  ASSH_RET_ON_ERR(assh_packet_alloc(s->ctx, SSH_MSG_SERVICE_REQUEST,
 				 name_len + 4, &pout));
   ASSH_ASSERT(assh_packet_add_string(pout, name_len, &name));
 
@@ -220,18 +220,18 @@ assh_error_t assh_service_loop(struct assh_session_s *s,
         if (s->tr_st >= ASSH_TR_DISCONNECT)
           break;
 
-        ASSH_CHK_RET(p != NULL, ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+        ASSH_RET_IF_TRUE(p != NULL, ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
 
 #ifdef CONFIG_ASSH_CLIENT
         /* client send a service request if no service is currently running */
         if (s->ctx->type == ASSH_CLIENT && s->srv_rq == NULL)
-          ASSH_ERR_RET(assh_service_send_request(s) | ASSH_ERRSV_DISCONNECT);
+          ASSH_RET_ON_ERR(assh_service_send_request(s) | ASSH_ERRSV_DISCONNECT);
 #endif
         break;
       }
 
     /* call service processing function, p may be NULL */
-    ASSH_ERR_RET(srv->f_process(s, p, e));
+    ASSH_RET_ON_ERR(srv->f_process(s, p, e));
 
     /* we have an event to report */
     if (e->id != ASSH_EVENT_INVALID)

@@ -52,11 +52,11 @@ assh_packet_alloc(struct assh_context_s *c,
 {
   assh_error_t err; 
 
-  ASSH_CHK_RET(payload_size_m1 + 1 > ASSH_PACKET_MAX_PAYLOAD,
+  ASSH_RET_IF_TRUE(payload_size_m1 + 1 > ASSH_PACKET_MAX_PAYLOAD,
                ASSH_ERR_OUTPUT_OVERFLOW);
 
   struct assh_packet_s *p;
-  ASSH_ERR_RET(assh_packet_alloc_raw(c, ASSH_PACKET_MIN_OVERHEAD +
+  ASSH_RET_ON_ERR(assh_packet_alloc_raw(c, ASSH_PACKET_MIN_OVERHEAD +
                  /* msg */ 1 + payload_size_m1, &p));
 
   p->data_size = ASSH_PACKET_HEADLEN + /* msg */ 1;
@@ -92,7 +92,7 @@ assh_packet_alloc_raw(struct assh_context_s *c, size_t raw_size,
   if (p == NULL)
 #endif
     {
-      ASSH_ERR_RET(assh_alloc(c, sizeof(*p) - sizeof(p->head) + raw_size,
+      ASSH_RET_ON_ERR(assh_alloc(c, sizeof(*p) - sizeof(p->head) + raw_size,
                               ASSH_ALLOC_PACKET, (void*)&p));
 #ifdef CONFIG_ASSH_PACKET_POOL
       p->buffer_size = raw_size;
@@ -202,7 +202,7 @@ assh_packet_dup(struct assh_packet_s *p, struct assh_packet_s **copy)
 {
   assh_error_t err;
 
-  ASSH_ERR_RET(assh_packet_alloc_raw(p->ctx, p->alloc_size, copy));
+  ASSH_RET_ON_ERR(assh_packet_alloc_raw(p->ctx, p->alloc_size, copy));
   struct assh_packet_s *r = *copy;
 
   memcpy(r->data, p->data, p->data_size);
@@ -219,9 +219,9 @@ assh_error_t assh_packet_add_mpint(struct assh_context_s *ctx,
   size_t l = assh_bignum_size_of_num(ASSH_BIGNUM_MPINT, bn);
 
   uint8_t *s;
-  ASSH_ERR_RET(assh_packet_add_array(p, l, &s));
+  ASSH_RET_ON_ERR(assh_packet_add_array(p, l, &s));
 
-  ASSH_ERR_RET(assh_bignum_convert(ctx,
+  ASSH_RET_ON_ERR(assh_bignum_convert(ctx,
     ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MPINT, bn, s, NULL, 0));
 
   p->data_size -= l - assh_load_u32(s) - 4;
@@ -235,19 +235,19 @@ assh_check_asn1(const uint8_t *buffer, size_t buffer_len, const uint8_t *str,
   assh_error_t err;
 
   const uint8_t *e = buffer + buffer_len;
-  ASSH_CHK_RET(str < buffer || str > e - 2, ASSH_ERR_INPUT_OVERFLOW);
-  ASSH_CHK_RET(id != 0 && str[0] != id, ASSH_ERR_BAD_DATA);
+  ASSH_RET_IF_TRUE(str < buffer || str > e - 2, ASSH_ERR_INPUT_OVERFLOW);
+  ASSH_RET_IF_TRUE(id != 0 && str[0] != id, ASSH_ERR_BAD_DATA);
 
   str++; /* discard type identifer */
   uint_fast32_t l = *str++;
   if (l & 0x80)  /* long length form ? */
     {
       uint8_t ll = l & 0x7f;
-      ASSH_CHK_RET(e - str < ll, ASSH_ERR_INPUT_OVERFLOW);
+      ASSH_RET_IF_TRUE(e - str < ll, ASSH_ERR_INPUT_OVERFLOW);
       for (l = 0; ll > 0; ll--)
         l = (l << 8) | *str++;
     }
-  ASSH_CHK_RET(e - str < l, ASSH_ERR_INPUT_OVERFLOW);
+  ASSH_RET_IF_TRUE(e - str < l, ASSH_ERR_INPUT_OVERFLOW);
   if (value != NULL)
     *value = str;
   if (next != NULL)
@@ -262,9 +262,9 @@ assh_check_string(const uint8_t *buffer, size_t buffer_len,
   assh_error_t err;
 
   const uint8_t *e = buffer + buffer_len;
-  ASSH_CHK_RET(str < buffer || str > e - 4, ASSH_ERR_INPUT_OVERFLOW);
+  ASSH_RET_IF_TRUE(str < buffer || str > e - 4, ASSH_ERR_INPUT_OVERFLOW);
   size_t s = assh_load_u32(str);
-  ASSH_CHK_RET(e - 4 - str < s, ASSH_ERR_INPUT_OVERFLOW);
+  ASSH_RET_IF_TRUE(e - 4 - str < s, ASSH_ERR_INPUT_OVERFLOW);
   if (next != NULL)
     *next = str + 4 + s;
   return ASSH_OK;
@@ -277,8 +277,8 @@ assh_check_array(const uint8_t *buffer, size_t buffer_len,
   assh_error_t err;
 
   const uint8_t *e = buffer + buffer_len;
-  ASSH_CHK_RET(array < buffer || array > e, ASSH_ERR_INPUT_OVERFLOW);
-  ASSH_CHK_RET(e - array < array_len, ASSH_ERR_INPUT_OVERFLOW);
+  ASSH_RET_IF_TRUE(array < buffer || array > e, ASSH_ERR_INPUT_OVERFLOW);
+  ASSH_RET_IF_TRUE(e - array < array_len, ASSH_ERR_INPUT_OVERFLOW);
   if (next != NULL)
     *next = array + array_len;
   return ASSH_OK;
@@ -292,7 +292,7 @@ assh_packet_add_array(struct assh_packet_s *p, size_t len, uint8_t **result)
   static const size_t tail_len = ASSH_PACKET_MIN_OVERHEAD
     - ASSH_PACKET_HEADLEN - /* msg */ 1;
 
-  ASSH_CHK_RET(p->data_size + len + tail_len >
+  ASSH_RET_IF_TRUE(p->data_size + len + tail_len >
                p->alloc_size, ASSH_ERR_OUTPUT_OVERFLOW);
   uint8_t *d = p->data + p->data_size;
   p->data_size += len;
@@ -306,7 +306,7 @@ assh_packet_add_string(struct assh_packet_s *p, size_t len, uint8_t **result)
   assh_error_t err;
 
   uint8_t *d;
-  ASSH_ERR_RET(assh_packet_add_array(p, len + 4, &d));
+  ASSH_RET_ON_ERR(assh_packet_add_array(p, len + 4, &d));
   assh_store_u32(d, len);
   if (result != NULL)
     *result = d + 4;
@@ -321,7 +321,7 @@ assh_packet_enlarge_string(struct assh_packet_s *p, uint8_t *str,
 
   size_t olen = assh_load_u32(str - 4);
   assert(str + olen == p->data + p->data_size);
-  ASSH_ERR_RET(assh_packet_add_array(p, len, result));
+  ASSH_RET_ON_ERR(assh_packet_add_array(p, len, result));
   assh_store_u32(str - 4, olen + len);
   return ASSH_OK;
 }
@@ -351,7 +351,7 @@ assh_ssh_string_copy(const uint8_t *ssh_str, char *nul_str, size_t max_len)
 
   size_t len = assh_load_u32(ssh_str);
   assert(max_len > 0);
-  ASSH_CHK_RET(len > max_len - 1, ASSH_ERR_OUTPUT_OVERFLOW);
+  ASSH_RET_IF_TRUE(len > max_len - 1, ASSH_ERR_OUTPUT_OVERFLOW);
   memcpy(nul_str, ssh_str + 4, len);
   nul_str[len] = '\0';
   return ASSH_OK;

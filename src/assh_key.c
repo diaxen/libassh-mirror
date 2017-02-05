@@ -77,11 +77,11 @@ assh_error_t assh_key_load(struct assh_context_s *c,
 
   if (algo == NULL)
     algo = assh_key_algo_guess(c, format, *blob, blob_len, role);
-  ASSH_CHK_RET(algo == NULL, ASSH_ERR_MISSING_ALGO);
+  ASSH_RET_IF_TRUE(algo == NULL, ASSH_ERR_MISSING_ALGO);
 
   struct assh_key_s *k;
 
-  ASSH_ERR_RET(algo->f_load(c, algo, blob, blob_len, &k, format));
+  ASSH_RET_ON_ERR(algo->f_load(c, algo, blob, blob_len, &k, format));
 
   k->role = role;
   k->next = *key;
@@ -101,7 +101,7 @@ assh_key_create(struct assh_context_s *c,
   assh_error_t err;
   struct assh_key_s *k;
 
-  ASSH_ERR_RET(algo->f_create(c, algo, bits, &k));
+  ASSH_RET_ON_ERR(algo->f_create(c, algo, bits, &k));
 
   k->role = role;
   k->next = *key;
@@ -119,7 +119,7 @@ assh_key_comment(struct assh_context_s *c,
 {
   assh_error_t err;
   assh_free(c, key->comment);
-  ASSH_TAIL_CALL(assh_strdup(c, &key->comment, comment, ASSH_ALLOC_INTERNAL));
+  ASSH_RETURN(assh_strdup(c, &key->comment, comment, ASSH_ALLOC_INTERNAL));
 }
 
 void assh_key_drop(struct assh_context_s *c,

@@ -67,7 +67,7 @@ assh_base64_encode_update(struct assh_base64_ctx_s *ctx,
       in++;
       if (in == 3)
 	{
-	  ASSH_CHK_RET(out + 4 >= ctx->out_end, ASSH_ERR_OUTPUT_OVERFLOW);
+	  ASSH_RET_IF_TRUE(out + 4 >= ctx->out_end, ASSH_ERR_OUTPUT_OVERFLOW);
 	  *out++ = bin2b64[(x >> 18) & 63];
 	  *out++ = bin2b64[(x >> 12) & 63];
 	  *out++ = bin2b64[(x >> 6) & 63];
@@ -97,19 +97,19 @@ assh_base64_decode_update(struct assh_base64_ctx_s *ctx,
       switch (c)
         {
         case -1:
-          ASSH_TAIL_CALL(ASSH_ERR_BAD_DATA);
+          ASSH_RETURN(ASSH_ERR_BAD_DATA);
         case -3:     /* padding char = */
-          ASSH_CHK_RET(ctx->pad++ >= 2, ASSH_ERR_BAD_DATA);
+          ASSH_RET_IF_TRUE(ctx->pad++ >= 2, ASSH_ERR_BAD_DATA);
         case -2:
           continue;  /* ignore blank chars */
         case -4:
 	  return ASSH_OK;  /* NUL termination */
         default:
-	  ASSH_CHK_RET(ctx->pad > 0, ASSH_ERR_BAD_DATA);
+	  ASSH_RET_IF_TRUE(ctx->pad > 0, ASSH_ERR_BAD_DATA);
           ctx->x = (ctx->x << 6) | c;
 	  if ((++ctx->in & 3) != 0)
 	    continue;
-	  ASSH_CHK_RET(ctx->out + 2 >= ctx->out_end, ASSH_ERR_OUTPUT_OVERFLOW);
+	  ASSH_RET_IF_TRUE(ctx->out + 2 >= ctx->out_end, ASSH_ERR_OUTPUT_OVERFLOW);
 	  *ctx->out++ = ctx->x >> 16;
 	  *ctx->out++ = ctx->x >> 8;
 	  *ctx->out++ = ctx->x;
@@ -124,9 +124,9 @@ assh_base64_decode_final(struct assh_base64_ctx_s *ctx)
 {
   assh_error_t err;
 
-  ASSH_CHK_RET((ctx->in + ctx->pad) & 3, ASSH_ERR_BAD_DATA);
+  ASSH_RET_IF_TRUE((ctx->in + ctx->pad) & 3, ASSH_ERR_BAD_DATA);
 
-  ASSH_CHK_RET(ctx->out + ((2 - ctx->pad) % 2) >= ctx->out_end,
+  ASSH_RET_IF_TRUE(ctx->out + ((2 - ctx->pad) % 2) >= ctx->out_end,
 	       ASSH_ERR_OUTPUT_OVERFLOW);
   switch (ctx->pad)
     {
@@ -152,7 +152,7 @@ assh_base64_encode_final(struct assh_base64_ctx_s *ctx)
   if (in == 0)
     return ASSH_OK;
 
-  ASSH_CHK_RET(out + 4 > ctx->out_end, ASSH_ERR_OUTPUT_OVERFLOW);
+  ASSH_RET_IF_TRUE(out + 4 > ctx->out_end, ASSH_ERR_OUTPUT_OVERFLOW);
   x <<= 24 - in * 8;
   *out++ = bin2b64[(x >> 18) & 63];
   *out++ = bin2b64[(x >> 12) & 63];

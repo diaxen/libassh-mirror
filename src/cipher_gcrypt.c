@@ -41,10 +41,10 @@ assh_cipher_gcrypt_init(const struct assh_algo_cipher_s *cipher,
 {
   assh_error_t err;
 
-  ASSH_CHK_RET(gcry_cipher_open(&ctx->hd, algo, mode, 0),
+  ASSH_RET_IF_TRUE(gcry_cipher_open(&ctx->hd, algo, mode, 0),
 	       ASSH_ERR_CRYPTO);
 
-  ASSH_CHK_GTO(gcry_cipher_setkey(ctx->hd, key, cipher->key_size),
+  ASSH_JMP_IF_TRUE(gcry_cipher_setkey(ctx->hd, key, cipher->key_size),
 	       ASSH_ERR_CRYPTO, err_open);
 
   ctx->cipher = cipher;
@@ -55,17 +55,17 @@ assh_cipher_gcrypt_init(const struct assh_algo_cipher_s *cipher,
     {
     case GCRY_CIPHER_MODE_GCM:
       ctx->iv = gcry_malloc_secure(cipher->iv_size);
-      ASSH_CHK_GTO(ctx->iv == NULL, ASSH_ERR_MEM, err_open);
+      ASSH_JMP_IF_TRUE(ctx->iv == NULL, ASSH_ERR_MEM, err_open);
       memcpy(ctx->iv, iv, cipher->iv_size);
       break;
 
     case GCRY_CIPHER_MODE_CBC:
-      ASSH_CHK_GTO(gcry_cipher_setiv(ctx->hd, iv, cipher->block_size),
+      ASSH_JMP_IF_TRUE(gcry_cipher_setiv(ctx->hd, iv, cipher->block_size),
 		   ASSH_ERR_CRYPTO, err_open);
       break;
 
     case GCRY_CIPHER_MODE_CTR:
-      ASSH_CHK_GTO(gcry_cipher_setctr(ctx->hd, iv, cipher->block_size),
+      ASSH_JMP_IF_TRUE(gcry_cipher_setctr(ctx->hd, iv, cipher->block_size),
 		   ASSH_ERR_CRYPTO, err_open);
       break;
 
@@ -79,10 +79,10 @@ assh_cipher_gcrypt_init(const struct assh_algo_cipher_s *cipher,
 	  memset(dummy, 0, sizeof(dummy));
 	  for (i = 0; i < 1536; i += sizeof(dummy))
 	    if (encrypt)
-	      ASSH_CHK_GTO(gcry_cipher_encrypt(ctx->hd, dummy, sizeof(dummy), NULL, 0),
+	      ASSH_JMP_IF_TRUE(gcry_cipher_encrypt(ctx->hd, dummy, sizeof(dummy), NULL, 0),
 			   ASSH_ERR_CRYPTO, err_open);
 	    else
-	      ASSH_CHK_GTO(gcry_cipher_decrypt(ctx->hd, dummy, sizeof(dummy), NULL, 0),
+	      ASSH_JMP_IF_TRUE(gcry_cipher_decrypt(ctx->hd, dummy, sizeof(dummy), NULL, 0),
 			   ASSH_ERR_CRYPTO, err_open);
 	}
       break;
@@ -103,7 +103,7 @@ static ASSH_CIPHER_PROCESS_FCN(assh_cipher_gcrypt_process_GCM)
   size_t block_size = ctx->cipher->block_size;
   size_t csize = len - 4 - auth_size;
 
-  ASSH_CHK_RET(csize & (block_size - 1),
+  ASSH_RET_IF_TRUE(csize & (block_size - 1),
                ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
 
   if (op == ASSH_CIPHER_PCK_HEAD)
@@ -114,17 +114,17 @@ static ASSH_CIPHER_PROCESS_FCN(assh_cipher_gcrypt_process_GCM)
 
   if (ctx->encrypt)
     {
-      ASSH_CHK_RET(gcry_cipher_encrypt(ctx->hd, data + 4,
+      ASSH_RET_IF_TRUE(gcry_cipher_encrypt(ctx->hd, data + 4,
 				       csize, NULL, 0),
 		   ASSH_ERR_CRYPTO);
       gcry_cipher_gettag(ctx->hd, data + len - auth_size, auth_size);
     }
   else
     {
-      ASSH_CHK_RET(gcry_cipher_decrypt(ctx->hd, data + 4,
+      ASSH_RET_IF_TRUE(gcry_cipher_decrypt(ctx->hd, data + 4,
 				       csize, NULL, 0),
 		   ASSH_ERR_CRYPTO);
-      ASSH_CHK_RET(gcry_cipher_checktag(ctx->hd,
+      ASSH_RET_IF_TRUE(gcry_cipher_checktag(ctx->hd,
 					data + len - auth_size, auth_size),
 		   ASSH_ERR_CRYPTO);
     }
@@ -141,14 +141,14 @@ static ASSH_CIPHER_PROCESS_FCN(assh_cipher_gcrypt_process)
   struct assh_cipher_gcrypt_context_s *ctx = ctx_;
   size_t block_size = ctx->cipher->block_size;
 
-  ASSH_CHK_RET(len & (block_size - 1),
+  ASSH_RET_IF_TRUE(len & (block_size - 1),
 	       ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
 
   if (ctx->encrypt)
-    ASSH_CHK_RET(gcry_cipher_encrypt(ctx->hd, data, len, NULL, 0),
+    ASSH_RET_IF_TRUE(gcry_cipher_encrypt(ctx->hd, data, len, NULL, 0),
 		 ASSH_ERR_CRYPTO);
   else
-    ASSH_CHK_RET(gcry_cipher_decrypt(ctx->hd, data, len, NULL, 0),
+    ASSH_RET_IF_TRUE(gcry_cipher_decrypt(ctx->hd, data, len, NULL, 0),
 		 ASSH_ERR_CRYPTO);
 
   return ASSH_OK;

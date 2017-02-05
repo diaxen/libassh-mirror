@@ -431,7 +431,7 @@ int test(int (*fend)(int, int), int n, int evrate)
 	  if (ASSH_ERR_ERROR(err) != ASSH_OK)
 	    {
 	      if (!evrate)
-		ASSH_ERR_RET(err);
+		ASSH_RET_ON_ERR(err);
 
 	      started[i] = 0;
 	      if (ASSH_ERR_ERROR(err) == ASSH_ERR_CLOSED)
@@ -890,7 +890,7 @@ int test(int (*fend)(int, int), int n, int evrate)
 	    {
 	      started[i] = 0;
 	      if (!evrate)
-		ASSH_ERR_RET(err);
+		ASSH_RET_ON_ERR(err);
 	    }
 	}
     }

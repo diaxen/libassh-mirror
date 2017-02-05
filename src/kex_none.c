@@ -45,8 +45,8 @@ static ASSH_KEX_PROCESS_FCN(assh_kex_none_process)
   memset(ex_hash, 0, sizeof(ex_hash));
 
   /* no packet exchange, setup new key */
-  ASSH_ERR_RET(assh_kex_new_keys(s, &assh_hash_sha1, ex_hash, secret));
-  ASSH_TAIL_CALL(assh_kex_end(s, 1));
+  ASSH_RET_ON_ERR(assh_kex_new_keys(s, &assh_hash_sha1, ex_hash, secret));
+  ASSH_RETURN(assh_kex_end(s, 1));
 }
 
 static ASSH_KEX_CLEANUP_FCN(assh_kex_none_cleanup)

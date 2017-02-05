@@ -60,19 +60,19 @@ static ASSH_ALLOCATOR(assh_default_allocator)
 	  *ptr = gcry_malloc_secure(size);
 	  break;
 	}
-      ASSH_CHK_RET(*ptr == NULL, ASSH_ERR_MEM);
+      ASSH_RET_IF_TRUE(*ptr == NULL, ASSH_ERR_MEM);
       return ASSH_OK;
     }
   else
     {
       *ptr = gcry_realloc(*ptr, size);
-      ASSH_CHK_RET(*ptr == NULL, ASSH_ERR_MEM);
+      ASSH_RET_IF_TRUE(*ptr == NULL, ASSH_ERR_MEM);
       return ASSH_OK;
     }
 #else
 # warning The default allocator relies on the standard non-secur realloc function
   *ptr = realloc(*ptr, size);
-  ASSH_CHK_RET(size != 0 && *ptr == NULL, ASSH_ERR_MEM);
+  ASSH_RET_IF_TRUE(size != 0 && *ptr == NULL, ASSH_ERR_MEM);
   return ASSH_OK;
 #endif
 }
@@ -85,7 +85,7 @@ assh_error_t assh_strdup(struct assh_context_s *c, char **r,
   if (str != NULL)
     {
       size_t l = strlen(str) + 1;
-      ASSH_ERR_RET(assh_alloc(c, l, type, (void**)r));
+      ASSH_RET_ON_ERR(assh_alloc(c, l, type, (void**)r));
       memcpy(*r, str, l);
     }
   return ASSH_OK;
@@ -129,7 +129,7 @@ assh_context_init(struct assh_context_s *c,
 #endif
     }
   c->prng = prng;
-  ASSH_ERR_RET(prng->f_init(c, prng_seed));
+  ASSH_RET_ON_ERR(prng->f_init(c, prng_seed));
 
   c->keys = NULL;
   c->kex_init_size = 0;
@@ -178,11 +178,11 @@ assh_context_create(struct assh_context_s **ctx,
     }
 
   *ctx = NULL;
-  ASSH_ERR_RET(alloc(alloc_pv, (void**)ctx,
+  ASSH_RET_ON_ERR(alloc(alloc_pv, (void**)ctx,
                      sizeof(**ctx) - sizeof((*ctx)->algos) + algo_max * sizeof(void*)
                      , ASSH_ALLOC_INTERNAL));
 
-  ASSH_ERR_GTO(assh_context_init(*ctx, type, alloc, alloc_pv, prng, prng_seed), err);
+  ASSH_JMP_ON_ERR(assh_context_init(*ctx, type, alloc, alloc_pv, prng, prng_seed), err);
   (*ctx)->algo_max = algo_max;
 
   return ASSH_OK;

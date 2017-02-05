@@ -351,7 +351,7 @@ static ASSH_CIPHER_PROCESS_FCN(assh_chachapoly_process)
           assh_store_u32le(data, ctx->enc_size);
           assh_poly1305_auth(poly_tag, data, len - 16, ctx->poly_key);
           assh_store_u32le(data, l);
-          ASSH_CHK_RET(assh_memcmp(data + len - 16, poly_tag, 16),
+          ASSH_RET_IF_TRUE(assh_memcmp(data + len - 16, poly_tag, 16),
                        ASSH_ERR_CRYPTO);
 
           /* decrypt data */

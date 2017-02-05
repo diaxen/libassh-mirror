@@ -64,7 +64,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_eddsa_output)
     }
 
     case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY: {
-      ASSH_CHK_RET(!k->key.private, ASSH_ERR_MISSING_KEY);
+      ASSH_RET_IF_TRUE(!k->key.private, ASSH_ERR_MISSING_KEY);
 
       size_t len = 4 + tlen + 4 + n + 4 + 2 * n;
 
@@ -87,7 +87,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_eddsa_output)
     }
 
     default:
-      ASSH_TAIL_CALL(ASSH_ERR_NOTSUP);
+      ASSH_RETURN(ASSH_ERR_NOTSUP);
     }
 }
 
@@ -124,7 +124,7 @@ assh_key_eddsa_create(struct assh_context_s *c,
 
   size_t n = ASSH_ALIGN8(curve->bits) / 8;
 
-  ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_key_eddsa_s) + 2 * n,
+  ASSH_RET_ON_ERR(assh_alloc(c, sizeof(struct assh_key_eddsa_s) + 2 * n,
                           ASSH_ALLOC_SECUR, (void**)&k));
 
   k->key.algo = algo;
@@ -137,7 +137,7 @@ assh_key_eddsa_create(struct assh_context_s *c,
   uint8_t *kp = k->data;
   uint8_t *ks = k->data + n;
 
-  ASSH_ERR_GTO(c->prng->f_get(c, ks, n,
+  ASSH_JMP_ON_ERR(c->prng->f_get(c, ks, n,
                  ASSH_PRNG_QUALITY_LONGTERM_KEY), err_key);
 
   ASSH_SCRATCH_ALLOC(c, uint8_t, sc,
@@ -148,7 +148,7 @@ assh_key_eddsa_create(struct assh_context_s *c,
   uint8_t *h = sc + hash->ctx_size;
   uint8_t *rx = h + 2 * n;
 
-  ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, hash), err_scratch);
+  ASSH_JMP_ON_ERR(assh_hash_init(c, hash_ctx, hash), err_scratch);
   assh_hash_update(hash_ctx, ks, n);
   assh_hash_final(hash_ctx, h + n, n * 2);
   assh_hash_cleanup(hash_ctx);
@@ -224,7 +224,7 @@ assh_key_eddsa_create(struct assh_context_s *c,
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode,
+  ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode,
       "MMMMMsdsddTTTTTTTTTTTTTTTTTTm", curve->bx, curve->by,
       curve->a, curve->p, curve->d, curve->bits,
       h + n, n * 8,             /* scalar */
@@ -279,15 +279,15 @@ assh_key_eddsa_load(struct assh_context_s *c,
     {
     case ASSH_KEY_FMT_PUB_RFC4253: {
       size_t len = 4 + tlen + 4 + n;
-      ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_key_eddsa_s) + n,
+      ASSH_RET_ON_ERR(assh_alloc(c, sizeof(struct assh_key_eddsa_s) + n,
                               ASSH_ALLOC_SECUR, (void**)&k));
 
       k->key.private = 0;
-      ASSH_CHK_GTO(blob_len < len, ASSH_ERR_INPUT_OVERFLOW, err_key);
-      ASSH_CHK_GTO(assh_load_u32(blob) != tlen, ASSH_ERR_BAD_DATA, err_key);
-      ASSH_CHK_GTO(memcmp(algo->type, blob + 4, tlen), ASSH_ERR_BAD_DATA, err_key);
+      ASSH_JMP_IF_TRUE(blob_len < len, ASSH_ERR_INPUT_OVERFLOW, err_key);
+      ASSH_JMP_IF_TRUE(assh_load_u32(blob) != tlen, ASSH_ERR_BAD_DATA, err_key);
+      ASSH_JMP_IF_TRUE(memcmp(algo->type, blob + 4, tlen), ASSH_ERR_BAD_DATA, err_key);
       const uint8_t *p = (uint8_t*)blob + 4 + tlen;
-      ASSH_CHK_GTO(assh_load_u32(p) != n, ASSH_ERR_BAD_DATA, err_key);
+      ASSH_JMP_IF_TRUE(assh_load_u32(p) != n, ASSH_ERR_BAD_DATA, err_key);
       memcpy(k->data, p + 4, n);
 
       *blob_ = p + 4 + n;
@@ -296,19 +296,19 @@ assh_key_eddsa_load(struct assh_context_s *c,
 
     case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY: {
       size_t len = 4 + tlen + 4 + n + 4 + 2 * n;
-      ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_key_eddsa_s) + 2 * n,
+      ASSH_RET_ON_ERR(assh_alloc(c, sizeof(struct assh_key_eddsa_s) + 2 * n,
                               ASSH_ALLOC_SECUR, (void**)&k));
 
       k->key.private = 1;
-      ASSH_CHK_GTO(blob_len < len, ASSH_ERR_INPUT_OVERFLOW, err_key);
-      ASSH_CHK_GTO(assh_load_u32(blob) != tlen, ASSH_ERR_BAD_DATA, err_key);
-      ASSH_CHK_GTO(memcmp(algo->type, blob + 4, tlen), ASSH_ERR_BAD_DATA, err_key);
+      ASSH_JMP_IF_TRUE(blob_len < len, ASSH_ERR_INPUT_OVERFLOW, err_key);
+      ASSH_JMP_IF_TRUE(assh_load_u32(blob) != tlen, ASSH_ERR_BAD_DATA, err_key);
+      ASSH_JMP_IF_TRUE(memcmp(algo->type, blob + 4, tlen), ASSH_ERR_BAD_DATA, err_key);
       const uint8_t *p = (uint8_t*)blob + 4 + tlen;
-      ASSH_CHK_GTO(assh_load_u32(p) != n, ASSH_ERR_BAD_DATA, err_key);
+      ASSH_JMP_IF_TRUE(assh_load_u32(p) != n, ASSH_ERR_BAD_DATA, err_key);
       memcpy(k->data, p + 4, n);
       const uint8_t *s = p + 4 + n;
-      ASSH_CHK_GTO(assh_load_u32(s) != 2 * n, ASSH_ERR_BAD_DATA, err_key);
-      ASSH_CHK_GTO(memcmp(p + 4, s + 4 + n, n), ASSH_ERR_BAD_DATA, err_key);
+      ASSH_JMP_IF_TRUE(assh_load_u32(s) != 2 * n, ASSH_ERR_BAD_DATA, err_key);
+      ASSH_JMP_IF_TRUE(memcmp(p + 4, s + 4 + n, n), ASSH_ERR_BAD_DATA, err_key);
       memcpy(k->data + n, s + 4, n);
 
       *blob_ = s + 4 + 2 * n;
@@ -316,7 +316,7 @@ assh_key_eddsa_load(struct assh_context_s *c,
     }
 
     default:
-      ASSH_TAIL_CALL(ASSH_ERR_NOTSUP);
+      ASSH_RETURN(ASSH_ERR_NOTSUP);
     }
 
   k->key.algo = algo;

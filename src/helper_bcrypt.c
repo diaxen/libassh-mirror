@@ -447,7 +447,7 @@ bcrypt_hash_sha512(struct assh_context_s *c,
 {
   assh_error_t err;
 
-  ASSH_ERR_RET(assh_hash_init(c, hash_ctx, &assh_hash_sha512));
+  ASSH_RET_ON_ERR(assh_hash_init(c, hash_ctx, &assh_hash_sha512));
   assh_hash_update(hash_ctx, in, len);
   assh_hash_final(hash_ctx, out, 64);
   assh_hash_cleanup(hash_ctx);
@@ -466,7 +466,7 @@ assh_bcrypt_pbkdf(struct assh_context_s *c,
   size_t i, j, amt, stride;
   uint32_t count;
 
-  ASSH_CHK_RET(rounds == 0, ASSH_ERR_BAD_ARG);
+  ASSH_RET_IF_TRUE(rounds == 0, ASSH_ERR_BAD_ARG);
 
   stride = (keylen + BCRYPT_HASHSIZE - 1) / BCRYPT_HASHSIZE;
   amt = (keylen + stride - 1) / stride;
@@ -483,7 +483,7 @@ assh_bcrypt_pbkdf(struct assh_context_s *c,
   memcpy(s->countsalt, salt, saltlen);
 
   /* collapse password */
-  ASSH_ERR_GTO(bcrypt_hash_sha512(c, sha512_ctx, s->sha2pass, pass, passlen), err_sc);
+  ASSH_JMP_ON_ERR(bcrypt_hash_sha512(c, sha512_ctx, s->sha2pass, pass, passlen), err_sc);
 
   /* generate key, BCRYPT_HASHSIZE at a time */
   for (count = 1; keylen > 0; count++)
@@ -491,7 +491,7 @@ assh_bcrypt_pbkdf(struct assh_context_s *c,
       assh_store_u32(s->countsalt + saltlen, count);
 
       /* first round, salt is salt */
-      ASSH_ERR_GTO(bcrypt_hash_sha512(c, sha512_ctx, s->sha2salt, s->countsalt, saltlen + 4), err_sc);
+      ASSH_JMP_ON_ERR(bcrypt_hash_sha512(c, sha512_ctx, s->sha2salt, s->countsalt, saltlen + 4), err_sc);
 
       bcrypt_hash(s);
       memcpy(s->out, s->tmpout, BCRYPT_HASHSIZE);
@@ -499,7 +499,7 @@ assh_bcrypt_pbkdf(struct assh_context_s *c,
       for (i = 1; i < rounds; i++)
 	{
 	  /* subsequent rounds, salt is previous output */
-	  ASSH_ERR_GTO(bcrypt_hash_sha512(c, sha512_ctx, s->sha2salt, s->tmpout, BCRYPT_HASHSIZE), err_sc);
+	  ASSH_JMP_ON_ERR(bcrypt_hash_sha512(c, sha512_ctx, s->sha2salt, s->tmpout, BCRYPT_HASHSIZE), err_sc);
 
 	  bcrypt_hash(s);
 	  for (j = 0; j < BCRYPT_HASHSIZE; j++)

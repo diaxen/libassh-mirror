@@ -98,18 +98,18 @@ assh_sign_rsa_generate(struct assh_context_s *c,
     }
 
   /* check availability of the private key */
-  ASSH_CHK_RET(assh_bignum_isempty(&k->dn), ASSH_ERR_MISSING_KEY);
+  ASSH_RET_IF_TRUE(assh_bignum_isempty(&k->dn), ASSH_ERR_MISSING_KEY);
 
-  ASSH_CHK_RET(*sign_len < len, ASSH_ERR_OUTPUT_OVERFLOW);
+  ASSH_RET_IF_TRUE(*sign_len < len, ASSH_ERR_OUTPUT_OVERFLOW);
   *sign_len = len;
 
   const struct assh_rsa_digest_s *digest = assh_rsa_digests + digest_id;
-  ASSH_CHK_RET(digest->algo == NULL, ASSH_ERR_NOTSUP);
+  ASSH_RET_IF_TRUE(digest->algo == NULL, ASSH_ERR_NOTSUP);
 
   /* build encoded message buffer */
   size_t ps_len = n - 3 - digest->oid_len - digest->algo->hash_size;
 
-  ASSH_CHK_RET(ps_len < 8, ASSH_ERR_BAD_DATA);
+  ASSH_RET_IF_TRUE(ps_len < 8, ASSH_ERR_BAD_DATA);
 
   ASSH_SCRATCH_ALLOC(c, uint8_t, scratch,
                      digest->algo->ctx_size + n,
@@ -129,7 +129,7 @@ assh_sign_rsa_generate(struct assh_context_s *c,
   uint_fast16_t i;
   void *hash_ctx = scratch;
 
-  ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, digest->algo), err_scratch);
+  ASSH_JMP_ON_ERR(assh_hash_init(c, hash_ctx, digest->algo), err_scratch);
   for (i = 0; i < data_count; i++)
     assh_hash_update(hash_ctx, data[i].data, data[i].len);
   assh_hash_final(hash_ctx, em, digest->algo->hash_size);
@@ -167,7 +167,7 @@ assh_sign_rsa_generate(struct assh_context_s *c,
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "DDNNTTm",
+  ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "DDNNTTm",
                    /* Data */ c_str, em_buf,
                    /* Num  */ &k->nn, &k->dn), err_scratch);
 
@@ -194,12 +194,12 @@ assh_sign_rsa_check(struct assh_context_s *c,
   size_t id_len = 4 + assh_load_u32((const uint8_t*)algo_id);
   size_t n = ASSH_ALIGN8(assh_bignum_bits(&k->nn)) / 8;
 
-  ASSH_CHK_RET(sign_len != id_len + 4 + n, ASSH_ERR_INPUT_OVERFLOW);
+  ASSH_RET_IF_TRUE(sign_len != id_len + 4 + n, ASSH_ERR_INPUT_OVERFLOW);
 
-  ASSH_CHK_RET(memcmp(sign, algo_id, id_len), ASSH_ERR_BAD_DATA);
+  ASSH_RET_IF_TRUE(memcmp(sign, algo_id, id_len), ASSH_ERR_BAD_DATA);
 
   uint8_t *c_str = (uint8_t*)sign + id_len;
-  ASSH_CHK_RET(assh_load_u32(c_str) != n, ASSH_ERR_INPUT_OVERFLOW);
+  ASSH_RET_IF_TRUE(assh_load_u32(c_str) != n, ASSH_ERR_INPUT_OVERFLOW);
 
   ASSH_SCRATCH_ALLOC(c, uint8_t, em_buf, n, ASSH_ERRSV_CONTINUE, err_);
   uint8_t *em = em_buf;
@@ -226,7 +226,7 @@ assh_sign_rsa_check(struct assh_context_s *c,
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "DDNNTTm",
+  ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "DDNNTTm",
                    /* Data */ c_str + 4, em,
                    /* Nun  */ &k->nn, &k->en), err_em);
 
@@ -238,12 +238,12 @@ assh_sign_rsa_check(struct assh_context_s *c,
   uint_fast16_t i;
 
   /* check padding */
-  ASSH_CHK_GTO(*em++ != 0x00, ASSH_ERR_BAD_DATA, err_em);
-  ASSH_CHK_GTO(*em++ != 0x01, ASSH_ERR_BAD_DATA, err_em);
+  ASSH_JMP_IF_TRUE(*em++ != 0x00, ASSH_ERR_BAD_DATA, err_em);
+  ASSH_JMP_IF_TRUE(*em++ != 0x01, ASSH_ERR_BAD_DATA, err_em);
   for (i = 0; em + 1 < em_end && *em == 0xff; em++)
     i++;
-  ASSH_CHK_GTO(i < 8, ASSH_ERR_BAD_DATA, err_em);
-  ASSH_CHK_GTO(*em++ != 0x00, ASSH_ERR_BAD_DATA, err_em);
+  ASSH_JMP_IF_TRUE(i < 8, ASSH_ERR_BAD_DATA, err_em);
+  ASSH_JMP_IF_TRUE(*em++ != 0x00, ASSH_ERR_BAD_DATA, err_em);
 
   /* lookup digest algorithm in use */
   const struct assh_rsa_digest_s *digest;
@@ -258,8 +258,8 @@ assh_sign_rsa_check(struct assh_context_s *c,
         break;
     }
 
-  ASSH_CHK_GTO(i == RSA_DIGEST_count, ASSH_ERR_NOTSUP, err_em);
-  ASSH_CHK_GTO(!((digest_mask >> i) & 1), ASSH_ERR_WEAK_ALGORITHM, err_em);
+  ASSH_JMP_IF_TRUE(i == RSA_DIGEST_count, ASSH_ERR_NOTSUP, err_em);
+  ASSH_JMP_IF_TRUE(!((digest_mask >> i) & 1), ASSH_ERR_WEAK_ALGORITHM, err_em);
 
   /* compute message hash */
   em += digest->oid_len;
@@ -269,7 +269,7 @@ assh_sign_rsa_check(struct assh_context_s *c,
 
   uint8_t *hash = hash_ctx + digest->algo->ctx_size;
 
-  ASSH_ERR_GTO(assh_hash_init(c, hash_ctx, digest->algo), err_hash);
+  ASSH_JMP_ON_ERR(assh_hash_init(c, hash_ctx, digest->algo), err_hash);
   for (i = 0; i < data_count; i++)
     assh_hash_update(hash_ctx, data[i].data, data[i].len);
   assh_hash_final(hash_ctx, hash, digest->algo->hash_size);
@@ -281,7 +281,7 @@ assh_sign_rsa_check(struct assh_context_s *c,
 
   *safety = ASSH_MIN(*safety, digest->algo->safety);
 
-  ASSH_CHK_GTO(assh_memcmp(hash, em, digest->algo->hash_size),
+  ASSH_JMP_IF_TRUE(assh_memcmp(hash, em, digest->algo->hash_size),
                ASSH_ERR_NUM_COMPARE_FAILED, err_hash);
 
   err = ASSH_OK;

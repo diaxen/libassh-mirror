@@ -103,7 +103,7 @@ assh_strdup(struct assh_context_s *c, char **r,
 
 # define ASSH_SCRATCH_ALLOC(context, type, name, size, sv, lbl)		\
   type *name;								\
-  ASSH_ERR_GTO(assh_alloc(context, (size) * sizeof(type),		\
+  ASSH_JMP_ON_ERR(assh_alloc(context, (size) * sizeof(type),		\
 			  ASSH_ALLOC_SCRATCH, (void**)&name) | sv, lbl);
 
 # define ASSH_SCRATCH_FREE(context, name)				\

@@ -52,7 +52,7 @@ assh_hmac_init(struct assh_context_s *c, const struct assh_algo_mac_s *mac,
   assert(mac->mac_size <= hash->hash_size);
   assert(mac->key_size <= hash->block_size);
 
-  ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_hmac_context_s)
+  ASSH_RET_ON_ERR(assh_alloc(c, sizeof(struct assh_hmac_context_s)
                           + hash->ctx_size * 4 + /* buf */ hash->hash_size,
                           ASSH_ALLOC_SECUR, &ctx->hash_co));
 
@@ -70,14 +70,14 @@ assh_hmac_init(struct assh_context_s *c, const struct assh_algo_mac_s *mac,
     kx[i] = key[i] ^ 0x36;
   for (; i < hash->block_size; i++)
     kx[i] = 0x36;
-  ASSH_ERR_GTO(assh_hash_init(c, ctx->hash_ci, hash), err_sc);
+  ASSH_JMP_ON_ERR(assh_hash_init(c, ctx->hash_ci, hash), err_sc);
   assh_hash_update(ctx->hash_ci, kx, hash->block_size);
 
   for (i = 0; i < mac->key_size; i++)
     kx[i] = key[i] ^ 0x5c;
   for (; i < hash->block_size; i++)
     kx[i] = 0x5c;
-  ASSH_ERR_GTO(assh_hash_init(c, ctx->hash_co, hash), err_ci);
+  ASSH_JMP_ON_ERR(assh_hash_init(c, ctx->hash_co, hash), err_ci);
   assh_hash_update(ctx->hash_co, kx, hash->block_size);
 
   ASSH_SCRATCH_FREE(c, kx);
@@ -109,14 +109,14 @@ static ASSH_MAC_COMPUTE_FCN(assh_hmac_compute)
   uint8_t be_seq[4];
   assh_error_t err;
 
-  ASSH_ERR_RET(assh_hash_copy(ctx->hash_ci_t, ctx->hash_ci));
+  ASSH_RET_ON_ERR(assh_hash_copy(ctx->hash_ci_t, ctx->hash_ci));
   assh_store_u32(be_seq, seq);
   assh_hash_update(ctx->hash_ci_t, be_seq, 4);
   assh_hash_update(ctx->hash_ci_t, data, len);
   assh_hash_final(ctx->hash_ci_t, ctx->buf, ctx->hash->hash_size);
   assh_hash_cleanup(ctx->hash_ci_t);
 
-  ASSH_ERR_RET(ctx->hash->f_copy(ctx->hash_co_t, ctx->hash_co));
+  ASSH_RET_ON_ERR(ctx->hash->f_copy(ctx->hash_co_t, ctx->hash_co));
   assh_hash_update(ctx->hash_co_t, ctx->buf, ctx->hash->hash_size);
 
   if (ctx->mac->mac_size < ctx->hash->hash_size)
@@ -140,8 +140,8 @@ static ASSH_MAC_CHECK_FCN(assh_hmac_check)
   uint_fast8_t l = ctx->mac->mac_size;
   uint8_t buf[l];
 
-  ASSH_ERR_RET(assh_hmac_compute(ctx, seq, data, len, buf));
-  ASSH_CHK_RET(assh_memcmp(mac, buf, l), ASSH_ERR_MAC);
+  ASSH_RET_ON_ERR(assh_hmac_compute(ctx, seq, data, len, buf));
+  ASSH_RET_IF_TRUE(assh_memcmp(mac, buf, l), ASSH_ERR_MAC);
 
   return ASSH_OK;
 }

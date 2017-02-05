@@ -45,7 +45,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_dsa_output)
   switch (format)
     {
     case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY:
-      ASSH_CHK_RET(assh_bignum_isempty(&k->xn), ASSH_ERR_MISSING_KEY);
+      ASSH_RET_IF_TRUE(assh_bignum_isempty(&k->xn), ASSH_ERR_MISSING_KEY);
       bn_[4] = &k->xn;
     case ASSH_KEY_FMT_PUB_RFC4253: {
       /* add algo identifier */
@@ -67,7 +67,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_dsa_output)
         {
           uint8_t *b = blob;
           for (bn = bn_; *bn != NULL; bn++)
-              ASSH_ERR_RET(assh_bignum_convert(c, ASSH_BIGNUM_NATIVE,
+              ASSH_RET_ON_ERR(assh_bignum_convert(c, ASSH_BIGNUM_NATIVE,
                              ASSH_BIGNUM_MPINT, *bn, b, &b, 0));
           l += b - blob;
         }
@@ -76,7 +76,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_dsa_output)
     }
 
     case ASSH_KEY_FMT_PV_PEM_ASN1: {
-      ASSH_CHK_RET(assh_bignum_isempty(&k->xn), ASSH_ERR_MISSING_KEY);
+      ASSH_RET_IF_TRUE(assh_bignum_isempty(&k->xn), ASSH_ERR_MISSING_KEY);
       bn_[4] = &k->xn;
       uint8_t *b = blob + 4;
       uint8_t *s = b;
@@ -100,7 +100,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_dsa_output)
         {
           /* add key integers */
           for (bn = bn_; *bn != NULL; bn++)
-              ASSH_ERR_RET(assh_bignum_convert(c, ASSH_BIGNUM_NATIVE,
+              ASSH_RET_ON_ERR(assh_bignum_convert(c, ASSH_BIGNUM_NATIVE,
                              ASSH_BIGNUM_ASN1, *bn, b, &b, 0));
           l = b - s;
           /* sequence header */
@@ -116,7 +116,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_dsa_output)
     }
 
     default:
-      ASSH_TAIL_CALL(ASSH_ERR_NOTSUP);
+      ASSH_RETURN(ASSH_ERR_NOTSUP);
     }
 }
 
@@ -181,7 +181,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
 {
   assh_error_t err;
 
-  ASSH_CHK_RET(bits < 1024 || bits > 4096, ASSH_ERR_NOTSUP);
+  ASSH_RET_IF_TRUE(bits < 1024 || bits > 4096, ASSH_ERR_NOTSUP);
 
   size_t l = ASSH_ALIGN8(bits);
   size_t n;
@@ -195,7 +195,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
 
   struct assh_key_dsa_s *k;
 
-  ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_key_dsa_s),
+  ASSH_RET_ON_ERR(assh_alloc(c, sizeof(struct assh_key_dsa_s),
                           ASSH_ALLOC_INTERNAL, (void**)&k));
 
   k->key.algo = &assh_key_dsa;
@@ -275,7 +275,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
     ASSH_BOP_END(),
   };
 
-  ASSH_ERR_GTO(assh_bignum_bytecode(c, 0, bytecode, "NNNNNTTTTm",
+  ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "NNNNNTTTTm",
                  &k->pn, &k->qn, &k->gn, &k->yn, &k->xn), err_key);
 
   assert(!k->pn.secret && !k->qn.secret &&
@@ -303,7 +303,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
   uint_fast16_t n = assh_bignum_bits(&k->qn);
 
   /* check key size */
-  ASSH_CHK_RET(l < 1024 || n < 160 || l > 4096 || n > 256 || l % 8 || n % 8,
+  ASSH_RET_IF_TRUE(l < 1024 || n < 160 || l > 4096 || n > 256 || l % 8 || n % 8,
                ASSH_ERR_BAD_DATA);
 
   enum bytecode_args_e
@@ -374,7 +374,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
     ASSH_BOP_END(),
   };
 
-  ASSH_TAIL_CALL(assh_bignum_bytecode(c, 0, bytecode1, "NNNNNTTm",
+  ASSH_RETURN(assh_bignum_bytecode(c, 0, bytecode1, "NNNNNTTm",
                              &k->pn, &k->qn, &k->gn, &k->xn, &k->yn));
 }
 
@@ -392,16 +392,16 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
     case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY:
     case ASSH_KEY_FMT_PUB_RFC4253: {
 
-      ASSH_CHK_RET(blob_len < ASSH_DSA_ID_LEN, ASSH_ERR_INPUT_OVERFLOW);
-      ASSH_CHK_RET(memcmp(ASSH_DSA_ID, blob, ASSH_DSA_ID_LEN), ASSH_ERR_BAD_DATA);
+      ASSH_RET_IF_TRUE(blob_len < ASSH_DSA_ID_LEN, ASSH_ERR_INPUT_OVERFLOW);
+      ASSH_RET_IF_TRUE(memcmp(ASSH_DSA_ID, blob, ASSH_DSA_ID_LEN), ASSH_ERR_BAD_DATA);
 
       p_str = blob + ASSH_DSA_ID_LEN;
-      ASSH_ERR_RET(assh_check_string(blob, blob_len, p_str, &q_str));
-      ASSH_ERR_RET(assh_bignum_size_of_data(ASSH_BIGNUM_MPINT, p_str, NULL, NULL, &l));
-      ASSH_ERR_RET(assh_check_string(blob, blob_len, q_str, &g_str));
-      ASSH_ERR_RET(assh_bignum_size_of_data(ASSH_BIGNUM_MPINT, q_str, NULL, NULL, &n));
-      ASSH_ERR_RET(assh_check_string(blob, blob_len, g_str, &y_str));
-      ASSH_ERR_RET(assh_check_string(blob, blob_len, y_str, &x_str));
+      ASSH_RET_ON_ERR(assh_check_string(blob, blob_len, p_str, &q_str));
+      ASSH_RET_ON_ERR(assh_bignum_size_of_data(ASSH_BIGNUM_MPINT, p_str, NULL, NULL, &l));
+      ASSH_RET_ON_ERR(assh_check_string(blob, blob_len, q_str, &g_str));
+      ASSH_RET_ON_ERR(assh_bignum_size_of_data(ASSH_BIGNUM_MPINT, q_str, NULL, NULL, &n));
+      ASSH_RET_ON_ERR(assh_check_string(blob, blob_len, g_str, &y_str));
+      ASSH_RET_ON_ERR(assh_check_string(blob, blob_len, y_str, &x_str));
 
       if (format != ASSH_KEY_FMT_PV_OPENSSH_V1_KEY)
         {
@@ -410,40 +410,40 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
           break;
         }
 
-      ASSH_ERR_RET(assh_check_string(blob, blob_len, x_str, blob_));
+      ASSH_RET_ON_ERR(assh_check_string(blob, blob_len, x_str, blob_));
       break;
     }
 
     case ASSH_KEY_FMT_PV_PEM_ASN1: {
       const uint8_t *seq, *seq_end;
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, blob, &seq, &seq_end,
+      ASSH_RET_ON_ERR(assh_check_asn1(blob, blob_len, blob, &seq, &seq_end,
                                    /* seq */ 0x30));
 
       /* skip first value */
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, seq, NULL, &p_str, 0x02));
+      ASSH_RET_ON_ERR(assh_check_asn1(blob, blob_len, seq, NULL, &p_str, 0x02));
 
       /* parse p, q, g, y, x */
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, p_str, NULL, &q_str, 0x02));
-      ASSH_ERR_RET(assh_bignum_size_of_data(ASSH_BIGNUM_ASN1, p_str, NULL, NULL, &l));
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, q_str, NULL, &g_str, 0x02));
-      ASSH_ERR_RET(assh_bignum_size_of_data(ASSH_BIGNUM_ASN1, q_str, NULL, NULL, &n));
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, g_str, NULL, &y_str, 0x02));
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, y_str, NULL, &x_str, 0x02));
-      ASSH_ERR_RET(assh_check_asn1(blob, blob_len, x_str, NULL, blob_, 0x02));
+      ASSH_RET_ON_ERR(assh_check_asn1(blob, blob_len, p_str, NULL, &q_str, 0x02));
+      ASSH_RET_ON_ERR(assh_bignum_size_of_data(ASSH_BIGNUM_ASN1, p_str, NULL, NULL, &l));
+      ASSH_RET_ON_ERR(assh_check_asn1(blob, blob_len, q_str, NULL, &g_str, 0x02));
+      ASSH_RET_ON_ERR(assh_bignum_size_of_data(ASSH_BIGNUM_ASN1, q_str, NULL, NULL, &n));
+      ASSH_RET_ON_ERR(assh_check_asn1(blob, blob_len, g_str, NULL, &y_str, 0x02));
+      ASSH_RET_ON_ERR(assh_check_asn1(blob, blob_len, y_str, NULL, &x_str, 0x02));
+      ASSH_RET_ON_ERR(assh_check_asn1(blob, blob_len, x_str, NULL, blob_, 0x02));
       break;
     }
 
     default:
-      ASSH_TAIL_CALL(ASSH_ERR_NOTSUP);
+      ASSH_RETURN(ASSH_ERR_NOTSUP);
     }
 
   /* allocate key structure */
-  ASSH_CHK_RET(l < 1024 || n < 160 || l % 8 || n % 8, ASSH_ERR_BAD_DATA);
-  ASSH_CHK_RET(l > 4096 || n > 256, ASSH_ERR_NOTSUP);
+  ASSH_RET_IF_TRUE(l < 1024 || n < 160 || l % 8 || n % 8, ASSH_ERR_BAD_DATA);
+  ASSH_RET_IF_TRUE(l > 4096 || n > 256, ASSH_ERR_NOTSUP);
 
   struct assh_key_dsa_s *k = (void*)*key;
 
-  ASSH_ERR_RET(assh_alloc(c, sizeof(struct assh_key_dsa_s),
+  ASSH_RET_ON_ERR(assh_alloc(c, sizeof(struct assh_key_dsa_s),
                           ASSH_ALLOC_INTERNAL, (void**)&k));
 
   k->key.algo = &assh_key_dsa;
@@ -463,30 +463,30 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
     {
     case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY:
       k->key.private = 1;
-      ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
+      ASSH_JMP_ON_ERR(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
                                        x_str, &k->xn, NULL, 0), err_xn);
     case ASSH_KEY_FMT_PUB_RFC4253:
-      ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
+      ASSH_JMP_ON_ERR(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
                                        p_str, &k->pn, NULL, 0), err_xn);
-      ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
+      ASSH_JMP_ON_ERR(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
                                        q_str, &k->qn, NULL, 0), err_xn);
-      ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
+      ASSH_JMP_ON_ERR(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
                                        g_str, &k->gn, NULL, 0), err_xn);
-      ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
+      ASSH_JMP_ON_ERR(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
                                        y_str, &k->yn, NULL, 0), err_xn);
       break;
 
     case ASSH_KEY_FMT_PV_PEM_ASN1:
       k->key.private = 1;
-      ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE,
+      ASSH_JMP_ON_ERR(assh_bignum_convert(c, ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE,
                                        p_str, &k->pn, NULL, 0), err_xn);
-      ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE,
+      ASSH_JMP_ON_ERR(assh_bignum_convert(c, ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE,
                                        q_str, &k->qn, NULL, 0), err_xn);
-      ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE,
+      ASSH_JMP_ON_ERR(assh_bignum_convert(c, ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE,
                                        g_str, &k->gn, NULL, 0), err_xn);
-      ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE,
+      ASSH_JMP_ON_ERR(assh_bignum_convert(c, ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE,
                                        y_str, &k->yn, NULL, 0), err_xn);
-      ASSH_ERR_GTO(assh_bignum_convert(c, ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE,
+      ASSH_JMP_ON_ERR(assh_bignum_convert(c, ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE,
                                        x_str, &k->xn, NULL, 1), err_xn);
     default:
       break;

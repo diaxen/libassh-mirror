@@ -89,8 +89,8 @@ assh_error_t assh_session_create(struct assh_context_s *c,
 				 struct assh_session_s **s)
 {
   assh_error_t err;
-  ASSH_ERR_RET(assh_alloc(c, sizeof(**s), ASSH_ALLOC_INTERNAL, (void**)s));
-  ASSH_ERR_GTO(assh_session_init(c, *s), err);
+  ASSH_RET_ON_ERR(assh_alloc(c, sizeof(**s), ASSH_ALLOC_INTERNAL, (void**)s));
+  ASSH_JMP_ON_ERR(assh_session_init(c, *s), err);
   return ASSH_OK;
  err:
   assh_free(c, *s);
@@ -276,7 +276,7 @@ assh_session_algo_filter(struct assh_session_s *s,
     {
     case ASSH_TR_KEX_WAIT:
     case ASSH_TR_SERVICE_KEX:
-      ASSH_TAIL_CALL(ASSH_ERR_STATE);
+      ASSH_RETURN(ASSH_ERR_STATE);
     default:
       s->kex_filter = filter != NULL
         ? filter : assh_session_kex_filter;

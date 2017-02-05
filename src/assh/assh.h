@@ -244,11 +244,11 @@ assh_hexdump(const char *name, const void *data, size_t len)
 }
 
 /** @internal */
-# define ASSH_ERR_GTO(expr, label) do { if ((err = (expr)) & 0x100) goto label; err &= 0xff; } while (0)
+# define ASSH_JMP_ON_ERR(expr, label) do { if ((err = (expr)) & 0x100) goto label; err &= 0xff; } while (0)
 /** @internal */
-# define ASSH_ERR_RET(expr) do { if ((err = (expr)) & 0x100) return err; err &= 0xff; } while (0)
+# define ASSH_RET_ON_ERR(expr) do { if ((err = (expr)) & 0x100) return err; err &= 0xff; } while (0)
 /** @internal */
-# define ASSH_TAIL_CALL(expr) do { if ((err = (expr)) & 0x100) return err; return err & 0xff; } while (0)
+# define ASSH_RETURN(expr) do { if ((err = (expr)) & 0x100) return err; return err & 0xff; } while (0)
 
 #else
 
@@ -264,7 +264,7 @@ void assh_hexdump(const char *name, const void *data, size_t len);
 # ifndef CONFIG_ASSH_CALLTRACE
 
 /** @internal */
-# define ASSH_ERR_GTO(expr, label)					\
+# define ASSH_JMP_ON_ERR(expr, label)					\
   do {									\
     err = (expr);							\
     if (err & 0x100)							\
@@ -279,7 +279,7 @@ void assh_hexdump(const char *name, const void *data, size_t len);
   } while (0)
 
 /** @internal */
-# define ASSH_ERR_RET(expr)						\
+# define ASSH_RET_ON_ERR(expr)						\
   do {									\
     err = (expr);							\
     if (err & 0x100)							\
@@ -294,7 +294,7 @@ void assh_hexdump(const char *name, const void *data, size_t len);
   } while (0)
 
 /** @internal */
-# define ASSH_TAIL_CALL(expr)						\
+# define ASSH_RETURN(expr)						\
   do {									\
     err = (expr);							\
     if (err & 0x100)							\
@@ -311,7 +311,7 @@ void assh_hexdump(const char *name, const void *data, size_t len);
 # else
 
 /** @internal */
-# define ASSH_ERR_GTO(expr, label)					\
+# define ASSH_JMP_ON_ERR(expr, label)					\
   do {									\
     fprintf(stderr, "%s:%u:assh >>> in %s, expr:`%s'\n",                \
             __FILE__, __LINE__, __func__, #expr);                  \
@@ -330,7 +330,7 @@ void assh_hexdump(const char *name, const void *data, size_t len);
   } while (0)
 
 /** @internal */
-# define ASSH_ERR_RET(expr)						\
+# define ASSH_RET_ON_ERR(expr)						\
   do {									\
     fprintf(stderr, "%s:%u:assh >>> in %s, expr:`%s'\n",                \
             __FILE__, __LINE__, __func__, #expr);                       \
@@ -349,7 +349,7 @@ void assh_hexdump(const char *name, const void *data, size_t len);
   } while (0)
 
 /** @internal */
-# define ASSH_TAIL_CALL(expr)						\
+# define ASSH_RETURN(expr)						\
   do {									\
     fprintf(stderr, "%s:%u:assh >>> in %s, expr:`%s'\n",                \
             __FILE__, __LINE__, __func__, #expr);                       \
@@ -373,10 +373,10 @@ void assh_hexdump(const char *name, const void *data, size_t len);
 #endif
 
 /** @internal */
-# define ASSH_CHK_GTO(cond, err, label) ASSH_ERR_GTO(cond ? err : 0, label) 
+# define ASSH_JMP_IF_TRUE(cond, err, label) ASSH_JMP_ON_ERR(cond ? err : 0, label) 
 
 /** @internal */
-# define ASSH_CHK_RET(cond, err) ASSH_ERR_RET(cond ? err : 0) 
+# define ASSH_RET_IF_TRUE(cond, err) ASSH_RET_ON_ERR(cond ? err : 0) 
 
 /** @internal SSH implementation identification string */
 #define ASSH_IDENT "SSH-2.0-LIBASSH\r\n"

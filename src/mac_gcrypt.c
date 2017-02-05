@@ -44,16 +44,16 @@ static ASSH_MAC_COMPUTE_FCN(assh_hmac_gcrypt_compute)
   struct assh_hmac_gcrypt_context_s *ctx = ctx_;
   assh_error_t err;
 
-  ASSH_CHK_RET(gcry_mac_reset(ctx->hd), ASSH_ERR_CRYPTO);
+  ASSH_RET_IF_TRUE(gcry_mac_reset(ctx->hd), ASSH_ERR_CRYPTO);
 
   uint8_t be_seq[4];
   assh_store_u32(be_seq, seq);
 
-  ASSH_CHK_RET(gcry_mac_write(ctx->hd, be_seq, 4), ASSH_ERR_CRYPTO);
-  ASSH_CHK_RET(gcry_mac_write(ctx->hd, data, len), ASSH_ERR_CRYPTO);
+  ASSH_RET_IF_TRUE(gcry_mac_write(ctx->hd, be_seq, 4), ASSH_ERR_CRYPTO);
+  ASSH_RET_IF_TRUE(gcry_mac_write(ctx->hd, data, len), ASSH_ERR_CRYPTO);
 
   size_t s = ctx->mac->mac_size;
-  ASSH_CHK_RET(gcry_mac_read(ctx->hd, mac, &s), ASSH_ERR_CRYPTO);
+  ASSH_RET_IF_TRUE(gcry_mac_read(ctx->hd, mac, &s), ASSH_ERR_CRYPTO);
   return ASSH_OK;
 }
 
@@ -62,15 +62,15 @@ static ASSH_MAC_CHECK_FCN(assh_hmac_gcrypt_check)
   struct assh_hmac_gcrypt_context_s *ctx = ctx_;
   assh_error_t err;
 
-  ASSH_CHK_RET(gcry_mac_reset(ctx->hd), ASSH_ERR_CRYPTO);
+  ASSH_RET_IF_TRUE(gcry_mac_reset(ctx->hd), ASSH_ERR_CRYPTO);
 
   uint8_t be_seq[4];
   assh_store_u32(be_seq, seq);
 
-  ASSH_CHK_RET(gcry_mac_write(ctx->hd, be_seq, 4), ASSH_ERR_CRYPTO);
-  ASSH_CHK_RET(gcry_mac_write(ctx->hd, data, len), ASSH_ERR_CRYPTO);
+  ASSH_RET_IF_TRUE(gcry_mac_write(ctx->hd, be_seq, 4), ASSH_ERR_CRYPTO);
+  ASSH_RET_IF_TRUE(gcry_mac_write(ctx->hd, data, len), ASSH_ERR_CRYPTO);
 
-  ASSH_CHK_RET(gcry_mac_verify(ctx->hd, mac, ctx->mac->mac_size), ASSH_ERR_CRYPTO);
+  ASSH_RET_IF_TRUE(gcry_mac_verify(ctx->hd, mac, ctx->mac->mac_size), ASSH_ERR_CRYPTO);
   return ASSH_OK;
 }
 
@@ -80,9 +80,9 @@ static assh_error_t assh_hmac_gcrypt_init(const struct assh_algo_mac_s *mac,
 {
   assh_error_t err;
   ctx->mac = mac;
-  ASSH_CHK_RET(gcry_mac_open(&ctx->hd, algo, GCRY_MAC_FLAG_SECURE,
+  ASSH_RET_IF_TRUE(gcry_mac_open(&ctx->hd, algo, GCRY_MAC_FLAG_SECURE,
 			     NULL), ASSH_ERR_CRYPTO);
-  ASSH_CHK_GTO(gcry_mac_setkey(ctx->hd, key, mac->key_size),
+  ASSH_JMP_IF_TRUE(gcry_mac_setkey(ctx->hd, key, mac->key_size),
 	       ASSH_ERR_CRYPTO, err_hd);
   ctx->gcry_mac_len = gcry_mac_get_algo_maclen(algo);
   return ASSH_OK;
