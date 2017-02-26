@@ -57,6 +57,21 @@ AC_ARG_ENABLE(server, AC_HELP_STRING(--disable-server, [Disable SSH server suppo
 AC_ARG_ENABLE(client, AC_HELP_STRING(--disable-client, [Disable SSH client support]),
 		       enable_client=$enableval, enable_client=yes)
 
+AC_ARG_ENABLE(none_userauth, AC_HELP_STRING(--enable-none, [Enable none authentication]),
+		       enable_none_userauth=$enableval, enable_none_userauth=no)
+
+AC_ARG_ENABLE(publickey_userauth, AC_HELP_STRING(--disable-publickey-userauth, [Disable public key user authentication]),
+		       enable_publickey_userauth=$enableval, enable_publickey_userauth=yes)
+
+AC_ARG_ENABLE(password_userauth, AC_HELP_STRING(--disable-password-userauth, [Disable public key user authentication]),
+		       enable_password_userauth=$enableval, enable_password_userauth=yes)
+
+AC_ARG_ENABLE(hostbased_userauth, AC_HELP_STRING(--disable-hostbased-userauth, [Disable host based user authentication]),
+		       enable_hostbased_userauth=$enableval, enable_hostbased_userauth=yes)
+
+AC_ARG_ENABLE(keyboard_userauth, AC_HELP_STRING(--disable-keyboard-userauth, [Disable host based user authentication]),
+		       enable_keyboard_userauth=$enableval, enable_keyboard_userauth=yes)
+
 AC_ARG_ENABLE(gcrypt, AC_HELP_STRING(--disable-gcrypt, [Disable use of gcrypt support]),
 		       enable_gcrypt=$enableval, enable_gcrypt=yes)
 
@@ -77,6 +92,12 @@ AC_ARG_ENABLE(gcrypt_ciphers, AC_HELP_STRING(--disable-gcrypt-ciphers, [Disable 
 
 AC_ARG_ENABLE(zlib, AC_HELP_STRING(--disable-zlib, [Disable use of the zlib library]),
 		       enable_zlib=$enableval, enable_zlib=yes)
+
+AC_ARG_ENABLE(packet_pool, AC_HELP_STRING(--disable-packet-pool, [Disable use of packet allocation pool]),
+		       enable_packet_pool=$enableval, enable_packet_pool=yes)
+
+AC_ARG_ENABLE(alloca, AC_HELP_STRING(--enable-alloca, [Store key related material on stack]),
+		       enable_alloca=$enableval, enable_alloca=no)
 
 if test x$enable_gcrypt = xyes ; then
   AC_CHECK_LIB(gcrypt, gcry_check_version, [
@@ -111,7 +132,6 @@ if test x$enable_gcrypt = xyes ; then
         AC_DEFINE([CONFIG_ASSH_CIPHER_IDEA], [], [IDEA cipher available])
         AC_DEFINE([CONFIG_ASSH_CIPHER_CAMELLIA], [], [Camellia cipher available])
         AC_DEFINE([CONFIG_ASSH_MODE_GCM], [], [GCM cipher mode available])
-        AC_DEFINE([CONFIG_ASSH_HASH_RIPEMD160], [], [RIPE-MD-160 message digest available])
       fi
 
     ], [
@@ -179,20 +199,38 @@ AM_CONDITIONAL(COND_dev_random,  [test x$enable_dev_random = xyes])
 
 if test x$enable_server = xyes ; then
    AC_DEFINE([CONFIG_ASSH_SERVER], [], [SSH server support])
-   AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_PUBLICKEY], [], [SSH server authentication: public key support])
-   AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_PASSWORD], [], [SSH server authentication: password support])
-   AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_HOSTBASED], [], [SSH server authentication: host based])
-   AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_KEYBOARD], [], [SSH server authentication: keyboard interactive])
-   AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_NONE], [], [SSH server authentication: bypassed, grant access directly])
+   if test x$enable_publickey_userauth = xyes ; then
+     AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_PUBLICKEY], [], [SSH server authentication: public key support])
+   fi
+   if test x$enable_password_userauth = xyes ; then
+     AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_PASSWORD], [], [SSH server authentication: password support])
+   fi
+   if test x$enable_hostbased_userauth = xyes ; then
+     AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_HOSTBASED], [], [SSH server authentication: host based])
+   fi
+   if test x$enable_keyboard_userauth = xyes ; then
+     AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_KEYBOARD], [], [SSH server authentication: keyboard interactive])
+   fi
+   if test x$enable_none_userauth = xyes ; then
+     AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_NONE], [], [SSH server authentication: bypassed, grant access directly])
+   fi
 fi
 
 if test x$enable_client = xyes ; then
    AC_DEFINE([CONFIG_ASSH_CLIENT], [], [SSH client support])
-   AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY], [], [SSH client authentication: public key support])
-   AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_PASSWORD], [], [SSH client authentication: password support])
-   AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_USE_PKOK], [], [SSH client authentication: public key signature is not sent directly])
-   AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_HOSTBASED], [], [SSH client authentication: host based])
-   AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_KEYBOARD], [], [SSH client authentication: keyboard interactive])
+   if test x$enable_publickey_userauth = xyes ; then
+     AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY], [], [SSH client authentication: public key support])
+     AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_USE_PKOK], [], [SSH client authentication: public key signature is not sent directly])
+   fi
+   if test x$enable_password_userauth = xyes ; then
+     AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_PASSWORD], [], [SSH client authentication: password support])
+   fi
+   if test x$enable_hostbased_userauth = xyes ; then
+     AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_HOSTBASED], [], [SSH client authentication: host based])
+   fi
+   if test x$enable_keyboard_userauth = xyes ; then
+     AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_KEYBOARD], [], [SSH client authentication: keyboard interactive])
+   fi
 fi
 
 AC_DEFINE([CONFIG_ASSH_AUTH_USERNAME_LEN], [32], [SSH authentication max username length])
@@ -201,8 +239,13 @@ AC_DEFINE([CONFIG_ASSH_AUTH_HOSTNAME_LEN], [128], [SSH authentication max hostna
 
 AC_DEFINE([CONFIG_ASSH_MAX_SERVICES], [4], [Maximum number of registered services])
 
-AC_DEFINE([CONFIG_ASSH_PACKET_POOL], [], [Use a packet allocation pool])
-#AC_DEFINE([CONFIG_ASSH_ALLOCA], [], [Enable storing key related material on stack])
+if test x$enable_packet_pool = xyes ; then
+  AC_DEFINE([CONFIG_ASSH_PACKET_POOL], [], [Use a packet allocation pool])
+fi
+
+if test x$enable_alloca = xyes ; then
+  AC_DEFINE([CONFIG_ASSH_ALLOCA], [], [Store key related material on stack])
+fi
 
 if test "$GCC" = "yes" ; then
     CFLAGS="-Wall -Wno-enum-compare $CFLAGS"
