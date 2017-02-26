@@ -40,6 +40,12 @@ userauth_SOURCES = userauth.c
 userauth_LDADD = $(top_builddir)/src/libassh.la
 userauth_CFLAGS = -I$(top_srcdir)/src
 
+noinst_PROGRAMS += userauth_server
+TESTS += userauth_server
+userauth_server_SOURCES = userauth_server.c
+userauth_server_LDADD = $(top_builddir)/src/libassh.la
+userauth_server_CFLAGS = -I$(top_srcdir)/src
+
 noinst_PROGRAMS += connection
 TESTS += connection
 connection_SOURCES = connection.c
