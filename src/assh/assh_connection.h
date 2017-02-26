@@ -30,6 +30,11 @@
 
    This standard service described in rfc4254 is implemented as a
    pluggable service module for libassh.
+
+   @ifnopt hide_internal
+     Here is an overview of the implemented channel state machine:
+     @image channel_fsm.png
+   @end if
 */
 
 #ifndef ASSH_SRV_CONNECTION_H_
