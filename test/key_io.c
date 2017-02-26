@@ -261,7 +261,8 @@ int main(int argc, char **argv)
     return -1;
 #endif
 
-  if (assh_context_init(&context, ASSH_SERVER, NULL, NULL, &assh_prng_weak, NULL))
+  if (assh_context_init(&context, ASSH_CLIENT_SERVER,
+			NULL, NULL, &assh_prng_weak, NULL))
     return -1;
 
   if (assh_algo_register_default(&context, 99, 10, 0) != ASSH_OK)

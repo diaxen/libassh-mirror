@@ -102,14 +102,28 @@ assh_context_init(struct assh_context_s *c,
 
   c->session_count = 0;
 
-  assert(
-#ifdef CONFIG_ASSH_CLIENT
-	 type == ASSH_CLIENT ||
+  switch (type)
+    {
+    case ASSH_CLIENT:
+#ifndef CONFIG_ASSH_CLIENT
+      ASSH_RETURN(ASSH_ERR_NOTSUP);
 #endif
+      break;
+    case ASSH_SERVER:
+#ifndef CONFIG_ASSH_SERVER
+      ASSH_RETURN(ASSH_ERR_NOTSUP);
+#endif
+      break;
+    case ASSH_CLIENT_SERVER:
 #ifdef CONFIG_ASSH_SERVER
-	 type == ASSH_SERVER ||
+      type = ASSH_SERVER;
+#else
+      type = ASSH_CLIENT;
 #endif
-	 0);
+      break;
+    default:
+      ASSH_UNREACHABLE();
+    }
 
   c->type = type;
 

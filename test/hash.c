@@ -122,7 +122,7 @@ main(int argc, char **argv)
     return -1;
 #endif
 
-  if (assh_context_init(&context, ASSH_SERVER, NULL, NULL, NULL, NULL))
+  if (assh_context_init(&context, ASSH_CLIENT_SERVER, NULL, NULL, NULL, NULL))
     return -1;
 
   uint_fast8_t i;
