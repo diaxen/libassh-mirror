@@ -754,12 +754,12 @@ int test(int (*fend)(int, int), int n, int evrate)
 	      struct assh_event_channel_open_reply_s *e = &event.connection.channel_open_reply;
 	      struct ch_map_entry_s *che = assh_channel_pv(e->ch);
 
-	      if (!started[i])
-		TEST_FAIL("(ctx %u seed %u) ASSH_EVENT_CHANNEL_OPEN_REPLY while not started\n", i, seed);
-
-	      switch (che->status)
+	      switch (e->reply)
 		{
-		case CH_SUCCESS:
+		case ASSH_CONNECTION_REPLY_SUCCESS:
+		  if (che->status == CH_FAIL)
+		    TEST_FAIL("(ctx %u seed %u) channel_open_reply.reply == FAIL %u\n", i, seed, e->reply);
+
 		  che->status = CH_OPEN;
 		  ch_report(che);
 
@@ -779,15 +779,26 @@ int test(int (*fend)(int, int), int n, int evrate)
 			}
 		    }
 		  break;
-		case CH_FAIL:
-		  che->ch[0] = che->ch[1] = NULL;
-		  che->status = CH_CLOSED;
+
+		case ASSH_CONNECTION_REPLY_FAILED:
+
+		  if (che->status != CH_FAIL)
+		    {
+		      if (started[i])
+			TEST_FAIL("(ctx %u seed %u) ASSH_EVENT_CHANNEL_OPEN_REPLY while started\n", i, seed);
+		      che->ch[i] = NULL;
+		    }
+		  else
+		    {
+		      che->ch[0] = che->ch[1] = NULL;
+		      che->status = CH_CLOSED;
+		    }
 		  ch_refs--;
 		  ch_report(che);
 		  break;
 		default:
 		  if (started[i^1])
-		    TEST_FAIL("(ctx %u seed %u) channel_open_reply status\n", i, seed);
+		    TEST_FAIL("(ctx %u seed %u) channel_open_reply status %u\n", i, seed, che->status);
 		}
 
 	      break;

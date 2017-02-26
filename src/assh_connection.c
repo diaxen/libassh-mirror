@@ -1422,6 +1422,27 @@ assh_connection_got_channel_close(struct assh_session_s *s,
   return ASSH_OK;
 }
 
+/* This is only used when the ASSH_EVENT_CHANNEL_OPEN_REPLY event is
+   reported because of a connection close. (see assh_channel_pop_closing). */
+static ASSH_EVENT_DONE_FCN(assh_event_channel_close_reply_done)
+{
+  assh_error_t err;
+  struct assh_connection_context_s *pv = s->srv_pv;
+
+  ASSH_RET_IF_TRUE(s->srv != &assh_service_connection,
+	       ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+  ASSH_RET_IF_TRUE(pv->state != ASSH_CONNECTION_ST_EVENT_CHANNEL_CLOSE,
+               ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+
+  pv->state = ASSH_CONNECTION_ST_IDLE;
+
+  struct assh_channel_s *ch = e->connection.channel_open_reply.ch;
+
+  assh_channel_cleanup(ch);
+
+  return ASSH_OK;
+}
+
 static ASSH_EVENT_DONE_FCN(assh_event_channel_close_done)
 {
   assh_error_t err;
@@ -1435,9 +1456,6 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_close_done)
   pv->state = ASSH_CONNECTION_ST_IDLE;
 
   struct assh_channel_s *ch = e->connection.channel_close.ch;
-
-  /* remove from pv->closing_queue */
-  assh_queue_remove((void*)ch);
 
   assh_channel_cleanup(ch);
 
@@ -1663,28 +1681,63 @@ static void assh_channel_force_close_i(struct assh_map_entry_s *ch_, void *pv_)
   struct assh_channel_s *ch = (struct assh_channel_s*)ch_;
   struct assh_connection_context_s *pv = pv_;
 
+  assh_queue_push_front(&pv->closing_queue, &ch->qentry);
+}
+
+static void assh_channel_pop_closing(struct assh_session_s *s,
+                                     struct assh_event_s *e)
+{
+  struct assh_connection_context_s *pv = s->srv_pv;
+  struct assh_channel_s *ch = (void*)assh_queue_back(&pv->closing_queue);
+
   switch (ch->status)
     {
-    case ASSH_CHANNEL_ST_OPEN_SENT:
-    case ASSH_CHANNEL_ST_OPEN_RECEIVED:
+    case ASSH_CHANNEL_ST_CLOSING:
+    case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
+      /* from assh_connection_got_channel_close */
+
     case ASSH_CHANNEL_ST_OPEN:
     case ASSH_CHANNEL_ST_EOF_SENT:
     case ASSH_CHANNEL_ST_EOF_RECEIVED:
     case ASSH_CHANNEL_ST_EOF_CLOSE:
-      ch->status = ASSH_CHANNEL_ST_CLOSING;
-      break;
-
     case ASSH_CHANNEL_ST_CLOSE_CALLED:
-      ch->status = ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING;      
-      break;
+    case ASSH_CHANNEL_ST_OPEN_RECEIVED: {
 
-    case ASSH_CHANNEL_ST_CLOSING:
-    case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
-      /* can not be in channel map */
-      ASSH_UNREACHABLE();
+      if (assh_request_reply_flush(s, ch, e))
+        return;
+
+      struct assh_event_channel_close_s *ev =
+        &e->connection.channel_close;
+
+      /* report channel close event */
+      e->id = ASSH_EVENT_CHANNEL_CLOSE;
+      e->f_done = assh_event_channel_close_done;
+      ev->ch = ch;
+      pv->state = ASSH_CONNECTION_ST_EVENT_CHANNEL_CLOSE;
+      break;
     }
 
-  assh_queue_push_front(&pv->closing_queue, &ch->qentry);
+    case ASSH_CHANNEL_ST_OPEN_SENT: {
+      assert(assh_queue_isempty(&ch->request_lqueue));
+
+      struct assh_event_channel_open_reply_s *ev =
+        &e->connection.channel_open_reply;
+
+      /* report channel open failed */
+      e->id = ASSH_EVENT_CHANNEL_OPEN_REPLY;
+      e->f_done = assh_event_channel_close_reply_done;
+      ev->ch = ch;
+      ev->reply = ASSH_CONNECTION_REPLY_FAILED;
+      pv->state = ASSH_CONNECTION_ST_EVENT_CHANNEL_CLOSE;
+
+      ch->status = ASSH_CHANNEL_ST_CLOSING;
+      break;
+    }
+
+    }
+
+  /* remove from pv->closing_queue */
+  assh_queue_remove((void*)ch);
 }
 
 static ASSH_SERVICE_PROCESS_FCN(assh_connection_process)
@@ -1726,22 +1779,7 @@ static ASSH_SERVICE_PROCESS_FCN(assh_connection_process)
   /* report channel closing related events */
   if (!assh_queue_isempty(&pv->closing_queue))
     {
-      struct assh_channel_s *ch = (void*)assh_queue_back(&pv->closing_queue);
-
-      /* pop a pending channel request and report an event */
-      if (assh_request_reply_flush(s, ch, e))
-        return ASSH_NO_DATA;
-
-      struct assh_event_channel_close_s *ev =
-        &e->connection.channel_close;
-
-      /* report channel close event */
-      e->id = ASSH_EVENT_CHANNEL_CLOSE;
-      e->f_done = assh_event_channel_close_done;
-      ev->ch = ch;
-
-      pv->state = ASSH_CONNECTION_ST_EVENT_CHANNEL_CLOSE;
-
+      assh_channel_pop_closing(s, e);
       return ASSH_NO_DATA;
     }
 
