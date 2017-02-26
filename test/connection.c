@@ -214,6 +214,7 @@ int test(int (*fend)(int, int), int n, int evrate)
   /********************* sessions test loop */
 
   //  ASSH_DEBUG("----\n");
+  uint_fast32_t stall = 0;
 
   for (j = 0; fend(j, n); j++)
     {
@@ -851,19 +852,15 @@ int test(int (*fend)(int, int), int n, int evrate)
 	      kex_done = 1;
 	      break;
 
-	    case ASSH_EVENT_READ: {
-	      struct assh_event_transport_read_s *te = &event.transport.read;
-	      te->transferred = fifo_read(&fifo[i], te->buf.data,
-					  te->buf.size % (rand() % FIFO_BUF_SIZE + 1));
+	    case ASSH_EVENT_READ:
+	      if (fifo_rw_event(fifo, &event, i))
+		stall++;
 	      break;
-	    }
 
-	    case ASSH_EVENT_WRITE: {
-	      struct assh_event_transport_write_s *te = &event.transport.write;
-	      te->transferred = fifo_write(&fifo[i ^ 1], te->buf.data,
-					   te->buf.size % (rand() % FIFO_BUF_SIZE + 1));
+	    case ASSH_EVENT_WRITE:
+	      if (!fifo_rw_event(fifo, &event, i))
+		stall = 0;
 	      break;
-	    }
 
 	    case ASSH_EVENT_CONNECTION_START:
 	      started[i]++;
@@ -892,6 +889,9 @@ int test(int (*fend)(int, int), int n, int evrate)
 	      if (!evrate)
 		ASSH_RET_ON_ERR(err);
 	    }
+
+	  if (stall >= 100000)
+	    TEST_FAIL("stalled\n");
 	}
     }
 
