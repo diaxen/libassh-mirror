@@ -23,6 +23,7 @@
 
 /**
    @file
+   @internal
    @short Bcrypt password hashing algorithm
 */
 

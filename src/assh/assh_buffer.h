@@ -66,8 +66,9 @@ assh_cbuffer(const struct assh_buffer_s *b)
   return (void*)b;
 }
 
-/** @This compares the content of an @ref assh_buffer_s
-    object with a nul terminated string. */
+/** @This compares the content of an @ref assh_buffer_s object with a
+    nul terminated string. This is @b not performed in constant
+    time. */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT uint_fast8_t
 assh_buffer_strcmp(const struct assh_cbuffer_s *buf, const char *nul_str)
 {
