@@ -807,7 +807,6 @@ int test(int (*fend)(int, int), int n, int evrate)
 	    case ASSH_EVENT_CHANNEL_CLOSE: {      /***** close event *****/
 	      struct assh_event_channel_close_s *e = &event.connection.channel_close;
 	      struct ch_map_entry_s *che = assh_channel_pv(e->ch);
-	      ASSH_DEBUG("REMOVING %p %p\n", e->ch->session, e->ch);
 
 	      ch_report(che);
 	      ch_event_close_count++;

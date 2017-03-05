@@ -64,6 +64,105 @@ struct assh_connection_context_s
   enum assh_connection_state_e state:8;
 };
 
+struct assh_request_s
+{
+  struct assh_queue_entry_s qentry;
+
+  struct assh_session_s *session;
+  struct assh_channel_s *ch;
+  struct assh_packet_s *reply_pck;
+  void *pv;
+  enum assh_request_status_e status:8;
+};
+
+ASSH_FIRST_FIELD_ASSERT(assh_request_s, qentry);
+
+struct assh_channel_s
+{
+  union {
+    /** channel queue entry, valid when the channel is waiting for close. */
+    struct assh_queue_entry_s qentry;
+    /** channel map entry, valid when the channel is open. */
+    struct assh_map_entry_s mentry;
+  };
+
+  struct assh_session_s *session;
+  struct assh_packet_s *data_pck;
+  void *pv;
+
+  struct assh_queue_s request_rqueue; //< requests we have to acknowledge
+  struct assh_queue_s request_lqueue; //< requests waiting for a reply from the remote host
+
+  uint32_t remote_id;
+  uint32_t rpkt_size;		//< remote packet size
+  uint32_t lpkt_size;		//< local packet size
+  uint32_t lwin_size;		//< local window size
+
+  uint32_t rwin_left;           //< remote window bytes left
+  uint32_t lwin_left;           //< local window bytes left
+
+  enum assh_channel_status_e status:8;
+};
+
+ASSH_FIRST_FIELD_ASSERT(assh_channel_s, qentry);
+ASSH_FIRST_FIELD_ASSERT(assh_channel_s, mentry);
+
+void assh_request_set_pv(struct assh_request_s *rq, void *pv)
+{
+  rq->pv = pv;
+}
+
+void * assh_request_pv(const struct assh_request_s *rq)
+{
+  return rq->pv;
+}
+
+enum assh_request_status_e
+assh_request_status(struct assh_request_s *rq)
+{
+  return rq->status;
+}
+
+void assh_channel_set_pv(struct assh_channel_s *ch, void *pv)
+{
+  ch->pv = pv;
+}
+
+void * assh_channel_pv(const struct assh_channel_s *ch)
+{
+  return ch->pv;
+}
+
+enum assh_channel_status_e
+assh_channel_status(const struct assh_channel_s *ch)
+{
+  return ch->status;
+}
+
+void assh_channel_set_win_size(struct assh_channel_s *ch,
+                               uint32_t win_size)
+{
+  ch->lwin_size = ASSH_MAX(win_size, ch->lpkt_size * 2);
+}
+
+void assh_channel_get_win_size(const struct assh_channel_s *ch,
+                               uint32_t *local, uint32_t *remote)
+{
+  if (local != NULL)
+    *local = ch->lwin_left;
+  if (remote != NULL)
+    *remote = ch->rwin_left;
+}
+
+void assh_channel_get_pkt_size(const struct assh_channel_s *ch,
+                               uint32_t *local, uint32_t *remote)
+{
+  if (local != NULL)
+    *local = ch->lpkt_size;
+  if (remote != NULL)
+    *remote = ch->rpkt_size;
+}
+
 static uint32_t
 assh_channel_next_id(struct assh_connection_context_s *pv)
 {
@@ -727,6 +826,15 @@ assh_channel_open_success_reply2(struct assh_channel_s *ch,
   return ASSH_OK;
  err:
   return assh_session_error(s, err);
+}
+
+assh_error_t
+assh_channel_open_success_reply(struct assh_channel_s *ch,
+                                const uint8_t *rsp_data,
+                                size_t rsp_data_len)
+{
+  return assh_channel_open_success_reply2(ch, ch->lpkt_size, ch->lwin_size,
+                                          rsp_data, rsp_data_len);
 }
 
 /* event done, reply to open */

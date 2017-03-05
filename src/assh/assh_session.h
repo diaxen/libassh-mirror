@@ -174,25 +174,17 @@ struct assh_session_s
 };
 
 /** @This set the user private pointer of the session. */
-ASSH_INLINE void
-assh_session_set_pv(struct assh_session_s *ctx,
-                    void *private)
-{
-  ctx->user_pv = private;
-}
+void assh_session_set_pv(struct assh_session_s *ctx,
+                         void *private);
 
 /** @This get the user private pointer of the session. */
-ASSH_INLINE void *
-assh_session_get_pv(struct assh_session_s *ctx)
-{
-  return ctx->user_pv;
-}
+void * assh_session_get_pv(struct assh_session_s *ctx);
 
 /** @This initializes a new ssh session object. When a stable ABI is
     needed, use the @ref assh_context_create function instead. This
     can be used to initialize a statically allocated session
     object. The @tt alloc parameter may be @tt NULL. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_ABI_UNSAFE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_session_init(struct assh_context_s *c,
 		  struct assh_session_s *s);
 
@@ -203,7 +195,8 @@ assh_session_create(struct assh_context_s *c,
 		    struct assh_session_s **s);
 
 /** @This cleanups a ssh session object. */
-void assh_session_cleanup(struct assh_session_s *s);
+ASSH_ABI_UNSAFE void
+assh_session_cleanup(struct assh_session_s *s);
 
 /** @This cleanups and releases a session created by the @ref
     assh_session_create function. */

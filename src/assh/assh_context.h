@@ -139,7 +139,7 @@ assh_context_create(struct assh_context_s **ctx,
 
     When a stable ABI is needed, use the @ref assh_context_create
     function instead. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_ABI_UNSAFE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_context_init(struct assh_context_s *ctx,
                   enum assh_context_type_e type,
                   assh_allocator_t *alloc, void *alloc_pv,
@@ -149,7 +149,8 @@ assh_context_init(struct assh_context_s *ctx,
 /** @This releases resources associated with a context. All existing
     @ref assh_session_s objects must have been released when calling
     this function. @see assh_context_init */
-void assh_context_cleanup(struct assh_context_s *ctx);
+ASSH_ABI_UNSAFE void
+assh_context_cleanup(struct assh_context_s *ctx);
 
 /** @This cleanups and releases a context created by the @ref
     assh_context_create function. All existing @ref assh_session_s
@@ -158,19 +159,11 @@ void assh_context_cleanup(struct assh_context_s *ctx);
 void assh_context_release(struct assh_context_s *ctx);
 
 /** @This set the user private pointer of the context. */
-ASSH_INLINE void
-assh_context_set_pv(struct assh_context_s *ctx,
-                    void *private)
-{
-  ctx->user_pv = private;
-}
+void assh_context_set_pv(struct assh_context_s *ctx,
+                         void *private);
 
 /** @This get the user private pointer of the context. */
-ASSH_INLINE void *
-assh_context_get_pv(struct assh_context_s *ctx)
-{
-  return ctx->user_pv;
-}
+void * assh_context_get_pv(struct assh_context_s *ctx);
 
 #endif
 

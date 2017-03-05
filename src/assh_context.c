@@ -224,6 +224,17 @@ void assh_context_cleanup(struct assh_context_s *c)
   c->prng->f_cleanup(c);
 }
 
+void assh_context_set_pv(struct assh_context_s *ctx,
+                    void *private)
+{
+  ctx->user_pv = private;
+}
+
+void * assh_context_get_pv(struct assh_context_s *ctx)
+{
+  return ctx->user_pv;
+}
+
 #ifdef CONFIG_ASSH_DEBUG
 
 #include <stdio.h>

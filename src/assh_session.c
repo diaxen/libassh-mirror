@@ -283,3 +283,14 @@ assh_session_algo_filter(struct assh_session_s *s,
       return ASSH_OK;
     }
 }
+
+void assh_session_set_pv(struct assh_session_s *ctx,
+                         void *private)
+{
+  ctx->user_pv = private;
+}
+
+void * assh_session_get_pv(struct assh_session_s *ctx)
+{
+  return ctx->user_pv;
+}

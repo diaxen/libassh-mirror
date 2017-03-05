@@ -51,6 +51,13 @@
 #include "assh_buffer.h"
 #include "assh_queue.h"
 
+/** @visible @This is the @em ssh-connection service request object.
+
+    Requests are created either by calling the @ref assh_request
+    function or when the @ref ASSH_EVENT_REQUEST event is reported.
+    The library user does not have to destroy request objects. */
+struct assh_request_s;
+
 /** @This specifies request status */
 enum assh_request_status_e
 {
@@ -61,26 +68,6 @@ enum assh_request_status_e
   /** Incoming request; blocked by previous requests in queue. */
   ASSH_REQUEST_ST_REPLY_READY,
 };
-
-/** @internal
-    @This is the @em ssh-connection service request object.
-
-    Requests are created either by calling the @ref assh_request
-    function or when the @ref ASSH_EVENT_REQUEST event is reported.
-    The library user does not have to destroy request objects.
- */
-struct assh_request_s
-{
-  struct assh_queue_entry_s qentry;
-
-  struct assh_session_s *session;
-  struct assh_channel_s *ch;
-  struct assh_packet_s *reply_pck;
-  void *pv;
-  enum assh_request_status_e status:8;
-};
-
-ASSH_FIRST_FIELD_ASSERT(assh_request_s, qentry);
 
 /** @This specifies channel status */
 enum assh_channel_status_e
@@ -111,8 +98,7 @@ enum assh_channel_status_e
   ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING,
 };
 
-/** @internal
-    @This is the @em ssh-connection service channel object.
+/** @visible @This is the @em ssh-connection service channel object.
 
     Channels are created either by calling the @ref assh_channel_open
     function or when the @ref ASSH_EVENT_CHANNEL_OPEN event is reported.
@@ -126,35 +112,7 @@ enum assh_channel_status_e
       @item when the @ref assh_session_cleanup function is called.
     @end list
 */
-struct assh_channel_s
-{
-  union {
-    /** channel queue entry, valid when the channel is waiting for close. */
-    struct assh_queue_entry_s qentry;
-    /** channel map entry, valid when the channel is open. */
-    struct assh_map_entry_s mentry;
-  };
-
-  struct assh_session_s *session;
-  struct assh_packet_s *data_pck;
-  void *pv;
-
-  struct assh_queue_s request_rqueue; //< requests we have to acknowledge
-  struct assh_queue_s request_lqueue; //< requests waiting for a reply from the remote host
-
-  uint32_t remote_id;
-  uint32_t rpkt_size;		//< remote packet size
-  uint32_t lpkt_size;		//< local packet size
-  uint32_t lwin_size;		//< local window size
-
-  uint32_t rwin_left;           //< remote window bytes left
-  uint32_t lwin_left;           //< local window bytes left
-
-  enum assh_channel_status_e status:8;
-};
-
-ASSH_FIRST_FIELD_ASSERT(assh_channel_s, qentry);
-ASSH_FIRST_FIELD_ASSERT(assh_channel_s, mentry);
+struct assh_channel_s;
 
 /** @This specifies standard values for channel open failure reason
     code as defined in rfc4254 section 5.1 */
@@ -184,74 +142,37 @@ enum assh_connection_reply_e
 #define ASSH_SRV_CN_DEFAULT_WINDOW  (ASSH_SRV_CN_DEFAULT_PKTSIZE * 3)
 
 /** This function sets the value of the channel private pointer. */
-ASSH_INLINE void
-assh_channel_set_pv(struct assh_channel_s *ch, void *pv)
-{
-  ch->pv = pv;
-}
+void assh_channel_set_pv(struct assh_channel_s *ch, void *pv);
 
 /** This function returns the value of the channel private pointer. */
-ASSH_INLINE void *
-assh_channel_pv(const struct assh_channel_s *ch)
-{
-  return ch->pv;
-}
+void * assh_channel_pv(const struct assh_channel_s *ch);
 
 /** This returns the current channel status */
-ASSH_INLINE enum assh_channel_status_e
-assh_channel_status(const struct assh_channel_s *ch)
-{
-  return ch->status;
-}
+enum assh_channel_status_e
+assh_channel_status(const struct assh_channel_s *ch);
 
 /** This set the maximum size of the local window. The next window
     adjust packet will increase the window size to match the given value. */
-ASSH_INLINE void assh_channel_set_win_size(struct assh_channel_s *ch,
-                                             uint32_t win_size)
-{
-  ch->lwin_size = ASSH_MAX(win_size, ch->lpkt_size * 2);
-}
+void assh_channel_set_win_size(struct assh_channel_s *ch,
+                               uint32_t win_size);
 
 /** This returns the number of bytes left in current windows for a channel */
-ASSH_INLINE void assh_channel_get_win_size(const struct assh_channel_s *ch,
-                                             uint32_t *local, uint32_t *remote)
-{
-  if (local != NULL)
-    *local = ch->lwin_left;
-  if (remote != NULL)
-    *remote = ch->rwin_left;
-}
+void assh_channel_get_win_size(const struct assh_channel_s *ch,
+                               uint32_t *local, uint32_t *remote);
 
 /** This returns the maximum packet size for a channel */
-ASSH_INLINE void assh_channel_get_pkt_size(const struct assh_channel_s *ch,
-                                             uint32_t *local, uint32_t *remote)
-{
-  if (local != NULL)
-    *local = ch->lpkt_size;
-  if (remote != NULL)
-    *remote = ch->rpkt_size;
-}
+void assh_channel_get_pkt_size(const struct assh_channel_s *ch,
+                               uint32_t *local, uint32_t *remote);
 
 /** This function sets the value of the request private pointer. */
-ASSH_INLINE void
-assh_request_set_pv(struct assh_request_s *rq, void *pv)
-{
-  rq->pv = pv;
-}
+void assh_request_set_pv(struct assh_request_s *rq, void *pv);
 
 /** This function returns the value of the request private pointer. */
-ASSH_INLINE void *
-assh_request_pv(const struct assh_request_s *rq)
-{
-  return rq->pv;
-}
+void * assh_request_pv(const struct assh_request_s *rq);
 
 /** This returns the current channel status */
-ASSH_INLINE enum assh_request_status_e
-assh_request_status(struct assh_request_s *rq)
-{
-  return rq->status;
-}
+enum assh_request_status_e
+assh_request_status(struct assh_request_s *rq);
 
 /************************************************* service start */
 
@@ -486,14 +407,10 @@ assh_channel_open_success_reply2(struct assh_channel_s *ch,
 
    @see assh_channel_open_failed_reply
 */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_channel_open_success_reply(struct assh_channel_s *ch,
                                 const uint8_t *rsp_data,
-                                size_t rsp_data_len)
-{
-  return assh_channel_open_success_reply2(ch, ch->lpkt_size, ch->lwin_size,
-                                          rsp_data, rsp_data_len);
-}
+                                size_t rsp_data_len);
 
 /**
    This function acknowledge a channel open message which has not been
