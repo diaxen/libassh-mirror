@@ -24,7 +24,6 @@
 /**
    @file
    @short Key support for the Digitial Signature Algorithm
-   @internal
 */
 
 #ifndef ASSH_KEY_DSA_H_

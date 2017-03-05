@@ -24,7 +24,6 @@
 /**
    @file
    @short Key support for the RSA signature algorithm
-   @internal
 */
 
 #ifndef ASSH_KEY_RSA_H_

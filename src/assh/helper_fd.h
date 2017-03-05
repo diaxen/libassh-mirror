@@ -21,6 +21,10 @@
 
 */
 
+/**
+   @file
+   @short IO using UNIX file descriptor
+*/
 
 #ifndef ASSH_HELPER_FD_H_
 #define ASSH_HELPER_FD_H_

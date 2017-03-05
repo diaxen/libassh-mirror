@@ -24,7 +24,6 @@
 /**
    @file
    @short Key support for the EdDSA signature algorithm
-   @internal
 */
 
 #ifndef ASSH_KEY_EDDSA_H_

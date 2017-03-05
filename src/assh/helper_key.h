@@ -23,7 +23,7 @@
 
 /**
    @file
-   @short SSH keys loaders
+   @short SSH keys file IO
 */
 
 #ifndef ASSH_HELPER_KEY_H_
@@ -33,7 +33,7 @@
 
 #include <stdio.h>
 
-/** @internal @This loads a key from a file handle and inserts the key
+/** @This loads a key from a file handle and inserts the key
     in a linked list. Both binary and text key formats are
     supported. This function relies on @ref assh_key_load to load the
     binary key blob. */
@@ -45,7 +45,7 @@ assh_load_key_file(struct assh_context_s *c,
 		   FILE *file, enum assh_key_format_e format,
 		   const char *passphrase);
 
-/** @internal @This loads a key from a file name and inserts the key
+/** @This loads a key from a file name and inserts the key
     in a linked list. This function relies on @ref
     assh_load_key_file. */
 ASSH_WARN_UNUSED_RESULT assh_error_t

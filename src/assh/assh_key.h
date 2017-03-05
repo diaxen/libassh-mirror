@@ -141,9 +141,8 @@ typedef ASSH_KEY_CMP_FCN(assh_key_cmp_t);
     @see assh_key_drop @see assh_key_flush */
 typedef ASSH_KEY_CLEANUP_FCN(assh_key_cleanup_t);
 
-/** @internal @This is the operations descriptor structure of the SSH
-    key module interface. It defines functions associated to a given
-    type of key. */
+/** @internalmembers @This is the key algorithm descriptor of the SSH
+    key module interface. */
 struct assh_key_ops_s
 {
   const char *type;

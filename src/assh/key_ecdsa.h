@@ -24,7 +24,6 @@
 /**
    @file
    @short Key support for the ECDSA signature algorithm
-   @internal
 */
 
 #ifndef ASSH_KEY_ECDSA_H_

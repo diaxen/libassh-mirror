@@ -42,7 +42,7 @@
     module interfaces. @see assh_algo_suitable_key */
 typedef ASSH_ALGO_SUITABLE_KEY_FCN(assh_algo_suitable_key_t);
 
-/** @internal @This specifies classes of SSH algorithm */
+/** @This specifies classes of SSH algorithm */
 enum assh_algo_class_e
 {
   ASSH_ALGO_KEX,

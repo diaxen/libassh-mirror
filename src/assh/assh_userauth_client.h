@@ -62,21 +62,31 @@ struct assh_event_userauth_client_user_s
     are accepted by the server. One of these methods must be selected
     by setting the @ref select field.
 
-    The @ref password, @ref pub_keys and @ref keyboard fields are
-    initially set to zero and have to be updated depending on the
-    retained authentication method.
+    The other fields are initially set to zero and have to be updated
+    depending on the retained authentication method:
 
-    The @ref pub_keys linked list can be populated by calling either
+    @list
+      @item When the @em keyboard-interactive method is selected, the @ref
+      keyboard_sub field will be used as @em submethods fields of the
+      request.
+
+      @item When the @em publickey method is selected, the @ref keys
+      field is used.
+
+      @item When the @em password method is selected, the @ref
+      password field is used.
+
+      @item When the @em hostbased method is selected, the @ref keys,
+      @ref host_name and @ref host_username fields are used.
+    @end list
+
+    The @ref keys linked list can be populated by calling either
     the @ref assh_key_load, @ref assh_load_key_file or @ref
     assh_load_key_filename functions. Multiple keys can be loaded. The
     assh library will take care of releasing the provided keys. If a
     public key is provided, the @ref ASSH_EVENT_USERAUTH_CLIENT_SIGN
     event will be reported. The library will take care of generating
     the signature when a private key is provided.
-
-    When the @em keyboard-interactive method is enabled, the @ref
-    keyboard_sub field will be used as @em submethods fields of the
-    request.
 
     This event may be reported multiple times before the
     authentication is successful. This occurs when a previous
