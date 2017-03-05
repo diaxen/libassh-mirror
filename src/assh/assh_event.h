@@ -194,7 +194,7 @@ assh_event_get(struct assh_session_s *s,
     remote side is not possible anymore. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_event_done(struct assh_session_s *s,
-                const struct assh_event_s *e,
+                struct assh_event_s *e,
                 assh_error_t err);
 
 /** @internal @see assh_event_hndl_func_t */

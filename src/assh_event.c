@@ -105,7 +105,7 @@ assh_error_t assh_event_get(struct assh_session_s *s,
 
 assh_error_t
 assh_event_done(struct assh_session_s *s,
-                const struct assh_event_s *e,
+                struct assh_event_s *e,
                 assh_error_t inerr)
 {
   assh_error_t err;
@@ -120,6 +120,7 @@ assh_event_done(struct assh_session_s *s,
 
   if (e->f_done != NULL)
     err = e->f_done(s, e);
+  e->f_done = NULL;
 
   if (ASSH_ERR_SEVERITY(inerr) >= ASSH_ERR_SEVERITY(err))
     err = inerr;
