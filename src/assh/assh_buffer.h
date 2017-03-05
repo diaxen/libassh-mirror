@@ -96,4 +96,20 @@ assh_buffer_strcpy(struct assh_buffer_s *buf, const char *nul_str)
   memcpy(buf->str, nul_str, buf->len);
 }
 
+/** @This allocates a string buffer using @tt malloc then copies the
+    content of the @ref assh_cbuffer_s object to the string and nul
+    terminates it. */
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT const char *
+assh_buffer_strdup(const struct assh_cbuffer_s *buf)
+{
+  size_t sz = buf->size;
+  char *str = malloc(sz + 1);
+  if (str)
+    {
+      memcpy(str, buf->str, sz);
+      str[sz] = 0;
+    }
+  return str;
+}
+
 #endif
