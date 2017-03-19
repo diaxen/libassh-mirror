@@ -26,7 +26,9 @@
 #include <assh/assh_service.h>
 #include <assh/assh_userauth_client.h>
 #include <assh/assh_compress.h>
+#include <assh/assh_connection.h>
 #include <assh/helper_key.h>
+#include <assh/helper_interactive.h>
 #include <assh/assh_kex.h>
 #include <assh/helper_fd.h>
 #include <assh/assh_event.h>
@@ -113,6 +115,9 @@ int main(int argc, char **argv)
 
   assh_bool_t auth_keys_done = 0;
   assh_safety_t safety = 0;
+
+  struct assh_channel_s *session_ch;
+  struct assh_request_s *request;
 
   while (1)
     {
@@ -221,15 +226,56 @@ int main(int argc, char **argv)
           fprintf(stderr, "userauth success\n");
           break;
 
-        case ASSH_EVENT_CONNECTION_START:
+        case ASSH_EVENT_CONNECTION_START: {
           /* may send channel related requests from this point */
+          err = assh_channel_open(session, "session", 7, NULL, 0, &session_ch);
           break;
+        }
+
+        case ASSH_EVENT_CHANNEL_OPEN_REPLY: {
+          struct assh_event_channel_open_reply_s *ev =
+            &event.connection.channel_open_reply;
+          assert(ev->ch == session_ch);
+
+          if (ev->reply != ASSH_CONNECTION_REPLY_SUCCESS)
+            {
+              fprintf(stderr, "unable to open session channel\n");
+              err = ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT;
+            }
+          else
+            {
+              err = assh_event_done(session, &event, err);
+              struct assh_inter_pty_req_s i;
+              assh_inter_init_pty_req(&i, getenv("TERM"), 0, 0, 0, 0, NULL);
+              err = assh_inter_send_pty_req(session, session_ch, &request, &i);
+            }
+          break;
+        }
+
+        case ASSH_EVENT_REQUEST_REPLY: {
+          struct assh_event_request_reply_s *ev =
+            &event.connection.request_reply;
+          assert(ev->ch == session_ch);
+          assert(ev->rq == request);
+          if (ev->reply != ASSH_CONNECTION_REPLY_SUCCESS)
+            {
+              fprintf(stderr, "unable to get a pty\n");
+              err = ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT;
+            }
+          else
+            {
+              err = assh_event_done(session, &event, err);
+              if (!err)
+                err = assh_inter_send_shell(session, session_ch, NULL);
+            }
+          break;
+        }
 
         default:
           printf("Don't know how to handle event %u\n", event.id);
         }
 
-      err = assh_event_done(session, &event, ASSH_OK);
+      err = assh_event_done(session, &event, err);
       if (err != ASSH_OK)
         fprintf(stderr, "assh error %x in main loop (errno=%i)\n",
                 (unsigned)err, errno);

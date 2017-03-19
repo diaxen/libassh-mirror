@@ -1,0 +1,78 @@
+
+# usage: perl parse_gen.pl < rfc4254_gen.txt
+
+%session OC interactive session start
+
+%pty-req RC pty request
+  charstr termenv      TERM environment variable value
+  uint32  char_width   terminal width, characters
+  uint32  char_height  terminal height, rows
+  uint32  pix_width    terminal width, pixels
+  uint32  pix_height   terminal height, pixels
+  charstr modes        encoded terminal modes
+
+%x11-req RC x11 forwarding request
+  boolean   single         single connection
+  charstr   auth_protocol  x11 authentication protocol
+  buffer    auth_cookie    x11 authentication cookie
+  uint32    screen         x11 screen number
+
+%x11 OS x11 channel
+  charstr   orig_addr      originator address (e.g., "192.168.7.38")
+  uint32    orig_port      originator port
+
+%env CR environment variable
+  charstr   name       variable name
+  charstr   value      variable value
+
+%shell CR shell execution
+
+%exec CR command execution
+  charstr   command
+
+%subsystem CR subsystem execution
+  charstr   name
+
+%window-change CRE window size changed
+  uint32  char_width   terminal width, characters
+  uint32  char_height  terminal height, rows
+  uint32  pix_width    terminal width, pixels
+  uint32  pix_height   terminal height, pixels
+
+%xon-xoff SRE client xon/xoff allowed
+  boolean   client_can_do
+
+%signal CRE signal delivery
+  charstr   sig_name
+
+%exit-status SRE command exit status
+  uint32 status
+
+%exit-signal SRE command kill status
+  charstr   sig_name   signal name without the "SIG" prefix
+  boolean   core       core dumped
+  charstr   errmsg     error message in UTF-8 encoding
+  charstr   lang       language tag
+
+%tcpip-forward GC port forwarding request
+  charstr   addr       address to bind
+  uint32    port       port number to bind
+
+%tcpip-forward-reply SK port forwarding request reply
+  uint32    port       port number bound
+
+%cancel-tcpip-forward CG port forwarding cancel
+  charstr   addr       bound address
+  uint32    port       bound port number
+
+%forwarded-tcpip OS incoming forwarded connection channel
+  charstr   conn_addr  address that was connected
+  uint32    conn_port  port that was connected
+  charstr   orig_add   originator IP address
+  uint32    orig_port  originator port
+
+%direct-tcpip OC direct tcp/ip forwarding channel
+  charstr   conn_addr  host to connect
+  uint32    conn_port  port to connect
+  charstr   orig_add   originator IP address
+  uint32    orig_port  originator port

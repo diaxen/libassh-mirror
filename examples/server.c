@@ -33,6 +33,7 @@
 
 #include <assh/helper_fd.h>
 #include <assh/helper_key.h>
+#include <assh/helper_interactive.h>
 
 #include <assh/key_rsa.h>
 #include <assh/key_dsa.h>
@@ -251,13 +252,26 @@ int main()
 
 	    case ASSH_EVENT_REQUEST: {
 	      struct assh_event_request_s *ev = &event.connection.request;
+	      err = ASSH_OK;
 
-	      if (!assh_buffer_strcmp(&ev->type, "shell"))
-		ev->reply = ASSH_CONNECTION_REPLY_SUCCESS;
-	      else if (!assh_buffer_strcmp(&ev->type, "pty-req"))
-		ev->reply = ASSH_CONNECTION_REPLY_SUCCESS;
+	      if (ev->ch)
+		{
+		  if (!assh_buffer_strcmp(&ev->type, "shell"))
+		    {
+		      ev->reply = ASSH_CONNECTION_REPLY_SUCCESS;
+		    }
+		  else if (!assh_buffer_strcmp(&ev->type, "pty-req"))
+		    {
+		      struct assh_inter_pty_req_s rqi;
+		      err = assh_inter_decode_pty_req(&rqi, ev->rq_data.data, ev->rq_data.size);
+		      if (!err)
+			{
+			  ev->reply = ASSH_CONNECTION_REPLY_SUCCESS;
+			}
+		    }
+		}
 
-	      err = assh_event_done(session, &event, ASSH_OK);
+	      err = assh_event_done(session, &event, err);
 	      break;
 	    }
 

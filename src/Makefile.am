@@ -32,7 +32,7 @@ libassh_la_SOURCES = assh_context.c assh_session.c assh_packet.c	\
 	sign_dsa.c sign_rsa.c sign_eddsa.c sign_ecdsa.c sign_none.c	\
 	compress_none.c							\
 	helper_key.c helper_fd.c helper_base64.c helper_bcrypt.c	\
-	hash_sha3_builtin.c prng_xswap_builtin.c
+	hash_sha3_builtin.c prng_xswap_builtin.c helper_interactive.c
 
 if COND_zlib
 libassh_la_SOURCES +=   compress_zlib.c
