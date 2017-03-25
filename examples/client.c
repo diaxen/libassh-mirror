@@ -107,12 +107,6 @@ int main(int argc, char **argv)
 
   assh_error_t err;
 
-  struct assh_event_hndl_table_s ev_table;
-  assh_event_table_init(&ev_table);
-
-  struct assh_fd_context_s fd_ctx;
-  assh_fd_events_register(&ev_table, &fd_ctx, sock);
-
   assh_bool_t auth_keys_done = 0;
   assh_safety_t safety = 0;
 
@@ -123,7 +117,7 @@ int main(int argc, char **argv)
     {
       struct assh_event_s event;
 
-      err = assh_event_table_run(session, &ev_table, &event);
+      err = assh_event_get(session, &event);
       if (ASSH_ERR_ERROR(err) != ASSH_OK)
         {
           fprintf(stderr, "assh error %x sv %x in main loop (errno=%i)\n",
@@ -136,6 +130,14 @@ int main(int argc, char **argv)
 
       switch (event.id)
         {
+        case ASSH_EVENT_READ:
+          err = assh_fd_event_read(session, &event, sock);
+          break;
+
+        case ASSH_EVENT_WRITE:
+          err = assh_fd_event_write(session, &event, sock);
+          break;
+
         case ASSH_EVENT_KEX_HOSTKEY_LOOKUP: {
           struct assh_event_kex_hostkey_lookup_s *ev =
             &event.kex.hostkey_lookup;

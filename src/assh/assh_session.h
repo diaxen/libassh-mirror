@@ -210,9 +210,8 @@ void assh_session_release(struct assh_session_s *s);
     sending the session close message to the remote hsot.
 
     This function is called from the @ref assh_event_get, @ref
-    assh_event_done and @ref assh_event_table_run functions. It is
-    also called from other functions of the public API which can
-    modify the session state.
+    assh_event_done function. It is also called from other functions
+    of the public API which can modify the session state.
 
     @see assh_error_e @see assh_error_severity_e
 */

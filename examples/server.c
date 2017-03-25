@@ -147,29 +147,13 @@ int main()
       time_t t = time(0);
       fprintf(stderr, "============== %s\n", ctime(&t));
 
-      /** rely on an event table to handle most events returned by the assh core */
-      struct assh_event_hndl_table_s ev_table;
-      assh_event_table_init(&ev_table);
-
-      /** register helper event handlers to process io events using
-	  file descriptors. */
-      struct assh_fd_context_s fd_ctx;
-      assh_fd_events_register(&ev_table, &fd_ctx, conn);
-
-#if 0
-      /** register helper event handlers to process ssh-connection
-	  (rfc4254) events in a way to serve shell */
-      struct assh_unix_shell_server_s ush_ctx;
-      assh_unix_shell_server_register(&ev_table, &ush_ctx);
-#endif
-
       while (1)
 	{
 	  struct assh_event_s event;
 
 	  /** get events from the core and use registered event
 	      handlers to process most events. */
-	  assh_error_t err = assh_event_table_run(session, &ev_table, &event);
+	  assh_error_t err = assh_event_get(session, &event);
 	  if (ASSH_ERR_ERROR(err) != ASSH_OK)
 	    {
 	      fprintf(stderr, "assh error %x in main loop (errno=%i)\n",
@@ -187,6 +171,16 @@ int main()
 	  /** we still have to process events not handled in the table */
 	  switch (event.id)
 	    {
+	    case ASSH_EVENT_READ:
+	      err = assh_fd_event_read(session, &event, conn);
+	      err = assh_event_done(session, &event, err);
+	      break;
+
+	    case ASSH_EVENT_WRITE:
+	      err = assh_fd_event_write(session, &event, conn);
+	      err = assh_event_done(session, &event, err);
+	      break;
+
 	    case ASSH_EVENT_KEX_DONE: {
 	      fprintf(stderr, "kex safety factor: %u\n", event.kex.done.safety);
 	      break;

@@ -32,14 +32,15 @@
 
 #include <assh/helper_fd.h>
 
-ASSH_EVENT_HANDLER_FCN(assh_fd_event_read)
+assh_error_t
+assh_fd_event_read(struct assh_session_s *s,
+                   struct assh_event_s *e, int fd)
 {
   assh_error_t err;
-  struct assh_fd_context_s *ctx_ = ctx;
   struct assh_event_transport_read_s *te = &e->transport.read;
   struct pollfd p;
   p.events = POLLIN | POLLPRI;
-  p.fd = ctx_->ssh_fd;
+  p.fd = fd;
 
   ASSH_DEBUG("read delay %u\n", te->delay);
   switch (poll(&p, 1, (int)te->delay * 1000))
@@ -48,7 +49,7 @@ ASSH_EVENT_HANDLER_FCN(assh_fd_event_read)
       te->transferred = 0;
       break;
     case 1: {
-      ssize_t r = read(ctx_->ssh_fd, te->buf.data, te->buf.size);
+      ssize_t r = read(fd, te->buf.data, te->buf.size);
       switch (r)
         {
         case -1:
@@ -70,14 +71,15 @@ ASSH_EVENT_HANDLER_FCN(assh_fd_event_read)
   return ASSH_OK;
 }
 
-ASSH_EVENT_HANDLER_FCN(assh_fd_event_write)
+assh_error_t
+assh_fd_event_write(struct assh_session_s *s,
+                    struct assh_event_s *e, int fd)
 {
   assh_error_t err;
-  struct assh_fd_context_s *ctx_ = ctx;
   struct assh_event_transport_write_s *te = &e->transport.write;
   struct pollfd p;
   p.events = POLLOUT;
-  p.fd = ctx_->ssh_fd;
+  p.fd = fd;
 
   ASSH_DEBUG("write delay %u\n", te->delay);
   switch (poll(&p, 1, (int)te->delay * 1000))
@@ -86,7 +88,7 @@ ASSH_EVENT_HANDLER_FCN(assh_fd_event_write)
       te->transferred = 0;
       break;
     case 1: {
-      ssize_t r = write(ctx_->ssh_fd, te->buf.data, te->buf.size);
+      ssize_t r = write(fd, te->buf.data, te->buf.size);
       switch (r)
         {
         case -1:
@@ -108,16 +110,4 @@ ASSH_EVENT_HANDLER_FCN(assh_fd_event_write)
   return ASSH_OK;
 }
 
-void assh_fd_events_register(struct assh_event_hndl_table_s *t,
-			     struct assh_fd_context_s *ctx,
-			     int ssh_fd)
-{
-  ctx->ssh_fd = ssh_fd;
-
-  assh_event_table_register(t, ASSH_EVENT_READ, &ctx->h_read,
-			    assh_fd_event_read, ctx);
-
-  assh_event_table_register(t, ASSH_EVENT_WRITE, &ctx->h_write,
-			    assh_fd_event_write, ctx);
-}
 

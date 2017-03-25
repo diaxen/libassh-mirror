@@ -67,7 +67,6 @@ struct assh_algo_sign_s;
 struct assh_key_ops_s;
 struct assh_event_s;
 struct assh_service_s;
-struct assh_event_hndl_table_s;
 struct assh_event_s;
 struct assh_queue_entry_s;
 struct assh_queue_s;

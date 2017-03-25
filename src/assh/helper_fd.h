@@ -29,21 +29,18 @@
 #ifndef ASSH_HELPER_FD_H_
 #define ASSH_HELPER_FD_H_
 
-#include "assh_event.h"
+#include "assh.h"
 
-struct assh_fd_context_s
-{
-  int ssh_fd;
+/** @This can be used to handle the @ref ASSH_EVENT_READ event by
+    reading data from a file descriptor. */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_fd_event_read(struct assh_session_s *s,
+                   struct assh_event_s *e, int fd);
 
-  struct assh_event_hndl_s h_read;
-  struct assh_event_hndl_s h_write;
-};
-
-void assh_fd_events_register(struct assh_event_hndl_table_s *t,
-			     struct assh_fd_context_s *ctx,
-			     int ssh_fd);
-
-ASSH_EVENT_HANDLER_FCN(assh_fd_event_read);
-ASSH_EVENT_HANDLER_FCN(assh_fd_event_write);
+/** @This can be used to handle the @ref ASSH_EVENT_WRITE event by
+    writing data to a file descriptor. */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_fd_event_write(struct assh_session_s *s,
+                    struct assh_event_s *e, int fd);
 
 #endif
