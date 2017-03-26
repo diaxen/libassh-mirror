@@ -36,14 +36,22 @@
 /** @This loads a key from a file handle and inserts the key
     in a linked list. Both binary and text key formats are
     supported. This function relies on @ref assh_key_load to load the
-    binary key blob. */
+    binary key blob.
+
+    When a binary format is used, the @tt size_hint argument specifies
+    the amount of bytes that must be read from the file. When a text
+    format is used, the @tt size_hint argument only controls the
+    allocation of the temporary buffer used to store the underlying
+    binary format. In either cases, a large enough default value is
+    used when 0 is passed.
+ */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_load_key_file(struct assh_context_s *c,
 		   struct assh_key_s **head,
 		   const struct assh_key_ops_s *algo,	
 		   enum assh_algo_class_e role,
 		   FILE *file, enum assh_key_format_e format,
-		   const char *passphrase);
+		   const char *passphrase, size_t size_hint);
 
 /** @This loads a key from a file name and inserts the key
     in a linked list. This function relies on @ref
@@ -55,7 +63,7 @@ assh_load_key_filename(struct assh_context_s *c,
 		       enum assh_algo_class_e role,
 		       const char *filename,
 		       enum assh_key_format_e format,
-		       const char *passphrase);
+		       const char *passphrase, size_t size_hint);
 
 /** @This loads a key from a file handler and register the key on the
     library context. @see assh_load_key_file */
@@ -64,7 +72,7 @@ assh_load_hostkey_file(struct assh_context_s *c,
 		       const struct assh_key_ops_s *algo,
 		       enum assh_algo_class_e role,
 		       FILE *file,
-		       enum assh_key_format_e format);
+		       enum assh_key_format_e format, size_t size_hint);
 
 /** @This loads a key from a file name and register the key on the
     library context. @see assh_load_key_filename */
@@ -73,7 +81,7 @@ assh_load_hostkey_filename(struct assh_context_s *c,
 			   const struct assh_key_ops_s *algo,
 			   enum assh_algo_class_e role,
 			   const char *filename,
-			   enum assh_key_format_e format);
+			   enum assh_key_format_e format, size_t size_hint);
 
 /** @This saves one or more keys to a file. @see assh_load_key_filename */
 ASSH_WARN_UNUSED_RESULT assh_error_t

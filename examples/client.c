@@ -181,12 +181,12 @@ int main(int argc, char **argv)
 
               if (assh_load_key_filename(context, &ev->keys,
                                          &assh_key_dsa, ASSH_ALGO_SIGN, "dsa_user_key",
-                                         ASSH_KEY_FMT_PV_PEM, NULL) != ASSH_OK)
+                                         ASSH_KEY_FMT_PV_PEM, NULL, 0) != ASSH_OK)
                 fprintf(stderr, "unable to load user dsa key\n");
 
               if (assh_load_key_filename(context, &ev->keys,
                                          &assh_key_rsa, ASSH_ALGO_SIGN, "rsa_user_key",
-                                         ASSH_KEY_FMT_PV_PEM, NULL) != ASSH_OK)
+                                         ASSH_KEY_FMT_PV_PEM, NULL, 0) != ASSH_OK)
                 fprintf(stderr, "unable to load user rsa key\n");
             }
 
@@ -198,7 +198,7 @@ int main(int argc, char **argv)
 
               if (assh_load_key_filename(context, &ev->keys,
                                          &assh_key_rsa, ASSH_ALGO_SIGN, "ssh_host_rsa_key",
-                                         ASSH_KEY_FMT_PV_PEM, NULL) != ASSH_OK)
+                                         ASSH_KEY_FMT_PV_PEM, NULL, 0) != ASSH_OK)
                 fprintf(stderr, "unable to load host rsa key\n");
 
               assh_buffer_strset(&ev->host_name, "localhost");

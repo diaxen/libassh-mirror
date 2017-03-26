@@ -226,7 +226,7 @@ static assh_error_t test_helper(struct assh_context_s *c)
       /* reload key from file */
       fprintf(stderr, "l");
       TEST_ASSERT(!assh_load_key_filename(c, &key2, t->algo,
-			  ASSH_ALGO_SIGN, "test.key", t->format, t->pass));
+			  ASSH_ALGO_SIGN, "test.key", t->format, t->pass, 0));
 
       /* compare loaded key to original */
       TEST_ASSERT(assh_key_cmp(c, key1, key2, assh_key_pub_fmt(t->format)));

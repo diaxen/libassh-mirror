@@ -104,27 +104,27 @@ int main()
 
   /** load host key */
   if (assh_load_hostkey_filename(context, &assh_key_dsa, ASSH_ALGO_SIGN, "dsa_host_key",
-				 ASSH_KEY_FMT_PV_PEM) != ASSH_OK)
+				 ASSH_KEY_FMT_PV_PEM, 0) != ASSH_OK)
     fprintf(stderr, "unable to load dsa key\n");
 
   if (assh_load_hostkey_filename(context, &assh_key_rsa, ASSH_ALGO_SIGN, "rsa_host_key",
-				 ASSH_KEY_FMT_PV_PEM) != ASSH_OK)
+				 ASSH_KEY_FMT_PV_PEM, 0) != ASSH_OK)
     fprintf(stderr, "unable to load rsa key\n");
 
   if (assh_load_hostkey_filename(context, &assh_key_ed25519, ASSH_ALGO_SIGN, "ed25519_host_key",
-				 ASSH_KEY_FMT_PV_OPENSSH_V1_KEY) != ASSH_OK)
+				 ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 0) != ASSH_OK)
     fprintf(stderr, "unable to load ed25519 key\n");
 
   if (assh_load_hostkey_filename(context, &assh_key_eddsa_e382, ASSH_ALGO_SIGN, "e382_host_key",
-				 ASSH_KEY_FMT_PV_OPENSSH_V1_KEY) != ASSH_OK)
+				 ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 0) != ASSH_OK)
     fprintf(stderr, "unable to load eddsa e382 key\n");
 
   if (assh_load_hostkey_filename(context, &assh_key_eddsa_e521, ASSH_ALGO_SIGN, "e521_host_key",
-				 ASSH_KEY_FMT_PV_OPENSSH_V1_KEY) != ASSH_OK)
+				 ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 0) != ASSH_OK)
     fprintf(stderr, "unable to load eddsa e521 key\n");
 
   if (assh_load_hostkey_filename(context, &assh_key_ecdsa_nistp, ASSH_ALGO_SIGN, "ecdsa_host_key",
-				 ASSH_KEY_FMT_PV_PEM) != ASSH_OK)
+				 ASSH_KEY_FMT_PV_PEM, 0) != ASSH_OK)
     fprintf(stderr, "unable to load ecdsa key\n");
 
   signal(SIGPIPE, SIG_IGN);

@@ -431,21 +431,29 @@ assh_load_openssh_v1_blob(struct assh_context_s *c,
   return err;
 }
 
+static assh_error_t assh_key_file_size(FILE *file, size_t *size)
+{
+  assh_error_t err;
+  size_t cur = ftell(file);
+
+  ASSH_RET_IF_TRUE(fseek(file, 0, SEEK_END), ASSH_ERR_IO);
+  *size = ftell(file) - cur;
+  fseek(file, cur, SEEK_SET);
+
+  return ASSH_OK;
+}
+
 assh_error_t assh_load_key_file(struct assh_context_s *c,
 				struct assh_key_s **head,
 				const struct assh_key_ops_s *algo,
 				enum assh_algo_class_e role,
 				FILE *file, enum assh_key_format_e format,
-				const char *passphrase)
+				const char *passphrase, size_t size_hint)
 {
   assh_error_t err = ASSH_OK;
   char *comment = NULL;
-
-  ASSH_RET_IF_TRUE(fseek(file, 0, SEEK_END), ASSH_ERR_IO);
-  size_t blob_len = ftell(file);
-
-  ASSH_RET_IF_TRUE(blob_len > 4096, ASSH_ERR_INPUT_OVERFLOW);
-  fseek(file, 0, SEEK_SET);
+  size_t size_default = 4096;
+  size_t blob_len = size_hint ? size_hint : size_default;
 
   ASSH_SCRATCH_ALLOC(c, uint8_t, blob, blob_len,
                      ASSH_ERRSV_CONTINUE, err_);
@@ -473,6 +481,11 @@ assh_error_t assh_load_key_file(struct assh_context_s *c,
       break;
 
     case ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB:
+      if (!size_hint)
+        {
+          ASSH_JMP_ON_ERR(assh_key_file_size(file, &blob_len), err_sc);
+          ASSH_RET_IF_TRUE(blob_len > size_default, ASSH_ERR_INPUT_OVERFLOW);
+        }
       blob_len = fread(blob, 1, blob_len, file);
       goto openssh_v1_blob;
 
@@ -484,6 +497,11 @@ assh_error_t assh_load_key_file(struct assh_context_s *c,
       goto err_sc;
 
     default:
+      if (!size_hint)
+        {
+          ASSH_JMP_ON_ERR(assh_key_file_size(file, &blob_len), err_sc);
+          ASSH_RET_IF_TRUE(blob_len > size_default, ASSH_ERR_INPUT_OVERFLOW);
+        }
       blob_len = fread(blob, 1, blob_len, file);
       break;
     }
@@ -513,14 +531,15 @@ assh_error_t assh_load_key_filename(struct assh_context_s *c,
 				    enum assh_algo_class_e role,
 				    const char *filename,
 				    enum assh_key_format_e format,
-				    const char *passphrase)
+				    const char *passphrase, size_t size_hint)
 {
   assh_error_t err;
 
   FILE *file = fopen(filename, "rb");
   ASSH_RET_IF_TRUE(file == NULL, ASSH_ERR_IO);
 
-  ASSH_JMP_ON_ERR(assh_load_key_file(c, head, algo, role, file, format, passphrase), err_);
+  ASSH_JMP_ON_ERR(assh_load_key_file(c, head, algo, role, file,
+                                  format, passphrase, size_hint), err_);
 
  err_:
   fclose(file);
@@ -531,11 +550,12 @@ assh_error_t assh_load_hostkey_file(struct assh_context_s *c,
 				    const struct assh_key_ops_s *algo,
 				    enum assh_algo_class_e role,
 				    FILE *file,
-				    enum assh_key_format_e format)
+				    enum assh_key_format_e format, size_t size_hint)
 {
 #ifdef CONFIG_ASSH_SERVER
   if (c->type == ASSH_SERVER)
-    return assh_load_key_file(c, &c->keys, algo, role, file, format, NULL);
+    return assh_load_key_file(c, &c->keys, algo, role,
+                              file, format, NULL, size_hint);
 #endif
   return ASSH_ERR_NOTSUP;
 }
@@ -544,11 +564,12 @@ assh_error_t assh_load_hostkey_filename(struct assh_context_s *c,
 					const struct assh_key_ops_s *algo,
 					enum assh_algo_class_e role,
 					const char *filename,
-					enum assh_key_format_e format)
+					enum assh_key_format_e format, size_t size_hint)
 {
 #ifdef CONFIG_ASSH_SERVER
   if (c->type == ASSH_SERVER)
-    return assh_load_key_filename(c, &c->keys, algo, role, filename, format, NULL);
+    return assh_load_key_filename(c, &c->keys, algo, role,
+                                  filename, format, NULL, size_hint);
 #endif
   return ASSH_ERR_NOTSUP;
 }

@@ -337,7 +337,7 @@ int main(int argc, char *argv[])
             {
               fseek(ifile, 0, SEEK_SET);
               switch (ASSH_ERR_ERROR(assh_load_key_file(context, &key, type->ops,
-                                       ASSH_ALGO_ANY, ifile, f->format, p)))
+                                       ASSH_ALGO_ANY, ifile, f->format, p, 0)))
                 {
                 case ASSH_OK:
                   goto done;
@@ -359,7 +359,7 @@ int main(int argc, char *argv[])
       else
         {
           switch (ASSH_ERR_ERROR(assh_load_key_file(context, &key, type->ops,
-                                   ASSH_ALGO_ANY, ifile, ifmt->format, p)))
+                                   ASSH_ALGO_ANY, ifile, ifmt->format, p, 0)))
             {
             case ASSH_OK:
               break;
