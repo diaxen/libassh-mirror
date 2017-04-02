@@ -392,7 +392,7 @@ assh_error_t assh_algo_by_name(struct assh_context_s *c,
     {
       a = c->algos[i];
 
-      if (a->class_ == class_)
+      if (class_ == ASSH_ALGO_ANY || a->class_ == class_)
         {
           const struct assh_algo_name_s *n;
           for (n = a->names; n->spec; n++)

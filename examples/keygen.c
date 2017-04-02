@@ -268,19 +268,8 @@ int main(int argc, char *argv[])
                           NULL, NULL, NULL, NULL))
     ERROR("Unable to create context.\n");
 
-  const struct assh_algo_s *key_ciphers[] = {
-# ifdef CONFIG_ASSH_CIPHER_AES
-    &assh_cipher_aes128_cbc.algo,
-    &assh_cipher_aes256_cbc.algo,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_TDES
-    &assh_cipher_tdes_cbc.algo,
-# endif
-    NULL
-  };
-
-  if (assh_algo_register(context, 99, 0, 0, key_ciphers) != ASSH_OK)
-    ERROR("Unable to register ciphers.\n");
+  if (assh_algo_register_default(context, 0, 0, 0))
+    ERROR("Unable to register algorithms.\n");
 
   const char *action = argv[optind];
   unsigned action_mask = 0;
@@ -304,11 +293,11 @@ int main(int argc, char *argv[])
 
   struct assh_key_s *key;
 
-  if (type == NULL)
-    ERROR("Missing -t option\n");
-
   if (action_mask & ASSH_KEYGEN_CREATE)
     {
+      if (type == NULL)
+        ERROR("Missing -t option\n");
+
       if (ofmt->public)
         ERROR("Won't save new key in public only format.\n");
       if (bits == 0)
@@ -329,6 +318,8 @@ int main(int argc, char *argv[])
 
       fprintf(stderr, "Loading key...\n");
 
+      const struct assh_key_ops_s *ops = type != NULL ? type->ops : NULL;
+
     retry:
       if (ifmt == NULL)
         {
@@ -336,7 +327,7 @@ int main(int argc, char *argv[])
           for (f = formats; f->name != NULL; f++)
             {
               fseek(ifile, 0, SEEK_SET);
-              switch (ASSH_ERR_ERROR(assh_load_key_file(context, &key, type->ops,
+              switch (ASSH_ERR_ERROR(assh_load_key_file(context, &key, ops,
                                        ASSH_ALGO_ANY, ifile, f->format, p, 0)))
                 {
                 case ASSH_OK:
@@ -352,13 +343,13 @@ int main(int argc, char *argv[])
                   continue;
                 }
             }
-          ERROR("Unable to guess input key format\n");
+          ERROR("Unable to guess input key format, use -g\n");
         done:
           fprintf(stderr, "Guessed input key format: %s.\n", f->name);
         }
       else
         {
-          switch (ASSH_ERR_ERROR(assh_load_key_file(context, &key, type->ops,
+          switch (ASSH_ERR_ERROR(assh_load_key_file(context, &key, ops,
                                    ASSH_ALGO_ANY, ifile, ifmt->format, p, 0)))
             {
             case ASSH_OK:
@@ -375,6 +366,9 @@ int main(int argc, char *argv[])
             }
         }
 
+      if (type == NULL)
+        fprintf(stderr, "Key type: %s\n", key->type);
+
       if (key->comment != NULL)
         fprintf(stderr, "Key comment: %s\n", key->comment);
     }
@@ -390,6 +384,8 @@ int main(int argc, char *argv[])
     {
       if (ofile == NULL)
         ERROR("Missing -o option\n");
+      if (ofmt == NULL)
+        ERROR("Missing -f option\n");
 
       fprintf(stderr, "Saving key in %s format...\n", ofmt->name);
 

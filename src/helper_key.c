@@ -30,6 +30,9 @@
 #include <assh/assh_prng.h>
 #include <assh/assh_cipher.h>
 #include <assh/assh_hash.h>
+#include <assh/key_rsa.h>
+#include <assh/key_dsa.h>
+#include <assh/key_ecdsa.h>
 
 #include <string.h>
 #include <stdlib.h>
@@ -53,6 +56,22 @@ assh_rfc1421_ciphers[] = {
 #ifdef CONFIG_ASSH_CIPHER_TDES
   { "DES-EDE3-CBC", &assh_cipher_tdes_cbc },
 #endif
+  { NULL }
+};
+
+struct assh_rfc1421_key_ops_s
+{
+  const char *name;
+  enum assh_key_format_e format;
+  const struct assh_key_ops_s *algo;
+};
+
+static const struct assh_rfc1421_key_ops_s
+assh_rfc1421_key_ops[] = {
+  { "RSA PRIVATE", ASSH_KEY_FMT_PV_PEM,  &assh_key_rsa, },
+  { "RSA PUBLIC",  ASSH_KEY_FMT_PUB_PEM, &assh_key_rsa },
+  { "DSA PRIVATE", ASSH_KEY_FMT_PV_PEM,  &assh_key_dsa },
+  { "EC PRIVATE",  ASSH_KEY_FMT_PV_PEM,  &assh_key_ecdsa_nistp },
   { NULL }
 };
 
@@ -109,6 +128,7 @@ assh_evp_bytes_to_key(struct assh_context_s *c,
 static ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_load_rfc4716_rfc1421(struct assh_context_s *c, FILE *file,
                           uint8_t *kdata, size_t *klen, assh_bool_t enc,
+                          const struct assh_key_ops_s **algo,
                           const char *passphrase, char **comment)
 {
   struct assh_base64_ctx_s ctx;
@@ -132,11 +152,32 @@ assh_load_rfc4716_rfc1421(struct assh_context_s *c, FILE *file,
 
       switch (state)
 	{
-	case 0:                 /* before BEGIN */
-	  if (l[0] != '-' || !strstr(l, "BEGIN "))
+	case 0: {               /* before BEGIN */
+          const char *begin = strstr(l, "BEGIN ");
+	  if (l[0] != '-' || !begin)
 	    continue;
+
+          if (algo && !*algo)
+            {
+              /* try to match key type */
+              uint_fast8_t i;
+              for (i = 0; ; i++)
+                {
+                  const char *name = assh_rfc1421_key_ops[i].name;
+                  if (!name)
+                    break;
+                  size_t l = strlen(name);
+                  if (!strncmp(name, begin + 6, l) && begin[6 + l] == ' ')
+                    {
+                      *algo = assh_rfc1421_key_ops[i].algo;
+                      break;
+                    }
+                }
+            }
+
 	  state = 1;
 	  continue;
+        }
 
 	case 1:                 /* Header line */
 	  state = 3;
@@ -248,13 +289,16 @@ assh_load_rfc4716_rfc1421(struct assh_context_s *c, FILE *file,
 static ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_load_pub_openssh(struct assh_context_s *c, FILE *file,
                       uint8_t *kdata, size_t *klen,
+                      const struct assh_key_ops_s **algo,
                       char **comment)
 {
   struct assh_base64_ctx_s ctx;
   assh_error_t err;
   int_fast16_t in;
-  uint_fast8_t clen = 0, state = 0;
+  uint_fast8_t alen = 0, clen = 0;
+  uint_fast8_t state = 0;
   char cmt[80];
+  char algo_name[40];
 
   assh_base64_init(&ctx, kdata, *klen);
 
@@ -264,10 +308,25 @@ assh_load_pub_openssh(struct assh_context_s *c, FILE *file,
 	break;
       switch (state)
 	{
-	case 0:                 /* skip algorithm */
+	case 0:                 /* read algorithm */
 	  if (!isspace(in))
-	    break;
-	  state = 1;
+            {
+              if (alen < sizeof(algo_name))
+                algo_name[alen++] = in;
+            }
+          else
+            {
+              if (algo && !*algo)
+                {
+                  const struct assh_algo_s *a;
+                  if (assh_algo_by_name(c, ASSH_ALGO_SIGN,
+                                        algo_name, alen, &a, NULL))
+                    *algo = NULL;
+                  else
+                    *algo = a->key;
+                }
+              state = 1;
+            }
 	  break;
 	case 1:                 /* skip white space */
 	  if (isspace(in))
@@ -461,22 +520,25 @@ assh_error_t assh_load_key_file(struct assh_context_s *c,
   switch (format)
     {
     case ASSH_KEY_FMT_PUB_RFC4716:
-      ASSH_JMP_ON_ERR(assh_load_rfc4716_rfc1421(c, file, blob, &blob_len, 0, NULL, &comment), err_sc);
+      ASSH_JMP_ON_ERR(assh_load_rfc4716_rfc1421(c, file, blob, &blob_len,
+                                             0, NULL, NULL, &comment), err_sc);
       format = ASSH_KEY_FMT_PUB_RFC4253;
       break;
 
     case ASSH_KEY_FMT_PUB_OPENSSH:
-      ASSH_JMP_ON_ERR(assh_load_pub_openssh(c, file, blob, &blob_len, &comment), err_sc);
+      ASSH_JMP_ON_ERR(assh_load_pub_openssh(c, file, blob, &blob_len, &algo, &comment), err_sc);
       format = ASSH_KEY_FMT_PUB_RFC4253;
       break;
 
     case ASSH_KEY_FMT_PV_PEM:
-      ASSH_JMP_ON_ERR(assh_load_rfc4716_rfc1421(c, file, blob, &blob_len, 1, passphrase, NULL), err_sc);
+      ASSH_JMP_ON_ERR(assh_load_rfc4716_rfc1421(c, file, blob, &blob_len, 1, &algo,
+                                             passphrase, NULL), err_sc);
       format = ASSH_KEY_FMT_PV_PEM_ASN1;
       break;
 
     case ASSH_KEY_FMT_PUB_PEM:
-      ASSH_JMP_ON_ERR(assh_load_rfc4716_rfc1421(c, file, blob, &blob_len, 0, NULL, NULL), err_sc);
+      ASSH_JMP_ON_ERR(assh_load_rfc4716_rfc1421(c, file, blob, &blob_len, 0, &algo,
+                                             NULL, NULL), err_sc);
       format = ASSH_KEY_FMT_PUB_PEM_ASN1;
       break;
 
@@ -490,7 +552,8 @@ assh_error_t assh_load_key_file(struct assh_context_s *c,
       goto openssh_v1_blob;
 
     case ASSH_KEY_FMT_PV_OPENSSH_V1:
-      ASSH_JMP_ON_ERR(assh_load_rfc4716_rfc1421(c, file, blob, &blob_len, 0, NULL, NULL), err_sc);
+      ASSH_JMP_ON_ERR(assh_load_rfc4716_rfc1421(c, file, blob, &blob_len, 0, NULL,
+                                             NULL, NULL), err_sc);
     openssh_v1_blob:
       ASSH_JMP_ON_ERR(assh_load_openssh_v1_blob(c, head, algo, role,
 					     blob, blob_len, passphrase), err_sc);
@@ -939,15 +1002,16 @@ assh_error_t assh_save_key_file(struct assh_context_s *c,
 
     case ASSH_KEY_FMT_PV_PEM:
     case ASSH_KEY_FMT_PUB_PEM: {
-      const char *type = head->algo->type;
-      if (!strcmp(type, "ssh-rsa"))
-	type = (format == ASSH_KEY_FMT_PV_PEM) ? "RSA PRIVATE" : "RSA PUBLIC";
-      else if (!strcmp(type, "ecdsa-sha2-nist") && format == ASSH_KEY_FMT_PV_PEM)
-	type = "EC PRIVATE";
-      else if (!strcmp(type, "ssh-dss") && format == ASSH_KEY_FMT_PV_PEM)
-	type = "DSA PRIVATE";
-      else
-	ASSH_JMP_ON_ERR(ASSH_ERR_NOTSUP, err_sc);
+      uint_fast8_t i;
+      const char *type;
+      for (i = 0; ; i++)
+        {
+          type = assh_rfc1421_key_ops[i].name;
+          ASSH_JMP_IF_TRUE(type == NULL, ASSH_ERR_NOTSUP, err_sc);
+          if (assh_rfc1421_key_ops[i].algo == head->algo &&
+              assh_rfc1421_key_ops[i].format == format)
+            break;
+        }
       ASSH_JMP_ON_ERR(assh_save_rfc1421(c, head, file, type, blob, blob_len, passphrase), err_sc);
       break;
     }

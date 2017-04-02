@@ -34,9 +34,14 @@
 #include <stdio.h>
 
 /** @This loads a key from a file handle and inserts the key
-    in a linked list. Both binary and text key formats are
+    in the @tt head linked list. Both binary and text key formats are
     supported. This function relies on @ref assh_key_load to load the
     binary key blob.
+
+    Depending on the format, the function may be able to guess the
+    type of key when @tt NULL is passed as @tt algo parameter. When the
+    type of key is not supported by a registered algorithm, the
+    function fails but the position of the file handle is advanced.
 
     When a binary format is used, the @tt size_hint argument specifies
     the amount of bytes that must be read from the file. When a text
@@ -48,7 +53,7 @@
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_load_key_file(struct assh_context_s *c,
 		   struct assh_key_s **head,
-		   const struct assh_key_ops_s *algo,	
+		   const struct assh_key_ops_s *algo,
 		   enum assh_algo_class_e role,
 		   FILE *file, enum assh_key_format_e format,
 		   const char *passphrase, size_t size_hint);

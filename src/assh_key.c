@@ -36,28 +36,40 @@ assh_key_algo_guess(struct assh_context_s *c,
                     const uint8_t *blob, size_t blob_len,
                     enum assh_algo_class_e role)
 {
-  const struct assh_key_ops_s *algo;
-
   switch (format)
     {
+    case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY:
     case ASSH_KEY_FMT_PUB_RFC4253: {
+
+      /* extract key type string from blob */
       const uint8_t *end;
       if (assh_check_string(blob, blob_len, blob, &end))
         return NULL;
       const char *name = (const char*)blob + 4;
       size_t name_len = end - blob - 4;
-      uint_fast16_t i;
 
-      for (i = 0; ; i++)
+      const struct assh_algo_s *algo;
+
+      /* try to match key ops type names */
+      uint_fast16_t i;
+      for (i = 0; i < c->algo_cnt; i++)
         {
-          if (i == c->algo_cnt)
-            return NULL;
-          algo = c->algos[i]->key;
-          if (algo != NULL && c->algos[i]->class_ != role &&
-              !strncmp(algo->type, name, name_len) &&
-              !algo->type[name_len])
-            return algo;
+          algo = c->algos[i];
+
+          const struct assh_key_ops_s *ops = algo->key;
+          if (ops == NULL || algo->class_ != role)
+            continue;
+
+          if (!strncmp(ops->type, name, name_len) &&
+              !ops->type[name_len])
+            return ops;
         }
+
+      /* try to match algorithm names */
+      if (!assh_algo_by_name(c, role, name, name_len, &algo, NULL) &&
+          algo->key != NULL)
+        return algo->key;
+
       return NULL;
     }
      
