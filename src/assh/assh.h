@@ -85,6 +85,17 @@ typedef uint8_t assh_bool_t;
 /** error code type */
 typedef int_fast16_t assh_error_t;
 
+/**
+   This is used to estimate algorithms and keys safety. The safety
+   factor is defined as follow:
+
+   @list
+     @item 0-19: broken
+     @item 20-25: weak
+     @item 26-49: medium
+     @item 50-99: strong
+   @end list
+*/
 typedef uint8_t assh_safety_t;
 
 /** @This specify the error severity and must be used along with error

@@ -282,6 +282,27 @@ assh_key_lookup(struct assh_context_s *c,
                 struct assh_key_s **key,
                 const struct assh_algo_s *algo);
 
+/** @This returns the type name of the key. */
+ASSH_INLINE const char *
+assh_key_type_name(struct assh_key_s *key)
+{
+  return key->type ? key->type : key->algo->type;
+}
+
+/** @This returns the estimated algorithm safety. */
+ASSH_INLINE assh_safety_t
+assh_key_safety(struct assh_key_s *key)
+{
+  return key->safety;
+}
+
+/* @see assh_safety_name @see assh_key_safety */
+ASSH_INLINE const char *
+assh_key_safety_name(struct assh_key_s *key)
+{
+  return assh_safety_name(key->safety);
+}
+
 /** Dummy key algorithm */
 extern const struct assh_key_ops_s assh_key_none;
 

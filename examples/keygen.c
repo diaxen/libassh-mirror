@@ -308,6 +308,9 @@ int main(int argc, char *argv[])
       fprintf(stderr, "Generating key...\n");
       if (assh_key_create(context, &key, bits, type->ops, ASSH_ALGO_ANY))
         ERROR("unable to create %zu bits key of type %s\n", bits, type->ops->type);
+
+      fprintf(stderr, "Key algorithmic safety: %s (%u%%)\n",
+              assh_key_safety_name(key), assh_key_safety(key));
     }
 
   if (action_mask & ASSH_KEYGEN_LOAD)
@@ -366,8 +369,11 @@ int main(int argc, char *argv[])
             }
         }
 
+      fprintf(stderr, "Key algorithmic safety: %s (%u%%)\n",
+              assh_key_safety_name(key), assh_key_safety(key));
+
       if (type == NULL)
-        fprintf(stderr, "Key type: %s\n", key->type);
+        fprintf(stderr, "Key type: %s\n", assh_key_type_name(key));
 
       if (key->comment != NULL)
         fprintf(stderr, "Key comment: %s\n", key->comment);

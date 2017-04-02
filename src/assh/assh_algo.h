@@ -152,15 +152,6 @@ struct assh_algo_s
    is [0, 99]. Algorithms with a safety factor or speed factor less
    than @tt min_safety and  @tt min_speed are skipped.
 
-   The Safety factor is defined as follow:
-
-   @list
-     @item 0-19: weak, broken
-     @item 20-25: borderline
-     @item 26-49: suitable for general use
-     @item 50-99: strong
-   @end list
-
    If multiple implementations of the same algorithm are registered,
    the variant which appears first in the list after sorting is kept
    and subsequent variants with the same name are discarded. This
@@ -208,6 +199,40 @@ void assh_algo_unregister(struct assh_context_s *c);
 ASSH_INLINE const char * assh_algo_name(const struct assh_algo_s *algo)
 {
   return algo->names[0].name;
+}
+
+/* @This returns the variant name of an algorithm. */
+ASSH_INLINE const char *
+assh_algo_variant(const struct assh_algo_s *algo)
+{
+  return algo->variant ? algo->variant : "default";
+}
+
+/** @This returns the estimated algorithm safety */
+ASSH_INLINE assh_safety_t
+assh_algo_safety(const struct assh_algo_s *algo)
+{
+  return algo->safety;
+}
+
+/* @This returns the name associated to a safety. */
+ASSH_INLINE const char *
+assh_safety_name(assh_safety_t safety)
+{
+  if (safety >= 50)
+    return "strong";
+  if (safety >= 26)
+    return "medium";
+  if (safety >= 20)
+    return "weak";
+  return "broken";
+}
+
+/* @see assh_safety_name @see assh_algo_safety. */
+ASSH_INLINE const char *
+assh_algo_safety_name(const struct assh_algo_s *algo)
+{
+  return assh_safety_name(algo->safety);
 }
 
 /** @internal @This finds a registered algorithm with matching class
