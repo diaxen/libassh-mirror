@@ -103,5 +103,23 @@ assh_save_key_filename(struct assh_context_s *c,
 		       enum assh_key_format_e format,
 		       const char *passphrase);
 
+/** @This specifies formats of ssh key fingerprint. */
+enum assh_fingerprint_fmt_e
+{
+  ASSH_FP_RFC4716_MD5,
+  ASSH_FP_RFC4255_SHA1,
+  ASSH_FP_RFC6594_SHA256,
+  ASSH_FP_BASE64_SHA256,
+};
+
+/** @This writes a fingerprint string of a key in the provided
+    buffer. The value of @tt buf_size is updated with the required
+    size when a @tt NULL buffer is passed. */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_key_fingerprint(struct assh_context_s *c,
+		     const struct assh_key_s *key,
+		     enum assh_fingerprint_fmt_e fmt,
+		     char *buf, size_t *buf_size);
+
 #endif
 

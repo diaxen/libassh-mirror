@@ -1049,3 +1049,107 @@ assh_error_t assh_save_key_filename(struct assh_context_s *c,
   return err;
 }
 
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_key_fingerprint(struct assh_context_s *c,
+		     const struct assh_key_s *key,
+		     enum assh_fingerprint_fmt_e fmt,
+		     char *buf, size_t *buf_size)
+{
+  assh_error_t err;
+  size_t msize;
+
+  const struct assh_hash_algo_s *halgo;
+  switch (fmt)
+    {
+    case ASSH_FP_RFC4716_MD5:
+      msize = /* hash hex */ 16*2 + /* colons */ 15 + /* nul */ 1;
+      halgo = &assh_hash_md5;
+      break;
+    case ASSH_FP_RFC6594_SHA256:
+      halgo = &assh_hash_sha256;
+      msize = /* hash hex */ 2 * halgo->hash_size + /* nul */ 1;
+      break;
+    case ASSH_FP_RFC4255_SHA1:
+      halgo = &assh_hash_sha1;
+      msize = /* hash hex */ 2 * halgo->hash_size + /* nul */ 1;
+      break;
+    case ASSH_FP_BASE64_SHA256:
+      msize = /* hash base64 */ 43 + /* nul */ 1;
+      halgo = &assh_hash_sha256;
+      break;
+    default:
+      ASSH_UNREACHABLE();
+    }
+
+  if (!buf)
+    {
+      *buf_size = msize;
+      return ASSH_OK;
+    }
+
+  ASSH_RET_IF_TRUE(*buf_size < msize, ASSH_ERR_OUTPUT_OVERFLOW);
+
+  size_t klen;
+  ASSH_RET_ON_ERR(assh_key_output(c, key, NULL, &klen, ASSH_KEY_FMT_PUB_RFC4253));
+
+  ASSH_SCRATCH_ALLOC(c, uint8_t, sc, halgo->ctx_size + klen + halgo->hash_size,
+                     ASSH_ERRSV_CONTINUE, err_);
+  struct assh_hash_ctx_s *hctx = (void*)sc;
+  uint8_t *blob = sc + halgo->ctx_size;
+  uint8_t *hash = blob + klen;
+
+  ASSH_JMP_ON_ERR(assh_key_output(c, key, blob, &klen, ASSH_KEY_FMT_PUB_RFC4253), err_sc);
+
+  ASSH_JMP_ON_ERR(assh_hash_init(c, hctx, halgo), err_sc);
+  assh_hash_update(hctx, blob, klen);
+  assh_hash_final(hctx, hash, halgo->hash_size);
+  assh_hash_cleanup(hctx);
+
+  const char *hex = "0123456789abcdef";
+
+  switch (fmt)
+    {
+    case ASSH_FP_RFC4716_MD5: {
+      uint_fast8_t i;
+      for (i = 0; i < 16*3; i += 3)
+        {
+          buf[i    ] = hex[*hash >> 4];
+          buf[i + 1] = hex[*hash & 15];
+          buf[i + 2] = ':';
+          hash++;
+        }
+      buf[i - 1] = 0;
+      break;
+    }
+    case ASSH_FP_RFC6594_SHA256:
+    case ASSH_FP_RFC4255_SHA1: {
+      uint_fast8_t i;
+      for (i = 0; i < halgo->hash_size * 2; i += 2)
+        {
+          buf[i    ] = hex[*hash >> 4];
+          buf[i + 1] = hex[*hash & 15];
+          hash++;
+        }
+      buf[i] = 0;
+      break;
+    }
+    case ASSH_FP_BASE64_SHA256: {
+      struct assh_base64_ctx_s bctx;
+      assh_base64_init(&bctx, buf, 44);
+      ASSH_JMP_ON_ERR(assh_base64_encode_update(&bctx, hash, 32), err_sc);
+      ASSH_JMP_ON_ERR(assh_base64_encode_final(&bctx), err_sc);
+      buf[43] = 0;              /* drop '=' */
+      break;
+    }
+    default:
+      ASSH_UNREACHABLE();
+    }
+
+  err = ASSH_OK;
+ err_sc:
+  ASSH_SCRATCH_FREE(c, sc);
+ err_:
+  return err;
+}
+
+
