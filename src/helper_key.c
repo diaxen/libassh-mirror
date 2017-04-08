@@ -302,14 +302,16 @@ assh_load_pub_openssh(struct assh_context_s *c, FILE *file,
 
   assh_base64_init(&ctx, kdata, *klen);
 
-  while ((in = fgetc(file)))
+  while (1)
     {
-      if (in == EOF || in == '\n' || in == '\r')
+      in = fgetc(file);
+      if (in == EOF || in == '\n')
 	break;
+
       switch (state)
 	{
-	case 0:                 /* read algorithm */
-	  if (!isspace(in))
+	case 0:                 /* read algorithm name */
+	  if (!isblank(in))
             {
               if (alen < sizeof(algo_name))
                 algo_name[alen++] = in;
@@ -329,14 +331,12 @@ assh_load_pub_openssh(struct assh_context_s *c, FILE *file,
             }
 	  break;
 	case 1:                 /* skip white space */
-	  if (isspace(in))
+	  if (isblank(in))
 	    break;
 	  state = 2;
 	case 2:
-	  if (isspace(in))      /* read and decode key */
+	  if (isblank(in))      /* read and decode key */
 	    {
-	      ASSH_RET_ON_ERR(assh_base64_decode_final(&ctx));
-	      *klen = assh_base64_outsize(&ctx);
               state = 3;
               break;
 	    }
@@ -344,18 +344,20 @@ assh_load_pub_openssh(struct assh_context_s *c, FILE *file,
 	  ASSH_RET_ON_ERR(assh_base64_decode_update(&ctx, &in8, 1));
 	  break;
 	case 3:                 /* skip white space */
-	  if (isspace(in))
+	  if (isblank(in))
 	    break;
 	  state = 4;
         case 4:                 /* read comment */
-          if (clen + 1 >= sizeof(cmt))
-            goto done;
-          cmt[clen++] = in;
+          if (clen + 1 < sizeof(cmt))
+            cmt[clen++] = in;
+          break;
 	}
     }
 
- done:
-  ASSH_RET_IF_TRUE(state < 3, ASSH_ERR_BAD_DATA);
+  ASSH_RET_IF_TRUE(state < 2, ASSH_ERR_BAD_DATA);
+
+  ASSH_RET_ON_ERR(assh_base64_decode_final(&ctx));
+  *klen = assh_base64_outsize(&ctx);
 
   if (comment != NULL && clen)
     {
