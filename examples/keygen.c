@@ -150,33 +150,18 @@ static const struct assh_keygen_type_s * get_type(const char *type)
   return NULL;
 }
 
-static char * get_passphrase(const char *prompt, struct assh_context_s *context)
+static const char *
+get_passphrase(const char *prompt, struct assh_context_s *context)
 {
-  char *p;
-  int_fast16_t c;
-  int_fast8_t i = 0;
-  const size_t maxlen = 80;
-
-  if (assh_alloc(context, maxlen, ASSH_ALLOC_SECUR, (void**)&p))
-    ERROR("Unable to allocate secur memory.\n");
-
   fprintf(stderr, prompt);
 
-  while (1)
-    {
-      c = getc(stdin);
-      switch (c)
-        {
-        case EOF:
-        case '\n':
-        case '\r':
-          p[i] = 0;
-          return i ? p : NULL;
-        default:
-          if (i + 1 < maxlen)
-            p[i++] = c;
-        }
-    }
+  const char *p;
+  if (assh_fd_get_password(context, &p, 80, 0, 0))
+    ERROR("Unable to read passphrase expected\n");
+
+  putc('\n', stderr);
+
+  return p;
 }
 
 static void usage(const char *program, assh_bool_t opts)

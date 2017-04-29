@@ -31,6 +31,61 @@
 #include <assh/assh_alloc.h>
 
 #include <assh/helper_fd.h>
+#include <assh/assh_event.h>
+
+#include <termios.h>
+
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_fd_get_password(struct assh_context_s *c, const char **pass,
+		     size_t max_len, int fd, assh_bool_t echo)
+{
+  struct termios t;
+  assh_error_t err;
+  char *p;
+  int_fast8_t i = 0;
+
+  ASSH_RET_IF_TRUE(!isatty(fd), ASSH_ERR_IO);
+
+  ASSH_RET_ON_ERR(assh_alloc(c, max_len, ASSH_ALLOC_SECUR, (void**)&p));
+  *pass = p;
+
+  if (!echo)
+    {
+      tcgetattr(fd, &t);
+      t.c_lflag &= ~ECHO;
+      tcsetattr(fd, 0, &t);
+    }
+
+  while (1)
+    {
+      char c;
+      ssize_t r = read(fd, &c, 1);
+
+      ASSH_JMP_IF_TRUE(r != 1, ASSH_ERR_IO, err_);
+
+      switch (c)
+        {
+        case '\n':
+        case '\r':
+          p[i] = 0;
+	  err = ASSH_OK;
+	  goto done;
+        default:
+          if (i + 1 < max_len)
+            p[i++] = c;
+        }
+    }
+
+ err_:
+  assh_free(c, p);
+ done:
+  if (!echo)
+    {
+      t.c_lflag |= ECHO;
+      tcsetattr(fd, 0, &t);
+    }
+  return err;
+}
 
 assh_error_t
 assh_fd_event_read(struct assh_session_s *s,
