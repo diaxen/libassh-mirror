@@ -173,12 +173,10 @@ int main()
 	    {
 	    case ASSH_EVENT_READ:
 	      err = assh_fd_event_read(session, &event, conn);
-	      err = assh_event_done(session, &event, err);
 	      break;
 
 	    case ASSH_EVENT_WRITE:
 	      err = assh_fd_event_write(session, &event, conn);
-	      err = assh_event_done(session, &event, err);
 	      break;
 
 	    case ASSH_EVENT_KEX_DONE: {

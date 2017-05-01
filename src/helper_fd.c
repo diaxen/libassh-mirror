@@ -91,8 +91,11 @@ assh_error_t
 assh_fd_event_read(struct assh_session_s *s,
                    struct assh_event_s *e, int fd)
 {
-  assh_error_t err;
+  assh_error_t err = ASSH_OK;
   struct assh_event_transport_read_s *te = &e->transport.read;
+
+  assert(e->id == ASSH_EVENT_READ);
+
   struct pollfd p;
   p.events = POLLIN | POLLPRI;
   p.fd = fd;
@@ -111,7 +114,8 @@ assh_fd_event_read(struct assh_session_s *s,
           if (errno == EAGAIN || errno == EWOULDBLOCK)
             break;
         case 0:
-          ASSH_RETURN(ASSH_ERR_IO | ASSH_ERRSV_FIN);
+          err = ASSH_ERR_IO | ASSH_ERRSV_FIN;
+          goto err_;
         default:
           te->transferred = r;
           break;
@@ -119,19 +123,25 @@ assh_fd_event_read(struct assh_session_s *s,
       break;
     }
     default:
-      ASSH_RETURN(ASSH_ERR_IO | ASSH_ERRSV_FIN);
+      err = ASSH_ERR_IO | ASSH_ERRSV_FIN;
+      goto err_;
     }
 
   te->time = time(NULL);
-  return ASSH_OK;
+
+ err_:
+  ASSH_RETURN(assh_event_done(s, e, err));
 }
 
 assh_error_t
 assh_fd_event_write(struct assh_session_s *s,
                     struct assh_event_s *e, int fd)
 {
-  assh_error_t err;
+  assh_error_t err = ASSH_OK;
   struct assh_event_transport_write_s *te = &e->transport.write;
+
+  assert(e->id == ASSH_EVENT_WRITE);
+
   struct pollfd p;
   p.events = POLLOUT;
   p.fd = fd;
@@ -150,7 +160,8 @@ assh_fd_event_write(struct assh_session_s *s,
           if (errno == EAGAIN || errno == EWOULDBLOCK)
             break;
         case 0:
-          ASSH_RETURN(ASSH_ERR_IO | ASSH_ERRSV_FIN);
+          err = ASSH_ERR_IO | ASSH_ERRSV_FIN;
+          goto err_;
         default:
           te->transferred = r;
           break;
@@ -158,11 +169,14 @@ assh_fd_event_write(struct assh_session_s *s,
       break;
     }
     default:
-      ASSH_RETURN(ASSH_ERR_IO | ASSH_ERRSV_FIN);
+      err = ASSH_ERR_IO | ASSH_ERRSV_FIN;
+      goto err_;
     }
 
   te->time = time(NULL);
-  return ASSH_OK;
+
+ err_:
+  ASSH_RETURN(assh_event_done(s, e, err));
 }
 
 
