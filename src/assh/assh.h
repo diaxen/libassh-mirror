@@ -73,11 +73,39 @@ struct assh_queue_s;
 struct assh_buffer_s;
 struct assh_cbuffer_s;
 
+struct assh_event_channel_close_s;
+struct assh_event_channel_data_s;
+struct assh_event_channel_eof_s;
+struct assh_event_channel_open_reply_s;
+struct assh_event_channel_open_s;
+struct assh_event_channel_window_s;
+struct assh_event_connection_start_s;
+struct assh_event_kex_done_s;
+struct assh_event_kex_hostkey_lookup_s;
+struct assh_event_request_reply_s;
+struct assh_event_request_s;
+struct assh_event_transport_read_s;
+struct assh_event_transport_write_s;
+struct assh_event_userauth_client_banner_s;
+struct assh_event_userauth_client_keyboard_s;
+struct assh_event_userauth_client_methods_s;
+struct assh_event_userauth_client_pwchange_s;
+struct assh_event_userauth_client_sign_s;
+struct assh_event_userauth_client_user_s;
+struct assh_event_userauth_server_hostbased_s;
+struct assh_event_userauth_server_kbinfo_s;
+struct assh_event_userauth_server_kbresponse_s;
+struct assh_event_userauth_server_methods_s;
+struct assh_event_userauth_server_password_s;
+struct assh_event_userauth_server_success_s;
+struct assh_event_userauth_server_userkey_s;
+
 enum assh_alloc_type_e;
 enum assh_key_format_e;
 enum assh_alloc_type_e;
 enum assh_ssh_msg_e;
 enum assh_algo_class_e;
+enum assh_userauth_methods_e;
 
 /** boolean type */
 typedef uint8_t assh_bool_t;
