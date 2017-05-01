@@ -503,8 +503,12 @@ ASSH_INLINE assh_channel_open(struct assh_session_s *s,
 
 /**
    This event is reported when the @tt ssh-connection service is
-   running and some incoming channel data are available. The data
-   buffers will not remain valid after the call to @ref
+   running and some incoming channel data are available.
+
+   The @tt transferred field should be set to the amount of consumed
+   data. The event will be reported again if the field is not updated
+   or if the value is less than @tt {data.size}. In the other case,
+   the data buffers will not remain valid after the call to @ref
    assh_event_done.
 
    @see ASSH_EVENT_CHANNEL_DATA
@@ -515,7 +519,14 @@ struct assh_event_channel_data_s
   ASSH_EV_CONST assh_bool_t               ext;        //< input
   ASSH_EV_CONST uint32_t                  ext_type;   //< input
   ASSH_EV_CONST struct assh_cbuffer_s     data;       //< input
+  size_t                                  transferred; //< output
 };
+
+/** This function returns true when the @ref ASSH_EVENT_CHANNEL_DATA
+    event will be reported again because the @tt transferred field of
+    the previous event has not been set to the maximum value. */
+assh_bool_t
+assh_channel_more_data(struct assh_session_s *s);
 
 /**
    This event is reported when the @tt ssh-connection service is
@@ -634,6 +645,12 @@ assh_channel_data_ext(struct assh_channel_s *ch, uint32_t ext_type,
   memcpy(d, data, *size);
   return assh_channel_data_send(ch, *size);
 }
+
+/**
+   This function returns the current maximum data size than can be
+   written to the channel.
+*/
+size_t assh_channel_data_size(struct assh_channel_s *ch);
 
 /************************************************* incoming channel close/eof */
 

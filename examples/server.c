@@ -279,6 +279,8 @@ int main()
 	      if (perr == ASSH_OK)  /* copy input data to output buffer */
 		memcpy(data, ev->data.data, size);
 
+	      ev->transferred = size;
+
 	      /* acknowledge input data event before sending */
 	      err = assh_event_done(session, &event, ASSH_OK);
 

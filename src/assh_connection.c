@@ -62,6 +62,11 @@ struct assh_connection_context_s
 
   uint32_t ch_id_counter;
   enum assh_connection_state_e state:8;
+
+  /** bytes left to transfer from the partialy handled
+      ASSH_CONNECTION_ST_EVENT_CHANNEL_DATA event. The associated
+      incoming data packet is in the pck field. */
+  uint32_t in_data_left:24;
 };
 
 struct assh_request_s
@@ -1135,10 +1140,68 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_data_done)
   ASSH_RET_IF_TRUE(pv->state != ASSH_CONNECTION_ST_EVENT_CHANNEL_DATA,
                ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
 
-  /* release request packet */
-  assh_packet_release(pv->pck);
-  pv->pck = NULL;
+  const struct assh_event_channel_data_s *ev =
+    &e->connection.channel_data;
+
+  assert(pv->in_data_left >= ev->transferred);
+  pv->in_data_left -= ev->transferred;
+
+  if (!pv->in_data_left)
+    {
+      assh_packet_release(pv->pck);
+      pv->pck = NULL;
+    }
+
   pv->state = ASSH_CONNECTION_ST_IDLE;
+
+  return ASSH_OK;
+}
+
+static ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_connection_more_channel_data(struct assh_session_s *s,
+                                  struct assh_event_s *e)
+{
+  assh_error_t err;
+  struct assh_connection_context_s *pv = s->srv_pv;
+
+  ASSH_RET_IF_TRUE(s->srv != &assh_service_connection,
+               ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+
+  assert(pv->in_data_left && pv->pck);
+
+  struct assh_packet_s *p = pv->pck;
+  assh_bool_t ext = p->head.msg == SSH_MSG_CHANNEL_EXTENDED_DATA;
+
+  uint32_t ch_id = -1;
+  const uint8_t *data;
+  ASSH_ASSERT(assh_packet_check_u32(p, &ch_id, p->head.end, &data));
+
+  struct assh_channel_s *ch = (void*)assh_map_lookup(&pv->channel_map, ch_id, NULL);
+
+  uint32_t ext_type = 0;
+  if (ext)
+    ASSH_ASSERT(assh_packet_check_u32(p, &ext_type, data, &data));
+
+  uint32_t size = 0;
+  ASSH_ASSERT(assh_packet_check_u32(p, &size, data, &data));
+  ASSH_ASSERT(assh_packet_check_array(p, data, size, NULL));
+
+  struct assh_event_channel_data_s *ev =
+    &e->connection.channel_data;
+
+  /* setup event */
+  e->id = ASSH_EVENT_CHANNEL_DATA;
+  e->f_done = assh_event_channel_data_done;
+
+  ev->ch = ch;
+  ev->ext = ext;
+  ev->ext_type = ext_type;
+
+  ev->data.size = pv->in_data_left;
+  ev->data.data = (uint8_t*)data + size - pv->in_data_left;
+  ev->transferred = 0;
+
+  pv->state = ASSH_CONNECTION_ST_EVENT_CHANNEL_DATA;
 
   return ASSH_OK;
 }
@@ -1146,11 +1209,11 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_data_done)
 static ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_connection_got_channel_data(struct assh_session_s *s,
                                  struct assh_packet_s *p,
-				 struct assh_event_s *e,
-                                 assh_bool_t ext)
+				 struct assh_event_s *e)
 {
   assh_error_t err;
   struct assh_connection_context_s *pv = s->srv_pv;
+  assh_bool_t ext = p->head.msg == SSH_MSG_CHANNEL_EXTENDED_DATA;
 
   uint32_t ch_id = -1;
   const uint8_t *data;
@@ -1234,8 +1297,10 @@ assh_connection_got_channel_data(struct assh_session_s *s,
 
   ev->data.size = size;
   ev->data.data = (uint8_t*)data;
+  ev->transferred = 0;
 
   /* keep packet for data buffer */
+  pv->in_data_left = size;
   pv->pck = assh_packet_refinc(p);
 
   pv->state = ASSH_CONNECTION_ST_EVENT_CHANNEL_DATA;
@@ -1304,7 +1369,29 @@ assh_connection_got_channel_window_adjust(struct assh_session_s *s,
   return ASSH_OK;
 }
 
+assh_bool_t
+assh_channel_more_data(struct assh_session_s *s)
+{
+  struct assh_connection_context_s *pv = s->srv_pv;
+
+  return s->srv == &assh_service_connection &&
+         pv->in_data_left > 0;
+}
+
 /************************************************* outgoing channel data */
+
+size_t assh_channel_data_size(struct assh_channel_s *ch)
+{
+  switch (ch->status)
+    {
+    default:
+      return 0;
+
+    case ASSH_CHANNEL_ST_OPEN:
+    case ASSH_CHANNEL_ST_EOF_RECEIVED:
+      return ASSH_MIN(ch->rpkt_size, ch->rwin_left);
+    }
+}
 
 static ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_channel_data_alloc_chk(struct assh_channel_s *ch,
@@ -1752,6 +1839,7 @@ static ASSH_SERVICE_INIT_FCN(assh_connection_init)
   pv->pck = NULL;
   pv->ch_id_counter = 0;
   s->deadline = s->time + ASSH_TIMEOUT_KEEPALIVE;
+  pv->in_data_left = 0;
 
   s->srv = &assh_service_connection;
   s->srv_pv = pv;
@@ -1877,6 +1965,12 @@ static ASSH_SERVICE_PROCESS_FCN(assh_connection_process)
       ASSH_RETURN(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
     }
 
+  if (pv->in_data_left)
+    {
+      ASSH_RET_ON_ERR(assh_connection_more_channel_data(s, e));
+      return ASSH_NO_DATA;
+    }
+
   /* move all channels to the closing queue */
   if (s->tr_st >= ASSH_TR_DISCONNECT && pv->channel_map != NULL)
     {
@@ -1932,10 +2026,8 @@ static ASSH_SERVICE_PROCESS_FCN(assh_connection_process)
       ASSH_RETURN(assh_connection_got_channel_window_adjust(s, p, e));
 
     case SSH_MSG_CHANNEL_DATA:
-      ASSH_RETURN(assh_connection_got_channel_data(s, p, e, 0));
-
     case SSH_MSG_CHANNEL_EXTENDED_DATA:
-      ASSH_RETURN(assh_connection_got_channel_data(s, p, e, 1));
+      ASSH_RETURN(assh_connection_got_channel_data(s, p, e));
 
     case SSH_MSG_CHANNEL_EOF:
       ASSH_RETURN(assh_connection_got_channel_eof(s, p, e));
