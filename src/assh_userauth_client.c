@@ -34,8 +34,6 @@
 #include <assh/assh_sign.h>
 #include <assh/assh_alloc.h>
 
-#ifdef CONFIG_ASSH_CLIENT
-
 ASSH_EVENT_SIZE_SASSERT(userauth_client);
 
 #include <stdlib.h>
@@ -1379,6 +1377,4 @@ const struct assh_service_s assh_service_userauth_client =
   .f_cleanup = assh_userauth_client_cleanup,
   .f_process = assh_userauth_client_process,
 };
-
-#endif
 

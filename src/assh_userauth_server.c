@@ -35,8 +35,6 @@
 #include <assh/assh_key.h>
 #include <assh/assh_alloc.h>
 
-#ifdef CONFIG_ASSH_SERVER
-
 ASSH_EVENT_SIZE_SASSERT(userauth_server);
 
 #include <stdlib.h>
@@ -1234,6 +1232,4 @@ const struct assh_service_s assh_service_userauth_server =
   .f_cleanup = assh_userauth_server_cleanup,
   .f_process = assh_userauth_server_process,
 };
-
-#endif
 
