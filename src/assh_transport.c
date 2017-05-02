@@ -547,6 +547,30 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
   return ASSH_OK;
 }
 
+assh_bool_t
+assh_transport_has_output(struct assh_session_s *s)
+{
+  if (s->tr_st >= ASSH_TR_FIN)
+    return 0;
+
+  switch (s->stream_out_st)
+    {
+    case ASSH_TR_OUT_IDENT:
+    case ASSH_TR_OUT_IDENT_PAUSE:
+      return 1;
+
+    case ASSH_TR_OUT_PACKETS:
+      return !assh_queue_isempty(&s->out_queue);
+
+    case ASSH_TR_OUT_PACKETS_PAUSE:
+    case ASSH_TR_OUT_PACKETS_ENCIPHERED:
+      return 1;
+
+    default:
+      return 0;
+    }
+}
+
 assh_error_t assh_transport_unimp(struct assh_session_s *s,
 				  struct assh_packet_s *pin)
 {

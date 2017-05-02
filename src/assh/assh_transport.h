@@ -183,5 +183,9 @@ ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_transport_dispatch(struct assh_session_s *s,
 			struct assh_event_s *e);
 
+/** This function returns true if there is pending output ssh stream. */
+assh_bool_t
+assh_transport_has_output(struct assh_session_s *s);
+
 #endif
 
