@@ -444,13 +444,7 @@ void test(const struct assh_algo_kex_s *kex,
 	      ASSH_DEBUG("event %u not handled\n", event.id);
 	    }
 
-	  err = assh_event_done(&session[i], &event, ASSH_OK);
-	  if (err != ASSH_OK)
-	    {
-	      if (packet_fuzz || alloc_fuzz)
-		goto done;
-	      TEST_FAIL("event_done %u error %lx\n", i, err);
-	    }
+	  assh_event_done(&session[i], &event, ASSH_OK);
 
 	  if (stall >= 100)
 	    {

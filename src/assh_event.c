@@ -105,31 +105,29 @@ assh_error_t assh_event_get(struct assh_session_s *s,
   return assh_session_error(s, err);
 }
 
-assh_error_t
+void
 assh_event_done(struct assh_session_s *s,
                 struct assh_event_s *e,
                 assh_error_t inerr)
 {
-  assh_error_t err;
-
-  ASSH_RET_IF_TRUE(s->tr_st == ASSH_TR_CLOSED,
-	       ASSH_ERR_CLOSED | ASSH_ERRSV_FIN);
+  assh_error_t err = ASSH_OK;
 
 #ifdef CONFIG_ASSH_DEBUG_EVENT
   if (e->id > 2)
     ASSH_DEBUG("ctx=%p session=%p event done id=%u\n", s->ctx, s, e->id);
 #endif
 
+  if (s->tr_st == ASSH_TR_CLOSED)
+    return;
+
   if (e->f_done != NULL)
-    err = e->f_done(s, e);
+    err = e->f_done(s, e, inerr);
   e->f_done = NULL;
 
   if (ASSH_ERR_SEVERITY(inerr) >= ASSH_ERR_SEVERITY(err))
     err = inerr;
 
-  if (!err)
-    return ASSH_OK;
-
-  return assh_session_error(s, err);
+  if (err)
+    assh_session_error(s, err);
 }
 

@@ -87,7 +87,7 @@ assh_fd_get_password(struct assh_context_s *c, const char **pass,
   return err;
 }
 
-assh_error_t
+void
 assh_fd_event(struct assh_session_s *s,
               struct assh_event_s *e, int fd)
 {
@@ -136,6 +136,6 @@ assh_fd_event(struct assh_session_s *s,
     }
 
  err_:
-  ASSH_RETURN(assh_event_done(s, e, err));
+  assh_event_done(s, e, err);
 }
 

@@ -102,7 +102,6 @@ static unsigned long auth_server_failure_count = 0;
 static unsigned long auth_server_partial_success_count = 0;
 static unsigned long auth_server_success_count = 0;
 static unsigned long auth_server_err_count = 0;
-static unsigned long auth_server_err_ev_count = 0;
 static unsigned long auth_client_none_count = 0;
 static unsigned long auth_client_pubkey_count = 0;
 static unsigned long auth_client_hostbased_count = 0;
@@ -116,7 +115,6 @@ static unsigned long auth_client_keyboard_resp_count = 0;
 static unsigned long auth_client_partial_success_count = 0;
 static unsigned long auth_client_success_count = 0;
 static unsigned long auth_client_err_count = 0;
-static unsigned long auth_client_err_ev_count = 0;
 
 /* use some of the available keys */
 static assh_bool_t use_keys(struct assh_key_s **k)
@@ -367,14 +365,7 @@ static int test()
 	  break;
 	}
 
-      err = assh_event_done(&session[0], &event, ASSH_OK);
-      if (ASSH_ERR_ERROR(err) != ASSH_OK)
-	{
-	  auth_server_err_ev_count++;
-	  if (packet_fuzz || alloc_fuzz)
-	    break;
-	  TEST_FAIL("");
-	}
+      assh_event_done(&session[0], &event, ASSH_OK);
 
       /****************************************************/
       ASSH_DEBUG("=== client %u ===\n", stall);
@@ -540,14 +531,7 @@ static int test()
 	  break;
 	}
 
-      err = assh_event_done(&session[1], &event, ASSH_OK);
-      if (ASSH_ERR_ERROR(err) != ASSH_OK)
-	{
-	  auth_client_err_ev_count++;
-	  if (packet_fuzz || alloc_fuzz)
-	    break;
-	  TEST_FAIL("");
-	}
+      assh_event_done(&session[1], &event, ASSH_OK);
 
       if (done == 3)
 	{
@@ -744,7 +728,6 @@ int main(int argc, char **argv)
 	  "  %8lu server partial success count\n"
 	  "  %8lu server success count\n"
 	  "  %8lu server fuzz error count\n"
-	  "  %8lu server fuzz event error count\n"
 	  "  %8lu client none count\n"
 	  "  %8lu client pubkey count\n"
 	  "  %8lu client hostbased count\n"
@@ -758,7 +741,6 @@ int main(int argc, char **argv)
 	  "  %8lu client partial success count\n"
 	  "  %8lu client success count\n"
 	  "  %8lu client fuzz error count\n"
-	  "  %8lu client fuzz event error count\n"
 	  "  %8lu fuzz packet bit errors\n"
 	  "  %8lu fuzz memory allocation fails\n"
 	  ,
@@ -779,7 +761,6 @@ int main(int argc, char **argv)
 	  auth_server_partial_success_count,
 	  auth_server_success_count,
 	  auth_server_err_count,
-	  auth_server_err_ev_count,
 	  auth_client_none_count,
 	  auth_client_pubkey_count,
 	  auth_client_hostbased_count,
@@ -793,7 +774,6 @@ int main(int argc, char **argv)
 	  auth_client_partial_success_count,
 	  auth_client_success_count,
 	  auth_client_err_count,
-	  auth_client_err_ev_count,
 	  packet_fuzz_bits,
 	  alloc_fuzz_fails
 	  );

@@ -243,10 +243,10 @@ int main(int argc, char **argv)
             }
           else
             {
-              err = assh_event_done(session, &event, err);
+              assh_event_done(session, &event, ASSH_OK);
               struct assh_inter_pty_req_s i;
               assh_inter_init_pty_req(&i, getenv("TERM"), 0, 0, 0, 0, NULL);
-              err = assh_inter_send_pty_req(session, session_ch, &request, &i);
+              assh_inter_send_pty_req(session, session_ch, &request, &i);
             }
           break;
         }
@@ -263,9 +263,8 @@ int main(int argc, char **argv)
             }
           else
             {
-              err = assh_event_done(session, &event, err);
-              if (!err)
-                err = assh_inter_send_shell(session, session_ch, NULL);
+              assh_event_done(session, &event, ASSH_OK);
+              assh_inter_send_shell(session, session_ch, NULL);
             }
           break;
         }
@@ -274,10 +273,7 @@ int main(int argc, char **argv)
           printf("Don't know how to handle event %u\n", event.id);
         }
 
-      err = assh_event_done(session, &event, err);
-      if (err != ASSH_OK)
-        fprintf(stderr, "assh error %x in main loop (errno=%i)\n",
-                (unsigned)err, errno);
+      assh_event_done(session, &event, err);
     }
 
  err_:

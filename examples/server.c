@@ -187,7 +187,7 @@ int main()
 
 	      assh_buffer_strset(&ev->banner, "welcome!");
 
-	      err = assh_event_done(session, &event, ASSH_OK);
+	      assh_event_done(session, &event, ASSH_OK);
 	      break;
 	    }
 
@@ -201,7 +201,7 @@ int main()
 		 user authorized keys. */
 	      ev->found = 1;
 
-	      err = assh_event_done(session, &event, ASSH_OK);
+	      assh_event_done(session, &event, ASSH_OK);
 	      break;
 	    }
 
@@ -212,7 +212,7 @@ int main()
 	      /* XXX check that user/password pair matches. */
 	      ev->result = ASSH_SERVER_PWSTATUS_SUCCESS;
 
-	      err = assh_event_done(session, &event, ASSH_OK);
+	      assh_event_done(session, &event, ASSH_OK);
 	      break;
 	    }
 
@@ -224,7 +224,7 @@ int main()
 		 user authorized keys. */
 	      ev->found = 1;
 
-	      err = assh_event_done(session, &event, ASSH_OK);
+	      assh_event_done(session, &event, ASSH_OK);
 	      break;
 	    }
 
@@ -235,7 +235,7 @@ int main()
 	      if (!assh_buffer_strcmp(&ev->type, "session"))
 		  ev->reply = ASSH_CONNECTION_REPLY_SUCCESS;
 
-	      err = assh_event_done(session, &event, ASSH_OK);
+	      assh_event_done(session, &event, ASSH_OK);
 	      break;
 	    }
 
@@ -260,7 +260,7 @@ int main()
 		    }
 		}
 
-	      err = assh_event_done(session, &event, err);
+	      assh_event_done(session, &event, err);
 	      break;
 	    }
 
@@ -279,21 +279,17 @@ int main()
 	      ev->transferred = size;
 
 	      /* acknowledge input data event before sending */
-	      err = assh_event_done(session, &event, ASSH_OK);
+	      assh_event_done(session, &event, ASSH_OK);
 
 	      if (perr == ASSH_OK)  /* send output data */
-		err = assh_channel_data_send(ev->ch, size);
+		assh_channel_data_send(ev->ch, size);
 	      break;
 	    }
 
 	    default:
 	      printf("Don't know how to handle event %u\n", event.id);
-	      err = assh_event_done(session, &event, ASSH_OK);
+	      assh_event_done(session, &event, ASSH_OK);
 	    }
-
-	  if (err != ASSH_OK)
-	    fprintf(stderr, "assh error %i in main loop (errno=%i)\n",
-		    (unsigned)err, errno);
 	}
 
       assh_session_release(session);

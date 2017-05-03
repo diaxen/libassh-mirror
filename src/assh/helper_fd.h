@@ -37,7 +37,7 @@
 
     @This takes care of calling the @ref assh_event_done function.
 */
-assh_error_t
+void
 assh_fd_event(struct assh_session_s *s,
 	      struct assh_event_s *e, int fd);
 

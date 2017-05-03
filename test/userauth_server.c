@@ -1268,6 +1268,18 @@ static void test()
 	      test_state_set(TEST05_ST_SERVER_REJECT);
 	      goto done;
 #endif
+#if defined(CONFIG_ASSH_SERVER_AUTH_PUBLICKEY)
+	      /*************************************************** TEST03 */
+	    case TEST03_ST_KEY_FOUND:
+	      test_state_set(TEST03_ST_SERVER_REJECT);
+	      goto done;
+#endif
+#if defined(CONFIG_ASSH_SERVER_AUTH_HOSTBASED)
+	      /*************************************************** TEST24 */
+	    case TEST24_ST_KEY_FOUND:
+	      test_state_set(TEST24_ST_SERVER_REJECT);
+	      goto done;
+#endif
 	    default:
 	      TEST_FAIL("server event get failed");
 	    }
@@ -2069,29 +2081,7 @@ static void test()
 	  break;
 	}
 
-      err = assh_event_done(&session[0], &event, ASSH_OK);
-
-      if (ASSH_ERR_ERROR(err) != ASSH_OK)
-	{
-	  switch (test_state)
-	    {
-#if defined(CONFIG_ASSH_SERVER_AUTH_PUBLICKEY)
-	      /*************************************************** TEST03 */
-	    case TEST03_ST_KEY_FOUND:
-	      test_state_set(TEST03_ST_SERVER_REJECT);
-	      goto done;
-#endif
-
-#if defined(CONFIG_ASSH_SERVER_AUTH_HOSTBASED)
-	      /*************************************************** TEST24 */
-	    case TEST24_ST_KEY_FOUND:
-	      test_state_set(TEST24_ST_SERVER_REJECT);
-	      goto done;
-#endif
-	    default:
-	      TEST_FAIL("server event done failed");
-	    }
-	}
+      assh_event_done(&session[0], &event, ASSH_OK);
 
       /****************************************************/
       ASSH_DEBUG("=== client %u ===\n", stall);
@@ -2116,9 +2106,7 @@ static void test()
 	  break;
 	}
 
-      err = assh_event_done(&session[1], &event, ASSH_OK);
-      if (ASSH_ERR_ERROR(err) != ASSH_OK)
-	TEST_FAIL("");
+      assh_event_done(&session[1], &event, ASSH_OK);
 
       if (stall >= 100)
 	TEST_FAIL("stalled");

@@ -891,14 +891,7 @@ int test(int (*fend)(int, int), int n, int evrate)
 	      everr |= ((1 << (12 + rand() % 3))
 			& (ASSH_ERRSV_DISCONNECT | ASSH_ERRSV_FIN));
 	    }
-	  err = assh_event_done(&session[i], &event, everr);
-
-	  if (ASSH_ERR_ERROR(err) != ASSH_OK)
-	    {
-	      started[i] = 0;
-	      if (!evrate)
-		ASSH_RET_ON_ERR(err);
-	    }
+	  assh_event_done(&session[i], &event, everr);
 
 	  if (stall >= 100000)
 	    TEST_FAIL("stalled\n");
