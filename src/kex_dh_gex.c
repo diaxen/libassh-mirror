@@ -101,7 +101,6 @@ struct assh_kex_dh_gex_private_s
       struct assh_bignum_s gn;
       struct assh_bignum_s en;
       struct assh_bignum_s xn;
-      struct assh_key_s *host_key;
       struct assh_packet_s *pck;
     };
 #endif
@@ -389,8 +388,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_dh_gex_host_key_lookup_done)
 
   assh_hash_string(hash_ctx, f_str);
 
-  ASSH_JMP_ON_ERR(assh_kex_client_hash2(s, hash_ctx,
-                      pv->host_key, secret, h_str)
+  ASSH_JMP_ON_ERR(assh_kex_client_hash2(s, hash_ctx, secret, h_str)
                | ASSH_ERRSV_DISCONNECT, err_hash);
 
   ASSH_JMP_ON_ERR(assh_kex_end(s, 1) | ASSH_ERRSV_DISCONNECT, err_hash);
@@ -425,8 +423,8 @@ static assh_error_t assh_kex_dh_gex_client_wait_f(struct assh_session_s *s,
   ASSH_RET_ON_ERR(assh_packet_check_string(p, h_str, NULL)
 	       | ASSH_ERRSV_DISCONNECT);
 
-  ASSH_RET_ON_ERR(assh_kex_client_get_key(s, &pv->host_key, ks_str, e,
-                                       &assh_kex_dh_gex_host_key_lookup_done, pv));
+  ASSH_RET_ON_ERR(assh_kex_client_get_key(s, ks_str, e,
+                 &assh_kex_dh_gex_host_key_lookup_done, pv));
 
   pv->state = ASSH_KEX_DH_GEX_CLIENT_LOOKUP_HOST_KEY_WAIT;
   pv->pck = assh_packet_refinc(p);
@@ -834,7 +832,6 @@ static assh_error_t assh_kex_dh_gex_init(struct assh_session_s *s,
     {
 #ifdef CONFIG_ASSH_CLIENT
     case ASSH_CLIENT:
-      pv->host_key = NULL;
       pv->pck = NULL;
 
       assh_bignum_init(s->ctx, &pv->gn, 0);
@@ -868,7 +865,6 @@ static ASSH_KEX_CLEANUP_FCN(assh_kex_dh_gex_cleanup)
       assh_bignum_release(c, &pv->en);
       assh_bignum_release(c, &pv->xn);
       assh_bignum_release(c, &pv->gn);
-      assh_key_flush(c, &pv->host_key);
       assh_packet_release(pv->pck);
       break;
 #endif

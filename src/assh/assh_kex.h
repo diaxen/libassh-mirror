@@ -109,18 +109,18 @@ assh_kex_client_hash1(struct assh_session_s *s,
 
 /** @internal This client side helper function can be used in
     key-exchange modules to the generate exchange hash, check the
-    associated signature and setup the resulting symmetric keys. 
+    associated signature and setup the resulting symmetric keys.
     @see assh_kex_client_hash2 */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_kex_client_hash2(struct assh_session_s *s, struct assh_hash_ctx_s *hash_ctx,
-                      const struct assh_key_s *host_key, const uint8_t *secret_str,
-                      const uint8_t *h_str);
+                      const uint8_t *secret_str, const uint8_t *h_str);
 
 /** @internal This client side helper function can be used in
-    key-exchange modules to load the host key and initialize an host
-    key lookup event. */
+    key-exchange modules to load the host key in @ref
+    assh_session_s::kex_host_key and initialize an host key lookup
+    event. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_kex_client_get_key(struct assh_session_s *s, struct assh_key_s **key,
+assh_kex_client_get_key(struct assh_session_s *s,
                         const uint8_t *ks_str, struct assh_event_s *e,
                         assh_error_t (*done)(struct assh_session_s *s,
                                              const struct assh_event_s *e,
@@ -195,6 +195,13 @@ assh_kex_end(struct assh_session_s *s, assh_bool_t accept);
 void assh_kex_keys_cleanup(struct assh_session_s *s,
                            struct assh_kex_keys_s *keys);
 
+/**
+   @internal This function is called internally by the transport layer
+   in order to report the ASSH_EVENT_KEX_DONE event.
+*/
+void assh_kex_done(struct assh_session_s *s,
+                   struct assh_event_s *e);
+
 /** @internal @see assh_kex_init_t */
 #define ASSH_KEX_INIT_FCN(n) assh_error_t (n)(struct assh_session_s *s, \
                                               size_t cipher_key_size)
@@ -265,10 +272,11 @@ struct assh_event_kex_hostkey_lookup_s
 
 /**
    The @ref ASSH_EVENT_KEX_DONE event is returned when a kex exchange
-   has completed.
+   has completed. For client sessions, the server host key is provided.
 */
 struct assh_event_kex_done_s
 {
+  struct assh_key_s * ASSH_EV_CONST host_key;  //< input
   assh_safety_t ASSH_EV_CONST safety;  //< input
 };
 

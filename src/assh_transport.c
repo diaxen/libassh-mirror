@@ -703,11 +703,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
       msg = SSH_MSG_INVALID;
 
       assh_transport_state(s, ASSH_TR_SERVICE);
-      e->id = ASSH_EVENT_KEX_DONE;
-      e->f_done = NULL;
-      e->kex.done.safety = ASSH_MIN(s->cur_keys_in->safety,
-        s->new_keys_out != NULL ? s->new_keys_out->safety
-			        : s->cur_keys_out->safety);
+      assh_kex_done(s, e);
       break;
 
     /* key re-exchange initiated, run service */

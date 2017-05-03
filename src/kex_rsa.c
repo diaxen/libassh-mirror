@@ -59,11 +59,11 @@ struct assh_kex_rsa_private_s
   const struct assh_hash_algo_s *hash;
 
   const uint8_t *lhash;
-  struct assh_key_s *host_key;
 
   union {
 #ifdef CONFIG_ASSH_SERVER
     struct {
+      struct assh_key_s *host_key;
       struct assh_key_s *t_key;
       void *hash_ctx;
     };
@@ -286,8 +286,8 @@ static assh_error_t assh_kex_rsa_client_wait_pubkey(struct assh_session_s *s,
   ASSH_RET_ON_ERR(assh_packet_check_string(p, t_str, NULL)
 	       | ASSH_ERRSV_DISCONNECT);
 
-  ASSH_RET_ON_ERR(assh_kex_client_get_key(s, &pv->host_key, ks_str, e,
-                               &assh_kex_rsa_host_key_lookup_done, pv));
+  ASSH_RET_ON_ERR(assh_kex_client_get_key(s, ks_str, e,
+                 &assh_kex_rsa_host_key_lookup_done, pv));
 
   pv->state = ASSH_KEX_RSA_CLIENT_LOOKUP_HOST_KEY_WAIT;
   pv->pck = assh_packet_refinc(p);
@@ -327,8 +327,7 @@ static assh_error_t assh_kex_rsa_client_wait_sign(struct assh_session_s *s,
   assh_hash_string(hash_ctx, t_str);
   assh_hash_string(hash_ctx, pv->secret + assh_load_u32(pv->secret) + 4);
 
-  ASSH_JMP_ON_ERR(assh_kex_client_hash2(s, hash_ctx,
-                        pv->host_key, pv->secret, h_str)
+  ASSH_JMP_ON_ERR(assh_kex_client_hash2(s, hash_ctx, pv->secret, h_str)
                | ASSH_ERRSV_DISCONNECT, err_hash);
 
   ASSH_JMP_ON_ERR(assh_kex_end(s, 1) | ASSH_ERRSV_DISCONNECT, err_hash);
@@ -616,7 +615,6 @@ static assh_error_t assh_kex_rsa_init(struct assh_session_s *s,
     {
 #ifdef CONFIG_ASSH_CLIENT
     case ASSH_CLIENT:
-      pv->host_key = NULL;
       pv->pck = NULL;
       pv->secret = NULL;
       break;
@@ -647,7 +645,6 @@ static ASSH_KEX_CLEANUP_FCN(assh_kex_rsa_cleanup)
     {
 #ifdef CONFIG_ASSH_CLIENT
     case ASSH_CLIENT:
-      assh_key_flush(s->ctx, &pv->host_key);
       assh_packet_release(pv->pck);
       assh_free(s->ctx, pv->secret);
       break;

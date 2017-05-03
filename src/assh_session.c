@@ -31,6 +31,7 @@
 #include <assh/assh_service.h>
 #include <assh/assh_transport.h>
 #include <assh/assh_alloc.h>
+#include <assh/assh_key.h>
 
 static ASSH_KEX_FILTER_FCN(assh_session_kex_filter)
 {
@@ -55,6 +56,7 @@ assh_error_t assh_session_init(struct assh_context_s *c,
   s->kex_filter = assh_session_kex_filter;
 
 #ifdef CONFIG_ASSH_CLIENT
+  s->kex_host_key = NULL;
   s->srv_rq = NULL;
   s->srv_index = 0;
 #endif
@@ -125,6 +127,10 @@ void assh_session_cleanup(struct assh_session_s *s)
 
   assh_packet_release(s->in_pck);
   assh_packet_release(s->stream_in_pck);
+
+#ifdef CONFIG_ASSH_CLIENT
+  assh_key_drop(s->ctx, &s->kex_host_key);
+#endif
 
   s->ctx->session_count--;
 }

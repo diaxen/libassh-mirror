@@ -705,7 +705,6 @@ assh_kex_new_keys(struct assh_session_s *s,
 #ifdef CONFIG_ASSH_CLIENT
 assh_error_t
 assh_kex_client_get_key(struct assh_session_s *s,
-                        struct assh_key_s **host_key,
                         const uint8_t *ks_str,
                         struct assh_event_s *e,
                         assh_event_done_t *done, void *pv)
@@ -714,28 +713,32 @@ assh_kex_client_get_key(struct assh_session_s *s,
 
   /* load key */
   const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
+  struct assh_key_s *host_key = NULL;
 
   const uint8_t *key_blob = ks_str + 4;
-  ASSH_RET_ON_ERR(assh_key_load(s->ctx, host_key, sign_algo->algo.key, ASSH_ALGO_SIGN,
+  ASSH_RET_ON_ERR(assh_key_load(s->ctx, &host_key, sign_algo->algo.key, ASSH_ALGO_SIGN,
                              ASSH_KEY_FMT_PUB_RFC4253, &key_blob,
                              assh_load_u32(ks_str))
                | ASSH_ERRSV_DISCONNECT);
 
   /* check if the key can be used by the algorithm */
-  ASSH_JMP_IF_TRUE(!assh_algo_suitable_key(s->ctx, &sign_algo->algo, *host_key),
+  ASSH_JMP_IF_TRUE(!assh_algo_suitable_key(s->ctx, &sign_algo->algo, host_key),
                ASSH_ERR_WEAK_ALGORITHM | ASSH_ERRSV_DISCONNECT, err_hk);
 
   /* Return an host key lookup event */
   e->id = ASSH_EVENT_KEX_HOSTKEY_LOOKUP;
   e->f_done = done;
   e->done_pv = pv;
-  e->kex.hostkey_lookup.key = *host_key;
+  e->kex.hostkey_lookup.key = host_key;
   e->kex.hostkey_lookup.accept = 0;
+
+  assert(s->kex_host_key == NULL);
+  s->kex_host_key = host_key;
 
   return ASSH_OK;
 
  err_hk:
-  assh_key_flush(s->ctx, host_key);
+  assh_key_drop(s->ctx, &host_key);
   return err;
 }
 
@@ -759,7 +762,6 @@ assh_kex_client_hash1(struct assh_session_s *s,
 assh_error_t
 assh_kex_client_hash2(struct assh_session_s *s,
                       struct assh_hash_ctx_s *hash_ctx,
-                      const struct assh_key_s *host_key,
                       const uint8_t *secret_str,
                       const uint8_t *h_str)
 {
@@ -781,7 +783,7 @@ assh_kex_client_hash2(struct assh_session_s *s,
   const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
   assh_safety_t sign_safety;
 
-  ASSH_RET_IF_TRUE(assh_sign_check(c, sign_algo, host_key, 1, &data,
+  ASSH_RET_IF_TRUE(assh_sign_check(c, sign_algo, s->kex_host_key, 1, &data,
                 h_str + 4, assh_load_u32(h_str), &sign_safety) != ASSH_OK,
                ASSH_ERR_HOSTKEY_SIGNATURE | ASSH_ERRSV_DISCONNECT);
 
@@ -938,6 +940,29 @@ assh_error_t assh_kex_end(struct assh_session_s *s, assh_bool_t accept)
   assh_transport_push(s, p);
 
   return ASSH_OK;
+}
+
+static ASSH_EVENT_DONE_FCN(assh_event_kex_done_done)
+{
+#ifdef CONFIG_ASSH_CLIENT
+  assh_key_drop(s->ctx, &s->kex_host_key);
+#endif
+  return ASSH_OK;
+}
+
+void assh_kex_done(struct assh_session_s *s,
+                   struct assh_event_s *e)
+{
+  e->id = ASSH_EVENT_KEX_DONE;
+  e->f_done = assh_event_kex_done_done;
+#ifdef CONFIG_ASSH_CLIENT
+  e->kex.done.host_key = s->kex_host_key;
+#else
+  e->kex.done.host_key = NULL;
+#endif
+  e->kex.done.safety = ASSH_MIN(s->cur_keys_in->safety,
+                                s->new_keys_out != NULL ? s->new_keys_out->safety
+			        : s->cur_keys_out->safety);
 }
 
 assh_error_t

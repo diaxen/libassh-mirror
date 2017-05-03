@@ -94,6 +94,10 @@ struct assh_session_s
 #ifdef CONFIG_ASSH_CLIENT
   /** Requested service. */
   const struct assh_service_s *srv_rq;
+  /** Host key sent by server. The key is loaded by @ref
+      assh_kex_client_get_key and released when the @ref
+      ASSH_EVENT_KEX_DONE event is acknowledged.  */
+  struct assh_key_s *kex_host_key;
 #endif
 
   /** Queue of ssh output packets. Packets in this queue will be

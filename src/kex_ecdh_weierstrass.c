@@ -61,7 +61,6 @@ struct assh_kex_ecdhws_private_s
   enum assh_kex_ecdhws_state_e state;
 
 #ifdef CONFIG_ASSH_CLIENT
-  struct assh_key_s *host_key;
   struct assh_packet_s *pck;
 #endif
 
@@ -263,8 +262,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_ecdhws_host_key_lookup_done)
   assh_hash_bytes_as_string(hash_ctx, pv->pubkey, pv->size * 2 + 1);
   assh_hash_string(hash_ctx, qs_str);
 
-  ASSH_JMP_ON_ERR(assh_kex_client_hash2(s, hash_ctx, pv->host_key,
-                                    secret, h_str)
+  ASSH_JMP_ON_ERR(assh_kex_client_hash2(s, hash_ctx, secret, h_str)
                | ASSH_ERRSV_DISCONNECT, err_sc);
 
   ASSH_JMP_ON_ERR(assh_kex_end(s, 1) | ASSH_ERRSV_DISCONNECT, err_hash);
@@ -302,8 +300,8 @@ static assh_error_t assh_kex_ecdhws_client_wait_reply(struct assh_session_s *s,
   ASSH_RET_IF_TRUE(assh_load_u32(qs_str) != pv->size * 2 + 1,
                ASSH_ERR_BAD_DATA | ASSH_ERRSV_DISCONNECT);
 
-  ASSH_RET_ON_ERR(assh_kex_client_get_key(s, &pv->host_key, ks_str, e,
-                              &assh_kex_ecdhws_host_key_lookup_done, pv));
+  ASSH_RET_ON_ERR(assh_kex_client_get_key(s, ks_str, e,
+                 &assh_kex_ecdhws_host_key_lookup_done, pv));
 
   pv->state = ASSH_KEX_ECDHWS_CLIENT_LOOKUP_HOST_KEY_WAIT;
   pv->pck = assh_packet_refinc(p);
@@ -435,10 +433,7 @@ static ASSH_KEX_CLEANUP_FCN(assh_kex_ecdhws_cleanup)
 
 #ifdef CONFIG_ASSH_CLIENT
   if (s->ctx->type == ASSH_CLIENT)
-    {
-      assh_key_flush(s->ctx, &pv->host_key);
-      assh_packet_release(pv->pck);
-    }
+    assh_packet_release(pv->pck);
 #endif
 
   assh_free(s->ctx, s->kex_pv);
@@ -472,7 +467,6 @@ assh_kex_ecdhws_init(struct assh_session_s *s,
 #ifdef CONFIG_ASSH_CLIENT
     case ASSH_CLIENT:
       pv->state = ASSH_KEX_ECDHWS_CLIENT_INIT;
-      pv->host_key = NULL;
       pv->pck = NULL;
       break;
 #endif
