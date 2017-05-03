@@ -153,7 +153,7 @@ int main()
 
 	  /** get events from the core and use registered event
 	      handlers to process most events. */
-	  assh_error_t err = assh_event_get(session, &event);
+	  assh_error_t err = assh_event_get(session, &event, time(NULL));
 	  if (ASSH_ERR_ERROR(err) != ASSH_OK)
 	    {
 	      fprintf(stderr, "assh error %x in main loop (errno=%i)\n",
@@ -172,11 +172,8 @@ int main()
 	  switch (event.id)
 	    {
 	    case ASSH_EVENT_READ:
-	      err = assh_fd_event_read(session, &event, conn);
-	      break;
-
 	    case ASSH_EVENT_WRITE:
-	      err = assh_fd_event_write(session, &event, conn);
+	      err = assh_fd_event(session, &event, conn);
 	      break;
 
 	    case ASSH_EVENT_KEX_DONE: {

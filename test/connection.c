@@ -427,7 +427,7 @@ int test(int (*fend)(int, int), int n, int evrate)
 
 	  /********************* handle events */
 
-	  err = assh_event_get(&session[i], &event);
+	  err = assh_event_get(&session[i], &event, 0);
 
 	  if (ASSH_ERR_ERROR(err) != ASSH_OK)
 	    {

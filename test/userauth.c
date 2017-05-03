@@ -179,7 +179,7 @@ static int test()
 
       /****************************************************/
       ASSH_DEBUG("=== server %u ===\n", stall);
-      err = assh_event_get(&session[0], &event);
+      err = assh_event_get(&session[0], &event, 0);
       if (ASSH_ERR_ERROR(err) != ASSH_OK)
 	{
 	  auth_server_err_count++;
@@ -378,7 +378,7 @@ static int test()
 
       /****************************************************/
       ASSH_DEBUG("=== client %u ===\n", stall);
-      err = assh_event_get(&session[1], &event);
+      err = assh_event_get(&session[1], &event, 0);
       if (ASSH_ERR_ERROR(err) != ASSH_OK)
 	{
 	  auth_client_err_count++;

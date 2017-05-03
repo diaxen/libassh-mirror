@@ -231,5 +231,26 @@ ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_session_algo_filter(struct assh_session_s *s,
                          assh_kex_filter_t *filter);
 
+/** @This returns the next protocol deadline. In order for the
+    library to handle protocol timeouts properly, the process must not
+    wait forever on a blocking io operation. The @ref assh_event_get
+    function must be called again when the deadline is reached.
+
+    @see assh_session_delay
+*/
+ASSH_INLINE assh_time_t
+assh_session_deadline(struct assh_session_s *s)
+{
+  return s->deadline;
+}
+
+/** @This returns the delay between the next protocol deadline and the
+    current time. If the deadline is in the past, the function returns 1. */
+ASSH_INLINE assh_time_t
+assh_session_delay(struct assh_session_s *s, assh_time_t time)
+{
+  return time < s->deadline ? s->deadline - time : 0;
+}
+
 #endif
 

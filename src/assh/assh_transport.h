@@ -105,18 +105,11 @@ enum assh_stream_out_state_e
     If not enough data is available, it's ok to provide less than
     requested or even no data. The buffer will be provided again the
     next time this event is reported.
-
-    The request should terminate after the specified @tt delay in
-    seconds when not enough data are available. The @tt time field
-    should be updated with the current time. Protocol timeouts will not
-    be handled if this 2 fields are ignored.
 */
 struct assh_event_transport_read_s
 {
   ASSH_EV_CONST struct assh_buffer_s buf;         //< input
   size_t                             transferred; //< output
-  assh_time_t                        time;        //< output
-  ASSH_EV_CONST uint16_t             delay;       //< input
 };
 
 /** The @ref ASSH_EVENT_WRITE event is reported when some ssh stream
@@ -130,16 +123,11 @@ struct assh_event_transport_read_s
     buffer size. If no data at all can be sent, the default value of
     the field can be left untouched. The buffer will remain valid and
     will be provided again the next time this event is returned.
-
-    The @tt time and @tt delay fields must be handled as described in
-    @ref assh_event_transport_read_s.
 */
 struct assh_event_transport_write_s
 {
   ASSH_EV_CONST struct assh_cbuffer_s buf;         //< input
   size_t                             transferred; //< output
-  assh_time_t                        time;        //< output
-  ASSH_EV_CONST uint16_t             delay;       //< input
 };
 
 /** @internal */

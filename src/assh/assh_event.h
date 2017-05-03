@@ -181,10 +181,16 @@ struct assh_event_s
     can be returned but calling this function again may still return
     more pending events. The @ref ASSH_ERR_CLOSED error is only
     returned when no more events are pending.
+
+    In order for the library to handle protocol timeouts properly, the
+    current time in seconds must be passed to this function. The @ref
+    assh_session_deadline function can then be used to get the next
+    deadline.
 */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_event_get(struct assh_session_s *s,
-               struct assh_event_s *e);
+               struct assh_event_s *e,
+               assh_time_t time);
 
 /** @This acknowledges the last event returned by the @ref
     assh_event_get function.

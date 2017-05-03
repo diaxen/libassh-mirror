@@ -398,7 +398,7 @@ void test(const struct assh_algo_kex_s *kex,
 
 	  ASSH_DEBUG("=== session %u %u ===\n", i, stall);
 
-	  err = assh_event_get(&session[i], &event);
+	  err = assh_event_get(&session[i], &event, 0);
 	  if (err != ASSH_OK)
 	    {
 	      if (packet_fuzz || alloc_fuzz)

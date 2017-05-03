@@ -31,23 +31,15 @@
 
 #include "assh.h"
 
-/** @This can be used to handle the @ref ASSH_EVENT_READ event by
-    reading data from a file descriptor.
+/** @This can be used to handle the @ref ASSH_EVENT_READ and @ref
+    ASSH_EVENT_WRITE events by reading from and writing to a file
+    descriptor.
 
     @This takes care of calling the @ref assh_event_done function.
 */
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_fd_event_read(struct assh_session_s *s,
-                   struct assh_event_s *e, int fd);
-
-/** @This can be used to handle the @ref ASSH_EVENT_WRITE event by
-    writing data to a file descriptor.
-
-    @This takes care of calling the @ref assh_event_done function.
-*/
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_fd_event_write(struct assh_session_s *s,
-                    struct assh_event_s *e, int fd);
+assh_error_t
+assh_fd_event(struct assh_session_s *s,
+	      struct assh_event_s *e, int fd);
 
 /** @This read characters on the file descriptor until a new line is
     found. The terminal echo is disabled. Characters beyond the

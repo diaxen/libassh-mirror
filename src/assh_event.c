@@ -34,10 +34,12 @@
 #include <assert.h>
 
 assh_error_t assh_event_get(struct assh_session_s *s,
-			    struct assh_event_s *event)
+			    struct assh_event_s *event,
+                            assh_time_t time)
 {
   assh_error_t err;
 
+  s->time = time;
   ASSH_RET_IF_TRUE(s->tr_st == ASSH_TR_CLOSED,
 	       ASSH_ERR_CLOSED | ASSH_ERRSV_FIN);
 
@@ -79,7 +81,7 @@ assh_error_t assh_event_get(struct assh_session_s *s,
   if (s->tr_st == ASSH_TR_DISCONNECT)
     {
       assh_transport_state(s, ASSH_TR_FIN);
-      return assh_event_get(s, event);
+      return assh_event_get(s, event, time);
     }
   else if (s->tr_st > ASSH_TR_DISCONNECT)
     {

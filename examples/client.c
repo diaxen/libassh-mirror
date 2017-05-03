@@ -117,7 +117,7 @@ int main(int argc, char **argv)
     {
       struct assh_event_s event;
 
-      err = assh_event_get(session, &event);
+      err = assh_event_get(session, &event, time(NULL));
       if (ASSH_ERR_ERROR(err) != ASSH_OK)
         {
           fprintf(stderr, "assh error %x sv %x in main loop (errno=%i)\n",
@@ -131,11 +131,8 @@ int main(int argc, char **argv)
       switch (event.id)
         {
         case ASSH_EVENT_READ:
-          err = assh_fd_event_read(session, &event, sock);
-          break;
-
         case ASSH_EVENT_WRITE:
-          err = assh_fd_event_write(session, &event, sock);
+          err = assh_fd_event(session, &event, sock);
           break;
 
         case ASSH_EVENT_KEX_HOSTKEY_LOOKUP: {

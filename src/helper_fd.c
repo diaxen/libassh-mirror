@@ -88,25 +88,15 @@ assh_fd_get_password(struct assh_context_s *c, const char **pass,
 }
 
 assh_error_t
-assh_fd_event_read(struct assh_session_s *s,
-                   struct assh_event_s *e, int fd)
+assh_fd_event(struct assh_session_s *s,
+              struct assh_event_s *e, int fd)
 {
   assh_error_t err = ASSH_OK;
-  struct assh_event_transport_read_s *te = &e->transport.read;
 
-  assert(e->id == ASSH_EVENT_READ);
-
-  struct pollfd p;
-  p.events = POLLIN | POLLPRI;
-  p.fd = fd;
-
-  ASSH_DEBUG("read delay %u\n", te->delay);
-  switch (poll(&p, 1, (int)te->delay * 1000))
+  switch (e->id)
     {
-    case 0:
-      te->transferred = 0;
-      break;
-    case 1: {
+    case ASSH_EVENT_READ: {
+      struct assh_event_transport_read_s *te = &e->transport.read;
       ssize_t r = read(fd, te->buf.data, te->buf.size);
       switch (r)
         {
@@ -122,37 +112,9 @@ assh_fd_event_read(struct assh_session_s *s,
         }
       break;
     }
-    default:
-      err = ASSH_ERR_IO | ASSH_ERRSV_FIN;
-      goto err_;
-    }
 
-  te->time = time(NULL);
-
- err_:
-  ASSH_RETURN(assh_event_done(s, e, err));
-}
-
-assh_error_t
-assh_fd_event_write(struct assh_session_s *s,
-                    struct assh_event_s *e, int fd)
-{
-  assh_error_t err = ASSH_OK;
-  struct assh_event_transport_write_s *te = &e->transport.write;
-
-  assert(e->id == ASSH_EVENT_WRITE);
-
-  struct pollfd p;
-  p.events = POLLOUT;
-  p.fd = fd;
-
-  ASSH_DEBUG("write delay %u\n", te->delay);
-  switch (poll(&p, 1, (int)te->delay * 1000))
-    {
-    case 0:
-      te->transferred = 0;
-      break;
-    case 1: {
+    case ASSH_EVENT_WRITE: {
+      struct assh_event_transport_write_s *te = &e->transport.write;
       ssize_t r = write(fd, te->buf.data, te->buf.size);
       switch (r)
         {
@@ -168,15 +130,12 @@ assh_fd_event_write(struct assh_session_s *s,
         }
       break;
     }
-    default:
-      err = ASSH_ERR_IO | ASSH_ERRSV_FIN;
-      goto err_;
-    }
 
-  te->time = time(NULL);
+    default:
+      abort();
+    }
 
  err_:
   ASSH_RETURN(assh_event_done(s, e, err));
 }
-
 

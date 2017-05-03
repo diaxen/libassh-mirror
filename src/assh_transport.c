@@ -86,7 +86,6 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
   size_t rd_size = e->transport.read.transferred;
   assert(rd_size <= e->transport.read.buf.size);
   s->stream_in_size += rd_size;
-  s->time = e->transport.read.time;
 
   switch (s->stream_in_st)
     {
@@ -279,9 +278,6 @@ assh_error_t assh_transport_read(struct assh_session_s *s,
   struct assh_kex_keys_s *k = s->cur_keys_in;
   uint8_t **data = &e->transport.read.buf.data;
   size_t *size = &e->transport.read.buf.size;
-  e->transport.read.time = 0;
-  e->transport.read.delay = s->time < s->deadline ?
-    ASSH_MIN(3600, s->deadline - s->time) : 1;
 
   switch (s->stream_in_st)
     {
@@ -327,14 +323,11 @@ static ASSH_EVENT_DONE_FCN(assh_event_write_done)
   size_t wr_size = e->transport.write.transferred;
   assert(wr_size <= e->transport.write.buf.size);
   s->stream_out_size += wr_size;
-  s->time = e->transport.write.time;
 
   switch (s->stream_out_st)
     {
     /* check if sending of ident string has completed */
     case ASSH_TR_OUT_IDENT_DONE:
-      if (s->deadline == 0)
-	s->deadline = s->time + ASSH_TIMEOUT_IDENT;
       s->stream_out_st = s->stream_out_size >= sizeof(ASSH_IDENT) - 1
 	? ASSH_TR_OUT_PACKETS : ASSH_TR_OUT_IDENT_PAUSE;
       return ASSH_OK;
@@ -376,9 +369,6 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
   assh_error_t err;
   uint8_t const ** const data = &e->transport.write.buf.data;
   size_t *size = &e->transport.write.buf.size;
-  e->transport.write.time = 0;
-  e->transport.write.delay = s->time < s->deadline ?
-    ASSH_MIN(3600, s->deadline - s->time) : 1;
 
   switch (s->stream_out_st)
     {
@@ -387,8 +377,6 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
       *data = (uint8_t*)ASSH_IDENT + s->stream_out_size;
       *size = sizeof(ASSH_IDENT) - 1 - s->stream_out_size;
       s->stream_out_st = ASSH_TR_OUT_IDENT_DONE;
-      if (s->deadline == 0)
-	e->transport.write.delay = ASSH_TIMEOUT_IDENT;
       break;
     }
 
@@ -639,6 +627,8 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
   switch (s->tr_st)
     {
     case ASSH_TR_IDENT:
+      if (s->deadline == 0)
+	s->deadline = s->time + ASSH_TIMEOUT_IDENT;
       return ASSH_OK;
 
     /* send first kex init packet during session init */
