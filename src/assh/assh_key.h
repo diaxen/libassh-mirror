@@ -171,6 +171,7 @@ struct assh_key_s
   enum assh_algo_class_e role:3;
 
   assh_bool_t private:1;
+  assh_bool_t stored:1;
 
   assh_safety_t safety;
   uint8_t ref_count;

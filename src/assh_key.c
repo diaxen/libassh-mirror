@@ -98,6 +98,7 @@ assh_error_t assh_key_load(struct assh_context_s *c,
   k->role = role;
   k->next = *key;
   k->ref_count = 1;
+  k->stored = 0;
   k->comment = NULL;
   *key = k;
 
@@ -118,6 +119,7 @@ assh_key_create(struct assh_context_s *c,
   k->role = role;
   k->next = *key;
   k->ref_count = 1;
+  k->stored = 0;
   k->comment = NULL;
   *key = k;
 
