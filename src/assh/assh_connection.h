@@ -262,7 +262,7 @@ struct assh_event_request_s
 
    @see assh_request_failed_reply
 */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_error_t
 assh_request_success_reply(struct assh_request_s *rq,
                            const uint8_t *rsp_data,
                            size_t rsp_data_len);
@@ -271,7 +271,7 @@ assh_request_success_reply(struct assh_request_s *rq,
    @This has the same behavior as @ref assh_request_success_reply but
    reports a request failure to the remote host.
 */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_error_t
 assh_request_failed_reply(struct assh_request_s *rq);
 
 /************************************************* outgoing request */
@@ -389,7 +389,7 @@ struct assh_event_channel_open_s
 
    @see assh_channel_open_success_reply
 */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_error_t
 assh_channel_open_success_reply2(struct assh_channel_s *ch,
                                  uint32_t pkt_size, uint32_t win_size,
                                  const uint8_t *rsp_data,
@@ -411,7 +411,7 @@ assh_channel_open_success_reply2(struct assh_channel_s *ch,
 
    @see assh_channel_open_failed_reply
 */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_error_t
 assh_channel_open_success_reply(struct assh_channel_s *ch,
                                 const uint8_t *rsp_data,
                                 size_t rsp_data_len);
@@ -429,7 +429,7 @@ assh_channel_open_success_reply(struct assh_channel_s *ch,
 
    @see assh_channel_open_success_reply
 */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_error_t
 assh_channel_open_failed_reply(struct assh_channel_s *ch,
                                enum assh_channel_open_reason_e reason);
 
@@ -599,7 +599,7 @@ assh_channel_data_alloc_ext(struct assh_channel_s *ch,
    not started or the last event has not been acknowledged by calling
    the @ref assh_event_done function.
 */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_error_t
 assh_channel_data_send(struct assh_channel_s *ch, size_t size);
 
 /**
@@ -615,7 +615,7 @@ assh_channel_data_send(struct assh_channel_s *ch, size_t size);
    not started or the last event has not been acknowledged by calling
    the @ref assh_event_done function.
 */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE assh_error_t
 assh_channel_data(struct assh_channel_s *ch,
                   const uint8_t *data, size_t *size)
 {
@@ -634,7 +634,7 @@ assh_channel_data(struct assh_channel_s *ch,
 
    @see assh_channel_data
 */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE assh_error_t
 assh_channel_data_ext(struct assh_channel_s *ch, uint32_t ext_type,
                       const uint8_t *data, size_t *size)
 {
@@ -699,7 +699,7 @@ struct assh_event_channel_close_s
    not started or the last event has not been acknowledged by calling
    the @ref assh_event_done function.
 */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_error_t
 assh_channel_eof(struct assh_channel_s *ch);
 
 /**
@@ -715,7 +715,7 @@ assh_channel_eof(struct assh_channel_s *ch);
    not started or the last event has not been acknowledged by calling
    the @ref assh_event_done function.
 */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_error_t
 assh_channel_close(struct assh_channel_s *ch);
 
 /**************************************************/
