@@ -303,7 +303,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
   uint_fast16_t n = assh_bignum_bits(&k->qn);
 
   /* check key size */
-  ASSH_RET_IF_TRUE(l < 1024 || n < 160 || l > 4096 || n > 256 || l % 8 || n % 8,
+  ASSH_RET_IF_TRUE(l < 768 || n < 160 || l > 4096 || n > 256 || l % 8 || n % 8,
                ASSH_ERR_BAD_DATA);
 
   enum bytecode_args_e
@@ -438,7 +438,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
     }
 
   /* allocate key structure */
-  ASSH_RET_IF_TRUE(l < 1024 || n < 160 || l % 8 || n % 8, ASSH_ERR_BAD_DATA);
+  ASSH_RET_IF_TRUE(l < 768 || n < 160 || l % 8 || n % 8, ASSH_ERR_BAD_DATA);
   ASSH_RET_IF_TRUE(l > 4096 || n > 256, ASSH_ERR_NOTSUP);
 
   struct assh_key_dsa_s *k = (void*)*key;

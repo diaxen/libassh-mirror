@@ -323,7 +323,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key)
     return 0;
   const struct assh_key_dsa_s *k = (const void*)key;
   return assh_bignum_bits(&k->qn) == 160 &&
-         assh_bignum_bits(&k->pn) == 1024;
+         assh_bignum_bits(&k->pn) >= 768;
 }
 
 const struct assh_algo_sign_s assh_sign_dsa =
