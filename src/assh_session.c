@@ -48,6 +48,7 @@ assh_error_t assh_session_init(struct assh_context_s *c,
   s->ident_len = 0;
   s->session_id_len = 0;
 
+  s->kex = NULL;
   s->kex_init_local = NULL;
   s->kex_init_remote = NULL;
   s->kex_pv = NULL;

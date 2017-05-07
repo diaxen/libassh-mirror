@@ -113,7 +113,9 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 		if (s->ident_str[i - 1] == '\r')
 		  i--;
 		s->ident_len = i;
-
+#ifdef CONFIG_ASSH_DEBUG_PROTOCOL
+		assh_hexdump("remote ident", s->ident_str, s->ident_len);
+#endif
 		assh_transport_state(s, ASSH_TR_KEX_INIT);
 
 		/* we might still have enough bytes to start packet decode */

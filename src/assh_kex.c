@@ -960,9 +960,16 @@ void assh_kex_done(struct assh_session_s *s,
 #else
   e->kex.done.host_key = NULL;
 #endif
-  e->kex.done.safety = ASSH_MIN(s->cur_keys_in->safety,
-                                s->new_keys_out != NULL ? s->new_keys_out->safety
-			        : s->cur_keys_out->safety);
+  const struct assh_kex_keys_s *in = s->cur_keys_in;
+  const struct assh_kex_keys_s *out = s->new_keys_out != NULL
+    ? s->new_keys_out : s->cur_keys_out;
+
+  e->kex.done.ident.data = s->ident_str;
+  e->kex.done.ident.size = s->ident_len;
+  e->kex.done.safety = ASSH_MIN(in->safety, out->safety);
+  e->kex.done.algo_kex = s->kex;
+  e->kex.done.algos_in = in;
+  e->kex.done.algos_out = out;
 }
 
 assh_error_t

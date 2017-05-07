@@ -65,6 +65,7 @@
 #endif
 
 #include "assh_algo.h"
+#include "assh_buffer.h"
 
 /** This function sets the amount of ssh stream that can flow between
     the client and server between re-keying requests. */
@@ -277,6 +278,10 @@ struct assh_event_kex_hostkey_lookup_s
 struct assh_event_kex_done_s
 {
   struct assh_key_s * ASSH_EV_CONST host_key;  //< input
+  struct assh_cbuffer_s ASSH_EV_CONST ident;  //< input
+  const struct assh_algo_kex_s * ASSH_EV_CONST algo_kex; //< input
+  const struct assh_kex_keys_s * ASSH_EV_CONST algos_in; //< input
+  const struct assh_kex_keys_s * ASSH_EV_CONST algos_out; //< input
   assh_safety_t ASSH_EV_CONST safety;  //< input
 };
 
