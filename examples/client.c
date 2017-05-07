@@ -19,6 +19,11 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
   02110-1301 USA
 
+  As a special exception, for the purpose of developing applications
+  using libassh, the content of the examples/client.c file may be
+  freely reused without causing the resulting work to be covered by
+  the GNU Lesser General Public License.
+
 */
 
 #include <assh/assh_session.h>
@@ -29,12 +34,11 @@
 #include <assh/assh_connection.h>
 #include <assh/helper_key.h>
 #include <assh/helper_interactive.h>
+#include <assh/helper_client.h>
 #include <assh/assh_kex.h>
 #include <assh/helper_fd.h>
 #include <assh/assh_event.h>
 #include <assh/assh_algo.h>
-#include <assh/key_rsa.h>
-#include <assh/key_dsa.h>
 
 #ifdef CONFIG_ASSH_USE_GCRYPT
 # include <gcrypt.h>
@@ -48,8 +52,23 @@
 #include <pthread.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <termios.h>
 
-assh_bool_t use_compression = 0;
+static assh_bool_t use_compression = 0;
+
+static const char *hostname = "localhost";
+
+static int port = 22;
+
+static const char *user;
+
+static enum assh_userauth_methods_e auth_methods =
+    ASSH_USERAUTH_METHOD_PASSWORD |
+    ASSH_USERAUTH_METHOD_PUBKEY |
+    ASSH_USERAUTH_METHOD_KEYBOARD;
+
+struct termios term;
 
 static ASSH_KEX_FILTER_FCN(algo_filter)
 {
@@ -61,14 +80,119 @@ static ASSH_KEX_FILTER_FCN(algo_filter)
          (name->spec & ASSH_ALGO_COMMON);
 }
 
+static assh_error_t
+assh_loop(struct assh_session_s *session,
+          struct assh_client_inter_session_s *inter,
+          struct pollfd *p)
+{
+  assh_error_t err;
+  time_t t = time(NULL);
+
+  while (1)
+    {
+      struct assh_event_s event;
+
+      /* get the next event from the assh library */
+      err = assh_event_get(session, &event, t);
+      if (ASSH_ERR_ERROR(err) != ASSH_OK)
+        return err;
+
+      switch (event.id)
+        {
+        case ASSH_EVENT_READ:
+          if (!(p[2].revents & POLLIN))
+            {
+              assh_event_done(session, &event, ASSH_OK);
+              return ASSH_OK;
+            }
+
+          /* get ssh stream from socket */
+          assh_fd_event(session, &event, p[2].fd);
+          p[2].revents ^= POLLIN;
+          break;
+
+        case ASSH_EVENT_WRITE:
+          if (!(p[2].revents & POLLOUT))
+            {
+              assh_event_done(session, &event, ASSH_OK);
+              return ASSH_OK;
+            }
+
+          /* write ssh stream to socket */
+          assh_fd_event(session, &event, p[2].fd);
+          p[2].revents ^= POLLOUT;
+          break;
+
+        case ASSH_EVENT_KEX_HOSTKEY_LOOKUP:
+          /* lookup host key in openssh standard files and query user */
+          assh_client_event_openssh_hk_lookup(session, hostname, &event);
+          break;
+
+        case ASSH_EVENT_KEX_DONE:
+          /* register new host key as needed */
+          assh_client_event_openssh_hk_add(session, hostname, &event);
+          break;
+
+        case ASSH_EVENT_USERAUTH_CLIENT_BANNER:
+        case ASSH_EVENT_USERAUTH_CLIENT_USER:
+        case ASSH_EVENT_USERAUTH_CLIENT_METHODS:
+        case ASSH_EVENT_USERAUTH_CLIENT_PWCHANGE:
+        case ASSH_EVENT_USERAUTH_CLIENT_KEYBOARD:
+          /* handle user authentication events */
+          assh_client_event_openssh_auth(session, user, hostname,
+             &auth_methods, assh_client_openssh_user_key_default, &event);
+          break;
+
+        case ASSH_EVENT_CONNECTION_START:
+          /* put terminal in raw mode */
+          if (isatty(0))
+            {
+              struct termios t;
+              t = term;
+              cfmakeraw(&t);
+              tcsetattr(0, 0, &t);
+            }
+
+        case ASSH_EVENT_CHANNEL_OPEN_REPLY:
+        case ASSH_EVENT_REQUEST_REPLY:
+        case ASSH_EVENT_CHANNEL_CLOSE:
+          /* start interactive session and shell */
+          assh_client_event_inter_session(session, &event, inter);
+          break;
+
+        case ASSH_EVENT_CHANNEL_DATA: {
+          if (!(p[1].revents & POLLOUT))
+            {
+              assh_event_done(session, &event, ASSH_OK);
+              return ASSH_OK;
+            }
+
+          struct assh_event_channel_data_s *ev = &event.connection.channel_data;
+
+          ssize_t r = write(p[1].fd, ev->data.data, ev->data.size);
+          if (r <= 0)
+            err = ASSH_ERR_IO | ASSH_ERRSV_DISCONNECT;
+          else
+            ev->transferred = r;
+
+          assh_event_done(session, &event, err);
+          p[1].revents ^= POLLOUT;
+          break;
+        }
+
+        default:
+          ASSH_DEBUG("event %u not handled\n", event.id);
+          assh_event_done(session, &event, ASSH_OK);
+        }
+    }
+}
+
 int main(int argc, char **argv)
 {
 #ifdef CONFIG_ASSH_USE_GCRYPT
   if (!gcry_check_version(GCRYPT_VERSION))
     return -1;
 #endif
-
-  int port = 22;
 
   if (argc > 1)
     port = atoi(argv[1]);
@@ -107,178 +231,77 @@ int main(int argc, char **argv)
 
   assh_error_t err;
 
-  assh_bool_t auth_keys_done = 0;
-  assh_safety_t safety = 0;
+  user = getenv("USER");
+  if (!user)
+    return -1;
 
-  struct assh_channel_s *session_ch;
-  struct assh_request_s *request;
+  struct assh_client_inter_session_s inter;
+  assh_client_init_inter_session(&inter, NULL, getenv("TERM"));
 
-  while (1)
-    {
-      struct assh_event_s event;
+  if (isatty(0))
+    tcgetattr(0, &term);
 
-      err = assh_event_get(session, &event, time(NULL));
-      if (ASSH_ERR_ERROR(err) != ASSH_OK)
-        {
-          fprintf(stderr, "assh error %x sv %x in main loop (errno=%i)\n",
-                  (unsigned)ASSH_ERR_ERROR(err),
-                  (unsigned)ASSH_ERR_SEVERITY(err), errno);
-          if (ASSH_ERR_ERROR(err) == ASSH_ERR_CLOSED)
-            goto err_;
-          continue;
-        }
+  struct pollfd p[3];
+  p[0].fd = 0;
+  p[1].fd = 1;
+  p[2].fd = sock;
 
-      switch (event.id)
-        {
-        case ASSH_EVENT_READ:
-        case ASSH_EVENT_WRITE:
-          err = assh_fd_event(session, &event, sock);
-          break;
+  do {
+    p[0].events = 0;
+    p[1].events = 0;
 
-        case ASSH_EVENT_KEX_HOSTKEY_LOOKUP: {
-          struct assh_event_kex_hostkey_lookup_s *ev =
-            &event.kex.hostkey_lookup;
+    if (inter.state == ASSH_CLIENT_INTER_ST_OPEN)
+      {
+        p[0].events = POLLIN;
+        if (assh_channel_more_data(session))
+          p[1].events = POLLOUT;
+      }
 
-          /* XXX the key validity may be checked before adding
-             the key to the list of known hosts. */
-          if (assh_key_validate(context, ev->key))
-            break;
+    p[2].events = POLLIN;
+    if (assh_transport_has_output(session))
+      p[2].events |= POLLOUT;
 
-          event.kex.hostkey_lookup.accept = 1;
-          break;
-        }
+    int timeout = assh_session_delay(session, time(NULL)) * 1000;
+    ASSH_DEBUG("Timeout %i\n", timeout);
 
-        case ASSH_EVENT_KEX_DONE: {
-          struct assh_event_kex_done_s *ev = &event.kex.done;
+    if (poll(p, 3, timeout) > 0)
+      {
+        if (inter.state == ASSH_CLIENT_INTER_ST_OPEN &&
+            p[0].revents)
+          {
+            uint8_t *buf;
+            size_t s = 256;
+            if (assh_channel_data_alloc(inter.channel, &buf, &s, 1) == ASSH_OK)
+              {
+                ssize_t r = read(p[0].fd, buf, s);
+                if (r)
+                  assh_channel_data_send(inter.channel, r);
+              }
+           }
 
-          safety = ev->safety;
+        if (p[2].revents || p[1].revents)
+          err = assh_loop(session, &inter, p);
 
-          fprintf(stderr, "kex safety factor: %u\n", safety);
-          break;
-        }
+        if (ASSH_ERR_ERROR(err) != ASSH_OK)
+          {
+            fprintf(stderr, "assh error %x sv %x in main loop (errno=%i)\n",
+                    (unsigned)ASSH_ERR_ERROR(err),
+                    (unsigned)ASSH_ERR_SEVERITY(err), errno);
+            static int n = 5;
+            if (!n--)
+              abort();
+          }
+      }
 
-        case ASSH_EVENT_USERAUTH_CLIENT_USER: {
-          struct assh_event_userauth_client_user_s *ev =
-            &event.userauth_client.user;
+  } while (ASSH_ERR_ERROR(err) != ASSH_ERR_CLOSED &&
+           inter.state != ASSH_CLIENT_INTER_ST_CLOSED);
 
-          assh_buffer_strset(&ev->username, "test");
-
-          break;
-        }
-
-        case ASSH_EVENT_USERAUTH_CLIENT_METHODS: {
-          struct assh_event_userauth_client_methods_s *ev =
-            &event.userauth_client.methods;
-
-          if ((ev->methods & ASSH_USERAUTH_METHOD_PUBKEY)
-              && !(auth_keys_done & 1))
-            {
-              auth_keys_done |= 1;
-              ev->select = ASSH_USERAUTH_METHOD_PUBKEY;
-
-              if (assh_load_key_filename(context, &ev->keys,
-                                         &assh_key_dsa, ASSH_ALGO_SIGN, "dsa_user_key",
-                                         ASSH_KEY_FMT_PV_PEM, NULL, 0) != ASSH_OK)
-                fprintf(stderr, "unable to load user dsa key\n");
-
-              if (assh_load_key_filename(context, &ev->keys,
-                                         &assh_key_rsa, ASSH_ALGO_SIGN, "rsa_user_key",
-                                         ASSH_KEY_FMT_PV_PEM, NULL, 0) != ASSH_OK)
-                fprintf(stderr, "unable to load user rsa key\n");
-            }
-
-          else if ((ev->methods & ASSH_USERAUTH_METHOD_HOSTBASED)
-              && !(auth_keys_done & 2))
-            {
-              auth_keys_done |= 2;
-              ev->select = ASSH_USERAUTH_METHOD_HOSTBASED;
-
-              if (assh_load_key_filename(context, &ev->keys,
-                                         &assh_key_rsa, ASSH_ALGO_SIGN, "ssh_host_rsa_key",
-                                         ASSH_KEY_FMT_PV_PEM, NULL, 0) != ASSH_OK)
-                fprintf(stderr, "unable to load host rsa key\n");
-
-              assh_buffer_strset(&ev->host_name, "localhost");
-              assh_buffer_strset(&ev->host_username, "test");
-            }
-
-          else if ((ev->methods & ASSH_USERAUTH_METHOD_PASSWORD)
-              && safety > 25)
-            {
-              ev->select = ASSH_USERAUTH_METHOD_PASSWORD;
-              fprintf(stderr, "password input\n");
-              assh_buffer_strset(&ev->password, "test");
-            }
-          break;
-        }
-
-        case ASSH_EVENT_USERAUTH_CLIENT_BANNER: {
-          struct assh_event_userauth_client_banner_s *ev =
-            &event.userauth_client.banner;
-
-          /* XXX terminal control chars should be filtered */
-          fwrite(ev->text.str, ev->text.len, 1, stderr);
-          break;
-        }
-
-        case ASSH_EVENT_USERAUTH_CLIENT_SUCCESS:
-          fprintf(stderr, "userauth success\n");
-          break;
-
-        case ASSH_EVENT_CONNECTION_START: {
-          /* may send channel related requests from this point */
-          err = assh_channel_open(session, "session", 7, NULL, 0, &session_ch);
-          break;
-        }
-
-        case ASSH_EVENT_CHANNEL_OPEN_REPLY: {
-          struct assh_event_channel_open_reply_s *ev =
-            &event.connection.channel_open_reply;
-          assert(ev->ch == session_ch);
-
-          if (ev->reply != ASSH_CONNECTION_REPLY_SUCCESS)
-            {
-              fprintf(stderr, "unable to open session channel\n");
-              err = ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT;
-            }
-          else
-            {
-              assh_event_done(session, &event, ASSH_OK);
-              struct assh_inter_pty_req_s i;
-              assh_inter_init_pty_req(&i, getenv("TERM"), 0, 0, 0, 0, NULL);
-              assh_inter_send_pty_req(session, session_ch, &request, &i);
-            }
-          break;
-        }
-
-        case ASSH_EVENT_REQUEST_REPLY: {
-          struct assh_event_request_reply_s *ev =
-            &event.connection.request_reply;
-          assert(ev->ch == session_ch);
-          assert(ev->rq == request);
-          if (ev->reply != ASSH_CONNECTION_REPLY_SUCCESS)
-            {
-              fprintf(stderr, "unable to get a pty\n");
-              err = ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT;
-            }
-          else
-            {
-              assh_event_done(session, &event, ASSH_OK);
-              assh_inter_send_shell(session, session_ch, NULL);
-            }
-          break;
-        }
-
-        default:
-          printf("Don't know how to handle event %u\n", event.id);
-        }
-
-      assh_event_done(session, &event, err);
-    }
-
- err_:
   assh_session_release(session);
   assh_context_release(context);
+
+  if (isatty(0))
+    tcsetattr(0, 0, &term);
+
   return 0;
 }
 

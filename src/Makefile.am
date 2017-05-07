@@ -35,7 +35,7 @@ libassh_la_SOURCES = assh_context.c assh_session.c assh_packet.c	\
 	hash_sha3_builtin.c prng_xswap_builtin.c helper_interactive.c
 
 if COND_client
-libassh_la_SOURCES +=   assh_userauth_client.c
+libassh_la_SOURCES +=   assh_userauth_client.c helper_client.c
 endif
 
 if COND_server
