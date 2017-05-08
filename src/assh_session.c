@@ -136,6 +136,66 @@ void assh_session_cleanup(struct assh_session_s *s)
   s->ctx->session_count--;
 }
 
+const char * assh_error_str(assh_error_t err)
+{
+  const char * str[ASSH_ERR_count - 0x100] = {
+    [ASSH_ERR_IO - 0x100]
+    = "IO error",
+    [ASSH_ERR_MEM - 0x100]
+    = "Memory allocation error",
+    [ASSH_ERR_INPUT_OVERFLOW - 0x100]
+    = "Input overflow",
+    [ASSH_ERR_OUTPUT_OVERFLOW - 0x100]
+    = "Output overflow",
+    [ASSH_ERR_NUM_OVERFLOW - 0x100]
+    = "Arithmetic overflow",
+    [ASSH_ERR_NUM_COMPARE_FAILED - 0x100]
+    = "Compare failed on big number",
+    [ASSH_ERR_BAD_VERSION - 0x100]
+    = "Bad protocol version",
+    [ASSH_ERR_BAD_DATA - 0x100]
+    = "Unexpected or corrupt data",
+    [ASSH_ERR_BAD_ARG - 0x100]
+    = "Invalid arguments",
+    [ASSH_ERR_MAC - 0x100]
+    = "Message authentication error",
+    [ASSH_ERR_PROTOCOL - 0x100]
+    = "Protocol error",
+    [ASSH_ERR_STATE - 0x100]
+    = "Invalid operation in current state",
+    [ASSH_ERR_CRYPTO - 0x100]
+    = "Cryptographic operation error ",
+    [ASSH_ERR_NOTSUP - 0x100]
+    = "Unsupported operation or value",
+    [ASSH_ERR_KEX_FAILED - 0x100]
+    = "Key exchange failed",
+    [ASSH_ERR_MISSING_KEY - 0x100]
+    = "Key not available",
+    [ASSH_ERR_MISSING_ALGO - 0x100]
+    = "Algorithm not available",
+    [ASSH_ERR_HOSTKEY_SIGNATURE - 0x100]
+    = "Host authentication failed",
+    [ASSH_ERR_SERVICE_NA - 0x100]
+    = "Service not available",
+    [ASSH_ERR_NO_AUTH - 0x100]
+    = "No more authentication method",
+    [ASSH_ERR_DISCONNECTED - 0x100]
+    = "Disconnect by remote host",
+    [ASSH_ERR_NO_MORE_SERVICE - 0x100]
+    = "No more service",
+    [ASSH_ERR_CLOSED - 0x100]
+    = "Session closed",
+    [ASSH_ERR_WEAK_ALGORITHM - 0x100]
+    = "Weak algorithm or key",
+    [ASSH_ERR_TIMEOUT - 0x100]
+    = "Protocol timeout",
+  };
+
+  if (err < 0x100)
+    return "Success";
+  return str[err - 0x100];
+}
+
 assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t inerr)
 {
   if ((inerr & ASSH_ERRSV_FATAL) || s->tr_st == ASSH_TR_CLOSED)

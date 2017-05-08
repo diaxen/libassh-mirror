@@ -215,7 +215,12 @@ enum assh_error_e
   ASSH_ERR_WEAK_ALGORITHM          = 0x119,
   /** Protocol timeout. */
   ASSH_ERR_TIMEOUT                 = 0x120,
+  /** @internal */
+  ASSH_ERR_count,
 };
+
+/** @This returns an error string */
+const char * assh_error_str(assh_error_t err);
 
 /** @This extracts the @ref assh_error_e part of an error code
     returned by a function. */
