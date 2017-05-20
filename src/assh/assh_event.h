@@ -42,6 +42,8 @@ enum assh_event_id_e
   ASSH_EVENT_READ                        = 1,
   /** @see assh_event_transport_write_s */
   ASSH_EVENT_WRITE                       = 2,
+  /** @see assh_event_error_s */
+  ASSH_EVENT_ERROR                       = 3,
 
   /** @see assh_event_kex_hostkey_lookup_s */
   ASSH_EVENT_KEX_HOSTKEY_LOOKUP          = 5,
@@ -100,6 +102,15 @@ enum assh_event_id_e
   ASSH_EVENT_COUNT,
 };
 
+/** The @ref ASSH_EVENT_ERROR event is reported when an error
+    occurs. The event may be reported multiple times during a
+    single session.
+    @see #ASSH_ERR_ERROR @see ASSH_ERR_SEVERITY */
+struct assh_event_error_s
+{
+  assh_error_t code;
+};
+
 /** @internal @see assh_event_done_t */
 #define ASSH_EVENT_DONE_FCN(n)                                          \
   ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_session_s *s,    \
@@ -129,6 +140,8 @@ struct assh_event_s
   void *done_pv;
 
   union {
+
+    struct assh_event_error_s error;
 
 #ifdef ASSH_TRANSPORT_H_
     union assh_event_transport_u transport;
@@ -177,18 +190,17 @@ struct assh_event_s
     The @ref assh_event_done function must be called after each
     successful call to this function, before requesting the next event.
 
-    This function can be called in a loop until the @ref
-    ASSH_ERR_CLOSED error code is returned. Other error codes
-    can be returned but calling this function again may still return
-    more pending events. The @ref ASSH_ERR_CLOSED error is only
-    returned when no more events are pending.
+    This function can be called in a loop until false is returned.
+    When the function returns true, the passed object event is
+    initialized. The function returns false when the sessions has
+    ended and no more event will be reported.
 
     In order for the library to handle protocol timeouts properly, the
     current time in seconds must be passed to this function. The @ref
     assh_session_deadline function can then be used to get the next
     deadline.
 */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_bool_t
 assh_event_get(struct assh_session_s *s,
                struct assh_event_s *e,
                assh_time_t time);
@@ -197,8 +209,14 @@ assh_event_get(struct assh_session_s *s,
     assh_event_get function.
 
     If an error occurred during event processing, it should be
-    reported to this function, especially if communication with the
-    remote side is not possible anymore. */
+    reported to this function, especially if the error must
+    terminate the session.
+
+    When an error is reported, the content of the event object is
+    considered undefined. The error will be reported by an @ref
+    ASSH_EVENT_ERROR event unless shadowed by an other error of higher
+    severity.
+*/
 void
 assh_event_done(struct assh_session_s *s,
                 struct assh_event_s *e,

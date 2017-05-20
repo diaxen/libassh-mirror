@@ -427,16 +427,9 @@ int test(int (*fend)(int, int), int n, int evrate)
 
 	  /********************* handle events */
 
-	  err = assh_event_get(&session[i], &event, 0);
-
-	  if (ASSH_ERR_ERROR(err) != ASSH_OK)
+	  if (!assh_event_get(&session[i], &event, 0))
 	    {
-	      if (!evrate)
-		ASSH_RET_ON_ERR(err);
-
-	      started[i] = 0;
-	      if (ASSH_ERR_ERROR(err) == ASSH_ERR_CLOSED)
-		closed[i] = 1;
+	      closed[i] = 1;
 
 	      if (closed[0] && closed[1])
 		{
@@ -445,11 +438,21 @@ int test(int (*fend)(int, int), int n, int evrate)
 		    TEST_FAIL("(ctx %u seed %u) not all channels are closed\n", i, seed);
 		  goto done;
 		}
+
 	      continue;
 	    }
 
 	  switch (event.id)
 	    {
+	    case ASSH_EVENT_ERROR: {
+	      err = event.error.code;
+	      if (!evrate)
+		ASSH_RET_ON_ERR(err);
+
+	      started[i] = 0;
+	      break;
+	    }
+
 	    case ASSH_EVENT_REQUEST: {        /***** incoming request *****/
 	      struct assh_event_request_s *e = &event.connection.request;
 	      struct rq_fifo_s *rrqf = &global_rq_fifo[i^1];

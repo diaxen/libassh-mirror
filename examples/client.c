@@ -80,8 +80,8 @@ static ASSH_KEX_FILTER_FCN(algo_filter)
          (name->spec & ASSH_ALGO_COMMON);
 }
 
-static assh_error_t
-assh_loop(struct assh_session_s *session,
+static assh_bool_t
+ssh_loop(struct assh_session_s *session,
           struct assh_client_inter_session_s *inter,
           struct pollfd *p)
 {
@@ -92,10 +92,10 @@ assh_loop(struct assh_session_s *session,
     {
       struct assh_event_s event;
 
-      /* get the next event from the assh library */
-      err = assh_event_get(session, &event, t);
-      if (ASSH_ERR_ERROR(err) != ASSH_OK)
-        return err;
+      /* Get the next event from the assh library. Any error reported
+         to the assh_event_done function will end up here. */
+      if (!assh_event_get(session, &event, t))
+        return 0;
 
       switch (event.id)
         {
@@ -103,7 +103,7 @@ assh_loop(struct assh_session_s *session,
           if (!(p[2].revents & POLLIN))
             {
               assh_event_done(session, &event, ASSH_OK);
-              return ASSH_OK;
+              return 1;
             }
 
           /* get ssh stream from socket */
@@ -115,7 +115,7 @@ assh_loop(struct assh_session_s *session,
           if (!(p[2].revents & POLLOUT))
             {
               assh_event_done(session, &event, ASSH_OK);
-              return ASSH_OK;
+              return 1;
             }
 
           /* write ssh stream to socket */
@@ -164,7 +164,7 @@ assh_loop(struct assh_session_s *session,
           if (!(p[1].revents & POLLOUT))
             {
               assh_event_done(session, &event, ASSH_OK);
-              return ASSH_OK;
+              return 1;
             }
 
           struct assh_event_channel_data_s *ev = &event.connection.channel_data;
@@ -279,23 +279,21 @@ int main(int argc, char **argv)
               }
            }
 
-        if (p[2].revents || p[1].revents)
-          err = assh_loop(session, &inter, p);
 
-        if (ASSH_ERR_ERROR(err) != ASSH_OK)
           {
-            fprintf(stderr, "assh error %x sv %x in main loop (errno=%i)\n",
-                    (unsigned)ASSH_ERR_ERROR(err),
-                    (unsigned)ASSH_ERR_SEVERITY(err), errno);
-            static int n = 5;
-            if (!n--)
-              abort();
           }
       }
 
-  } while (ASSH_ERR_ERROR(err) != ASSH_ERR_CLOSED &&
-           inter.state != ASSH_CLIENT_INTER_ST_CLOSED);
+    /* we may have ssh stream to transfer in either size or data
+       to receive from the interactive sessions channel. This is
+       handled by libassh events. */
+    if (p[2].revents || p[1].revents)
+      if (!ssh_loop(session, &inter, p))
+        break;
 
+    /* we quit when the last error has been reported or when the
+       remote side has closed the interactive session. */
+  } while (inter.state != ASSH_CLIENT_INTER_ST_CLOSED);
   assh_session_release(session);
   assh_context_release(context);
 

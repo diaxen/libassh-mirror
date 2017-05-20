@@ -147,33 +147,22 @@ int main()
       time_t t = time(0);
       fprintf(stderr, "============== %s\n", ctime(&t));
 
-      while (1)
+      struct assh_event_s event;
+
+      /** get events from the core. */
+      while (assh_event_get(session, &event, time(NULL)))
 	{
-	  struct assh_event_s event;
-
-	  /** get events from the core and use registered event
-	      handlers to process most events. */
-	  assh_error_t err = assh_event_get(session, &event, time(NULL));
-	  if (ASSH_ERR_ERROR(err) != ASSH_OK)
-	    {
-	      fprintf(stderr, "assh error %x in main loop (errno=%i)\n",
-		      (unsigned)err, errno);
-
-	      if (ASSH_ERR_ERROR(err) == ASSH_ERR_CLOSED)
-		{
-		  close(conn);
-		  break;
-		}
-
-	      continue;
-	    }
-
-	  /** we still have to process events not handled in the table */
 	  switch (event.id)
 	    {
 	    case ASSH_EVENT_READ:
 	    case ASSH_EVENT_WRITE:
-	      err = assh_fd_event(session, &event, conn);
+	      assh_fd_event(session, &event, conn);
+	      break;
+
+	    case ASSH_EVENT_ERROR:
+	      fprintf(stderr, "SSH error: %s\n",
+		      assh_error_str(event.error.code));
+	      assh_event_done(session, &event, ASSH_OK);
 	      break;
 
 	    case ASSH_EVENT_KEX_DONE: {
@@ -241,7 +230,7 @@ int main()
 
 	    case ASSH_EVENT_REQUEST: {
 	      struct assh_event_request_s *ev = &event.connection.request;
-	      err = ASSH_OK;
+	      assh_error_t err = ASSH_OK;
 
 	      if (ev->ch)
 		{

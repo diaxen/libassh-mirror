@@ -33,15 +33,26 @@
 
 #include <assert.h>
 
-assh_error_t assh_event_get(struct assh_session_s *s,
-			    struct assh_event_s *event,
-                            assh_time_t time)
+static ASSH_EVENT_DONE_FCN(assh_event_error_done)
+{
+  assert(s->last_err != 0);
+  s->last_err = 0;
+  return ASSH_OK;
+}
+
+assh_bool_t assh_event_get(struct assh_session_s *s,
+                           struct assh_event_s *event,
+                           assh_time_t time)
 {
   assh_error_t err;
 
   s->time = time;
-  ASSH_RET_IF_TRUE(s->tr_st == ASSH_TR_CLOSED,
-	       ASSH_ERR_CLOSED | ASSH_ERRSV_FIN);
+
+  if (s->last_err)
+    goto err_ev;
+
+  if (s->tr_st == ASSH_TR_CLOSED)
+    return 0;
 
   event->id = ASSH_EVENT_INVALID;
 
@@ -87,7 +98,7 @@ assh_error_t assh_event_get(struct assh_session_s *s,
     {
       /* all events have been reported, end of session. */
       assh_transport_state(s, ASSH_TR_CLOSED);
-      ASSH_RETURN(ASSH_ERR_CLOSED | ASSH_ERRSV_FIN);
+      return 0;
     }
 
   /* run the state machine which extracts deciphered packets from the
@@ -99,10 +110,16 @@ assh_error_t assh_event_get(struct assh_session_s *s,
   if (event->id > 2)
     ASSH_DEBUG("ctx=%p session=%p event id=%u\n", s->ctx, s, event->id);
 #endif
-  return ASSH_OK;
+  return 1;
 
  err:
-  return assh_session_error(s, err);
+  assh_session_error(s, err);
+
+ err_ev:
+  event->id = ASSH_EVENT_ERROR;
+  event->f_done = assh_event_error_done;
+  event->error.code = s->last_err;
+  return 1;
 }
 
 void

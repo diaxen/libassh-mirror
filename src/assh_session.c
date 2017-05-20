@@ -64,6 +64,7 @@ assh_error_t assh_session_init(struct assh_context_s *c,
   s->srv = NULL;
   s->auth_done = 0;
 
+  s->last_err = 0;
   s->time = 0;
   s->deadline = 0;
 
@@ -191,6 +192,7 @@ const char * assh_error_str(assh_error_t err)
     = "Protocol timeout",
   };
 
+  err = ASSH_ERR_ERROR(err);
   if (err < 0x100)
     return "Success";
   return str[err - 0x100];
@@ -198,6 +200,12 @@ const char * assh_error_str(assh_error_t err)
 
 assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t inerr)
 {
+  if (!(inerr & 0x100))
+      return inerr;
+
+  if (ASSH_ERR_SEVERITY(inerr) >= ASSH_ERR_SEVERITY(s->last_err))
+    s->last_err = inerr;
+
   if ((inerr & ASSH_ERRSV_FATAL) || s->tr_st == ASSH_TR_CLOSED)
     {
       assh_transport_state(s, ASSH_TR_CLOSED);

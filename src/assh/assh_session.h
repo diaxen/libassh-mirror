@@ -125,6 +125,10 @@ struct assh_session_s
   /** Pointer to next input keys and algorithms on SSH_MSG_NEWKEYS received. */
   struct assh_kex_keys_s *new_keys_in;
 
+  /** last error reported to @ref assh_session_error. This will be
+      reported as an @ref ASSH_EVENT_ERROR event. */
+  assh_error_t last_err;
+
   /** Current date as reported by the last IO request. */
   assh_time_t time;
   /** The session will terminate with the @ref ASSH_ERR_TIMEOUT error

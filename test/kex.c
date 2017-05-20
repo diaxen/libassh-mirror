@@ -394,20 +394,20 @@ void test(const struct assh_algo_kex_s *kex,
       for (i = 0; i < 2; i++)
 	{
 	  struct assh_event_s event;
-	  assh_error_t err;
 
 	  ASSH_DEBUG("=== session %u %u ===\n", i, stall);
 
-	  err = assh_event_get(&session[i], &event, 0);
-	  if (err != ASSH_OK)
-	    {
-	      if (packet_fuzz || alloc_fuzz)
-		goto done;
-	      TEST_FAIL("event_get %u error %lx\n", i, err);
-	    }
+	  if (!assh_event_get(&session[i], &event, 0))
+	    TEST_FAIL("event_get %u terminated\n", i);
 
 	  switch (event.id)
 	    {
+	    case ASSH_EVENT_ERROR:
+	      if (packet_fuzz || alloc_fuzz)
+		goto done;
+	      TEST_FAIL("error %u %lx\n", i, event.error.code);
+	      break;
+
 	    case ASSH_EVENT_KEX_HOSTKEY_LOOKUP:
 	      assert(i == 1);
 	      event.kex.hostkey_lookup.accept = 1;

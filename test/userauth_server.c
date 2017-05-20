@@ -1251,15 +1251,26 @@ static void test()
 
   while (1)
     {
-      assh_error_t err;
       struct assh_event_s event;
 
       /****************************************************/
       ASSH_DEBUG("=== server %u ===\n", stall);
-      err = assh_event_get(&session[0], &event, 0);
+      if (!assh_event_get(&session[0], &event, 0))
+        TEST_FAIL("session terminated");
 
-      if (ASSH_ERR_ERROR(err) != ASSH_OK)
+      switch (event.id)
 	{
+	case ASSH_EVENT_READ:
+	  if (fifo_rw_event(fifo, &event, 0))
+	    stall++;
+	  break;
+
+	case ASSH_EVENT_WRITE:
+	  if (!fifo_rw_event(fifo, &event, 0))
+	    stall = 0;
+	  break;
+
+        case ASSH_EVENT_ERROR:
 	  switch (test_state)
 	    {
 #if defined(CONFIG_ASSH_SERVER_AUTH_PUBLICKEY)
@@ -1281,21 +1292,9 @@ static void test()
 	      goto done;
 #endif
 	    default:
-	      TEST_FAIL("server event get failed");
+	      TEST_FAIL("server unexpected error event");
 	    }
-	}
-
-      switch (event.id)
-	{
-	case ASSH_EVENT_READ:
-	  if (fifo_rw_event(fifo, &event, 0))
-	    stall++;
-	  break;
-
-	case ASSH_EVENT_WRITE:
-	  if (!fifo_rw_event(fifo, &event, 0))
-	    stall = 0;
-	  break;
+          break;
 
 	case ASSH_EVENT_USERAUTH_SERVER_METHODS:
 	  switch (test_state)
@@ -2085,9 +2084,8 @@ static void test()
 
       /****************************************************/
       ASSH_DEBUG("=== client %u ===\n", stall);
-      err = assh_event_get(&session[1], &event, 0);
-      if (ASSH_ERR_ERROR(err) != ASSH_OK)
-	TEST_FAIL("");
+      if (!assh_event_get(&session[1], &event, 0))
+        TEST_FAIL("session terminated");
 
       switch (event.id)
 	{
@@ -2100,6 +2098,9 @@ static void test()
 	  if (!fifo_rw_event(fifo, &event, 1))
 	    stall = 0;
 	  break;
+
+        case ASSH_EVENT_ERROR:
+          TEST_FAIL("client error event\n");
 
 	default:
 	  ASSH_DEBUG("client: don't know how to handle event %u\n", event.id);

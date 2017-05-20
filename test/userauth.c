@@ -172,19 +172,12 @@ static int test()
 
   while (1)
     {
-      assh_error_t err;
       struct assh_event_s event;
 
       /****************************************************/
       ASSH_DEBUG("=== server %u ===\n", stall);
-      err = assh_event_get(&session[0], &event, 0);
-      if (ASSH_ERR_ERROR(err) != ASSH_OK)
-	{
-	  auth_server_err_count++;
-	  if (packet_fuzz || alloc_fuzz)
-	    break;
-	  TEST_FAIL("");
-	}
+      if (!assh_event_get(&session[0], &event, 0))
+	TEST_FAIL("session terminated");
 
       switch (event.id)
 	{
@@ -199,6 +192,12 @@ static int test()
 	  if (!fifo_rw_event(fifo, &event, 0))
 	    stall = 0;
 	  break;
+
+	case ASSH_EVENT_ERROR:
+	  auth_server_err_count++;
+	  if (packet_fuzz || alloc_fuzz)
+	    goto done;
+	  TEST_FAIL("error event");
 
 	case ASSH_EVENT_KEX_DONE:
 	  assert(!session[0].auth_done);
@@ -369,14 +368,8 @@ static int test()
 
       /****************************************************/
       ASSH_DEBUG("=== client %u ===\n", stall);
-      err = assh_event_get(&session[1], &event, 0);
-      if (ASSH_ERR_ERROR(err) != ASSH_OK)
-	{
-	  auth_client_err_count++;
-	  if (packet_fuzz || alloc_fuzz)
-	    break;
-	  TEST_FAIL("");
-	}
+      if (!assh_event_get(&session[1], &event, 0))
+	TEST_FAIL("session terminated");
 
       switch (event.id)
 	{
@@ -391,6 +384,12 @@ static int test()
 	  if (!fifo_rw_event(fifo, &event, 1))
 	    stall = 0;
 	  break;
+
+	case ASSH_EVENT_ERROR:
+	  auth_client_err_count++;
+	  if (packet_fuzz || alloc_fuzz)
+	    goto done;
+	  TEST_FAIL("error event");
 
 	case ASSH_EVENT_KEX_DONE:
 	  assert(!session[1].auth_done);
@@ -552,6 +551,7 @@ static int test()
 	}
     }
 
+ done:
   ASSH_DEBUG("=== done ===\n");
 
   /* unlimited retries should lead to authentication completion when
