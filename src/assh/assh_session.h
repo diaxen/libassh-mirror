@@ -221,6 +221,14 @@ void assh_session_release(struct assh_session_s *s);
 */
 assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t err);
 
+/** @This fetches the reason code and description string of any
+    received @ref SSH_MSG_DISCONNECT packet. @tt reason and @tt desc
+    may be @tt NULL. */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_session_disconnect_msg(struct assh_session_s *s,
+                            enum assh_ssh_disconnect_e *reason,
+                            struct assh_cbuffer_s *desc);
+
 /** @This returns the current session safety factor which depends on
     algorithms chosen during the last key exchange. The safety
     factor may change during the session lifetime.

@@ -334,6 +334,35 @@ uint_fast8_t assh_session_safety(struct assh_session_s *s)
 }
 
 assh_error_t
+assh_session_disconnect_msg(struct assh_session_s *s,
+                            enum assh_ssh_disconnect_e *reason,
+                            struct assh_cbuffer_s *desc)
+{
+  assh_error_t err;
+  struct assh_packet_s *p = s->in_pck;
+
+  if (p == NULL || p->head.msg != SSH_MSG_DISCONNECT)
+    return ASSH_NO_DATA;
+
+  const uint8_t *dcode = p->head.end;
+  const uint8_t *ddesc, *end;
+
+  ASSH_RET_ON_ERR(assh_packet_check_array(p, dcode, 4, &ddesc));
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, ddesc, &end));
+
+  if (reason)
+    *reason = assh_load_u32(dcode);
+
+  if (desc)
+    {
+      desc->data = ddesc;
+      desc->size = end - ddesc;
+    }
+
+  return ASSH_OK;
+}
+
+assh_error_t
 assh_session_algo_filter(struct assh_session_s *s,
                          assh_kex_filter_t *filter)
 {
