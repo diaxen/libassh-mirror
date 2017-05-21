@@ -41,8 +41,10 @@
 #include <assh/assh_session.h>
 #include <assh/assh_connection.h>
 #include <assh/assh_event.h>
+#include <assh/assh_cipher.h>
+#include <assh/assh_compress.h>
+#include <assh/assh_mac.h>
 
-#include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -165,23 +167,17 @@ assh_client_openssh_userpath(char *buf, size_t buf_size, const char *filename)
 }
 
 void
-assh_client_event_openssh_hk_lookup(struct assh_session_s *s,
+assh_client_event_openssh_hk_lookup(struct assh_session_s *s, FILE *out, FILE *in,
 				    const char *host,
 				    struct assh_event_s *event)
 {
-  struct assh_event_kex_hostkey_lookup_s *ev = &event->kex.hostkey_lookup;
-  struct assh_context_s *c = s->ctx;
-  assh_error_t err;
-
   assert(event->id == ASSH_EVENT_KEX_HOSTKEY_LOOKUP);
 
   char path[128];
   const char *home = assh_client_openssh_userpath(path,
 			      sizeof(path), "known_hosts");
 
-  struct assh_key_s *ek = ev->key;
-
-  assh_client_event_openssh_hk_lookup_va(s, host, event,
+  assh_client_event_openssh_hk_lookup_va(s, out, in, host, event,
 			      "/etc/ssh/ssh_known_hosts", home, NULL);
 }
 
@@ -192,7 +188,6 @@ assh_client_event_openssh_hk_add(struct assh_session_s *s,
 {
   struct assh_event_kex_done_s *ev = &event->kex.done;
   struct assh_key_s *hk = ev->host_key;
-  assh_error_t err;
 
   assert(event->id == ASSH_EVENT_KEX_DONE);
 
@@ -211,7 +206,8 @@ assh_client_event_openssh_hk_add(struct assh_session_s *s,
 }
 
 void
-assh_client_event_openssh_hk_lookup_va(struct assh_session_s *s, const char *host,
+assh_client_event_openssh_hk_lookup_va(struct assh_session_s *s, FILE *out, FILE *in,
+				       const char *host,
 				       struct assh_event_s *event, ...)
 {
   struct assh_event_kex_hostkey_lookup_s *ev =
@@ -221,8 +217,6 @@ assh_client_event_openssh_hk_lookup_va(struct assh_session_s *s, const char *hos
 
   struct assh_key_s *mk, *k, *ek = ev->key;
   struct assh_key_s *keys = NULL;
-  uint_fast16_t line;
-  uint_fast16_t fcount = 0;
   va_list ap;
 
   assert(event->id == ASSH_EVENT_KEX_HOSTKEY_LOOKUP);
@@ -262,7 +256,7 @@ assh_client_event_openssh_hk_lookup_va(struct assh_session_s *s, const char *hos
 	}
       else if (!strcmp(k->type, ek->type))
 	{
-	  fprintf(stderr,
+	  fprintf(out,
 		  "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
 	          "ERROR: It is not possible to trust the remote host because it sent a key which\n"
 		  "does not match the one seen on previous connections. It might not be the ssh\n"
@@ -276,14 +270,15 @@ assh_client_event_openssh_hk_lookup_va(struct assh_session_s *s, const char *hos
 		  "  Type                   : %s\n"
 		  "  Algorithmic safety     : %s (%u%%)\n"
 		  "  SHA256 fingerprint     : %s\n"
-		  "  MD5 fingerprint (weak) : %s\n"
+		  "  MD5 fingerprint        : %s\n"
 		  "\n"
 	          "Known public key stored locally:\n"
 		  "  Type                   : %s\n"
 		  "  Algorithmic safety     : %s (%u%%)\n"
 		  "  Location               : %s\n",
-		  host, ek->type, assh_safety_name(ek->safety), ek->safety, fp_sha, fp_md5,
-		  k->type, assh_safety_name(k->safety), k->safety, k->comment);
+		  host, assh_key_type_name(ek), assh_key_safety_name(ek), assh_key_safety(ek),
+		  fp_sha, fp_md5, assh_key_type_name(k), assh_key_safety_name(k), assh_key_safety(k),
+		  k->comment);
 	  goto done;
 	}
       if (mk->safety > k->safety)
@@ -292,7 +287,7 @@ assh_client_event_openssh_hk_lookup_va(struct assh_session_s *s, const char *hos
 
   if (mk)
     {
-      fprintf(stderr,
+      fprintf(out,
 	      "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
 	      "WARNING: It is not possible to trust the remote host because it sent an\n"
 	      "unknown key. Other key(s) of incompatible type are known from previous\n"
@@ -307,18 +302,19 @@ assh_client_event_openssh_hk_lookup_va(struct assh_session_s *s, const char *hos
 	      "  Type                   : %s\n"
 	      "  Algorithmic safety     : %s (%u%%)\n"
 	      "  SHA256 fingerprint     : %s\n"
-	      "  MD5 fingerprint (weak) : %s\n"
+	      "  MD5 fingerprint        : %s\n"
 	      "\n"
 	      "Best known public key stored locally:\n"
 	      "  Type                   : %s\n"
 	      "  Algorithmic safety     : %s (%u%%)\n"
 	      "  File location          : %s\n",
-	      host, ek->type, assh_safety_name(ek->safety), ek->safety, fp_sha, fp_md5,
-	      mk->type, assh_safety_name(mk->safety), mk->safety, mk->comment);
+	      host, assh_key_type_name(ek), assh_key_safety_name(ek), assh_key_safety(ek),
+	      fp_sha, fp_md5, mk->type,
+	      assh_key_safety_name(mk), assh_key_safety(mk), mk->comment);
     }
   else
     {
-      fprintf(stderr,
+      fprintf(out,
 	      "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
 	      "There is currently no known key stored locally for the remote host. It is not\n"
 	      "possible to ensure you are connecting to the ssh server you are expecting\n"
@@ -331,24 +327,25 @@ assh_client_event_openssh_hk_lookup_va(struct assh_session_s *s, const char *hos
 	      "  Type                   : %s\n"
 	      "  Algorithmic safety     : %s (%u%%)\n"
 	      "  SHA256 fingerprint     : %s\n"
-	      "  MD5 fingerprint (weak) : %s\n",
-	      host, ek->type, assh_safety_name(ek->safety), ek->safety, fp_sha, fp_md5);
+	      "  MD5 fingerprint        : %s\n",
+	      host, assh_key_type_name(ek), assh_key_safety_name(ek), assh_key_safety(ek),
+	      fp_sha, fp_md5);
     }
 
-  int fd = fileno(stdin);
+  int fd = fileno(in);
   assh_bool_t tty = fd >= 0 && isatty(fd);
 
   if (!tty)
     {
-      fprintf(stderr, "\nNot a tty, unable to prompt for key verification...\n");
+      fprintf(out, "\nNot a tty, unable to prompt for key verification...\n");
       goto done;
     }
 
   ASSH_JMP_ON_ERR(assh_key_validate(c, ek), err_);
 
-  fprintf(stderr, "\nHave you verified the untrusted key? (type uppercase yes) : ");
+  fprintf(out, "\nHave you verified the untrusted key? (type uppercase yes) : ");
 
-  if (getchar() != 'Y' || getchar() != 'E' || getchar() != 'S')
+  if (getc(in) != 'Y' || getc(in) != 'E' || getc(in) != 'S')
     goto done;
 
  accept:
@@ -363,8 +360,8 @@ assh_client_event_openssh_hk_lookup_va(struct assh_session_s *s, const char *hos
 }
 
 /* print string, skipping any terminal control characters */
-static void
-assh_client_print_string(const struct assh_cbuffer_s *str)
+void
+assh_client_print_string(FILE *out, const struct assh_cbuffer_s *str)
 {
   size_t i;
 
@@ -373,12 +370,12 @@ assh_client_print_string(const struct assh_cbuffer_s *str)
       char c = str->str[i];
 
       if ((c >= ' ' && c <= 127) || c == '\n' || c == '\t')
-	fputc(c, stderr);
+	fputc(c, out);
     }
 }
 
 static assh_error_t
-assh_client_load_key_passphrase(struct assh_context_s *c,
+assh_client_load_key_passphrase(struct assh_context_s *c, FILE *out, FILE *in,
 				struct assh_key_s **head,
 				const struct assh_key_ops_s *algo,
 				enum assh_algo_class_e role,
@@ -396,18 +393,18 @@ assh_client_load_key_passphrase(struct assh_context_s *c,
       return ASSH_OK;
 
     case ASSH_ERR_MISSING_KEY: {
-      fprintf(stderr, "Passphrase for `%s': ",
+      fprintf(out, "Passphrase for `%s': ",
 	      filename);
       const char *pass;
-      ASSH_RET_ON_ERR(assh_fd_get_password(c, &pass, 80, 0, 0));
-      putc('\n', stderr);
+      ASSH_RET_ON_ERR(assh_fd_get_password(c, &pass, 80, fileno(in), 0));
+      putc('\n', out);
       err = assh_load_key_filename(c, head, algo, role,
 				   filename, format, pass, 0);
       assh_free(c, (void*)pass);
     }
 
     default:
-      ASSH_RET_ON_ERR(err);
+      ASSH_RETURN(err);
     }
 }
 
@@ -425,7 +422,7 @@ const struct assh_client_openssh_user_key_s assh_client_openssh_user_key_default
 };
 
 void
-assh_client_event_openssh_auth(struct assh_session_s *s,
+assh_client_event_openssh_auth(struct assh_session_s *s, FILE *out, FILE *in,
 			       const char *user, const char *host,
 			       enum assh_userauth_methods_e *methods,
 			       const struct assh_client_openssh_user_key_s *key_files,
@@ -441,8 +438,8 @@ assh_client_event_openssh_auth(struct assh_session_s *s,
 	&event->userauth_client.banner;
 
       assert(event->id == ASSH_EVENT_USERAUTH_CLIENT_BANNER);
-      assh_client_print_string(&ev->text);
-      fputc('\n', stderr);
+      assh_client_print_string(out, &ev->text);
+      fputc('\n', out);
 
       assh_event_done(s, event, ASSH_OK);
       break;
@@ -478,7 +475,7 @@ assh_client_event_openssh_auth(struct assh_session_s *s,
 						      key_files->filename);
 
 		  if (path)
-		    assh_client_load_key_passphrase(c, &ev->keys,
+		    assh_client_load_key_passphrase(c, out, in, &ev->keys,
 		      key_files->algo, key_files->role, path, key_files->format);
 		}
 	    }
@@ -500,11 +497,11 @@ assh_client_event_openssh_auth(struct assh_session_s *s,
 	  err = ASSH_ERR_NOTSUP;
 	  const char *pass;
 
-	  if (isatty(0))
+	  if (isatty(fileno(in)))
 	    {
-	      fprintf(stderr, "Password for `%s@%s': ", user, host);
-	      err = assh_fd_get_password(c, &pass, 80, 0, 0);
-	      fputc('\n', stderr);
+	      fprintf(out, "Password for `%s@%s': ", user, host);
+	      err = assh_fd_get_password(c, &pass, 80, fileno(in), 0);
+	      fputc('\n', out);
 	    }
 
 	  if (!err)
@@ -531,7 +528,7 @@ assh_client_event_openssh_auth(struct assh_session_s *s,
 
       if (m & ASSH_USERAUTH_METHOD_KEYBOARD)
 	{
-	  if (isatty(0))
+	  if (isatty(fileno(in)))
 	    {
 	      /* select keyboard interactive authentication */
 	      assh_buffer_strset(&ev->keyboard_sub, "pam");
@@ -551,21 +548,21 @@ assh_client_event_openssh_auth(struct assh_session_s *s,
       struct assh_event_userauth_client_pwchange_s *ev =
 	&event->userauth_client.pwchange;
 
-      assh_client_print_string(&ev->prompt);
-      fputc('\n', stderr);
+      assh_client_print_string(out, &ev->prompt);
+      fputc('\n', out);
 
       const char *old_pass, *new_pass;
-      fprintf(stderr, "Current password for `%s@%s': ",
+      fprintf(out, "Current password for `%s@%s': ",
 	      user, host);
-      err = assh_fd_get_password(c, &old_pass, 80, 0, 0);
-      fputc('\n', stderr);
+      err = assh_fd_get_password(c, &old_pass, 80, fileno(in), 0);
+      fputc('\n', out);
 
       if (!err)
 	{
-	  fprintf(stderr, "New password for `%s@%s': ",
+	  fprintf(out, "New password for `%s@%s': ",
 		  user, host);
-	  err = assh_fd_get_password(c, &new_pass, 80, 0, 0);
-	  fputc('\n', stderr);
+	  err = assh_fd_get_password(c, &new_pass, 80, fileno(in), 0);
+	  fputc('\n', out);
 
 	  if (!err)
 	    {
@@ -599,29 +596,32 @@ assh_client_event_openssh_auth(struct assh_session_s *s,
       uint_fast8_t i = 0, count = ev->count;
       struct assh_cbuffer_s rsp[count];
 
+      err = ASSH_OK;
       if (count)
 	{
-	  fprintf(stderr, "Interactive authentication for `%s@%s':\n", user, host);
+	  fprintf(out, "Interactive user authentication for `%s@%s':\n", user, host);
 
 	  if (ev->instruction.len)
 	    {
-	      assh_client_print_string(&ev->instruction);
-	      fputc('\n', stderr);
+	      assh_client_print_string(out, &ev->instruction);
+	      fputc('\n', out);
 	    }
 
 	  for (; i < count; i++)
 	    {
 	      const char *v;
-	      assh_client_print_string(&ev->prompts[i]);
-	      err = assh_fd_get_password(c, &v, 80, 0, (ev->echos >> i) & 1);
-	      fputc('\n', stderr);
-	      assh_buffer_strset(&rsp[i], err ? "" : v);
+	      assh_client_print_string(out, &ev->prompts[i]);
+	      err = assh_fd_get_password(c, &v, 80, fileno(in), (ev->echos >> i) & 1);
+	      if (err)
+		break;
+	      fputc('\n', out);
+	      assh_buffer_strset(&rsp[i], v);
 	    }
 
 	  ev->responses = rsp;
 	}
-
-      assh_event_done(s, event, ASSH_OK);
+#warning do not process events with errors, try cltr-d in password input
+      assh_event_done(s, event, err);
 
       while (i--)
 	assh_free(c, (void*)rsp[i].str);
@@ -632,6 +632,85 @@ assh_client_event_openssh_auth(struct assh_session_s *s,
     default:
       abort();
     }
+}
+
+void
+assh_client_print_kex_details(struct assh_session_s *s, FILE *out,
+			      const struct assh_event_s *event)
+{
+  const struct assh_event_kex_done_s *ev = &event->kex.done;
+
+  assert(event->id == ASSH_EVENT_KEX_DONE);
+  const struct assh_algo_kex_s *kex = ev->algo_kex;
+
+  fprintf(out,
+	  "Key exchange details:\n"
+	  "  remote software   : ");
+  assh_client_print_string(out, &ev->ident);
+
+  fprintf(out, "\n"
+	  "  key exchange      : %-38s safety %u%% (%s)\n",
+	  assh_algo_name(&kex->algo),
+	  assh_algo_safety(&kex->algo),
+	  assh_algo_safety_name(&kex->algo)
+	  );
+
+  if (ev->host_key)
+    fprintf(out,
+	  "  host key          : %-38s safety %u%% (%s)\n",
+	  assh_key_type_name(ev->host_key),
+	  assh_key_safety(ev->host_key),
+	  assh_key_safety_name(ev->host_key)
+	  );
+
+  const struct assh_algo_cipher_s *cipher_in = ev->algos_in->cipher;
+  const struct assh_algo_cipher_s *cipher_out = ev->algos_out->cipher;
+
+  fprintf(out,
+	  "  input cipher      : %-38s safety %u%% (%s)\n"
+	  "  output cipher     : %-38s safety %u%% (%s)\n",
+	  assh_algo_name(&cipher_in->algo),
+	  assh_algo_safety(&cipher_in->algo),
+	  assh_algo_safety_name(&cipher_in->algo),
+	  assh_algo_name(&cipher_out->algo),
+	  assh_algo_safety(&cipher_out->algo),
+	  assh_algo_safety_name(&cipher_out->algo)
+	  );
+
+  const struct assh_algo_mac_s *mac_in = ev->algos_in->mac;
+  const struct assh_algo_mac_s *mac_out = ev->algos_out->mac;
+
+  if (!cipher_in->auth_size)
+    fprintf(out,
+	  "  input mac         : %-38s safety %u%% (%s)\n",
+	  assh_algo_name(&mac_in->algo),
+	  assh_algo_safety(&mac_in->algo),
+          assh_algo_safety_name(&mac_in->algo)
+	    );
+
+  if (!cipher_out->auth_size)
+    fprintf(out,
+	  "  output mac        : %-38s safety %u%% (%s)\n",
+	  assh_algo_name(&mac_out->algo),
+	  assh_algo_safety(&mac_out->algo),
+	  assh_algo_safety_name(&mac_out->algo)
+	    );
+
+  if (ev->algos_in->cmp != &assh_compress_none)
+    fprintf(out,
+	  "  input compression : %-38s safety %u%% (%s)\n",
+	  assh_algo_name(&ev->algos_in->cmp->algo),
+	  assh_algo_safety(&ev->algos_in->cmp->algo),
+	  assh_algo_safety_name(&ev->algos_in->cmp->algo)
+	  );
+
+  if (ev->algos_out->cmp != &assh_compress_none)
+    fprintf(out,
+	  "  output compression: %-38s safety %u%% (%s)\n",
+	  assh_algo_name(&ev->algos_out->cmp->algo),
+	  assh_algo_safety(&ev->algos_out->cmp->algo),
+	  assh_algo_safety_name(&ev->algos_out->cmp->algo)
+	  );
 }
 
 void
@@ -650,9 +729,6 @@ assh_client_event_inter_session(struct assh_session_s *s,
 				struct assh_event_s *event,
 				struct assh_client_inter_session_s *ctx)
 {
-  struct assh_context_s *c = s->ctx;
-  assh_error_t err;
-
   switch (event->id)
     {
     case ASSH_EVENT_CONNECTION_START:
@@ -770,3 +846,31 @@ err:
       break;
     }
 }
+
+void
+assh_client_event_print_error(struct assh_session_s *s,
+			      FILE *out, struct assh_event_s *event)
+{
+  assert(event->id == ASSH_EVENT_ERROR);
+
+  struct assh_event_error_s *ev = &event->error;
+  /* report library error code */
+  fprintf(out, "SSH error: %s\n",
+	  assh_error_str(ev->code));
+
+  if (ASSH_ERR_ERROR(ev->code) == ASSH_ERR_DISCONNECTED)
+    {
+      /* report remote host disconnect message if any */
+      uint32_t reason;
+      struct assh_cbuffer_s desc;
+      if (!assh_session_disconnect_msg(s, &reason, &desc))
+	{
+	  fprintf(out, "Server message: ");
+	  assh_client_print_string(out, &desc);
+	  fprintf(out, " (reason=%u)\n", reason);
+	}
+    }
+
+  assh_event_done(s, event, ASSH_OK);
+}
+

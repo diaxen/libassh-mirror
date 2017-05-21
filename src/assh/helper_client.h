@@ -43,6 +43,8 @@
 
 #include "assh_key.h"
 
+#include <stdio.h>
+
 #ifdef CONFIG_ASSH_CLIENT
 
 /** @This loads all public keys associated to a given host name and
@@ -80,7 +82,7 @@ assh_client_openssh_add_known_hosts(struct assh_context_s *c,
     any case.
 */
 void
-assh_client_event_openssh_hk_lookup_va(struct assh_session_s *s,
+assh_client_event_openssh_hk_lookup_va(struct assh_session_s *s, FILE *out, FILE *in,
                                        const char *host,
                                        struct assh_event_s *event, ...);
 
@@ -91,7 +93,7 @@ assh_client_event_openssh_hk_lookup_va(struct assh_session_s *s,
     any case.
 */
 void
-assh_client_event_openssh_hk_lookup(struct assh_session_s *s,
+assh_client_event_openssh_hk_lookup(struct assh_session_s *s, FILE *out, FILE *in,
                                     const char *host,
                                     struct assh_event_s *event);
 
@@ -149,11 +151,15 @@ extern const struct assh_client_openssh_user_key_s
     any case.
 */
 void
-assh_client_event_openssh_auth(struct assh_session_s *s,
+assh_client_event_openssh_auth(struct assh_session_s *s, FILE *out, FILE *in,
 			       const char *user, const char *host,
 			       enum assh_userauth_methods_e *methods,
 			       const struct assh_client_openssh_user_key_s *key_files,
 			       struct assh_event_s *event);
+
+void
+assh_client_print_kex_details(struct assh_session_s *s, FILE *out,
+			      const struct assh_event_s *event);
 
 enum assh_client_inter_session_state_e
 {
@@ -195,6 +201,19 @@ void
 assh_client_event_inter_session(struct assh_session_s *s,
                                 struct assh_event_s *event,
                                 struct assh_client_inter_session_s *state);
+
+/** @This writes a string to the passed stream, filtering out terminal
+    control characters. */
+void
+assh_client_print_string(FILE *out, const struct assh_cbuffer_s *str);
+
+/** @This prints details of the error event.
+
+    @This takes care of calling the @ref assh_event_done function.
+ */
+void
+assh_client_event_print_error(struct assh_session_s *s,
+                              FILE *out, struct assh_event_s *event);
 
 #endif
 
