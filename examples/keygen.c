@@ -354,11 +354,11 @@ int main(int argc, char *argv[])
             }
         }
 
-      fprintf(stderr, "Key algorithmic safety: %s (%u%%)\n",
-              assh_key_safety_name(key), assh_key_safety(key));
-
       if (type == NULL)
         fprintf(stderr, "Key type: %s\n", assh_key_type_name(key));
+
+      fprintf(stderr, "Key algorithmic safety: %s (%u%%)\n",
+              assh_key_safety_name(key), assh_key_safety(key));
 
       if (key->comment != NULL)
         fprintf(stderr, "Key comment: %s\n", key->comment);
@@ -383,7 +383,11 @@ int main(int argc, char *argv[])
       if (no_outpass || ofmt->public)
         passphrase = NULL;
       else if (passphrase == NULL)
-        passphrase = get_passphrase("Output key passphrase: ", context);
+        {
+          passphrase = get_passphrase("Output key passphrase: ", context);
+          if (!*passphrase)
+            passphrase = NULL;
+        }
 
       if (key->comment == NULL)
         {
