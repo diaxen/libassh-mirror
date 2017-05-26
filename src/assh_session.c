@@ -198,6 +198,37 @@ const char * assh_error_str(assh_error_t err)
   return str[err - 0x100];
 }
 
+static assh_error_t
+assh_session_send_disconnect(struct assh_session_s *s,
+                             enum assh_ssh_disconnect_e reason,
+                             const char *desc)
+{
+  assh_error_t err;
+
+  size_t sz = 0;
+  if (desc != NULL)
+    sz = 4 + strlen(desc);
+
+  struct assh_packet_s *pout;
+  ASSH_RET_ON_ERR(assh_packet_alloc(s->ctx, SSH_MSG_DISCONNECT,
+                                 3 * 4 + sz, &pout));
+
+  ASSH_ASSERT(assh_packet_add_u32(pout, reason)); /* reason code */
+
+  uint8_t *str;
+  ASSH_ASSERT(assh_packet_add_string(pout, sz, &str)); /* description */
+  if (desc != NULL)
+    memcpy(str, desc, sz - 4);
+
+  ASSH_ASSERT(assh_packet_add_string(pout, 0, NULL)); /* language */
+
+  assh_transport_push(s, pout);
+
+  s->deadline = s->time + 1;
+
+  return ASSH_OK;
+}
+
 assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t inerr)
 {
   if (!(inerr & 0x100))
@@ -309,28 +340,9 @@ assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t inerr)
     return inerr;
 
   ASSH_DEBUG("disconnect packet reason: %u (%s)\n", reason, desc);
+
   assh_transport_state(s, ASSH_TR_DISCONNECT);
-
-  struct assh_packet_s *pout;
-  size_t sz = 0;
-  if (desc != NULL)
-    sz = 4 + strlen(desc);
-
-  if (assh_packet_alloc(s->ctx, SSH_MSG_DISCONNECT, 3 * 4 + sz, &pout) == ASSH_OK)
-    {
-      ASSH_ASSERT(assh_packet_add_u32(pout, reason)); /* reason code */
-
-      uint8_t *str;
-      ASSH_ASSERT(assh_packet_add_string(pout, sz, &str)); /* description */
-      if (desc != NULL)
-	memcpy(str, desc, sz - 4);
-
-      ASSH_ASSERT(assh_packet_add_string(pout, 0, NULL)); /* language */
-
-      assh_transport_push(s, pout);
-
-      s->deadline = s->time + 1;
-    }
+  assh_session_send_disconnect(s, reason, desc);
 
   return inerr | ASSH_ERRSV_FIN;
 }
@@ -339,6 +351,35 @@ uint_fast8_t assh_session_safety(struct assh_session_s *s)
 {
   return ASSH_MIN(s->cur_keys_out->safety,
                   s->cur_keys_in->safety);
+}
+
+assh_error_t
+assh_session_disconnect(struct assh_session_s *s,
+                        enum assh_ssh_disconnect_e reason,
+                        const char *desc)
+{
+  assh_error_t err;
+
+  switch (s->tr_st)
+    {
+    case ASSH_TR_IDENT:
+    case ASSH_TR_CLOSED:
+    case ASSH_TR_FIN:
+      ASSH_RETURN(ASSH_ERR_STATE);
+
+    case ASSH_TR_KEX_INIT:
+    case ASSH_TR_KEX_WAIT:
+    case ASSH_TR_KEX_SKIP:
+    case ASSH_TR_KEX_RUNNING:
+    case ASSH_TR_NEWKEY:
+    case ASSH_TR_SERVICE:
+    case ASSH_TR_SERVICE_KEX:
+      ASSH_RET_ON_ERR(assh_session_send_disconnect(s, reason, desc));
+      assh_transport_state(s, ASSH_TR_DISCONNECT);
+
+    case ASSH_TR_DISCONNECT:
+      return ASSH_OK;
+    }
 }
 
 assh_error_t

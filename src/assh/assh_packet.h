@@ -183,7 +183,7 @@ enum assh_ssh_msg_e
   SSH_MSG_CHANNEL_FAILURE           = 100,
 };
 
-/** @internal @This specifies standard ssh disconnect reasons. */
+/** @This specifies standard ssh disconnect reasons. */
 enum assh_ssh_disconnect_e
 {
   SSH_DISCONNECT_HOST_NOT_ALLOWED_TO_CONNECT    =  1,

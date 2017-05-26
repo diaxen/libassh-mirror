@@ -448,16 +448,14 @@ int main(int argc, char **argv)
           }
        }
 
-    /* we may have ssh stream to transfer in either size or data
-       to receive from the interactive sessions channel. This is
-       handled by libassh events. */
-    if (p[2].revents || p[1].revents)
-      if (!ssh_loop(session, &inter, p))
-        break;
+    /* we disconnect when the remote side has closed the interactive
+       session. */
+    if (inter.state == ASSH_CLIENT_INTER_ST_CLOSED)
+      assh_session_disconnect(session, SSH_DISCONNECT_BY_APPLICATION, NULL);
 
-    /* we quit when the last error has been reported or when the
-       remote side has closed the interactive session. */
-  } while (inter.state != ASSH_CLIENT_INTER_ST_CLOSED);
+    /* let our ssh event loop handle ssh stream io events, channel data
+       input events and any other ssh related events. */
+  } while (!(p[2].revents || p[1].revents) || ssh_loop(session, &inter, p));
 
   /* restore terminal attributes */
   if (isatty(0))
@@ -466,6 +464,8 @@ int main(int argc, char **argv)
   /* not useful here as we are about to leave... */
   assh_session_release(session);
   assh_context_release(context);
+
+  close(sock);
 
   return 0;
 }

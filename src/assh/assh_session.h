@@ -225,6 +225,15 @@ void assh_session_release(struct assh_session_s *s);
 */
 assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t err);
 
+/** @This schedules the end of the session and sends a
+    SSH_MSG_DISCONNECT packet to the remote host. The @ref
+    assh_event_get function must still be called until no more events
+    are available. */
+assh_error_t
+assh_session_disconnect(struct assh_session_s *s,
+                        enum assh_ssh_disconnect_e reason,
+                        const char *desc);
+
 /** @This fetches the reason code and description string of any
     received @ref SSH_MSG_DISCONNECT packet. @tt reason and @tt desc
     may be @tt NULL. */
