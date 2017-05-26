@@ -330,8 +330,13 @@ static ASSH_EVENT_DONE_FCN(assh_event_write_done)
     {
     /* check if sending of ident string has completed */
     case ASSH_TR_OUT_IDENT_DONE:
-      s->stream_out_st = s->stream_out_size >= sizeof(ASSH_IDENT) - 1
-	? ASSH_TR_OUT_PACKETS : ASSH_TR_OUT_IDENT_PAUSE;
+      if (s->stream_out_size >= sizeof(ASSH_IDENT) - 1)
+	s->stream_out_st = ASSH_TR_OUT_PACKETS;
+      else if (s->tr_st < ASSH_TR_DISCONNECT)
+	s->stream_out_st = ASSH_TR_OUT_IDENT_PAUSE;
+      else
+	s->stream_out_st = ASSH_TR_OUT_IDENT;
+
       return ASSH_OK;
 
     /* check if sending of packet has completed */
@@ -344,8 +349,14 @@ static ASSH_EVENT_DONE_FCN(assh_event_write_done)
       if (s->stream_out_size < p->data_size)
 	{
 	  /* packet partially sent, need to report one more write
-	     event later. Yield to the input state machine for now. */
-	  s->stream_out_st = ASSH_TR_OUT_PACKETS_PAUSE;
+	     event later. */
+
+	  if (s->tr_st < ASSH_TR_DISCONNECT)
+	    /* Yield to the input state machine for now. */
+	    s->stream_out_st = ASSH_TR_OUT_PACKETS_PAUSE;
+	  else
+	    s->stream_out_st = ASSH_TR_OUT_PACKETS_ENCIPHERED;
+
 	  return ASSH_OK;
 	}
 
@@ -376,6 +387,9 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
     {
     /* the write stream buffer is the constant ident string */
     case ASSH_TR_OUT_IDENT: {
+      if (s->tr_st >= ASSH_TR_DISCONNECT)
+	return ASSH_OK;
+
       *data = (uint8_t*)ASSH_IDENT + s->stream_out_size;
       *size = sizeof(ASSH_IDENT) - 1 - s->stream_out_size;
       s->stream_out_st = ASSH_TR_OUT_IDENT_DONE;
