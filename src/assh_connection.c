@@ -697,7 +697,7 @@ assh_connection_got_request_reply(struct assh_session_s *s,
         {
         case ASSH_CHANNEL_ST_OPEN_SENT:
         case ASSH_CHANNEL_ST_OPEN_RECEIVED:
-          ASSH_RETURN(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+	  ASSH_RETURN(ASSH_ERR_PROTOCOL | ASSH_ERRSV_FATAL);
 
         case ASSH_CHANNEL_ST_OPEN:
         case ASSH_CHANNEL_ST_EOF_SENT:
