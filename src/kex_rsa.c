@@ -140,8 +140,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
   struct assh_kex_rsa_private_s *pv = s->kex_pv;
   assh_error_t err;
 
-  ASSH_RET_IF_TRUE(pv->state != ASSH_KEX_RSA_CLIENT_LOOKUP_HOST_KEY_WAIT,
-               ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+  assert(pv->state == ASSH_KEX_RSA_CLIENT_LOOKUP_HOST_KEY_WAIT);
 
   if (!e->kex.hostkey_lookup.accept)
     ASSH_RETURN(assh_kex_end(s, 0) | ASSH_ERRSV_DISCONNECT);
@@ -542,8 +541,7 @@ static ASSH_KEX_PROCESS_FCN(assh_kex_rsa_process)
                     | ASSH_ERRSV_DISCONNECT);
 
     case ASSH_KEX_RSA_CLIENT_LOOKUP_HOST_KEY_WAIT:
-      ASSH_RETURN(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
-      break;
+      ASSH_UNREACHABLE();
 
     case ASSH_KEX_RSA_CLIENT_WAIT_SIGN:
       if (p == NULL)

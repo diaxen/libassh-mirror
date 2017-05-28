@@ -888,9 +888,7 @@ int test(int (*fend)(int, int), int n, int evrate)
 
 	  if (evrate && !(rand() % evrate))
 	    {
-	      do {
-		everr = (rand() % 32 + 0x100);
-	      } while (everr == ASSH_ERR_STATE);
+	      everr = (rand() % 32 + 0x100);
 	      everr |= ((1 << (12 + rand() % 3))
 			& (ASSH_ERRSV_DISCONNECT | ASSH_ERRSV_FIN));
 	    }

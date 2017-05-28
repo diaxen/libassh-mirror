@@ -187,8 +187,6 @@ enum assh_error_e
   ASSH_ERR_MAC                     = 0x109,
   /** Packet content doesn't match current state of the protocol. */
   ASSH_ERR_PROTOCOL                = 0x10a,
-  /** The function can not be called in the current state of the protocol. */
-  ASSH_ERR_STATE                   = 0x10b,
   /** Crypto initialization or processing error. */
   ASSH_ERR_CRYPTO                  = 0x10c,
   /** Unsupported parameter value. */

@@ -269,14 +269,13 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
     }
 
     default:
-      ASSH_RETURN(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+      ASSH_UNREACHABLE();
     }
 }
 
 assh_error_t assh_transport_read(struct assh_session_s *s,
 				 struct assh_event_s *e)
 {
-  assh_error_t err;
   struct assh_kex_keys_s *k = s->cur_keys_in;
   uint8_t **data = &e->transport.read.buf.data;
   size_t *size = &e->transport.read.buf.size;
@@ -309,7 +308,7 @@ assh_error_t assh_transport_read(struct assh_session_s *s,
     }
 
     default:
-      ASSH_RETURN(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+      ASSH_UNREACHABLE();
     }
 
   e->id = ASSH_EVENT_READ;
@@ -320,8 +319,6 @@ assh_error_t assh_transport_read(struct assh_session_s *s,
 
 static ASSH_EVENT_DONE_FCN(assh_event_write_done)
 {
-  assh_error_t err;
-
   size_t wr_size = e->transport.write.transferred;
   assert(wr_size <= e->transport.write.buf.size);
   s->stream_out_size += wr_size;
@@ -372,7 +369,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_write_done)
     }
 
     default:
-      ASSH_RETURN(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+      ASSH_UNREACHABLE();
     }
 }
 
@@ -541,7 +538,7 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
       return ASSH_OK;
 
     default:
-      ASSH_RETURN(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+      ASSH_UNREACHABLE();
     }
 
   /* a buffer is available for output, return a write event */
@@ -780,7 +777,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
       break;
 
     case ASSH_TR_CLOSED:
-      ASSH_RETURN(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+      ASSH_UNREACHABLE();
     }
 
  done:

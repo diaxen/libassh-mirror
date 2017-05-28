@@ -132,7 +132,7 @@ assh_fd_event(struct assh_session_s *s,
     }
 
     default:
-      abort();
+      ASSH_UNREACHABLE();
     }
 
  err_:

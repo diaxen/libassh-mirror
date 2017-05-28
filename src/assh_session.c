@@ -162,8 +162,6 @@ const char * assh_error_str(assh_error_t err)
     = "Message authentication error",
     [ASSH_ERR_PROTOCOL - 0x100]
     = "Protocol error",
-    [ASSH_ERR_STATE - 0x100]
-    = "Invalid operation in current state",
     [ASSH_ERR_CRYPTO - 0x100]
     = "Cryptographic operation error ",
     [ASSH_ERR_NOTSUP - 0x100]
@@ -269,11 +267,7 @@ assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t inerr)
     case ASSH_ERR_DISCONNECTED:
     case ASSH_ERR_CLOSED:
       assh_transport_state(s, ASSH_TR_FIN);
-      return inerr | ASSH_ERRSV_FIN;      
-
-    case ASSH_ERR_STATE:
-      assh_transport_state(s, ASSH_TR_CLOSED);
-      return inerr | ASSH_ERRSV_FATAL;      
+      return inerr | ASSH_ERRSV_FIN;
 
     case ASSH_ERR_MEM:
       reason = SSH_DISCONNECT_RESERVED;
@@ -363,9 +357,8 @@ assh_session_disconnect(struct assh_session_s *s,
   switch (s->tr_st)
     {
     case ASSH_TR_IDENT:
-    case ASSH_TR_CLOSED:
-    case ASSH_TR_FIN:
-      ASSH_RETURN(ASSH_ERR_STATE);
+      assh_transport_state(s, ASSH_TR_CLOSED);
+      return ASSH_OK;
 
     case ASSH_TR_KEX_INIT:
     case ASSH_TR_KEX_WAIT:
@@ -379,6 +372,10 @@ assh_session_disconnect(struct assh_session_s *s,
 
     case ASSH_TR_DISCONNECT:
       return ASSH_OK;
+
+    case ASSH_TR_CLOSED:
+    case ASSH_TR_FIN:
+      ASSH_RETURN(ASSH_ERR_CLOSED);
     }
 }
 
@@ -421,7 +418,7 @@ assh_session_algo_filter(struct assh_session_s *s,
     {
     case ASSH_TR_KEX_WAIT:
     case ASSH_TR_SERVICE_KEX:
-      ASSH_RETURN(ASSH_ERR_STATE);
+      return ASSH_NOT_FOUND;
     default:
       s->kex_filter = filter != NULL
         ? filter : assh_session_kex_filter;

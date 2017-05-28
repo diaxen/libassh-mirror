@@ -220,7 +220,7 @@ ASSH_INLINE void assh_clear(void *data, size_t len)
 /** @internal */
 #define ASSH_ALIGN8(x) ((((x) - 1) | 7) + 1)
 
-#if defined(__GNUC__) && !defined(CONFIG_ASSH_DEBUG)
+#if defined(__GNUC__) && defined(NDEBUG)
 # define ASSH_UNREACHABLE()  __builtin_unreachable()
 #else
 # define ASSH_UNREACHABLE()  do { abort(); } while (1)

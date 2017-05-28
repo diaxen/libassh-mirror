@@ -149,8 +149,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_dh_host_key_lookup_done)
   const struct assh_kex_dh_group_s *gr = pv->group;
   assh_error_t err;
 
-  ASSH_RET_IF_TRUE(pv->state != ASSH_KEX_DH_CLIENT_LOOKUP_HOST_KEY_WAIT,
-               ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+  assert(pv->state == ASSH_KEX_DH_CLIENT_LOOKUP_HOST_KEY_WAIT);
 
   if (!e->kex.hostkey_lookup.accept)
     ASSH_RETURN(assh_kex_end(s, 0) | ASSH_ERRSV_DISCONNECT);
@@ -418,7 +417,7 @@ static ASSH_KEX_PROCESS_FCN(assh_kex_dh_process)
                     | ASSH_ERRSV_DISCONNECT);
 
     case ASSH_KEX_DH_CLIENT_LOOKUP_HOST_KEY_WAIT:
-      ASSH_RETURN(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+      ASSH_UNREACHABLE();
 #endif
 
 #ifdef CONFIG_ASSH_SERVER

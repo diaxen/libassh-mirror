@@ -434,8 +434,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_req_pwchange_done)
   const struct assh_event_userauth_client_pwchange_s *ev = &e->userauth_client.pwchange;
   assh_error_t err;
 
-  ASSH_RET_IF_TRUE(pv->state != ASSH_USERAUTH_ST_GET_PWCHANGE,
-	       ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+  assert(pv->state == ASSH_USERAUTH_ST_GET_PWCHANGE);
 
   assh_packet_release(pv->pck);
   pv->pck = NULL;
@@ -510,7 +509,7 @@ static ASSH_USERAUTH_CLIENT_PROCESS(assh_userauth_client_password_process)
       return ASSH_NO_DATA;
 
     default:
-      ASSH_RETURN(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+      ASSH_UNREACHABLE();
     }
 }
 
@@ -551,8 +550,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_keyboard_info_done)
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
-  ASSH_RET_IF_TRUE(pv->state != ASSH_USERAUTH_ST_KEYBOARD_INFO,
-	       ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+  assert(pv->state == ASSH_USERAUTH_ST_KEYBOARD_INFO);
 
   assh_packet_release(pv->pck);
   pv->pck = NULL;
@@ -742,7 +740,6 @@ assh_userauth_client_pck_hostbased(struct assh_session_s *s,
 static ASSH_EVENT_DONE_FCN(assh_userauth_client_hostbased_sign_done)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
 
   struct assh_packet_s *pout = pv->pck;
   const struct assh_event_userauth_client_sign_s *ev = &e->userauth_client.sign;
@@ -917,7 +914,6 @@ static assh_error_t assh_userauth_client_pck_pubkey(struct assh_session_s *s,
 static ASSH_EVENT_DONE_FCN(assh_userauth_client_pubkey_sign_done)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
 
   struct assh_packet_s *pout = pv->pck;
   const struct assh_event_userauth_client_sign_s *ev = &e->userauth_client.sign;
@@ -1070,8 +1066,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_username_done)
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
-  ASSH_RET_IF_TRUE(pv->state != ASSH_USERAUTH_ST_GET_USERNAME,
-	       ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+  assert(pv->state == ASSH_USERAUTH_ST_GET_USERNAME);
 
   const struct assh_event_userauth_client_user_s *ev = &e->userauth_client.user;
 
@@ -1109,8 +1104,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_get_methods_done)
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
-  ASSH_RET_IF_TRUE(pv->state != ASSH_USERAUTH_ST_GET_METHODS,
-	       ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+  assert(pv->state == ASSH_USERAUTH_ST_GET_METHODS);
 
   const struct assh_event_userauth_client_methods_s *ev =
     &e->userauth_client.methods;
@@ -1159,8 +1153,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_success_done)
   const struct assh_service_s *srv = pv->srv;
   assh_error_t err;
 
-  ASSH_RET_IF_TRUE(pv->state != ASSH_USERAUTH_ST_SUCCESS,
-	       ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+  assert(pv->state == ASSH_USERAUTH_ST_SUCCESS);
 
   /* cleanup the authentication service and start the next service. */
   assh_userauth_client_cleanup(s);

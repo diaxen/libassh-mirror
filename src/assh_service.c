@@ -88,7 +88,7 @@ assh_error_t assh_service_register_default(struct assh_context_s *c)
 #endif
 
     default:
-      assert(!"possible");
+      ASSH_UNREACHABLE();
     }
 }
 

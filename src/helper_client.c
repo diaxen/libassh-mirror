@@ -630,7 +630,7 @@ assh_client_event_openssh_auth(struct assh_session_s *s, FILE *out, FILE *in,
     }
 
     default:
-      abort();
+      ASSH_UNREACHABLE();
     }
 }
 
@@ -818,14 +818,14 @@ assh_client_event_inter_session(struct assh_session_s *s,
 	  return;
 
 	default:
-	  abort();
+	  ASSH_UNREACHABLE();
 	}
 
       return;
     }
 
     default:
-      abort();
+      ASSH_UNREACHABLE();
     }
 
 err:

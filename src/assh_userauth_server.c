@@ -279,8 +279,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_success_done)
   const struct assh_service_s *srv = pv->srv;
   assh_error_t err;
 
-  ASSH_RET_IF_TRUE(pv->state != ASSH_USERAUTH_ST_SUCCESS_DONE,
-               ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+  assert(pv->state == ASSH_USERAUTH_ST_SUCCESS_DONE);
 
   const struct assh_event_userauth_server_success_s *ev =
     &e->userauth_server.success;
@@ -452,7 +451,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_password_done)
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
-  ASSH_RET_IF_TRUE(pv->state != ASSH_USERAUTH_ST_PASSWORD, ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+  assert(pv->state == ASSH_USERAUTH_ST_PASSWORD);
 
   assh_packet_release(pv->pck);
   pv->pck = NULL;
@@ -621,8 +620,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_kbresponse_done)
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
-  ASSH_RET_IF_TRUE(pv->state != ASSH_USERAUTH_ST_KEYBOARD_RESPONSE,
-               ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+  assert(pv->state == ASSH_USERAUTH_ST_KEYBOARD_RESPONSE);
 
   assh_free(s->ctx, pv->keyboard_array);
   pv->keyboard_array = NULL;
@@ -719,8 +717,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_kbinfo_done)
   assh_packet_release(pv->pck);
   pv->pck = NULL;
 
-  ASSH_RET_IF_TRUE(pv->state != ASSH_USERAUTH_ST_KEYBOARD_INFO,
-               ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+  assert(pv->state == ASSH_USERAUTH_ST_KEYBOARD_INFO);
 
   const struct assh_event_userauth_server_kbinfo_s *ev =
     &e->userauth_server.kbinfo;
@@ -897,7 +894,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
     }
 
     default:
-      ASSH_RETURN(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+      ASSH_UNREACHABLE();
     }
 }
 
@@ -1052,8 +1049,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_get_methods_done)
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
-  ASSH_RET_IF_TRUE(pv->state != ASSH_USERAUTH_ST_METHODS_DONE,
-               ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+  assert(pv->state == ASSH_USERAUTH_ST_METHODS_DONE);
 
   const struct assh_event_userauth_server_methods_s *ev =
     &e->userauth_server.methods;
@@ -1190,7 +1186,7 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_server_process)
 #endif
 
     default:
-      ASSH_RETURN(ASSH_ERR_STATE | ASSH_ERRSV_FATAL);
+      ASSH_UNREACHABLE();
     }
 }
 
