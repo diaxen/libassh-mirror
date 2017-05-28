@@ -652,6 +652,14 @@ assh_channel_data_ext(struct assh_channel_s *ch, uint32_t ext_type,
 */
 size_t assh_channel_data_size(struct assh_channel_s *ch);
 
+/**
+   This function allocates and transmits a dummy packet ignored by the
+   remote host. Once enciphered, the packet looks similar to a channel
+   data packet of specified size.
+*/
+assh_error_t
+assh_channel_dummy(struct assh_channel_s *ch, size_t size);
+
 /************************************************* incoming channel close/eof */
 
 /**

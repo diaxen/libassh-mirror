@@ -1498,10 +1498,50 @@ assh_channel_data_send(struct assh_channel_s *ch, size_t size)
   pout->data_size += size;
   ch->rwin_left -= size;
 
-  assh_transport_push(ch->session, ch->data_pck);
+  assh_transport_push(s, ch->data_pck);
   ch->data_pck = NULL;
 
   return ASSH_OK;
+ err:
+  return assh_session_error(s, err);
+}
+
+assh_error_t
+assh_channel_dummy(struct assh_channel_s *ch, size_t size)
+{
+  assh_error_t err;
+  struct assh_session_s *s = ch->session;
+  struct assh_connection_context_s *pv = s->srv_pv;
+
+  assert(s->srv == &assh_service_connection);
+  assert(pv->state == ASSH_CONNECTION_ST_IDLE);
+
+  switch (ch->status)
+    {
+    case ASSH_CHANNEL_ST_OPEN_SENT:
+    case ASSH_CHANNEL_ST_OPEN_RECEIVED:
+    case ASSH_CHANNEL_ST_EOF_SENT:
+    case ASSH_CHANNEL_ST_EOF_CLOSE:
+    case ASSH_CHANNEL_ST_CLOSE_CALLED:
+    case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
+      ASSH_UNREACHABLE();
+
+    case ASSH_CHANNEL_ST_OPEN:
+    case ASSH_CHANNEL_ST_EOF_RECEIVED:
+      break;
+
+    case ASSH_CHANNEL_ST_CLOSING:
+      return ASSH_NO_DATA;
+    }
+
+  struct assh_packet_s *pout;
+
+  ASSH_JMP_ON_ERR(assh_packet_alloc(s->ctx, SSH_MSG_IGNORE,
+		 2 * 4 + size, &pout) | ASSH_ERRSV_CONTINUE, err);
+
+  assh_transport_push(s, pout);
+  return ASSH_OK;
+
  err:
   return assh_session_error(s, err);
 }

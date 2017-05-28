@@ -51,7 +51,8 @@ void assh_transport_push(struct assh_session_s *s,
   /* sending of service packets is postponed during kex */
   assh_bool_t kex_msg = p->head.msg <= SSH_MSG_KEXSPEC_LAST &&
     p->head.msg != SSH_MSG_SERVICE_REQUEST &&
-    p->head.msg != SSH_MSG_SERVICE_ACCEPT;
+    p->head.msg != SSH_MSG_SERVICE_ACCEPT &&
+    p->head.msg != SSH_MSG_IGNORE;
 
   switch (s->tr_st)
     {
