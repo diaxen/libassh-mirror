@@ -320,6 +320,26 @@ extern const struct assh_algo_kex_s assh_kex_dh_group1_sha1;
     rfc4253. */
 extern const struct assh_algo_kex_s assh_kex_dh_group14_sha1;
 
+/** Draft @tt @tt diffie-hellman-group14-sha256 algorithm specified in
+    draft-ietf-curdle-ssh-modp-dh-sha2-05. */
+extern const struct assh_algo_kex_s assh_kex_dh_group14_sha256;
+
+/** Draft @tt @tt diffie-hellman-group15-sha512 algorithm specified in
+    draft-ietf-curdle-ssh-modp-dh-sha2-05. */
+extern const struct assh_algo_kex_s assh_kex_dh_group15_sha512;
+
+/** Draft @tt @tt diffie-hellman-group16-sha512 algorithm specified in
+    draft-ietf-curdle-ssh-modp-dh-sha2-05. */
+extern const struct assh_algo_kex_s assh_kex_dh_group16_sha512;
+
+/** Draft @tt @tt diffie-hellman-group17-sha512 algorithm specified in
+    draft-ietf-curdle-ssh-modp-dh-sha2-05. */
+extern const struct assh_algo_kex_s assh_kex_dh_group17_sha512;
+
+/** Draft @tt @tt diffie-hellman-group18-sha512 algorithm specified in
+    draft-ietf-curdle-ssh-modp-dh-sha2-05. */
+extern const struct assh_algo_kex_s assh_kex_dh_group18_sha512;
+
 /** The @tt curve25519-sha256 algorithm defined in @tt
     curve25519-sha256@libssh.org.txt by the libssh project. This
     offers 125 bit security and relies on a Montgomery elliptic curve.

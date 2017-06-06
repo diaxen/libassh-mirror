@@ -144,10 +144,15 @@ assh_config.h
 
     @section {Prime field Diffie-Hellman}
       These are diffie-hellman over prime field algorithms, specified
-      in @invoke{4253}rfc :
+      in @invoke{4253}rfc and @em {draft-ietf-curdle-ssh-modp-dh-sha2-05}:
       @list
         @item @tt {diffie-hellman-group1-sha1} (1024 bits prime),
         @item @tt {diffie-hellman-group14-sha1} (2048 bits prime).
+        @item @tt {diffie-hellman-group14-sha256} (2048 bits prime).
+        @item @tt {diffie-hellman-group15-sha512} (3072 bits prime).
+        @item @tt {diffie-hellman-group16-sha512} (4096 bits prime).
+        @item @tt {diffie-hellman-group17-sha512} (6144 bits prime).
+        @item @tt {diffie-hellman-group18-sha512} (8192 bits prime).
       @end list
     @end section
 
