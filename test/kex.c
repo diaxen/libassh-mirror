@@ -71,6 +71,9 @@ static const struct algo_with_key_s kex_list_long[] =
   { &assh_kex_curve25519_sha256, NULL, NULL, 0 },
   { &assh_kex_m383_sha384,	   NULL, NULL, 0 },
   { &assh_kex_m511_sha512,	   NULL, NULL, 0 },
+  { &assh_kex_sha2_nistp256,	   NULL, NULL, 0 },
+  { &assh_kex_sha2_nistp384,	   NULL, NULL, 0 },
+  { &assh_kex_sha2_nistp521,	   NULL, NULL, 0 },
   { &assh_kex_dh_group1_sha1,	   NULL, NULL, 0 },
   { &assh_kex_dh_group14_sha1,   NULL, NULL, 0 },
   { &assh_kex_dh_group14_sha256,   NULL, NULL, 0 },
@@ -91,6 +94,7 @@ static const struct algo_with_key_s kex_list_all[] =
 {
   { &assh_kex_none,              NULL, NULL, 0 },
   { &assh_kex_curve25519_sha256, NULL, NULL, 0 },
+  { &assh_kex_sha2_nistp256,	   NULL, NULL, 0 },
   { &assh_kex_dh_group1_sha1,	   NULL, NULL, 0 },
   { &assh_kex_dh_gex_sha1,	   NULL, NULL, 0 },
   { &assh_kex_rsa1024_sha1,	   NULL, NULL, 0 },
@@ -537,8 +541,10 @@ int main(int argc, char **argv)
 	  test_loop(seed, kex_list_short, sign_list_short, cipher_list_long, mac_list_long, comp_list_short);
 	  /* test compression */
 	  test_loop(seed, kex_list_short, sign_list_short, cipher_list_short, mac_list_short, comp_list_long);
-	  /* test kex and sign */
-	  test_loop(seed, kex_list_long, sign_list_long, cipher_list_short, mac_list_short, comp_list_short);
+	  /* test sign */
+	  test_loop(seed, kex_list_all, sign_list_long, cipher_list_short, mac_list_short, comp_list_short);
+	  /* test kex */
+	  test_loop(seed, kex_list_long, sign_list_short, cipher_list_short, mac_list_short, comp_list_short);
 	}
 
       /* run some more sessions with some packet error */
