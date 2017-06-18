@@ -301,7 +301,7 @@ static ASSH_CIPHER_PROCESS_FCN(assh_aes_cbc_process)
   uint32_t b[4];
   uint_fast8_t i;
 
-  ASSH_RET_IF_TRUE(len & 15, ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_IF_TRUE(len & 15, ASSH_ERR_INPUT_OVERFLOW);
 
   if (ctx->encrypt)
     {
@@ -348,7 +348,7 @@ static ASSH_CIPHER_PROCESS_FCN(assh_aes_ctr_process)
   uint32_t *iv = ctx->iv;
   uint_fast8_t i;
 
-  ASSH_RET_IF_TRUE(len & 15, ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_IF_TRUE(len & 15, ASSH_ERR_INPUT_OVERFLOW);
 
   for ( ;len >= 16; len -= 16)
     {

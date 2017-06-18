@@ -94,7 +94,7 @@ static ASSH_CIPHER_PROCESS_FCN(assh_arc4_process)
 {
   struct assh_cipher_arc4_context_s *ctx = ctx_;
   assh_error_t err;
-  ASSH_RET_IF_TRUE(len & 7, ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_IF_TRUE(len & 7, ASSH_ERR_INPUT_OVERFLOW);
   assh_arc4_run(ctx, data, len);
   return ASSH_OK;
 }

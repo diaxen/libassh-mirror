@@ -104,7 +104,7 @@ static ASSH_CIPHER_PROCESS_FCN(assh_cipher_gcrypt_process_GCM)
   size_t csize = len - 4 - auth_size;
 
   ASSH_RET_IF_TRUE(csize & (block_size - 1),
-               ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
+               ASSH_ERR_INPUT_OVERFLOW);
 
   if (op == ASSH_CIPHER_PCK_HEAD)
     return ASSH_OK;
@@ -142,7 +142,7 @@ static ASSH_CIPHER_PROCESS_FCN(assh_cipher_gcrypt_process)
   size_t block_size = ctx->cipher->block_size;
 
   ASSH_RET_IF_TRUE(len & (block_size - 1),
-	       ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
+	       ASSH_ERR_INPUT_OVERFLOW);
 
   if (ctx->encrypt)
     ASSH_RET_IF_TRUE(gcry_cipher_encrypt(ctx->hd, data, len, NULL, 0),

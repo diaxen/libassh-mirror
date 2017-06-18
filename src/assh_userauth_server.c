@@ -220,7 +220,7 @@ assh_userauth_server_send_failure(struct assh_session_s *s,
 
   struct assh_packet_s *pout;
   ASSH_RET_ON_ERR(assh_packet_alloc(s->ctx, SSH_MSG_USERAUTH_FAILURE,
-                                 psize, &pout) | ASSH_ERRSV_DISCONNECT);
+                                 psize, &pout));
 
   uint8_t *list, *partial_success;
 
@@ -268,7 +268,7 @@ static assh_error_t assh_userauth_server_failure(struct assh_session_s *s,
 
   /* check auth attempts count */
   ASSH_RET_IF_TRUE(pv->retry && --pv->retry == 0,
-               ASSH_ERR_NO_AUTH | ASSH_ERRSV_DISCONNECT);
+               ASSH_ERR_NO_AUTH);
 
   return ASSH_OK;
 }
@@ -293,7 +293,8 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_success_done)
 
       assh_userauth_server_flush_state(s);
       pv->state = ASSH_USERAUTH_ST_WAIT_RQ;
-      ASSH_RETURN(assh_userauth_server_send_failure(s, 1));
+      ASSH_RETURN(assh_userauth_server_send_failure(s, 1)
+                     | ASSH_ERRSV_DISCONNECT);
     }
 
   /* cleanup the authentication service */
@@ -352,13 +353,13 @@ assh_userauth_server_get_key(struct assh_session_s *s,
   const uint8_t *key_blob = pub_blob + 4;
   ASSH_RET_ON_ERR(assh_key_load(s->ctx, pub_key, (*algo)->key, ASSH_ALGO_SIGN,
                  ASSH_KEY_FMT_PUB_RFC4253, &key_blob,
-                 assh_load_u32(pub_blob)) | ASSH_ERRSV_DISCONNECT);
+                 assh_load_u32(pub_blob)));
 
   /* check if the key can be used by the algorithm */
   if (!assh_algo_suitable_key(s->ctx, *algo, *pub_key))
     {
       assh_key_drop(s->ctx, pub_key);
-      ASSH_RET_ON_ERR(assh_userauth_server_failure(s, 1) | ASSH_ERRSV_DISCONNECT);
+      ASSH_RET_ON_ERR(assh_userauth_server_failure(s, 1));
       return ASSH_NO_DATA;
     }
 
@@ -387,8 +388,7 @@ assh_userauth_server_sign_check(struct assh_session_s *s,
 
   /* check the signature */
   ASSH_RET_ON_ERR(assh_sign_check(s->ctx, pv->algo, pv->pub_key, 3,
-                 data, sign_str + 4, assh_load_u32(sign_str), &sign_safety)
-               | ASSH_ERRSV_DISCONNECT);
+                 data, sign_str + 4, assh_load_u32(sign_str), &sign_safety));
 
   pv->safety = ASSH_MIN(sign_safety, pv->safety);
 
@@ -418,7 +418,7 @@ assh_userauth_server_pwchange(struct assh_session_s *s,
   assh_error_t err;
 
   ASSH_RET_IF_TRUE(pv->retry && --pv->retry == 0,
-               ASSH_ERR_NO_AUTH | ASSH_ERRSV_DISCONNECT);
+               ASSH_ERR_NO_AUTH);
 
   const struct assh_event_userauth_server_password_s *ev =
     &e->userauth_server.password;
@@ -428,7 +428,7 @@ assh_userauth_server_pwchange(struct assh_session_s *s,
   struct assh_packet_s *pout;
 
   ASSH_RET_ON_ERR(assh_packet_alloc(s->ctx, SSH_MSG_USERAUTH_PASSWD_CHANGEREQ,
-                 4 + prompt_len + 4 + lang_len, &pout) | ASSH_ERRSV_DISCONNECT);
+                 4 + prompt_len + 4 + lang_len, &pout));
 
   uint8_t *str;
   ASSH_ASSERT(assh_packet_add_string(pout, prompt_len, &str));
@@ -484,11 +484,9 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_password)
   const uint8_t *pwchange = auth_data;
   const uint8_t *password, *new_password;
 
-  ASSH_RET_ON_ERR(assh_packet_check_array(p, pwchange, 1, &password)
-               | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_ON_ERR(assh_packet_check_array(p, pwchange, 1, &password));
 
-  ASSH_RET_ON_ERR(assh_packet_check_string(p, password, &new_password)
-               | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, password, &new_password));
 
   struct assh_event_userauth_server_password_s *ev =
     &e->userauth_server.password;
@@ -500,14 +498,13 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_password)
 
   if (*pwchange)
     {
-      ASSH_RET_ON_ERR(assh_packet_check_string(p, new_password, NULL)
-                   | ASSH_ERRSV_DISCONNECT);
+      ASSH_RET_ON_ERR(assh_packet_check_string(p, new_password, NULL));
       ev->new_password.data = new_password + 4;
       ev->new_password.len = assh_load_u32(new_password);
     }
   else if (pv->state == ASSH_USERAUTH_ST_PASSWORD_WAIT_CHANGE)
     {
-      ASSH_RETURN(assh_userauth_server_failure(s, 1) | ASSH_ERRSV_DISCONNECT);
+      ASSH_RETURN(assh_userauth_server_failure(s, 1));
     }
   else
     {
@@ -571,20 +568,20 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_hostbased)
   const uint8_t *algo_name = auth_data;
   const uint8_t *pub_blob, *hostname, *husername, *sign;
 
-  ASSH_RET_ON_ERR(assh_packet_check_string(p, algo_name, &pub_blob) | ASSH_ERRSV_DISCONNECT);
-  ASSH_RET_ON_ERR(assh_packet_check_string(p, pub_blob, &hostname) | ASSH_ERRSV_DISCONNECT);
-  ASSH_RET_ON_ERR(assh_packet_check_string(p, hostname, &husername) | ASSH_ERRSV_DISCONNECT);
-  ASSH_RET_ON_ERR(assh_packet_check_string(p, husername, &sign) | ASSH_ERRSV_DISCONNECT);
-  ASSH_RET_ON_ERR(assh_packet_check_string(p, sign, NULL) | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, algo_name, &pub_blob));
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, pub_blob, &hostname));
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, hostname, &husername));
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, husername, &sign));
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, sign, NULL));
 
   const struct assh_algo_s *algo;
   struct assh_key_s *pub_key = NULL;
 
   ASSH_RET_ON_ERR(assh_userauth_server_get_key(s, algo_name, pub_blob,
-                 &algo, &pub_key, NULL) | ASSH_ERRSV_DISCONNECT);
+                 &algo, &pub_key, NULL));
 
   if (err == ASSH_NO_DATA)
-    ASSH_RETURN(assh_userauth_server_failure(s, 1) | ASSH_ERRSV_DISCONNECT);
+    ASSH_RETURN(assh_userauth_server_failure(s, 1));
 
   pv->algo = (void*)algo;
   pv->pub_key = pub_key;
@@ -656,18 +653,17 @@ assh_userauth_server_kbresponse(struct assh_session_s *s,
   assh_error_t err;
 
   ASSH_RET_IF_TRUE(p->head.msg != SSH_MSG_USERAUTH_INFO_RESPONSE,
-               ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+               ASSH_ERR_PROTOCOL);
 
   const uint8_t *count_ = p->head.end;
   const uint8_t *resp, *next;
 
-  ASSH_RET_ON_ERR(assh_packet_check_array(p, count_, 4, &resp)
-               | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_ON_ERR(assh_packet_check_array(p, count_, 4, &resp));
 
   size_t i, count = assh_load_u32(count_);
 
   if (count != pv->keyboard_count)
-    ASSH_RETURN(assh_userauth_server_failure(s, 1) | ASSH_ERRSV_DISCONNECT);
+    ASSH_RETURN(assh_userauth_server_failure(s, 1));
 
   struct assh_cbuffer_s *responses = NULL;
 
@@ -682,8 +678,7 @@ assh_userauth_server_kbresponse(struct assh_session_s *s,
 
       for (i = 0; i < count; i++)
         {
-          ASSH_RET_ON_ERR(assh_packet_check_string(p, resp, &next)
-                       | ASSH_ERRSV_DISCONNECT);
+          ASSH_RET_ON_ERR(assh_packet_check_string(p, resp, &next));
           responses[i].data = resp + 4;
           responses[i].len = assh_load_u32(resp);
           resp = next;
@@ -724,8 +719,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_kbinfo_done)
 
   size_t i, count = ev->count;
 
-  ASSH_RET_IF_TRUE(count > 32,
-               ASSH_ERR_OUTPUT_OVERFLOW | ASSH_ERRSV_FATAL);
+  assert(count <= 32);
 
   pv->keyboard_count = count;
 
@@ -807,10 +801,8 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_kbinfo)
   const uint8_t *lang = auth_data;
   const uint8_t *sub;
 
-  ASSH_RET_ON_ERR(assh_packet_check_string(p, lang, &sub)
-               | ASSH_ERRSV_DISCONNECT);
-  ASSH_RET_ON_ERR(assh_packet_check_string(p, sub, NULL)
-               | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, lang, &sub));
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, sub, NULL));
 
   assert(pv->pck == NULL);
   pv->pck = assh_packet_refinc(p);
@@ -907,18 +899,18 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_pubkey)
   const uint8_t *second = auth_data;
   const uint8_t *algo_name, *pub_blob, *sign;
 
-  ASSH_RET_ON_ERR(assh_packet_check_array(p, second, 1, &algo_name) | ASSH_ERRSV_DISCONNECT);
-  ASSH_RET_ON_ERR(assh_packet_check_string(p, algo_name, &pub_blob) | ASSH_ERRSV_DISCONNECT);
-  ASSH_RET_ON_ERR(assh_packet_check_string(p, pub_blob, &sign) | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_ON_ERR(assh_packet_check_array(p, second, 1, &algo_name));
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, algo_name, &pub_blob));
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, pub_blob, &sign));
 
   const struct assh_algo_s *algo;
   struct assh_key_s *pub_key = NULL;
 
   ASSH_RET_ON_ERR(assh_userauth_server_get_key(s, algo_name, pub_blob,
-                 &algo, &pub_key, &pv->algo_name) | ASSH_ERRSV_DISCONNECT);
+                 &algo, &pub_key, &pv->algo_name));
 
   if (err == ASSH_NO_DATA)
-    ASSH_RETURN(assh_userauth_server_failure(s, 1) | ASSH_ERRSV_DISCONNECT);
+    ASSH_RETURN(assh_userauth_server_failure(s, 1));
 
   /* test if the key has been previously found in the list of authorized user keys. */
   assh_bool_t new_key = (pv->pubkey_state == ASSH_USERAUTH_PUBKEY_NONE ||
@@ -939,15 +931,12 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_pubkey)
   /* the packet contains a signature to check */
   if (*second)
     {
-      ASSH_RET_ON_ERR(assh_packet_check_string(p, sign, NULL)
-                   | ASSH_ERRSV_DISCONNECT);
+      ASSH_RET_ON_ERR(assh_packet_check_string(p, sign, NULL));
 
       if (pv->pubkey_state == ASSH_USERAUTH_PUBKEY_FOUND)
         {
-          ASSH_RET_ON_ERR(assh_userauth_server_sign_check(s, p, sign)
-		       | ASSH_ERRSV_DISCONNECT);
-          ASSH_RETURN(assh_userauth_server_success(s, e)
-                         | ASSH_ERRSV_DISCONNECT);
+          ASSH_RET_ON_ERR(assh_userauth_server_sign_check(s, p, sign));
+          ASSH_RETURN(assh_userauth_server_success(s, e));
         }
 
       assert(pv->pck == NULL);
@@ -996,7 +985,7 @@ static assh_error_t assh_userauth_server_req(struct assh_session_s *s,
         ASSH_RETURN(assh_transport_unimp(s, p));
 
     case SSH_MSG_UNIMPLEMENTED:
-      ASSH_RETURN(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+      ASSH_RETURN(ASSH_ERR_PROTOCOL);
 
     case SSH_MSG_USERAUTH_REQUEST:
       break;
@@ -1005,9 +994,9 @@ static assh_error_t assh_userauth_server_req(struct assh_session_s *s,
   uint8_t *username = p->head.end;
   const uint8_t *srv_name, *method_name, *auth_data;
 
-  ASSH_RET_ON_ERR(assh_packet_check_string(p, username, &srv_name) | ASSH_ERRSV_DISCONNECT);
-  ASSH_RET_ON_ERR(assh_packet_check_string(p, srv_name, &method_name) | ASSH_ERRSV_DISCONNECT);
-  ASSH_RET_ON_ERR(assh_packet_check_string(p, method_name, &auth_data) | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, username, &srv_name));
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, srv_name, &method_name));
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, method_name, &auth_data));
 
   const struct assh_userauth_server_method_s *m;
 
@@ -1033,15 +1022,14 @@ static assh_error_t assh_userauth_server_req(struct assh_session_s *s,
           pv->method = m;
 
           /* keep user name */
-          ASSH_RET_ON_ERR(assh_ssh_string_copy(username, pv->username, sizeof(pv->username))
-                       | ASSH_ERRSV_DISCONNECT);
+          ASSH_RET_ON_ERR(assh_ssh_string_copy(username, pv->username, sizeof(pv->username)));
         }
 
       ASSH_RETURN(m->f_req(s, p, e, auth_data)
                     | ASSH_ERRSV_DISCONNECT);
     }
 
-  ASSH_RETURN(assh_userauth_server_failure(s, 0) | ASSH_ERRSV_DISCONNECT);
+  ASSH_RETURN(assh_userauth_server_failure(s, 0));
 }
 
 static ASSH_EVENT_DONE_FCN(assh_userauth_server_get_methods_done)
@@ -1078,7 +1066,8 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_get_methods_done)
     }
 
   if (ev->failed)
-    ASSH_RET_ON_ERR(assh_userauth_server_send_failure(s, 0));
+    ASSH_RET_ON_ERR(assh_userauth_server_send_failure(s, 0)
+                 | ASSH_ERRSV_DISCONNECT);
 
   pv->state = ASSH_USERAUTH_ST_WAIT_RQ;
 
@@ -1171,13 +1160,15 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_server_process)
     case ASSH_USERAUTH_ST_WAIT_RQ:
       if (p == NULL)
         return ASSH_OK;
-      ASSH_RETURN(assh_userauth_server_req(s, p, e) | ASSH_ERRSV_DISCONNECT);
+      ASSH_RETURN(assh_userauth_server_req(s, p, e)
+                     | ASSH_ERRSV_DISCONNECT);
 
 #ifdef CONFIG_ASSH_SERVER_AUTH_KEYBOARD
     case ASSH_USERAUTH_ST_KEYBOARD_INFO_SENT:
       if (p == NULL)
         return ASSH_OK;
-      ASSH_RETURN(assh_userauth_server_kbresponse(s, p, e) | ASSH_ERRSV_DISCONNECT);
+      ASSH_RETURN(assh_userauth_server_kbresponse(s, p, e)
+                     | ASSH_ERRSV_DISCONNECT);
 
     case ASSH_USERAUTH_ST_KEYBOARD_CONTINUE:
       ASSH_RET_ON_ERR(assh_userauth_server_kbinfo(s, p, e, "\x00\x00\x00\x00")

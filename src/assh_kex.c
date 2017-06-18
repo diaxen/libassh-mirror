@@ -58,8 +58,7 @@ assh_kex_list(struct assh_session_s *s, struct assh_packet_s *p,
   assh_bool_t first = 0;
   uint8_t *list;
 
-  ASSH_RET_ON_ERR(assh_packet_add_string(p, 0, &list)
-               | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_ON_ERR(assh_packet_add_string(p, 0, &list));
 
   ASSH_DEBUG("kex send: ");
 
@@ -83,8 +82,7 @@ assh_kex_list(struct assh_session_s *s, struct assh_packet_s *p,
           /* append name to the list */
           uint8_t *tail;
           size_t l = strlen(name->name);
-          ASSH_RET_ON_ERR(assh_packet_enlarge_string(p, list, first + l, &tail)
-                       | ASSH_ERRSV_DISCONNECT);
+          ASSH_RET_ON_ERR(assh_packet_enlarge_string(p, list, first + l, &tail));
           memcpy(tail + first, name->name, l);
           if (first)
             tail[0] = ',';
@@ -98,7 +96,7 @@ assh_kex_list(struct assh_session_s *s, struct assh_packet_s *p,
 
   ASSH_DEBUG_("\n");
 
-  ASSH_RET_IF_TRUE(!first, ASSH_ERR_MISSING_ALGO | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_IF_TRUE(!first, ASSH_ERR_MISSING_ALGO);
 
   return ASSH_OK;
 }
@@ -110,37 +108,31 @@ assh_error_t assh_kex_send_init(struct assh_session_s *s)
 
   struct assh_packet_s *p;
   ASSH_RET_ON_ERR(assh_packet_alloc(c, SSH_MSG_KEXINIT,
-                 c->kex_init_size, &p) | ASSH_ERRSV_DISCONNECT);
+                 c->kex_init_size, &p));
 
   uint8_t *cookie;
   ASSH_JMP_ON_ERR(assh_packet_add_array(p, 16, &cookie), err_pck);
   ASSH_JMP_ON_ERR(assh_prng_get(c, cookie,
-		  16, ASSH_PRNG_QUALITY_NONCE)
-	       | ASSH_ERRSV_DISCONNECT, err_pck);
+		  16, ASSH_PRNG_QUALITY_NONCE), err_pck);
 
   /* lists of algorithms */
   uint_fast16_t i = 0, j;
   for (j = ASSH_ALGO_KEX; j <= ASSH_ALGO_COMPRESS; j++)
     {
       uint_fast16_t k = i;
-      ASSH_JMP_ON_ERR(assh_kex_list(s, p, &i, j, c->type == ASSH_CLIENT)
-                   | ASSH_ERRSV_DISCONNECT, err_pck);
+      ASSH_JMP_ON_ERR(assh_kex_list(s, p, &i, j, c->type == ASSH_CLIENT), err_pck);
 
       if (j >= ASSH_ALGO_CIPHER) /* other direction */
-        ASSH_JMP_ON_ERR(assh_kex_list(s, p, &k, j, c->type == ASSH_SERVER)
-                     | ASSH_ERRSV_DISCONNECT, err_pck);
+        ASSH_JMP_ON_ERR(assh_kex_list(s, p, &k, j, c->type == ASSH_SERVER), err_pck);
     }
 
   uint8_t *x;
 
   /* empty languages */
-  ASSH_JMP_ON_ERR(assh_packet_add_string(p, 0, &x)
-	       | ASSH_ERRSV_DISCONNECT, err_pck);
-  ASSH_JMP_ON_ERR(assh_packet_add_string(p, 0, &x)
-	       | ASSH_ERRSV_DISCONNECT, err_pck);
+  ASSH_JMP_ON_ERR(assh_packet_add_string(p, 0, &x), err_pck);
+  ASSH_JMP_ON_ERR(assh_packet_add_string(p, 0, &x), err_pck);
 
-  ASSH_JMP_ON_ERR(assh_packet_add_array(p, 5, &x)
-	       | ASSH_ERRSV_DISCONNECT, err_pck);
+  ASSH_JMP_ON_ERR(assh_packet_add_array(p, 5, &x), err_pck);
 
   /* fkpf + reserved */
   memset(x, 0, 5);
@@ -149,8 +141,7 @@ assh_error_t assh_kex_send_init(struct assh_session_s *s)
   assert(s->kex_init_local == NULL);
 
   struct assh_packet_s *pc;
-  ASSH_JMP_ON_ERR(assh_packet_dup(p, &pc)
-	       | ASSH_ERRSV_DISCONNECT, err_pck);
+  ASSH_JMP_ON_ERR(assh_packet_dup(p, &pc), err_pck);
   s->kex_init_local = pc;
 
   /* setup packet len and padding fields of the copy */
@@ -236,7 +227,7 @@ assh_kex_server_algos(struct assh_session_s *s, const uint8_t *lists[9],
             s->kex_preferred[i] = NULL;
         }
 
-      ASSH_RETURN(ASSH_ERR_MISSING_ALGO | ASSH_ERRSV_DISCONNECT);
+      ASSH_RETURN(ASSH_ERR_MISSING_ALGO);
     done:;
     }
 
@@ -290,8 +281,7 @@ assh_kex_client_algos(struct assh_session_s *s, const uint8_t *lists[9],
       /* iterate over available algorithms */
       for (k = j; ; k++)
         {
-          ASSH_RET_IF_TRUE(k == c->algo_cnt,
-		       ASSH_ERR_MISSING_ALGO | ASSH_ERRSV_DISCONNECT);
+          ASSH_RET_IF_TRUE(k == c->algo_cnt, ASSH_ERR_MISSING_ALGO);
 
           const struct assh_algo_s *a = c->algos[k];
 
@@ -299,7 +289,7 @@ assh_kex_client_algos(struct assh_session_s *s, const uint8_t *lists[9],
             continue;
 
           ASSH_RET_IF_TRUE(a->class_ > assh_kex_algos_classes[i],
-                       ASSH_ERR_MISSING_ALGO | ASSH_ERRSV_DISCONNECT);
+                       ASSH_ERR_MISSING_ALGO);
 
           const struct assh_algo_name_s *na;
           for (na = a->names; na->spec; na++)
@@ -357,11 +347,9 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
   /* get pointers to the 10 name-lists while checking bounds */
   lists[0] = p->head.end /* cookie */ + 16;
   for (i = 0; i < 10; i++)
-    ASSH_RET_ON_ERR(assh_packet_check_string(p, lists[i], lists + i + 1)
-		 | ASSH_ERRSV_DISCONNECT);
+    ASSH_RET_ON_ERR(assh_packet_check_string(p, lists[i], lists + i + 1));
 
-  ASSH_RET_ON_ERR(assh_packet_check_array(p, lists[10], 1, NULL)
-               | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_ON_ERR(assh_packet_check_array(p, lists[10], 1, NULL));
 
   assh_bool_t guess_follows = *lists[10];
 
@@ -372,14 +360,12 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
     {
 #ifdef CONFIG_ASSH_SERVER
     case ASSH_SERVER:
-      ASSH_RET_ON_ERR(assh_kex_server_algos(s, lists, algos)
-		   | ASSH_ERRSV_DISCONNECT);
+      ASSH_RET_ON_ERR(assh_kex_server_algos(s, lists, algos));
       break;
 #endif
 #ifdef CONFIG_ASSH_CLIENT
     case ASSH_CLIENT:
-      ASSH_RET_ON_ERR(assh_kex_client_algos(s, lists, algos)
-		   | ASSH_ERRSV_DISCONNECT);
+      ASSH_RET_ON_ERR(assh_kex_client_algos(s, lists, algos));
       break;
 #endif
     default:
@@ -429,8 +415,7 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
   struct assh_kex_keys_s *kin;
   size_t kin_size = sizeof(*kin) + cipher_in->ctx_size + cmp_in->ctx_size
     + mac_in->ctx_size;
-  ASSH_RET_ON_ERR(assh_alloc(s->ctx, kin_size, ASSH_ALLOC_SECUR, (void**)&kin)
-	       | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_ON_ERR(assh_alloc(s->ctx, kin_size, ASSH_ALLOC_SECUR, (void**)&kin));
 
   kin_safety = ASSH_MIN(kin_safety, cipher_in->algo.safety);
   if (!cipher_in->auth_size)
@@ -439,8 +424,8 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
   struct assh_kex_keys_s *kout;
   size_t kout_size = sizeof(*kout) + cipher_out->ctx_size + cmp_out->ctx_size
     + mac_out->ctx_size;
-  ASSH_JMP_ON_ERR(assh_alloc(s->ctx, kout_size, ASSH_ALLOC_SECUR, (void**)&kout)
-	       | ASSH_ERRSV_DISCONNECT, err_kin);
+  ASSH_JMP_ON_ERR(assh_alloc(s->ctx, kout_size, ASSH_ALLOC_SECUR, (void**)&kout),
+	       err_kin);
 
   kout_safety = ASSH_MIN(kout_safety, cipher_out->algo.safety);
   if (!cipher_out->auth_size)
@@ -467,7 +452,7 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
   s->new_keys_out = kout;
 
   /* initialize key exchange algorithm */
-  ASSH_JMP_ON_ERR(kex->f_init(s, key_size) | ASSH_ERRSV_DISCONNECT, err);
+  ASSH_JMP_ON_ERR(kex->f_init(s, key_size), err);
 
   s->kex = kex;
   s->host_sign_algo = sign;
@@ -569,7 +554,7 @@ assh_kex_new_keys(struct assh_session_s *s,
   ASSH_SCRATCH_ALLOC(s->ctx, uint8_t, scratch, hash_algo->ctx_size +
            /* iv */  ASSH_MAX_BLOCK_SIZE +
            /* key */ ASSH_MAX(ASSH_MAX_EKEY_SIZE, ASSH_MAX_IKEY_SIZE),
-                     ASSH_ERRSV_DISCONNECT, err);
+                     ASSH_ERRSV_CONTINUE, err);
 
   void *hash_ctx = scratch;
   uint8_t *iv = scratch + hash_algo->ctx_size;
@@ -584,15 +569,13 @@ assh_kex_new_keys(struct assh_session_s *s,
   if (kin->cipher->iv_size)
     ASSH_JMP_ON_ERR(assh_kex_new_key(s, hash_ctx, hash_algo, ex_hash,
                                   secret_str, *c,
-                                  iv, kin->cipher->iv_size)
-                 | ASSH_ERRSV_DISCONNECT, err_scratch);
+                                  iv, kin->cipher->iv_size), err_scratch);
   c++;
 
   if (kin->cipher->key_size)
     ASSH_JMP_ON_ERR(assh_kex_new_key(s, hash_ctx, hash_algo, ex_hash,
                                   secret_str, *c,
-                                  key, kin->cipher->key_size)
-                 | ASSH_ERRSV_DISCONNECT, err_scratch);
+                                  key, kin->cipher->key_size), err_scratch);
   c++;
 
   kin->cipher_ctx = (void*)next_in_ctx;
@@ -603,22 +586,19 @@ assh_kex_new_keys(struct assh_session_s *s,
   assh_hexdump("in ekey", key, kin->cipher->key_size);
 #endif
 
-  ASSH_JMP_ON_ERR(kin->cipher->f_init(s->ctx, kin->cipher_ctx, key, iv, 0)
-	       | ASSH_ERRSV_DISCONNECT, err_cipher_in);
+  ASSH_JMP_ON_ERR(kin->cipher->f_init(s->ctx, kin->cipher_ctx, key, iv, 0), err_cipher_in);
 
   /* get output cipher iv/key and init cipher */
   if (kout->cipher->iv_size)
     ASSH_JMP_ON_ERR(assh_kex_new_key(s, hash_ctx, hash_algo, ex_hash,
                                   secret_str, *c,
-                                  iv, kout->cipher->iv_size)
-                 | ASSH_ERRSV_DISCONNECT, err_scratch);
+                                  iv, kout->cipher->iv_size), err_scratch);
   c++;
 
   if (kout->cipher->key_size)
     ASSH_JMP_ON_ERR(assh_kex_new_key(s, hash_ctx, hash_algo, ex_hash,
                                   secret_str, *c,
-                                  key, kout->cipher->key_size)
-                 | ASSH_ERRSV_DISCONNECT, err_cipher_out);
+                                  key, kout->cipher->key_size), err_cipher_out);
   c++;
 
   kout->cipher_ctx = (void*)next_out_ctx;
@@ -629,24 +609,21 @@ assh_kex_new_keys(struct assh_session_s *s,
   assh_hexdump("out ekey", key, kout->cipher->key_size);
 #endif
 
-  ASSH_JMP_ON_ERR(kout->cipher->f_init(s->ctx, kout->cipher_ctx, key, iv, 1)
-	       | ASSH_ERRSV_DISCONNECT, err_cipher_out);
+  ASSH_JMP_ON_ERR(kout->cipher->f_init(s->ctx, kout->cipher_ctx, key, iv, 1), err_cipher_out);
 
   if (kin->mac->key_size)
     {
       /* get input integrity key and init mac */
       ASSH_JMP_ON_ERR(assh_kex_new_key(s, hash_ctx, hash_algo, ex_hash,
                                     secret_str, *c,
-                                    key, kin->mac->key_size)
-                   | ASSH_ERRSV_DISCONNECT, err_mac_in);
+                                    key, kin->mac->key_size), err_mac_in);
 #ifdef CONFIG_ASSH_DEBUG_KEX
       assh_hexdump("in ikey", key, kin->mac->key_size);
 #endif
     }
   kin->mac_ctx = (void*)next_in_ctx;
   next_in_ctx += kin->mac->ctx_size;
-  ASSH_JMP_ON_ERR(kin->mac->f_init(s->ctx, kin->mac_ctx, key)
-               | ASSH_ERRSV_DISCONNECT, err_mac_in);
+  ASSH_JMP_ON_ERR(kin->mac->f_init(s->ctx, kin->mac_ctx, key), err_mac_in);
   c++;
 
   if (kout->mac->key_size)
@@ -654,27 +631,23 @@ assh_kex_new_keys(struct assh_session_s *s,
       /* get output integrity key and init mac */
       ASSH_JMP_ON_ERR(assh_kex_new_key(s, hash_ctx, hash_algo, ex_hash,
                                     secret_str, *c,
-                                    key, kout->mac->key_size)
-                   | ASSH_ERRSV_DISCONNECT, err_mac_out);
+                                    key, kout->mac->key_size), err_mac_out);
 #ifdef CONFIG_ASSH_DEBUG_KEX
       assh_hexdump("out ikey", key, kout->mac->key_size);
 #endif
     }
   kout->mac_ctx = (void*)next_out_ctx;
   next_out_ctx += kout->mac->ctx_size;
-  ASSH_JMP_ON_ERR(kout->mac->f_init(s->ctx, kout->mac_ctx, key)
-               | ASSH_ERRSV_DISCONNECT, err_mac_out);
+  ASSH_JMP_ON_ERR(kout->mac->f_init(s->ctx, kout->mac_ctx, key), err_mac_out);
   c++;
 
   /* init input compression */
   kin->cmp_ctx = (void*)next_in_ctx;
-  ASSH_JMP_ON_ERR(kin->cmp->f_init(s->ctx, kin->cmp_ctx, 0)
-	       | ASSH_ERRSV_DISCONNECT, err_cmp_in);
+  ASSH_JMP_ON_ERR(kin->cmp->f_init(s->ctx, kin->cmp_ctx, 0), err_cmp_in);
 
   /* init output compression */
   kout->cmp_ctx = (void*)next_out_ctx;
-  ASSH_JMP_ON_ERR(kout->cmp->f_init(s->ctx, kout->cmp_ctx, 1)
-	       | ASSH_ERRSV_DISCONNECT, err_cmp_out);
+  ASSH_JMP_ON_ERR(kout->cmp->f_init(s->ctx, kout->cmp_ctx, 1), err_cmp_out);
 
   ASSH_SCRATCH_FREE(s->ctx, scratch);
   return ASSH_OK;
@@ -718,12 +691,11 @@ assh_kex_client_get_key(struct assh_session_s *s,
   const uint8_t *key_blob = ks_str + 4;
   ASSH_RET_ON_ERR(assh_key_load(s->ctx, &host_key, sign_algo->algo.key, ASSH_ALGO_SIGN,
                              ASSH_KEY_FMT_PUB_RFC4253, &key_blob,
-                             assh_load_u32(ks_str))
-               | ASSH_ERRSV_DISCONNECT);
+                             assh_load_u32(ks_str)));
 
   /* check if the key can be used by the algorithm */
   ASSH_JMP_IF_TRUE(!assh_algo_suitable_key(s->ctx, &sign_algo->algo, host_key),
-               ASSH_ERR_WEAK_ALGORITHM | ASSH_ERRSV_DISCONNECT, err_hk);
+               ASSH_ERR_WEAK_ALGORITHM, err_hk);
 
   /* Return an host key lookup event */
   e->id = ASSH_EVENT_KEX_HOSTKEY_LOOKUP;
@@ -785,13 +757,12 @@ assh_kex_client_hash2(struct assh_session_s *s,
 
   ASSH_RET_IF_TRUE(assh_sign_check(c, sign_algo, s->kex_host_key, 1, &data,
                 h_str + 4, assh_load_u32(h_str), &sign_safety) != ASSH_OK,
-               ASSH_ERR_HOSTKEY_SIGNATURE | ASSH_ERRSV_DISCONNECT);
+               ASSH_ERR_HOSTKEY_SIGNATURE);
 
   assh_kex_lower_safety(s, sign_safety);
 
   /* setup new keys */
-  ASSH_RETURN(assh_kex_new_keys(s, hash_ctx->algo, ex_hash, secret_str)
-                | ASSH_ERRSV_DISCONNECT);
+  ASSH_RETURN(assh_kex_new_keys(s, hash_ctx->algo, ex_hash, secret_str));
 }
 #endif
 
@@ -810,7 +781,7 @@ assh_kex_server_hash1(struct assh_session_s *s, size_t kex_len,
   const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
 
   ASSH_RET_IF_TRUE(assh_key_lookup(c, host_key, &s->host_sign_algo->algo) != ASSH_OK,
-               ASSH_ERR_MISSING_KEY | ASSH_ERRSV_DISCONNECT);
+               ASSH_ERR_MISSING_KEY);
   const struct assh_key_s *hk = *host_key;
 
   assh_kex_lower_safety(s, hk->safety);
@@ -818,22 +789,18 @@ assh_kex_server_hash1(struct assh_session_s *s, size_t kex_len,
   /* alloc reply packet */
   size_t ks_len;
   ASSH_RET_ON_ERR(assh_key_output(c, hk, NULL, &ks_len,
-	         ASSH_KEY_FMT_PUB_RFC4253)
-	       | ASSH_ERRSV_DISCONNECT);
+	         ASSH_KEY_FMT_PUB_RFC4253));
 
-  ASSH_RET_ON_ERR(assh_sign_generate(c, sign_algo, hk, 0, NULL, NULL, sign_len)
-	       | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_ON_ERR(assh_sign_generate(c, sign_algo, hk, 0, NULL, NULL, sign_len));
 
   ASSH_RET_ON_ERR(assh_packet_alloc(c, msg,
-		(4 + ks_len) + kex_len + (4 + *sign_len), pout)
-	       | ASSH_ERRSV_DISCONNECT);
+		(4 + ks_len) + kex_len + (4 + *sign_len), pout));
 
   /* append public host key to packet. */
   uint8_t *ks_str;
   ASSH_ASSERT(assh_packet_add_string(*pout, ks_len, &ks_str));
   ASSH_JMP_ON_ERR(assh_key_output(c, hk, ks_str, &ks_len,
-		ASSH_KEY_FMT_PUB_RFC4253)
-	       | ASSH_ERRSV_DISCONNECT, err_p);
+		ASSH_KEY_FMT_PUB_RFC4253), err_p);
 
   assh_packet_shrink_string(*pout, ks_str, ks_len);
 
@@ -880,13 +847,11 @@ assh_kex_server_hash2(struct assh_session_s *s,
   ASSH_ASSERT(assh_packet_add_string(pout, sign_len, &sign));
 
   ASSH_RET_ON_ERR(assh_sign_generate(c, sign_algo, host_key, 1,
-		 &data, sign, &sign_len)
-	       | ASSH_ERRSV_DISCONNECT);
+		 &data, sign, &sign_len));
   assh_packet_shrink_string(pout, sign, sign_len);
 
   /* setup new symmetric keys */
-  ASSH_RETURN(assh_kex_new_keys(s, hash_ctx->algo, ex_hash, secret_str)
-                | ASSH_ERRSV_DISCONNECT);
+  ASSH_RETURN(assh_kex_new_keys(s, hash_ctx->algo, ex_hash, secret_str));
 }
 #endif
 
@@ -927,7 +892,7 @@ assh_error_t assh_kex_end(struct assh_session_s *s, assh_bool_t accept)
   assh_packet_release(s->kex_init_remote);
   s->kex_init_remote = NULL;
 
-  ASSH_RET_IF_TRUE(!accept, ASSH_ERR_KEX_FAILED | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_IF_TRUE(!accept, ASSH_ERR_KEX_FAILED);
 
   s->kex_bytes = 0;
 
@@ -936,7 +901,7 @@ assh_error_t assh_kex_end(struct assh_session_s *s, assh_bool_t accept)
 
   /* send a NEWKEY packet */
   struct assh_packet_s *p;
-  ASSH_RET_ON_ERR(assh_packet_alloc(s->ctx, SSH_MSG_NEWKEYS, 0, &p) | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_ON_ERR(assh_packet_alloc(s->ctx, SSH_MSG_NEWKEYS, 0, &p));
   assh_transport_push(s, p);
 
   return ASSH_OK;

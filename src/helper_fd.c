@@ -104,7 +104,7 @@ assh_fd_event(struct assh_session_s *s,
           if (errno == EAGAIN || errno == EWOULDBLOCK)
             break;
         case 0:
-          err = ASSH_ERR_IO | ASSH_ERRSV_FIN;
+          err = ASSH_ERR_IO | ASSH_ERRSV_DISCONNECT;
           goto err_;
         default:
           te->transferred = r;

@@ -242,7 +242,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
       /* decompress payload */
       struct assh_packet_s *p_ = p;
       ASSH_RET_ON_ERR(k->cmp->f_process(s->ctx, k->cmp_ctx, &p, s->auth_done)
-		   | ASSH_ERRSV_FIN);
+		   | ASSH_ERRSV_DISCONNECT);
 
       if (p_ != p)
 	assh_packet_release(p_);

@@ -163,7 +163,8 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
 
   size_t kbits = assh_bignum_bits(&t_key->nn);
 
-  ASSH_JMP_IF_TRUE(kbits < pv->minklen, ASSH_ERR_BAD_DATA, err_tkey);
+  ASSH_JMP_IF_TRUE(kbits < pv->minklen, ASSH_ERR_BAD_DATA
+               | ASSH_ERRSV_DISCONNECT, err_tkey);
 
   /* create shared secret */
   size_t hlen = pv->hash->hash_size;
@@ -173,14 +174,16 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
   size_t elen = ASSH_ALIGN8(kbits) / 8;
 
   ASSH_JMP_ON_ERR(assh_alloc(c, slen + 4 + elen, ASSH_ALLOC_SECUR,
-			  (void**)&pv->secret), err_tkey);
+			  (void**)&pv->secret)
+               | ASSH_ERRSV_DISCONNECT, err_tkey);
 
   uint8_t *secret = pv->secret;
   uint8_t *em = secret + slen + 4;
   assh_store_u32(em - 4, elen);
 
   ASSH_JMP_ON_ERR(assh_prng_get(c, secret + 4, slen - 4,
-		ASSH_PRNG_QUALITY_EPHEMERAL_KEY), err_tkey);
+		ASSH_PRNG_QUALITY_EPHEMERAL_KEY)
+               | ASSH_ERRSV_DISCONNECT, err_tkey);
   assh_store_u32(secret, slen - 4);
   secret[4] &= 0x7f & (0xff >> ((8 - sbits) & 7));
 
@@ -193,7 +196,8 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
   em[0] = 0;
   uint8_t *seed = em + 1;
   ASSH_JMP_ON_ERR(assh_prng_get(c, seed, hlen,
-		ASSH_PRNG_QUALITY_NONCE), err_tkey);
+		ASSH_PRNG_QUALITY_NONCE)
+               | ASSH_ERRSV_DISCONNECT, err_tkey);
 
   uint8_t *db = em + 1 + hlen;
   memcpy(db, pv->lhash, hlen); /* hash of empty label */
@@ -208,9 +212,11 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
 #endif
 
   ASSH_JMP_ON_ERR(assh_kex_rsa_mgf1(c, pv->hash,
-	         em + 1, hlen, db, elen - hlen - 1), err_tkey);
+	         em + 1, hlen, db, elen - hlen - 1)
+               | ASSH_ERRSV_DISCONNECT, err_tkey);
   ASSH_JMP_ON_ERR(assh_kex_rsa_mgf1(c, pv->hash,
-                 db, elen - hlen - 1, em + 1, hlen), err_tkey);
+                 db, elen - hlen - 1, em + 1, hlen)
+               | ASSH_ERRSV_DISCONNECT, err_tkey);
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
   assh_hexdump("em", em, elen);
@@ -241,7 +247,8 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
   };
 
   ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "DNNTTm",
-                em, &t_key->nn, &t_key->en), err_tkey);
+                em, &t_key->nn, &t_key->en)
+               | ASSH_ERRSV_DISCONNECT, err_tkey);
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
   assh_hexdump("emc", em, elen);
@@ -274,16 +281,13 @@ static assh_error_t assh_kex_rsa_client_wait_pubkey(struct assh_session_s *s,
   struct assh_kex_rsa_private_s *pv = s->kex_pv;
   assh_error_t err;
 
-  ASSH_RET_IF_TRUE(p->head.msg != SSH_MSG_KEXRSA_PUBKEY, ASSH_ERR_PROTOCOL
-	       | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_IF_TRUE(p->head.msg != SSH_MSG_KEXRSA_PUBKEY, ASSH_ERR_PROTOCOL);
 
   const uint8_t *ks_str = p->head.end;
   const uint8_t *t_str;
 
-  ASSH_RET_ON_ERR(assh_packet_check_string(p, ks_str, &t_str)
-	       | ASSH_ERRSV_DISCONNECT);
-  ASSH_RET_ON_ERR(assh_packet_check_string(p, t_str, NULL)
-	       | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, ks_str, &t_str));
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, t_str, NULL));
 
   ASSH_RET_ON_ERR(assh_kex_client_get_key(s, ks_str, e,
                  &assh_kex_rsa_host_key_lookup_done, pv));
@@ -306,12 +310,10 @@ static assh_error_t assh_kex_rsa_client_wait_sign(struct assh_session_s *s,
   ASSH_ASSERT(assh_packet_check_string(pv->pck, ks_str, &t_str));
 
   /* SSH_MSG_KEXRSA_DONE packet */
-  ASSH_RET_IF_TRUE(p->head.msg != SSH_MSG_KEXRSA_DONE, ASSH_ERR_PROTOCOL
-	       | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_IF_TRUE(p->head.msg != SSH_MSG_KEXRSA_DONE, ASSH_ERR_PROTOCOL);
 
   uint8_t *h_str = p->head.end;
-  ASSH_RET_ON_ERR(assh_packet_check_string(p, h_str, NULL)
-	       | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, h_str, NULL));
 
   ASSH_SCRATCH_ALLOC(s->ctx, uint8_t, scratch,
                      pv->hash->ctx_size,
@@ -320,16 +322,14 @@ static assh_error_t assh_kex_rsa_client_wait_sign(struct assh_session_s *s,
 
   ASSH_JMP_ON_ERR(assh_hash_init(s->ctx, hash_ctx, pv->hash), err_scratch);
 
-  ASSH_JMP_ON_ERR(assh_kex_client_hash1(s, hash_ctx, ks_str)
-               | ASSH_ERRSV_DISCONNECT, err_hash);
+  ASSH_JMP_ON_ERR(assh_kex_client_hash1(s, hash_ctx, ks_str), err_hash);
 
   assh_hash_string(hash_ctx, t_str);
   assh_hash_string(hash_ctx, pv->secret + assh_load_u32(pv->secret) + 4);
 
-  ASSH_JMP_ON_ERR(assh_kex_client_hash2(s, hash_ctx, pv->secret, h_str)
-               | ASSH_ERRSV_DISCONNECT, err_hash);
+  ASSH_JMP_ON_ERR(assh_kex_client_hash2(s, hash_ctx, pv->secret, h_str), err_hash);
 
-  ASSH_JMP_ON_ERR(assh_kex_end(s, 1) | ASSH_ERRSV_DISCONNECT, err_hash);
+  ASSH_JMP_ON_ERR(assh_kex_end(s, 1), err_hash);
 
   err = ASSH_OK;
 
@@ -353,39 +353,34 @@ static assh_error_t assh_kex_rsa_server_send_pubkey(struct assh_session_s *s)
 
   struct assh_key_s *hk;
   ASSH_RET_IF_TRUE(assh_key_lookup(c, &hk, &s->host_sign_algo->algo) != ASSH_OK,
-               ASSH_ERR_MISSING_KEY | ASSH_ERRSV_DISCONNECT);
+               ASSH_ERR_MISSING_KEY);
   pv->host_key = hk;
 
   /* alloc reply packet */
   size_t ks_len;
   ASSH_RET_ON_ERR(assh_key_output(c, hk, NULL, &ks_len,
-	         ASSH_KEY_FMT_PUB_RFC4253)
-	       | ASSH_ERRSV_DISCONNECT);
+	         ASSH_KEY_FMT_PUB_RFC4253));
 
   size_t t_len;
   ASSH_RET_ON_ERR(assh_key_output(c, pv->t_key, NULL, &t_len,
-	         ASSH_KEY_FMT_PUB_RFC4253)
-	       | ASSH_ERRSV_DISCONNECT);
+	         ASSH_KEY_FMT_PUB_RFC4253));
 
   struct assh_packet_s *pout;
 
   ASSH_RET_ON_ERR(assh_packet_alloc(c, SSH_MSG_KEXRSA_PUBKEY,
-		(4 + ks_len) + (4 + t_len), &pout)
-	       | ASSH_ERRSV_DISCONNECT);
+		(4 + ks_len) + (4 + t_len), &pout));
 
   uint8_t *ks_str;
   ASSH_ASSERT(assh_packet_add_string(pout, ks_len, &ks_str));
   ASSH_JMP_ON_ERR(assh_key_output(c, hk, ks_str, &ks_len,
-		ASSH_KEY_FMT_PUB_RFC4253)
-	       | ASSH_ERRSV_DISCONNECT, err_p);
+		ASSH_KEY_FMT_PUB_RFC4253), err_p);
 
   assh_packet_shrink_string(pout, ks_str, ks_len);
 
   uint8_t *t_str;
   ASSH_ASSERT(assh_packet_add_string(pout, t_len, &t_str));
   ASSH_JMP_ON_ERR(assh_key_output(c, pv->t_key, t_str, &t_len,
-		ASSH_KEY_FMT_PUB_RFC4253)
-	       | ASSH_ERRSV_DISCONNECT, err_p);
+		ASSH_KEY_FMT_PUB_RFC4253), err_p);
 
   assh_packet_shrink_string(pout, t_str, t_len);
 
@@ -420,13 +415,11 @@ static assh_error_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
   struct assh_kex_rsa_private_s *pv = s->kex_pv;
   assh_error_t err;
 
-  ASSH_RET_IF_TRUE(p->head.msg != SSH_MSG_KEXRSA_SECRET, ASSH_ERR_PROTOCOL
-	       | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_IF_TRUE(p->head.msg != SSH_MSG_KEXRSA_SECRET, ASSH_ERR_PROTOCOL);
 
   uint8_t *e_str = p->head.end;
 
-  ASSH_RET_ON_ERR(assh_packet_check_string(p, e_str, NULL)
-	       | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, e_str, NULL));
 
   assh_hash_string(pv->hash_ctx, e_str);
 
@@ -437,8 +430,7 @@ static assh_error_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
   size_t hlen = pv->hash->hash_size;
   size_t elen = ASSH_ALIGN8(kbits) / 8;
 
-  ASSH_RET_IF_TRUE(assh_load_u32(e_str) != elen, ASSH_ERR_BAD_DATA
-	       | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_IF_TRUE(assh_load_u32(e_str) != elen, ASSH_ERR_BAD_DATA);
 
   uint8_t *em = e_str + 4;
 
@@ -489,8 +481,7 @@ static assh_error_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
   assh_hexdump("e", em, elen);
 #endif
 
-  ASSH_RET_IF_TRUE(assh_memcmp(db, pv->lhash, hlen), ASSH_ERR_BAD_DATA
-	       | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_IF_TRUE(assh_memcmp(db, pv->lhash, hlen), ASSH_ERR_BAD_DATA);
 
   /* check and skip padding */
   uint8_t *ps = db + hlen;
@@ -506,19 +497,16 @@ static assh_error_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
 
   size_t sign_len;
   const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
-  ASSH_RET_ON_ERR(assh_sign_generate(c, sign_algo, hk, 0, NULL, NULL, &sign_len)
-	       | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_ON_ERR(assh_sign_generate(c, sign_algo, hk, 0, NULL, NULL, &sign_len));
 
   struct assh_packet_s *pout;
-  ASSH_RET_ON_ERR(assh_packet_alloc(c, SSH_MSG_KEXRSA_DONE, (4 + sign_len), &pout)
-	       | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_ON_ERR(assh_packet_alloc(c, SSH_MSG_KEXRSA_DONE, (4 + sign_len), &pout));
 
-  ASSH_JMP_ON_ERR(assh_kex_server_hash2(s, pv->hash_ctx, pout, sign_len, hk, ps)
-	       | ASSH_ERRSV_DISCONNECT, err_p);
+  ASSH_JMP_ON_ERR(assh_kex_server_hash2(s, pv->hash_ctx, pout, sign_len, hk, ps), err_p);
 
   assh_transport_push(s, pout);
 
-  ASSH_RETURN(assh_kex_end(s, 1) | ASSH_ERRSV_DISCONNECT);
+  ASSH_RETURN(assh_kex_end(s, 1));
 
  err_p:
   assh_packet_release(pout);
@@ -578,8 +566,7 @@ static assh_error_t assh_kex_rsa_init(struct assh_session_s *s,
   assh_error_t err;
   struct assh_kex_rsa_private_s *pv;
 
-  ASSH_RET_ON_ERR(assh_alloc(c, sizeof(*pv), ASSH_ALLOC_INTERNAL, (void**)&pv)
-	       | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_ON_ERR(assh_alloc(c, sizeof(*pv), ASSH_ALLOC_INTERNAL, (void**)&pv));
 
   switch (c->type)
     {
@@ -594,7 +581,7 @@ static assh_error_t assh_kex_rsa_init(struct assh_session_s *s,
       if (assh_key_lookup(c, &pv->t_key, algo))
 	{
 	  ASSH_JMP_ON_ERR(assh_key_create(c, &c->keys, minklen, &assh_key_rsa,
-		       ASSH_ALGO_KEX) | ASSH_ERRSV_DISCONNECT, err);
+		       ASSH_ALGO_KEX), err);
 	  pv->t_key = c->keys;
 	}
       pv->state = ASSH_KEX_RSA_SERVER_SEND_PUBKEY;

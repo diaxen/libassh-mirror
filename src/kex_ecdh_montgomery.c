@@ -120,7 +120,7 @@ struct assh_kex_ecdhmt_private_s
 
 #define ASSH_BOP_MONTGOMERY_SADD_OPS 18
 
-assh_error_t ASSH_WARN_UNUSED_RESULT
+static assh_error_t ASSH_WARN_UNUSED_RESULT
 assh_montgomery_point_mul(struct assh_session_s *s, uint8_t *result,
                           const uint8_t *basepoint, const uint8_t *scalar)
 {
@@ -240,7 +240,7 @@ static assh_error_t assh_kex_ecdhmt_client_send_pubkey(struct assh_session_s *s)
   /* send a packet containing the public key */
   struct assh_packet_s *p;
   ASSH_RET_ON_ERR(assh_packet_alloc(c, SSH_MSG_KEX_ECDH_INIT,
-               4 + pv->size, &p) | ASSH_ERRSV_DISCONNECT);
+               4 + pv->size, &p));
 
   uint8_t *qc_str;
   ASSH_ASSERT(assh_packet_add_string(p, pv->size, &qc_str));
@@ -279,14 +279,15 @@ static ASSH_EVENT_DONE_FCN(assh_kex_ecdhmt_host_key_lookup_done)
   /* compute shared secret */
   ASSH_SCRATCH_ALLOC(s->ctx, uint8_t, scratch,
                      pv->hash->ctx_size + 5 + pv->size,
-		     ASSH_ERRSV_CONTINUE, err_);
+		     ASSH_ERRSV_DISCONNECT, err_);
 
   void *hash_ctx = scratch;
   uint8_t *secret = scratch + pv->hash->ctx_size;
   uint8_t *secret_end = secret + 5 + pv->size;
 
   ASSH_JMP_ON_ERR(assh_montgomery_point_mul(s, secret + 5,
-                           qs_str + 4, pv->pvkey), err_sc);
+                           qs_str + 4, pv->pvkey)
+               | ASSH_ERRSV_DISCONNECT, err_sc);
 
   /* makes the secret looks like a mpint */
   secret[4] = 0;
@@ -296,7 +297,8 @@ static ASSH_EVENT_DONE_FCN(assh_kex_ecdhmt_host_key_lookup_done)
   assh_store_u32(secret, secret_end - secret - 4);
 
   /* compute exchange hash and send reply */
-  ASSH_JMP_ON_ERR(assh_hash_init(s->ctx, hash_ctx, pv->hash), err_sc);
+  ASSH_JMP_ON_ERR(assh_hash_init(s->ctx, hash_ctx, pv->hash)
+               | ASSH_ERRSV_DISCONNECT, err_sc);
 
   ASSH_JMP_ON_ERR(assh_kex_client_hash1(s, hash_ctx, ks_str)
                | ASSH_ERRSV_DISCONNECT, err_sc);
@@ -326,21 +328,17 @@ static assh_error_t assh_kex_ecdhmt_client_wait_reply(struct assh_session_s *s,
   struct assh_kex_ecdhmt_private_s *pv = s->kex_pv;
   assh_error_t err;
 
-  ASSH_RET_IF_TRUE(p->head.msg != SSH_MSG_KEX_ECDH_REPLY, ASSH_ERR_PROTOCOL
-	       | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_IF_TRUE(p->head.msg != SSH_MSG_KEX_ECDH_REPLY, ASSH_ERR_PROTOCOL);
 
   const uint8_t *ks_str = p->head.end;
   const uint8_t *qs_str, *h_str;
 
-  ASSH_RET_ON_ERR(assh_packet_check_string(p, ks_str, &qs_str)
-	       | ASSH_ERRSV_DISCONNECT);
-  ASSH_RET_ON_ERR(assh_packet_check_string(p, qs_str, &h_str)
-	       | ASSH_ERRSV_DISCONNECT);
-  ASSH_RET_ON_ERR(assh_packet_check_string(p, h_str, NULL)
-	       | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, ks_str, &qs_str));
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, qs_str, &h_str));
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, h_str, NULL));
 
   ASSH_RET_IF_TRUE(assh_load_u32(qs_str) != pv->size,
-               ASSH_ERR_BAD_DATA | ASSH_ERRSV_DISCONNECT);
+               ASSH_ERR_BAD_DATA);
 
   ASSH_RET_ON_ERR(assh_kex_client_get_key(s, ks_str, e,
                  &assh_kex_ecdhmt_host_key_lookup_done, pv));
@@ -364,15 +362,14 @@ static assh_error_t assh_kex_ecdhmt_server_wait_pubkey(struct assh_session_s *s,
   assh_error_t err;
 
   ASSH_RET_IF_TRUE(p->head.msg != SSH_MSG_KEX_ECDH_INIT,
-	       ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+	       ASSH_ERR_PROTOCOL);
 
   uint8_t *qc_str = p->head.end;
 
-  ASSH_RET_ON_ERR(assh_packet_check_string(p, qc_str, NULL)
-	       | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, qc_str, NULL));
 
   ASSH_RET_IF_TRUE(assh_load_u32(qc_str) != pv->size,
-               ASSH_ERR_BAD_DATA | ASSH_ERRSV_DISCONNECT);
+               ASSH_ERR_BAD_DATA);
 
   /* generate ephemeral key pair */
   ASSH_RET_ON_ERR(assh_kex_ecdhmt_private_gen(s, pv->pvkey));
@@ -423,7 +420,7 @@ static assh_error_t assh_kex_ecdhmt_server_wait_pubkey(struct assh_session_s *s,
 
   assh_transport_push(s, pout);
 
-  ASSH_JMP_ON_ERR(assh_kex_end(s, 1) | ASSH_ERRSV_DISCONNECT, err_hash);
+  ASSH_JMP_ON_ERR(assh_kex_end(s, 1), err_hash);
 
   err = ASSH_OK;
   goto err_hash;
@@ -500,8 +497,7 @@ assh_kex_ecdhmt_init(struct assh_session_s *s,
 
   struct assh_kex_ecdhmt_private_s *pv;
   ASSH_RET_ON_ERR(assh_alloc(s->ctx, sizeof(*pv) + l * 2,
-                          ASSH_ALLOC_SECUR, (void**)&pv)
-	       | ASSH_ERRSV_DISCONNECT);
+                          ASSH_ALLOC_SECUR, (void**)&pv));
 
   s->kex_pv = pv;
 
