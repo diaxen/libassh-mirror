@@ -64,7 +64,7 @@ assh_inter_init_pty_req(struct assh_inter_pty_req_s *i,
   size_t modes_len = 0;
   while (modes[modes_len])
     modes_len += 2;
-  i->modes.str = modes;
+  i->modes.data = modes;
   i->modes.len = modes_len;
 }
 

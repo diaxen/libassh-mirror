@@ -1171,7 +1171,8 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_server_process)
                      | ASSH_ERRSV_DISCONNECT);
 
     case ASSH_USERAUTH_ST_KEYBOARD_CONTINUE:
-      ASSH_RET_ON_ERR(assh_userauth_server_kbinfo(s, p, e, "\x00\x00\x00\x00")
+      ASSH_RET_ON_ERR(assh_userauth_server_kbinfo(s, p, e,
+                     (const uint8_t *)"\x00\x00\x00\x00")
                    | ASSH_ERRSV_DISCONNECT);
       return ASSH_NO_DATA;
 #endif

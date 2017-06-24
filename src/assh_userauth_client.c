@@ -521,7 +521,7 @@ static ASSH_USERAUTH_CLIENT_REQ(assh_userauth_client_keyboard_req)
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
-  uint8_t *bool_, *str;
+  uint8_t *str;
 
   struct assh_packet_s *pout;
 
@@ -653,7 +653,6 @@ assh_userauth_client_req_keyboard_info(struct assh_session_s *s,
 
 static ASSH_USERAUTH_CLIENT_PROCESS(assh_userauth_client_keyboard_process)
 {
-  struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
   if (p == NULL)

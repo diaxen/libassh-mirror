@@ -1137,7 +1137,7 @@ assh_key_fingerprint(struct assh_context_s *c,
     }
     case ASSH_FP_BASE64_SHA256: {
       struct assh_base64_ctx_s bctx;
-      assh_base64_init(&bctx, buf, 44);
+      assh_base64_init(&bctx, (uint8_t*)buf, 44);
       ASSH_JMP_ON_ERR(assh_base64_encode_update(&bctx, hash, 32), err_sc);
       ASSH_JMP_ON_ERR(assh_base64_encode_final(&bctx), err_sc);
       buf[43] = 0;              /* drop '=' */

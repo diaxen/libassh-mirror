@@ -376,6 +376,9 @@ assh_session_disconnect(struct assh_session_s *s,
     case ASSH_TR_CLOSED:
     case ASSH_TR_FIN:
       ASSH_RETURN(ASSH_ERR_CLOSED);
+
+    default:
+      ASSH_UNREACHABLE();
     }
 }
 
@@ -412,8 +415,6 @@ assh_error_t
 assh_session_algo_filter(struct assh_session_s *s,
                          assh_kex_filter_t *filter)
 {
-  assh_error_t err;
-
   switch (s->tr_st)
     {
     case ASSH_TR_KEX_WAIT:
