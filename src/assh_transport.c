@@ -241,7 +241,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 
       /* decompress payload */
       struct assh_packet_s *p_ = p;
-      ASSH_RET_ON_ERR(k->cmp->f_process(s->ctx, k->cmp_ctx, &p, s->auth_done)
+      ASSH_RET_ON_ERR(k->cmp->f_process(s->ctx, k->cmp_ctx, &p, s->tr_user_auth_done)
 		   | ASSH_ERRSV_DISCONNECT);
 
       if (p_ != p)
@@ -254,7 +254,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 #endif
 
 #ifdef CONFIG_ASSH_CLIENT
-      s->auth_done |= s->ctx->type == ASSH_CLIENT &&
+      s->tr_user_auth_done |= s->ctx->type == ASSH_CLIENT &&
 	p->head.msg == SSH_MSG_USERAUTH_SUCCESS;
 #endif
 
@@ -422,7 +422,7 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 
       struct assh_packet_s *p_ = p;
       /* compress payload */
-      ASSH_RET_ON_ERR(k->cmp->f_process(s->ctx, k->cmp_ctx, &p, s->auth_done)
+      ASSH_RET_ON_ERR(k->cmp->f_process(s->ctx, k->cmp_ctx, &p, s->tr_user_auth_done)
 		   | ASSH_ERRSV_FIN);
 
       if (p_ != p)
@@ -501,7 +501,7 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 	}
 
       s->stream_out_st = ASSH_TR_OUT_PACKETS_DONE;
-      s->auth_done |= auth;
+      s->tr_user_auth_done |= auth;
 
       if (newkey)
 	{

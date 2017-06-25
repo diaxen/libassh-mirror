@@ -169,7 +169,9 @@ struct assh_session_s
   size_t srv_index:5;
 #endif
 
-  assh_bool_t auth_done:1;
+  /** user authentication success packet has been handled by the
+      transport layer */
+  assh_bool_t tr_user_auth_done:1;
 
   /** Currrent output ssh stream generator state. */
   enum assh_stream_out_state_e stream_out_st:3;

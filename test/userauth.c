@@ -200,7 +200,7 @@ static int test()
 	  TEST_FAIL("error event");
 
 	case ASSH_EVENT_KEX_DONE:
-	  assert(!session[0].auth_done);
+	  assert(!session[0].tr_user_auth_done);
 	  break;
 
 	case ASSH_EVENT_USERAUTH_SERVER_METHODS:
@@ -392,7 +392,7 @@ static int test()
 	  TEST_FAIL("error event");
 
 	case ASSH_EVENT_KEX_DONE:
-	  assert(!session[1].auth_done);
+	  assert(!session[1].tr_user_auth_done);
 	  break;
 
         case ASSH_EVENT_USERAUTH_CLIENT_USER:
@@ -557,7 +557,7 @@ static int test()
   /* unlimited retries should lead to authentication completion when
      no error is introduced */
   assert(packet_fuzz || alloc_fuzz ||
-	 (session[0].auth_done && session[1].auth_done));
+	 (session[0].auth_done && session[1].tr_user_auth_done));
 
   if (!packet_fuzz && !alloc_fuzz && alloc_size == alloc_size_init)
     TEST_FAIL("leak checking not working\n");
