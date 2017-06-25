@@ -35,7 +35,20 @@ libassh_la_SOURCES = assh_context.c assh_session.c assh_packet.c	\
 	hash_sha3_builtin.c prng_xswap_builtin.c helper_interactive.c
 
 if COND_client
-libassh_la_SOURCES +=   assh_userauth_client.c helper_client.c
+libassh_la_SOURCES +=   assh_userauth_client.c assh_userauth_client_none.c \
+			assh_userauth_client_pv.h helper_client.c
+if COND_password_userauth
+libassh_la_SOURCES +=   assh_userauth_client_password.c
+endif
+if COND_publickey_userauth
+libassh_la_SOURCES +=   assh_userauth_client_publickey.c
+endif
+if COND_hostbased_userauth
+libassh_la_SOURCES +=   assh_userauth_client_hostbased.c
+endif
+if COND_keyboard_userauth
+libassh_la_SOURCES +=   assh_userauth_client_keyboard.c
+endif
 endif
 
 if COND_server
