@@ -117,6 +117,7 @@ void assh_session_cleanup(struct assh_session_s *s)
   switch (s->srv_st)
     {
     case ASSH_SRV_RUNNING:
+    case ASSH_SRV_INIT_EVENT:
       s->srv->f_cleanup(s);
     default:
       break;

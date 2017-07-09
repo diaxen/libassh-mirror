@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_EV_CONST /* write access to event const fields */
+
 #include <assh/assh_context.h>
 #include <assh/assh_session.h>
 #include <assh/assh_service.h>
@@ -238,6 +240,14 @@ assh_service_next(struct assh_session_s *s,
 }
 #endif
 
+static ASSH_EVENT_DONE_FCN(assh_event_service_start_done)
+{
+  assert(s->srv_st == ASSH_SRV_INIT_EVENT);
+  s->srv_st = ASSH_SRV_RUNNING;
+
+  return ASSH_OK;
+}
+
 assh_error_t assh_service_loop(struct assh_session_s *s,
                                struct assh_packet_s *p,
                                struct assh_event_s *e)
@@ -312,10 +322,17 @@ assh_error_t assh_service_loop(struct assh_session_s *s,
         /* starts service and report event */
         ASSH_RET_ON_ERR(s->srv->f_init(s) | ASSH_ERRSV_DISCONNECT);
 
-        s->srv_st = ASSH_SRV_RUNNING;
+        e->id = ASSH_EVENT_SERVICE_START;
+        e->f_done = assh_event_service_start_done;
+        e->service.start.srv = s->srv;
+
+        s->srv_st = ASSH_SRV_INIT_EVENT;
 
         /* packet not consumed by the init */
         return p != NULL ? ASSH_NO_DATA : ASSH_OK;
+
+      case ASSH_SRV_INIT_EVENT:
+        ASSH_UNREACHABLE();
 
       case ASSH_SRV_RUNNING:
         ASSH_RET_IF_TRUE(p != NULL &&

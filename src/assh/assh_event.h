@@ -50,6 +50,9 @@ enum assh_event_id_e
   /** @see assh_event_kex_done_s */
   ASSH_EVENT_KEX_DONE                    = 6,
 
+  /** @see assh_event_service_start_s */
+  ASSH_EVENT_SERVICE_START               = 9,
+
   /** @see assh_event_userauth_client_user_s */
   ASSH_EVENT_USERAUTH_CLIENT_USER        = 10,
   /** @see assh_event_userauth_client_methods_s */
@@ -149,6 +152,10 @@ struct assh_event_s
 
 #ifdef ASSH_KEX_H_
     union assh_event_kex_u kex;
+#endif
+
+#ifdef ASSH_SERVICE_H_
+    union assh_event_service_u service;
 #endif
 
 #ifdef CONFIG_ASSH_CLIENT

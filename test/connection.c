@@ -858,7 +858,7 @@ int test(int (*fend)(int, int), int n, int evrate)
 
 	    case ASSH_EVENT_KEX_HOSTKEY_LOOKUP:
 	      event.kex.hostkey_lookup.accept = 1;
-	      break;
+	      goto ev_ok;
 
 	    case ASSH_EVENT_KEX_DONE:
 	      if (kex_done)
@@ -879,6 +879,8 @@ int test(int (*fend)(int, int), int n, int evrate)
 	    case ASSH_EVENT_CONNECTION_START:
 	      started[i]++;
 	      break;
+	    case ASSH_EVENT_SERVICE_START:
+	      goto ev_ok;
 
 	    default:
 	      printf("Don't know how to handle event %u (context %u)\n", event.id, i);
@@ -897,6 +899,10 @@ int test(int (*fend)(int, int), int n, int evrate)
 
 	  if (stall >= 100000)
 	    TEST_FAIL("stalled\n");
+	  continue;
+
+	ev_ok:
+	  assh_event_done(&session[i], &event, ASSH_OK);
 	}
     }
 

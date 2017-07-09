@@ -29,6 +29,10 @@
 #ifndef ASSH_SERVICE_H_
 #define ASSH_SERVICE_H_
 
+#ifdef ASSH_EVENT_H_
+# warning The assh/assh_event.h header should be included after assh_service.h
+#endif
+
 #include "assh_context.h"
 
 /** @internal */
@@ -37,6 +41,7 @@ enum assh_service_state_e
   ASSH_SRV_NONE,
   ASSH_SRV_REQUESTED,
   ASSH_SRV_INIT,
+  ASSH_SRV_INIT_EVENT,
   ASSH_SRV_RUNNING,
 };
 
@@ -108,6 +113,21 @@ struct assh_service_s
   assh_service_process_t *f_process;
   enum assh_context_type_e side:2;
   assh_bool_t no_user_auth:1;
+};
+
+/**
+   The @ref ASSH_EVENT_SERVICE_START event is reported when a
+   service has started.
+*/
+struct assh_event_service_start_s
+{
+  const struct assh_service_s * ASSH_EV_CONST srv;
+};
+
+/** @internal */
+union assh_event_service_u
+{
+  struct assh_event_service_start_s start;
 };
 
 /** @This function registers a single @ref assh_service_s for use by
