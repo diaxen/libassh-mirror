@@ -308,6 +308,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_success_done)
 
   /* start the next requested service */
   ASSH_RETURN(srv->f_init(s) | ASSH_ERRSV_DISCONNECT);
+  s->user_auth_done = 1;
 }
 
 /* handle authentication success */
@@ -1216,6 +1217,7 @@ const struct assh_service_s assh_service_userauth_server =
 {
   .name = "ssh-userauth",
   .side = ASSH_SERVER,
+  .no_user_auth = 1,
   .f_init = assh_userauth_server_init,
   .f_cleanup = assh_userauth_server_cleanup,
   .f_process = assh_userauth_server_process,

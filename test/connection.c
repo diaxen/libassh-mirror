@@ -201,6 +201,7 @@ int test(int (*fend)(int, int), int n, int evrate)
       if (assh_session_init(&context[i], &session[i]) != ASSH_OK)
 	return -1;
 
+      session[i].user_auth_done = 1;
       if (assh_kex_set_threshold(&session[i], 1 + rand() % 4096))
 	return -1;
     }

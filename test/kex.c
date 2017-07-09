@@ -393,6 +393,7 @@ void test(const struct assh_algo_kex_s *kex,
       if (assh_session_init(c, &session[i]) != ASSH_OK)
 	TEST_FAIL("session init\n");
 
+      session[i].user_auth_done = 1;
       assh_cipher_fuzz_initreg(c, &session[i]);
     }
 

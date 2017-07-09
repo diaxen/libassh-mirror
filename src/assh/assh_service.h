@@ -98,6 +98,7 @@ struct assh_service_s
   assh_service_cleanup_t *f_cleanup;
   assh_service_process_t *f_process;
   enum assh_context_type_e side:2;
+  assh_bool_t no_user_auth:1;
 };
 
 /** @This function registers a single @ref assh_service_s for use by

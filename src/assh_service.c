@@ -133,6 +133,9 @@ assh_error_t assh_service_got_request(struct assh_session_s *s,
 		    (const char *)name + 4, &srv) != ASSH_OK,
                ASSH_ERR_SERVICE_NA);
 
+  ASSH_RET_IF_TRUE(!s->user_auth_done && !srv->no_user_auth,
+               ASSH_ERR_SERVICE_NA | ASSH_ERRSV_DISCONNECT);
+
   struct assh_packet_s *pout;
   ASSH_RET_ON_ERR(assh_packet_alloc(s->ctx, SSH_MSG_SERVICE_ACCEPT,
 				 name_len + 4, &pout));

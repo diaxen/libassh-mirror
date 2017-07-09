@@ -63,6 +63,7 @@ assh_error_t assh_session_init(struct assh_context_s *c,
 #endif
   s->srv = NULL;
   s->tr_user_auth_done = 0;
+  s->user_auth_done = 0;
 
   s->last_err = 0;
   s->time = 0;

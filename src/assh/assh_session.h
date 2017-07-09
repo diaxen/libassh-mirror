@@ -172,6 +172,8 @@ struct assh_session_s
   /** user authentication success packet has been handled by the
       transport layer */
   assh_bool_t tr_user_auth_done:1;
+  /** user authentication success */
+  assh_bool_t user_auth_done:1;
 
   /** Currrent output ssh stream generator state. */
   enum assh_stream_out_state_e stream_out_st:3;

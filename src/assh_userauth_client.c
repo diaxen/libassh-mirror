@@ -370,6 +370,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_success_done)
 
   /* cleanup the authentication service and start the next service. */
   assh_userauth_client_cleanup(s);
+  s->user_auth_done = 1;
 
   ASSH_RET_ON_ERR(srv->f_init(s) | ASSH_ERRSV_DISCONNECT);
   s->srv_index++;
@@ -537,6 +538,7 @@ const struct assh_service_s assh_service_userauth_client =
 {
   .name = "ssh-userauth",
   .side = ASSH_CLIENT,
+  .no_user_auth = 1,
   .f_init = assh_userauth_client_init,
   .f_cleanup = assh_userauth_client_cleanup,
   .f_process = assh_userauth_client_process,
