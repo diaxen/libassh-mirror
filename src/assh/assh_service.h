@@ -31,6 +31,15 @@
 
 #include "assh_context.h"
 
+/** @internal */
+enum assh_service_state_e
+{
+  ASSH_SRV_NONE,
+  ASSH_SRV_REQUESTED,
+  ASSH_SRV_INIT,
+  ASSH_SRV_RUNNING,
+};
+
 /** @internal @see assh_service_init_t */
 #define ASSH_SERVICE_INIT_FCN(n) \
   ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_session_s *s)
@@ -124,20 +133,6 @@ assh_service_register_default(struct assh_context_s *c);
 
 /** @internal */
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_service_got_request(struct assh_session_s *s,
-                         struct assh_packet_s *p);
-
-/** @internal */
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_service_got_accept(struct assh_session_s *s,
-                        struct assh_packet_s *p);
-
-/** @internal */
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_service_send_request(struct assh_session_s *s);
-
-/** @internal */
-ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_service_loop(struct assh_session_s *s,
                   struct assh_packet_s *p,
                   struct assh_event_s *e);
@@ -147,6 +142,23 @@ ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_service_by_name(struct assh_context_s *c,
                      size_t name_len, const char *name,
                      const struct assh_service_s **srv_);
+
+/** @internal @This returns the next service which must be started for
+    the current client session. Designed for use by service
+    implementations. */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_service_next(struct assh_session_s *s,
+                  const struct assh_service_s **srv);
+
+/** @internal @This stops the currently running service if any.
+    Designed for use by service implementations. */
+void assh_service_stop(struct assh_session_s *s);
+
+/** @internal @This stops the currently running service if any and
+    schedules execution of the specified service. Designed for use by
+    service implementations. */
+void assh_service_start(struct assh_session_s *s,
+                        const struct assh_service_s *next);
 
 #endif
 

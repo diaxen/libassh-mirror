@@ -135,7 +135,6 @@ static ASSH_SERVICE_INIT_FCN(assh_userauth_server_init)
   ASSH_RET_ON_ERR(assh_alloc(s->ctx, sizeof(*pv),
                 ASSH_ALLOC_SECUR, (void**)&pv));
 
-  s->srv = &assh_service_userauth_server;
   s->srv_pv = pv;
   pv->deadline = s->time + ASSH_TIMEOUT_USERAUTH;
   pv->safety = 99;
@@ -193,9 +192,6 @@ static ASSH_SERVICE_CLEANUP_FCN(assh_userauth_server_cleanup)
   assh_packet_release(pv->pck);
 
   assh_free(s->ctx, pv);
-
-  s->srv_pv = NULL;
-  s->srv = NULL;
 }
 
 /* send the authentication failure packet */
@@ -276,7 +272,6 @@ static assh_error_t assh_userauth_server_failure(struct assh_session_s *s,
 static ASSH_EVENT_DONE_FCN(assh_userauth_server_success_done)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  const struct assh_service_s *srv = pv->srv;
   assh_error_t err;
 
   assert(pv->state == ASSH_USERAUTH_ST_SUCCESS_DONE);
@@ -297,18 +292,16 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_success_done)
                      | ASSH_ERRSV_DISCONNECT);
     }
 
-  /* cleanup the authentication service */
-  assh_userauth_server_cleanup(s);
-
   /* send the authentication success packet */
   struct assh_packet_s *pout;
   ASSH_RET_ON_ERR(assh_packet_alloc(s->ctx, SSH_MSG_USERAUTH_SUCCESS, 0, &pout)
 	       | ASSH_ERRSV_DISCONNECT);
   assh_transport_push(s, pout);
 
-  /* start the next requested service */
-  ASSH_RETURN(srv->f_init(s) | ASSH_ERRSV_DISCONNECT);
   s->user_auth_done = 1;
+  assh_service_start(s, pv->srv);
+
+  return ASSH_OK;
 }
 
 /* handle authentication success */

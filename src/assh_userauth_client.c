@@ -59,9 +59,10 @@ static const struct assh_userauth_client_method_s
 static ASSH_SERVICE_INIT_FCN(assh_userauth_client_init)
 {
   struct assh_userauth_context_s *pv;
+  const struct assh_service_s *srv;
   assh_error_t err;
 
-  ASSH_RET_IF_TRUE(s->srv_index >= s->ctx->srvs_count, ASSH_ERR_SERVICE_NA);
+  ASSH_RET_ON_ERR(assh_service_next(s, &srv));
 
   ASSH_RET_ON_ERR(assh_alloc(s->ctx, sizeof(*pv),
                     ASSH_ALLOC_SECUR, (void**)&pv));
@@ -69,7 +70,6 @@ static ASSH_SERVICE_INIT_FCN(assh_userauth_client_init)
   pv->methods = 0;
   pv->state = ASSH_USERAUTH_ST_INIT;
 
-  s->srv = &assh_service_userauth_client;
   s->srv_pv = pv;
 
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY
@@ -87,8 +87,8 @@ static ASSH_SERVICE_INIT_FCN(assh_userauth_client_init)
 #endif
 
   /* get next client requested service */
-  pv->srv = s->ctx->srvs[s->srv_index];
   pv->pck = NULL;
+  pv->srv = srv;
 
   return ASSH_OK;
 }
@@ -115,9 +115,6 @@ static ASSH_SERVICE_CLEANUP_FCN(assh_userauth_client_cleanup)
   assh_packet_release(pv->pck);
 
   assh_free(c, pv);
-
-  s->srv_pv = NULL;
-  s->srv = NULL;
 }
 
 ASSH_USERAUTH_CLIENT_RETRY(assh_userauth_client_no_retry)
@@ -363,16 +360,13 @@ assh_userauth_client_get_methods(struct assh_session_s *s,
 static ASSH_EVENT_DONE_FCN(assh_userauth_client_success_done)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  const struct assh_service_s *srv = pv->srv;
-  assh_error_t err;
 
   assert(pv->state == ASSH_USERAUTH_ST_SUCCESS);
 
   /* cleanup the authentication service and start the next service. */
-  assh_userauth_client_cleanup(s);
   s->user_auth_done = 1;
+  assh_service_start(s, pv->srv);
 
-  ASSH_RET_ON_ERR(srv->f_init(s) | ASSH_ERRSV_DISCONNECT);
   s->srv_index++;
 
   return ASSH_OK;

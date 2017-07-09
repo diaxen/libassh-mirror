@@ -727,44 +727,18 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 
     /* handle service related packet, run service */
     case ASSH_TR_SERVICE:
-      switch (msg)
+      if (msg == SSH_MSG_KEXINIT)
 	{
         /* received a rekeying request, reply and switch to ASSH_TR_KEX_RUNNING */
-	case SSH_MSG_KEXINIT:
 	  ASSH_RET_IF_TRUE(s->new_keys_out != NULL, ASSH_ERR_PROTOCOL | ASSH_ERRSV_FIN);
 	  ASSH_RET_ON_ERR(assh_kex_send_init(s) | ASSH_ERRSV_DISCONNECT);
 	  goto kex_init;
-
-	/* handle a service request packet */
-	case SSH_MSG_SERVICE_REQUEST:
-#ifdef CONFIG_ASSH_SERVER
-	  if (s->ctx->type == ASSH_SERVER)
-	    ASSH_RET_ON_ERR(assh_service_got_request(s, p) | ASSH_ERRSV_DISCONNECT);
-	  else
-#endif
-	    ASSH_RETURN(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
-	  p = NULL;
-	  break;
-
-	/* handle a service accept packet */
-        case SSH_MSG_SERVICE_ACCEPT:
-#ifdef CONFIG_ASSH_CLIENT
-	  if (s->ctx->type == ASSH_CLIENT)
-	    ASSH_RET_ON_ERR(assh_service_got_accept(s, p) | ASSH_ERRSV_DISCONNECT);
-	  else
-#endif
-	    ASSH_RETURN(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
-	  p = NULL;
-	  break;
-
-	/* dispatch packet to service */
-        default:
-	  ASSH_RET_IF_TRUE(msg >= SSH_MSG_ALGONEG_FIRST &&
-		       msg <= SSH_MSG_KEXSPEC_LAST,
-		       ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
-	case SSH_MSG_INVALID:
-	  break;
 	}
+
+      /* dispatch packet to service */
+      ASSH_RET_IF_TRUE(msg >= SSH_MSG_ALGONEG_FIRST &&
+		   msg <= SSH_MSG_KEXSPEC_LAST,
+		   ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
 
     case ASSH_TR_FIN:
 

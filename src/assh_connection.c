@@ -1802,7 +1802,6 @@ static ASSH_SERVICE_INIT_FCN(assh_connection_init)
   s->deadline = s->time + ASSH_TIMEOUT_KEEPALIVE;
   pv->in_data_left = 0;
 
-  s->srv = &assh_service_connection;
   s->srv_pv = pv;
 
   pv->state = ASSH_CONNECTION_ST_START;
@@ -1828,9 +1827,6 @@ static ASSH_SERVICE_CLEANUP_FCN(assh_connection_cleanup)
   assh_channel_queue_cleanup(s, &pv->closing_queue);
 
   assh_free(s->ctx, pv);
-
-  s->srv_pv = NULL;
-  s->srv = NULL;
 }
 
 static void assh_channel_force_close_i(struct assh_map_entry_s *ch_, void *pv_)

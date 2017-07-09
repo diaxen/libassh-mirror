@@ -58,9 +58,9 @@ assh_error_t assh_session_init(struct assh_context_s *c,
 
 #ifdef CONFIG_ASSH_CLIENT
   s->kex_host_key = NULL;
-  s->srv_rq = NULL;
   s->srv_index = 0;
 #endif
+  s->srv_st = ASSH_SRV_NONE;
   s->srv = NULL;
   s->tr_user_auth_done = 0;
   s->user_auth_done = 0;
@@ -114,8 +114,13 @@ void assh_session_cleanup(struct assh_session_s *s)
     s->kex->f_cleanup(s);
   assert(s->kex_pv == NULL);
 
-  if (s->srv != NULL)
-    s->srv->f_cleanup(s);
+  switch (s->srv_st)
+    {
+    case ASSH_SRV_RUNNING:
+      s->srv->f_cleanup(s);
+    default:
+      break;
+    }
 
   assh_packet_release(s->kex_init_local);
   assh_packet_release(s->kex_init_remote);

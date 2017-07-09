@@ -115,12 +115,11 @@ assh_error_t assh_service_by_name(struct assh_context_s *c,
 }
 
 #ifdef CONFIG_ASSH_SERVER
-assh_error_t assh_service_got_request(struct assh_session_s *s,
-                                      struct assh_packet_s *p)
+static assh_error_t
+assh_service_got_request(struct assh_session_s *s,
+                         struct assh_packet_s *p)
 {
   assh_error_t err;
-
-  ASSH_RET_IF_TRUE(s->srv != NULL, ASSH_ERR_PROTOCOL);
 
   const uint8_t *name = p->head.end, *name_end;
   ASSH_RET_ON_ERR(assh_packet_check_string(p, name, &name_end));
@@ -140,45 +139,37 @@ assh_error_t assh_service_got_request(struct assh_session_s *s,
   ASSH_RET_ON_ERR(assh_packet_alloc(s->ctx, SSH_MSG_SERVICE_ACCEPT,
 				 name_len + 4, &pout));
 
-  /* init service */
-  ASSH_JMP_ON_ERR(srv->f_init(s), err_pkt);
-
   /* send accept packet */
   uint8_t *namep;
   ASSH_ASSERT(assh_packet_add_string(pout, name_len, &namep));
   memcpy(namep, srv->name, name_len);
   assh_transport_push(s, pout);
 
+  s->srv = srv;
+
   return ASSH_OK;
- err_pkt:
-  assh_packet_release(pout);
-  return err;
 }
 #endif
 
 #ifdef CONFIG_ASSH_CLIENT
-assh_error_t assh_service_got_accept(struct assh_session_s *s,
-                                     struct assh_packet_s *p)
+static assh_error_t
+assh_service_got_accept(struct assh_session_s *s,
+                        struct assh_packet_s *p)
 {
   assh_error_t err;
-
-  ASSH_RET_IF_TRUE(s->srv_rq == NULL || s->srv != NULL, ASSH_ERR_PROTOCOL);
 
   /* check accepted service name */
   const uint8_t *name = p->head.end, *name_end;
   ASSH_RET_ON_ERR(assh_packet_check_string(p, name, &name_end));
 
-  ASSH_RET_IF_TRUE(assh_ssh_string_compare(name, s->srv_rq->name),
+  ASSH_RET_IF_TRUE(assh_ssh_string_compare(name, s->srv->name),
 	       ASSH_ERR_PROTOCOL);
 
-  /* init service */
-  const struct assh_service_s *srv = s->srv_rq;
-  s->srv_rq = NULL;
-
-  ASSH_RETURN(srv->f_init(s));
+  return ASSH_OK;
 }
 
-assh_error_t assh_service_send_request(struct assh_session_s *s)
+static assh_error_t
+assh_service_send_request(struct assh_session_s *s)
 {
   assh_error_t err;
 
@@ -201,7 +192,47 @@ assh_error_t assh_service_send_request(struct assh_session_s *s)
   assh_transport_push(s, pout);
 
   s->srv_index++;
-  s->srv_rq = srv;
+  s->srv = srv;
+  s->srv_st = ASSH_SRV_REQUESTED;
+
+  return ASSH_OK;
+}
+#endif
+
+void assh_service_stop(struct assh_session_s *s)
+{
+  if (s->srv_st == ASSH_SRV_RUNNING)
+    {
+      const struct assh_service_s *srv = s->srv;
+
+      srv->f_cleanup(s);
+
+      s->srv_pv = NULL;
+      s->srv_st = ASSH_SRV_NONE;
+    }
+}
+
+void assh_service_start(struct assh_session_s *s,
+                        const struct assh_service_s *next)
+{
+  assh_service_stop(s);
+
+  s->srv = next;
+  s->srv_st = ASSH_SRV_INIT;
+}
+
+#ifdef CONFIG_ASSH_CLIENT
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_service_next(struct assh_session_s *s,
+                  const struct assh_service_s **srv)
+{
+  struct assh_context_s *c = s->ctx;
+  assh_error_t err;
+
+  assert(c->type == ASSH_CLIENT);
+
+  ASSH_RET_IF_TRUE(s->srv_index >= c->srvs_count, ASSH_ERR_SERVICE_NA);
+  *srv = c->srvs[s->srv_index++];
 
   return ASSH_OK;
 }
@@ -211,44 +242,110 @@ assh_error_t assh_service_loop(struct assh_session_s *s,
                                struct assh_packet_s *p,
                                struct assh_event_s *e)
 {
-  const struct assh_service_s *srv;
   assh_error_t err;
 
-  do {
-    srv = s->srv;
+  while (1)
+    {
 
-    if (srv == NULL)
+    switch (s->srv_st)
       {
-        /* do not start a service when disconnecting */
-        if (s->tr_st >= ASSH_TR_DISCONNECT)
-          break;
+      case ASSH_SRV_NONE:
+        if (p != NULL)
+          {
+            /* no service is currently running, we should receive a
+               request packet on the server side. */
+#ifdef CONFIG_ASSH_SERVER
+            if (p->head.msg == SSH_MSG_SERVICE_REQUEST
+# ifdef CONFIG_ASSH_CLIENT
+                && s->ctx->type == ASSH_SERVER
+# endif
+               )
+              {
+                if (s->tr_st >= ASSH_TR_DISCONNECT)
+                  return ASSH_OK;
 
-        ASSH_RET_IF_TRUE(p != NULL, ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+                ASSH_RET_ON_ERR(assh_service_got_request(s, p)
+                             | ASSH_ERRSV_DISCONNECT);
+
+                s->srv_st = ASSH_SRV_INIT;
+                p = NULL;
+                continue;
+              }
+#endif
+            ASSH_RETURN(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+          }
 
 #ifdef CONFIG_ASSH_CLIENT
-        /* client send a service request if no service is currently running */
-        if (s->ctx->type == ASSH_CLIENT && s->srv_rq == NULL)
+# ifdef CONFIG_ASSH_SERVER
+        /* no service is currently running, we have to send a
+           request packet on the client side. */
+        if (s->ctx->type == ASSH_CLIENT)
+# endif
           ASSH_RET_ON_ERR(assh_service_send_request(s) | ASSH_ERRSV_DISCONNECT);
 #endif
-        break;
-      }
+        return ASSH_OK;
 
-    /* call service processing function, p may be NULL */
-    ASSH_RET_ON_ERR(srv->f_process(s, p, e));
+#ifdef CONFIG_ASSH_CLIENT
+      case ASSH_SRV_REQUESTED:
+        if (p != NULL)
+          {
+            /* we previously sent a service request packet, expecting the
+               accept packet from the server. */
+            if (p->head.msg == SSH_MSG_SERVICE_ACCEPT)
+              {
+                ASSH_RET_ON_ERR(assh_service_got_accept(s, p)
+                             | ASSH_ERRSV_DISCONNECT);
 
-    /* we have an event to report */
-    if (e->id != ASSH_EVENT_INVALID)
-      {
+                s->srv_st = ASSH_SRV_INIT;
+                p = NULL;
+                continue;
+              }
+            ASSH_RETURN(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+          }
+        return ASSH_OK;
+#endif
+
+      case ASSH_SRV_INIT:
+        if (s->tr_st >= ASSH_TR_DISCONNECT)
+          return ASSH_OK;
+
+        /* starts service and report event */
+        ASSH_RET_ON_ERR(s->srv->f_init(s) | ASSH_ERRSV_DISCONNECT);
+
+        s->srv_st = ASSH_SRV_RUNNING;
+
+        /* packet not consumed by the init */
+        return p != NULL ? ASSH_NO_DATA : ASSH_OK;
+
+      case ASSH_SRV_RUNNING:
+        ASSH_RET_IF_TRUE(p != NULL &&
+                     (p->head.msg == SSH_MSG_SERVICE_ACCEPT ||
+                      p->head.msg == SSH_MSG_SERVICE_REQUEST),
+                     ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+
+        /* call service processing function, p may be NULL */
+        ASSH_RET_ON_ERR(s->srv->f_process(s, p, e));
+
+        /* Handle as a consumed packet when no packet passed to
+           service. The pointer might have been set to NULL in a
+           previous iteration. */
         if (p == NULL)
           err = ASSH_OK;
-        return err;               /* err may be ASSH_OK or ASSH_NO_DATA */
+
+        /* report any event */
+        if (e->id != ASSH_EVENT_INVALID)
+          return err;    /* err may be ASSH_OK or ASSH_NO_DATA */
+
+        /* need to start the next service or
+           packet not consumed yet */
+        if (s->srv_st == ASSH_SRV_INIT ||
+            err == ASSH_NO_DATA)
+          continue;
+
+        return ASSH_OK;
+
+      default:
+        ASSH_UNREACHABLE();
       }
-
-    if (err == ASSH_OK)
-      p = NULL;
-
-  } while (err == ASSH_NO_DATA || /* input packet not consumed by service */
-           srv != s->srv          /* service has changed */);
-
-  return ASSH_OK;
+  }
 }

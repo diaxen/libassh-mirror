@@ -30,6 +30,7 @@
 #define ASSH_SESSION_H_
 
 #include "assh_transport.h"
+#include "assh_service.h"
 #include "assh_queue.h"
 #include "assh_packet.h"
 
@@ -92,8 +93,6 @@ struct assh_session_s
   /** Current service private data. */
   void *srv_pv;
 #ifdef CONFIG_ASSH_CLIENT
-  /** Requested service. */
-  const struct assh_service_s *srv_rq;
   /** Host key sent by server. The key is loaded by @ref
       assh_kex_client_get_key and released when the @ref
       ASSH_EVENT_KEX_DONE event is acknowledged.  */
@@ -183,6 +182,9 @@ struct assh_session_s
 
   /** Current state of the transport layer. */
   enum assh_transport_state_e tr_st:4;
+
+  /** Current state of service execution. */
+  enum assh_service_state_e srv_st:3;
 };
 
 /** @This set the user private pointer of the session. */
