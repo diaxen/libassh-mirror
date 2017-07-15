@@ -355,9 +355,10 @@ static int test()
 
 	  break;
 
-	case ASSH_EVENT_CONNECTION_START:
+	case ASSH_EVENT_SERVICE_START:
 	  stall = 0;
-	  done |= 1;
+	  if (event.service.start.srv == &assh_service_connection)
+	    done |= 1;
 	  break;
 
 	default:
@@ -524,8 +525,10 @@ static int test()
 	  auth_client_success_count++;
 	  break;
 
-	case ASSH_EVENT_CONNECTION_START:
-	  done |= 2;
+	case ASSH_EVENT_SERVICE_START:
+	  if (event.service.start.srv == &assh_service_connection)
+	    done |= 2;
+	  break;
 
 	default:
 	  ASSH_DEBUG("client: don't know how to handle event %u\n", event.id);

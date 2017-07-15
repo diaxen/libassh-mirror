@@ -731,15 +731,24 @@ assh_client_event_inter_session(struct assh_session_s *s,
 {
   switch (event->id)
     {
-    case ASSH_EVENT_CONNECTION_START:
-      /* we can send channel related requests from this point */
-      assert(ctx->state == ASSH_CLIENT_INTER_ST_INIT);
+    case ASSH_EVENT_SERVICE_START: {
+      assh_bool_t conn = event->service.start.srv ==
+	                   &assh_service_connection;
+
       assh_event_done(s, event, ASSH_OK);
 
-      if (assh_inter_open_session(s, &ctx->channel))
-	goto err;
-      ctx->state = ASSH_CLIENT_INTER_ST_SESSION;
+      if (conn)
+	{
+	  /* we can send channel related requests from this point */
+	  assert(ctx->state == ASSH_CLIENT_INTER_ST_INIT);
+
+	  if (assh_inter_open_session(s, &ctx->channel))
+	    goto err;
+
+	  ctx->state = ASSH_CLIENT_INTER_ST_SESSION;
+	}
       return;
+    }
 
     case ASSH_EVENT_CHANNEL_OPEN_REPLY: {
       struct assh_event_channel_open_reply_s *ev =

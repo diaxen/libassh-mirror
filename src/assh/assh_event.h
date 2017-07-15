@@ -82,8 +82,6 @@ enum assh_event_id_e
   /** @see assh_event_userauth_server_success_s */
   ASSH_EVENT_USERAUTH_SERVER_SUCCESS     = 26,
 
-  /** @see assh_event_connection_start_s */
-  ASSH_EVENT_CONNECTION_START            = 30,
   /** @see assh_event_request_s */
   ASSH_EVENT_REQUEST                     = 31,
   /** @see assh_event_request_reply_s */

@@ -180,10 +180,13 @@ ssh_loop(struct assh_session_s *session,
              &auth_methods, assh_client_openssh_user_key_default, &event);
           break;
 
-        case ASSH_EVENT_CONNECTION_START:
-          /* put terminal in raw mode */
-          if (isatty(0))
+        case ASSH_EVENT_SERVICE_START:
+
+          if (event.service.start.srv ==
+              &assh_service_connection &&
+              isatty(0))
             {
+              /* put terminal in raw mode */
               struct termios t;
               t = term;
               cfmakeraw(&t);

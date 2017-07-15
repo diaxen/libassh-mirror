@@ -38,7 +38,6 @@ ASSH_EVENT_SIZE_SASSERT(connection);
 
 enum assh_connection_state_e
 {
-  ASSH_CONNECTION_ST_START, 
   ASSH_CONNECTION_ST_IDLE,
   ASSH_CONNECTION_ST_EVENT_REQUEST,
   ASSH_CONNECTION_ST_EVENT_REQUEST_REPLY,
@@ -1804,7 +1803,7 @@ static ASSH_SERVICE_INIT_FCN(assh_connection_init)
 
   s->srv_pv = pv;
 
-  pv->state = ASSH_CONNECTION_ST_START;
+  pv->state = ASSH_CONNECTION_ST_IDLE;
 
   return ASSH_OK;
 }
@@ -1906,21 +1905,7 @@ static ASSH_SERVICE_PROCESS_FCN(assh_connection_process)
       s->deadline = s->time + ASSH_TIMEOUT_KEEPALIVE;
     }
 
-  switch (pv->state)
-    {
-    case ASSH_CONNECTION_ST_START:
-      assert(p == NULL);
-      e->id = ASSH_EVENT_CONNECTION_START;
-      e->f_done = NULL;
-      pv->state = ASSH_CONNECTION_ST_IDLE;
-      return ASSH_OK;
-
-    case ASSH_CONNECTION_ST_IDLE:
-      break;
-
-    default:
-      ASSH_UNREACHABLE();
-    }
+  assert(pv->state == ASSH_CONNECTION_ST_IDLE);
 
   if (pv->in_data_left)
     {

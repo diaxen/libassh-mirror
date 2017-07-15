@@ -876,10 +876,9 @@ int test(int (*fend)(int, int), int n, int evrate)
 		stall = 0;
 	      break;
 
-	    case ASSH_EVENT_CONNECTION_START:
-	      started[i]++;
-	      break;
 	    case ASSH_EVENT_SERVICE_START:
+	      if (event.service.start.srv == &assh_service_connection)
+		started[i]++;
 	      goto ev_ok;
 
 	    default:

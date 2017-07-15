@@ -2071,7 +2071,7 @@ static void test()
 	    }
 	  break;
 
-	case ASSH_EVENT_CONNECTION_START:
+	case ASSH_EVENT_SERVICE_START:
 	  stall = 0;
 	  break;
 

@@ -442,7 +442,9 @@ void test(const struct assh_algo_kex_s *kex,
 		stall = 0;
 	      break;
 
-	    case ASSH_EVENT_CONNECTION_START:
+	    case ASSH_EVENT_SERVICE_START:
+	      if (event.service.start.srv != &assh_service_connection)
+		break;
 #warning transfer more data
 	      done |= 1 << i;
 

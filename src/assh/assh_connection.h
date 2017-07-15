@@ -178,19 +178,6 @@ void * assh_request_pv(const struct assh_request_s *rq);
 enum assh_request_status_e
 assh_request_status(struct assh_request_s *rq);
 
-/************************************************* service start */
-
-/**
-   This event is reported when the @tt ssh-connection service has
-   just started. The channel related and request related functions
-   can be used from this point.
-
-   @see ASSH_EVENT_CONNECTION_START
-*/
-struct assh_event_connection_start_s
-{
-};
-
 /************************************************* incoming request */
 
 /**
@@ -731,7 +718,6 @@ assh_channel_close(struct assh_channel_s *ch);
 /** @This contains all @tt ssh-connection service related events */
 union assh_event_connection_u
 {
-  struct assh_event_connection_start_s  start;
   struct assh_event_request_s           request;
   struct assh_event_request_reply_s     request_reply;
   struct assh_event_channel_open_s      channel_open;
