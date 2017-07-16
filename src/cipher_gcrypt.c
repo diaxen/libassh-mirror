@@ -236,7 +236,8 @@ ASSH_GCRYPT_CIPHER(aes192_cbc, AES192, CBC,
                    { ASSH_ALGO_STD_IETF, "aes192-cbc" });
 ASSH_GCRYPT_CIPHER(aes256_cbc,          AES256,     CBC,
                    16, 16, 16, 32, 0, 60, 60,
-                   { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "aes256-cbc" });
+                   { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "aes256-cbc" },
+                   { ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_OLDNAME, "rijndael-cbc@lysator.liu.se" });
 
 ASSH_GCRYPT_CIPHER(aes128_ctr,          AES128,     CTR,
                    16, 16, 16, 16, 0, 41, 70,
