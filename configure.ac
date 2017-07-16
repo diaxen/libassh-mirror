@@ -201,6 +201,7 @@ AM_CONDITIONAL(COND_password_userauth, [test x$enable_password_userauth = xyes])
 AM_CONDITIONAL(COND_hostbased_userauth, [test x$enable_hostbased_userauth = xyes])
 AM_CONDITIONAL(COND_keyboard_userauth, [test x$enable_keyboard_userauth = xyes])
 AM_CONDITIONAL(COND_publickey_userauth, [test x$enable_publickey_userauth = xyes])
+AM_CONDITIONAL(COND_none_userauth, [test x$enable_none_userauth = xyes])
 
 if test x$enable_server = xyes ; then
    AC_DEFINE([CONFIG_ASSH_SERVER], [], [SSH server support])

@@ -52,7 +52,23 @@ endif
 endif
 
 if COND_server
-libassh_la_SOURCES +=   assh_userauth_server.c
+libassh_la_SOURCES +=   assh_userauth_server.c assh_userauth_server_pv.h
+
+if COND_none_userauth
+libassh_la_SOURCES +=   assh_userauth_server_none.c
+endif
+if COND_password_userauth
+libassh_la_SOURCES +=   assh_userauth_server_password.c
+endif
+if COND_publickey_userauth
+libassh_la_SOURCES +=   assh_userauth_server_publickey.c
+endif
+if COND_hostbased_userauth
+libassh_la_SOURCES +=   assh_userauth_server_hostbased.c
+endif
+if COND_keyboard_userauth
+libassh_la_SOURCES +=   assh_userauth_server_keyboard.c
+endif
 endif
 
 if COND_zlib
