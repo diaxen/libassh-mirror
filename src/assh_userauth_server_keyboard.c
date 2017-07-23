@@ -47,9 +47,13 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_kbresponse_done)
   const struct assh_event_userauth_server_kbresponse_s *ev =
     &e->userauth_server.kbresponse;
 
+  if (ASSH_ERR_ERROR(inerr))
+    goto failure;
+
   switch (ev->result)
     {
     case ASSH_SERVER_KBSTATUS_FAILURE:
+    failure:
       ASSH_RET_ON_ERR(assh_userauth_server_failure(s, 1) | ASSH_ERRSV_DISCONNECT);
       break;
     case ASSH_SERVER_KBSTATUS_SUCCESS:
@@ -133,6 +137,9 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_kbinfo_done)
   assh_packet_release(pv->pck);
   pv->pck = NULL;
 
+  if (ASSH_ERR_ERROR(inerr))
+    ASSH_RETURN(assh_userauth_server_failure(s, 1)
+                   | ASSH_ERRSV_DISCONNECT);
 
   const struct assh_event_userauth_server_kbinfo_s *ev =
     &e->userauth_server.kbinfo;

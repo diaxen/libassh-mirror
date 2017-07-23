@@ -40,7 +40,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_hostbased_done)
   const struct assh_event_userauth_server_hostbased_s *ev =
     &e->userauth_server.hostbased;
 
-  if (!ev->found)
+  if (ASSH_ERR_ERROR(inerr) || !ev->found)
     {
       assh_packet_release(pv->pck);
       pv->pck = NULL;

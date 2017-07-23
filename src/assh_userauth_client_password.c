@@ -92,7 +92,8 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_req_pwchange_done)
   assh_packet_release(pv->pck);
   pv->pck = NULL;
 
-  if (ev->old_password.len && ev->new_password.len)
+  if (!ASSH_ERR_ERROR(inerr) &&
+      ev->old_password.len && ev->new_password.len)
     {
       ASSH_RET_ON_ERR(assh_userauth_client_send_password(s,
         &ev->old_password, &ev->new_password) | ASSH_ERRSV_DISCONNECT);

@@ -79,9 +79,13 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_password_done)
   const struct assh_event_userauth_server_password_s *ev =
     &e->userauth_server.password;
 
+  if (ASSH_ERR_ERROR(inerr))
+    goto failure;
+
   switch (ev->result)
     {
     case ASSH_SERVER_PWSTATUS_FAILURE:
+    failure:
       ASSH_RET_ON_ERR(assh_userauth_server_failure(s, 1) | ASSH_ERRSV_DISCONNECT);
       break;
     case ASSH_SERVER_PWSTATUS_SUCCESS:

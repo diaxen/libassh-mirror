@@ -274,6 +274,9 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_username_done)
 
   assert(pv->state == ASSH_USERAUTH_ST_GET_USERNAME);
 
+  /* promote event processing error */
+  ASSH_RET_IF_TRUE(ASSH_ERR_ERROR(inerr), inerr | ASSH_ERRSV_DISCONNECT);
+
   const struct assh_event_userauth_client_user_s *ev = &e->userauth_client.user;
 
   /* keep username */
@@ -314,6 +317,9 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_get_methods_done)
   assh_error_t err;
 
   assert(pv->state == ASSH_USERAUTH_ST_GET_METHODS);
+
+  /* promote event processing error */
+  ASSH_RET_IF_TRUE(ASSH_ERR_ERROR(inerr), inerr | ASSH_ERRSV_DISCONNECT);
 
   const struct assh_event_userauth_client_methods_s *ev =
     &e->userauth_client.methods;

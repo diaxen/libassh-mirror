@@ -620,7 +620,7 @@ assh_client_event_openssh_auth(struct assh_session_s *s, FILE *out, FILE *in,
 
 	  ev->responses = rsp;
 	}
-#warning do not process events with errors, try cltr-d in password input
+
       assh_event_done(s, event, err);
 
       while (i--)

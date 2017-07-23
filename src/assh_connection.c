@@ -377,6 +377,9 @@ static ASSH_EVENT_DONE_FCN(assh_event_request_done)
 
   struct assh_request_s *rq = ev->rq;
 
+  if (ASSH_ERR_ERROR(inerr))
+    goto failure;
+
   /* acknowledge request */
   switch (ev->reply)
     {
@@ -389,6 +392,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_request_done)
 		     | ASSH_ERRSV_DISCONNECT);
       break;
     case ASSH_CONNECTION_REPLY_FAILED:
+    failure:
       if (rq == NULL)
         return ASSH_OK;
       ASSH_RETURN(assh_request_failed_reply(rq)
@@ -833,6 +837,9 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_open_done)
   const struct assh_event_channel_open_s *eo =
     &e->connection.channel_open;
 
+  if (ASSH_ERR_ERROR(inerr))
+    goto failure;
+
   switch (eo->reply)
     {
     case ASSH_CONNECTION_REPLY_SUCCESS:
@@ -841,6 +848,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_open_done)
 		   | ASSH_ERRSV_DISCONNECT);
 
     case ASSH_CONNECTION_REPLY_FAILED:
+    failure:
       ASSH_RETURN(assh_channel_open_failed_reply(eo->ch, eo->reason)
 		   | ASSH_ERRSV_DISCONNECT);
 
@@ -1095,8 +1103,10 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_data_done)
   const struct assh_event_channel_data_s *ev =
     &e->connection.channel_data;
 
-  assert(pv->in_data_left >= ev->transferred);
-  pv->in_data_left -= ev->transferred;
+  size_t transferred = ASSH_ERR_ERROR(inerr) ? 0 : ev->transferred;
+
+  assert(pv->in_data_left >= transferred);
+  pv->in_data_left -= transferred;
 
   if (!pv->in_data_left)
     {

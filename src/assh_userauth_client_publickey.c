@@ -80,8 +80,12 @@ assh_userauth_client_pck_pubkey(struct assh_session_s *s,
 static ASSH_EVENT_DONE_FCN(assh_userauth_client_pubkey_sign_done)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
+  assh_error_t err;
 
   assert(pv->state == ASSH_USERAUTH_ST_SENT_PUBKEY_RQ_DONE);
+
+  /* promote event processing error */
+  ASSH_RET_IF_TRUE(ASSH_ERR_ERROR(inerr), inerr | ASSH_ERRSV_DISCONNECT);
 
   struct assh_packet_s *pout = pv->pck;
   const struct assh_event_userauth_client_sign_s *ev = &e->userauth_client.sign;

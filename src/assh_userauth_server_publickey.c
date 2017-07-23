@@ -45,7 +45,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
     case ASSH_USERAUTH_ST_PUBKEY_PKOK: {      /* may need to send PK_OK */
       pv->state = ASSH_USERAUTH_ST_WAIT_RQ;
 
-      if (!ev->found)
+      if (ASSH_ERR_ERROR(inerr) || !ev->found)
         break;
 
       /* alloc packet */
@@ -83,7 +83,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
 
     case ASSH_USERAUTH_ST_PUBKEY_VERIFY: {
 
-      if (!ev->found)
+      if (ASSH_ERR_ERROR(inerr) || !ev->found)
         {
           assh_packet_release(pv->pck);
           pv->pck = NULL;

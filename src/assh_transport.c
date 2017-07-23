@@ -85,7 +85,9 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
   struct assh_kex_keys_s *k = s->cur_keys_in;
   uint_fast8_t hsize = k->cipher->head_size;
 
-  size_t rd_size = e->transport.read.transferred;
+  size_t rd_size = ASSH_ERR_ERROR(inerr)
+    ? 0 : e->transport.read.transferred;
+
   assert(rd_size <= e->transport.read.buf.size);
   s->stream_in_size += rd_size;
 
@@ -321,7 +323,9 @@ assh_error_t assh_transport_read(struct assh_session_s *s,
 
 static ASSH_EVENT_DONE_FCN(assh_event_write_done)
 {
-  size_t wr_size = e->transport.write.transferred;
+  size_t wr_size = ASSH_ERR_ERROR(inerr)
+    ? 0 : e->transport.write.transferred;
+
   assert(wr_size <= e->transport.write.buf.size);
   s->stream_out_size += wr_size;
 

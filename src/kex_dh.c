@@ -151,7 +151,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_dh_host_key_lookup_done)
 
   assert(pv->state == ASSH_KEX_DH_CLIENT_LOOKUP_HOST_KEY_WAIT);
 
-  if (!e->kex.hostkey_lookup.accept)
+  if (!e->kex.hostkey_lookup.accept || ASSH_ERR_ERROR(inerr))
     ASSH_RETURN(assh_kex_end(s, 0) | ASSH_ERRSV_DISCONNECT);
 
   struct assh_packet_s *p = pv->pck;

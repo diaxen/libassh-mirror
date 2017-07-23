@@ -70,7 +70,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_keyboard_info_done)
   struct assh_packet_s *pout;
   const struct assh_event_userauth_client_keyboard_s *ev = &e->userauth_client.keyboard;
 
-  size_t i, count = ev->count;
+  size_t i, count = ASSH_ERR_ERROR(inerr) ? 0 : ev->count;
 
   size_t psize = 4;
   for (i = 0; i < count; i++)
@@ -87,9 +87,10 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_keyboard_info_done)
 
   for (i = 0; i < count; i++)
     {
-      size_t len = ev->responses[i].len;
+      size_t len = ASSH_ERR_ERROR(inerr) ? 0 : ev->responses[i].len;
       ASSH_ASSERT(assh_packet_add_string(pout, len, &str));
-      memcpy(str, ev->responses[i].str, len);
+      if (len)
+        memcpy(str, ev->responses[i].str, len);
     }
 
   assh_transport_push(s, pout);
