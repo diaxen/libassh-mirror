@@ -28,6 +28,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef CONFIG_ASSH_USE_GCRYPT
+# include <gcrypt.h>
+#endif
+
 static char std(enum assh_algo_spec_e s)
 {
   switch (s & 7)
@@ -115,6 +119,12 @@ static void show_order(assh_safety_t safety)
 
 int main(int argc, char **argv)
 {
+#ifdef CONFIG_ASSH_USE_GCRYPT
+  if (!gcry_check_version(GCRYPT_VERSION))
+    return -1;
+  gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
+#endif
+
   if (argc < 2)
     show_table();
   else

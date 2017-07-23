@@ -30,6 +30,11 @@
 
 static ASSH_PRNG_INIT_FCN(assh_prng_gcrypt_init)
 {
+  assh_error_t err;
+
+  ASSH_RET_IF_TRUE(!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P),
+               ASSH_ERR_CRYPTO);
+
   return ASSH_OK;
 }
 

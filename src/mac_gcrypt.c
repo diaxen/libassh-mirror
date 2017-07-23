@@ -80,6 +80,10 @@ static assh_error_t assh_hmac_gcrypt_init(const struct assh_algo_mac_s *mac,
 {
   assh_error_t err;
   ctx->mac = mac;
+
+  ASSH_RET_IF_TRUE(!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P),
+               ASSH_ERR_CRYPTO);
+
   ASSH_RET_IF_TRUE(gcry_mac_open(&ctx->hd, algo, GCRY_MAC_FLAG_SECURE,
 			     NULL), ASSH_ERR_CRYPTO);
   ASSH_JMP_IF_TRUE(gcry_mac_setkey(ctx->hd, key, mac->key_size),

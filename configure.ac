@@ -245,6 +245,7 @@ AC_DEFINE([CONFIG_ASSH_AUTH_HOSTNAME_LEN], [128], [SSH authentication max hostna
 
 AC_DEFINE([CONFIG_ASSH_MAX_SERVICES], [4], [Maximum number of registered services])
 AC_DEFINE([CONFIG_ASSH_ABI_WARN], [], [Warn when a function not relying on a stable ABI is used])
+AC_DEFINE([CONFIG_ASSH_LIBC_REALLOC], [], [Compile the assh_libc_allocator])
 #AC_DEFINE([NDEBUG], [], [Disable asserts and some aborts])
 
 if test x$enable_packet_pool = xyes ; then

@@ -41,6 +41,9 @@ assh_cipher_gcrypt_init(const struct assh_algo_cipher_s *cipher,
 {
   assh_error_t err;
 
+  ASSH_RET_IF_TRUE(!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P),
+               ASSH_ERR_CRYPTO);
+
   ASSH_RET_IF_TRUE(gcry_cipher_open(&ctx->hd, algo, mode, 0),
 	       ASSH_ERR_CRYPTO);
 

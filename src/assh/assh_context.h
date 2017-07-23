@@ -117,10 +117,30 @@ struct assh_context_s
   const struct assh_algo_s *algos[CONFIG_ASSH_MAX_ALGORITHMS];
 };
 
+#ifdef CONFIG_ASSH_LIBC_REALLOC
+/** This allocator relies on the libc @tt realloc function. This
+    allocator @b{is not} able to provide secure memory.
+
+    It does not requires private data; @tt NULL may be passed as @tt
+    alloc_pv parameter of the initialization function.
+*/
+ASSH_ALLOCATOR(assh_libc_allocator);
+#endif
+
+#ifdef CONFIG_ASSH_USE_GCRYPT_ALLOC
+/** This allocator relies on the various memory allocation functions
+    provided by libgcrypt.
+
+    It does not requires private data; @tt NULL may be passed as @tt
+    alloc_pv parameter of the initialization function.
+*/
+ASSH_ALLOCATOR(assh_gcrypt_allocator);
+#endif
+
 /** @This allocates and initializes a context. The maximum number of
     registered algorithms should be @ref #CONFIG_ASSH_MAX_ALGORITHMS
-    if the @ref assh_algo_register_default function is used. The @tt
-    alloc and @tt prng parameters may be @tt NULL.
+    if the @ref assh_algo_register_default function is used.
+
     @see assh_context_init */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_context_create(struct assh_context_s **ctx,
@@ -134,8 +154,9 @@ assh_context_create(struct assh_context_s **ctx,
     object.
 
     If the @tt alloc parameter is @tt NULL, a default memory allocator
-    will be used. If the @tt prng parameter is @tt NULL, a default
-    random generator will be used.
+    will be used provided that one have been compiled in the
+    library. If the @tt prng parameter is @tt NULL, a default random
+    generator will be used.
 
     When a stable ABI is needed, use the @ref assh_context_create
     function instead. */

@@ -42,6 +42,10 @@
 #include "leaks_check.h"
 #include "test.h"
 
+#ifdef CONFIG_ASSH_USE_GCRYPT
+# include <gcrypt.h>
+#endif
+
 static struct fifo_s fifo[2];
 static struct assh_context_s context[2];
 static struct assh_session_s session[2];
@@ -2230,6 +2234,12 @@ static void test()
 
 int main()
 {
+#ifdef CONFIG_ASSH_USE_GCRYPT
+  if (!gcry_check_version(GCRYPT_VERSION))
+    return -1;
+  gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
+#endif
+
   uint_fast8_t i = 0;
 
   /* init server context */

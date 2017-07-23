@@ -584,7 +584,9 @@ int main(int argc, char **argv)
 #ifdef CONFIG_ASSH_USE_GCRYPT
   if (!gcry_check_version(GCRYPT_VERSION))
     TEST_FAIL("");
+  gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
+
   unsigned int count = argc > 1 ? atoi(argv[1]) : 100;
   unsigned int action = argc > 2 ? atoi(argv[2]) : 7;
   unsigned int seed = argc > 3 ? atoi(argv[3]) : time(0);

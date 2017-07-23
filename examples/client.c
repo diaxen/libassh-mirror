@@ -258,6 +258,7 @@ int main(int argc, char **argv)
 #ifdef CONFIG_ASSH_USE_GCRYPT
   if (!gcry_check_version(GCRYPT_VERSION))
     ERROR("gcrypt initialization error\n");
+  gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
 
   /* parse command line options */

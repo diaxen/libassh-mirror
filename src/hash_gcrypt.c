@@ -67,6 +67,9 @@ static ASSH_HASH_INIT_FCN(assh_gcrypt_hash_##id_##_init)                \
   struct assh_hash_gcrypt_context_s *gctx = (void*)hctx;                \
   assh_error_t err;                                                     \
                                                                         \
+  ASSH_RET_IF_TRUE(!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P),        \
+               ASSH_ERR_CRYPTO);                                        \
+                                                                        \
   ASSH_RET_IF_TRUE(gcry_md_open(&gctx->hd, algo_, GCRY_MD_FLAG_SECURE),     \
 	       ASSH_ERR_CRYPTO);                                        \
                                                                         \

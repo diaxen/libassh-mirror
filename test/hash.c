@@ -120,6 +120,7 @@ main(int argc, char **argv)
 #ifdef CONFIG_ASSH_USE_GCRYPT
   if (!gcry_check_version(GCRYPT_VERSION))
     return -1;
+  gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
 
   if (assh_context_init(&context, ASSH_CLIENT_SERVER, NULL, NULL, NULL, NULL))

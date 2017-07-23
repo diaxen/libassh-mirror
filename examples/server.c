@@ -67,6 +67,7 @@ int main()
 #ifdef CONFIG_ASSH_USE_GCRYPT
   if (!gcry_check_version(GCRYPT_VERSION))
     return -1;
+  gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
 
   int sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);

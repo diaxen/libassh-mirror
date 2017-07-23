@@ -159,6 +159,9 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_gcrypt_convert)
 {
   assh_error_t err;
 
+  ASSH_RET_IF_TRUE(!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P),
+               ASSH_ERR_CRYPTO | ASSH_ERRSV_FATAL);
+
   const struct assh_bignum_s *srcn = src;
   struct assh_bignum_s *dstn = dst;
 
@@ -404,7 +407,8 @@ assh_bignum_gcrypt_print(void *arg, enum assh_bignum_fmt_e fmt,
 #endif
 }
 
-assh_error_t assh_bignum_gcrypt_realloc(struct assh_bignum_s *bn, assh_bool_t secret)
+static assh_error_t
+assh_bignum_gcrypt_realloc(struct assh_bignum_s *bn, assh_bool_t secret)
 {
   assh_error_t err;
 
@@ -447,6 +451,9 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_gcrypt_bytecode)
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
   uint8_t trace = 0;
 #endif
+
+  ASSH_RET_IF_TRUE(!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P),
+               ASSH_ERR_CRYPTO | ASSH_ERRSV_FATAL);
 
   /* find number of arguments and temporaries */
   for (tlen = flen = 0; format[flen]; flen++)
