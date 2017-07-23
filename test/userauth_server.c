@@ -1270,6 +1270,7 @@ static void test()
 	  break;
 
 	case ASSH_EVENT_WRITE:
+          stall++;
 	  if (!fifo_rw_event(fifo, &event, 0))
 	    stall = 0;
 	  break;

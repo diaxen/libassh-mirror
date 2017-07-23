@@ -80,7 +80,7 @@ static assh_bool_t fifo_rw_event(struct fifo_s fifo[2], struct assh_event_s *e, 
 
     case ASSH_EVENT_WRITE: {
       struct assh_event_transport_write_s *te = &e->transport.write;
-      assh_bool_t stalled = (te->buf.size == 0);
+      assh_bool_t stalled = (te->buf.size == 0) || (fifo[i ^ 1].size == FIFO_BUF_SIZE);
       te->transferred = fifo_write(&fifo[i ^ 1], te->buf.data,
 				   te->buf.size % (rand() % FIFO_BUF_SIZE + 1));
       return stalled;

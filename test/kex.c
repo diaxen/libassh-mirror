@@ -438,6 +438,7 @@ void test(const struct assh_algo_kex_s *kex,
 	      break;
 
 	    case ASSH_EVENT_WRITE:
+	      stall++;
 	      if (!fifo_rw_event(fifo, &event, i))
 		stall = 0;
 	      break;

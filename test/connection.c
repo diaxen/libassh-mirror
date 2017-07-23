@@ -215,7 +215,7 @@ int test(int (*fend)(int, int), int n, int evrate)
   /********************* sessions test loop */
 
   //  ASSH_DEBUG("----\n");
-  uint_fast32_t stall = 0;
+  uint_fast32_t stall[2] = { 0, 0 };
 
   for (j = 0; fend(j, n); j++)
     {
@@ -443,6 +443,15 @@ int test(int (*fend)(int, int), int n, int evrate)
 	      continue;
 	    }
 
+	  assh_error_t everr = ASSH_OK;
+
+	  if (evrate && !(rand() % evrate))
+	    {
+	      everr = (rand() % 32 + 0x100);
+	      everr |= ((1 << (12 + rand() % 3))
+			& (ASSH_ERRSV_DISCONNECT | ASSH_ERRSV_FIN));
+	    }
+
 	  switch (event.id)
 	    {
 	    case ASSH_EVENT_ERROR: {
@@ -534,6 +543,9 @@ int test(int (*fend)(int, int), int n, int evrate)
 	      e->rsp_data.data = NULL;
 	      rqe->data_len = e->rsp_data.size = 0;
 
+	      if (everr)
+		goto rq_fail;
+
 	      switch (rand() % 3)
 		{
 		case 0:
@@ -549,6 +561,7 @@ int test(int (*fend)(int, int), int n, int evrate)
 		  rq_reply_success++;
 		  break;
 		case 1:
+		rq_fail:
 		  e->reply = ASSH_CONNECTION_REPLY_FAILED;
 		  rqe->status = RQ_FAIL;
 		  rq_reply_failed++;
@@ -718,6 +731,9 @@ int test(int (*fend)(int, int), int n, int evrate)
 
 	      ch_event_open_count++;
 
+	      if (everr)
+		goto ch_fail;
+
 	      switch (rand() % 3)
 		{
 		case 0:
@@ -735,6 +751,7 @@ int test(int (*fend)(int, int), int n, int evrate)
 		  ch_report(che);
 		  break;
 		case 1:
+		ch_fail:
 		  e->reply = ASSH_CONNECTION_REPLY_FAILED;
 		  che->ch[i] = NULL;
 		  che->status = CH_FAIL;
@@ -857,51 +874,50 @@ int test(int (*fend)(int, int), int n, int evrate)
 	    }
 
 	    case ASSH_EVENT_KEX_HOSTKEY_LOOKUP:
+	      everr = ASSH_OK;
 	      event.kex.hostkey_lookup.accept = 1;
-	      goto ev_ok;
+	      break;
 
 	    case ASSH_EVENT_KEX_DONE:
+	      everr = ASSH_OK;
 	      if (kex_done)
 		rekex_count++;
 	      kex_done = 1;
 	      break;
 
 	    case ASSH_EVENT_READ:
+	      everr = ASSH_OK;
 	      if (fifo_rw_event(fifo, &event, i))
-		stall++;
+		stall[i]++;
 	      break;
 
 	    case ASSH_EVENT_WRITE:
+	      everr = ASSH_OK;
+	      stall[i]++;
 	      if (!fifo_rw_event(fifo, &event, i))
-		stall = 0;
+		stall[i] = 0;
 	      break;
 
 	    case ASSH_EVENT_SERVICE_START:
+	      everr = ASSH_OK;
 	      if (event.service.start.srv == &assh_service_connection)
 		started[i]++;
-	      goto ev_ok;
+	      break;
 
 	    default:
 	      printf("Don't know how to handle event %u (context %u)\n", event.id, i);
 	      return 21;
 	    }
 
-	  assh_error_t everr = ASSH_OK;
-
-	  if (evrate && !(rand() % evrate))
-	    {
-	      everr = (rand() % 32 + 0x100);
-	      everr |= ((1 << (12 + rand() % 3))
-			& (ASSH_ERRSV_DISCONNECT | ASSH_ERRSV_FIN));
-	    }
 	  assh_event_done(&session[i], &event, everr);
 
-	  if (stall >= 100000)
-	    TEST_FAIL("stalled\n");
+	  if (stall[i] >= 100000)
+	    {
+	      if (evrate)
+		goto done;
+	      TEST_FAIL("stalled\n");
+	    }
 	  continue;
-
-	ev_ok:
-	  assh_event_done(&session[i], &event, ASSH_OK);
 	}
     }
 
