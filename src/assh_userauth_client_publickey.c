@@ -81,6 +81,8 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_pubkey_sign_done)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
 
+  assert(pv->state == ASSH_USERAUTH_ST_SENT_PUBKEY_RQ_DONE);
+
   struct assh_packet_s *pout = pv->pck;
   const struct assh_event_userauth_client_sign_s *ev = &e->userauth_client.sign;
 
@@ -133,6 +135,7 @@ assh_userauth_client_send_pubkey(struct assh_session_s *s,
         {
           ASSH_JMP_ON_ERR(assh_userauth_client_send_sign(s, k, pout, sign_len),
                        err_packet);
+          pv->state = ASSH_USERAUTH_ST_SENT_PUBKEY_RQ;
         }
       else
         {
@@ -141,9 +144,8 @@ assh_userauth_client_send_pubkey(struct assh_session_s *s,
 
           ASSH_JMP_ON_ERR(assh_userauth_client_get_sign(s, &e->userauth_client.sign,
                                                      k, pout, sign_len), err_packet);
+          pv->state = ASSH_USERAUTH_ST_SENT_PUBKEY_RQ_DONE;
         }
-
-      pv->state = ASSH_USERAUTH_ST_SENT_PUBKEY_RQ;
     }
 
   return ASSH_OK;

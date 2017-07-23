@@ -128,10 +128,11 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_kbinfo_done)
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
+  assert(pv->state == ASSH_USERAUTH_ST_KEYBOARD_INFO);
+
   assh_packet_release(pv->pck);
   pv->pck = NULL;
 
-  assert(pv->state == ASSH_USERAUTH_ST_KEYBOARD_INFO);
 
   const struct assh_event_userauth_server_kbinfo_s *ev =
     &e->userauth_server.kbinfo;

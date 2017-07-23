@@ -46,7 +46,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
       pv->state = ASSH_USERAUTH_ST_WAIT_RQ;
 
       if (!ev->found)
-        ASSH_RETURN(assh_userauth_server_failure(s, 1) | ASSH_ERRSV_DISCONNECT);
+        break;
 
       /* alloc packet */
       size_t algo_name_len = strlen(pv->algo_name->name);
@@ -85,16 +85,15 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
 
       if (!ev->found)
         {
-          ASSH_RET_ON_ERR(assh_userauth_server_failure(s, 1)
-                       | ASSH_ERRSV_DISCONNECT);
+          assh_packet_release(pv->pck);
+          pv->pck = NULL;
+          break;
         }
-      else
-        {
-          ASSH_RET_ON_ERR(assh_userauth_server_sign_check(s, pv->pck, pv->sign)
-                       | ASSH_ERRSV_DISCONNECT);
 
-          pv->state = ASSH_USERAUTH_ST_SUCCESS;
-        }
+      ASSH_RET_ON_ERR(assh_userauth_server_sign_check(s, pv->pck, pv->sign)
+                   | ASSH_ERRSV_DISCONNECT);
+
+      pv->state = ASSH_USERAUTH_ST_SUCCESS;
 
       assh_packet_release(pv->pck);
       pv->pck = NULL;
@@ -105,6 +104,9 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
     default:
       ASSH_UNREACHABLE();
     }
+
+  ASSH_RETURN(assh_userauth_server_failure(s, 1)
+                 | ASSH_ERRSV_DISCONNECT);
 }
 
 /* handle public key request packet */

@@ -345,6 +345,8 @@ assh_userauth_client_get_methods(struct assh_session_s *s,
   struct assh_event_userauth_client_methods_s *ev =
     &e->userauth_client.methods;
 
+  assert(pv->pck == NULL);
+
   memset(ev, 0, sizeof(*ev));
   ev->methods = pv->methods;
   ev->partial_success = partial_success;

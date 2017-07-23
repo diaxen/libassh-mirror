@@ -183,6 +183,7 @@ assh_error_t assh_userauth_server_failure(struct assh_session_s *s,
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
+  assert(pv->pck == NULL);
   assh_userauth_server_flush_state(s);
 
   if (get_methods)
@@ -219,6 +220,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_success_done)
       ASSH_RET_IF_TRUE(!(pv->methods & ASSH_USERAUTH_METHOD_SERVER_IMPLEMENTED),
                    ASSH_ERR_MISSING_ALGO | ASSH_ERRSV_DISCONNECT);
 
+      assert(pv->pck == NULL);
       assh_userauth_server_flush_state(s);
       pv->state = ASSH_USERAUTH_ST_WAIT_RQ;
       ASSH_RETURN(assh_userauth_server_send_failure(s, 1)
@@ -366,6 +368,7 @@ static assh_error_t assh_userauth_server_req(struct assh_session_s *s,
           assh_ssh_string_compare(srv_name, pv->srv->name) ||
           assh_ssh_string_compare(username, pv->username))
         {
+          assert(pv->pck == NULL);
           assh_userauth_server_flush_state(s);
 
           /* lookup service name */

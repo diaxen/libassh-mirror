@@ -35,11 +35,16 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_hostbased_done)
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
+  assert(pv->state == ASSH_USERAUTH_ST_HOSTBASED_VERIFY);
+
   const struct assh_event_userauth_server_hostbased_s *ev =
     &e->userauth_server.hostbased;
 
   if (!ev->found)
     {
+      assh_packet_release(pv->pck);
+      pv->pck = NULL;
+
       ASSH_RET_ON_ERR(assh_userauth_server_failure(s, 1)
                    | ASSH_ERRSV_DISCONNECT);
     }
@@ -49,10 +54,10 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_hostbased_done)
                    | ASSH_ERRSV_DISCONNECT);
 
       pv->state = ASSH_USERAUTH_ST_SUCCESS;
-    }
 
-  assh_packet_release(pv->pck);
-  pv->pck = NULL;
+      assh_packet_release(pv->pck);
+      pv->pck = NULL;
+    }
 
   return ASSH_OK;
 }
@@ -99,6 +104,8 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_hostbased)
 
   e->id = ASSH_EVENT_USERAUTH_SERVER_HOSTBASED;
   e->f_done = assh_userauth_server_hostbased_done;
+
+  pv->state = ASSH_USERAUTH_ST_HOSTBASED_VERIFY;
 
   return err;
 }
