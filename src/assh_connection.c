@@ -1512,6 +1512,7 @@ assh_channel_data_alloc(struct assh_channel_s *ch,
   *data = pout->data + pout->data_size
     + /* room for data size */ 4;
 
+  assh_packet_release(ch->data_pck);
   ch->data_pck = pout;
 
   return ASSH_OK;
@@ -1540,6 +1541,7 @@ assh_channel_data_alloc_ext(struct assh_channel_s *ch,
   *data = pout->data + pout->data_size
     + /* room for data size */ 4;
 
+  assh_packet_release(ch->data_pck);
   ch->data_pck = pout;
 
   return ASSH_OK;
