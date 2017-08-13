@@ -40,6 +40,7 @@ enum assh_connection_state_e
 {
   ASSH_CONNECTION_ST_IDLE,
   ASSH_CONNECTION_ST_EVENT_REQUEST,
+  ASSH_CONNECTION_ST_EVENT_REQUEST_ABORT,
   ASSH_CONNECTION_ST_EVENT_REQUEST_REPLY,
   ASSH_CONNECTION_ST_EVENT_CHANNEL_OPEN,
   ASSH_CONNECTION_ST_EVENT_CHANNEL_OPEN_REPLY,
@@ -684,6 +685,75 @@ static assh_bool_t assh_request_reply_flush(struct assh_session_s *s,
   pv->state = ASSH_CONNECTION_ST_EVENT_REQUEST_REPLY;
 
   return 1;
+}
+
+/* cleanup request abort event */
+static ASSH_EVENT_DONE_FCN(assh_event_request_abort_done)
+{
+  struct assh_connection_context_s *pv = s->srv_pv;
+
+  assert(s->srv == &assh_service_connection);
+  assert(pv->state == ASSH_CONNECTION_ST_EVENT_REQUEST_ABORT);
+
+  pv->state = ASSH_CONNECTION_ST_IDLE;
+
+  const struct assh_event_request_abort_s *ev =
+    &e->connection.request_abort;
+
+  /* pop and release request */
+  struct assh_channel_s *ch = ev->ch;
+  struct assh_queue_s *q = ch == NULL
+    ? &pv->request_rqueue : &ch->request_rqueue;
+
+  struct assh_queue_entry_s *rqe = assh_queue_back(q);
+  struct assh_request_s *rq = (void*)rqe;
+  assert(ev->rq == rq);
+
+  assh_queue_remove(rqe);
+  assh_free(s->ctx, rq);
+
+  return ASSH_OK;
+}
+
+/* pop the next unreplied requests and report a reply failed event */
+static assh_bool_t
+assh_request_abort_flush(struct assh_session_s *s,
+                         struct assh_channel_s *ch,
+                         struct assh_event_s *e)
+{
+  struct assh_connection_context_s *pv = s->srv_pv;
+  struct assh_queue_s *q = ch == NULL
+    ? &pv->request_rqueue : &ch->request_rqueue;
+
+  while (!assh_queue_isempty(q))
+    {
+      struct assh_queue_entry_s *rqe = assh_queue_back(q);
+      struct assh_request_s *rq = (void*)rqe;
+
+      if (rq->status != ASSH_REQUEST_ST_REPLY_POSTPONED)
+        {
+          assh_packet_release(rq->reply_pck);
+
+          assh_queue_remove(rqe);
+          assh_free(s->ctx, rqe);
+        }
+      else
+        {
+          struct assh_event_request_abort_s *ev =
+            &e->connection.request_abort;
+
+          e->id = ASSH_EVENT_REQUEST_ABORT;
+          e->f_done = assh_event_request_abort_done;
+
+          ev->ch = ch;
+          ev->rq = rq;
+          pv->state = ASSH_CONNECTION_ST_EVENT_REQUEST_ABORT;
+
+          return 1;
+        }
+    }
+
+  return 0;
 }
 
 /* setup an event from incoming request reply */
@@ -1897,7 +1967,8 @@ static void assh_channel_pop_closing(struct assh_session_s *s,
     case ASSH_CHANNEL_ST_CLOSE_CALLED:
     case ASSH_CHANNEL_ST_OPEN_RECEIVED: {
 
-      if (assh_request_reply_flush(s, ch, e))
+      if (assh_request_reply_flush(s, ch, e) ||
+          assh_request_abort_flush(s, ch, e))
         return;
 
       struct assh_event_channel_close_s *ev =
@@ -1974,7 +2045,8 @@ static ASSH_SERVICE_PROCESS_FCN(assh_connection_process)
   if (s->tr_st >= ASSH_TR_DISCONNECT)
     {
       /* pop a pending global request and report an event */
-      if (assh_request_reply_flush(s, NULL, e))
+      if (assh_request_reply_flush(s, NULL, e) ||
+          assh_request_abort_flush(s, NULL, e))
         return ASSH_NO_DATA;
 
       /* no more event to report, last return of this session */

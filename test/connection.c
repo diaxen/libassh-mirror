@@ -281,13 +281,12 @@ int test(int (*fend)(int, int), int n, int evrate)
 		/* look for postponed requests in the fifo */
 		for (n = 0; n < RQ_POSTPONED_SIZE; n++)
 		  {
-		    if ((rqe = rq_postponed[(n+l) % RQ_POSTPONED_SIZE]))
+		    if ((rqe = rq_postponed[(n+l) % RQ_POSTPONED_SIZE]) &&
+			rqe->status == RQ_POSTPONED)
 		      break;
 		  }
 		if (n == RQ_POSTPONED_SIZE)
 		  break;
-		rq_postponed[(n+l) % RQ_POSTPONED_SIZE] = NULL;
-		TEST_ASSERT(rqe->status == RQ_POSTPONED);
 		rqe->data_len = 0;
 
 		switch (rand() % 2)
@@ -395,13 +394,6 @@ int test(int (*fend)(int, int), int n, int evrate)
 			if (assh_channel_close(che->ch[i]))
 			  return 1;
 
-			/* forget all postponed requests */
-			unsigned int n;
-			for (n = 0; n < RQ_POSTPONED_SIZE; n++)
-			  {
-			    if (rq_postponed[n] != NULL && rq_postponed[n]->che == che)
-			      rq_postponed[n] = NULL;
-			  }
 			break;
 		      }
 		      case 1: {	/**** may send eof ****/
@@ -583,6 +575,24 @@ int test(int (*fend)(int, int), int n, int evrate)
 	      break;
 	    }
 
+	    case ASSH_EVENT_REQUEST_ABORT: {        /***** incoming request *****/
+	      struct assh_event_request_abort_s *e = &event.connection.request_abort;
+	      struct rq_fifo_entry_s *rqe = assh_request_pv(e->rq);
+	      ASSH_DEBUG("abort %p\n", rqe);
+
+	      unsigned int n;
+	      for (n = 0; n < RQ_POSTPONED_SIZE; n++)
+		if (rq_postponed[n] == rqe)
+		  {
+		    rq_postponed[n] = NULL;
+		    rqe->status = RQ_ERROR;
+		    break;
+		  }
+	      if (n == RQ_POSTPONED_SIZE)
+		TEST_FAIL("(ctx %u seed %u) unknown postponed request\n", i, seed);
+	      break;
+	    }
+
 	    case ASSH_EVENT_REQUEST_REPLY: {      /***** request reply *****/
 	      struct assh_event_request_reply_s *e = &event.connection.request_reply;
 	      struct rq_fifo_s *lrqf = &global_rq_fifo[i];
@@ -657,17 +667,6 @@ int test(int (*fend)(int, int), int n, int evrate)
 
 		default:
 		  TEST_FAIL("(ctx %u seed %u) request_reply.reply\n", seed, rqe->status);
-		}
-
-	      /* remove postponed request entry */
-	      if (rqe->status == RQ_POSTPONED)
-		{
-		  unsigned int n;
-		  for (n = 0; n < RQ_POSTPONED_SIZE; n++)
-		    if (rq_postponed[n] == rqe)
-		      break;
-		  if (n < RQ_POSTPONED_SIZE)
-		    rq_postponed[n] = NULL;
 		}
 
 	      rqe->status = RQ_RELEASED;
@@ -844,13 +843,6 @@ int test(int (*fend)(int, int), int n, int evrate)
 	      if (che->status == CH_CLOSED && (che->ch[0] != NULL || che->ch[1] != NULL))
 		TEST_FAIL("(ctx %u seed %u) channel %p not NULL\n", i, seed, che);
 
-	      /* forget all postponed requests */
-	      unsigned int n;
-	      for (n = 0; n < RQ_POSTPONED_SIZE; n++)
-		{
-		  if (rq_postponed[n] != NULL && rq_postponed[n]->che == che)
-		    rq_postponed[n] = NULL;
-		}
 	      break;
 	    }
 

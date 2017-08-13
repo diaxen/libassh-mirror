@@ -225,10 +225,9 @@ assh_request_status(struct assh_request_s *rq);
    expected by the remote host.  Care should be taken not to postpone
    too many requests in order to avoid resource-exhaustion attacks.
 
-   If some incoming requests are left unreplied when the @ref
-   ASSH_EVENT_CHANNEL_CLOSE event is reported, all postponed request
-   objects associated with the channel are released along with the
-   channel.
+   If some incoming requests are left unreplied when the channel is
+   closing or the connection is ending, some @ref ASSH_EVENT_REQUEST_ABORT
+   events are reported.
 
    @see ASSH_EVENT_REQUEST
 */
@@ -240,6 +239,21 @@ struct assh_event_request_s
   ASSH_EV_CONST struct assh_cbuffer_s   rq_data;    //< input
   enum assh_connection_reply_e          reply;      //< output
   struct assh_cbuffer_s                  rsp_data;   //< output
+};
+
+/**
+   This event is repoted when a channel is closing or the connection
+   is terminated and some associated requests have been postponed.
+
+   The @ref assh_request_s object will be release when calling the
+   @ref assh_event_done function.
+
+   @see ASSH_EVENT_REQUEST_ABORT
+*/
+struct assh_event_request_abort_s
+{
+  struct assh_channel_s * ASSH_EV_CONST ch;         //< input
+  struct assh_request_s * ASSH_EV_CONST rq;         //< input
 };
 
 /**
@@ -736,6 +750,7 @@ assh_channel_close(struct assh_channel_s *ch);
 union assh_event_connection_u
 {
   struct assh_event_request_s           request;
+  struct assh_event_request_abort_s     request_abort;
   struct assh_event_request_reply_s     request_reply;
   struct assh_event_channel_open_s      channel_open;
   struct assh_event_channel_open_reply_s channel_open_reply;
