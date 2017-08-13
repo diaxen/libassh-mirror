@@ -174,6 +174,11 @@ void assh_request_set_pv(struct assh_request_s *rq, void *pv);
 /** This function returns the value of the request private pointer. */
 void * assh_request_pv(const struct assh_request_s *rq);
 
+/** This function returns the channel associated to a request.
+    It returns @tt NULL for global requests. */
+struct assh_channel_s *
+assh_request_channel(const struct assh_request_s *rq);
+
 /** This returns the current channel status */
 enum assh_request_status_e
 assh_request_status(struct assh_request_s *rq);

@@ -127,6 +127,12 @@ assh_request_status(struct assh_request_s *rq)
   return rq->status;
 }
 
+struct assh_channel_s *
+assh_request_channel(const struct assh_request_s *rq)
+{
+  return rq->ch;
+}
+
 void assh_channel_set_pv(struct assh_channel_s *ch, void *pv)
 {
   ch->pv = pv;
