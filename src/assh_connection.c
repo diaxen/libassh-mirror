@@ -75,7 +75,10 @@ struct assh_request_s
   struct assh_session_s *session;
   struct assh_channel_s *ch;
   struct assh_packet_s *reply_pck;
-  void *pv;
+  union {
+    void *pv;
+    uintptr_t pvi;
+  };
   enum assh_request_status_e status:8;
 };
 
@@ -92,7 +95,10 @@ struct assh_channel_s
 
   struct assh_session_s *session;
   struct assh_packet_s *data_pck;
-  void *pv;
+  union {
+    void *pv;
+    uintptr_t pvi;
+  };
 
   struct assh_queue_s request_rqueue; //< requests we have to acknowledge
   struct assh_queue_s request_lqueue; //< requests waiting for a reply from the remote host
@@ -121,6 +127,16 @@ void * assh_request_pv(const struct assh_request_s *rq)
   return rq->pv;
 }
 
+void assh_request_set_pvi(struct assh_request_s *rq, uintptr_t pv)
+{
+  rq->pvi = pv;
+}
+
+uintptr_t assh_request_pvi(const struct assh_request_s *rq)
+{
+  return rq->pvi;
+}
+
 enum assh_request_status_e
 assh_request_status(struct assh_request_s *rq)
 {
@@ -141,6 +157,16 @@ void assh_channel_set_pv(struct assh_channel_s *ch, void *pv)
 void * assh_channel_pv(const struct assh_channel_s *ch)
 {
   return ch->pv;
+}
+
+void assh_channel_set_pvi(struct assh_channel_s *ch, uintptr_t pv)
+{
+  ch->pvi = pv;
+}
+
+uintptr_t assh_channel_pvi(const struct assh_channel_s *ch)
+{
+  return ch->pvi;
 }
 
 enum assh_channel_status_e

@@ -151,6 +151,12 @@ void assh_channel_set_pv(struct assh_channel_s *ch, void *pv);
 /** This function returns the value of the channel private pointer. */
 void * assh_channel_pv(const struct assh_channel_s *ch);
 
+/** This function sets the value of the channel private integer. */
+void assh_channel_set_pvi(struct assh_channel_s *ch, uintptr_t pv);
+
+/** This function returns the value of the channel private integer. */
+uintptr_t assh_channel_pvi(const struct assh_channel_s *ch);
+
 /** This returns the current channel status */
 enum assh_channel_status_e
 assh_channel_status(const struct assh_channel_s *ch);
@@ -173,6 +179,12 @@ void assh_request_set_pv(struct assh_request_s *rq, void *pv);
 
 /** This function returns the value of the request private pointer. */
 void * assh_request_pv(const struct assh_request_s *rq);
+
+/** This function sets the value of the request private integer. */
+void assh_request_set_pvi(struct assh_request_s *rq, uintptr_t pv);
+
+/** This function returns the value of the request private integer. */
+uintptr_t assh_request_pvi(const struct assh_request_s *rq);
 
 /** This function returns the channel associated to a request.
     It returns @tt NULL for global requests. */
