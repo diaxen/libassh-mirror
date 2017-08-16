@@ -96,6 +96,7 @@ unsigned long ch_event_eof_count = 0;
 unsigned long ch_data_send = 0;
 unsigned long ch_data_recv = 0;
 unsigned long ch_data_window = 0;
+unsigned long ev_err_count = 0;
 unsigned long disconnect_count = 0;
 unsigned long rekex_count = 0;
 
@@ -400,6 +401,7 @@ int test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 
 	  if (evrate && !(rand() % evrate))
 	    {
+	      ev_err_count++;
 	      everr = (rand() % 32 + 0x100);
 	      everr |= ((1 << (12 + rand() % 3))
 			& (ASSH_ERRSV_DISCONNECT | ASSH_ERRSV_FIN));
@@ -762,6 +764,7 @@ int main(int argc, char **argv)
 	  "  %8lu channel data receive\n"
 	  "  %8lu channel window\n"
 	  "  %8lu rekex\n"
+	  "  %8lu event error\n"
 	  "  %8lu disconnect\n"
 	  "  %8lu fuzz packet bit errors\n"
 	  "  %8lu fuzz memory allocation fails\n"
@@ -774,7 +777,7 @@ int main(int argc, char **argv)
 	  ch_open_reply_failed_count, ch_postpone_count,
 	  ch_close_count, ch_event_close_count,
 	  ch_eof_count, ch_event_eof_count,
-	  ch_data_send, ch_data_recv, ch_data_window, rekex_count,
+	  ch_data_send, ch_data_recv, ch_data_window, rekex_count, ev_err_count,
 	  disconnect_count, packet_fuzz_bits, alloc_fuzz_fails
 	  );
 

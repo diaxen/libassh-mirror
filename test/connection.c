@@ -156,6 +156,7 @@ unsigned long ch_close_count = 0;
 unsigned long ch_event_close_count = 0;
 unsigned long ch_eof_count = 0;
 unsigned long ch_event_eof_count = 0;
+unsigned long ev_err_count = 0;
 unsigned long rekex_count = 0;
 
 int test(int (*fend)(int, int), int n, int evrate)
@@ -446,6 +447,7 @@ int test(int (*fend)(int, int), int n, int evrate)
 
 	  if (evrate && !(rand() % evrate))
 	    {
+	      ev_err_count++;
 	      everr = (rand() % 32 + 0x100);
 	      everr |= ((1 << (12 + rand() % 3))
 			& (ASSH_ERRSV_DISCONNECT | ASSH_ERRSV_FIN));
@@ -1018,6 +1020,7 @@ int main(int argc, char **argv)
 	  "  %8lu channel eof calls\n"
 	  "  %8lu channel eof events\n"
 	  "  %8lu rekex\n"
+	  "  %8lu event error\n"
 	  ,
 	  rq_send_count, rq_reply_success, rq_reply_failed,
 	  rq_event_count, rq_event_success_count,
@@ -1026,7 +1029,7 @@ int main(int argc, char **argv)
 	  ch_open_reply_success_count,
 	  ch_open_reply_failed_count, ch_postpone_count,
 	  ch_close_count, ch_event_close_count,
-	  ch_eof_count, ch_event_eof_count, rekex_count
+	  ch_eof_count, ch_event_eof_count, rekex_count, ev_err_count
 	  );
 
   return 0;
