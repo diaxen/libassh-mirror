@@ -887,6 +887,9 @@ assh_channel_open_success_reply2(struct assh_channel_s *ch,
 
   ASSH_JMP_IF_TRUE(pkt_size < 1, ASSH_ERR_BAD_ARG | ASSH_ERRSV_CONTINUE, err);
 
+  ch->lpkt_size = ASSH_MIN(pkt_size, ASSH_PACKET_MAX_PAYLOAD
+                           - /* extended data message header */ 3 * 4);
+  ch->lwin_size = ch->lwin_left = ASSH_MAX(win_size, ch->lpkt_size * 4);
 
   struct assh_packet_s *pout;
 
@@ -895,9 +898,6 @@ assh_channel_open_success_reply2(struct assh_channel_s *ch,
   ASSH_JMP_ON_ERR(assh_packet_alloc(s->ctx, SSH_MSG_CHANNEL_OPEN_CONFIRMATION,
                  4 * 4 + rsp_data_len, &pout) | ASSH_ERRSV_CONTINUE, err);
 
-  ch->lpkt_size = ASSH_MIN(pkt_size, ASSH_PACKET_MAX_PAYLOAD
-                           - /* extended data message header */ 3 * 4);
-  ch->lwin_size = ch->lwin_left = ASSH_MAX(win_size, ch->lpkt_size * 4);
   ch->status = ASSH_CHANNEL_ST_OPEN;
 
   ASSH_ASSERT(assh_packet_add_u32(pout, ch->remote_id));
@@ -945,9 +945,13 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_open_done)
   switch (eo->reply)
     {
     case ASSH_CONNECTION_REPLY_SUCCESS:
-      ASSH_RETURN(assh_channel_open_success_reply2(eo->ch, eo->win_size,
-                     eo->pkt_size, eo->rsp_data.data, eo->rsp_data.size)
-		   | ASSH_ERRSV_DISCONNECT);
+      err = assh_channel_open_success_reply2(eo->ch, eo->win_size,
+                     eo->pkt_size, eo->rsp_data.data, eo->rsp_data.size);
+      /* The channel is considered open for now even if we were not
+         able to allocate the reply packet. This is because we can not
+         report the error immediately to the application. */
+      eo->ch->status = ASSH_CHANNEL_ST_OPEN;
+      ASSH_RETURN(err | ASSH_ERRSV_DISCONNECT);
 
     case ASSH_CONNECTION_REPLY_FAILED:
     failure:
