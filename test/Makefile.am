@@ -52,6 +52,12 @@ connection_SOURCES = connection.c
 connection_LDADD = $(top_builddir)/src/libassh.la
 connection_CFLAGS = -I$(top_srcdir)/src
 
+noinst_PROGRAMS += connection2
+TESTS += connection2
+connection2_SOURCES = connection2.c
+connection2_LDADD = $(top_builddir)/src/libassh.la
+connection2_CFLAGS = -I$(top_srcdir)/src
+
 noinst_PROGRAMS += kex
 TESTS += kex
 kex_SOURCES = kex.c

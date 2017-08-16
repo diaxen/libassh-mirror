@@ -21,6 +21,13 @@
 
 */
 
+/*
+  This tests the ssh connection layer by performing random channel and
+  request operations. This test keeps track of client and server
+  operations using unified channel and request states and check
+  consistency of operation on both sides.
+*/
+
 #include <assh/assh_session.h>
 #include <assh/assh_context.h>
 #include <assh/assh_service.h>
