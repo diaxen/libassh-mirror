@@ -706,36 +706,59 @@ int main(int argc, char **argv)
 #endif
 
   unsigned int count = argc > 1 ? atoi(argv[1]) : 200;
+  unsigned int action = argc > 2 ? atoi(argv[2]) : 31;
   unsigned int k;
 
-  seed = argc > 2 ? atoi(argv[2]) : time(0);
+  seed = argc > 3 ? atoi(argv[3]) : time(0);
 
   for (k = 0; k < count; )
     {
       srand(seed);
       packet_fuzz = 0;
 
-      putc('e', stderr);
-      if (test(&end_early_cleanup, 10000, 0, 0))
-	return 1;
+      if (action & 1)
+	{
+	  putc('e', stderr);
+	  if (test(&end_early_cleanup, 10000, 0, 0))
+	    return 1;
+	}
 
-      putc('d', stderr);
-      if (test(&end_disconnect, 1000000, 0, 0))
-	return 1;
+      if (action & 2)
+	{
+	  putc('d', stderr);
+	  if (test(&end_disconnect, 1000000, 0, 0))
+	    return 1;
+	}
 
-      packet_fuzz = 10 + rand() % 1024;
-      putc('f', stderr);
-      if (test(&end_wait_error, 10000, 0, 0))
-	return 1;
+      if (action & 4)
+	{
+	  packet_fuzz = 10 + rand() % 1024;
+	  putc('f', stderr);
+	  if (test(&end_wait_error, 10000, 0, 0))
+	    return 1;
+	}
 
-      packet_fuzz = 0;
-      putc('a', stderr);
-      if (test(&end_wait_error, 10000, 0, 4 + rand() % 32))
-	return 1;
+      if (action & 8)
+	{
+	  packet_fuzz = 0;
+	  putc('a', stderr);
+	  if (test(&end_wait_error, 10000, 0, 4 + rand() % 32))
+	    return 1;
+	}
+
+      if (action & 16)
+	{
+	  putc('v', stderr);
+	  packet_fuzz = 10 + rand() % 1024;
+	  if (test(&end_wait_error, 10000,
+		   rand() % 256 + 16,
+		   rand() % 128 + 16))
+	    return 1;
+	}
 
       seed++;
 
-      if (++k % 16 == 0)
+      if (++k % 12 == 0)
 	fprintf(stderr, " seed=%u\n", seed);
     }
 

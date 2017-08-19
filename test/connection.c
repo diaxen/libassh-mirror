@@ -972,29 +972,39 @@ int main(int argc, char **argv)
 #endif
 
   unsigned int count = argc > 1 ? atoi(argv[1]) : 100;
+  unsigned int action = argc > 2 ? atoi(argv[2]) : 31;
   unsigned int k;
 
-  seed = argc > 2 ? atoi(argv[2]) : time(0);
+  seed = argc > 3 ? atoi(argv[3]) : time(0);
 
   for (k = 0; k < count; )
     {
       srand(seed);
 
-      putc('r', stderr);
-      if (test(&end_no_more_requests, 10000, 0))
-	return 1;
+      if (action & 1)
+	{
+	  putc('r', stderr);
+	  if (test(&end_no_more_requests, 10000, 0))
+	    return 1;
+	}
 
-      putc('e', stderr);
-      if (test(&end_early_cleanup, 10000, 0))
-	return 1;
+      if (action & 2)
+	{
+	  putc('e', stderr);
+	  if (test(&end_early_cleanup, 10000, 0))
+	    return 1;
+	}
 
-      putc('v', stderr);
-      if (test(&end_wait_error, 10000, rand() % 256 + 16))
-	return 1;
+      if (action & 4)
+	{
+	  putc('v', stderr);
+	  if (test(&end_wait_error, 10000, rand() % 256 + 16))
+	    return 1;
+	}
 
       seed++;
 
-      if (++k % 32 == 0)
+      if (++k % 16 == 0)
 	fprintf(stderr, " seed=%u\n", seed);
     }
 
