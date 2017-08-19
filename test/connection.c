@@ -274,6 +274,7 @@ int test(int (*fend)(int, int), int n, int evrate)
 		  break;
 		if (err > ASSH_NO_DATA)
 		  return 3;
+		ASSH_DEBUG("assh_request %p\n", &rqe->srq);
 		rq_send_count++;
 		if (want_reply)
 		  assh_request_set_pv(rqe->srq, rqe);
@@ -309,7 +310,7 @@ int test(int (*fend)(int, int), int n, int evrate)
 		    assh_error_t er = assh_request_success_reply(rqe->rrq, rqe->rsp_data, rqe->data_len);
 		    if (er > ASSH_NO_DATA)
 		      TEST_FAIL("(ctx %u seed %u) assh_request_reply(ASSH_CONNECTION_REPLY_SUCCESS)\n", i, seed);
-
+		    ASSH_DEBUG("assh_request_success_reply %p\n", rqe->rrq);
 		    rq_reply_success++;
 		    rqe->status = RQ_SUCCESS;
 		    break;
@@ -318,6 +319,7 @@ int test(int (*fend)(int, int), int n, int evrate)
 		    assh_error_t er = assh_request_failed_reply(rqe->rrq);
 		    if (er > ASSH_NO_DATA)
 		      TEST_FAIL("(ctx %u seed %u) assh_request_reply(ASSH_CONNECTION_REPLY_FAILED)\n", i, seed);
+		    ASSH_DEBUG("assh_request_failed_reply %p\n", rqe->rrq);
 		    rq_reply_failed++;
 		    rqe->status = RQ_FAIL;
 		    break;
@@ -348,6 +350,7 @@ int test(int (*fend)(int, int), int n, int evrate)
 					   &che->ch[i]))
 		      return 1;
 
+		    ASSH_DEBUG("assh_channel_open2 %p\n", &che->ch[i]);
 		    assh_channel_set_pv(che->ch[i], che);
 		    che->initiator = i;
 		    che->status = CH_REQUESTED;
@@ -373,6 +376,7 @@ int test(int (*fend)(int, int), int n, int evrate)
 							    rand() % 31 + 1, rand() % 128,
 							    che->data, che->data_len))
 			  return 1;
+			ASSH_DEBUG("assh_channel_open_success_reply2 %p\n", che->ch[i]);
 			che->status = CH_SUCCESS;
 			ch_report(che);
 			ch_open_reply_success_count++;
@@ -380,6 +384,7 @@ int test(int (*fend)(int, int), int n, int evrate)
 		      case 1:
 			if (assh_channel_open_failed_reply(che->ch[i], rand() % 4 + 1))
 			  return 1;
+			ASSH_DEBUG("assh_channel_open_failed_reply %p\n", che->ch[i]);
 			che->status = CH_FAIL;
 			ch_report(che);
 			ch_refs--;
@@ -401,6 +406,7 @@ int test(int (*fend)(int, int), int n, int evrate)
 			che->close_sent |= 1 << i;
 			if (assh_channel_close(che->ch[i]))
 			  return 1;
+			ASSH_DEBUG("assh_channel_close %p\n", che->ch[i]);
 
 			break;
 		      }
@@ -413,6 +419,7 @@ int test(int (*fend)(int, int), int n, int evrate)
 			che->eof_sent |= 1 << i;
 			if (assh_channel_eof(che->ch[i]))
 			  return 1;
+			ASSH_DEBUG("assh_channel_eof %p\n", che->ch[i]);
 			break;
 		      }
 		      }
@@ -534,10 +541,10 @@ int test(int (*fend)(int, int), int n, int evrate)
 		    {
 		      rrqf->first++;
 		      rrqf->count--;
-		      break;
+		      goto ev_request_done;
 		    }
 		  rqe->status = RQ_NOREPLY;
-		  break;
+		  goto ev_request_done;
 		}
 
 	      assh_request_set_pv(e->rq, rqe);
@@ -581,13 +588,15 @@ int test(int (*fend)(int, int), int n, int evrate)
 		}
 		}
 
+	    ev_request_done:
+	      ASSH_DEBUG("ASSH_EVENT_REQUEST %p:%p %u\n", e->rq, rqe, e->reply);
 	      break;
 	    }
 
 	    case ASSH_EVENT_REQUEST_ABORT: {        /***** incoming request *****/
 	      struct assh_event_request_abort_s *e = &event.connection.request_abort;
+	      ASSH_DEBUG("ASSH_EVENT_REQUEST_ABORT %p\n", e->rq);
 	      struct rq_fifo_entry_s *rqe = assh_request_pv(e->rq);
-	      ASSH_DEBUG("abort %p\n", rqe);
 
 	      unsigned int n;
 	      for (n = 0; n < RQ_POSTPONED_SIZE; n++)
@@ -622,6 +631,8 @@ int test(int (*fend)(int, int), int n, int evrate)
 		  lrqf->first++;
 		  lrqf->count--;
 		}
+
+	      ASSH_DEBUG("ASSH_EVENT_REQUEST_REPLY %p:%p %u\n", e->rq, rqe, e->reply);
 
 	      TEST_ASSERT(e->rq == rqe->srq);
 
@@ -679,6 +690,8 @@ int test(int (*fend)(int, int), int n, int evrate)
 		}
 
 	      rqe->status = RQ_RELEASED;
+
+	      ASSH_DEBUG("ASSH_EVENT_REQUEST_REPLY %p status %u\n", e->rq, rqe->status);
 
 	      /* pop request as well as subsequent
 		 requests with no reply  */
@@ -776,11 +789,14 @@ int test(int (*fend)(int, int), int n, int evrate)
 		  ch_report(che);
 		  break;
 		}
+
+	      ASSH_DEBUG("ASSH_EVENT_CHANNEL_OPEN %p %u\n", e->ch, e->reply);
 	      break;
 	    }
 
 	    case ASSH_EVENT_CHANNEL_OPEN_REPLY: {      /***** open reply event *****/
 	      struct assh_event_channel_open_reply_s *e = &event.connection.channel_open_reply;
+	      ASSH_DEBUG("ASSH_EVENT_CHANNEL_OPEN_REPLY %p\n", e->ch);
 	      struct ch_map_entry_s *che = assh_channel_pv(e->ch);
 
 	      switch (e->reply)
@@ -835,6 +851,7 @@ int test(int (*fend)(int, int), int n, int evrate)
 
 	    case ASSH_EVENT_CHANNEL_CLOSE: {      /***** close event *****/
 	      struct assh_event_channel_close_s *e = &event.connection.channel_close;
+	      ASSH_DEBUG("ASSH_EVENT_CHANNEL_CLOSE %p\n", e->ch);
 	      struct ch_map_entry_s *che = assh_channel_pv(e->ch);
 
 	      ch_report(che);
@@ -857,6 +874,7 @@ int test(int (*fend)(int, int), int n, int evrate)
 
 	    case ASSH_EVENT_CHANNEL_EOF: {      /***** eof event *****/
 	      struct assh_event_channel_close_s *e = &event.connection.channel_close;
+	      ASSH_DEBUG("ASSH_EVENT_CHANNEL_EOF %p\n", e->ch);
 	      struct ch_map_entry_s *che = assh_channel_pv(e->ch);
 
 	      if (!started[i] && !evrate)
