@@ -894,8 +894,6 @@ assh_error_t assh_kex_end(struct assh_session_s *s, assh_bool_t accept)
 
   ASSH_RET_IF_TRUE(!accept, ASSH_ERR_KEX_FAILED);
 
-  s->kex_bytes = 0;
-
   /* next state is wait for NEWKEY packet */
   assh_transport_state(s, ASSH_TR_NEWKEY);
 

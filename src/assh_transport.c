@@ -722,6 +722,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
       msg = SSH_MSG_INVALID;
 
       assh_transport_state(s, ASSH_TR_KEX_DONE);
+      s->kex_bytes = 0;
       assh_kex_done(s, e);
       break;
 
