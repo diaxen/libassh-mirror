@@ -315,7 +315,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_dsa_check)
   return err;
 }
 
-static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key)
+static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key_768)
 {
   if (key == NULL)
     return c->type == ASSH_SERVER;
@@ -326,11 +326,35 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key)
          assh_bignum_bits(&k->pn) >= 768;
 }
 
-const struct assh_algo_sign_s assh_sign_dsa =
+const struct assh_algo_sign_s assh_sign_dsa768 =
+{
+  ASSH_ALGO_BASE(SIGN, 15, 40,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "ssh-dss" }),
+    ASSH_ALGO_VARIANT( 2, "768+ bits keys" ),
+    .f_suitable_key = assh_sign_dsa_suitable_key_768,
+    .key = &assh_key_dsa,
+  ),
+  .f_generate = assh_sign_dsa_generate,
+  .f_check = assh_sign_dsa_check,
+};
+
+static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key_1024)
+{
+  if (key == NULL)
+    return c->type == ASSH_SERVER;
+  if (key->algo != &assh_key_dsa)
+    return 0;
+  const struct assh_key_dsa_s *k = (const void*)key;
+  return assh_bignum_bits(&k->qn) == 160 &&
+         assh_bignum_bits(&k->pn) >= 1024;
+}
+
+const struct assh_algo_sign_s assh_sign_dsa1024 =
 {
   ASSH_ALGO_BASE(SIGN, 20, 40,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "ssh-dss" }),
-    .f_suitable_key = assh_sign_dsa_suitable_key,
+    ASSH_ALGO_VARIANT( 2, "1024+ bits keys" ),
+    .f_suitable_key = assh_sign_dsa_suitable_key_1024,
     .key = &assh_key_dsa,
   ),
   .f_generate = assh_sign_dsa_generate,

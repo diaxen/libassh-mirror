@@ -617,7 +617,7 @@ int main(int argc, char **argv)
     {
       if (assh_algo_register_va(&context[i], 0, 0, 0, &assh_kex_none, &assh_sign_none,
 				&assh_cipher_fuzz, &assh_hmac_none, &assh_compress_none,
-				&assh_sign_rsa_sha1, &assh_sign_dsa, &assh_sign_ed25519,
+				&assh_sign_rsa_sha1, &assh_sign_dsa1024, &assh_sign_ed25519,
 				&assh_sign_eddsa_e521, &assh_sign_nistp256, &assh_sign_nistp521,
 				NULL))
 	TEST_FAIL("");

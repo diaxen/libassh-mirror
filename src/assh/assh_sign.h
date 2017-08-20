@@ -101,8 +101,11 @@ assh_sign_check(struct assh_context_s *c, const struct assh_algo_sign_s *algo,
 /** Dummy signature algorithm */
 extern const struct assh_algo_sign_s assh_sign_none;
 
-/** Use SHA1 and a dsa key with L = 1024 and N = 160. */
-extern const struct assh_algo_sign_s assh_sign_dsa;
+/** Use SHA1 and a dsa key with L >= 768 and N = 160. */
+extern const struct assh_algo_sign_s assh_sign_dsa768;
+
+/** Use SHA1 and a dsa key with L >= 1024 and N = 160. */
+extern const struct assh_algo_sign_s assh_sign_dsa1024;
 
 /** Use SHA224 and a dsa key with L >= 2048 and N = 224. */
 extern const struct assh_algo_sign_s assh_sign_dsa2048_sha224;

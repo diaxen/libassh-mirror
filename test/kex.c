@@ -114,7 +114,7 @@ static const struct algo_with_key_s kex_list_short[] =
 static const struct algo_with_key_s sign_list_long[] =
 {
   { &assh_sign_none,              &assh_key_none, (const uint8_t*)"\0", 0 },
-  { &assh_sign_dsa,               &assh_key_dsa, dsa1024_key, sizeof(dsa1024_key) - 1 },
+  { &assh_sign_dsa1024,           &assh_key_dsa, dsa1024_key, sizeof(dsa1024_key) - 1 },
   { &assh_sign_nistp256,          &assh_key_ecdsa_nistp, ecdsa_nistp256_key, sizeof(ecdsa_nistp256_key) - 1 },
   { &assh_sign_nistp384,          &assh_key_ecdsa_nistp, ecdsa_nistp384_key, sizeof(ecdsa_nistp384_key) - 1 },
   { &assh_sign_nistp521,          &assh_key_ecdsa_nistp, ecdsa_nistp521_key, sizeof(ecdsa_nistp521_key) - 1 },
@@ -135,7 +135,7 @@ static const struct algo_with_key_s sign_list_long[] =
 static const struct algo_with_key_s sign_list_all[] =
 {
   { &assh_sign_none,              &assh_key_none, (const uint8_t*)"\0", 0 },
-  { &assh_sign_dsa,               &assh_key_dsa, dsa1024_key, sizeof(dsa1024_key) - 1 },
+  { &assh_sign_dsa768,            &assh_key_dsa, dsa1024_key, sizeof(dsa1024_key) - 1 },
   { &assh_sign_nistp256,          &assh_key_ecdsa_nistp, ecdsa_nistp256_key, sizeof(ecdsa_nistp256_key) - 1 },
   { &assh_sign_rsa_sha1_md5,      &assh_key_rsa, rsa1024_key, sizeof(rsa1024_key) - 1 },
   { &assh_sign_ed25519,           &assh_key_ed25519, ed25519_key, sizeof(ed25519_key) - 1 },

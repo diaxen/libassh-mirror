@@ -29,7 +29,7 @@ struct algo_s
 
 struct algo_s algos[] = {
 
-  { &assh_sign_dsa,             dsa1024_key, 1, 1024, 2304, sizeof(dsa1024_key),
+  { &assh_sign_dsa1024,         dsa1024_key, 1, 1024, 2304, sizeof(dsa1024_key),
     55,  (const uint8_t *)
     "\x00\x00\x00\x07\x73\x73\x68\x2d\x64\x73\x73\x00\x00\x00\x28\x11"
     "\x09\x68\x32\x63\x6c\x75\xbc\xb3\x3e\x88\x2a\xf9\xc8\xe7\x97\x4b"
