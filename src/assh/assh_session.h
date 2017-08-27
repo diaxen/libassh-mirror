@@ -174,6 +174,9 @@ struct assh_session_s
   /** user authentication success */
   assh_bool_t user_auth_done:1;
 
+  /** initial key exchange done. */
+  assh_bool_t kex_done:1;
+
   /** Currrent output ssh stream generator state. */
   enum assh_stream_out_state_e stream_out_st:3;
 

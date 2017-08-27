@@ -191,7 +191,7 @@ assh_client_event_openssh_hk_add(struct assh_session_s *s,
 
   assert(event->id == ASSH_EVENT_KEX_DONE);
 
-  if (hk && !hk->stored)
+  if (ev->initial && hk && !hk->stored)
     {
       char path[128];
       const char *home = assh_client_openssh_userpath(path,
@@ -220,6 +220,9 @@ assh_client_event_openssh_hk_lookup_va(struct assh_session_s *s, FILE *out, FILE
   va_list ap;
 
   assert(event->id == ASSH_EVENT_KEX_HOSTKEY_LOOKUP);
+
+  if (!ev->initial)
+    goto accept;
 
   ev->accept = 0;
 

@@ -264,16 +264,23 @@ struct assh_kex_keys_s
    client needs to lookup a server host key in the local database. The
    @ref accept field must be updated accordingly before calling the
    @ref assh_event_done function.
+
+   The @ref initial field is only set for the first key exchange of
+   the session.
 */
 struct assh_event_kex_hostkey_lookup_s
 {
   struct assh_key_s * ASSH_EV_CONST key;  //< input
+  assh_bool_t ASSH_EV_CONST initial; //< input
   assh_bool_t               accept;             //< output
 };
 
 /**
    The @ref ASSH_EVENT_KEX_DONE event is returned when a kex exchange
    has completed. For client sessions, the server host key is provided.
+
+   The @ref initial field is only set for the first key exchange of
+   the session.
 */
 struct assh_event_kex_done_s
 {
@@ -283,6 +290,7 @@ struct assh_event_kex_done_s
   const struct assh_kex_keys_s * ASSH_EV_CONST algos_in; //< input
   const struct assh_kex_keys_s * ASSH_EV_CONST algos_out; //< input
   assh_safety_t ASSH_EV_CONST safety;  //< input
+  assh_bool_t ASSH_EV_CONST initial; //< input
 };
 
 /** @internal */

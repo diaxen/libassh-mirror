@@ -55,6 +55,7 @@ assh_error_t assh_session_init(struct assh_context_s *c,
   s->kex_bytes = 0;
   s->kex_max_bytes = ASSH_REKEX_THRESHOLD;
   s->kex_filter = assh_session_kex_filter;
+  s->kex_done = 0;
 
 #ifdef CONFIG_ASSH_CLIENT
   s->kex_host_key = NULL;

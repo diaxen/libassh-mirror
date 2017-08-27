@@ -702,6 +702,7 @@ assh_kex_client_get_key(struct assh_session_s *s,
   e->f_done = done;
   e->done_pv = pv;
   e->kex.hostkey_lookup.key = host_key;
+  e->kex.hostkey_lookup.initial = !s->kex_done;
   e->kex.hostkey_lookup.accept = 0;
 
   assert(s->kex_host_key == NULL);
@@ -912,6 +913,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_kex_done_done)
   assh_key_drop(s->ctx, &s->kex_host_key);
 #endif
   assh_transport_state(s, ASSH_TR_SERVICE);
+  s->kex_done = 1;
   return ASSH_OK;
 }
 
@@ -932,6 +934,7 @@ void assh_kex_done(struct assh_session_s *s,
   e->kex.done.ident.data = s->ident_str;
   e->kex.done.ident.size = s->ident_len;
   e->kex.done.safety = ASSH_MIN(in->safety, out->safety);
+  e->kex.done.initial = !s->kex_done;
   e->kex.done.algo_kex = s->kex;
   e->kex.done.algos_in = in;
   e->kex.done.algos_out = out;
