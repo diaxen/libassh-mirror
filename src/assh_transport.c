@@ -661,6 +661,18 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 	break;
       ASSH_RET_IF_TRUE(msg != SSH_MSG_KEXINIT, ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
     kex_init:
+
+#ifdef CONFIG_ASSH_SERVER
+      /* server does not allow multiple key exchanges before user
+	 authentication. */
+      ASSH_RET_IF_TRUE(
+# ifdef CONFIG_ASSH_CLIENT
+		   s->ctx->type == ASSH_SERVER &&
+# endif
+		   s->kex_done && !s->user_auth_done,
+		   ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+#endif
+
       s->deadline = s->time + ASSH_TIMEOUT_KEX;
       ASSH_RET_ON_ERR(assh_kex_got_init(s, p) | ASSH_ERRSV_DISCONNECT);
 
