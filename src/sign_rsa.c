@@ -416,6 +416,7 @@ const struct assh_algo_sign_s assh_sign_rsa_sha256 =
     .f_suitable_key = assh_sign_rsa_suitable_key_2048,
     .key = &assh_key_rsa,
   ),
+  .groups = 1,
   .f_generate = assh_sign_rsa_generate_sha256,
   .f_check = assh_sign_rsa_check_sha256,
 };
@@ -444,6 +445,7 @@ const struct assh_algo_sign_s assh_sign_rsa_sha512 =
     .f_suitable_key = assh_sign_rsa_suitable_key_2048,
     .key = &assh_key_rsa,
   ),
+  .groups = 1,
   .f_generate = assh_sign_rsa_generate_sha512,
   .f_check = assh_sign_rsa_check_sha512,
 };

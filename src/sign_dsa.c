@@ -380,6 +380,7 @@ const struct assh_algo_sign_s assh_sign_dsa2048_sha224 =
     .f_suitable_key = assh_sign_dsa_suitable_key_2048_224,
     .key = &assh_key_dsa,
   ),
+  .groups = 1,
   .f_generate = assh_sign_dsa_generate,
   .f_check = assh_sign_dsa_check,
 };
@@ -403,6 +404,7 @@ const struct assh_algo_sign_s assh_sign_dsa2048_sha256 =
     .f_suitable_key = assh_sign_dsa_suitable_key_2048_256,
     .key = &assh_key_dsa,
   ),
+  .groups = 1,
   .f_generate = assh_sign_dsa_generate,
   .f_check = assh_sign_dsa_check,
 };
@@ -426,6 +428,7 @@ const struct assh_algo_sign_s assh_sign_dsa3072_sha256 =
     .f_suitable_key = assh_sign_dsa_suitable_key_3072_256,
     .key = &assh_key_dsa,
   ),
+  .groups = 1,
   .f_generate = assh_sign_dsa_generate,
   .f_check = assh_sign_dsa_check,
 };

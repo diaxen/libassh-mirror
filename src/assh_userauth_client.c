@@ -158,14 +158,31 @@ void
 assh_userauth_client_key_next(struct assh_session_s *s,
                               struct assh_userauth_keys_s *k)
 {
-  k->algo_idx++;
-  while (k->keys != NULL &&
-         assh_algo_by_key(s->ctx, k->keys,
-                          &k->algo_idx, &k->algo) != ASSH_OK)
+  while (k->keys != NULL)
     {
-      /* drop used key */
-      assh_key_drop(s->ctx, &k->keys);
-      k->algo_idx = 0;
+      const struct assh_algo_s *algo;
+
+      if (assh_algo_by_key(s->ctx, k->keys,
+                           &k->algo_idx, &algo) != ASSH_OK)
+        {
+          /* drop used key */
+          assh_key_drop(s->ctx, &k->keys);
+          k->algo_idx = 0;
+          k->algo_groups = 0;
+          continue;
+        }
+
+      assert(algo->class_ == ASSH_ALGO_SIGN);
+      k->algo = (void*)algo;
+
+      k->algo_idx++;
+
+      /* only try one algorithm per group */
+      if (!(k->algo_groups & k->algo->groups))
+        {
+          k->algo_groups |= k->algo->groups;
+          break;
+        }
     }
 }
 
@@ -182,10 +199,22 @@ assh_userauth_client_key_get(struct assh_session_s *s,
       struct assh_key_s *next = keys->next;
 
       /* insert provided keys in internal list */
-      if (assh_algo_by_key(s->ctx, keys, &k->algo_idx, &k->algo) == ASSH_OK)
-        assh_key_insert(&k->keys, keys);
+      const struct assh_algo_s *algo;
+      if (keys->role == ASSH_ALGO_SIGN &&
+          assh_algo_by_key(s->ctx, keys, &k->algo_idx, &algo) == ASSH_OK)
+        {
+          assh_key_insert(&k->keys, keys);
+
+          assert(algo->class_ == ASSH_ALGO_SIGN);
+          k->algo = (void*)algo;
+          k->algo_groups = k->algo->groups;
+
+          k->algo_idx++;
+        }
       else
-        assh_key_drop(s->ctx, &keys);
+        {
+          assh_key_drop(s->ctx, &keys);
+        }
 
       keys = next;
     }
@@ -198,7 +227,6 @@ assh_userauth_client_send_sign(struct assh_session_s *s,
                                struct assh_packet_s *pout,
                                size_t sign_len)
 {
-  const struct assh_algo_sign_s *algo = (const void *)k->algo;
   assh_error_t err;
 
   uint8_t *sign;
@@ -215,7 +243,7 @@ assh_userauth_client_send_sign(struct assh_session_s *s,
 
   /* append the signature */
   ASSH_ASSERT(assh_packet_add_string(pout, sign_len, &sign));
-  ASSH_RET_ON_ERR(assh_sign_generate(s->ctx, algo, k->keys,
+  ASSH_RET_ON_ERR(assh_sign_generate(s->ctx, k->algo, k->keys,
                                   3, data, sign, &sign_len));
   assh_packet_shrink_string(pout, sign, sign_len);
 
@@ -233,7 +261,6 @@ assh_userauth_client_get_sign(struct assh_session_s *s,
                               size_t sign_len)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  const struct assh_algo_sign_s *algo = (const void *)k->algo;
   assh_error_t err;
 
   uint8_t *sign;
@@ -256,7 +283,7 @@ assh_userauth_client_get_sign(struct assh_session_s *s,
   ASSH_ASSERT(assh_packet_add_string(pout, sign_len, &sign));
 
   ev->pub_key = k->keys;
-  ev->algo = algo;
+  ev->algo = k->algo;
   ev->auth_data.data = data;
   ev->auth_data.len = data_len;
   ev->sign.data = sign;

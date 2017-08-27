@@ -60,6 +60,12 @@ typedef ASSH_SIGN_CHECK_FCN(assh_sign_check_t);
 struct assh_algo_sign_s
 {
   struct assh_algo_s algo;
+
+  /** Bit mask used to define groups in a set of algorithms which can
+      use the same type of key. This used to reduce number of
+      authentication retries with the same key. */
+  uint16_t groups;
+
   assh_sign_generate_t *f_generate;
   assh_sign_check_t *f_check;
 };

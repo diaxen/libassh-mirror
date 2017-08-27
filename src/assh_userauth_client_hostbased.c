@@ -61,7 +61,7 @@ assh_userauth_client_pck_hostbased(struct assh_session_s *s,
   /* add signature algorithm name */
   uint8_t *str;
   ASSH_ASSERT(assh_packet_add_string(*pout, algo_name_len, &str));
-  memcpy(str, assh_algo_name(pv->hostkey.algo), algo_name_len);
+  memcpy(str, assh_algo_name(&pv->hostkey.algo->algo), algo_name_len);
 
   /* add public key blob */
   uint8_t *blob;

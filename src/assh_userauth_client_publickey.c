@@ -42,7 +42,7 @@ assh_userauth_client_pck_pubkey(struct assh_session_s *s,
   struct assh_key_s *pub_key = pv->pubkey.keys;
   assh_error_t err;
 
-  size_t algo_name_len = strlen(assh_algo_name(pv->pubkey.algo));
+  size_t algo_name_len = strlen(assh_algo_name(&pv->pubkey.algo->algo));
 
   /* allocate a packet and append common fileds for a publickey
      request */
@@ -61,7 +61,7 @@ assh_userauth_client_pck_pubkey(struct assh_session_s *s,
   /* add signature algorithm name */
   uint8_t *algo_name;
   ASSH_ASSERT(assh_packet_add_string(*pout, algo_name_len, &algo_name));
-  memcpy(algo_name, assh_algo_name(pv->pubkey.algo), algo_name_len);
+  memcpy(algo_name, assh_algo_name(&pv->pubkey.algo->algo), algo_name_len);
 
   /* add public key blob */
   uint8_t *blob;

@@ -87,7 +87,8 @@ struct assh_userauth_client_method_s
 struct assh_userauth_keys_s
 {
   uint16_t algo_idx;
-  const struct assh_algo_s *algo;
+  uint16_t algo_groups;
+  const struct assh_algo_sign_s *algo;
   struct assh_key_s *keys;
   uint8_t *auth_data;
 };
