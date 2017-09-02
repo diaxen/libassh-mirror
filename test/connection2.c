@@ -107,7 +107,7 @@ static void get_data(size_t *size, const uint8_t **data)
   *data = r + rand() % (sizeof(r) - *size);
 }
 
-int test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
+void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 {
   assh_error_t err;
   unsigned int i, j;
@@ -123,27 +123,27 @@ int test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 			assh_leaks_allocator, NULL, NULL, NULL) ||
       assh_context_init(&context[1], ASSH_CLIENT,
 			assh_leaks_allocator, NULL, NULL, NULL))
-    return -1;
+    TEST_FAIL("init");
 
   for (i = 0; i < 2; i++)
     {
       fifo_init(&fifo[i]);
 
       if (assh_service_register_va(&context[i], &assh_service_connection, NULL))
-	return -1;
+	TEST_FAIL("init");
 
       if (assh_algo_register_va(&context[i], 0, 0, 0, &assh_kex_none, &assh_sign_none,
 				&assh_cipher_fuzz, &assh_cipher_none, &assh_hmac_none,
 				&assh_compress_none, NULL) != ASSH_OK)
-	return -1;
+	TEST_FAIL("init");
 
       if (assh_session_init(&context[i], &session[i]) != ASSH_OK)
-	return -1;
+	TEST_FAIL("init");
       assh_cipher_fuzz_initreg(&context[i], &session[i]);
 
       session[i].user_auth_done = 1;
       if (assh_kex_set_threshold(&session[i], 1 + rand() % 16384))
-	return -1;
+	TEST_FAIL("init");
 
       for (j = 0; j < RQ_POSTPONED_SIZE; j++)
 	rq_postponed[i][j] = NULL;
@@ -153,7 +153,7 @@ int test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
     }
 
   if (assh_key_create(&context[0], &context[0].keys, 0, &assh_key_none, ASSH_ALGO_SIGN) != ASSH_OK)
-    return -1;
+    TEST_FAIL("init");
 
   /********************* sessions test loop */
 
@@ -636,8 +636,7 @@ int test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 	      break;
 
 	    default:
-	      printf("Don't know how to handle event %u (context %u)\n", event.id, i);
-	      return 21;
+	      TEST_FAIL("(ctx %u seed %u) Don't know how to handle event %u\n", i, seed, event.id);
 	    }
 
 	  assh_event_done(&session[i], &event, everr);
@@ -666,8 +665,6 @@ int test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 
   if (alloc_size != 0)
     TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
-
-  return 0;
 }
 
 static int end_disconnect(int j, int n)
@@ -701,7 +698,7 @@ int main(int argc, char **argv)
 {
 #ifdef CONFIG_ASSH_USE_GCRYPT
   if (!gcry_check_version(GCRYPT_VERSION))
-    return -1;
+    TEST_FAIL("init");
   gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
 
@@ -719,41 +716,36 @@ int main(int argc, char **argv)
       if (action & 1)
 	{
 	  putc('e', stderr);
-	  if (test(&end_early_cleanup, 10000, 0, 0))
-	    return 1;
+	  test(&end_early_cleanup, 10000, 0, 0);
 	}
 
       if (action & 2)
 	{
 	  putc('d', stderr);
-	  if (test(&end_disconnect, 1000000, 0, 0))
-	    return 1;
+	  test(&end_disconnect, 1000000, 0, 0);
 	}
 
       if (action & 4)
 	{
 	  packet_fuzz = 10 + rand() % 1024;
 	  putc('f', stderr);
-	  if (test(&end_wait_error, 10000, 0, 0))
-	    return 1;
+	  test(&end_wait_error, 10000, 0, 0);
 	}
 
       if (action & 8)
 	{
 	  packet_fuzz = 0;
 	  putc('a', stderr);
-	  if (test(&end_wait_error, 10000, 0, 4 + rand() % 32))
-	    return 1;
+	  test(&end_wait_error, 10000, 0, 4 + rand() % 32);
 	}
 
       if (action & 16)
 	{
 	  putc('v', stderr);
 	  packet_fuzz = 10 + rand() % 1024;
-	  if (test(&end_wait_error, 10000,
+	  test(&end_wait_error, 10000,
 		   rand() % 256 + 16,
-		   rand() % 128 + 16))
-	    return 1;
+		   rand() % 128 + 16);
 	}
 
       seed++;

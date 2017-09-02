@@ -159,7 +159,7 @@ unsigned long ch_event_eof_count = 0;
 unsigned long ev_err_count = 0;
 unsigned long rekex_count = 0;
 
-int test(int (*fend)(int, int), int n, int evrate)
+void test(int (*fend)(int, int), int n, int evrate)
 {
   assh_error_t err;
   unsigned int i, j;
@@ -175,7 +175,7 @@ int test(int (*fend)(int, int), int n, int evrate)
 			assh_leaks_allocator, NULL, NULL, NULL) ||
       assh_context_init(&context[1], ASSH_CLIENT,
 			assh_leaks_allocator, NULL, NULL, NULL))
-    return -1;
+    TEST_FAIL("init");
 
   ch_refs = 0;
   for (j = 0; j < CH_MAP_SIZE; j++)
@@ -195,30 +195,30 @@ int test(int (*fend)(int, int), int n, int evrate)
       rq_fifo_init(&global_rq_fifo[i]);
 
       if (assh_service_register_va(&context[i], &assh_service_connection, NULL))
-	return -1;
+	TEST_FAIL("init");
 
 #if 0
       if (assh_algo_register_default(&context[i], 99, 10, 0) != ASSH_OK)
-	return -1;
+	TEST_FAIL("init");
 #else
       if (assh_algo_register_va(&context[i], 0, 0, 0, &assh_kex_none, &assh_sign_none,
 				&assh_cipher_none, &assh_hmac_none, &assh_compress_none, NULL) != ASSH_OK)
-	return -1;
+	TEST_FAIL("init");
 #endif
 
       if (assh_session_init(&context[i], &session[i]) != ASSH_OK)
-	return -1;
+	TEST_FAIL("init");
 
       session[i].user_auth_done = 1;
       if (assh_kex_set_threshold(&session[i], 1 + rand() % 4096))
-	return -1;
+	TEST_FAIL("init");
     }
 
   for (i = 0; i < RQ_POSTPONED_SIZE; i++)
     rq_postponed[i] = NULL;
 
   if (assh_key_create(&context[0], &context[0].keys, 0, &assh_key_none, ASSH_ALGO_SIGN) != ASSH_OK)
-    return -1;
+    TEST_FAIL("init");
 
   /********************* sessions test loop */
 
@@ -273,7 +273,7 @@ int test(int (*fend)(int, int), int n, int evrate)
 		if (err == ASSH_NO_DATA)
 		  break;
 		if (err > ASSH_NO_DATA)
-		  return 3;
+		  TEST_FAIL("(ctx %u seed %u) assh_request failed 0x%lx\n", i, seed, err);
 		ASSH_DEBUG("assh_request %p\n", &rqe->srq);
 		rq_send_count++;
 		if (want_reply)
@@ -348,7 +348,7 @@ int test(int (*fend)(int, int), int n, int evrate)
 					   che->data, che->data_len,
 					   rand() % 31 + 1, rand() % 128,
 					   &che->ch[i]))
-		      return 1;
+		      TEST_FAIL("(ctx %u seed %u) assh_channel_open2 failed 0x%lx\n", i, seed, err);
 
 		    ASSH_DEBUG("assh_channel_open2 %p\n", &che->ch[i]);
 		    assh_channel_set_pv(che->ch[i], che);
@@ -372,18 +372,20 @@ int test(int (*fend)(int, int), int n, int evrate)
 		      case 0:
 			che->data_len = rand() % sizeof(che->data);
 			memset(che->data, rand(), che->data_len);
-			if (assh_channel_open_success_reply2(che->ch[i],
-							    rand() % 31 + 1, rand() % 128,
-							    che->data, che->data_len))
-			  return 1;
+			err = assh_channel_open_success_reply2(che->ch[i],
+							       rand() % 31 + 1, rand() % 128,
+							       che->data, che->data_len);
+			if (err)
+			  TEST_FAIL("(ctx %u seed %u) assh_channel_open_success_reply failed 0x%lx\n", i, seed, err);
 			ASSH_DEBUG("assh_channel_open_success_reply2 %p\n", che->ch[i]);
 			che->status = CH_SUCCESS;
 			ch_report(che);
 			ch_open_reply_success_count++;
 			break;
 		      case 1:
-			if (assh_channel_open_failed_reply(che->ch[i], rand() % 4 + 1))
-			  return 1;
+			err = assh_channel_open_failed_reply(che->ch[i], rand() % 4 + 1);
+			if (err)
+			  TEST_FAIL("(ctx %u seed %u) assh_channel_open_failed_reply failed 0x%lx\n", i, seed, err);
 			ASSH_DEBUG("assh_channel_open_failed_reply %p\n", che->ch[i]);
 			che->status = CH_FAIL;
 			ch_report(che);
@@ -404,8 +406,9 @@ int test(int (*fend)(int, int), int n, int evrate)
 			if (che->close_sent & (1 << i))
 			  break;
 			che->close_sent |= 1 << i;
-			if (assh_channel_close(che->ch[i]))
-			  return 1;
+			err = assh_channel_close(che->ch[i]);
+			if (err)
+			  TEST_FAIL("(ctx %u seed %u) assh_channel_close failed 0x%lx\n", i, seed, err);
 			ASSH_DEBUG("assh_channel_close %p\n", che->ch[i]);
 
 			break;
@@ -417,8 +420,9 @@ int test(int (*fend)(int, int), int n, int evrate)
 			  break;
 			ch_eof_count++;
 			che->eof_sent |= 1 << i;
-			if (assh_channel_eof(che->ch[i]))
-			  return 1;
+			err = assh_channel_eof(che->ch[i]);
+			if (err)
+			  TEST_FAIL("(ctx %u seed %u) assh_channel_eof failed 0x%lx\n", i, seed, err);
 			ASSH_DEBUG("assh_channel_eof %p\n", che->ch[i]);
 			break;
 		      }
@@ -465,7 +469,7 @@ int test(int (*fend)(int, int), int n, int evrate)
 	    case ASSH_EVENT_ERROR: {
 	      err = event.error.code;
 	      if (!evrate)
-		ASSH_RET_ON_ERR(err);
+		TEST_FAIL("(ctx %u seed %u) unexpected error event 0x%lx\n", i, seed, err);
 
 	      started[i] = 0;
 	      break;
@@ -924,8 +928,7 @@ int test(int (*fend)(int, int), int n, int evrate)
 	      break;
 
 	    default:
-	      printf("Don't know how to handle event %u (context %u)\n", event.id, i);
-	      return 21;
+	      TEST_FAIL("(ctx %u seed %u) Don't know how to handle event %u\n", i, seed, event.id);
 	    }
 
 	  assh_event_done(&session[i], &event, everr);
@@ -954,8 +957,6 @@ int test(int (*fend)(int, int), int n, int evrate)
 
   if (alloc_size != 0)
     TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
-
-  return 0;
 }
 
 static int end_wait_error(int j, int n)
@@ -985,7 +986,7 @@ int main(int argc, char **argv)
 {
 #ifdef CONFIG_ASSH_USE_GCRYPT
   if (!gcry_check_version(GCRYPT_VERSION))
-    return -1;
+    TEST_FAIL("init");
   gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
 
@@ -1002,22 +1003,19 @@ int main(int argc, char **argv)
       if (action & 1)
 	{
 	  putc('r', stderr);
-	  if (test(&end_no_more_requests, 10000, 0))
-	    return 1;
+	  test(&end_no_more_requests, 10000, 0);
 	}
 
       if (action & 2)
 	{
 	  putc('e', stderr);
-	  if (test(&end_early_cleanup, 10000, 0))
-	    return 1;
+	  test(&end_early_cleanup, 10000, 0);
 	}
 
       if (action & 4)
 	{
 	  putc('v', stderr);
-	  if (test(&end_wait_error, 10000, rand() % 256 + 16))
-	    return 1;
+	  test(&end_wait_error, 10000, rand() % 256 + 16);
 	}
 
       seed++;
