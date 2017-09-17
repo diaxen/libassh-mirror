@@ -298,6 +298,14 @@ void test(int (*fend)(int, int), int n, int evrate)
 		  break;
 		rqe->data_len = 0;
 
+		if (rqe->che)
+		  {
+		    if (assh_request_channel(rqe->rrq) != rqe->che->ch[i])
+		      break;
+		    if (rqe->che->close_sent & (1 << i))
+		      break;
+		  }
+
 		switch (rand() % 2)
 		  {
 		  case 0: {

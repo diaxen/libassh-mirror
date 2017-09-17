@@ -222,6 +222,11 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 		    break;
 		if (rq == NULL)
 		  break;
+
+		struct assh_channel_s *ch = assh_request_channel(rq);
+		if (ch && assh_channel_pvi(ch) == CH_CLOSE)
+		  break;
+
 		rq_postponed[i][n] = NULL;
 
 		switch (rand() % 2)
@@ -229,7 +234,7 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 		  case 0: {
 		    size_t data_len = 0;
 		    const uint8_t *data;
-		    if (!assh_request_channel(rq))
+		    if (!ch)
 		      get_data(&data_len, &data);
 		    assh_error_t er = assh_request_success_reply(rq, data, data_len);
 		    if (er > ASSH_NO_DATA)
