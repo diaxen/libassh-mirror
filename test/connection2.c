@@ -328,7 +328,7 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 			    break;
 			  }
 		      }
-		    else
+		    else if (assh_channel_pvi(ch) != CH_WAIT)
 		      {
 			switch (rand() % 4)
 			  {
@@ -561,6 +561,8 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 		}
 	      else
 		{
+		  if (assh_channel_pvi(e->ch) != CH_WAIT)
+		    TEST_FAIL("(ctx %u seed %u) channel_open reply\n", n, seed);
 		  assh_channel_set_pvi(e->ch, CH_OPEN);
 		}
 
@@ -604,8 +606,11 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 
 	    case ASSH_EVENT_ERROR: {
 	      everr = ASSH_OK;
-	      if (ASSH_ERR_SEVERITY(event.error.code))
+	      err = event.error.code;
+	      if (ASSH_ERR_SEVERITY(err))
 		started[i] = 0;
+	      if (!evrate && !packet_fuzz && !alloc_fuzz)
+		TEST_FAIL("(ctx %u seed %u) unexpected error event 0x%lx\n", i, seed, err);
 	      break;
 	    }
 

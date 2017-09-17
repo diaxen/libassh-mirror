@@ -100,6 +100,8 @@ enum assh_channel_status_e
   /** The @ref assh_channel_close function was called at some point
       and the channel is closing as in @ref ASSH_CHANNEL_ST_CLOSING state. */
   ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING,
+  ASSH_CHANNEL_ST_FORCE_CLOSE,
+  ASSH_CHANNEL_ST_OPEN_SENT_FORCE_CLOSE
 };
 
 /** @visible @This is the @em ssh-connection service channel object.
