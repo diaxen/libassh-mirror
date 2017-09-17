@@ -352,10 +352,13 @@ void test(int (*fend)(int, int), int n, int evrate)
 		    che->data_len = rand() % sizeof(che->data);
 		    memset(che->data, rand(), che->data_len);
 
-		    if (assh_channel_open2(&session[i], che->type, che->type_len,
+		    err = assh_channel_open2(&session[i], che->type, che->type_len,
 					   che->data, che->data_len,
 					   rand() % 31 + 1, rand() % 128,
-					   &che->ch[i]))
+					     &che->ch[i]);
+		    if (err == ASSH_NO_DATA)
+		      break;
+		    if (err > ASSH_NO_DATA)
 		      TEST_FAIL("(ctx %u seed %u) assh_channel_open2 failed 0x%lx\n", i, seed, err);
 
 		    ASSH_DEBUG("assh_channel_open2 %p\n", &che->ch[i]);

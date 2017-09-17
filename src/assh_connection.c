@@ -563,6 +563,9 @@ assh_error_t assh_request(struct assh_session_s *s,
   struct assh_packet_s *pout;
   size_t size = 4 + type_len + 1 + 4 + data_len;
 
+  if (s->tr_st >= ASSH_TR_DISCONNECT)
+    return ASSH_NO_DATA;
+
   if (ch == NULL)
     {
       ASSH_JMP_ON_ERR(assh_packet_alloc(s->ctx, SSH_MSG_GLOBAL_REQUEST, size, &pout)
@@ -1052,6 +1055,9 @@ assh_channel_open2(struct assh_session_s *s,
 
   assert(s->srv == &assh_service_connection);
   assert(pv->state == ASSH_CONNECTION_ST_IDLE);
+
+  if (s->tr_st >= ASSH_TR_DISCONNECT)
+    return ASSH_NO_DATA;
 
   ASSH_JMP_IF_TRUE(pkt_size < 1, ASSH_ERR_BAD_ARG | ASSH_ERRSV_CONTINUE, err);
 

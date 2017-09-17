@@ -272,10 +272,13 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 		    size_t data_len;
 		    const uint8_t *data;
 		    get_data(&data_len, &data);
-		    if (assh_channel_open2(&session[i], (const char *)data, data_len,
-					   data, data_len,
-					   rand() % 31 + 1, rand() % 128,
-					   &ch))
+		    err = assh_channel_open2(&session[i], (const char *)data, data_len,
+					     data, data_len,
+					     rand() % 31 + 1, rand() % 128,
+					     &ch);
+		    if (err == ASSH_NO_DATA)
+		      break;
+		    if (err > ASSH_NO_DATA)
 		      {
 			if (alloc_f)
 			  break;
