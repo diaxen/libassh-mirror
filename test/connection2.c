@@ -413,6 +413,9 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 	      everr = (rand() % 32 + 0x100);
 	      everr |= ((1 << (12 + rand() % 3))
 			& (ASSH_ERRSV_DISCONNECT | ASSH_ERRSV_FIN));
+
+	      if (ASSH_ERR_ERROR(everr) == ASSH_ERR_PROTOCOL && !packet_fuzz)
+		everr = ASSH_OK;
 	    }
 
 	  ASSH_DEBUG("event %u err %u\n", event.id, everr);
@@ -611,6 +614,8 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 		started[i] = 0;
 	      if (!evrate && !packet_fuzz && !alloc_fuzz)
 		TEST_FAIL("(ctx %u seed %u) unexpected error event 0x%lx\n", i, seed, err);
+	      if (ASSH_ERR_ERROR(err) == ASSH_ERR_PROTOCOL && !packet_fuzz)
+		TEST_FAIL("(ctx %u seed %u) unexpected protocol error\n", i, seed);
 	      break;
 	    }
 
