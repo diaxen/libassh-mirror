@@ -296,7 +296,7 @@ assh_request_failed_reply(struct assh_request_s *rq)
 	case ASSH_CHANNEL_ST_CLOSE_CALLED:
 	case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
         case ASSH_CHANNEL_ST_OPEN_SENT_FORCE_CLOSE:
-          ASSH_UNREACHABLE();
+          ASSH_UNREACHABLE("call not allowed in current state");
 
 	case ASSH_CHANNEL_ST_OPEN:
 	case ASSH_CHANNEL_ST_EOF_SENT:
@@ -354,7 +354,7 @@ assh_request_success_reply(struct assh_request_s *rq,
 	case ASSH_CHANNEL_ST_CLOSE_CALLED:
 	case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
         case ASSH_CHANNEL_ST_OPEN_SENT_FORCE_CLOSE:
-          ASSH_UNREACHABLE();
+          ASSH_UNREACHABLE("call not allowed in current state");
 
 	case ASSH_CHANNEL_ST_OPEN:
 	case ASSH_CHANNEL_ST_EOF_SENT:
@@ -439,11 +439,8 @@ static ASSH_EVENT_DONE_FCN(assh_event_request_done)
       assert(rq != NULL);
       return ASSH_OK;
 
-    case ASSH_CONNECTION_REPLY_CLOSED:
-      ASSH_UNREACHABLE();
-
     default:
-      ASSH_UNREACHABLE();
+      ASSH_UNREACHABLE("unexpected event value");
     }
 }
 
@@ -498,7 +495,7 @@ assh_connection_got_request(struct assh_session_s *s,
         case ASSH_CHANNEL_ST_OPEN_SENT_FORCE_CLOSE:
           /* This channel id has been removed from the channel map
              when the close packet was received. */
-          ASSH_UNREACHABLE();
+          ASSH_UNREACHABLE("internal error");
 	}
     }
 
@@ -586,7 +583,7 @@ assh_error_t assh_request(struct assh_session_s *s,
       case ASSH_CHANNEL_ST_FORCE_CLOSE:
       case ASSH_CHANNEL_ST_CLOSE_CALLED:
       case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
-        ASSH_UNREACHABLE();
+        ASSH_UNREACHABLE("call not allowed in current state");
 
       case ASSH_CHANNEL_ST_EOF_CLOSE:
       case ASSH_CHANNEL_ST_CLOSING:
@@ -814,7 +811,7 @@ assh_connection_got_request_reply(struct assh_session_s *s,
         case ASSH_CHANNEL_ST_CLOSING:
           /* This channel id has been removed from the channel map
              when the close packet was received. */
-          ASSH_UNREACHABLE();
+          ASSH_UNREACHABLE("internal error");
         }
     }
 
@@ -870,7 +867,7 @@ assh_channel_open_failed_reply(struct assh_channel_s *ch,
     case ASSH_CHANNEL_ST_FORCE_CLOSE:
       return ASSH_NO_DATA;
     default:
-      ASSH_UNREACHABLE();
+      ASSH_UNREACHABLE("call not allowed in current state");
     }
 
   struct assh_packet_s *pout;
@@ -913,7 +910,7 @@ assh_channel_open_success_reply2(struct assh_channel_s *ch,
     case ASSH_CHANNEL_ST_FORCE_CLOSE:
       return ASSH_NO_DATA;
     default:
-      ASSH_UNREACHABLE();
+      ASSH_UNREACHABLE("call not allowed in current state");
     }
 
   ASSH_JMP_IF_TRUE(pkt_size < 1, ASSH_ERR_BAD_ARG | ASSH_ERRSV_CONTINUE, err);
@@ -996,7 +993,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_open_done)
       return ASSH_OK;
 
     default:
-      ASSH_UNREACHABLE();
+      ASSH_UNREACHABLE("unexpected event value");
     }
 }
 
@@ -1161,7 +1158,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_open_reply_done)
       break;
 
     default:
-      ASSH_UNREACHABLE();
+      ASSH_UNREACHABLE("internal error");
     }
 
   return ASSH_OK;
@@ -1346,7 +1343,7 @@ assh_connection_got_channel_data(struct assh_session_s *s,
     case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
     case ASSH_CHANNEL_ST_FORCE_CLOSE:
     case ASSH_CHANNEL_ST_OPEN_SENT_FORCE_CLOSE:
-      ASSH_UNREACHABLE();
+      ASSH_UNREACHABLE("internal error");
     }
 
   uint32_t ext_type = 0;
@@ -1448,7 +1445,7 @@ assh_connection_got_channel_window_adjust(struct assh_session_s *s,
     case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
     case ASSH_CHANNEL_ST_FORCE_CLOSE:
     case ASSH_CHANNEL_ST_OPEN_SENT_FORCE_CLOSE:
-      ASSH_UNREACHABLE();
+      ASSH_UNREACHABLE("internal error");
     }
 
   if (inc == 0)
@@ -1515,7 +1512,7 @@ assh_channel_data_alloc_chk(struct assh_channel_s *ch,
     case ASSH_CHANNEL_ST_EOF_CLOSE:
     case ASSH_CHANNEL_ST_CLOSE_CALLED:
     case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
-      ASSH_UNREACHABLE();
+      ASSH_UNREACHABLE("call not allowed in current state");
 
     case ASSH_CHANNEL_ST_OPEN:
     case ASSH_CHANNEL_ST_EOF_RECEIVED:
@@ -1620,7 +1617,7 @@ assh_channel_data_send(struct assh_channel_s *ch, size_t size)
     case ASSH_CHANNEL_ST_EOF_CLOSE:
     case ASSH_CHANNEL_ST_CLOSE_CALLED:
     case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
-      ASSH_UNREACHABLE();
+      ASSH_UNREACHABLE("call not allowed in current state");
 
     case ASSH_CHANNEL_ST_OPEN:
     case ASSH_CHANNEL_ST_EOF_RECEIVED:
@@ -1671,7 +1668,7 @@ assh_channel_dummy(struct assh_channel_s *ch, size_t size)
     case ASSH_CHANNEL_ST_EOF_CLOSE:
     case ASSH_CHANNEL_ST_CLOSE_CALLED:
     case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
-      ASSH_UNREACHABLE();
+      ASSH_UNREACHABLE("call not allowed in current state");
 
     case ASSH_CHANNEL_ST_OPEN:
     case ASSH_CHANNEL_ST_EOF_RECEIVED:
@@ -1755,7 +1752,7 @@ assh_connection_got_channel_close(struct assh_session_s *s,
     case ASSH_CHANNEL_ST_OPEN_SENT_FORCE_CLOSE:
       /* This channel id has been removed from the channel map
          when the close packet was received. */
-      ASSH_UNREACHABLE();
+      ASSH_UNREACHABLE("internal error");
     }
 
   /* move channel from id lookup map to closing queue */
@@ -1853,7 +1850,7 @@ assh_connection_got_channel_eof(struct assh_session_s *s,
     case ASSH_CHANNEL_ST_OPEN_SENT_FORCE_CLOSE:
       /* This channel id has been removed from the channel map
          when the close packet was received. */
-      ASSH_UNREACHABLE();
+      ASSH_UNREACHABLE("internal error");
     }
 
   struct assh_event_channel_eof_s *ev =
@@ -1885,7 +1882,11 @@ assh_channel_eof(struct assh_channel_s *ch)
     case ASSH_CHANNEL_ST_OPEN_SENT:
     case ASSH_CHANNEL_ST_OPEN_SENT_FORCE_CLOSE:
     case ASSH_CHANNEL_ST_OPEN_RECEIVED:
-      ASSH_UNREACHABLE();
+    case ASSH_CHANNEL_ST_EOF_SENT:
+    case ASSH_CHANNEL_ST_EOF_CLOSE:
+    case ASSH_CHANNEL_ST_CLOSE_CALLED:
+    case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
+      ASSH_UNREACHABLE("call not allowed in current state");
 
     case ASSH_CHANNEL_ST_OPEN:
       ASSH_RET_ON_ERR(assh_connection_send_channel_close(s, ch, SSH_MSG_CHANNEL_EOF)
@@ -1902,12 +1903,6 @@ assh_channel_eof(struct assh_channel_s *ch)
     case ASSH_CHANNEL_ST_CLOSING:
     case ASSH_CHANNEL_ST_FORCE_CLOSE:
       break;
-
-    case ASSH_CHANNEL_ST_EOF_SENT:
-    case ASSH_CHANNEL_ST_EOF_CLOSE:
-    case ASSH_CHANNEL_ST_CLOSE_CALLED:
-    case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
-      ASSH_UNREACHABLE();
     }
 
   return ASSH_OK;
@@ -1928,7 +1923,9 @@ assh_channel_close(struct assh_channel_s *ch)
     case ASSH_CHANNEL_ST_OPEN_SENT:
     case ASSH_CHANNEL_ST_OPEN_RECEIVED:
     case ASSH_CHANNEL_ST_OPEN_SENT_FORCE_CLOSE:
-      ASSH_UNREACHABLE();
+    case ASSH_CHANNEL_ST_CLOSE_CALLED:
+    case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
+      ASSH_UNREACHABLE("call not allowed in current state");
 
     case ASSH_CHANNEL_ST_OPEN:
     case ASSH_CHANNEL_ST_EOF_SENT:
@@ -1945,10 +1942,6 @@ assh_channel_close(struct assh_channel_s *ch)
     case ASSH_CHANNEL_ST_CLOSING:
       ch->status = ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING;
       break;
-
-    case ASSH_CHANNEL_ST_CLOSE_CALLED:
-    case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
-      ASSH_UNREACHABLE();
 
     case ASSH_CHANNEL_ST_FORCE_CLOSE:
       break;
@@ -2032,7 +2025,7 @@ static void assh_channel_force_close_i(struct assh_map_entry_s *ch_, void *pv_)
     case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
     case ASSH_CHANNEL_ST_FORCE_CLOSE:
     case ASSH_CHANNEL_ST_OPEN_SENT_FORCE_CLOSE:
-      ASSH_UNREACHABLE();
+      ASSH_UNREACHABLE("internal error");
     }
 
   assh_queue_push_front(&pv->closing_queue, &ch->qentry);
@@ -2086,7 +2079,7 @@ static void assh_channel_pop_closing(struct assh_session_s *s,
     }
 
     default:
-      ASSH_UNREACHABLE();
+      ASSH_UNREACHABLE("internal error");
     }
 
   /* remove from pv->closing_queue */

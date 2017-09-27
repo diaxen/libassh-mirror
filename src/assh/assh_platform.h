@@ -221,9 +221,9 @@ ASSH_INLINE void assh_clear(void *data, size_t len)
 #define ASSH_ALIGN8(x) ((((x) - 1) | 7) + 1)
 
 #if defined(__GNUC__) && defined(NDEBUG)
-# define ASSH_UNREACHABLE()  __builtin_unreachable()
+# define ASSH_UNREACHABLE(msg)  __builtin_unreachable()
 #else
-# define ASSH_UNREACHABLE()  do { abort(); } while (1)
+# define ASSH_UNREACHABLE(msg)  do { assert(!"not reachable: " msg); abort(); } while (1)
 #endif
 
 typedef time_t assh_time_t;
