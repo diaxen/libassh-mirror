@@ -196,6 +196,15 @@ ASSH_INLINE void assh_clear(void *data, size_t len)
 /** @internal */
 #define assh_ctz64(x) __builtin_ctzll(x)
 
+/** @internal */
+#define assh_popc8(x) __builtin_popcount(x)
+/** @internal */
+#define assh_popc16(x) __builtin_popcount(x)
+/** @internal */
+#define assh_popc32(x) __builtin_popcountl(x)
+/** @internal */
+#define assh_popc64(x) __builtin_popcountll(x)
+
 #else
 
 /** @internal */
@@ -215,6 +224,16 @@ ASSH_INLINE void assh_clear(void *data, size_t len)
 #define assh_ctz32(x) assh_ct_ctz32(x)
 /** @internal */
 #define assh_ctz64(x) assh_ct_ctz64(x)
+
+/** @internal */
+#define assh_popc8(x)  assh_ct_popc8(x)
+/** @internal */
+#define assh_popc16(x) assh_ct_popc16(x)
+/** @internal */
+#define assh_popc32(x) assh_ct_popc32(x)
+/** @internal */
+#define assh_popc64(x) assh_ct_popc64(x)
+
 #endif
 
 /** @internal */

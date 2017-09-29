@@ -486,6 +486,28 @@ ASSH_INLINE uint_fast8_t assh_ct_clz##n(uint##n##_t x)                \
   j |= (a0 >> (j + 2-1))  & 2;                                        \
   j |= (x  >> (j + 1-0))  & 1;                                        \
   return j ^ (n - 1);                                                 \
+}                                                                     \
+                                                                      \
+/** @internal @This computes the number of one bits of a              \
+    n bits value in constant time */                                  \
+ASSH_INLINE uint_fast8_t assh_ct_popc##n(uint##n##_t x)               \
+{                                                                     \
+  x = (x & (uint##n##_t)0x5555555555555555ULL) +                      \
+    ((x >> 1) & (uint##n##_t)0x5555555555555555ULL);                  \
+  x = (x & (uint##n##_t)0x3333333333333333ULL) +                      \
+    ((x >> 2) & (uint##n##_t)0x3333333333333333ULL);                  \
+  x = (x & (uint##n##_t)0x0f0f0f0f0f0f0f0fULL) +                      \
+    ((x >> 4) & (uint##n##_t)0x0f0f0f0f0f0f0f0fULL);                  \
+  if (n > 8)                                                          \
+    x = (x & (uint##n##_t)0x00ff00ff00ff00ffULL) +                    \
+      ((x >> 8) & (uint##n##_t)0x00ff00ff00ff00ffULL);                \
+  if (n > 16)                                                         \
+    x = (x & (uint##n##_t)0x0000ffff0000ffffULL) +                    \
+      ((x >> 16) & (uint##n##_t)0x0000ffff0000ffffULL);               \
+  if (n > 32)                                                         \
+    x = (x & 0x00000000ffffffffULL) +                                 \
+      (((uint64_t)x >> 32) & 0x00000000ffffffffULL);                  \
+  return x;                                                           \
 }
 
 ASSH_CT_CTLZ_GEN(8, 3);
