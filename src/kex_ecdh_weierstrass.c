@@ -195,7 +195,7 @@ static assh_error_t assh_kex_ecdhws_client_send_pubkey(struct assh_session_s *s)
   assh_error_t err;
 
   /* generate ephemeral key pair */
-  ASSH_RET_ON_ERR(s->ctx->prng->f_get(s->ctx, pv->pvkey, pv->size,
+  ASSH_RET_ON_ERR(assh_prng_get(s->ctx, pv->pvkey, pv->size,
                       ASSH_PRNG_QUALITY_EPHEMERAL_KEY));
 
   ASSH_RET_ON_ERR(assh_weierstrass_base_mul(s));
@@ -330,7 +330,7 @@ static assh_error_t assh_kex_ecdhws_server_wait_pubkey(struct assh_session_s *s,
                ASSH_ERR_BAD_DATA);
 
   /* generate ephemeral key pair */
-  ASSH_RET_ON_ERR(s->ctx->prng->f_get(s->ctx, pv->pvkey, pv->size,
+  ASSH_RET_ON_ERR(assh_prng_get(s->ctx, pv->pvkey, pv->size,
                       ASSH_PRNG_QUALITY_EPHEMERAL_KEY));
 
   ASSH_RET_ON_ERR(assh_weierstrass_base_mul(s));

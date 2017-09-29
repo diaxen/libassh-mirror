@@ -207,7 +207,7 @@ assh_kex_ecdhmt_private_gen(struct assh_session_s *s,
   const struct assh_montgomery_curve_s *curve = pv->curve;
   assh_error_t err;
 
-  ASSH_RET_ON_ERR(s->ctx->prng->f_get(s->ctx, private, pv->size,
+  ASSH_RET_ON_ERR(assh_prng_get(s->ctx, private, pv->size,
                       ASSH_PRNG_QUALITY_EPHEMERAL_KEY));
 
   private[0] -= private[0] % curve->cofactor;

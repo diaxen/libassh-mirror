@@ -365,7 +365,7 @@ assh_bignum_rand(struct assh_context_s *c,
   if (l == 0)
     return ASSH_OK;
 
-  ASSH_RET_ON_ERR(c->prng->f_get(c, (uint8_t*)n,
+  ASSH_RET_ON_ERR(assh_prng_get(c, (uint8_t*)n,
                  l * sizeof(assh_bnword_t), quality));
 
   while (1)
@@ -380,7 +380,7 @@ assh_bignum_rand(struct assh_context_s *c,
       for (i = l; --i != 0; )
         n[i] = n[i - 1];
 
-      ASSH_RET_ON_ERR(c->prng->f_get(c, (uint8_t*)n,
+      ASSH_RET_ON_ERR(assh_prng_get(c, (uint8_t*)n,
                      sizeof(assh_bnword_t), quality));
     }
 

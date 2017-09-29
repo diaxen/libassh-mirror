@@ -310,7 +310,7 @@ assh_bignum_check_prime(struct assh_context_s *ctx,
       assh_bnword_t rn[l];
 
       /* generate random base for mr algorithm */
-      ASSH_RET_ON_ERR(ctx->prng->f_get(ctx, (uint8_t*)rn,
+      ASSH_RET_ON_ERR(assh_prng_get(ctx, (uint8_t*)rn,
                  sizeof(rn), ASSH_PRNG_QUALITY_NONCE));
 
       ASSH_RET_ON_ERR(assh_bignum_miller_rabin(ctx, sc, rn, bn, rounds, result));
@@ -334,7 +334,7 @@ assh_bignum_next_prime(struct assh_context_s *ctx,
 
   /* generate random base for mr algorithm */
   assh_bnword_t rn[l];
-  ASSH_RET_ON_ERR(ctx->prng->f_get(ctx, (uint8_t*)rn,
+  ASSH_RET_ON_ERR(assh_prng_get(ctx, (uint8_t*)rn,
                  sizeof(rn), ASSH_PRNG_QUALITY_NONCE));
 
   /* simple formula for upper bound of max prime gap */
