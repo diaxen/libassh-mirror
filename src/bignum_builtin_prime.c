@@ -104,7 +104,7 @@ static const uint16_t assh_primes[ASSH_SIEVE_PRIMES] = {
 
 struct assh_bignum_sieve_s
 {
-  uint16_t offsets[ASSH_SIEVE_PRIMES];
+  uint32_t offsets[ASSH_SIEVE_PRIMES];
 };
 
 /* compute bignum modulo a small prime */
