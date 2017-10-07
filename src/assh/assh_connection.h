@@ -159,6 +159,10 @@ void assh_channel_set_pvi(struct assh_channel_s *ch, uintptr_t pv);
 /** This function returns the value of the channel private integer. */
 uintptr_t assh_channel_pvi(const struct assh_channel_s *ch);
 
+/** This function returns the session associated to a channel. */
+struct assh_session_s *
+assh_channel_session(const struct assh_channel_s *ch);
+
 /** This returns the current channel status */
 enum assh_channel_status_e
 assh_channel_status(const struct assh_channel_s *ch);
@@ -187,6 +191,10 @@ void assh_request_set_pvi(struct assh_request_s *rq, uintptr_t pv);
 
 /** This function returns the value of the request private integer. */
 uintptr_t assh_request_pvi(const struct assh_request_s *rq);
+
+/** This function returns the session associated to a request. */
+struct assh_session_s *
+assh_request_session(const struct assh_request_s *rq);
 
 /** This function returns the channel associated to a request.
     It returns @tt NULL for global requests. */

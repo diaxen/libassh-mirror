@@ -150,6 +150,12 @@ assh_request_channel(const struct assh_request_s *rq)
   return rq->ch;
 }
 
+struct assh_session_s *
+assh_request_session(const struct assh_request_s *rq)
+{
+  return rq->session;
+}
+
 void assh_channel_set_pv(struct assh_channel_s *ch, void *pv)
 {
   ch->pv = pv;
@@ -168,6 +174,12 @@ void assh_channel_set_pvi(struct assh_channel_s *ch, uintptr_t pv)
 uintptr_t assh_channel_pvi(const struct assh_channel_s *ch)
 {
   return ch->pvi;
+}
+
+struct assh_session_s *
+assh_channel_session(const struct assh_channel_s *ch)
+{
+  return ch->session;
 }
 
 enum assh_channel_status_e
