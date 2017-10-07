@@ -72,7 +72,7 @@ static assh_error_t test_algo(struct assh_context_s *c)
       if (t->algo != algo || t->bits_min != bits_min || t->bits_max != bits_max)
 	{
 	  /* create new key */
-	  size_t bits = t->bits_min + rand() % (t->bits_max - t->bits_min + 1);
+	  size_t bits = t->bits_min + assh_prng_rand() % (t->bits_max - t->bits_min + 1);
 	  fprintf(stderr, "\nkey type: %s, size: %zu\n", t->algo->type, bits);
 	  assh_key_drop(c, &key1);
 	  TEST_ASSERT(!assh_key_create(c, &key1, bits, t->algo, ASSH_ALGO_SIGN));
@@ -97,7 +97,7 @@ static assh_error_t test_algo(struct assh_context_s *c)
 
       /* reload key from blob */
       const uint8_t *blob2 = blob1;
-      size_t padding = rand() % 32;	/* may load from large buffer */
+      size_t padding = assh_prng_rand() % 32;	/* may load from large buffer */
 
       fprintf(stderr, "l");
       TEST_ASSERT(!assh_key_load(c, &key2, t->algo, ASSH_ALGO_SIGN, t->format,
@@ -211,7 +211,7 @@ static assh_error_t test_helper(struct assh_context_s *c)
 	{
 	  /* create new key */
 	  assh_key_drop(c, &key1);
-	  size_t bits = t->bits_min + rand() % (t->bits_max - t->bits_min + 1);
+	  size_t bits = t->bits_min + assh_prng_rand() % (t->bits_max - t->bits_min + 1);
 	  fprintf(stderr, "\nkey type: %s, size: %zu\n", t->algo->type, bits);
 	  TEST_ASSERT(!assh_key_create(c, &key1, bits, t->algo, ASSH_ALGO_SIGN));
 	}
@@ -272,7 +272,7 @@ int main(int argc, char **argv)
   size_t k, count = argc > 1 ? atoi(argv[1]) : 10;
 
   int t = time(0);
-  srand(t);
+  assh_prng_seed(t);
   fprintf(stderr, "Seed: %u\n", t);
 
   for (k = 0; k < count; k++)

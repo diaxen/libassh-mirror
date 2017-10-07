@@ -13,12 +13,16 @@ static ASSH_CIPHER_INIT_FCN(assh_fuzz_init)
 
 static ASSH_CIPHER_PROCESS_FCN(assh_fuzz_process)
 {
-  for (uint32_t i = 0; i < len; i++)
-    if (packet_fuzz && RAND_MAX / packet_fuzz > rand())
-      {
-        data[i] ^= 1 << (rand() % 8);
-        packet_fuzz_bits++;
-      }
+  if (packet_fuzz)
+    {
+      uint64_t r = prng_rand_max / packet_fuzz;
+      for (uint32_t i = 0; i < len; i++)
+        if (r > assh_prng_rand())
+          {
+            data[i] ^= 1 << (assh_prng_rand() % 8);
+            packet_fuzz_bits++;
+          }
+    }
   return ASSH_OK;
 }
 

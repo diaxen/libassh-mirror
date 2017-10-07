@@ -103,8 +103,8 @@ unsigned long rekex_count = 0;
 static void get_data(size_t *size, const uint8_t **data)
 {
   static const uint8_t r[] = "1a2q3w4z5s6x7e8d9c0r1f2v3t4g5b6y7h8n9u0j1k2i3l4m5p6o";
-  *size = rand() % sizeof(r);
-  *data = r + rand() % (sizeof(r) - *size);
+  *size = assh_prng_rand() % sizeof(r);
+  *data = r + assh_prng_rand() % (sizeof(r) - *size);
 }
 
 void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
@@ -120,9 +120,11 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 
   alloc_fuzz = 0;
   if (assh_context_init(&context[0], ASSH_SERVER,
-			assh_leaks_allocator, NULL, NULL, NULL) ||
+			assh_leaks_allocator, NULL,
+			&assh_prng_weak, NULL) ||
       assh_context_init(&context[1], ASSH_CLIENT,
-			assh_leaks_allocator, NULL, NULL, NULL))
+			assh_leaks_allocator, NULL,
+			&assh_prng_weak, NULL))
     TEST_FAIL("init");
 
   for (i = 0; i < 2; i++)
@@ -142,7 +144,7 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
       assh_cipher_fuzz_initreg(&context[i], &session[i]);
 
       session[i].user_auth_done = 1;
-      if (assh_kex_set_threshold(&session[i], 1 + rand() % 16384))
+      if (assh_kex_set_threshold(&session[i], 1 + assh_prng_rand() % 16384))
 	TEST_FAIL("init");
 
       for (j = 0; j < RQ_POSTPONED_SIZE; j++)
@@ -172,12 +174,12 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 	  /********************* generate request and channel open... */
 
 	  if (started[i])
-	    switch (rand() % 8)
+	    switch (assh_prng_rand() % 8)
 	      {
 	      case 0:
 	      case 1: {    	/***** send a new request *****/
-		assh_bool_t want_reply = rand() % 2;
-		unsigned int k = rand() % CH_MAP_SIZE;
+		assh_bool_t want_reply = assh_prng_rand() % 2;
+		unsigned int k = assh_prng_rand() % CH_MAP_SIZE;
 		struct assh_channel_s *ch = ch_map[i][k];
 		struct assh_request_s *rq;
 
@@ -229,11 +231,11 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 
 		rq_postponed[i][n] = NULL;
 
-		switch (rand() % 2)
+		switch (assh_prng_rand() % 2)
 		  {
 		  case 0: {
 		    size_t data_len = 0;
-		    const uint8_t *data;
+		    const uint8_t *data = NULL;
 		    if (!ch)
 		      get_data(&data_len, &data);
 		    assh_error_t er = assh_request_success_reply(rq, data, data_len);
@@ -264,7 +266,7 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 	      }
 
 	      case 4: {    	/***** channel actions *****/
-		unsigned int k = rand() % CH_MAP_SIZE;
+		unsigned int k = assh_prng_rand() % CH_MAP_SIZE;
 		struct assh_channel_s *ch = ch_map[i][k];
 
 		if (ch == NULL) /**** channel is closed, try to open ****/
@@ -274,7 +276,7 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 		    get_data(&data_len, &data);
 		    err = assh_channel_open2(&session[i], (const char *)data, data_len,
 					     data, data_len,
-					     rand() % 31 + 1, rand() % 128,
+					     assh_prng_rand() % 31 + 1, assh_prng_rand() % 128,
 					     &ch);
 		    if (err == ASSH_NO_DATA)
 		      break;
@@ -297,14 +299,14 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 		      break;
 		    if (assh_channel_pvi(ch) == CH_POSTONED) /* postponned */
 		      {
-			switch (rand() % 2)
+			switch (assh_prng_rand() % 2)
 			  {
 			    size_t data_len;
 			    const uint8_t *data;
 			  case 0:
 			    get_data(&data_len, &data);
 			    if (assh_channel_open_success_reply2(ch,
-					rand() % 31 + 1, rand() % 128,
+					assh_prng_rand() % 31 + 1, assh_prng_rand() % 128,
 								 data, data_len))
 			      {
 				if (alloc_f)
@@ -316,7 +318,7 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 			    assh_channel_set_pvi(ch, CH_OPEN);
 			    break;
 			  case 1:
-			    if (assh_channel_open_failed_reply(ch, rand() % 4 + 1))
+			    if (assh_channel_open_failed_reply(ch, assh_prng_rand() % 4 + 1))
 			      {
 				if (alloc_f)
 				  break;
@@ -330,7 +332,7 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 		      }
 		    else if (assh_channel_pvi(ch) != CH_WAIT)
 		      {
-			switch (rand() % 4)
+			switch (assh_prng_rand() % 4)
 			  {
 			  case 0: {	/**** may close ****/
 			    if (assh_channel_status(ch) == ASSH_CHANNEL_ST_OPEN_SENT)
@@ -372,7 +374,7 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 			    if (assh_channel_pvi(ch) != CH_OPEN)
 			      break;
 			    uint8_t *d;
-			    size_t m = rand() % 64 + 1;
+			    size_t m = assh_prng_rand() % 64 + 1;
 			    size_t s = s % m + 1;
 			    assh_error_t er = assh_channel_data_alloc(ch, &d, &s, m);
 			    if (er > ASSH_NO_DATA)
@@ -383,7 +385,7 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 			      }
 			    if (er == ASSH_OK && s > 0)
 			      {
-				memset(d, rand(), s);
+				memset(d, assh_prng_rand(), s);
 				if (assh_channel_data_send(ch, s))
 				  TEST_FAIL("(ctx %u seed %u) assh_channel_data_send()\n", i, seed);
 				ch_data_send++;
@@ -407,11 +409,11 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 
 	  assh_error_t everr = ASSH_OK;
 
-	  if (evrate && !(rand() % evrate))
+	  if (evrate && !(assh_prng_rand() % evrate))
 	    {
 	      ev_err_count++;
-	      everr = (rand() % 32 + 0x100);
-	      everr |= ((1 << (12 + rand() % 3))
+	      everr = (assh_prng_rand() % 32 + 0x100);
+	      everr |= ((1 << (12 + assh_prng_rand() % 3))
 			& (ASSH_ERRSV_DISCONNECT | ASSH_ERRSV_FIN));
 
 	      if (ASSH_ERR_ERROR(everr) == ASSH_ERR_PROTOCOL && !packet_fuzz)
@@ -428,7 +430,7 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 	      if (everr)
 		goto rq_fail;
 
-	      switch (rand() % 3)
+	      switch (assh_prng_rand() % 3)
 		{
 		case 1:
 		rq_fail:
@@ -524,7 +526,7 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 		{
 		  if (ch_map[i][n] == NULL)
 		    {
-		      switch (rand() % 3)
+		      switch (assh_prng_rand() % 3)
 			{
 			case 0:
 			  ch_map[i][n] = e->ch;
@@ -587,7 +589,7 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 
 	    case ASSH_EVENT_CHANNEL_DATA: {
 	      struct assh_event_channel_data_s *e = &event.connection.channel_data;
-	      e->transferred = rand() % (e->data.size + 1);
+	      e->transferred = assh_prng_rand() % (e->data.size + 1);
 	      ASSH_DEBUG("ASSH_EVENT_CHANNEL_DATA %p\n", e->ch);
 	      ch_data_recv++;
 	      break;
@@ -687,16 +689,16 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 
 static int end_disconnect(int j, int n)
 {
-  if (rand() % 5000)
+  if (assh_prng_rand() % 5000)
     {
-      assh_session_disconnect(&session[0], rand() % 15 + 1,
-			      "dummy error message" + rand() % 8);
+      assh_session_disconnect(&session[0], assh_prng_rand() % 15 + 1,
+			      "dummy error message" + assh_prng_rand() % 8);
       disconnect_count++;
     }
-  if (rand() % 5000)
+  if (assh_prng_rand() % 5000)
     {
-      assh_session_disconnect(&session[1], rand() % 15 + 1,
-			      "dummy error message" + rand() % 8);
+      assh_session_disconnect(&session[1], assh_prng_rand() % 15 + 1,
+			      "dummy error message" + assh_prng_rand() % 8);
       disconnect_count++;
     }
   return 0;
@@ -709,7 +711,7 @@ static int end_wait_error(int j, int n)
 
 static int end_early_cleanup(int j, int n)
 {
-  return rand() % 10000;
+  return assh_prng_rand() % 10000;
 }
 
 int main(int argc, char **argv)
@@ -728,7 +730,7 @@ int main(int argc, char **argv)
 
   for (k = 0; k < count; )
     {
-      srand(seed);
+      assh_prng_seed(seed);
       packet_fuzz = 0;
 
       if (action & 1)
@@ -745,7 +747,7 @@ int main(int argc, char **argv)
 
       if (action & 4)
 	{
-	  packet_fuzz = 10 + rand() % 1024;
+	  packet_fuzz = 10 + assh_prng_rand() % 1024;
 	  putc('f', stderr);
 	  test(&end_wait_error, 10000, 0, 0);
 	}
@@ -754,16 +756,16 @@ int main(int argc, char **argv)
 	{
 	  packet_fuzz = 0;
 	  putc('a', stderr);
-	  test(&end_wait_error, 10000, 0, 4 + rand() % 32);
+	  test(&end_wait_error, 10000, 0, 4 + assh_prng_rand() % 32);
 	}
 
       if (action & 16)
 	{
 	  putc('v', stderr);
-	  packet_fuzz = 10 + rand() % 1024;
+	  packet_fuzz = 10 + assh_prng_rand() % 1024;
 	  test(&end_wait_error, 10000,
-		   rand() % 256 + 16,
-		   rand() % 128 + 16);
+		   assh_prng_rand() % 256 + 16,
+		   assh_prng_rand() % 128 + 16);
 	}
 
       seed++;

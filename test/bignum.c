@@ -950,8 +950,8 @@ assh_error_t test_add_sub(unsigned int count)
         A, B, C, D, S, L
       };
 
-      size_t s = 27 + rand() % 100;
-      size_t l = 3 + rand() % 12;
+      size_t s = 27 + assh_prng_rand() % 100;
+      size_t l = 3 + assh_prng_rand() % 12;
 
       static const assh_bignum_op_t bytecode[] = {
         ASSH_BOP_SIZE(  A,      S                       ),
@@ -1067,12 +1067,12 @@ assh_error_t test_move(unsigned int count)
         A_mpint, B_mpint
       };
 
-      size_t s = 1 + rand() % 64;
+      size_t s = 1 + assh_prng_rand() % 64;
 
       uint8_t mpa[s+4];
       uint8_t mpb[s+4];
 
-      memset(mpa + 4, rand() & 127, s);
+      memset(mpa + 4, assh_prng_rand() & 127, s);
 
       if (mpa[4] == 0)
         s = 0;
@@ -1142,7 +1142,7 @@ assh_error_t test_modinv(unsigned int count)
       };
 
       ASSH_RET_ON_ERR(assh_bignum_bytecode(&context, 0, bytecode, "TTTTsM",
-                                        (size_t)(rand() % 900 + 100),
+                                        (size_t)(assh_prng_rand() % 900 + 100),
                                         i % 2 ? prime1 : prime2));
     }
 
@@ -1194,7 +1194,7 @@ assh_error_t test_mt(unsigned int count)
       };
 
       ASSH_RET_ON_ERR(assh_bignum_bytecode(&context, 0, bytecode, "TTTTTmsM",
-                                        (size_t)1024 /*(rand() % 900 + 100)*/,
+                                        (size_t)1024 /*(assh_prng_rand() % 900 + 100)*/,
                                         i % 2 ? prime1 : prime2));
     }
 

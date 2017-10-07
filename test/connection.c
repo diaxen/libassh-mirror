@@ -172,9 +172,11 @@ void test(int (*fend)(int, int), int n, int evrate)
   ASSH_DEBUG("==============================================================\n");
 
   if (assh_context_init(&context[0], ASSH_SERVER,
-			assh_leaks_allocator, NULL, NULL, NULL) ||
+			assh_leaks_allocator, NULL,
+			&assh_prng_weak, NULL) ||
       assh_context_init(&context[1], ASSH_CLIENT,
-			assh_leaks_allocator, NULL, NULL, NULL))
+			assh_leaks_allocator, NULL,
+			&assh_prng_weak, NULL))
     TEST_FAIL("init");
 
   ch_refs = 0;
@@ -210,7 +212,7 @@ void test(int (*fend)(int, int), int n, int evrate)
 	TEST_FAIL("init");
 
       session[i].user_auth_done = 1;
-      if (assh_kex_set_threshold(&session[i], 1 + rand() % 4096))
+      if (assh_kex_set_threshold(&session[i], 1 + assh_prng_rand() % 4096))
 	TEST_FAIL("init");
     }
 
@@ -237,11 +239,11 @@ void test(int (*fend)(int, int), int n, int evrate)
 	  /********************* generate request and channel open... */
 
 	  if (started[i])
-	    switch (rand() % 10)
+	    switch (assh_prng_rand() % 10)
 	      {
 	      case 0:
 	      case 1: {    	/***** send a new request *****/
-		unsigned int k = rand() % CH_MAP_SIZE;
+		unsigned int k = assh_prng_rand() % CH_MAP_SIZE;
 		struct ch_map_entry_s *che = &ch_map[k];
 		struct assh_channel_s *ch = NULL;
 		struct rq_fifo_s *lrqf = &global_rq_fifo[i];
@@ -255,20 +257,20 @@ void test(int (*fend)(int, int), int n, int evrate)
 		  break;
 
 		struct rq_fifo_entry_s *rqe = &lrqf->entry[(lrqf->first + lrqf->count++) % RQ_FIFO_SIZE];
-		assh_bool_t want_reply = rand() % 2;
+		assh_bool_t want_reply = assh_prng_rand() % 2;
 
 		rqe->che = ch ? che : NULL;
 
-		rqe->type_len = rand() % (sizeof(rqe->type) - 1) + 1;
-		memset(rqe->type, 'a' + rand() % 26, rqe->type_len);
+		rqe->type_len = assh_prng_rand() % (sizeof(rqe->type) - 1) + 1;
+		memset(rqe->type, 'a' + assh_prng_rand() % 26, rqe->type_len);
 
-		rqe->data_len = rand() % sizeof(rqe->rq_data);
-		memset(rqe->rq_data, rand(), rqe->data_len);
+		rqe->data_len = assh_prng_rand() % sizeof(rqe->rq_data);
+		memset(rqe->rq_data, assh_prng_rand(), rqe->data_len);
 
 		rqe->status = RQ_SENT;
 		rqe->srq = NULL;
 		err = assh_request(&session[i], ch, rqe->type, rqe->type_len,
-				   rqe->data_len || rand() % 2 ? rqe->rq_data : NULL, rqe->data_len,
+				   rqe->data_len || assh_prng_rand() % 2 ? rqe->rq_data : NULL, rqe->data_len,
 				   want_reply ? &rqe->srq : NULL);
 		if (err == ASSH_NO_DATA)
 		  break;
@@ -285,7 +287,7 @@ void test(int (*fend)(int, int), int n, int evrate)
 	      case 2:
 	      case 3: {		/***** reply to postponed request *****/
 		struct rq_fifo_entry_s *rqe;
-		unsigned int n, l = rand() % RQ_POSTPONED_SIZE;
+		unsigned int n, l = assh_prng_rand() % RQ_POSTPONED_SIZE;
 
 		/* look for postponed requests in the fifo */
 		for (n = 0; n < RQ_POSTPONED_SIZE; n++)
@@ -306,13 +308,13 @@ void test(int (*fend)(int, int), int n, int evrate)
 		      break;
 		  }
 
-		switch (rand() % 2)
+		switch (assh_prng_rand() % 2)
 		  {
 		  case 0: {
 		    if (rqe->che == NULL)
 		      {
-			rqe->data_len = rand() % sizeof(rqe->rsp_data);
-			memset(rqe->rsp_data, rand(), rqe->data_len);
+			rqe->data_len = assh_prng_rand() % sizeof(rqe->rsp_data);
+			memset(rqe->rsp_data, assh_prng_rand(), rqe->data_len);
 		      }
 
 		    assh_error_t er = assh_request_success_reply(rqe->rrq, rqe->rsp_data, rqe->data_len);
@@ -337,7 +339,7 @@ void test(int (*fend)(int, int), int n, int evrate)
 	      }
 
 	      case 4: {    	/***** channel actions *****/
-		unsigned int k = rand() % CH_MAP_SIZE;
+		unsigned int k = assh_prng_rand() % CH_MAP_SIZE;
 		struct ch_map_entry_s *che = &ch_map[k];
 
 		switch (che->status)
@@ -345,16 +347,16 @@ void test(int (*fend)(int, int), int n, int evrate)
 		  case CH_CLOSED: { /**** channel is closed, try to open ****/
 		    if (j > n)
 		      break;
-		    che->type_len = rand() % (sizeof(che->type) - 1) + 1;
-		    memset(che->type, 'a' + rand() % 26, che->type_len);
+		    che->type_len = assh_prng_rand() % (sizeof(che->type) - 1) + 1;
+		    memset(che->type, 'a' + assh_prng_rand() % 26, che->type_len);
 		    che->type[0] = k;
 
-		    che->data_len = rand() % sizeof(che->data);
-		    memset(che->data, rand(), che->data_len);
+		    che->data_len = assh_prng_rand() % sizeof(che->data);
+		    memset(che->data, assh_prng_rand(), che->data_len);
 
 		    err = assh_channel_open2(&session[i], che->type, che->type_len,
 					   che->data, che->data_len,
-					   rand() % 31 + 1, rand() % 128,
+					   assh_prng_rand() % 31 + 1, assh_prng_rand() % 128,
 					     &che->ch[i]);
 		    if (err == ASSH_NO_DATA)
 		      break;
@@ -378,13 +380,13 @@ void test(int (*fend)(int, int), int n, int evrate)
 		  case CH_POSTPONED: { /**** reply to postponed open ****/
 		    if (che->initiator == i)
 		      break;
-		    switch (rand() % 2)
+		    switch (assh_prng_rand() % 2)
 		      {
 		      case 0:
-			che->data_len = rand() % sizeof(che->data);
-			memset(che->data, rand(), che->data_len);
+			che->data_len = assh_prng_rand() % sizeof(che->data);
+			memset(che->data, assh_prng_rand(), che->data_len);
 			err = assh_channel_open_success_reply2(che->ch[i],
-							       rand() % 31 + 1, rand() % 128,
+							       assh_prng_rand() % 31 + 1, assh_prng_rand() % 128,
 							       che->data, che->data_len);
 			if (err)
 			  TEST_FAIL("(ctx %u seed %u) assh_channel_open_success_reply failed 0x%lx\n", i, seed, err);
@@ -394,7 +396,7 @@ void test(int (*fend)(int, int), int n, int evrate)
 			ch_open_reply_success_count++;
 			break;
 		      case 1:
-			err = assh_channel_open_failed_reply(che->ch[i], rand() % 4 + 1);
+			err = assh_channel_open_failed_reply(che->ch[i], assh_prng_rand() % 4 + 1);
 			if (err)
 			  TEST_FAIL("(ctx %u seed %u) assh_channel_open_failed_reply failed 0x%lx\n", i, seed, err);
 			ASSH_DEBUG("assh_channel_open_failed_reply %p\n", che->ch[i]);
@@ -408,7 +410,7 @@ void test(int (*fend)(int, int), int n, int evrate)
 		  }
 		  case CH_OPEN: { /**** channel is open ****/
 
-		    switch (rand() % 2)
+		    switch (assh_prng_rand() % 2)
 		      {
 		      case 0: {	/**** may close ****/
 			if (che->ch[i] == NULL)
@@ -467,11 +469,11 @@ void test(int (*fend)(int, int), int n, int evrate)
 
 	  assh_error_t everr = ASSH_OK;
 
-	  if (evrate && !(rand() % evrate))
+	  if (evrate && !(assh_prng_rand() % evrate))
 	    {
 	      ev_err_count++;
-	      everr = (rand() % 32 + 0x100);
-	      everr |= ((1 << (12 + rand() % 3))
+	      everr = (assh_prng_rand() % 32 + 0x100);
+	      everr |= ((1 << (12 + assh_prng_rand() % 3))
 			& (ASSH_ERRSV_DISCONNECT | ASSH_ERRSV_FIN));
 
 	      if (ASSH_ERR_ERROR(everr) == ASSH_ERR_PROTOCOL)
@@ -573,14 +575,14 @@ void test(int (*fend)(int, int), int n, int evrate)
 	      if (everr)
 		goto rq_fail;
 
-	      switch (rand() % 3)
+	      switch (assh_prng_rand() % 3)
 		{
 		case 0:
 		  e->reply = ASSH_CONNECTION_REPLY_SUCCESS;
 		  if (e->ch == NULL)
 		    {
-		      rqe->data_len = rand() % sizeof(rqe->rsp_data);
-		      memset(rqe->rsp_data, rand(), rqe->data_len);
+		      rqe->data_len = assh_prng_rand() % sizeof(rqe->rsp_data);
+		      memset(rqe->rsp_data, assh_prng_rand(), rqe->data_len);
 		      e->rsp_data.data = rqe->rsp_data;
 		      e->rsp_data.size = rqe->data_len;
 		    }
@@ -774,7 +776,7 @@ void test(int (*fend)(int, int), int n, int evrate)
 	      if (everr)
 		goto ch_fail;
 
-	      switch (rand() % 3)
+	      switch (assh_prng_rand() % 3)
 		{
 		case 0:
 		  e->reply = ASSH_CONNECTION_REPLY_SUCCESS;
@@ -784,8 +786,8 @@ void test(int (*fend)(int, int), int n, int evrate)
 		  ch_refs++;
 		  ch_open_reply_success_count++;
 
-		  che->data_len = rand() % sizeof(che->data);
-		  memset(che->data, rand(), che->data_len);
+		  che->data_len = assh_prng_rand() % sizeof(che->data);
+		  memset(che->data, assh_prng_rand(), che->data_len);
 		  e->rsp_data.data = che->data;
 		  e->rsp_data.size = che->data_len;
 		  ch_report(che);
@@ -994,7 +996,7 @@ static int end_early_cleanup(int j, int n)
   return (/* global_rq_fifo[0].count < RQ_FIFO_SIZE / 2 ||
 	  global_rq_fifo[1].count < RQ_FIFO_SIZE / 2 ||
 	  ch_refs < CH_MAP_SIZE / 2 ||*/
-	  rand() % 1000);
+	  assh_prng_rand() % 1000);
 }
 
 int main(int argc, char **argv)
@@ -1013,7 +1015,7 @@ int main(int argc, char **argv)
 
   for (k = 0; k < count; )
     {
-      srand(seed);
+      assh_prng_seed(seed);
 
       if (action & 1)
 	{
@@ -1030,7 +1032,7 @@ int main(int argc, char **argv)
       if (action & 4)
 	{
 	  putc('v', stderr);
-	  test(&end_wait_error, 10000, rand() % 256 + 16);
+	  test(&end_wait_error, 10000, assh_prng_rand() % 256 + 16);
 	}
 
       seed++;

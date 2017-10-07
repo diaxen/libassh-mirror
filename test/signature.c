@@ -209,7 +209,7 @@ assh_error_t test_const()
       if (sign_safety > a->algo.safety || sign_safety > key->safety)
 	abort();
 
-      data[rand() % sizeof(data)]++;
+      data[assh_prng_rand() % sizeof(data)]++;
 
       fprintf(stderr, "V");
       if (!assh_sign_check(&context, a, key, 3, d, sign, sign_len, &sign_safety))
@@ -254,7 +254,7 @@ assh_error_t test_sign(unsigned int max_size)
 	{
 	  if (algos[i].gen_key)
 	    {
-	      size_t kbits = algos[i].kbits_min + rand()
+	      size_t kbits = algos[i].kbits_min + assh_prng_rand()
                            % (algos[i].kbits_max - algos[i].kbits_min + 1);
               fprintf(stderr, "N");
 	      ASSH_RET_ON_ERR(assh_key_create(&context, &key, kbits,
@@ -279,7 +279,7 @@ assh_error_t test_sign(unsigned int max_size)
 	  int s = 0;
 	  while (s < size)
 	    {
-	      int r = rand() % 128 + 128;
+	      int r = assh_prng_rand() % 128 + 128;
 	      if (s + r > size)
 		r = size - s;
 	      d[c].data = data + s;
@@ -308,8 +308,8 @@ assh_error_t test_sign(unsigned int max_size)
 	  if (sign_safety > a->algo.safety || sign_safety > key->safety)
 	    abort();
 
-          unsigned int r1 = rand() % sign_len;
-          unsigned char r2 = rand();
+          unsigned int r1 = assh_prng_rand() % sign_len;
+          unsigned char r2 = assh_prng_rand();
           if (!r2)
             r2++;
 #ifdef CONFIG_ASSH_DEBUG_SIGN
@@ -333,7 +333,7 @@ assh_error_t test_sign(unsigned int max_size)
 
 	  if (size)
 	    {
-	      r1 = rand() % size;
+	      r1 = assh_prng_rand() % size;
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
 	      fprintf(stderr, "Mangling data byte %u, previous=0x%02x, new=0x%02x\n",
@@ -378,8 +378,8 @@ assh_error_t test_load(unsigned int max_size)
 
 	  if (bad)		/* mangle key blob on odd iterations */
 	    {
-	      unsigned int r1 = rand() % sizeof(key_blob);
-	      unsigned char r2 = rand();
+	      unsigned int r1 = assh_prng_rand() % sizeof(key_blob);
+	      unsigned char r2 = assh_prng_rand();
 	      if (!r2)
 		r2++;
 #ifdef CONFIG_ASSH_DEBUG_SIGN
@@ -437,7 +437,7 @@ int main(int argc, char **argv)
   for (i = 0; algos[i].algo; i++)
     ASSH_RET_ON_ERR(assh_algo_register_va(&context, 0, 0, 0, algos[i].algo, NULL));
 
-  srand(s);
+  assh_prng_seed(s);
   fprintf(stderr, "\nSeed: %u\n", s);
 
   if (test_const())

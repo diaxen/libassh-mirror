@@ -123,7 +123,7 @@ static assh_bool_t use_keys(struct assh_key_s **k)
   assh_bool_t done = 0;
 
   for (i = 0; i < TEST_KEYS_COUNT; i++)
-    switch (rand() & 3)
+    switch (assh_prng_rand() & 3)
       {
       case 0:
       case 1:
@@ -206,13 +206,13 @@ static int test()
 	  break;
 
 	case ASSH_EVENT_USERAUTH_SERVER_METHODS:
-	  event.userauth_server.methods.banner.size = 4 - rand() % 5;
+	  event.userauth_server.methods.banner.size = 4 - assh_prng_rand() % 5;
 	  event.userauth_server.methods.banner.str = "test";
 
 	  do {
 	    /* randomly choose some initial allowed methods */
 	    event.userauth_server.methods.methods =
-	      rand() & ASSH_USERAUTH_METHOD_SERVER_IMPLEMENTED;
+	      assh_prng_rand() & ASSH_USERAUTH_METHOD_SERVER_IMPLEMENTED;
 	  } while (!event.userauth_server.methods.methods);
 
 	  /* unlimited retries */
@@ -226,7 +226,7 @@ static int test()
 
 	case ASSH_EVENT_USERAUTH_SERVER_USERKEY: {
 	  stall = 0;
-	  assh_bool_t found = rand() & 1;
+	  assh_bool_t found = assh_prng_rand() & 1;
 	  /* randomly report userkey found */
 	  event.userauth_server.userkey.found = found;
 	  if (found)
@@ -251,24 +251,24 @@ static int test()
 
 	case ASSH_EVENT_USERAUTH_SERVER_KBINFO: {
 	  assh_buffer_strset(&event.userauth_server.kbinfo.name,
-			     "nametest" + rand() % 8);
+			     "nametest" + assh_prng_rand() % 8);
 	  assh_buffer_strset(&event.userauth_server.kbinfo.instruction,
-			     "insttest" + rand() % 8);
+			     "insttest" + assh_prng_rand() % 8);
 	  static const struct assh_cbuffer_s p[] = {
 	    { .str = "password: ", .len = 10 },
 	    { .str = "token: ", .len = 7 },
 	    { .str = "foo: ", .len = 5 },
 	    { .str = "bar: ", .len = 5 },
 	  };
-	  event.userauth_server.kbinfo.count = rand() % 4;
+	  event.userauth_server.kbinfo.count = assh_prng_rand() % 4;
 	  event.userauth_server.kbinfo.prompts = p;
 	  auth_server_keyboard_info_count++;
 	  break;
 	}
 
 	case ASSH_EVENT_USERAUTH_SERVER_KBRESPONSE: {
-	  event.userauth_server.kbresponse.result = rand() % 3;
-	  switch (rand() % 8)
+	  event.userauth_server.kbresponse.result = assh_prng_rand() % 3;
+	  switch (assh_prng_rand() % 8)
 	    {
 	    case 0:
 	      break;
@@ -309,7 +309,7 @@ static int test()
 	  if (event.userauth_server.password.new_password.len)
 	    auth_server_password_new_count++;
 
-	  switch (rand() % 8)
+	  switch (assh_prng_rand() % 8)
 	    {
 	    case 0:
 	      break;
@@ -326,9 +326,9 @@ static int test()
 	      break;
 	    case 6:
 	      assh_buffer_strset(&event.userauth_server.password.change_prompt,
-				 "expired" + rand() % 7);
+				 "expired" + assh_prng_rand() % 7);
 	      assh_buffer_strset(&event.userauth_server.password.change_lang,
-				 "en" + rand() % 2);
+				 "en" + assh_prng_rand() % 2);
 	    case 7:
 	      auth_server_password_change_count++;
 	      event.userauth_server.password.result = ASSH_SERVER_PWSTATUS_CHANGE;
@@ -337,7 +337,7 @@ static int test()
 	  break;
 
 	case ASSH_EVENT_USERAUTH_SERVER_HOSTBASED:
-	  event.userauth_server.hostbased.found = rand() & 1;
+	  event.userauth_server.hostbased.found = assh_prng_rand() & 1;
 	  break;
 
 	case ASSH_EVENT_USERAUTH_SERVER_SUCCESS:
@@ -347,7 +347,7 @@ static int test()
 
 	  /* randomly request multi factors authentication */
 	  event.userauth_server.success.methods =
-	    rand() & ASSH_USERAUTH_METHOD_SERVER_IMPLEMENTED;
+	    assh_prng_rand() & ASSH_USERAUTH_METHOD_SERVER_IMPLEMENTED;
 
 	  if (event.userauth_server.success.methods)
 	    auth_server_partial_success_count++;
@@ -401,7 +401,7 @@ static int test()
 
         case ASSH_EVENT_USERAUTH_CLIENT_USER:
 	  /* use a username of random len */
-	  username = "testtest" + rand() % 4;
+	  username = "testtest" + assh_prng_rand() % 4;
           assh_buffer_strset(&event.userauth_client.user.username, username);
           break;
 
@@ -413,7 +413,7 @@ static int test()
 	  /* randomly try available authentication methods */
 	  while (!event.userauth_client.methods.select)
 	    {
-	      switch (rand() % 8)
+	      switch (assh_prng_rand() % 8)
 		{
 		case 0:
 		  if (!(event.userauth_client.methods.methods &
@@ -429,7 +429,7 @@ static int test()
 			ASSH_USERAUTH_METHOD_PASSWORD))
 		    break;
 		  /* randomly pick a password */
-		  i = rand() % TEST_PASS_COUNT;
+		  i = assh_prng_rand() % TEST_PASS_COUNT;
 		  password = pass[i];
 		  assh_buffer_strset(&event.userauth_client.methods.password, password);
 		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_PASSWORD;
@@ -442,7 +442,7 @@ static int test()
 		    break;
 		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_KEYBOARD;
 		  assh_buffer_strset(&event.userauth_client.methods.keyboard_sub,
-				     "method" + rand() % 6);
+				     "method" + assh_prng_rand() % 6);
 		  auth_client_keyboard_count++;
 		  break;
 
@@ -466,9 +466,9 @@ static int test()
 		    break;
 		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_HOSTBASED;
 		  assh_buffer_strset(&event.userauth_client.methods.host_name,
-				     "localhost" + rand() % 9);
+				     "localhost" + assh_prng_rand() % 9);
 		  assh_buffer_strset(&event.userauth_client.methods.host_username,
-				     "test" + rand() % 4);
+				     "test" + assh_prng_rand() % 4);
 
 		  if (!use_keys(&event.userauth_client.methods.keys))
 		    event.userauth_client.methods.select = 0;
@@ -495,12 +495,12 @@ static int test()
 	}
 
 	case ASSH_EVENT_USERAUTH_CLIENT_PWCHANGE: {
-	  if (rand() & 1)
+	  if (assh_prng_rand() & 1)
 	    {
 	      auth_client_password_skip_change_count++;
 	      break;
 	    }
-	  i = rand() % TEST_PASS_COUNT;
+	  i = assh_prng_rand() % TEST_PASS_COUNT;
 	  password = pass[i];
 	  assh_buffer_strset(&event.userauth_client.pwchange.old_password,
 			     password);
@@ -516,7 +516,7 @@ static int test()
           for (i = 0; i < event.userauth_client.keyboard.count; i++)
             {
               assh_buffer_strset(&event.userauth_client.keyboard.responses[i],
-				 "azertyui" + rand() % 8);
+				 "azertyui" + assh_prng_rand() % 8);
 	      auth_client_keyboard_resp_count++;
             }
 	  break;
@@ -665,7 +665,7 @@ int main(int argc, char **argv)
   /* run some ssh sessions */
   for (k = 0; k < count; )
     {
-      srand(seed + k);
+      assh_prng_seed(seed + k);
 
       /* run a session */
       if (action & 1)
@@ -681,7 +681,7 @@ int main(int argc, char **argv)
       if (action & 2)
 	{
 	  alloc_fuzz = 0;
-	  packet_fuzz = 10 + rand() % 1024;
+	  packet_fuzz = 10 + assh_prng_rand() % 1024;
 	  putc('f', stderr);
 	  test();
 	}
@@ -689,7 +689,7 @@ int main(int argc, char **argv)
       /* run a session with some allocation fails */
       if (action & 4)
 	{
-	  alloc_fuzz = 4 + rand() % 32;
+	  alloc_fuzz = 4 + assh_prng_rand() % 32;
 	  packet_fuzz = 0;
 	  putc('a', stderr);
 	  test();

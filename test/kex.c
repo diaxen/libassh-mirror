@@ -504,7 +504,7 @@ void test_loop(unsigned int seed,
 		{
 		  while (kex->algo)
 		    {
-		      srand(seed);
+		      assh_prng_seed(seed);
 		      test(kex->algo, sign->algo, *cipher, *mac, *comp,
 			   kex, sign);
 		      kex++;
@@ -561,7 +561,7 @@ int main(int argc, char **argv)
       if (action & 2)
 	{
 	  alloc_fuzz = 0;
-	  packet_fuzz = 10 + rand() % 1024;
+	  packet_fuzz = 10 + assh_prng_rand() % 1024;
 
 	  /* fuzz compression parsing */
 	  test_loop(seed, kex_list_short, sign_list_short, cipher_list_fuzz, mac_list_fuzz, comp_list_long);
@@ -574,7 +574,7 @@ int main(int argc, char **argv)
       /* run some more sessions with some allocation fails */
       if (action & 4)
 	{
-	  alloc_fuzz = 4 + rand() % 32;
+	  alloc_fuzz = 4 + assh_prng_rand() % 32;
 	  packet_fuzz = 0;
 
 	  /* fuzz cipher and mac allocation */

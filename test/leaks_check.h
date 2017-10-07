@@ -48,7 +48,7 @@ static ASSH_ALLOCATOR(assh_leaks_allocator)
     }
   else if (*ptr == NULL)
     {
-      if (alloc_fuzz && rand() % alloc_fuzz == 0)
+      if (alloc_fuzz && assh_prng_rand() % alloc_fuzz == 0)
 	{
 	  alloc_fuzz_fails++;
 	  return ASSH_ERR_MEM;
@@ -69,7 +69,7 @@ static ASSH_ALLOCATOR(assh_leaks_allocator)
     }
   else
     {
-      if (alloc_fuzz && rand() % alloc_fuzz == 0)
+      if (alloc_fuzz && assh_prng_rand() % alloc_fuzz == 0)
 	{
 	  alloc_fuzz_fails++;
 	  return ASSH_ERR_MEM;
