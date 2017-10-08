@@ -407,17 +407,31 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
     /* the next output packet must be enciphered before write */
     case ASSH_TR_OUT_PACKETS: {
 
-      /* nothing to output, yield to input */
-      if (assh_queue_isempty(&s->out_queue))
-	return ASSH_OK;
-
       struct assh_queue_s *q = &s->out_queue;
-      struct assh_packet_s *p = (void*)assh_queue_front(q);
+      struct assh_packet_s *p;
+      uint8_t msg;
+
+      while (1)
+	{
+	  /* nothing to output, yield to input */
+	  if (assh_queue_isempty(q))
+	    return ASSH_OK;
+
+	  p = (void*)assh_queue_front(q);
+	  msg = p->head.msg;
+
+	  if (s->tr_st < ASSH_TR_DISCONNECT)
+	    break;
+
+	  /* discard any packets other than SSH_MSG_DISCONNECT */
+	  if (msg == SSH_MSG_DISCONNECT)
+	    break;
+
+	  assh_queue_remove(&p->entry);
+	  assh_packet_release(p);
+	}
 
       struct assh_kex_keys_s *k = s->cur_keys_out;
-
-      assh_bool_t newkey = p->head.msg == SSH_MSG_NEWKEYS;
-      assh_bool_t auth = p->head.msg == SSH_MSG_USERAUTH_SUCCESS;
 
 #ifdef CONFIG_ASSH_DEBUG_PROTOCOL
       ASSH_DEBUG("outgoing packet: session=%p tr_st=%i, size=%zu, msg=%u\n",
@@ -506,9 +520,9 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 	}
 
       s->stream_out_st = ASSH_TR_OUT_PACKETS_DONE;
-      s->tr_user_auth_done |= auth;
+      s->tr_user_auth_done |= msg == SSH_MSG_USERAUTH_SUCCESS;
 
-      if (newkey)
+      if (msg == SSH_MSG_NEWKEYS)
 	{
 	  /* release the old output cipher/mac context and install the new one */
 	  assert(s->new_keys_out != NULL);
