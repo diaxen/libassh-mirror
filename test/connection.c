@@ -870,6 +870,7 @@ void test(int (*fend)(int, int), int n, int evrate)
 	      break;
 	    }
 
+	    case ASSH_EVENT_CHANNEL_ABORT:
 	    case ASSH_EVENT_CHANNEL_CLOSE: {      /***** close event *****/
 	      struct assh_event_channel_close_s *e = &event.connection.channel_close;
 	      ASSH_DEBUG("ASSH_EVENT_CHANNEL_CLOSE %p\n", e->ch);

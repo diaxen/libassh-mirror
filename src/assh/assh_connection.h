@@ -101,7 +101,8 @@ enum assh_channel_status_e
       and the channel is closing as in @ref ASSH_CHANNEL_ST_CLOSING state. */
   ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING,
   ASSH_CHANNEL_ST_FORCE_CLOSE,
-  ASSH_CHANNEL_ST_OPEN_SENT_FORCE_CLOSE
+  ASSH_CHANNEL_ST_OPEN_SENT_FORCE_CLOSE,
+  ASSH_CHANNEL_ST_OPEN_RECEIVED_FORCE_CLOSE
 };
 
 /** @visible @This is the @em ssh-connection service channel object.
@@ -408,6 +409,13 @@ struct assh_event_channel_open_s
   uint32_t                              win_size; //< input/output
   uint32_t                              pkt_size; //< input/output
   struct assh_cbuffer_s                 rsp_data; //< output
+};
+
+/**
+*/
+struct assh_event_channel_abort_s
+{
+  struct assh_channel_s * ASSH_EV_CONST ch;         //< input
 };
 
 /**
@@ -768,6 +776,7 @@ union assh_event_connection_u
   struct assh_event_channel_window_s    channel_window;
   struct assh_event_channel_eof_s       channel_eof;
   struct assh_event_channel_close_s     channel_close;
+  struct assh_event_channel_abort_s     channel_abort;
 };
 
 /** @This is the @tt ssh-connection service module descriptor. */

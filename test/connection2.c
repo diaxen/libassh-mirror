@@ -90,6 +90,7 @@ unsigned long ch_open_reply_success_count = 0;
 unsigned long ch_open_reply_failed_count = 0;
 unsigned long ch_postpone_count = 0;
 unsigned long ch_close_count = 0;
+unsigned long ch_event_abort_count = 0;
 unsigned long ch_event_close_count = 0;
 unsigned long ch_eof_count = 0;
 unsigned long ch_event_eof_count = 0;
@@ -305,9 +306,12 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 			    const uint8_t *data;
 			  case 0:
 			    get_data(&data_len, &data);
-			    if (assh_channel_open_success_reply2(ch,
+			    err = assh_channel_open_success_reply2(ch,
 					assh_prng_rand() % 31 + 1, assh_prng_rand() % 128,
-								 data, data_len))
+								   data, data_len);
+			    if (err == ASSH_NO_DATA)
+			      break;
+			    if (err > ASSH_NO_DATA)
 			      {
 				if (alloc_f)
 				  break;
@@ -318,7 +322,10 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 			    assh_channel_set_pvi(ch, CH_OPEN);
 			    break;
 			  case 1:
-			    if (assh_channel_open_failed_reply(ch, assh_prng_rand() % 4 + 1))
+			    err = assh_channel_open_failed_reply(ch, assh_prng_rand() % 4 + 1);
+			    if (err == ASSH_NO_DATA)
+			      break;
+			    if (err > ASSH_NO_DATA)
 			      {
 				if (alloc_f)
 				  break;
@@ -574,6 +581,22 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 	      break;
 	    }
 
+	    case ASSH_EVENT_CHANNEL_ABORT: {
+	      struct assh_event_channel_abort_s *e = &event.connection.channel_abort;
+	      ASSH_DEBUG("ASSH_EVENT_CHANNEL_ABORT %p\n", e->ch);
+
+	      if (assh_channel_pvi(e->ch) != CH_POSTONED)
+		TEST_FAIL("(ctx %u seed %u) channel_abort\n", n, seed);
+
+	      ch_event_abort_count++;
+
+	      for (n = 0; n < CH_MAP_SIZE; n++)
+		if (ch_map[i][n] == e->ch)
+		  ch_map[i][n] = NULL;
+
+	      break;
+	    }
+
 	    case ASSH_EVENT_CHANNEL_CLOSE: {      /***** close event *****/
 	      struct assh_event_channel_close_s *e = &event.connection.channel_close;
 	      ASSH_DEBUG("ASSH_EVENT_CHANNEL_CLOSE %p\n", e->ch);
@@ -793,6 +816,7 @@ int main(int argc, char **argv)
 	  "  %8lu channel open postponed\n"
 	  "  %8lu channel close calls\n"
 	  "  %8lu channel close events\n"
+	  "  %8lu channel abort events\n"
 	  "  %8lu channel eof calls\n"
 	  "  %8lu channel eof events\n"
 	  "  %8lu channel data send\n"
@@ -810,7 +834,7 @@ int main(int argc, char **argv)
 	  ch_open_count, ch_event_open_count,
 	  ch_open_reply_success_count,
 	  ch_open_reply_failed_count, ch_postpone_count,
-	  ch_close_count, ch_event_close_count,
+	  ch_close_count, ch_event_close_count, ch_event_abort_count,
 	  ch_eof_count, ch_event_eof_count,
 	  ch_data_send, ch_data_recv, ch_data_window, rekex_count, ev_err_count,
 	  disconnect_count, packet_fuzz_bits, alloc_fuzz_fails

@@ -100,6 +100,8 @@ enum assh_event_id_e
   ASSH_EVENT_CHANNEL_EOF                 = 37,
   /** @see assh_event_channel_close_s */
   ASSH_EVENT_CHANNEL_CLOSE               = 38,
+  /** @see assh_event_channel_abort_s */
+  ASSH_EVENT_CHANNEL_ABORT               = 39,
 
   /** @internal */
   ASSH_EVENT_COUNT,
