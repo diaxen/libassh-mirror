@@ -1002,8 +1002,8 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_open_done)
   switch (eo->reply)
     {
     case ASSH_CONNECTION_REPLY_SUCCESS:
-      err = assh_channel_open_success_reply2(ch, eo->win_size,
-                     eo->pkt_size, eo->rsp_data.data, eo->rsp_data.size);
+      err = assh_channel_open_success_reply2(ch, eo->pkt_size,
+                     eo->win_size, eo->rsp_data.data, eo->rsp_data.size);
       /* The channel is considered open for now even if we were not
          able to allocate the reply packet. This is because we can not
          report the error immediately to the application. */
