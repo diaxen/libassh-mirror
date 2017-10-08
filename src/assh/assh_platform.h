@@ -43,6 +43,7 @@
 # ifdef CONFIG_ASSH_ABI_WARN
 #  define ASSH_ABI_UNSAFE __attribute__((deprecated("ABI")))
 # endif
+# define ASSH_UNUSED __attribute__((unused))
 #endif
 
 #ifndef ASSH_ABI_UNSAFE
@@ -51,6 +52,10 @@
 
 #ifndef ASSH_WARN_UNUSED_RESULT
 # define ASSH_WARN_UNUSED_RESULT
+#endif
+
+#ifndef ASSH_UNUSED
+# define ASSH_UNUSED
 #endif
 
 #define ASSH_INLINE static inline

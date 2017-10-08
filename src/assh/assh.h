@@ -433,7 +433,7 @@ typedef ASSH_ALLOCATOR(assh_allocator_t);
 #define ASSH_FIRST_FIELD_ASSERT(struct_name, field)                   \
   /** @hidden */                                                      \
   typedef int field##_must_be_the_first_field_in_struct_##struct_name \
-  [-(int)offsetof(struct struct_name, field)];
+  [-(int)offsetof(struct struct_name, field)] ASSH_UNUSED;
 
 /** @internal */
 ASSH_INLINE const char ** assh_charptr_cast(char **p)
