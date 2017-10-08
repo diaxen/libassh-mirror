@@ -940,7 +940,7 @@ assh_channel_open_success_reply2(struct assh_channel_s *ch,
       ASSH_UNREACHABLE("call not allowed in current state");
     }
 
-  ASSH_JMP_IF_TRUE(pkt_size < 1, ASSH_ERR_BAD_ARG | ASSH_ERRSV_CONTINUE, err);
+  assert(pkt_size >= 1);
 
   ch->lpkt_size = ASSH_MIN(pkt_size, ASSH_PACKET_MAX_PAYLOAD
                            - /* extended data message header */ 3 * 4);
@@ -1117,7 +1117,7 @@ assh_channel_open2(struct assh_session_s *s,
   if (s->tr_st >= ASSH_TR_DISCONNECT)
     return ASSH_NO_DATA;
 
-  ASSH_JMP_IF_TRUE(pkt_size < 1, ASSH_ERR_BAD_ARG | ASSH_ERRSV_CONTINUE, err);
+  assert(pkt_size >= 1);
 
   /* alloc open msg packet */
   struct assh_packet_s *pout;
