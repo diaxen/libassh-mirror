@@ -137,17 +137,28 @@ ASSH_ALLOCATOR(assh_libc_allocator);
 ASSH_ALLOCATOR(assh_gcrypt_allocator);
 #endif
 
-/** @This allocates and initializes a context. The maximum number of
-    registered algorithms should be @ref #CONFIG_ASSH_MAX_ALGORITHMS
-    if the @ref assh_algo_register_default function is used.
+/** @This allocates and initializes a context.
 
-    @see assh_context_init */
+    If the @tt alloc parameter is @tt NULL, a default memory allocator
+    will be used provided that one have been compiled in the
+    library. If the @tt prng parameter is @tt NULL, a default random
+    generator will be used. Some random number generator require a
+    seed.
+
+    @see assh_context_release */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_context_create(struct assh_context_s **ctx,
 		    enum assh_context_type_e type, size_t algo_max,
 		    assh_allocator_t *alloc, void *alloc_pv,
                     const struct assh_prng_s *prng,
                     const struct assh_buffer_s *prng_seed);
+
+/** @This cleanups and releases a context created by the @ref
+    assh_context_create function. All existing @ref assh_session_s
+    objects must have been released when calling this function.
+
+    @see assh_context_create */
+void assh_context_release(struct assh_context_s *ctx);
 
 /** @This initializes a context for use as a client or server. This
     can be used to initialize a statically allocated context
@@ -156,10 +167,14 @@ assh_context_create(struct assh_context_s **ctx,
     If the @tt alloc parameter is @tt NULL, a default memory allocator
     will be used provided that one have been compiled in the
     library. If the @tt prng parameter is @tt NULL, a default random
-    generator will be used.
+    generator will be used. Some random number generator require a
+    seed.
 
     When a stable ABI is needed, use the @ref assh_context_create
-    function instead. */
+    function instead.
+
+    @see assh_context_cleanup
+*/
 ASSH_ABI_UNSAFE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_context_init(struct assh_context_s *ctx,
                   enum assh_context_type_e type,
@@ -172,12 +187,6 @@ assh_context_init(struct assh_context_s *ctx,
     this function. @see assh_context_init */
 ASSH_ABI_UNSAFE void
 assh_context_cleanup(struct assh_context_s *ctx);
-
-/** @This cleanups and releases a context created by the @ref
-    assh_context_create function. All existing @ref assh_session_s
-    objects must have been released when calling this function. @see
-    assh_context_create */
-void assh_context_release(struct assh_context_s *ctx);
 
 /** @This set the user private pointer of the context. */
 void assh_context_set_pv(struct assh_context_s *ctx,

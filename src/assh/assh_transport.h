@@ -107,6 +107,10 @@ enum assh_stream_out_state_e
     If not enough data is available, it's ok to provide less than
     requested or even no data. The buffer will be provided again the
     next time this event is reported.
+
+    When the underlying communication channel is not able to provide
+    more data, the @tt {(ASSH_ERR_IO | ASSH_ERRSV_DISCONNECT)} error
+    has to be reported to the @ref assh_event_done function.
 */
 struct assh_event_transport_read_s
 {
@@ -125,6 +129,11 @@ struct assh_event_transport_read_s
     buffer size. If no data at all can be sent, the default value of
     the field can be left untouched. The buffer will remain valid and
     will be provided again the next time this event is returned.
+
+    When the underlying communication channel is closed and it is not
+    possible to send more data, the @tt {(ASSH_ERR_IO | ASSH_ERRSV_FIN)}
+    error has to be reported to the @ref assh_event_done function in
+    order to prevent a stall.
 */
 struct assh_event_transport_write_s
 {
