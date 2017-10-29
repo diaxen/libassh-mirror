@@ -85,10 +85,13 @@ unsigned long rq_event_failed_count = 0;
 unsigned long rq_event_closed_count = 0;
 unsigned long rq_postpone_count = 0;
 unsigned long ch_open_count = 0;
-unsigned long ch_event_open_count = 0;
+unsigned long ch_event_open_reply_success_count = 0;
+unsigned long ch_event_open_reply_failed_count = 0;
 unsigned long ch_open_reply_success_count = 0;
 unsigned long ch_open_reply_failed_count = 0;
 unsigned long ch_postpone_count = 0;
+unsigned long ch_open_success_reply_call_count = 0;
+unsigned long ch_open_failed_reply_call_count = 0;
 unsigned long ch_close_count = 0;
 unsigned long ch_event_abort_count = 0;
 unsigned long ch_event_close_count = 0;
@@ -108,7 +111,8 @@ static void get_data(size_t *size, const uint8_t **data)
   *data = r + assh_prng_rand() % (sizeof(r) - *size);
 }
 
-void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
+void test(int (*fend)(int, int), int cnt, int evrate,
+	  unsigned alloc_f, assh_bool_t disco)
 {
   assh_error_t err;
   unsigned int i, j;
@@ -163,7 +167,7 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
   uint_fast32_t stall[2] = { 0, 0 };
 
   for (j = 0; (session[0].tr_st != ASSH_TR_CLOSED &&
-	       session[1].tr_st != ASSH_TR_CLOSED) && fend(j, n); j++)
+	       session[1].tr_st != ASSH_TR_CLOSED) && fend(j, cnt); j++)
     {
       /* alternate between the two sessions */
       for (i = 0; i < 2; i++)
@@ -186,13 +190,13 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 
 		if (!ch)
 		  goto globl_rq;
-		switch (assh_channel_status(ch))
+
+		switch (assh_channel_pvi(ch))
 		  {
 		    size_t data_len;
 		    const uint8_t *data;
-		  case ASSH_CHANNEL_ST_OPEN:
-		  case ASSH_CHANNEL_ST_EOF_SENT:
-		  case ASSH_CHANNEL_ST_EOF_RECEIVED:
+		  case CH_OPEN:
+		  case CH_EOF:
 		  globl_rq:
 		    get_data(&data_len, &data);
 		    err = assh_request(&session[i], ch, (const char *)data, data_len,
@@ -296,10 +300,13 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 		  }
 		else
 		  {
-		    if (assh_channel_pvi(ch) == CH_CLOSE)
-		      break;
-		    if (assh_channel_pvi(ch) == CH_POSTONED) /* postponned */
+		    switch (assh_channel_pvi(ch))
 		      {
+		      case CH_WAIT:
+		      case CH_CLOSE:
+			break;
+
+		      case CH_POSTONED: /* postponned */
 			switch (assh_prng_rand() % 2)
 			  {
 			    size_t data_len;
@@ -318,7 +325,7 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 				TEST_FAIL("(ctx %u seed %u) assh_channel_open_success_reply2()\n", i, seed);
 			      }
 			    ASSH_DEBUG("assh_channel_open_success_reply2 %p\n", ch);
-			    ch_open_reply_success_count++;
+			    ch_open_success_reply_call_count++;
 			    assh_channel_set_pvi(ch, CH_OPEN);
 			    break;
 			  case 1:
@@ -333,36 +340,17 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 			      }
 			    ASSH_DEBUG("assh_channel_open_failed_reply %p\n", ch);
 			    ch_map[i][k] = NULL;
-			    ch_open_reply_failed_count++;
+			    ch_open_failed_reply_call_count++;
 			    break;
 			  }
-		      }
-		    else if (assh_channel_pvi(ch) != CH_WAIT)
-		      {
-			switch (assh_prng_rand() % 4)
+			break;
+
+		      case CH_OPEN:
+			switch (assh_prng_rand() % 8)
 			  {
-			  case 0: {	/**** may close ****/
-			    if (assh_channel_status(ch) == ASSH_CHANNEL_ST_OPEN_SENT)
-			      break;
-			    ch_close_count++;
-
-			    if (assh_channel_close(ch))
-			      {
-				if (alloc_f)
-				  break;
-				TEST_FAIL("(ctx %u seed %u) assh_channel_close()\n", i, seed);
-			      }
-
-			    ASSH_DEBUG("assh_channel_close %p\n", ch);
-
-			    assh_channel_set_pvi(ch, CH_CLOSE);
-			    break;
-			  }
+			  case 0:
+			    goto try_close;
 			  case 1: {	/**** may send eof ****/
-			    if (assh_channel_pvi(ch) != CH_OPEN)
-			      break;
-			    if (assh_channel_pvi(ch) == CH_EOF)
-			      break;
 			    assh_channel_set_pvi(ch, CH_EOF);
 			    ch_eof_count++;
 
@@ -377,12 +365,12 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 			    break;
 			  }
 			  case 2: /*** send channel data ***/
-			  case 3: {
-			    if (assh_channel_pvi(ch) != CH_OPEN)
-			      break;
+			  case 3:
+			  case 4:
+			  case 5: {
 			    uint8_t *d;
-			    size_t m = assh_prng_rand() % 64 + 1;
-			    size_t s = s % m + 1;
+			    size_t m = assh_prng_rand() % 64;
+			    size_t s = assh_prng_rand() % (m + 1);
 			    assh_error_t er = assh_channel_data_alloc(ch, &d, &s, m);
 			    if (er > ASSH_NO_DATA)
 			      {
@@ -397,8 +385,28 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 				  TEST_FAIL("(ctx %u seed %u) assh_channel_data_send()\n", i, seed);
 				ch_data_send++;
 			      }
+			    break;
 			  }
 			  }
+			break;
+
+		      case CH_EOF:
+			if (assh_prng_rand() % 4)
+			  break;
+		      try_close:
+			ch_close_count++;
+
+			if (assh_channel_close(ch))
+			  {
+			    if (alloc_f)
+			      break;
+			    TEST_FAIL("(ctx %u seed %u) assh_channel_close()\n", i, seed);
+			  }
+
+			ASSH_DEBUG("assh_channel_close %p\n", ch);
+
+			assh_channel_set_pvi(ch, CH_CLOSE);
+			break;
 		      }
 		  }
 
@@ -410,9 +418,7 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 	  /********************* handle events */
 
 	  if (!assh_event_get(&session[i], &event, 0))
-	    {
-	      continue;
-	    }
+	    continue;
 
 	  assh_error_t everr = ASSH_OK;
 
@@ -488,22 +494,17 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 	      struct assh_event_request_reply_s *e = &event.connection.request_reply;
 	      ASSH_DEBUG("ASSH_EVENT_REQUEST_REPLY %p\n", e->rq);
 
+	      unsigned n;
 	      for (n = 0; n < RQ_POSTPONED_SIZE; n++)
 		assert(rq_postponed[i][n] != e->rq);
 
 	      switch (e->reply)
 		{
 		case ASSH_CONNECTION_REPLY_SUCCESS:
-		  if (!started[i])
-		    TEST_FAIL("(ctx %u seed %u) ASSH_CONNECTION_REPLY_SUCCESS while not started\n", i, seed);
-
 		  rq_event_success_count++;
 		  break;
 
 		case ASSH_CONNECTION_REPLY_FAILED:
-		  if (!started[i])
-		    TEST_FAIL("(ctx %u seed %u) ASSH_CONNECTION_REPLY_FAILED while not started\n", i, seed);
-
 		  rq_event_failed_count++;
 		  break;
 
@@ -521,14 +522,10 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 	    case ASSH_EVENT_CHANNEL_OPEN: {      /***** channel open event *****/
 	      struct assh_event_channel_open_s *e = &event.connection.channel_open;
 
-	      if (!started[i])
-		TEST_FAIL("(ctx %u seed %u) ASSH_EVENT_CHANNEL_OPEN while not started\n", i, seed);
-
-	      ch_event_open_count++;
-
 	      if (everr)
 		goto ch_fail;
 
+	      unsigned n;
 	      for (n = 0; n < CH_MAP_SIZE; n++)
 		{
 		  if (ch_map[i][n] == NULL)
@@ -567,15 +564,18 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 
 	      if (e->reply == ASSH_CONNECTION_REPLY_FAILED)
 		{
+		  unsigned n;
 		  for (n = 0; n < CH_MAP_SIZE; n++)
 		    if (ch_map[i][n] == e->ch)
 		      ch_map[i][n] = NULL;
+		  ch_event_open_reply_failed_count++;
 		}
 	      else
 		{
 		  if (assh_channel_pvi(e->ch) != CH_WAIT)
-		    TEST_FAIL("(ctx %u seed %u) channel_open reply\n", n, seed);
+		    TEST_FAIL("(ctx %u seed %u) channel_open reply\n", i, seed);
 		  assh_channel_set_pvi(e->ch, CH_OPEN);
+		  ch_event_open_reply_success_count++;
 		}
 
 	      break;
@@ -586,10 +586,11 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 	      ASSH_DEBUG("ASSH_EVENT_CHANNEL_ABORT %p\n", e->ch);
 
 	      if (assh_channel_pvi(e->ch) != CH_POSTONED)
-		TEST_FAIL("(ctx %u seed %u) channel_abort\n", n, seed);
+		TEST_FAIL("(ctx %u seed %u) channel_abort\n", i, seed);
 
 	      ch_event_abort_count++;
 
+	      unsigned n;
 	      for (n = 0; n < CH_MAP_SIZE; n++)
 		if (ch_map[i][n] == e->ch)
 		  ch_map[i][n] = NULL;
@@ -603,6 +604,7 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 
 	      ch_event_close_count++;
 
+	      unsigned n;
 	      for (n = 0; n < CH_MAP_SIZE; n++)
 		if (ch_map[i][n] == e->ch)
 		  ch_map[i][n] = NULL;
@@ -635,8 +637,12 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 	    case ASSH_EVENT_ERROR: {
 	      everr = ASSH_OK;
 	      err = event.error.code;
+	      if (err & ASSH_ERR_EXTERNAL)
+		break;
 	      if (ASSH_ERR_SEVERITY(err))
 		started[i] = 0;
+	      if (disco && (ASSH_ERR_ERROR(err) == ASSH_ERR_DISCONNECTED))
+		break;
 	      if (!evrate && !packet_fuzz && !alloc_fuzz)
 		TEST_FAIL("(ctx %u seed %u) unexpected error event 0x%lx\n", i, seed, err);
 	      if (ASSH_ERR_ERROR(err) == ASSH_ERR_PROTOCOL && !packet_fuzz)
@@ -663,10 +669,17 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 	      break;
 
 	    case ASSH_EVENT_WRITE:
-	      everr = ASSH_OK;
-	      stall[i]++;
-	      if (!fifo_rw_event(fifo, &event, i))
-		stall[i] = 0;
+	      if (session[i ^ 1].tr_st >= ASSH_TR_DISCONNECT)
+		{
+		  everr = ASSH_ERR_IO | ASSH_ERRSV_FIN;
+		}
+	      else
+		{
+		  everr = ASSH_OK;
+		  stall[i]++;
+		  if (!fifo_rw_event(fifo, &event, i))
+		    stall[i] = 0;
+		}
 	      break;
 
 	    case ASSH_EVENT_SERVICE_START:
@@ -688,7 +701,7 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 	    {
 	      if (evrate || packet_fuzz || alloc_fuzz)
 		goto done;
-	      TEST_FAIL("stalled\n");
+	      TEST_FAIL("(ctx %u seed %u) stalled\n", i, seed);
 	    }
 	  continue;
 	}
@@ -712,19 +725,19 @@ void test(int (*fend)(int, int), int n, int evrate, unsigned alloc_f)
 
 static int end_disconnect(int j, int n)
 {
-  if (assh_prng_rand() % 5000)
+  if (assh_prng_rand() % 8192 == 0)
     {
       assh_session_disconnect(&session[0], assh_prng_rand() % 15 + 1,
 			      "dummy error message" + assh_prng_rand() % 8);
       disconnect_count++;
     }
-  if (assh_prng_rand() % 5000)
+  if (assh_prng_rand() % 8192 == 0)
     {
       assh_session_disconnect(&session[1], assh_prng_rand() % 15 + 1,
 			      "dummy error message" + assh_prng_rand() % 8);
       disconnect_count++;
     }
-  return 0;
+  return 1;
 }
 
 static int end_wait_error(int j, int n)
@@ -759,36 +772,36 @@ int main(int argc, char **argv)
       if (action & 1)
 	{
 	  putc('e', stderr);
-	  test(&end_early_cleanup, 10000, 0, 0);
+	  test(&end_early_cleanup, 10000, 0, 0, 0);
 	}
 
       if (action & 2)
 	{
 	  putc('d', stderr);
-	  test(&end_disconnect, 1000000, 0, 0);
+	  test(&end_disconnect, 1000000, 0, 0, 1);
 	}
 
       if (action & 4)
 	{
 	  packet_fuzz = 10 + assh_prng_rand() % 1024;
 	  putc('f', stderr);
-	  test(&end_wait_error, 10000, 0, 0);
+	  test(&end_wait_error, 10000, 0, 0, 0);
 	}
 
       if (action & 8)
 	{
 	  packet_fuzz = 0;
 	  putc('a', stderr);
-	  test(&end_wait_error, 10000, 0, 4 + assh_prng_rand() % 32);
+	  test(&end_wait_error, 10000, 0, 4 + assh_prng_rand() % 32, 0);
 	}
 
       if (action & 16)
 	{
 	  putc('v', stderr);
 	  packet_fuzz = 10 + assh_prng_rand() % 1024;
-	  test(&end_wait_error, 10000,
-		   assh_prng_rand() % 256 + 16,
-		   assh_prng_rand() % 128 + 16);
+	  test(&end_disconnect, 10000,
+	       assh_prng_rand() % 256 + 16,
+	       assh_prng_rand() % 128 + 16, 1);
 	}
 
       seed++;
@@ -810,10 +823,13 @@ int main(int argc, char **argv)
 	  "  %8lu request reply events (closed)\n"
 	  "  %8lu request postponed\n"
 	  "  %8lu channel open calls\n"
-	  "  %8lu channel open events\n"
-	  "  %8lu channel open reply (success)\n"
-	  "  %8lu channel open reply (failed)\n"
-	  "  %8lu channel open postponed\n"
+	  "  %8lu channel open reply event (success)\n"
+	  "  %8lu channel open reply event (failed)\n"
+	  "  %8lu channel open events (success)\n"
+	  "  %8lu channel open events (failed)\n"
+	  "  %8lu channel open events postponed\n"
+	  "  %8lu channel open reply call (success)\n"
+	  "  %8lu channel open reply call (failed)\n"
 	  "  %8lu channel close calls\n"
 	  "  %8lu channel close events\n"
 	  "  %8lu channel abort events\n"
@@ -831,9 +847,9 @@ int main(int argc, char **argv)
 	  rq_send_count, rq_reply_success, rq_reply_failed,
 	  rq_event_count, rq_event_success_count,
 	  rq_event_failed_count, rq_event_closed_count, rq_postpone_count,
-	  ch_open_count, ch_event_open_count,
-	  ch_open_reply_success_count,
-	  ch_open_reply_failed_count, ch_postpone_count,
+	  ch_open_count, ch_event_open_reply_success_count, ch_event_open_reply_failed_count,
+	  ch_open_reply_success_count, ch_open_reply_failed_count, ch_postpone_count,
+	  ch_open_success_reply_call_count, ch_open_failed_reply_call_count,
 	  ch_close_count, ch_event_close_count, ch_event_abort_count,
 	  ch_eof_count, ch_event_eof_count,
 	  ch_data_send, ch_data_recv, ch_data_window, rekex_count, ev_err_count,
