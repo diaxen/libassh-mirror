@@ -41,6 +41,10 @@ static ASSH_KEX_FILTER_FCN(assh_session_kex_filter)
 assh_error_t assh_session_init(struct assh_context_s *c,
 			       struct assh_session_s *s)
 {
+  assh_error_t err;
+
+  ASSH_RET_IF_TRUE(c->algo_cnt == 0, ASSH_ERR_BUSY);
+
   s->ctx = c;
 
   assh_transport_state(s, ASSH_TR_IDENT);
@@ -423,11 +427,13 @@ assh_error_t
 assh_session_algo_filter(struct assh_session_s *s,
                          assh_kex_filter_t *filter)
 {
+  assh_error_t err;
+
   switch (s->tr_st)
     {
     case ASSH_TR_KEX_WAIT:
     case ASSH_TR_SERVICE_KEX:
-      return ASSH_NOT_FOUND;
+      ASSH_RETURN(ASSH_ERR_BUSY);
     default:
       s->kex_filter = filter != NULL
         ? filter : assh_session_kex_filter;

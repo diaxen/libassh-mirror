@@ -180,6 +180,7 @@ assh_error_t assh_algo_register_static(struct assh_context_s *c,
   assh_error_t err;
   const struct assh_algo_s *l, *a = table[0];
 
+  ASSH_RET_IF_TRUE(c->session_count, ASSH_ERR_BUSY);
   ASSH_RET_IF_TRUE(c->algo_realloc && c->algos, ASSH_ERR_BUSY);
 
   while ((l = table[i]))
@@ -210,6 +211,7 @@ assh_error_t assh_algo_register(struct assh_context_s *c, assh_safety_t safety,
   assh_error_t err = ASSH_OK;
   size_t i, count = c->algo_cnt;
 
+  ASSH_RET_IF_TRUE(c->session_count, ASSH_ERR_BUSY);
   ASSH_RET_IF_TRUE(safety > 99, ASSH_ERR_BAD_ARG);
 
   for (i = 0; table[i] != NULL; i++)
@@ -245,6 +247,7 @@ assh_error_t assh_algo_register_va(struct assh_context_s *c, assh_safety_t safet
   va_list ap;
   size_t count = c->algo_cnt;
 
+  ASSH_RET_IF_TRUE(c->session_count, ASSH_ERR_BUSY);
   ASSH_RET_IF_TRUE(safety > 99, ASSH_ERR_BAD_ARG);
 
   va_start(ap, min_speed);
