@@ -592,12 +592,20 @@ int main(int argc, char **argv)
   unsigned int action = argc > 2 ? atoi(argv[2]) : 7;
   unsigned int seed = argc > 3 ? atoi(argv[3]) : time(0);
 
+  static const struct assh_algo_s *algos[] = {
+    &assh_kex_none.algo, &assh_sign_none.algo,
+    &assh_sign_rsa_sha1.algo, &assh_sign_dsa1024.algo, &assh_sign_ed25519.algo,
+    &assh_sign_eddsa_e521.algo, &assh_sign_nistp256.algo, &assh_sign_nistp521.algo,
+    &assh_cipher_fuzz.algo, &assh_hmac_none.algo, &assh_compress_none.algo, NULL
+  };
+
   uint_fast8_t i;
   /* init server context */
   if (assh_context_init(&context[0], ASSH_SERVER,
 			assh_leaks_allocator, NULL, &assh_prng_weak, NULL) ||
       assh_service_register_va(&context[0], &assh_service_userauth_server,
-			       &assh_service_connection, NULL))
+			       &assh_service_connection, NULL) ||
+      assh_algo_register_static(&context[0], algos))
     TEST_FAIL("");
 
   /* create host key */
@@ -609,19 +617,9 @@ int main(int argc, char **argv)
   if (assh_context_init(&context[1], ASSH_CLIENT,
 			assh_leaks_allocator, NULL, &assh_prng_weak, NULL) ||
       assh_service_register_va(&context[1], &assh_service_userauth_client,
-			       &assh_service_connection, NULL))
+			       &assh_service_connection, NULL) ||
+      assh_algo_register_static(&context[1], algos))
     TEST_FAIL("");
-
-  /* register some algorithms */
-  for (i = 0; i < 2; i++)
-    {
-      if (assh_algo_register_va(&context[i], 0, 0, 0, &assh_kex_none, &assh_sign_none,
-				&assh_cipher_fuzz, &assh_hmac_none, &assh_compress_none,
-				&assh_sign_rsa_sha1, &assh_sign_dsa1024, &assh_sign_ed25519,
-				&assh_sign_eddsa_e521, &assh_sign_nistp256, &assh_sign_nistp521,
-				NULL))
-	TEST_FAIL("");
-    }
 
   /* create some user authentication keys */
   for (i = 0; i < TEST_KEYS_COUNT; i++)

@@ -84,7 +84,7 @@ static void show_order(assh_safety_t safety)
 {
   struct assh_context_s *c;
 
-  if (assh_context_create(&c, ASSH_SERVER, CONFIG_ASSH_MAX_ALGORITHMS,
+  if (assh_context_create(&c, ASSH_SERVER,
                           NULL, NULL, NULL, NULL))
     return;
 

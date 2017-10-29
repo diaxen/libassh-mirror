@@ -143,34 +143,68 @@ struct assh_algo_s
 };
 
 /**
-   @This registers the specified @ref assh_algo_s objects for use by
-   the given context. The last parameter must be @tt NULL.
+   @This registers the specified array of algorithms for use by the
+   given library context. The last entry must be @tt NULL.
 
-   The algorithms are sorted depending on their safety factor and
-   speed factor. The @tt safety parameter indicates how algorithms
-   safety must be favored over speed. Valid range for this parameter
-   is [0, 99]. Algorithms with a safety factor or speed factor less
-   than @tt min_safety and  @tt min_speed are skipped.
+   The array is copied and the algorithms are sorted depending on
+   their safety factor and speed factor. The @tt safety parameter
+   indicates how algorithms safety must be favored over speed. Valid
+   range for this parameter is [0, 99]. Algorithms with a safety
+   factor or speed factor less than @tt min_safety and @tt min_speed
+   are skipped.
 
    If multiple implementations of the same algorithm are registered,
    the variant which appears first in the list after sorting is kept
    and subsequent variants with the same name are discarded. This
    should retain the less secure variants of the same algorithm not
    filtered by the value of @tt min_safety.
+
+   If this function is called more than once, the internal array of
+   algorithms is resized and new algorithms are appended.
+
+   It is not possible to modify registered algorithms when some
+   sessions are associated to the context. The @ref
+   assh_session_algo_filter function can still be used to setup a per
+   session algorithm filter.
+
+   @see assh_algo_register_default
 */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_register_va(struct assh_context_s *c, assh_safety_t safety,
 		      assh_safety_t min_safety, uint8_t min_speed, ...);
 
 /**
-   @This registers the specified @ref assh_algo_s objects for use by
-   the given context. The last table entry must be @tt NULL.
+   @This registers the specified array of algorithms for use by the
+   given library context. The last entry must be @tt NULL.
+
    @see assh_algo_register_va
 */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_register(struct assh_context_s *c, assh_safety_t safety,
 		   assh_safety_t min_safety, uint8_t min_speed,
                    const struct assh_algo_s *table[]);
+
+/**
+   @This registers the specified array of algorithms for use by the
+   given library context. The last entry must be @tt NULL.
+
+   The algorithms must be sorted in ascending class order. The array
+   is not copied and must remain valid.
+
+   If this function is called more than once, the array of algorithms
+   is replaced.
+
+   It is not possible to register more algorithms by calling @ref
+   assh_algo_register without first calling @ref assh_algo_unregister.
+
+   It is not possible to modify registered algorithms when some
+   sessions are associated to the context.  The @ref
+   assh_session_algo_filter function can still be used to setup a per
+   session algorithm filter.
+*/
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_algo_register_static(struct assh_context_s *c,
+                          const struct assh_algo_s *table[]);
 
 /** NULL terminated array of available algorithms. */
 extern const struct assh_algo_s *assh_algo_table[];
@@ -192,8 +226,13 @@ assh_algo_register_default(struct assh_context_s *c,
   return assh_algo_register(c, safety, min_safety, min_speed, assh_algo_table);
 }
 
-/** Unregister all algorithms */
-void assh_algo_unregister(struct assh_context_s *c);
+/** Unregister all algorithms.
+
+    It is not possible to modify registered algorithms when some
+    sessions are associated to the context.
+*/
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_algo_unregister(struct assh_context_s *c);
 
 /** @This returns the algorithm default name */
 ASSH_INLINE const char * assh_algo_name(const struct assh_algo_s *algo)

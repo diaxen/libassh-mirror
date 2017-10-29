@@ -2241,13 +2241,18 @@ int main()
   gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
 
-  uint_fast8_t i = 0;
+  static const struct assh_algo_s *algos[] = {
+    &assh_kex_none.algo, &assh_sign_none.algo, &assh_sign_ed25519.algo,
+    &assh_cipher_none.algo, &assh_hmac_none.algo, &assh_compress_none.algo,
+    NULL
+  };
 
   /* init server context */
   if (assh_context_init(&context[0], ASSH_SERVER,
 			assh_leaks_allocator, NULL, &assh_prng_weak, NULL) ||
       assh_service_register_va(&context[0], &assh_service_userauth_server,
-			       &assh_service_connection, NULL))
+			       &assh_service_connection, NULL) ||
+      assh_algo_register_static(&context[0], algos))
     TEST_FAIL("");
 
   /* create host key */
@@ -2259,17 +2264,9 @@ int main()
   if (assh_context_init(&context[1], ASSH_CLIENT,
 			assh_leaks_allocator, NULL, &assh_prng_weak, NULL) ||
       assh_service_register_va(&context[1], &test_service_userauth_client,
-			       &assh_service_connection, NULL))
+			       &assh_service_connection, NULL) ||
+      assh_algo_register_static(&context[1], algos))
     TEST_FAIL("");
-
-  /* register some algorithms */
-  for (i = 0; i < 2; i++)
-    {
-      if (assh_algo_register_va(&context[i], 0, 0, 0, &assh_kex_none, &assh_sign_none,
-				&assh_cipher_none, &assh_hmac_none, &assh_compress_none,
-				&assh_sign_ed25519, NULL))
-	TEST_FAIL("");
-    }
 
   /* create some user authentication key */
   key_s = key_c = key_cbad = NULL;

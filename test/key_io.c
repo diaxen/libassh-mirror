@@ -254,7 +254,7 @@ static assh_error_t test_helper(struct assh_context_s *c)
 
 int main(int argc, char **argv)
 {
-  struct assh_context_s context;
+  struct assh_context_s *context;
 
 #ifdef CONFIG_ASSH_USE_GCRYPT
   if (!gcry_check_version(GCRYPT_VERSION))
@@ -262,11 +262,11 @@ int main(int argc, char **argv)
   gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
 
-  if (assh_context_init(&context, ASSH_CLIENT_SERVER,
+  if (assh_context_create(&context, ASSH_CLIENT_SERVER,
 			NULL, NULL, &assh_prng_weak, NULL))
     return -1;
 
-  if (assh_algo_register_default(&context, 99, 10, 0) != ASSH_OK)
+  if (assh_algo_register_default(context, 99, 10, 0) != ASSH_OK)
     return -1;
 
   size_t k, count = argc > 1 ? atoi(argv[1]) : 10;
@@ -277,13 +277,13 @@ int main(int argc, char **argv)
 
   for (k = 0; k < count; k++)
     {
-      if (test_algo(&context))
+      if (test_algo(context))
 	abort();
-      if (test_helper(&context))
+      if (test_helper(context))
       	abort();
     }
 
-  assh_context_cleanup(&context);
+  assh_context_cleanup(context);
 
   fprintf(stderr, "\nDone.\n");
   return 0;

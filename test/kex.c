@@ -334,10 +334,17 @@ void test(const struct assh_algo_kex_s *kex,
 	  const struct algo_with_key_s *kex_key,
 	  const struct algo_with_key_s *sign_key)
 {
+  const struct assh_algo_s *algos[] = {
+    &kex->algo, &sign->algo, &cipher->algo, &mac->algo, &comp->algo,
+    NULL
+  };
+
   if (assh_context_init(&context[0], ASSH_SERVER,
 			assh_leaks_allocator, NULL, &assh_prng_weak, NULL) ||
+      assh_algo_register_static(&context[0], algos) ||
       assh_context_init(&context[1], ASSH_CLIENT,
-			assh_leaks_allocator, NULL, &assh_prng_weak, NULL))
+			assh_leaks_allocator, NULL, &assh_prng_weak, NULL) ||
+      assh_algo_register_static(&context[1], algos))
     TEST_FAIL("ctx init\n");
 
   uint_fast8_t i;
@@ -356,9 +363,6 @@ void test(const struct assh_algo_kex_s *kex,
 
       if (assh_service_register_va(c, &assh_service_connection, NULL))
 	TEST_FAIL("service register\n");
-
-      if (assh_algo_register_va(c, 0, 0, 0, kex, sign, cipher, mac, comp, NULL) != ASSH_OK)
-	TEST_FAIL("algo register\n");
 
       if (i == 0 && sign_key->key_algo != NULL)
 	{

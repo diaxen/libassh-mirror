@@ -179,8 +179,9 @@ assh_context_init(struct assh_context_s *c,
   c->keys = NULL;
   c->kex_init_size = 0;
 
-  c->algo_cnt = 0;
-  c->algo_max = CONFIG_ASSH_MAX_ALGORITHMS;
+  c->algo_cnt = c->algo_max = 0;
+  c->algo_realloc = 0;
+  c->algos = NULL;
 
 #ifdef CONFIG_ASSH_PACKET_POOL
   size_t i;
@@ -209,7 +210,7 @@ assh_context_init(struct assh_context_s *c,
 
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_context_create(struct assh_context_s **ctx,
-		    enum assh_context_type_e type, size_t algo_max,
+		    enum assh_context_type_e type,
 		    assh_allocator_t *alloc, void *alloc_pv,
                     const struct assh_prng_s *prng,
                     const struct assh_buffer_s *prng_seed)
@@ -227,14 +228,14 @@ assh_context_create(struct assh_context_s **ctx,
 #endif
 
   *ctx = NULL;
-  ASSH_RET_ON_ERR(alloc(alloc_pv, (void**)ctx,
-                     sizeof(**ctx) - sizeof((*ctx)->algos) + algo_max * sizeof(void*)
-                     , ASSH_ALLOC_INTERNAL));
+  ASSH_RET_ON_ERR(alloc(alloc_pv, (void**)ctx, sizeof(**ctx),
+                     ASSH_ALLOC_INTERNAL));
 
-  ASSH_JMP_ON_ERR(assh_context_init(*ctx, type, alloc, alloc_pv, prng, prng_seed), err);
-  (*ctx)->algo_max = algo_max;
+  ASSH_JMP_ON_ERR(assh_context_init(*ctx, type, alloc, alloc_pv,
+                                  prng, prng_seed), err);
 
   return ASSH_OK;
+
  err:
   alloc(alloc_pv, (void**)ctx, 0, ASSH_ALLOC_INTERNAL);
   return err;
@@ -255,6 +256,9 @@ void assh_context_cleanup(struct assh_context_s *c)
 #endif
 
   assh_key_flush(c, &c->keys);
+
+  if (c->algo_realloc)
+    assh_free(c, c->algos);
 
   c->prng->f_cleanup(c);
 }

@@ -30,6 +30,7 @@
 #include <assh/assh_mac.h>
 #include <assh/assh_sign.h>
 #include <assh/assh_compress.h>
+#include <assh/assh_alloc.h>
 
 #include <string.h>
 #include <stdarg.h>
@@ -95,14 +96,14 @@ static void assh_algo_sort(struct assh_context_s *c,
                            assh_safety_t min_safety,
                            uint_fast8_t min_speed)
 {
-  int_fast16_t i;
-
   assh_algo_filter_variants(c, min_safety, min_speed);
 
   /* sort algorithms by class and safety/speed factor */
 #ifdef CONFIG_ASSH_QSORTR
   qsort_r(c->algos, c->algo_cnt, sizeof(void*), assh_algo_qsort_cmp, &safety);
 #else
+  int_fast16_t i;
+
   for (i = 0; i < c->algo_cnt; i++)
     {
       const struct assh_algo_s *a = c->algos[i];
@@ -118,10 +119,14 @@ static void assh_algo_sort(struct assh_context_s *c,
       c->algos[j + 1] = a;
     }
 #endif
+}
 
-  /* estimate size of the kex init packet */
+static void assh_algo_kex_init_size(struct assh_context_s *c)
+{
+  int_fast16_t i;
   size_t kex_init_size = /* random cookie */ 16;
   enum assh_algo_class_e last = ASSH_ALGO_ANY;
+
   for (i = 0; i < c->algo_cnt; i++)
     {
       const struct assh_algo_s *a = c->algos[i];
@@ -153,6 +158,51 @@ static void assh_algo_sort(struct assh_context_s *c,
   c->kex_init_size = kex_init_size;
 }
 
+static assh_error_t assh_algo_extend(struct assh_context_s *c)
+{
+  assh_error_t err;
+
+  ASSH_RET_IF_TRUE(!c->algo_realloc && c->algos, ASSH_ERR_NOTSUP);
+  size_t count = c->algo_max + 16;
+  ASSH_RET_ON_ERR(assh_realloc(c, (void**)&c->algos,
+                    sizeof(void*) * count, ASSH_ALLOC_INTERNAL));
+  c->algo_max = count;
+  c->algo_realloc = 1;
+
+  return ASSH_OK;
+}
+
+assh_error_t assh_algo_register_static(struct assh_context_s *c,
+                                       const struct assh_algo_s *table[])
+{
+  size_t i = 0;
+  uint_fast8_t m = 0;
+  assh_error_t err;
+  const struct assh_algo_s *l, *a = table[0];
+
+  ASSH_RET_IF_TRUE(c->algo_realloc && c->algos, ASSH_ERR_BUSY);
+
+  while ((l = table[i]))
+    {
+      /* check class order */
+      m |= 1 << l->class_;
+      ASSH_RET_IF_TRUE(a->class_ > l->class_, ASSH_ERR_BAD_ARG);
+      i++;
+      a = l;
+    }
+
+  /* check that all classes are represented */
+  ASSH_RET_IF_TRUE(m != 0x1f, ASSH_ERR_BAD_ARG);
+
+  c->algo_cnt = c->algo_max = i;
+  c->algo_realloc = 0;
+  c->algos = table;
+
+  assh_algo_kex_init_size(c);
+
+  return ASSH_OK;
+}
+
 assh_error_t assh_algo_register(struct assh_context_s *c, assh_safety_t safety,
 				assh_safety_t min_safety, uint8_t min_speed,
                                 const struct assh_algo_s *table[])
@@ -168,12 +218,14 @@ assh_error_t assh_algo_register(struct assh_context_s *c, assh_safety_t safety,
       ASSH_RET_IF_TRUE(algo->api != ASSH_ALGO_API_VERSION, ASSH_ERR_BAD_ARG);
       if (algo->safety < min_safety || algo->speed < min_speed)
 	continue;
-      ASSH_RET_IF_TRUE(count == c->algo_max, ASSH_ERR_MEM);
+      if (count == c->algo_max)
+        ASSH_RET_ON_ERR(assh_algo_extend(c));
       c->algos[count++] = algo;
     }
 
   c->algo_cnt = count;
   assh_algo_sort(c, safety, min_safety, min_speed);
+  assh_algo_kex_init_size(c);
 
   return ASSH_OK;
 }
@@ -206,21 +258,33 @@ assh_error_t assh_algo_register_va(struct assh_context_s *c, assh_safety_t safet
       ASSH_RET_IF_TRUE(algo->api != ASSH_ALGO_API_VERSION, ASSH_ERR_BAD_ARG);
       if (algo->safety < min_safety || algo->speed < min_speed)
 	continue;
-      ASSH_JMP_IF_TRUE(count == c->algo_max, ASSH_ERR_MEM, err_);
+      if (count == c->algo_max)
+        ASSH_JMP_ON_ERR(assh_algo_extend(c), err_);
       c->algos[count++] = algo;
     }
 
   c->algo_cnt = count;
   assh_algo_sort(c, safety, min_safety, min_speed);
+  assh_algo_kex_init_size(c);
 
  err_:
   va_end(ap);
   return err;
 }
 
-void assh_algo_unregister(struct assh_context_s *c)
+assh_error_t assh_algo_unregister(struct assh_context_s *c)
 {
-  c->algo_cnt = 0;
+  assh_error_t err;
+
+  ASSH_RET_IF_TRUE(c->session_count, ASSH_ERR_BUSY);
+
+  if (c->algo_realloc)
+    assh_free(c, c->algos);
+
+  c->algo_cnt = c->algo_max = 0;
+  c->algos = NULL;
+
+  return ASSH_OK;
 }
 
 const struct assh_algo_s *assh_algo_table[] = {

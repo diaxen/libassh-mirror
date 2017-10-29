@@ -382,7 +382,7 @@ int main(int argc, char **argv)
   /* initializes an assh context object */
   struct assh_context_s *context;
 
-  if (assh_context_create(&context, ASSH_CLIENT, CONFIG_ASSH_MAX_ALGORITHMS,
+  if (assh_context_create(&context, ASSH_CLIENT,
                           NULL, NULL, NULL, NULL) != ASSH_OK ||
       assh_service_register_default(context) != ASSH_OK ||
       assh_algo_register_default(context, algo_safety, algo_min_safety, 0) != ASSH_OK)

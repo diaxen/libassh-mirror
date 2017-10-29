@@ -103,8 +103,10 @@ struct assh_context_s
   /** Number of initialized sessions attached to this context. */
   size_t session_count:8;
 
+  size_t algo_realloc:1;
+
   /** Number of algorithm slots */
-  size_t algo_max:16;
+  size_t algo_max:15;
 
   /** Number of registered algorithms */
   size_t algo_cnt:16;
@@ -114,7 +116,7 @@ struct assh_context_s
   size_t kex_init_size:16;
 
   /** Registered algorithms */
-  const struct assh_algo_s *algos[CONFIG_ASSH_MAX_ALGORITHMS];
+  const struct assh_algo_s **algos;
 };
 
 #ifdef CONFIG_ASSH_LIBC_REALLOC
@@ -148,7 +150,7 @@ ASSH_ALLOCATOR(assh_gcrypt_allocator);
     @see assh_context_release */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_context_create(struct assh_context_s **ctx,
-		    enum assh_context_type_e type, size_t algo_max,
+		    enum assh_context_type_e type,
 		    assh_allocator_t *alloc, void *alloc_pv,
                     const struct assh_prng_s *prng,
                     const struct assh_buffer_s *prng_seed);

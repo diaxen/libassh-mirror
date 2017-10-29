@@ -123,13 +123,21 @@ void test(int (*fend)(int, int), int cnt, int evrate,
 
   ASSH_DEBUG("==============================================================\n");
 
+  static const struct assh_algo_s *algos[] = {
+    &assh_kex_none.algo, &assh_sign_none.algo,
+    &assh_cipher_fuzz.algo, &assh_hmac_none.algo, &assh_compress_none.algo,
+    NULL
+  };
+
   alloc_fuzz = 0;
   if (assh_context_init(&context[0], ASSH_SERVER,
 			assh_leaks_allocator, NULL,
 			&assh_prng_weak, NULL) ||
+      assh_algo_register_static(&context[0], algos) ||
       assh_context_init(&context[1], ASSH_CLIENT,
 			assh_leaks_allocator, NULL,
-			&assh_prng_weak, NULL))
+			&assh_prng_weak, NULL) ||
+      assh_algo_register_static(&context[1], algos))
     TEST_FAIL("init");
 
   for (i = 0; i < 2; i++)
@@ -137,11 +145,6 @@ void test(int (*fend)(int, int), int cnt, int evrate,
       fifo_init(&fifo[i]);
 
       if (assh_service_register_va(&context[i], &assh_service_connection, NULL))
-	TEST_FAIL("init");
-
-      if (assh_algo_register_va(&context[i], 0, 0, 0, &assh_kex_none, &assh_sign_none,
-				&assh_cipher_fuzz, &assh_cipher_none, &assh_hmac_none,
-				&assh_compress_none, NULL) != ASSH_OK)
 	TEST_FAIL("init");
 
       if (assh_session_init(&context[i], &session[i]) != ASSH_OK)

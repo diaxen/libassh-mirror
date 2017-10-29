@@ -250,7 +250,7 @@ int main(int argc, char *argv[])
 
   struct assh_context_s *context;
 
-  if (assh_context_create(&context, ASSH_CLIENT_SERVER, CONFIG_ASSH_MAX_ALGORITHMS,
+  if (assh_context_create(&context, ASSH_CLIENT_SERVER,
                           NULL, NULL, NULL, NULL))
     ERROR("Unable to create context.\n");
 
