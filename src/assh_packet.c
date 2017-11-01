@@ -31,6 +31,10 @@
 #include <string.h>
 
 #ifdef CONFIG_ASSH_PACKET_POOL
+# ifdef CONFIG_ASSH_VALGRIND
+#  include <valgrind/memcheck.h>
+# endif
+
 /* This function returns the index of the bucket associated to a given
    packet size in the allocator pool. */
 static inline struct assh_packet_pool_s *
@@ -52,7 +56,7 @@ assh_packet_alloc(struct assh_context_s *c,
 {
   assh_error_t err; 
 
-  ASSH_RET_IF_TRUE(payload_size_m1 + 1 > ASSH_PACKET_MAX_PAYLOAD,
+  ASSH_RET_IF_TRUE(payload_size_m1 + 1 > CONFIG_ASSH_MAX_PAYLOAD,
                ASSH_ERR_OUTPUT_OVERFLOW);
 
   struct assh_packet_s *p;
@@ -83,6 +87,7 @@ assh_packet_alloc_raw(struct assh_context_s *c, size_t raw_size,
 	{
 	  *r = p->pool_next;
           pl->size -= p->buffer_size;
+          c->pck_pool_size -= p->buffer_size;
           pl->count--;
 	  break;
 	}
@@ -181,6 +186,10 @@ void assh_packet_release(struct assh_packet_s *p)
       pl->pck = p;
       pl->count++;
       pl->size += p->buffer_size;
+      c->pck_pool_size += p->buffer_size;
+# ifdef CONFIG_ASSH_VALGRIND
+      VALGRIND_MAKE_MEM_UNDEFINED(p->data, p->buffer_size);
+# endif
     }
 #endif
 }

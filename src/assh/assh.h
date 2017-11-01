@@ -264,9 +264,6 @@ const char * assh_error_str(assh_error_t err);
 /** @internal Default key re-echange threshold in bytes */
 #define ASSH_REKEX_THRESHOLD (1 << 31)
 
-/** @internal Maximum size of packet payload */
-#define ASSH_PACKET_MAX_PAYLOAD 35000
-
 /** remote identification string protocol timeout in seconds */
 #define ASSH_TIMEOUT_IDENT 10
 /** kex exchange protocol timeout in seconds */

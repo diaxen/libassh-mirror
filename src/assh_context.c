@@ -192,8 +192,8 @@ assh_context_init(struct assh_context_s *c,
       c->pool[i].size = 0;
     }
 
-  c->pck_pool_max_size = 1 << 20;
-  c->pck_pool_max_bsize = c->pck_pool_max_size / ASSH_PCK_POOL_SIZE;
+  c->pck_pool_max_size = CONFIG_ASSH_PACKET_POOL_SIZE;
+  c->pck_pool_max_bsize = CONFIG_ASSH_PACKET_POOL_SIZE / ASSH_PCK_POOL_SIZE;
   c->pck_pool_size = 0;
 #endif
 

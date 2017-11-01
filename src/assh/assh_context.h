@@ -80,11 +80,13 @@ struct assh_context_s
   struct assh_key_s *keys;
 
 #ifdef CONFIG_ASSH_PACKET_POOL
-  /** Packet pool maximum allocated size in a single bucket. */
+  /** Packet pool: maximum allocated size in a single bucket. */
   uint32_t pck_pool_max_bsize;
-  /** Packet pool maximum allocated size. */
+  /** Packet pool: maximum byte amount of spare packets before
+      releasing to the memory allocator. */
   uint32_t pck_pool_max_size;
-  /** Packet pool current allocated size. */
+  /** Packet pool: current byte amount of spare packets not yet
+      released to the memory allocator. */
   uint32_t pck_pool_size;
 
   /** Packet pool buckets of spare packets by size. */
