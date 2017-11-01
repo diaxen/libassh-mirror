@@ -52,6 +52,10 @@
     cipher, mac and compression algorithms. */
 typedef ASSH_KEX_FILTER_FCN(assh_kex_filter_t);
 
+#if CONFIG_ASSH_IDENT_SIZE < 8 || CONFIG_ASSH_IDENT_SIZE > 255
+# error CONFIG_ASSH_IDENT_SIZE out of range
+#endif
+
 /** @internalmembers @This is the session context structure. */
 struct assh_session_s
 {
@@ -159,7 +163,7 @@ struct assh_session_s
   size_t session_id_len:8;
 
   /** Copy of the ident string sent by the remote host. */
-  uint8_t ident_str[255];
+  uint8_t ident_str[CONFIG_ASSH_IDENT_SIZE];
   /** Size of the ident string sent by the remote host. */
   size_t ident_len:8;
 

@@ -241,6 +241,10 @@ AC_DEFINE([CONFIG_ASSH_AUTH_USERNAME_LEN], [32], [SSH authentication max usernam
 AC_DEFINE([CONFIG_ASSH_AUTH_PASSWORD_LEN], [32], [SSH authentication max password length])
 AC_DEFINE([CONFIG_ASSH_AUTH_HOSTNAME_LEN], [128], [SSH authentication max hostname length])
 
+# rfc4253 requires 255 here. Using a lower value on embedded targets would
+# reduce the size of the assh_session_s structure and seems acceptable
+AC_DEFINE([CONFIG_ASSH_IDENT_SIZE], [255], [Maximum length of the remote software identification string])
+
 AC_DEFINE([CONFIG_ASSH_MAX_SERVICES], [4], [Maximum number of registered services])
 AC_DEFINE([CONFIG_ASSH_ABI_WARN], [], [Warn when a function not relying on a stable ABI is used])
 AC_DEFINE([CONFIG_ASSH_LIBC_REALLOC], [], [Compile the assh_libc_allocator])
