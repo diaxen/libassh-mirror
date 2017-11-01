@@ -96,20 +96,6 @@ ASSH_ALLOCATOR(assh_libc_allocator)
 }
 #endif
 
-assh_error_t assh_strdup(struct assh_context_s *c, char **r,
-                         const char *str, enum assh_alloc_type_e type)
-{
-  assh_error_t err;
-  *r = NULL;
-  if (str != NULL)
-    {
-      size_t l = strlen(str) + 1;
-      ASSH_RET_ON_ERR(assh_alloc(c, l, type, (void**)r));
-      memcpy(*r, str, l);
-    }
-  return ASSH_OK;
-}
-
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_context_init(struct assh_context_s *c,
                   enum assh_context_type_e type,

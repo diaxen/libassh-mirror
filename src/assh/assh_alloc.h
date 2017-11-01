@@ -72,10 +72,6 @@ ASSH_INLINE void assh_free(struct assh_context_s *c, void *ptr)
     (void)c->f_alloc(c->alloc_pv, &ptr, 0, ASSH_ALLOC_NONE);
 }
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_strdup(struct assh_context_s *c, char **r,
-            const char *str, enum assh_alloc_type_e type);
-
 #ifdef CONFIG_ASSH_ALLOCA
 
 # include <alloca.h>

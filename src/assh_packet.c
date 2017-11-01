@@ -391,3 +391,17 @@ assh_append_asn1(uint8_t **dst, uint8_t id, size_t len)
   *dst = d;
 }
 
+assh_error_t assh_strdup(struct assh_context_s *c, char **r,
+                         const char *str, enum assh_alloc_type_e type)
+{
+  assh_error_t err;
+  *r = NULL;
+  if (str != NULL)
+    {
+      size_t l = strlen(str) + 1;
+      ASSH_RET_ON_ERR(assh_alloc(c, l, type, (void**)r));
+      memcpy(*r, str, l);
+    }
+  return ASSH_OK;
+}
+

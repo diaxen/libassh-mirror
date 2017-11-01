@@ -424,5 +424,11 @@ assh_ssh_string_compare(const uint8_t *ssh_str, const char *nul_str)
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_ssh_string_copy(const uint8_t *ssh_str, char *nul_str, size_t max_len);
 
+/** @internal @This behaves like the standard @tt strdup function but
+    relies on the context registered memory allocator. */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_strdup(struct assh_context_s *c, char **r,
+            const char *str, enum assh_alloc_type_e type);
+
 #endif
 
