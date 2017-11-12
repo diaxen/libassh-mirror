@@ -138,7 +138,8 @@ static void assh_algo_kex_init_size(struct assh_context_s *c)
 	l += 4;	/* string header */
       const struct assh_algo_name_s *n;
       for (n = a->names; n->spec; n++)
-        l += strlen(n->name);
+        l += /* strlen(",") */ (n != a->names)
+          + strlen(n->name);
       switch (a->class_)
 	{
 	case ASSH_ALGO_KEX:
