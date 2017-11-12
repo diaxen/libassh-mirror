@@ -90,6 +90,14 @@ static ASSH_KEX_FILTER_FCN(algo_filter)
          (name->spec & ASSH_ALGO_COMMON);
 }
 
+/* used to index our array of struct pollfd */
+enum poll_e
+{
+  POLL_STDIN,
+  POLL_STDOUT,
+  POLL_SOCKET,
+};
+
 static assh_bool_t
 ssh_loop(struct assh_session_s *session,
           struct assh_client_inter_session_s *inter,
@@ -112,29 +120,29 @@ ssh_loop(struct assh_session_s *session,
         case ASSH_EVENT_READ:
           /* return if we are not sure that we can read some ssh
              stream from the socket right now */
-          if (!(p[2].revents & POLLIN))
+          if (!(p[POLL_SOCKET].revents & POLLIN))
             {
               assh_event_done(session, &event, ASSH_OK);
               return 1;
             }
 
           /* let an helper function read ssh stream from socket */
-          assh_fd_event(session, &event, p[2].fd);
-          p[2].revents ^= POLLIN;
+          assh_fd_event(session, &event, p[POLL_SOCKET].fd);
+          p[POLL_SOCKET].revents ^= POLLIN;
           break;
 
         case ASSH_EVENT_WRITE:
           /* return if we are not sure that we can write some ssh
              stream to the socket right now */
-          if (!(p[2].revents & POLLOUT))
+          if (!(p[POLL_SOCKET].revents & POLLOUT))
             {
               assh_event_done(session, &event, ASSH_OK);
               return 1;
             }
 
           /* let an helper function write ssh stream to socket */
-          assh_fd_event(session, &event, p[2].fd);
-          p[2].revents ^= POLLOUT;
+          assh_fd_event(session, &event, p[POLL_SOCKET].fd);
+          p[POLL_SOCKET].revents ^= POLLOUT;
           break;
 
         case ASSH_EVENT_ERROR:
@@ -208,7 +216,7 @@ ssh_loop(struct assh_session_s *session,
 
           /* return if we are not sure that we can write some data to
              the standard output right now */
-          if (!(p[1].revents & POLLOUT))
+          if (!(p[POLL_STDOUT].revents & POLLOUT))
             {
               assh_event_done(session, &event, ASSH_OK);
               return 1;
@@ -217,14 +225,14 @@ ssh_loop(struct assh_session_s *session,
           struct assh_event_channel_data_s *ev = &event.connection.channel_data;
 
           /* write to stdout */
-          ssize_t r = write(p[1].fd, ev->data.data, ev->data.size);
+          ssize_t r = write(p[POLL_STDOUT].fd, ev->data.data, ev->data.size);
           if (r < 0)
             err = ASSH_ERR_IO | ASSH_ERRSV_DISCONNECT;
           else
             ev->transferred = r;
 
           assh_event_done(session, &event, err);
-          p[1].revents ^= POLLOUT;
+          p[POLL_STDOUT].revents ^= POLLOUT;
           break;
         }
 
@@ -407,26 +415,26 @@ int main(int argc, char **argv)
 
   /* main IOs polling loop */
   struct pollfd p[3];
-  p[0].fd = 0;                  /* standard input */
-  p[1].fd = 1;                  /* standard output */
-  p[2].fd = sock;               /* ssh socket */
+  p[POLL_STDIN].fd = 0;
+  p[POLL_STDOUT].fd = 1;
+  p[POLL_SOCKET].fd = sock;
 
   do {
-    p[0].events = 0;
-    p[1].events = 0;
+    p[POLL_STDIN].events = 0;
+    p[POLL_STDOUT].events = 0;
 
     /* poll on terminal when the interactive session is open */
     if (inter.state == ASSH_CLIENT_INTER_ST_OPEN)
       {
-        p[0].events = POLLIN;
+        p[POLL_STDIN].events = POLLIN;
         if (assh_channel_more_data(session))
-          p[1].events = POLLOUT;
+          p[POLL_STDOUT].events = POLLOUT;
       }
 
     /* always poll on the ssh socket */
-    p[2].events = POLLIN;
+    p[POLL_SOCKET].events = POLLIN;
     if (assh_transport_has_output(session))
-      p[2].events |= POLLOUT;
+      p[POLL_SOCKET].events |= POLLOUT;
 
     /* get the appropriate ssh protocol timeout */
     int timeout = assh_session_delay(session, time(NULL)) * 1000;
@@ -437,7 +445,7 @@ int main(int argc, char **argv)
 
     /* we may need to write data from the terminal to the
        interactive session channel */
-    if (p[0].revents)
+    if (p[POLL_STDIN].revents)
       {
         assert(inter.state == ASSH_CLIENT_INTER_ST_OPEN);
 
@@ -448,8 +456,8 @@ int main(int argc, char **argv)
           {
             /* read data from the terminal directly in the
                buffer of the outgoing packet then send it. */
-            ssize_t r = read(p[0].fd, buf, s);
-            if (r)
+            ssize_t r = read(p[POLL_STDIN].fd, buf, s);
+            if (r > 0)
               assh_channel_data_send(inter.channel, r);
           }
        }
@@ -461,7 +469,9 @@ int main(int argc, char **argv)
 
     /* let our ssh event loop handle ssh stream io events, channel data
        input events and any other ssh related events. */
-  } while (!(p[2].revents || p[1].revents) || ssh_loop(session, &inter, p));
+  } while (!(p[POLL_SOCKET].revents ||
+             p[POLL_STDOUT].revents) ||
+           ssh_loop(session, &inter, p));
 
   /* restore terminal attributes */
   if (isatty(0))
