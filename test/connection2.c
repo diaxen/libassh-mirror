@@ -629,7 +629,7 @@ void test(int (*fend)(int, int), int cnt, int evrate,
 	    }
 
 	    case ASSH_EVENT_CHANNEL_EOF: {      /***** eof event *****/
-	      struct assh_event_channel_close_s *e = &event.connection.channel_close;
+	      struct assh_event_channel_eof_s *e = &event.connection.channel_eof;
 	      (void)e;
 	      ASSH_DEBUG("ASSH_EVENT_CHANNEL_EOF %p\n", e->ch);
 
