@@ -28,6 +28,8 @@ AM_PROG_LIBTOOL
 
 AC_LANG(C)
 
+AC_GNU_SOURCE
+
 AC_STDC_HEADERS
 AC_CHECK_HEADERS(assert.h, AC_DEFINE([HAVE_ASSERT_H]))
 
@@ -38,6 +40,11 @@ AC_CHECK_SIZEOF(long)
 AC_CHECK_TYPE(long long, [bnlong_size=8], [bnlong_size=$ac_cv_sizeof_long])
 AC_CHECK_TYPE(__int128,  [bnlong_size=x])
 AC_CHECK_LIB(c, qsort_r, AC_DEFINE(CONFIG_ASSH_QSORTR, 1, [qsort_r available]))
+
+AC_CHECK_LIB(c, posix_openpt,
+  AC_DEFINE(CONFIG_ASSH_POSIX_OPENPT, 1, [posix_openpt available])
+  AC_DEFINE(_XOPEN_SOURCE, 600, [_XOPEN_SOURCE])
+)
 
 case "${ac_cv_sizeof_long}_${bnlong_size}" in
     8_x)

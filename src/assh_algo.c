@@ -21,7 +21,7 @@
 
 */
 
-#define _GNU_SOURCE             /* qsort_r */
+#include "config.h"
 
 #include <assh/assh_context.h>
 #include <assh/assh_algo.h>
