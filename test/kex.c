@@ -65,7 +65,7 @@ struct algo_with_key_s
 };
 
 /* all kex algorithms, multiple set of parameters */
-static const struct algo_with_key_s kex_list_long[] =
+static const struct algo_with_key_s kex_list_slow[] =
 {
   { &assh_kex_none,              NULL, NULL, 0 },
   { &assh_kex_curve25519_sha256, NULL, NULL, 0 },
@@ -85,6 +85,24 @@ static const struct algo_with_key_s kex_list_long[] =
   { &assh_kex_dh_gex_sha256_12,  NULL, NULL, 0 },
   { &assh_kex_rsa1024_sha1,	   NULL, NULL, 0 },
   { &assh_kex_rsa1024_sha1,	   &assh_key_rsa, rsa1024_key, sizeof(rsa1024_key) },
+  { &assh_kex_rsa2048_sha256,	   &assh_key_rsa, rsa2048_key, sizeof(rsa2048_key) },
+  { NULL },
+};
+
+/* all kex algorithms, reduced set of parameters */
+static const struct algo_with_key_s kex_list_long[] =
+{
+  { &assh_kex_none,              NULL, NULL, 0 },
+  { &assh_kex_curve25519_sha256, NULL, NULL, 0 },
+  { &assh_kex_m383_sha384,	   NULL, NULL, 0 },
+  { &assh_kex_m511_sha512,	   NULL, NULL, 0 },
+  { &assh_kex_sha2_nistp256,	   NULL, NULL, 0 },
+  { &assh_kex_sha2_nistp384,	   NULL, NULL, 0 },
+  { &assh_kex_sha2_nistp521,	   NULL, NULL, 0 },
+  { &assh_kex_dh_group1_sha1,	   NULL, NULL, 0 },
+  { &assh_kex_dh_group14_sha256,   NULL, NULL, 0 },
+  { &assh_kex_dh_gex_sha1,	   NULL, NULL, 0 },
+  { &assh_kex_rsa1024_sha1,	   NULL, NULL, 0 },
   { &assh_kex_rsa2048_sha256,	   &assh_key_rsa, rsa2048_key, sizeof(rsa2048_key) },
   { NULL },
 };
@@ -325,6 +343,7 @@ static const struct assh_algo_compress_s *comp_list_short[] =
 static unsigned long kex_client_done_count = 0;
 static unsigned long kex_server_done_count = 0;
 static unsigned long kex_hostkey_lookup_count = 0;
+static unsigned long kex_rekex_count = 0;
 
 void test(const struct assh_algo_kex_s *kex,
 	  const struct assh_algo_sign_s *sign,
@@ -332,7 +351,8 @@ void test(const struct assh_algo_kex_s *kex,
 	  const struct assh_algo_mac_s *mac,
 	  const struct assh_algo_compress_s *comp,
 	  const struct algo_with_key_s *kex_key,
-	  const struct algo_with_key_s *sign_key)
+	  const struct algo_with_key_s *sign_key,
+	  unsigned seed, unsigned cycles)
 {
   const struct assh_algo_s *algos[] = {
     &kex->algo, &sign->algo, &cipher->algo, &mac->algo, &comp->algo,
@@ -347,10 +367,12 @@ void test(const struct assh_algo_kex_s *kex,
       assh_algo_register_static(&context[1], algos))
     TEST_FAIL("ctx init\n");
 
-  uint_fast8_t i;
-  uint_fast8_t done = 0;
+  unsigned i;
+  unsigned done_count[2] = { 0, 0 };
+  uint_fast8_t started = 0;
+  struct assh_channel_s *ch[2];
 
-  fprintf(stderr, "%-36s %-30s %-30s %-30s %s\n",
+  fprintf(stderr, "%u: %s, %s, %s, %s, %s\n", seed,
 	  assh_algo_name(&kex->algo), assh_algo_name(&sign->algo),
 	  assh_algo_name(&cipher->algo), assh_algo_name(&mac->algo),
 	  assh_algo_name(&comp->algo));
@@ -394,8 +416,9 @@ void test(const struct assh_algo_kex_s *kex,
 	  } while (0);
 	}
 
-      if (assh_session_init(c, &session[i]) != ASSH_OK)
-	TEST_FAIL("session init\n");
+      if (assh_session_init(c, &session[i]) ||
+	  assh_kex_set_threshold(&session[i], 1024 + assh_prng_rand() % 1024))
+	TEST_FAIL("sessions init");
 
       session[i].user_auth_done = 1;
       assh_cipher_fuzz_initreg(c, &session[i]);
@@ -403,7 +426,12 @@ void test(const struct assh_algo_kex_s *kex,
 
   uint_fast8_t stall = 0;
 
-  while (1) 
+  char data[256];
+  for (i = 0; i < sizeof(data); i++)
+    data[i] = assh_prng_rand();
+
+  while (done_count[0] < cycles &&
+	 done_count[1] < cycles)
     {
       for (i = 0; i < 2; i++)
 	{
@@ -411,15 +439,24 @@ void test(const struct assh_algo_kex_s *kex,
 
 	  ASSH_DEBUG("=== session %u %u ===\n", i, stall);
 
+	  if ((started >> i) & 1)
+	    {
+	      size_t size = assh_prng_rand() % sizeof(data);
+	      assh_channel_data(ch[i], (const uint8_t*)data, &size);
+	    }
+
 	  if (!assh_event_get(&session[i], &event, 0))
-	    TEST_FAIL("event_get %u terminated\n", i);
+	    if (!packet_fuzz)
+	      TEST_FAIL("seed %u, event_get %u terminated\n", seed, i);
+	    else
+	      goto done;
 
 	  switch (event.id)
 	    {
 	    case ASSH_EVENT_ERROR:
 	      if (packet_fuzz || alloc_fuzz)
 		goto done;
-	      TEST_FAIL("error %u %lx\n", i, event.error.code);
+	      TEST_FAIL("seed %u, error %u %lx\n", i, seed, event.error.code);
 	      break;
 
 	    case ASSH_EVENT_KEX_HOSTKEY_LOOKUP:
@@ -430,10 +467,34 @@ void test(const struct assh_algo_kex_s *kex,
 
 	    case ASSH_EVENT_KEX_DONE:
 	      ASSH_DEBUG("kex safety %u: %u\n", i, event.kex.done.safety);
+	      if (event.kex.done.initial != !done_count[i])
+		TEST_FAIL("seed %u, kex done initial\n", seed);
+	      if (!event.kex.done.initial)
+		kex_rekex_count++;
+	      done_count[i]++;
 	      if (i)
 		kex_client_done_count++;
 	      else
 		kex_server_done_count++;
+	      break;
+
+            case ASSH_EVENT_SERVICE_START:
+              if (event.service.start.srv == &assh_service_connection)
+		while (assh_channel_open(&session[i], "test", 4, NULL, 0, &ch[i]))
+		  ;
+	      break;
+
+	    case ASSH_EVENT_CHANNEL_OPEN:
+	      event.connection.channel_open.reply = ASSH_CONNECTION_REPLY_SUCCESS;
+	      break;
+
+	    case ASSH_EVENT_CHANNEL_OPEN_REPLY:
+	      started |= 1 << i;
+	      break;
+
+	    case ASSH_EVENT_CHANNEL_DATA:
+	      event.connection.channel_data.transferred =
+		event.connection.channel_data.data.size;
 	      break;
 
 	    case ASSH_EVENT_READ:
@@ -447,16 +508,6 @@ void test(const struct assh_algo_kex_s *kex,
 		stall = 0;
 	      break;
 
-	    case ASSH_EVENT_SERVICE_START:
-	      if (event.service.start.srv != &assh_service_connection)
-		break;
-#warning transfer more data
-	      done |= 1 << i;
-
-	      if (done == 3)
-		goto done;
-	      break;
-
 	    default:
 	      ASSH_DEBUG("event %u not handled\n", event.id);
 	    }
@@ -467,7 +518,7 @@ void test(const struct assh_algo_kex_s *kex,
 	    {
 	      /* packet exchange is stalled, hopefully due to a fuzzing error */
 	      if (!packet_fuzz)
-		TEST_FAIL("stalled %u\n", i);
+		TEST_FAIL("seed %u, stalled %u\n", seed, i);
 	      ASSH_DEBUG("=== stall ===");
 	      goto done;
 	    }
@@ -489,14 +540,13 @@ void test_loop(unsigned int seed,
 	       const struct algo_with_key_s *sign,
 	       const struct assh_algo_cipher_s **cipher,
 	       const struct assh_algo_mac_s **mac,
-	       const struct assh_algo_compress_s **comp)
+	       const struct assh_algo_compress_s **comp,
+	       unsigned cycles)
 {
   const struct algo_with_key_s *kex_list = kex;
   const struct algo_with_key_s *sign_list = sign;
   const struct assh_algo_cipher_s **cipher_list = cipher;
   const struct assh_algo_mac_s **mac_list = mac;
-
-  fprintf(stderr, "Seed: %9u\n", seed);
 
   while (*comp)
     {
@@ -510,7 +560,7 @@ void test_loop(unsigned int seed,
 		    {
 		      assh_prng_seed(seed);
 		      test(kex->algo, sign->algo, *cipher, *mac, *comp,
-			   kex, sign);
+			   kex, sign, seed, cycles);
 		      kex++;
 		    }
 		  kex = kex_list;
@@ -552,13 +602,16 @@ int main(int argc, char **argv)
 	  packet_fuzz = 0;
 
 	  /* test cipher and mac */
-	  test_loop(seed, kex_list_short, sign_list_short, cipher_list_long, mac_list_long, comp_list_short);
+	  test_loop(seed, kex_list_short, sign_list_short, cipher_list_long, mac_list_long, comp_list_short, 2);
 	  /* test compression */
-	  test_loop(seed, kex_list_short, sign_list_short, cipher_list_short, mac_list_short, comp_list_long);
+	  test_loop(seed, kex_list_short, sign_list_short, cipher_list_short, mac_list_short, comp_list_long, 2);
 	  /* test sign */
-	  test_loop(seed, kex_list_all, sign_list_long, cipher_list_short, mac_list_short, comp_list_short);
+	  test_loop(seed, kex_list_all, sign_list_long, cipher_list_short, mac_list_short, comp_list_short, 2);
 	  /* test kex */
-	  test_loop(seed, kex_list_long, sign_list_short, cipher_list_short, mac_list_short, comp_list_short);
+	  if (action & 8)
+	    test_loop(seed, kex_list_slow, sign_list_short, cipher_list_short, mac_list_short, comp_list_short, 2);
+	  else
+	    test_loop(seed, kex_list_long, sign_list_short, cipher_list_short, mac_list_short, comp_list_short, 2);
 	}
 
       /* run some more sessions with some packet error */
@@ -568,11 +621,14 @@ int main(int argc, char **argv)
 	  packet_fuzz = 10 + assh_prng_rand() % 1024;
 
 	  /* fuzz compression parsing */
-	  test_loop(seed, kex_list_short, sign_list_short, cipher_list_fuzz, mac_list_fuzz, comp_list_long);
+	  test_loop(seed, kex_list_short, sign_list_short, cipher_list_fuzz, mac_list_fuzz, comp_list_long, 4);
 	  /* fuzz signature parsing */
-	  test_loop(seed, kex_list_short, sign_list_long, cipher_list_fuzz, mac_list_fuzz, comp_list_short);
+	  test_loop(seed, kex_list_short, sign_list_long, cipher_list_fuzz, mac_list_fuzz, comp_list_short, 4);
 	  /* fuzz kex parsing */
-	  test_loop(seed, kex_list_long, sign_list_short, cipher_list_fuzz, mac_list_fuzz, comp_list_short);
+	  if (action & 8)
+	    test_loop(seed, kex_list_slow, sign_list_short, cipher_list_fuzz, mac_list_fuzz, comp_list_short, 4);
+	  else
+	    test_loop(seed, kex_list_long, sign_list_short, cipher_list_fuzz, mac_list_fuzz, comp_list_short, 4);
 	}
 
       /* run some more sessions with some allocation fails */
@@ -582,34 +638,29 @@ int main(int argc, char **argv)
 	  packet_fuzz = 0;
 
 	  /* fuzz cipher and mac allocation */
-	  test_loop(seed, kex_list_short, sign_list_short, cipher_list_long, mac_list_long, comp_list_short);
+	  test_loop(seed, kex_list_short, sign_list_short, cipher_list_long, mac_list_long, comp_list_short, 4);
 	  /* fuzz compression allocation */
-	  test_loop(seed, kex_list_short, sign_list_short, cipher_list_short, mac_list_short, comp_list_long);
+	  test_loop(seed, kex_list_short, sign_list_short, cipher_list_short, mac_list_short, comp_list_long, 4);
 	  /* fuzz kex and sign allocation */
-	  test_loop(seed, kex_list_all, sign_list_all, cipher_list_short, mac_list_short, comp_list_short);
+	  test_loop(seed, kex_list_all, sign_list_all, cipher_list_short, mac_list_short, comp_list_short, 4);
 	}
     }
 
-  if (action & 6)
-    {
-      fprintf(stderr, "Summary:\n"
+  fprintf(stderr, "Summary:\n"
 	      "  %8lu client kex done\n"
 	      "  %8lu server kex done\n"
 	      "  %8lu client host key lookup\n"
+	      "  %8lu re-kex\n"
 	      "  %8lu fuzz packet bit errors\n"
 	      "  %8lu fuzz memory allocation fails\n"
 	      ,
 	      kex_client_done_count,
 	      kex_server_done_count,
 	      kex_hostkey_lookup_count,
+	      kex_rekex_count,
 	      packet_fuzz_bits,
 	      alloc_fuzz_fails
-	      );
-    }
-  else
-    {
-      fprintf(stderr, "Done\n");
-    }
+	  );
 
   return 0;
 }
