@@ -178,7 +178,7 @@ assh_client_event_openssh_hk_lookup(struct assh_session_s *s, FILE *out, FILE *i
 			      sizeof(path), "known_hosts");
 
   assh_client_event_openssh_hk_lookup_va(s, out, in, host, event,
-			      "/etc/ssh/ssh_known_hosts", home, NULL);
+		 CONFIG_ASSH_OPENSSH_PREFIX "ssh_known_hosts", home, NULL);
 }
 
 void

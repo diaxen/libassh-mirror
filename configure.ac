@@ -260,6 +260,7 @@ AC_DEFINE([CONFIG_ASSH_MAX_SERVICES], [4], [Maximum number of registered service
 AC_DEFINE([CONFIG_ASSH_ABI_WARN], [], [Warn when a function not relying on a stable ABI is used])
 AC_DEFINE([CONFIG_ASSH_LIBC_REALLOC], [], [Compile the assh_libc_allocator])
 #AC_DEFINE([NDEBUG], [], [Disable asserts and some aborts])
+AC_DEFINE([CONFIG_ASSH_OPENSSH_PREFIX], ["/etc/ssh/"], [Path to openssh configuration])
 
 if test x$enable_packet_pool = xyes ; then
   AC_DEFINE([CONFIG_ASSH_PACKET_POOL], [], [Use a packet allocation pool])
