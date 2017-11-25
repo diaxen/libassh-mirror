@@ -37,9 +37,6 @@ assh_userauth_server_pwchange(struct assh_session_s *s,
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
-  ASSH_RET_IF_TRUE(pv->retry && --pv->retry == 0,
-               ASSH_ERR_NO_AUTH);
-
   const struct assh_event_userauth_server_password_s *ev =
     &e->userauth_server.password;
 
@@ -86,7 +83,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_password_done)
     {
     case ASSH_SERVER_PWSTATUS_FAILURE:
     failure:
-      ASSH_RET_ON_ERR(assh_userauth_server_failure(s, 1) | ASSH_ERRSV_DISCONNECT);
+      ASSH_RET_ON_ERR(assh_userauth_server_failure(s, NULL) | ASSH_ERRSV_DISCONNECT);
       break;
     case ASSH_SERVER_PWSTATUS_SUCCESS:
       pv->state = ASSH_USERAUTH_ST_SUCCESS;
@@ -128,7 +125,7 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_password)
     }
   else if (pv->state == ASSH_USERAUTH_ST_PASSWORD_WAIT_CHANGE)
     {
-      ASSH_RETURN(assh_userauth_server_failure(s, 1));
+      ASSH_RETURN(assh_userauth_server_failure(s, e));
     }
   else
     {

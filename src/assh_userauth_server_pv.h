@@ -101,7 +101,7 @@ struct assh_userauth_context_s
   char username[CONFIG_ASSH_AUTH_USERNAME_LEN + 1];
 
   enum assh_userauth_methods_e methods:8;
-  uint_fast8_t retry;
+  uint_fast8_t tries;
   enum assh_userauth_state_e state:8;
   assh_safety_t safety;
 
@@ -127,7 +127,7 @@ assh_userauth_server_send_failure(struct assh_session_s *s,
 
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_userauth_server_failure(struct assh_session_s *s,
-			     assh_bool_t get_methods);
+                             struct assh_event_s *e);
 
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_userauth_server_success(struct assh_session_s *s,

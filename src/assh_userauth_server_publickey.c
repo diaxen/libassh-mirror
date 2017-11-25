@@ -105,7 +105,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
       ASSH_UNREACHABLE();
     }
 
-  ASSH_RETURN(assh_userauth_server_failure(s, 1)
+  ASSH_RETURN(assh_userauth_server_failure(s, NULL)
                  | ASSH_ERRSV_DISCONNECT);
 }
 
@@ -129,7 +129,7 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_pubkey)
                  &algo, &pub_key, &pv->algo_name));
 
   if (err == ASSH_NO_DATA)
-    ASSH_RETURN(assh_userauth_server_failure(s, 1));
+    ASSH_RETURN(assh_userauth_server_failure(s, e));
 
   /* test if the key has been previously found in the list of authorized user keys. */
   assh_bool_t new_key = (pv->pubkey_state == ASSH_USERAUTH_PUBKEY_NONE ||

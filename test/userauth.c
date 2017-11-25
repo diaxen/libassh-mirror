@@ -216,7 +216,7 @@ static int test()
 	  } while (!event.userauth_server.methods.methods);
 
 	  /* unlimited retries */
-	  event.userauth_server.methods.retries = 0;
+	  event.userauth_server.methods.retries = 254;
 
 	  if (event.userauth_server.methods.failed)
 	    auth_server_failure_count++;

@@ -54,7 +54,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_kbresponse_done)
     {
     case ASSH_SERVER_KBSTATUS_FAILURE:
     failure:
-      ASSH_RET_ON_ERR(assh_userauth_server_failure(s, 1) | ASSH_ERRSV_DISCONNECT);
+      ASSH_RET_ON_ERR(assh_userauth_server_failure(s, NULL) | ASSH_ERRSV_DISCONNECT);
       break;
     case ASSH_SERVER_KBSTATUS_SUCCESS:
       pv->state = ASSH_USERAUTH_ST_SUCCESS;
@@ -86,7 +86,7 @@ assh_userauth_server_kbresponse(struct assh_session_s *s,
   size_t i, count = assh_load_u32(count_);
 
   if (count != pv->keyboard_count)
-    ASSH_RETURN(assh_userauth_server_failure(s, 1));
+    ASSH_RETURN(assh_userauth_server_failure(s, e));
 
   struct assh_cbuffer_s *responses = NULL;
 
@@ -138,7 +138,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_kbinfo_done)
   pv->pck = NULL;
 
   if (ASSH_ERR_ERROR(inerr))
-    ASSH_RETURN(assh_userauth_server_failure(s, 1)
+    ASSH_RETURN(assh_userauth_server_failure(s, NULL)
                    | ASSH_ERRSV_DISCONNECT);
 
   const struct assh_event_userauth_server_kbinfo_s *ev =

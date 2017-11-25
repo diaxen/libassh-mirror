@@ -45,7 +45,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_hostbased_done)
       assh_packet_release(pv->pck);
       pv->pck = NULL;
 
-      ASSH_RET_ON_ERR(assh_userauth_server_failure(s, 1)
+      ASSH_RET_ON_ERR(assh_userauth_server_failure(s, NULL)
                    | ASSH_ERRSV_DISCONNECT);
     }
   else
@@ -83,7 +83,7 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_hostbased)
                  &algo, &pub_key, NULL));
 
   if (err == ASSH_NO_DATA)
-    ASSH_RETURN(assh_userauth_server_failure(s, 1));
+    ASSH_RETURN(assh_userauth_server_failure(s, e));
 
   pv->algo = (void*)algo;
   pv->pub_key = pub_key;
