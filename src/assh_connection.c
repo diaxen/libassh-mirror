@@ -1506,13 +1506,21 @@ assh_connection_got_channel_window_adjust(struct assh_session_s *s,
   return ASSH_OK;
 }
 
-assh_bool_t
+struct assh_channel_s *
 assh_channel_more_data(struct assh_session_s *s)
 {
   struct assh_connection_context_s *pv = s->srv_pv;
 
-  return s->srv == &assh_service_connection &&
-         pv->in_data_left > 0;
+  if (s->srv == &assh_service_connection &&
+      pv->in_data_left > 0)
+    {
+      struct assh_packet_s *p = pv->pck;
+      uint32_t ch_id = -1;
+      ASSH_ASSERT(assh_packet_check_u32(p, &ch_id, p->head.end, NULL));
+      return (void*)assh_map_lookup(&pv->channel_map, ch_id, NULL);
+    }
+
+  return NULL;
 }
 
 /************************************************* outgoing channel data */

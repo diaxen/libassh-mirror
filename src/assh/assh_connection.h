@@ -602,11 +602,16 @@ struct assh_event_channel_data_s
   size_t                                  transferred; //< output
 };
 
-/** This function returns true when the @ref ASSH_EVENT_CHANNEL_DATA
-    event will be reported again because the @ref
-    assh_event_channel_data_s::transferred field of the previous event
-    has not been set to the maximum value. */
-assh_bool_t
+/** This function returns a pointer to a channel with pending data
+    when the @ref ASSH_EVENT_CHANNEL_DATA event will be reported
+    again.
+
+    This occurs when the @ref assh_event_channel_data_s::transferred
+    field of the previous event has not been set to the maximum
+    value.
+
+    It returns @tt NULL when there is no channel with pending data. */
+struct assh_channel_s *
 assh_channel_more_data(struct assh_session_s *s);
 
 /**
