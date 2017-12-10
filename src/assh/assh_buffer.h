@@ -113,4 +113,19 @@ assh_buffer_strdup(const struct assh_cbuffer_s *buf)
   return str;
 }
 
+/** @This copies the content of the @ref assh_cbuffer_s object to the
+    string buffer and nul terminates it. It returns @tt NULL if the
+    provided buffer is not large enough. */
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT const char *
+assh_buffer_tostr(char *str, size_t len,
+                  const struct assh_cbuffer_s *buf)
+{
+  size_t sz = buf->size;
+  if (sz + 1 > len)
+    return NULL;
+  memcpy(str, buf->str, sz);
+  str[sz] = 0;
+  return str;
+}
+
 #endif
