@@ -224,6 +224,8 @@ assh_error_t assh_userauth_server_success(struct assh_session_s *s,
   struct assh_event_userauth_server_success_s *ev =
     &e->userauth_server.success;
 
+  ev->username.str = pv->username;
+  ev->username.len = strlen(pv->username);
   ev->method = pv->method->mask;
   ev->sign_safety = pv->safety;
   ev->methods = 0;

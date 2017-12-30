@@ -214,6 +214,7 @@ struct assh_event_userauth_server_kbresponse_s
     @see ASSH_EVENT_USERAUTH_SERVER_SUCCESS */
 struct assh_event_userauth_server_success_s
 {
+  ASSH_EV_CONST struct assh_cbuffer_s username;  //< input
   ASSH_EV_CONST enum assh_userauth_methods_e method; //< input
   enum assh_userauth_methods_e       methods;        //< output
   ASSH_EV_CONST assh_safety_t        sign_safety;    //< input
