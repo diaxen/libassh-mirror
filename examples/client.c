@@ -469,9 +469,7 @@ int main(int argc, char **argv)
 
     /* let our ssh event loop handle ssh stream io events, channel data
        input events and any other ssh related events. */
-  } while (!(p[POLL_SOCKET].revents ||
-             p[POLL_STDOUT].revents) ||
-           ssh_loop(session, &inter, p));
+  } while (ssh_loop(session, &inter, p));
 
   /* restore terminal attributes */
   if (isatty(0))
