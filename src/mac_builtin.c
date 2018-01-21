@@ -24,7 +24,7 @@
 
 #include <assh/assh_mac.h>
 #include <assh/assh_hash.h>
-#include <assh/assh_packet.h>
+#include <assh/assh_buffer.h>
 #include <assh/assh_alloc.h>
 
 #include <string.h>

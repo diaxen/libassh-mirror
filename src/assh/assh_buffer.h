@@ -128,4 +128,15 @@ assh_buffer_tostr(char *str, size_t len,
   return str;
 }
 
+/** @This compare two buffers of byte of the same length in
+    constant time. */
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT uint8_t
+assh_memcmp(const uint8_t *nula, const uint8_t *nulb, size_t len)
+{
+  uint8_t r = 0;
+  while (len--)
+    r |= nula[len] ^ nulb[len];
+  return r;
+}
+
 #endif

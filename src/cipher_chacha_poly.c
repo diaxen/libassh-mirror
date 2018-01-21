@@ -22,7 +22,7 @@
 */
 
 #include <assh/assh_cipher.h>
-#include <assh/assh_packet.h>
+#include <assh/assh_buffer.h>
 
 /******************************************************* chacha20 */
 

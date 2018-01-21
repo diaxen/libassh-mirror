@@ -21,7 +21,7 @@
 
 */
 
-#include <assh/assh_packet.h>
+#include <assh/assh_buffer.h>
 #include <assh/assh_bignum.h>
 #include <assh/assh_sign.h>
 #include <assh/key_rsa.h>

@@ -23,6 +23,7 @@
 
 #include <assh/key_rsa.h>
 #include <assh/assh_packet.h>
+#include <assh/assh_buffer.h>
 #include <assh/assh_alloc.h>
 #include <assh/assh_prng.h>
 
