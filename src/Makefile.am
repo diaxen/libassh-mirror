@@ -52,7 +52,8 @@ endif
 endif
 
 if COND_server
-libassh_la_SOURCES +=   assh_userauth_server.c assh_userauth_server_pv.h
+libassh_la_SOURCES +=   assh_userauth_server.c assh_userauth_server_pv.h \
+			helper_server.c
 
 if COND_none_userauth
 libassh_la_SOURCES +=   assh_userauth_server_none.c

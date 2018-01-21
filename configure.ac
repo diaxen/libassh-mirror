@@ -46,6 +46,14 @@ AC_CHECK_LIB(c, posix_openpt,
   AC_DEFINE(_XOPEN_SOURCE, 600, [_XOPEN_SOURCE])
 )
 
+AC_CHECK_LIB(c, getpwnam_r, AC_DEFINE(CONFIG_ASSH_GETPWNAM_R, 1, [getpwnam_r available]))
+AC_CHECK_LIB(c, getspnam_r, AC_DEFINE(CONFIG_ASSH_GETSPNAM_R, 1, [getspnam_r available]))
+
+AC_CHECK_LIB(crypt, crypt_r,
+  LIBS="$LIBS -lcrypt"
+  AC_DEFINE(CONFIG_ASSH_CRYPT_R, 1, [crypt_r available])
+)
+
 case "${ac_cv_sizeof_long}_${bnlong_size}" in
     8_x)
          AC_DEFINE(CONFIG_ASSH_BIGNUM_WORD, 64, [Using 64 bits words for bignum.])
