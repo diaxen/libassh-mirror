@@ -338,6 +338,7 @@ enum assh_bignum_opcode_e
   ASSH_BIGNUM_OP_RAND      = 13,
   ASSH_BIGNUM_OP_CMP       = 14,
   ASSH_BIGNUM_OP_TEST      = 15,
+  ASSH_BIGNUM_OP_SET       = 16,
   ASSH_BIGNUM_OP_UINT      = 17,
   ASSH_BIGNUM_OP_MTUINT    = 18,
   ASSH_BIGNUM_OP_JMP       = 19,
@@ -364,7 +365,7 @@ enum assh_bignum_opcode_e
     "end", "move", "sizer", "size", "add",      \
     "sub", "mul", "div", "gcd",                 \
     "expm", "inv", "shr", "shl",                \
-    "rand", "cmp", "test", "uint",              \
+    "rand", "cmp", "test", "set", "uint",       \
     "mtuint", "(c)jmp", "cfail",                \
     "ladinit", "ladtest", "ladnext", "cswap",   \
     "cmove", "mtinit", "mtto", "mtfrom",        \
@@ -607,6 +608,14 @@ enum assh_bignum_opcode_e
     {size(src2) - val)}. @tt val must be in the range @tt{[0, 64]}. */
 #define ASSH_BOP_TEST(src1, val, src2, condid)                 \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_TEST, condid, src1, val, src2)
+
+/** @mgroup{Bytecode instructions}
+    @internal This instruction set a bit in @tt dst from a condition
+    flag. When the @tt src operand is @ref #ASSH_BOP_NOREG, the tested
+    bit position is @tt{val}. In the other case, the tested bit position
+    is @tt {size(src) - val)}. @tt val must be in the range @tt{[0, 64]}. */
+#define ASSH_BOP_SET(dst, val, src, condid)                 \
+  ASSH_BOP_FMT4(ASSH_BIGNUM_OP_SET, condid, dst, val, src)
 
 /** @mgroup{Bytecode instructions}
     @internal This instruction initializes a big number from a 20 bits

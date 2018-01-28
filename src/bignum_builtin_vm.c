@@ -768,10 +768,9 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           break;
         }
 
-        case ASSH_BIGNUM_OP_TEST: {
+        case ASSH_BIGNUM_OP_TEST:
+        case ASSH_BIGNUM_OP_SET: {
           struct assh_bignum_s *src1 = args[ob];
-          uint8_t cond_mask = (1 << oa);
-          cond &= ~cond_mask;
           size_t b = oc;
           assert(!src1->mt_num);
           if (od != ASSH_BOP_NOREG)
@@ -781,10 +780,22 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
               b -= oc;
             }
           assert(b < src1->bits);
-          assh_bnword_t *n = src1->n;
-          cond |= ((n[b / ASSH_BIGNUM_W] >> (b % ASSH_BIGNUM_W)) & 1) << oa;
-          cond_secret &= ~cond_mask;
-          cond_secret |= src1->secret << oa;
+          assh_bnword_t *n = (assh_bnword_t*)src1->n + b / ASSH_BIGNUM_W;
+
+          if (op == ASSH_BIGNUM_OP_SET)
+            {
+              assh_bnword_t s = (assh_bnword_t)((cond >> oa) & 1) << (b % ASSH_BIGNUM_W);
+              assh_bnword_t m = (assh_bnword_t)1 << (b % ASSH_BIGNUM_W);
+              *n = (*n & ~m) | (s & m);
+              src1->secret |= (cond_secret >> oa) & 1;
+            }
+          else
+            {
+              uint8_t s = ((*n >> (b % ASSH_BIGNUM_W)) & 1) << oa;
+              uint8_t m = 1 << oa;
+              cond = (cond & ~m) | (cond & s);
+              cond_secret = (cond_secret & ~m) | (src1->secret << oa);
+            }
           break;
         }
 
