@@ -35,22 +35,25 @@ assh_bignum_realloc(struct assh_context_s *c,
   bn->secret = secret;
   secret |= bn->secure;
 
-  enum assh_alloc_type_e type = secret
-    ? ASSH_ALLOC_SECUR : ASSH_ALLOC_INTERNAL;
-  size_t size = assh_bignum_words(bn->bits) * sizeof(assh_bnword_t);
+  if (!bn->tmp)
+    {
+      enum assh_alloc_type_e type = secret
+        ? ASSH_ALLOC_SECUR : ASSH_ALLOC_INTERNAL;
+      size_t size = assh_bignum_words(bn->bits) * sizeof(assh_bnword_t);
 
-  if (bn->n != NULL && bn->storage != secret)
-    {
-      void *new;
-      ASSH_RET_ON_ERR(assh_alloc(c, size, type, &new));
-      if (perserve)
-        memcpy(new, bn->n, size);
-      assh_free(c, bn->n);
-      bn->n = new;
-    }
-  else if (bn->n == NULL)
-    {
-      ASSH_RET_ON_ERR(assh_realloc(c, &bn->n, size, type));
+      if (bn->n != NULL && bn->storage != secret)
+        {
+          void *new;
+          ASSH_RET_ON_ERR(assh_alloc(c, size, type, &new));
+          if (perserve)
+            memcpy(new, bn->n, size);
+          assh_free(c, bn->n);
+          bn->n = new;
+        }
+      else if (bn->n == NULL)
+        {
+          ASSH_RET_ON_ERR(assh_realloc(c, &bn->n, size, type));
+        }
     }
 
   bn->storage = secret;
@@ -132,10 +135,6 @@ static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_builtin_convert)
           ASSH_RET_IF_TRUE(dstn->bits < sizeof(uintptr_t) * 8, ASSH_ERR_NUM_OVERFLOW);
           ASSH_RET_ON_ERR(assh_bignum_realloc(c, dstn, secret, 0));
           ASSH_RET_ON_ERR(assh_bignum_from_uint(dstn, (uintptr_t)src));
-          break;
-
-        case ASSH_BIGNUM_SIZE:
-          dstn->bits = b;
           break;
 
         default:
@@ -237,17 +236,16 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
   struct assh_bignum_s tmp[tlen];
   struct assh_bignum_mt_s mt[mlen];
 
-  memset(tmp, 0, sizeof(tmp));
-
   for (i = j = k = 0; i < flen; i++)
     switch (format[i])
       {
       case ASSH_BIGNUM_TEMP:
+        assh_bignum_init(c, &tmp[j], 0);
         args[i] = &tmp[j];
         j++;
         break;
       case ASSH_BIGNUM_MT:
-        mt[k].mod.n = NULL;
+        assh_bignum_init(c, &mt[k].mod, 0);
         args[i] = &mt[k];
         k++;
         break;
@@ -261,6 +259,93 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
       }
       default:
         args[i] = va_arg(ap, void *);
+      }
+
+  size_t scratch_size = 0;
+
+  while (1)
+    {
+      uint32_t opc = ops[pc];
+      enum assh_bignum_opcode_e op = opc >> 26;
+      uint_fast8_t oa = (opc >> 20) & 0x3f;
+      uint_fast8_t ob = (opc >> 14) & 0x3f;
+      uint_fast8_t oc = (opc >> 6) & 0xff;
+      uint_fast8_t od = opc & 0x3f;
+
+      switch (op)
+        {
+          size_t b, i, j;
+
+        case ASSH_BIGNUM_OP_SIZE:
+          j = oa;
+          goto op_size;
+        case ASSH_BIGNUM_OP_SIZER:
+          j = oc;
+        op_size:
+          pc++;
+
+          ASSH_RET_ON_ERR(assh_bignum_size_of_data(format[ob], args[ob],
+                                                NULL, NULL, &b));
+
+          if (op == ASSH_BIGNUM_OP_SIZE)
+            b = ((od >= 32) ? (b << (od - 32))
+                 : (b >> (32 - od))) + (intptr_t)(int8_t)oc;
+
+          for (i = oa; i <= j; i++)
+            {
+              struct assh_bignum_s *dst = args[i];
+              struct assh_bignum_mt_s *mt = args[i];
+
+              switch (format[i])
+                {
+                case ASSH_BIGNUM_TEMP:
+                  dst->bits = b;
+                  dst->n = (void*)(scratch_size * sizeof(assh_bnword_t));
+                  scratch_size += assh_bignum_words(b);
+                  dst->tmp = 1;
+                  break;
+
+                case ASSH_BIGNUM_MT:
+                  mt->max_bits = b;
+                  dst->n = (void*)(scratch_size * sizeof(assh_bnword_t));
+                  scratch_size += 3 * assh_bignum_words(b) + 1;
+                  dst->tmp = 1;
+                  break;
+
+                case ASSH_BIGNUM_NATIVE:
+                  dst->bits = b;
+                  if (dst->n != NULL)
+                    {
+                      assh_free(c, dst->n);
+                      dst->n = NULL;
+                    }
+                  break;
+
+                default:
+                  ASSH_UNREACHABLE();
+                }
+            }
+
+          break;
+
+        default:
+          goto size_done;
+        }
+    }
+ size_done:;
+
+  ASSH_SCRATCH_ALLOC(c, assh_bnword_t, sc_,
+		     scratch_size,
+		     ASSH_ERRSV_CONTINUE, err_);
+
+  for (i = 0; i < flen; i++)
+    switch (format[i])
+      {
+      case ASSH_BIGNUM_TEMP:
+      case ASSH_BIGNUM_MT:;
+        struct assh_bignum_s *dst = args[i];
+        dst->n += (uintptr_t)sc_;
+        break;
       }
 
   while (1)
@@ -310,39 +395,9 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           break;
         }
 
-        case ASSH_BIGNUM_OP_SIZE: {
-          size_t b;
-          ASSH_JMP_ON_ERR(assh_bignum_size_of_data(format[ob], args[ob],
-                                                NULL, NULL, &b), err_sc);
-          struct assh_bignum_s *dst = args[oa];
-          dst->bits = ((od >= 32) ? (b << (od - 32))
-                       : (b >> (32 - od))) + (intptr_t)(int8_t)oc;
-
-          if (dst->n != NULL)
-            {
-              assh_free(c, dst->n);
-              dst->n = NULL;
-            }
-          break;
-        }
-
-        case ASSH_BIGNUM_OP_SIZER: {
-          size_t b, i;
-          ASSH_JMP_ON_ERR(assh_bignum_size_of_data(format[ob], args[ob],
-                                                NULL, NULL, &b), err_sc);
-          for (i = oa; i <= oc; i++) 
-            {
-              struct assh_bignum_s *dst = args[i];
-              dst->bits = b;
-
-              if (dst->n != NULL)
-                {
-                  assh_free(c, dst->n);
-                  dst->n = NULL;
-                }
-            }
-          break;
-        }
+        case ASSH_BIGNUM_OP_SIZE:
+        case ASSH_BIGNUM_OP_SIZER:
+          ASSH_UNREACHABLE();
 
         case ASSH_BIGNUM_OP_SUB:
         case ASSH_BIGNUM_OP_ADD: {
@@ -886,13 +941,8 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
     assh_free(c, sc.n_s);
 
   /* release numbers */
-  for (i = 0; i < tlen; i++)
-    if (tmp[i].n != NULL)
-      assh_free(c, tmp[i].n);
-
-  for (i = 0; i < mlen; i++)
-    if (mt[i].mod.n != NULL)
-      assh_free(c, mt[i].mod.n);
+  ASSH_SCRATCH_FREE(c, sc_);
+ err_:
 
   return err;
 }

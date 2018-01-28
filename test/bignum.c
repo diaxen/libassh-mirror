@@ -299,9 +299,9 @@ assh_error_t test_ops()
 
     static const assh_bignum_op_t bytecode_cmp1[] = {
       ASSH_BOP_SIZE(	A,	S			),
-      ASSH_BOP_MOVE(	A,	A_mpint			),
-
       ASSH_BOP_SIZE(	B,	S			),
+
+      ASSH_BOP_MOVE(	A,	A_mpint			),
       ASSH_BOP_MOVE(	B,	B_mpint			),
 
       ASSH_BOP_CMPEQ(     A,      B,	0        	),
@@ -322,9 +322,9 @@ assh_error_t test_ops()
 
     static const assh_bignum_op_t bytecode_cmp2[] = {
       ASSH_BOP_SIZE(	A,	S			),
-      ASSH_BOP_MOVE(	A,	A_mpint			),
-
       ASSH_BOP_SIZE(	B,	S			),
+
+      ASSH_BOP_MOVE(	A,	A_mpint			),
       ASSH_BOP_MOVE(	B,	B_mpint			),
 
       ASSH_BOP_CMPEQ(     A,      B,	0     		),
@@ -335,9 +335,9 @@ assh_error_t test_ops()
 
     static const assh_bignum_op_t bytecode_cmp3[] = {
       ASSH_BOP_SIZE(	A,	S			),
-      ASSH_BOP_MOVE(	A,	A_mpint			),
-
       ASSH_BOP_SIZE(	B,	S			),
+
+      ASSH_BOP_MOVE(	A,	A_mpint			),
       ASSH_BOP_MOVE(	B,	B_mpint			),
 
       ASSH_BOP_CMPLT(     B,      A,	0      		),
@@ -403,9 +403,10 @@ assh_error_t test_ops()
     };
 
     static const assh_bignum_op_t bytecode_addm[] = {
+      ASSH_BOP_SIZE(	M,	R		),
+      ASSH_BOP_SIZE(	MT,	R		),
       ASSH_BOP_MOVE(	A,	A_mpint		),
       ASSH_BOP_MOVE(	B,	B_mpint		),
-      ASSH_BOP_SIZE(	M,	R		),
       ASSH_BOP_MOVE(	M,	M_mpint		),
       ASSH_BOP_MTINIT(	MT,     M               ),
       ASSH_BOP_MTTO(    A,      A,      A,      MT      ),
@@ -417,9 +418,10 @@ assh_error_t test_ops()
     };
 
     static const assh_bignum_op_t bytecode_subm[] = {
+      ASSH_BOP_SIZE(	M,	R		),
+      ASSH_BOP_SIZE(	MT,	R		),
       ASSH_BOP_MOVE(	A,	A_mpint		),
       ASSH_BOP_MOVE(	B,	B_mpint		),
-      ASSH_BOP_SIZE(	M,	R		),
       ASSH_BOP_MOVE(	M,	M_mpint		),
       ASSH_BOP_MTINIT(	MT,     M               ),
       ASSH_BOP_MTTO(    A,      A,      A,      MT      ),
@@ -431,9 +433,10 @@ assh_error_t test_ops()
     };
 
     static const assh_bignum_op_t bytecode_mulm_mt[] = {
+      ASSH_BOP_SIZE(	M,	R		),
+      ASSH_BOP_SIZE(	MT,	R		),
       ASSH_BOP_MOVE(	A,	A_mpint		),
       ASSH_BOP_MOVE(	B,	B_mpint		),
-      ASSH_BOP_SIZE(	M,	R		),
       ASSH_BOP_MOVE(	M,	M_mpint		),
       ASSH_BOP_MTINIT(	MT,     M               ),
       ASSH_BOP_MTTO(    A,      A,      A,      MT      ),
@@ -447,8 +450,9 @@ assh_error_t test_ops()
     };
 
     static const assh_bignum_op_t bytecode_modinv_mt[] = {
-      ASSH_BOP_MOVE(	A,	A_mpint		),
       ASSH_BOP_SIZE(	M,	R		),
+      ASSH_BOP_SIZE(	MT,	R		),
+      ASSH_BOP_MOVE(	A,	A_mpint		),
       ASSH_BOP_MOVE(	M,	M_mpint		),
       ASSH_BOP_MTINIT(	MT,     M               ),
       ASSH_BOP_MTTO(    A,      A,      A,      MT      ),
@@ -467,9 +471,9 @@ assh_error_t test_ops()
 
     static const assh_bignum_op_t bytecode_nextprime[] = {
       ASSH_BOP_SIZE(	M,	A		),
+      ASSH_BOP_SIZE(	T,	A		),
       ASSH_BOP_UINT(	M,	0		),
 
-      ASSH_BOP_SIZE(	T,	A		),
       ASSH_BOP_UINT(	T,	1		),
 
       ASSH_BOP_MOVE(	A,	A_mpint		),
@@ -968,6 +972,7 @@ assh_error_t test_add_sub(unsigned int count)
         ASSH_BOP_SIZE(  A,      S                       ),
         ASSH_BOP_SIZE(  B,      S                       ),
         ASSH_BOP_SIZE(  C,      S                       ),
+        ASSH_BOP_SIZEM( D,      S,      0,      2       ),
 
         ASSH_BOP_RAND(  A,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
                                 ASSH_PRNG_QUALITY_WEAK  ),
@@ -1002,7 +1007,6 @@ assh_error_t test_add_sub(unsigned int count)
         ASSH_BOP_ADD(   B,      A,      B               ),
         ASSH_BOP_ADD(   B,      B,      A               ),
 
-        ASSH_BOP_SIZEM( D,      S,      0,      2       ),
         ASSH_BOP_UINT(  C,      5                       ),
         ASSH_BOP_MUL(   D,      A,      C               ),
 	ASSH_BOP_PRINT( A,      'A'                     ),
@@ -1091,9 +1095,8 @@ assh_error_t test_move(unsigned int count)
       assh_store_u32(mpb, s);
 
       static const assh_bignum_op_t bytecode[] = {
-	ASSH_BOP_PRINT( A,      'A'                     ),
-
         ASSH_BOP_SIZE(  A,      A_mpint                 ),
+
 	ASSH_BOP_PRINT( A,      'A'                     ),
 
         ASSH_BOP_MOVE(  A,      A_mpint                 ),
@@ -1130,11 +1133,11 @@ assh_error_t test_modinv(unsigned int count)
       static const assh_bignum_op_t bytecode[] = {
 
         ASSH_BOP_SIZE(  P,      P_mpint                 ),
-        ASSH_BOP_MOVE(  P,      P_mpint                 ),
-
         ASSH_BOP_SIZE(  B,      S                       ),
         ASSH_BOP_SIZE(  C,      P                       ),
         ASSH_BOP_SIZE(  D,      P                       ),
+
+        ASSH_BOP_MOVE(  P,      P_mpint                 ),
 
         ASSH_BOP_RAND(  B,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
                                 ASSH_PRNG_QUALITY_WEAK  ),
@@ -1178,12 +1181,13 @@ assh_error_t test_mt(unsigned int count)
 
       static const assh_bignum_op_t bytecode[] = {
         ASSH_BOP_SIZE(  P,      P_mpint                 ),
-        ASSH_BOP_MOVE(  P,      P_mpint                 ),
-
+        ASSH_BOP_SIZE(	MT,	P               	),
         ASSH_BOP_SIZE(  A,      P                       ),
         ASSH_BOP_SIZE(  B,      P                       ),
         ASSH_BOP_SIZE(  R,      P                       ),
         ASSH_BOP_SIZE(  R2,     P                       ),
+
+        ASSH_BOP_MOVE(  P,      P_mpint                 ),
 
         ASSH_BOP_RAND(  A,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
                                 ASSH_PRNG_QUALITY_WEAK  ),
@@ -1229,8 +1233,7 @@ assh_error_t test_expmod(unsigned int count)
 
       static const assh_bignum_op_t bytecode[] = {
         ASSH_BOP_SIZE(  P,      P_mpint                 ),
-        ASSH_BOP_MOVE(  P,      P_mpint                 ),
-
+        ASSH_BOP_SIZE(  MT,     P                       ),
         ASSH_BOP_SIZE(  A,      P                       ),
         ASSH_BOP_SIZE(  IA,     P                       ),
         ASSH_BOP_SIZE(  X,      P                       ),
@@ -1240,6 +1243,8 @@ assh_error_t test_expmod(unsigned int count)
         ASSH_BOP_SIZE(  R3,     P                       ),
         ASSH_BOP_SIZE(  R4,     P                       ),
         ASSH_BOP_SIZE(  R5,     P                       ),
+
+        ASSH_BOP_MOVE(  P,      P_mpint                 ),
         ASSH_BOP_MTINIT(MT,     P                       ),
 
         ASSH_BOP_RAND(  A,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,

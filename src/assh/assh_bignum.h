@@ -124,6 +124,8 @@ struct assh_bignum_s
   uint16_t mt_num:1;
   /** Associated montgomery context id */
   uint16_t mt_id:6;
+  /** This is a temporary number stored in vm scratch buffer */
+  uint16_t tmp:1;
   /** Number data */
   void *n;
 };
@@ -288,6 +290,7 @@ assh_bignum_init(struct assh_context_s *c,
   bn->secure = 0;
   bn->mt_mod = 0;
   bn->mt_num = 0;
+  bn->tmp = 0;
   bn->n = NULL;
 }
 
@@ -373,7 +376,8 @@ enum assh_bignum_opcode_e
 #define ASSH_BOP_NOREG  63
 
 /** @mgroup{Bytecode instructions}
-    @internal This instruction terminates execution of the bytecode. */
+    @internal This instruction terminates execution of the bytecode.
+    It must be used only once as the last instruction of the program. */
 #define ASSH_BOP_END() \
   ASSH_BOP_FMT3(ASSH_BIGNUM_OP_END, 0, 0, 0)
 

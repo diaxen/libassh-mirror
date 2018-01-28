@@ -37,19 +37,10 @@ assh_bignum_mt_init(struct assh_context_s *c,
   /* check modulus is odd */
   ASSH_RET_IF_TRUE(!(*(assh_bnword_t*)mod->n & 1), ASSH_ERR_NUM_OVERFLOW);
 
+  assert(mod->bits <= mt->max_bits);
+
   size_t ml = assh_bignum_words(mod->bits);
-
   assh_bnword_t *m = mt->mod.n;
-
-  if (m == NULL || mt->mod.bits < mod->bits)
-    {
-      if (m != NULL)
-        assh_free(c, m);
-      mt->mod.n = NULL;
-      ASSH_RET_ON_ERR(assh_alloc(c, (ml * 3 + 1) * sizeof(assh_bnword_t),
-                              ASSH_ALLOC_INTERNAL, (void**)&m));
-      mt->mod.n = m;
-    }
 
   /* copy the modulus */
   memcpy(m, mod->n, ml * sizeof(assh_bnword_t));
@@ -67,7 +58,7 @@ assh_bignum_mt_init(struct assh_context_s *c,
     r2[i] = 0;
   r2[i] = 1;
 
-  ASSH_JMP_ON_ERR(assh_bignum_div_euclidean(r2, ml * 2 + 1, NULL, 0, m, ml), err_);
+  ASSH_RET_ON_ERR(assh_bignum_div_euclidean(r2, ml * 2 + 1, NULL, 0, m, ml));
 
   /* compute 1 in montgomery representation */
   assh_bnword_t *r1 = m + ml * 2;
@@ -76,16 +67,9 @@ assh_bignum_mt_init(struct assh_context_s *c,
     r1[i] = 0;
   r1[i] = 1;
 
-  ASSH_JMP_ON_ERR(assh_bignum_div_euclidean(r1, ml + 1, NULL, 0, m, ml), err_);
-
-  //  assh_hexdump("one", one, ml * sizeof(assh_bnword_t));
+  ASSH_RET_ON_ERR(assh_bignum_div_euclidean(r1, ml + 1, NULL, 0, m, ml));
 
   return ASSH_OK;
-
- err_:
-  mt->mod.n = NULL;
-  assh_free(c, m);
-  return err;
 }
 
 void

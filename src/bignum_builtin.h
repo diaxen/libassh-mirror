@@ -97,6 +97,8 @@ struct assh_bignum_mt_s
 {
   struct assh_bignum_s mod;
   assh_bnword_t n0;
+  /* maximum bits */
+  uint16_t max_bits;
 };
 
 ASSH_FIRST_FIELD_ASSERT(assh_bignum_mt_s, mod);
