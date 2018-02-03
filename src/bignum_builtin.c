@@ -387,3 +387,16 @@ assh_bignum_rand(struct assh_context_s *c,
   return ASSH_OK;
 }
 
+uint_fast32_t assh_bignum_bitlen(const struct assh_bignum_s *a)
+{
+  if (a->secret)
+    return a->bits;
+
+  uint_fast32_t j = assh_bignum_words(a->bits);
+  const assh_bnword_t *an = a->n;
+  assh_bnword_t t;
+  while (j && !(t = an[j - 1]))
+    j--;
+
+  return j ? j * ASSH_BIGNUM_W - assh_bn_clz(t) : 0;
+}

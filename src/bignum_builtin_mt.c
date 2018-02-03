@@ -349,23 +349,14 @@ assh_bignum_expmod_mt(struct assh_context_s *ctx,
   assh_bnword_t *tmp = sq + ml;
   assh_bnword_t *bn = b->n;
   assh_bnword_t *rn = r->n;
-  uint_fast32_t i = 0, j = b->bits;
+  uint_fast32_t i = 0, j = assh_bignum_bitlen(b);
 
   memcpy(sq, a->n, ml * sizeof(assh_bnword_t));
+  if (!j)
+    return ASSH_OK;
 
   assh_bnword_t *r1 = (assh_bnword_t*)mt->mod.n + 2 * ml;
   memcpy(rn, r1, ml * sizeof(assh_bnword_t));
-
-  if (!b->secret)
-    {
-      assh_bnword_t t;
-      j = assh_bignum_words(b->bits);
-      while (j && !(t = bn[j - 1]))
-        j--;
-      if (!j)
-        return ASSH_OK;
-      j = j * ASSH_BIGNUM_W - assh_bn_clz(t);
-    }
 
   while (1)
     {

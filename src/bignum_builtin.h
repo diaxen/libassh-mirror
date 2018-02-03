@@ -181,6 +181,10 @@ assh_bool_t assh_bignum_eq_uint(const assh_bnword_t a,
 assh_bool_t assh_bignum_eq(const assh_bnword_t *a, size_t al,
 			   const assh_bnword_t *b, size_t bl);
 
+/** @This returns the effective bit length of the number. For secret
+    numbers, the bit length of the container is returned instead. */
+uint_fast32_t assh_bignum_bitlen(const struct assh_bignum_s *a);
+
 enum assh_bignum_cmp_result_e {
   ASSH_BIGNUM_CMP_GT = 1,
   ASSH_BIGNUM_CMP_LT = 2,
