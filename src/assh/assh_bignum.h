@@ -487,7 +487,13 @@ enum assh_bignum_opcode_e
 
 /** @mgroup{Bytecode instructions}
     @internal This instruction computes @tt {dst2 = src1 % src2} and
-    @tt {dst1 = src1 / src2}. @see #ASSH_BOP_MOD  @see #ASSH_BOP_DIV */
+    @tt {dst1 = src1 / src2}.
+
+    When a secret number is involved, the constant time algorithm used
+    only yields a correct result if the most significant bit of src2
+    is set.
+
+    @see #ASSH_BOP_MOD  @see #ASSH_BOP_DIV */
 #define ASSH_BOP_DIVMOD(dstq, dstr, src1, src2)                 \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_DIV, dstq, dstr, src1, src2)
 

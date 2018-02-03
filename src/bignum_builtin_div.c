@@ -178,6 +178,73 @@ assh_bignum_div_euclidean(assh_bnword_t * __restrict__ r,
   return ASSH_OK;
 }
 
+static void
+assh_bignum_div_euclidean_ct(assh_bnword_t * __restrict__ rn,
+                             uint_fast32_t r_len,
+                             assh_bnword_t * __restrict__ dn,
+                             uint_fast32_t d_len,
+                             const assh_bnword_t * __restrict__ bn,
+                             uint_fast32_t b_len, int_fast32_t bitlen_diff)
+{
+  assh_bnword_t s = 0;
+  assh_bnlong_t t;
+  uint_fast32_t i, k;
+
+  if (bitlen_diff < 0)
+    return;
+
+  /* This is a constant time euclidean division algorithm which shifts
+     the divisor by a single bit per iteration. It works by always
+     subtracting the divisor then correcting the remainder on the next
+     iteration if it became negative. */
+
+  for (k = bitlen_diff + 1; k--; )
+    {
+      /* if r >= 0
+          r = r - (b << k)
+        else
+          r = r + (b << k) */
+
+      s = ~s;    /* chose add or sub depending on the sign of last result */
+
+      t = (assh_bnlong_t)(s & 1) << ASSH_BIGNUM_W;
+      uint_fast32_t j = k / ASSH_BIGNUM_W;
+      assh_bnword_t o = 0;
+
+      for (i = 0; i < b_len; i++, j++)
+        {
+          assh_bnword_t x = bn[i];
+          assh_bnword_t b = ((assh_bnlong_t)x << (k % ASSH_BIGNUM_W)) |
+                             (assh_bnlong_t)o >> (ASSH_BIGNUM_W - k % ASSH_BIGNUM_W);
+          rn[j] = t = (assh_bnlong_t)rn[j] + (b ^ s) + (t >> ASSH_BIGNUM_W);
+          o = x;
+        }
+
+      o = (assh_bnlong_t)o >> (ASSH_BIGNUM_W - k % ASSH_BIGNUM_W);
+      for (; j < r_len; j++)
+        {
+          rn[j] = t = (assh_bnlong_t)rn[j] + (o ^ s) + (t >> ASSH_BIGNUM_W);
+          o = 0;
+        }
+
+      /* sign of r */
+      s = (t >> ASSH_BIGNUM_W) - 1;
+
+      /* update the quotient */
+      if (dn)
+        dn[k / ASSH_BIGNUM_W] |= ((s + 1) << (k % ASSH_BIGNUM_W));
+    }
+
+  /* perform final correction
+     if r < 0
+       r = r + b */
+  t = 0;
+  for (i = 0; i < b_len; i++)
+    rn[i] = t = (assh_bnlong_t)rn[i] + (bn[i] & s) + (t >> ASSH_BIGNUM_W);
+  for (; i < r_len; i++)
+    rn[i] = t = (assh_bnlong_t)rn[i] + (t >> ASSH_BIGNUM_W);
+}
+
 assh_error_t
 assh_bignum_div(struct assh_context_s *ctx,
                 struct assh_bignum_scratch_s *sc,
@@ -189,7 +256,6 @@ assh_bignum_div(struct assh_context_s *ctx,
   assh_error_t err;
 
   assert(r != d && a != d && b != d && b != r);
-  assert(!a->secret && !b->secret);
   assert(a->bits >= b->bits);
   assert(d == NULL || d->bits >= a->bits);
 
@@ -224,7 +290,11 @@ assh_bignum_div(struct assh_context_s *ctx,
       memset(dn, 0, dl * sizeof(assh_bnword_t));
     }
 
-  ASSH_RET_ON_ERR(assh_bignum_div_euclidean(rn, rl, dn, dl, b->n, bl));
+  if (a->secret || b->secret)
+    assh_bignum_div_euclidean_ct(rn, rl, dn, dl, b->n, bl,
+                                 a->bits - assh_bignum_bitlen(b));
+  else
+    ASSH_RET_ON_ERR(assh_bignum_div_euclidean(rn, rl, dn, dl, b->n, bl));
 
   if (r != NULL && r->bits < a->bits)
     memcpy(r->n, rn, assh_bignum_words(r->bits) * sizeof(assh_bnword_t));

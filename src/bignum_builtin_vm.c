@@ -529,7 +529,6 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           struct assh_bignum_s *src1 = args[oc], *src2 = args[od];
           assert(!src2->mt_num);
           assert(src1->mt_num == src2->mt_mod);
-          assert(src2->mt_mod || (!src1->secret && !src2->secret));
           if (oa != ASSH_BOP_NOREG)
             {
               assert(!src2->mt_mod);
