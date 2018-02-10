@@ -219,7 +219,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
 
   static const assh_bignum_op_t bytecode[] = {
     ASSH_BOP_SIZE(      T0,     Q                       ),
-    ASSH_BOP_SIZER(     T1,     T3,     P               ),
+    ASSH_BOP_SIZER(     T1,     MT,     P               ),
 
     /* generate Q */
     ASSH_BOP_UINT(      T0,     1                       ),
@@ -313,7 +313,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
   };
 
   static const assh_bignum_op_t bytecode1[] = {
-    ASSH_BOP_SIZER(     T1,     T2,     P               ),
+    ASSH_BOP_SIZER(     T1,     MT,     P               ),
 
     /* check q prime with probability 1e-6 */
     ASSH_BOP_TEST(      Q,      1,      Q,      0       ),

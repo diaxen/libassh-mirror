@@ -104,8 +104,7 @@ static assh_error_t assh_kex_dh_client_send_expmod(struct assh_session_s *s)
   };
 
   static const assh_bignum_op_t bytecode[] = {
-    ASSH_BOP_SIZE(      G,      G_n		        ),
-    ASSH_BOP_SIZE(      P,      G_n		        ),
+    ASSH_BOP_SIZER(     G,      MT,     G_n	        ),
 
     ASSH_BOP_MOVE(      G,      G_mpint			),
     ASSH_BOP_MOVE(      P,      P_mpint			),
@@ -182,7 +181,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_dh_host_key_lookup_done)
   };
 
   static const assh_bignum_op_t bytecode[] = {
-    ASSH_BOP_SIZER(     G,      K,	G_n		),
+    ASSH_BOP_SIZER(     G,      MT,	G_n		),
 
     ASSH_BOP_MOVE(      F,      F_mpint			),
     ASSH_BOP_MOVE(      G,      G_mpint			),
@@ -320,7 +319,7 @@ static assh_error_t assh_kex_dh_server_wait_e(struct assh_session_s *s,
   };
 
   static const assh_bignum_op_t bytecode[] = {
-    ASSH_BOP_SIZER(     F,      T,	G_n		),
+    ASSH_BOP_SIZER(     F,      MT,	G_n		),
 
     ASSH_BOP_MOVE(      G,      G_mpint         	),
     ASSH_BOP_MOVE(      P,      P_mpint         	),

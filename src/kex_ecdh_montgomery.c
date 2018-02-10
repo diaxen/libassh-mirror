@@ -138,7 +138,7 @@ assh_montgomery_point_mul(struct assh_session_s *s, uint8_t *result,
 
   static const assh_bignum_op_t bytecode[] = {
 
-    ASSH_BOP_SIZER(     X2,     SC,    S                ),
+    ASSH_BOP_SIZER(     X2,     MT,    S                ),
 
     /* init */
     ASSH_BOP_MOVE(      T0,     P_mpint                 ),

@@ -188,12 +188,12 @@ static assh_error_t assh_kex_dh_gex_client_wait_group(struct assh_session_s *s,
   {
     G_mpint, P_mpint, E_mpint,
     G, P, E, X,
-    T1, T2, Q, G_n, MT
+    T1, T2, Q, MT, G_n
   };
 
   static const assh_bignum_op_t bytecode[] = {
 
-    ASSH_BOP_SIZER(     G,      Q,      G_n            	),
+    ASSH_BOP_SIZER(     G,      MT,     G_n            	),
 
     ASSH_BOP_MOVE(      G,      G_mpint                 ),
     ASSH_BOP_MOVE(      P,      P_mpint                 ),
@@ -240,7 +240,7 @@ static assh_error_t assh_kex_dh_gex_client_wait_group(struct assh_session_s *s,
     ASSH_BOP_END(),
   };
 
-  ASSH_JMP_ON_ERR(assh_bignum_bytecode(s->ctx, 0, bytecode, "MMMNNNNTTTsm",
+  ASSH_JMP_ON_ERR(assh_bignum_bytecode(s->ctx, 0, bytecode, "MMMNNNNTTTms",
                                     /* M */ g_str, p_str, e_str,
                                     /* N */ &pv->gn, &pv->pn, &pv->en, &pv->xn,
                                     /* S */ n), err_p);
@@ -304,7 +304,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_dh_gex_host_key_lookup_done)
     ASSH_BOP_PRINT(     P,      'P'             	),
 #endif
 
-    ASSH_BOP_SIZER(     F,      K,      P       	),
+    ASSH_BOP_SIZER(     F,      MT,      P       	),
 
     ASSH_BOP_MOVE(      F,      F_mpint         	),
 
@@ -605,7 +605,7 @@ static assh_error_t assh_kex_dh_gex_server_wait_e(struct assh_session_s *s,
   static const assh_bignum_op_t bytecode[] = {
 
     ASSH_BOP_SIZE(      X,      X_n                     ),
-    ASSH_BOP_SIZER(     F,      T,      P               ),
+    ASSH_BOP_SIZER(     F,      MT,     P               ),
 
     ASSH_BOP_MOVE(      E,      E_mpint                 ),
 

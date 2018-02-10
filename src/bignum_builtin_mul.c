@@ -112,9 +112,28 @@ assh_bignum_karatsuba(assh_bnword_t * __restrict__ r,
 }
 #endif
 
+size_t
+assh_bignum_mul_sc_size(const struct assh_bignum_s *r,
+                        const struct assh_bignum_s *a,
+                        const struct assh_bignum_s *b)
+{
+  size_t rl = assh_bignum_words(r->bits);
+  size_t al = assh_bignum_words(a->bits);
+  size_t bl = assh_bignum_words(b->bits);
+  size_t l = al + bl;
+  size_t sl = rl < l ? l : 0;
+
+#if !defined(__OPTIMIZE_SIZE__)
+  if (al == bl && !(al & 1))
+    sl += ASSH_KARA_SCRATCH(al);
+#endif
+
+  return sl;
+}
+
 assh_error_t
 assh_bignum_mul(struct assh_context_s *ctx,
-                struct assh_bignum_scratch_s *sc,
+                assh_bnword_t *s,
                 struct assh_bignum_s *r,
                 const struct assh_bignum_s *a,
                 const struct assh_bignum_s *b)
@@ -130,13 +149,11 @@ assh_bignum_mul(struct assh_context_s *ctx,
   size_t bl = assh_bignum_words(b->bits);
   size_t l = al + bl;
   size_t sl = rl < l ? l : 0;
-  assh_bnword_t *s, *x = r->n;
+  assh_bnword_t *x = r->n;
 
 #if !defined(__OPTIMIZE_SIZE__)
   if (al == bl && !(al & 1))
     {
-      ASSH_RET_ON_ERR(assh_bignum_scratch_expand(ctx, &s, sc, sl
-                     + ASSH_KARA_SCRATCH(al), r->secret | a->secure | b->secure));
       if (sl)
         x = s;
       assh_bignum_karatsuba(x, a->n, b->n, s + sl, al);
@@ -145,11 +162,7 @@ assh_bignum_mul(struct assh_context_s *ctx,
 #endif
     {
       if (sl)
-        {
-          ASSH_RET_ON_ERR(assh_bignum_scratch_expand(ctx, &s, sc, sl,
-                                                  r->secret | a->secure | b->secure));
-          x = s;
-        }
+        x = s;
       assh_bignum_school_mul(x, a->n, al, b->n, bl);
     }
 
@@ -161,9 +174,25 @@ assh_bignum_mul(struct assh_context_s *ctx,
   return ASSH_OK;
 }
 
+size_t
+assh_bignum_mul_mod_sc_size(const struct assh_bignum_s *a,
+                            const struct assh_bignum_s *b)
+{
+  size_t al = assh_bignum_words(a->bits);
+  size_t bl = assh_bignum_words(b->bits);
+  size_t l = al + bl; /* result size */
+
+#if !defined(__OPTIMIZE_SIZE__)
+  if (al == bl && !(al & 1))
+    l += ASSH_KARA_SCRATCH(al);
+#endif
+
+  return l;
+}
+
 assh_error_t
 assh_bignum_mul_mod(struct assh_context_s *ctx,
-                    struct assh_bignum_scratch_s *sc,
+                    assh_bnword_t *x,
                     struct assh_bignum_s *r,
                     const struct assh_bignum_s *a,
                     const struct assh_bignum_s *b,
@@ -182,19 +211,8 @@ assh_bignum_mul_mod(struct assh_context_s *ctx,
 
   size_t l = al + bl; /* result size */
 
-  size_t scratch_len = l;
 #if !defined(__OPTIMIZE_SIZE__)
-  assh_bool_t use_kara = al == bl && !(al & 1);
-  if (use_kara)
-    scratch_len += ASSH_KARA_SCRATCH(al);
-#endif
-
-  assh_bnword_t *x;
-  ASSH_RET_ON_ERR(assh_bignum_scratch_expand(ctx, &x, sc, scratch_len,
-                                          a->secure | b->secure | m->secure));
-
-#if !defined(__OPTIMIZE_SIZE__)
-  if (use_kara)
+  if (al == bl && !(al & 1))
     assh_bignum_karatsuba(x, a->n, b->n, x + l, al);
   else
 #endif

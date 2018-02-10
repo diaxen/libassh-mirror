@@ -31,37 +31,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_bignum_scratch_expand(struct assh_context_s *c, assh_bnword_t **r,
-                           struct assh_bignum_scratch_s *sc,
-                           size_t words, assh_bool_t secure)
-{
-  assh_error_t err;
-
-  if (secure)
-    {
-      if (sc->words_s < words)
-        {
-          ASSH_RET_ON_ERR(assh_realloc(c, (void**)&sc->n_s,
-            words * sizeof(assh_bnword_t), ASSH_ALLOC_SECUR));
-          sc->words_s = words;
-        }
-      *r = sc->n_s;
-    }
-  else
-    {
-      if (sc->words < words)
-        {
-          ASSH_RET_ON_ERR(assh_realloc(c, (void**)&sc->n,
-            words * sizeof(assh_bnword_t), ASSH_ALLOC_INTERNAL));
-          sc->words = words;
-        }
-      *r = sc->n;
-    }
-
-  return ASSH_OK;
-}
-
 #ifdef CONFIG_ASSH_DEBUG
 void
 assh_bignum_dump(const assh_bnword_t *x, size_t l)

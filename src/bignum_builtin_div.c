@@ -245,9 +245,18 @@ assh_bignum_div_euclidean_ct(assh_bnword_t * __restrict__ rn,
     rn[i] = t = (assh_bnlong_t)rn[i] + (t >> ASSH_BIGNUM_W);
 }
 
+size_t
+assh_bignum_div_sc_size(const struct assh_bignum_s *r,
+                        const struct assh_bignum_s *a)
+{
+  if (r != NULL && r->bits >= a->bits)
+    return 0;
+  return assh_bignum_words(a->bits);
+}
+
 assh_error_t
 assh_bignum_div(struct assh_context_s *ctx,
-                struct assh_bignum_scratch_s *sc,
+                assh_bnword_t *s,
                 struct assh_bignum_s *r,
                 struct assh_bignum_s *d,
                 const struct assh_bignum_s *a,
@@ -272,8 +281,7 @@ assh_bignum_div(struct assh_context_s *ctx,
   else
     {
       rl = al;
-      ASSH_RET_ON_ERR(assh_bignum_scratch_expand(ctx, &rn, sc, rl,
-                                              a->secure | b->secure));
+      rn = s;
     }
 
   if (a->n != rn)
@@ -302,9 +310,15 @@ assh_bignum_div(struct assh_context_s *ctx,
   return ASSH_OK;
 }
 
+size_t
+assh_bignum_modinv_sc_size(const struct assh_bignum_s *m)
+{
+  return assh_bignum_words(m->bits) * 3;
+}
+
 assh_error_t
 assh_bignum_modinv(struct assh_context_s *ctx,
-                   struct assh_bignum_scratch_s *sc,
+                   assh_bnword_t *r,
                    struct assh_bignum_s *u,
                    const struct assh_bignum_s *a,
                    const struct assh_bignum_s *m)
@@ -319,10 +333,6 @@ assh_bignum_modinv(struct assh_context_s *ctx,
   size_t ul = assh_bignum_words(u->bits);
   size_t al = assh_bignum_words(a->bits);
   size_t ml = assh_bignum_words(m->bits);
-
-  assh_bnword_t *r;
-  ASSH_RET_ON_ERR(assh_bignum_scratch_expand(ctx, &r, sc, ml * 3,
-                                          a->secure | m->secure));
 
   assh_bnword_t * __restrict__ un = u->n;
   const assh_bnword_t * __restrict__ an = a->n;
@@ -379,9 +389,18 @@ assh_bignum_modinv(struct assh_context_s *ctx,
   return ASSH_OK;
 }
 
+size_t
+assh_bignum_gcd_sc_size(const struct assh_bignum_s *a,
+                        const struct assh_bignum_s *b)
+{
+  size_t al = assh_bignum_words(a->bits);
+  size_t bl = assh_bignum_words(b->bits);
+  return al > bl ? al : bl;
+}
+
 assh_error_t
 assh_bignum_gcd(struct assh_context_s *ctx,
-                struct assh_bignum_scratch_s *sc,
+                assh_bnword_t *s,
                 struct assh_bignum_s *g,
                 const struct assh_bignum_s *a,
                 const struct assh_bignum_s *b)
@@ -396,15 +415,12 @@ assh_bignum_gcd(struct assh_context_s *ctx,
   size_t bl = assh_bignum_words(b->bits);
 
   size_t l = al > bl ? al : bl;
-  assh_bnword_t *xr;
-
-  ASSH_RET_ON_ERR(assh_bignum_scratch_expand(ctx, &xr, sc, l,
-                                          a->secure | b->secure));
 
   assh_bnword_t * __restrict__ gn = g->n;
   const assh_bnword_t * __restrict__ an = a->n;
   const assh_bnword_t * __restrict__ bn = b->n;
 
+  assh_bnword_t *xr = s;
   assh_bnword_t *xp = gn;
 
   /* use largest buffer between scratch and result for the largest

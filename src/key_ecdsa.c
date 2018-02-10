@@ -273,7 +273,7 @@ assh_key_ecdsa_create(struct assh_context_s *c,
 
   static const assh_bignum_op_t bytecode[] = {
 
-    ASSH_BOP_SIZER(     X1,     T3,    SC               ),
+    ASSH_BOP_SIZER(     X1,     MT,    SC               ),
 
     ASSH_BOP_UINT(      T0,     1                       ),
     ASSH_BOP_MOVE(      T1,     N_raw                   ),
@@ -341,7 +341,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_ecdsa_validate)
 
   static const assh_bignum_op_t bytecode[] = {
 
-    ASSH_BOP_SIZER(     X1,     T2,    X                ),
+    ASSH_BOP_SIZER(     X1,     MT,    X                ),
 
     /* init */
     ASSH_BOP_MOVE(      T0,     P_raw                   ),

@@ -128,20 +128,15 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
   };
 
   static const assh_bignum_op_t bytecode[] = {
-    ASSH_BOP_SIZER(     K,      R2,     Q               ),
+    ASSH_BOP_SIZEM(     K,      Q,      0,      1       ),
+    ASSH_BOP_SIZER(     R,      R2,     Q               ),
+    ASSH_BOP_SIZER(     R3,     MT,     P               ),
 
-    /* reduce k */
-    ASSH_BOP_SIZEM(     R3,     Q,      0,      1       ),
-    ASSH_BOP_SIZE(      R4,     R3                      ),
-    ASSH_BOP_MOVE(      R4,     Q                       ),
-    ASSH_BOP_MTINIT(	MT,	R4			),
-    ASSH_BOP_MOVES(     R3,     K_data                  ),
-    ASSH_BOP_MTTO(      R4,     R4,     R3,     MT      ),
-    ASSH_BOP_MOD(       R4,     R4,             MT	),
-    ASSH_BOP_MTFROM(    R3,     R3,     R4,     MT      ),
-    ASSH_BOP_MOVE(      K,      R3                      ),
+    /* k = k % q */
+    ASSH_BOP_MOVES(     K,      K_data                  ),
+    ASSH_BOP_MOD(       K,      K,      Q               ),
+    ASSH_BOP_SHRINK(    K,      Q                       ),
 
-    ASSH_BOP_SIZER(     R3,     R4,     P               ),
     ASSH_BOP_MOVE(      M,      M_data                  ),
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
@@ -248,7 +243,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_dsa_check)
 
   static const assh_bignum_op_t bytecode[] = {
     ASSH_BOP_SIZER(     M,      U2,     Q               ),
-    ASSH_BOP_SIZER(     V1,     V,      P               ),
+    ASSH_BOP_SIZER(     V1,     MT,     P               ),
 
     ASSH_BOP_MOVE(      R,      R_data                  ),
     ASSH_BOP_MOVE(      S,      S_data                  ),

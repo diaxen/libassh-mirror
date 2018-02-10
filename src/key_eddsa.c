@@ -161,13 +161,13 @@ assh_key_eddsa_create(struct assh_context_s *c,
     D_mpint, Size, SC_raw, SC_size,                      /* in */
     RX_raw, RY_raw,                                      /* out */
     P, A, D, T0, T1,                                     /* temp */
-    RX, RY, RZ,  BX, BY, BZ,  PX, PY, PZ,  QX, QY, QZ, SC,
-    MT
+    RX, RY, RZ,  BX, BY, BZ,  PX, PY, PZ,  QX, QY, QZ, MT,
+    SC
   };
 
   static const assh_bignum_op_t bytecode[] = {
 
-    ASSH_BOP_SIZER(     P,      QZ,     Size            ),
+    ASSH_BOP_SIZER(     P,      MT,     Size            ),
     ASSH_BOP_SIZE(      SC,     SC_size                 ),
 
     /* init */
@@ -226,7 +226,7 @@ assh_key_eddsa_create(struct assh_context_s *c,
   };
 
   ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode,
-      "MMMMMsdsddTTTTTTTTTTTTTTTTTTm", curve->bx, curve->by,
+      "MMMMMsdsddTTTTTTTTTTTTTTTTTmT", curve->bx, curve->by,
       curve->a, curve->p, curve->d, curve->bits,
       h + n, n * 8,             /* scalar */
       rx, kp), err_scratch);

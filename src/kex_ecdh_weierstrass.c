@@ -86,7 +86,7 @@ assh_weierstrass_base_mul(struct assh_session_s *s)
 
   static const assh_bignum_op_t bytecode[] = {
 
-    ASSH_BOP_SIZER(     X1,     SC,    S                ),
+    ASSH_BOP_SIZER(     X1,     MT,    S                ),
 
     /* init */
     ASSH_BOP_MOVE(      T0,     P_raw                   ),
@@ -143,7 +143,7 @@ assh_weierstrass_point_mul(struct assh_session_s *s, uint8_t *px,
 
   static const assh_bignum_op_t bytecode[] = {
 
-    ASSH_BOP_SIZER(     X1,     SC,    S                ),
+    ASSH_BOP_SIZER(     X1,     MT,    S                ),
 
     /* init */
     ASSH_BOP_MOVE(      T0,     P_raw                   ),

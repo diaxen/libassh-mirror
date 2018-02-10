@@ -154,8 +154,7 @@ assh_sign_rsa_generate(struct assh_context_s *c,
   };
 
   static const assh_bignum_op_t bytecode[] = {
-    ASSH_BOP_SIZE(      C,      N			),
-    ASSH_BOP_SIZE(      EM,     N			),
+    ASSH_BOP_SIZER(     C,      MT,     N		),
     ASSH_BOP_MTINIT(    MT,     N                       ),
 
     ASSH_BOP_MOVE(      EM,     EM_data			),
@@ -213,8 +212,7 @@ assh_sign_rsa_check(struct assh_context_s *c,
   };
 
   static const assh_bignum_op_t bytecode[] = {
-    ASSH_BOP_SIZE(      C,      N			),
-    ASSH_BOP_SIZE(      EM,     N			),
+    ASSH_BOP_SIZER(     C,      MT,     N		),
     ASSH_BOP_MTINIT(    MT,     N                       ),
 
     ASSH_BOP_MOVE(      C,      C_data                  ),

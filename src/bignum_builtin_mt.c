@@ -263,9 +263,19 @@ assh_bignum_mt_reduce(const struct assh_bignum_mt_s *mt,
     a[i] &= e;
 }
 
+size_t
+assh_bignum_mt_convert_sc_size(const struct assh_bignum_mt_s *mt,
+                               const struct assh_bignum_s *r,
+                               const struct assh_bignum_s *a)
+{
+  if (r == a)
+    return assh_bignum_words(mt->max_bits);
+  return 0;
+}
+
 assh_error_t
 assh_bignum_mt_convert(struct assh_context_s *ctx,
-                       struct assh_bignum_scratch_s *sc,
+                       assh_bnword_t *s,
                        assh_bool_t fwd,
                        const struct assh_bignum_mt_s *mt,
                        struct assh_bignum_s *r,
@@ -278,7 +288,7 @@ assh_bignum_mt_convert(struct assh_context_s *ctx,
   assh_bnword_t *t = r->n;
 
   if (r == a)
-    ASSH_RET_ON_ERR(assh_bignum_scratch_expand(ctx, &t, sc, ml, r->secret | a->secure));
+    t = s;
 
   if (fwd)
     {
@@ -294,9 +304,19 @@ assh_bignum_mt_convert(struct assh_context_s *ctx,
   return ASSH_OK;
 }
 
+size_t
+assh_bignum_mul_mod_mt_sc_size(const struct assh_bignum_s *r,
+                               const struct assh_bignum_s *a,
+                               const struct assh_bignum_s *b)
+{
+  if (r == a || r == b)
+    return assh_bignum_words(r->bits);
+  return 0;
+}
+
 assh_error_t
 assh_bignum_mul_mod_mt(struct assh_context_s *ctx,
-                       struct assh_bignum_scratch_s *sc,
+                       assh_bnword_t *s,
                        struct assh_bignum_s *r,
                        const struct assh_bignum_s *a,
                        const struct assh_bignum_s *b,
@@ -312,11 +332,8 @@ assh_bignum_mul_mod_mt(struct assh_context_s *ctx,
 
   if (r == a || r == b)
     {
-      assh_bnword_t *rn;
-      ASSH_RET_ON_ERR(assh_bignum_scratch_expand(ctx, &rn, sc, rl,
-                     r->secret | a->secure | b->secure));
-      assh_bignum_mt_mul(mt, rn, a->n, b->n);
-      memcpy(r->n, rn, rl * sizeof(assh_bnword_t));
+      assh_bignum_mt_mul(mt, s, a->n, b->n);
+      memcpy(r->n, s, rl * sizeof(assh_bnword_t));
     }
   else
     {
@@ -326,9 +343,15 @@ assh_bignum_mul_mod_mt(struct assh_context_s *ctx,
   return err;
 }
 
+size_t
+assh_bignum_expmod_mt_sc_size(const struct assh_bignum_mt_s *mt)
+{
+  return assh_bignum_words(mt->max_bits) * 2;
+}
+
 assh_error_t
 assh_bignum_expmod_mt(struct assh_context_s *ctx,
-                      struct assh_bignum_scratch_s *sc,
+                      assh_bnword_t *sq,
                       struct assh_bignum_s *r,
                       const struct assh_bignum_s *a,
                       const struct assh_bignum_s *b,
@@ -342,9 +365,6 @@ assh_bignum_expmod_mt(struct assh_context_s *ctx,
 
   size_t ml = assh_bignum_words(mt->mod.bits);
 
-  assh_bnword_t *sq;
-  ASSH_RET_ON_ERR(assh_bignum_scratch_expand(ctx, &sq, sc, ml * 2,
-                 r->secret | a->secure | b->secure));
 
   assh_bnword_t *tmp = sq + ml;
   assh_bnword_t *bn = b->n;
@@ -380,10 +400,16 @@ assh_bignum_expmod_mt(struct assh_context_s *ctx,
   return ASSH_OK;
 }
 
+size_t
+assh_bignum_modinv_mt_sc_size(const struct assh_bignum_mt_s *mt)
+{
+  return assh_bignum_words(mt->max_bits) * 2;
+}
+
 /* compute inverse using the Fermat little theorem */
 assh_error_t
 assh_bignum_modinv_mt(struct assh_context_s *ctx,
-                      struct assh_bignum_scratch_s *sc,
+                      assh_bnword_t *sq,
                       struct assh_bignum_s *r,
                       const struct assh_bignum_s *a,
                       const struct assh_bignum_mt_s *mt)
@@ -396,9 +422,6 @@ assh_bignum_modinv_mt(struct assh_context_s *ctx,
   /* prime modulus as been checked as non-secret in mt_init */
 
   size_t ml = assh_bignum_words(mt->mod.bits);
-
-  assh_bnword_t *sq;
-  ASSH_RET_ON_ERR(assh_bignum_scratch_expand(ctx, &sq, sc, ml * 2, r->secret | a->secure));
 
   assh_bnword_t *tmp = sq + ml;
   uint_fast32_t i = 0;

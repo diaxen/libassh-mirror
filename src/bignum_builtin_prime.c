@@ -165,9 +165,15 @@ assh_bignum_sieve_init(struct assh_bignum_sieve_s * __restrict__ s,
     }
 }
 
+size_t
+assh_bignum_prime_sc_size(const struct assh_bignum_s *bn)
+{
+  return assh_bignum_words(bn->bits) * 4;
+}
+
 static assh_error_t ASSH_WARN_UNUSED_RESULT
 assh_bignum_miller_rabin(struct assh_context_s *c,
-                         struct assh_bignum_scratch_s *sc,
+                         assh_bnword_t *s,
                          assh_bnword_t *rn,
                          const struct assh_bignum_s *bn,
                          size_t rounds, assh_bool_t *result)
@@ -180,9 +186,7 @@ assh_bignum_miller_rabin(struct assh_context_s *c,
   assert(bn->bits > 0 && (n[0] & 1));
   *result = 0;
 
-  assh_bnword_t *an;
-  ASSH_RET_ON_ERR(assh_bignum_scratch_expand(c, &an, sc, l * 4, bn->secret | bn->secure));
-
+  assh_bnword_t *an = s;
   assh_bnword_t *cn = an + l;
   assh_bnword_t *zn = an + l * 2;
   assh_bnword_t *tn = an + l * 3;
@@ -278,7 +282,7 @@ assh_bignum_miller_rabin(struct assh_context_s *c,
 
 assh_error_t ASSH_WARN_UNUSED_RESULT
 assh_bignum_check_prime(struct assh_context_s *ctx,
-                        struct assh_bignum_scratch_s *sc,
+                        assh_bnword_t *s,
                         const struct assh_bignum_s *bn,
                         size_t rounds, assh_bool_t *result)
 {
@@ -313,7 +317,7 @@ assh_bignum_check_prime(struct assh_context_s *ctx,
       ASSH_RET_ON_ERR(assh_prng_get(ctx, (uint8_t*)rn,
                  sizeof(rn), ASSH_PRNG_QUALITY_NONCE));
 
-      ASSH_RET_ON_ERR(assh_bignum_miller_rabin(ctx, sc, rn, bn, rounds, result));
+      ASSH_RET_ON_ERR(assh_bignum_miller_rabin(ctx, s, rn, bn, rounds, result));
     }
 
   return ASSH_OK;
@@ -321,7 +325,7 @@ assh_bignum_check_prime(struct assh_context_s *ctx,
 
 assh_error_t
 assh_bignum_next_prime(struct assh_context_s *ctx,
-                       struct assh_bignum_scratch_s *sc,
+                       assh_bnword_t *s,
                        struct assh_bignum_s *bn,
                        struct assh_bignum_s *step)
 {
@@ -398,7 +402,7 @@ assh_bignum_next_prime(struct assh_context_s *ctx,
                  error estimates for the strong probable prime test,
                  Mathematics of Computation 61" */
               assh_bool_t r;
-              ASSH_JMP_ON_ERR(assh_bignum_miller_rabin(ctx, sc, rn, bn, 7, &r), err_);
+              ASSH_JMP_ON_ERR(assh_bignum_miller_rabin(ctx, s, rn, bn, 7, &r), err_);
               if (r)
                 goto err_;
             }
@@ -415,7 +419,7 @@ assh_bignum_next_prime(struct assh_context_s *ctx,
 
 assh_error_t
 assh_bignum_gen_prime(struct assh_context_s *c,
-                      struct assh_bignum_scratch_s *sc,
+                      assh_bnword_t *s,
                       struct assh_bignum_s *bn,
                       const struct assh_bignum_s *min,
                       const struct assh_bignum_s *max,
@@ -424,7 +428,7 @@ assh_bignum_gen_prime(struct assh_context_s *c,
   assh_error_t err;
 
   ASSH_RET_ON_ERR(assh_bignum_rand(c, bn, min, max, quality));
-  ASSH_RET_ON_ERR(assh_bignum_next_prime(c, sc, bn, NULL));
+  ASSH_RET_ON_ERR(assh_bignum_next_prime(c, s, bn, NULL));
 
   ASSH_RET_IF_TRUE(max != NULL && (assh_bignum_cmp(bn, max) & ASSH_BIGNUM_CMP_GT),
                ASSH_ERR_NUM_OVERFLOW);

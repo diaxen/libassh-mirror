@@ -358,6 +358,7 @@ enum assh_bignum_opcode_e
   ASSH_BIGNUM_OP_PRIVACY   = 33,
   ASSH_BIGNUM_OP_PRINT     = 34,
   ASSH_BIGNUM_OP_TRACE     = 35,
+  ASSH_BIGNUM_OP_SHRINK    = 36,
 };
 
 /** @internal */
@@ -370,7 +371,7 @@ enum assh_bignum_opcode_e
     "ladinit", "ladtest", "ladnext", "cswap",   \
     "cmove", "mtinit", "mtto", "mtfrom",        \
     "prime", "nextprime", "isprime", "bool",    \
-    "privacy", "print", "trace"                 \
+    "privacy", "print", "trace", "shrink"       \
 }
 
 /** @internal Reserved big number bytecode register id. */
@@ -419,11 +420,10 @@ enum assh_bignum_opcode_e
 #define ASSH_BOP_MTFROM(dst1, dst2, src, mt)       \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_MTFROM, dst2 - dst1 + 1, dst1, src, mt)
 
-/** @mgroup{Bytecode instructions}
-    @internal This instruction changes the bit size of a number. It is
-    equivalent to a call to the @ref assh_bignum_init function on the
-    destination, with the source operand being evaluated by a call to
-    @ref assh_bignum_size_of_data. */
+/** @mgroup{Bytecode instructions} @internal
+    This instruction defines the bit size of a number or montgomery
+    context. The source operand is evaluated by a call to
+    the @ref assh_bignum_size_of_data function. */
 #define ASSH_BOP_SIZE(dst, src) \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_SIZE, dst, src, 0, 32)
 
@@ -440,6 +440,13 @@ enum assh_bignum_opcode_e
     registers. */
 #define ASSH_BOP_SIZER(dst1, dst2, src)                      \
   ASSH_BOP_FMT4(ASSH_BIGNUM_OP_SIZER, dst1, src, dst2, 0)
+
+/** @mgroup{Bytecode instructions}
+    @internal This reduces the bit size of a temporary number
+    or montgomery context. The source operand is evaluated by a call
+    to the @ref assh_bignum_size_of_data function. */
+#define ASSH_BOP_SHRINK(dst, src)         \
+  ASSH_BOP_FMT2(ASSH_BIGNUM_OP_SHRINK, dst, src)
 
 /** @mgroup{Bytecode instructions}
     @internal This instruction computes @tt {dst = (src1 + src2) %

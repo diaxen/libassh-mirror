@@ -113,27 +113,20 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_ecdsa_generate)
 
   enum {
     X_raw, Y_raw, P_raw, N_raw, M_raw, K_raw, D, R_mpint, S_mpint,
-    X1, Y1, Z1, X2, Y2, Z2, X3, Y3, Z3, T0, T1, T2, T3, K,
-    MT, S, Sh
+    X1, Y1, Z1, X2, Y2, Z2, X3, Y3, Z3, T0, T1, T2, T3, MT,
+    K, S, Sh
   };
 
   static const assh_bignum_op_t bytecode[] = {
 
     /* reduce k */
-    ASSH_BOP_SIZER(     T0,     T1,    Sh               ),
-    ASSH_BOP_SIZER(     T3,     K,     S                ),
+    ASSH_BOP_SIZE(      K,      Sh                      ),
+    ASSH_BOP_SIZER(     X1,     MT,    S                ),
 
     ASSH_BOP_MOVE(      T3,     P_raw                   ),
-    ASSH_BOP_MOVE(      T1,     T3                      ),
-    ASSH_BOP_MTINIT(	MT,     T1                      ),
-
-    ASSH_BOP_MOVES(     T0,     K_raw                   ),
-    ASSH_BOP_MTTO(      T1,     T1,     T0,     MT      ),
-    ASSH_BOP_MOD(       T1,     T1,             MT	),
-    ASSH_BOP_MTFROM(    T0,     T0,     T1,     MT      ),
-    ASSH_BOP_MOVE(      K,      T0                      ),
-
-    ASSH_BOP_SIZER(     X1,     T2,    S                ),
+    ASSH_BOP_MOVES(     K,      K_raw                   ),
+    ASSH_BOP_MOD(       K,      K,     T3               ),
+    ASSH_BOP_SHRINK(    K,      S                       ),
 
     /* compute ephemeral key pair (k, R) */
     ASSH_BOP_MTINIT(	MT,     T3                      ),
@@ -192,7 +185,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_ecdsa_generate)
     ASSH_BOP_END(),
   };
 
-  ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "DDDDDDNMMTTTTTTTTTTTTTTmss",
+  ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "DDDDDDNMMTTTTTTTTTTTTTmTss",
 	    curve->gx, curve->gy, curve->p, curve->n,
             hm, k_, &k->sn, rs_str, NULL, curve->bits, hsize * 8 * 2), err_scratch);
 
@@ -269,7 +262,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_ecdsa_check)
 
   static const assh_bignum_op_t bytecode[] = {
 
-    ASSH_BOP_SIZER(     X1,     U2,    S                ),
+    ASSH_BOP_SIZER(     X1,     MT,    S                ),
 
     ASSH_BOP_MOVE(      T2,     N_raw                   ),
     ASSH_BOP_UINT(      T3,     0               	),

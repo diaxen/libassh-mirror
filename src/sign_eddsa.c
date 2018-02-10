@@ -110,13 +110,13 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
       /* out */
       RX_raw, RY_raw,
       /* temp */
-      MT, A, D,
+      A, D,
       RX, RY, RZ,  BX, BY, BZ,
-      PX, PY, PZ,  QX, QY, QZ, T0, T1, SC
+      PX, PY, PZ,  QX, QY, QZ, T0, T1, MT, SC
     };
 
     static const assh_bignum_op_t bytecode1[] = {
-      ASSH_BOP_SIZER(   A,      T1,     P_n             ),
+      ASSH_BOP_SIZER(   A,      MT,     P_n             ),
       ASSH_BOP_SIZE(    SC,     SC_size                 ),
 
       /* init */
@@ -169,7 +169,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
     };
 
     ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode1,
-      "MMMMMsdsddmTTTTTTTTTTTTTTTTT", curve->bx, curve->by,
+      "MMMMMsdsddTTTTTTTTTTTTTTTTmT", curve->bx, curve->by,
       curve->a, curve->p, curve->d, curve->bits,
       r, n * 8 * 2,             /* scalar */
       rx, r_str), err_scratch);
@@ -209,13 +209,12 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
   {
     enum {
       L_mpint, H_raw, AZ_raw, R_raw, S_raw, P_n,
-      L, T0, T1, S, MT
+      L, T0, T1, MT, S
     };
 
     static const assh_bignum_op_t bytecode2[] = {
-      ASSH_BOP_SIZEM(   T1,     P_n,    0,      1       ),
-      ASSH_BOP_SIZE(    T0,     T1                      ),
-      ASSH_BOP_SIZE(    L,      T1                      ),
+      ASSH_BOP_SIZEM(   L,      P_n,    0,      1       ),
+      ASSH_BOP_SIZER(   T0,     MT,     L               ),
       ASSH_BOP_SIZE(    S,      P_n                     ),
 
       ASSH_BOP_MOVE(    L,      L_mpint                 ),
@@ -238,7 +237,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
       ASSH_BOP_END(),
     };
 
-    ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode2, "MddddsTTTTm",
+    ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode2, "MddddsTTTmT",
       curve->l, hram, az, r, s_str, n * 8), err_scratch);
   }
 
@@ -307,12 +306,11 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
     /* temp */
     P, A, D, T0, T1,
     BX, BY, BZ,  RX, RY, RZ,  PX, PY, PZ,
-    QX, QY, QZ, SC1, SC2, MT, U = PY, V = PZ
+    QX, QY, QZ, MT, SC1, SC2, U = PY, V = PZ
   };
 
   static const assh_bignum_op_t bytecode[] = {
-
-    ASSH_BOP_SIZER(     P,      QZ,     P_n             ),
+    ASSH_BOP_SIZER(     P,      MT,     P_n             ),
     ASSH_BOP_SIZEM(     SC1,    SC2_size, 0, 1          ),
     ASSH_BOP_SIZE(      SC2,    SC2_size                ),
 
@@ -485,7 +483,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
   };
 
   ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, kx_sign, bytecode,
-          "MMMMMMsdddsddTTTTTTTTTTTTTTTTTTTm", curve->bx, curve->by,
+          "MMMMMMsdddsddTTTTTTTTTTTTTTTTTmTT", curve->bx, curve->by,
           curve->a, curve->p, curve->d, curve->i,
           curve->bits, kp,
           hram, rs_str + 4 + n, n * 8, /* scalars */

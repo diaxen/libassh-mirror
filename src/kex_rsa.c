@@ -232,8 +232,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
   };
 
   static const assh_bignum_op_t bytecode[] = {
-    ASSH_BOP_SIZE(      A,      N			),
-    ASSH_BOP_SIZE(      B,      N			),
+    ASSH_BOP_SIZER(     A,      MT,     N		),
 
     ASSH_BOP_MOVE(      A,      EM_data			),
 
@@ -446,8 +445,7 @@ static assh_error_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
   };
 
   static const assh_bignum_op_t bytecode[] = {
-    ASSH_BOP_SIZE(      A,      N			),
-    ASSH_BOP_SIZE(      B,      N			),
+    ASSH_BOP_SIZER(     A,      MT,     N		),
 
     ASSH_BOP_MOVE(      A,      EM_data			),
 
