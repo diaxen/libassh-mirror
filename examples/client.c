@@ -26,6 +26,17 @@
 
 */
 
+/*
+  This implements a toy ssh client example
+  with the following features:
+
+   - Event loop driven with fd polling for read and write.
+   - Password and public key user authentication.
+   - Disable some user athentication methods depending on kex safety.
+   - Handle interactive session with shell or command.
+   - Handle pseudo TTY allocation and pipes.
+*/
+
 #include "config.h"
 
 #include <assh/assh_session.h>
@@ -119,7 +130,7 @@ ssh_loop(struct assh_session_s *session,
         {
         case ASSH_EVENT_READ:
           /* return if we are not sure that we can read some ssh
-             stream from the socket right now */
+             stream from the socket without blocking */
           if (!(p[POLL_SOCKET].revents & POLLIN))
             {
               assh_event_done(session, &event, ASSH_OK);
@@ -133,7 +144,7 @@ ssh_loop(struct assh_session_s *session,
 
         case ASSH_EVENT_WRITE:
           /* return if we are not sure that we can write some ssh
-             stream to the socket right now */
+             stream to the socket without blocking */
           if (!(p[POLL_SOCKET].revents & POLLOUT))
             {
               assh_event_done(session, &event, ASSH_OK);

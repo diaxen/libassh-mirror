@@ -177,7 +177,7 @@ struct assh_key_s
   uint8_t ref_count;
 };
 
-/** @internal @This allocates and intiailizes the key structure from
+/** @This allocates and intiailizes the key structure from
     the passed key blob data. The @tt blob pointer is updated so that
     the key blob is skipped.
 
@@ -192,7 +192,7 @@ assh_key_load(struct assh_context_s *c,
               enum assh_key_format_e format,
               const uint8_t **blob, size_t blob_len);
 
-/** @internal @This creates a new key of specified type and bits
+/** @This creates a new key of specified type and bits
     size. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_key_create(struct assh_context_s *c,
@@ -206,7 +206,7 @@ assh_key_comment(struct assh_context_s *c,
                  struct assh_key_s *key,
                  const char *comment);
 
-/** @internal This function write the key in blob representation to
+/** @This writes the key in blob representation to
     the @tt blob buffer. The @tt blob_len parameter is updated with
     the actual size of the key blob.
 
@@ -226,7 +226,7 @@ assh_key_output(struct assh_context_s *c,
   return key->algo->f_output(c, key, blob, blob_len, format);
 }
 
-/** @This function returns true if both keys are equals. If the @tt
+/** @This returns true if both keys are equals. If the @tt
     pub parameter is set, only the public parts of the key are taken
     into account. */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_bool_t
@@ -236,7 +236,7 @@ assh_key_cmp(struct assh_context_s *c, const struct assh_key_s *key,
   return key->algo->f_cmp(c, key, b, pub);
 }
 
-/** @This remove the first key from the singly linked list. The key is
+/** @This removes the first key from the singly linked list. The key is
     also released unless @ref assh_key_refinc has been called. */
 void assh_key_drop(struct assh_context_s *c,
                    struct assh_key_s **head);

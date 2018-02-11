@@ -106,8 +106,8 @@ enum assh_event_userauth_server_pwstatus_s
 
     The client requests a password change when the size of the @ref
     new_password buffer is not 0. The server can require this behavior
-    for the next password event by setting the @ref pwchange field. In
-    this case the @ref prompt and @ref lang fields may also be
+    for the next password event by setting the @tt pwchange field. In
+    this case the @tt prompt and @tt lang fields may also be
     updated.
 
     @see ASSH_EVENT_USERAUTH_SERVER_PASSWORD */
@@ -172,7 +172,7 @@ struct assh_event_userauth_server_kbinfo_s
   const struct assh_cbuffer_s *prompts; //< output
 };
 
-/** @see assh_event_userauth_server_kbstatus_s */
+/** @see assh_event_userauth_server_kbresponse_s */
 enum assh_event_userauth_server_kbstatus_e
 {
   ASSH_SERVER_KBSTATUS_FAILURE,

@@ -157,10 +157,13 @@ assh_client_event_openssh_auth(struct assh_session_s *s, FILE *out, FILE *in,
 			       const struct assh_client_openssh_user_key_s *key_files,
 			       struct assh_event_s *event);
 
+/** @This prints a list of algorithms selected by the kex exchange. */
 void
 assh_client_print_kex_details(struct assh_session_s *s, FILE *out,
 			      const struct assh_event_s *event);
 
+/** @This specifies the current state of an interactive session.
+    @see assh_client_inter_session_s */
 enum assh_client_inter_session_state_e
 {
   ASSH_CLIENT_INTER_ST_INIT,
@@ -172,8 +175,13 @@ enum assh_client_inter_session_state_e
   ASSH_CLIENT_INTER_ST_CLOSED,
 };
 
-/** @This stores the state of the interactive session between calls to
-    the @ref assh_client_event_inter_session function. */
+/** @This stores the state of the simple interactive session helper
+    between calls to the @ref assh_client_event_inter_session
+    function.
+
+    @This must be initialized by calling the @ref
+    assh_client_init_inter_session function.
+*/
 struct assh_client_inter_session_s
 {
   enum assh_client_inter_session_state_e state;
@@ -183,19 +191,30 @@ struct assh_client_inter_session_s
   struct assh_request_s *request;
 };
 
+/** @This initializes an interactive session object for execution of
+    the specified command. This must be used along with the @ref
+    assh_client_event_inter_session event handler function.
+
+    This is a simple helper designed to start a command on a remote
+    server. The associated event handler takes care of sending the
+    appropriate requests to the remote host when the @tt
+    {ssh-connection} service is started.
+*/
 void
 assh_client_init_inter_session(struct assh_client_inter_session_s *state,
                                const char *command, const char *term);
 
 /** @This implements an events handler which starts an interactive
-    session and requests execution of a shell on the remote server.
+    session and requests execution of a command on the remote server.
 
     @This is designed to handle the following events:
     @list
-      @item @ref ASSH_EVENT_CONNECTION_START
+      @item @ref ASSH_EVENT_SERVICE_START
       @item @ref ASSH_EVENT_CHANNEL_OPEN_REPLY
       @item @ref ASSH_EVENT_REQUEST_REPLY
     @end list
+
+    @This takes care of calling the @ref assh_event_done function.
 */
 void
 assh_client_event_inter_session(struct assh_session_s *s,

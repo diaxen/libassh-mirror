@@ -68,49 +68,153 @@ assh_config.h
 
 @section TP {Introduction}
 
-  Libassh is a C library which implements the ssh2 protocol.
+  Libassh is a C library which implements the ssh version 2 protocol.
 
-  Both client and server sides are supported.
+  Both client and server sides are implemented with same set of
+  features.
 
-  @section {Asynchronous ssh}
-    It has been designed to be fully asynchronous. This not only means
-    that the library calls are non-blocking: it is also able to handle
-    out of order operations permitted by the underlying ssh2 protocol.
-    This includes sending or handling multiple channel open requests out
-    of order.
+  @section {Event based ssh}
+    It has been designed to support either asynchronous and
+    synchronous designs of the application and operating system.
 
-    The library is event based. Its event loop agnostic design eases
-    integration in applications, including those based on event loop
-    from an existing toolkits. The library core does not perform the
-    socket operations directly but instead return events in order to
-    move data in and out. It actually only contains the ssh2 protocol
-    state machines and algorithms. Some helpers are provided for
-    convenience.
+    It does not rely on blocking calls or callbacks, instead the
+    library returns event objects which can be processed at any time
+    before being acknowledged. This event loop agnostic design allows
+    easy integration in applications, including those based on event
+    loops from existing toolkits.
+
+    Its design fully supports the asynchronous nature of the ssh2
+    protocol. This not only means that the library calls are
+    non-blocking, it is also able to handle out of order
+    operations. This includes requesting, reporting and replying to
+    multiple channel open messages out of order.
   @end section
 
   @section {Modular ssh}
-    This ssh2 implementation tries to be as modular as the protocol
-    specification is.
+    The ssh2 protocol is specified in a modular way so that
+    implementers can freely add new crypto algorithms, new
+    services and new user authentication methods without loosing
+    compatibility with other implementations.
 
-    Algorithms are implemented as modules. New algorithms can be
-    implemented and registered dynamically. Here is a list of defined
-    module APIs:
+    This ssh2 implementation is as modular as the protocol
+    specification is. It allows dynamic registering of custom
+    algorithms, custom ssh services as well as other software
+    components. Here is a list of defined module APIs:
 
     @list
-      @item ssh2 @xref{key-exchange algorithms},
-      @item ssh2 @xref{signature algorithms},
-      @item ssh2 @xref{cipher algorithms},
-      @item ssh2 @xref{message authentication algorithms},
-      @item ssh2 services.
+      @item Memory allocator,
+      @item Random generator,
+      @item Ssh services,
+      @item @xref{Key-exchange ssh algorithms},
+      @item @xref{Signature ssh algorithms},
+      @item @xref{Cipher ssh algorithms},
+      @item @xref{Message authentication ssh algorithms},
+      @item @xref{Compression algorithms},
+      @item Ssh key management,
+      @item Hash functions.
     @end list
 
-    Additional modular APIs are used for cryptographic hashes, random
-    data generation and big number computation engine.
+  @end section
 
+  @section {Portable ssh}
+    The library core does not perform network socket operations
+    directly but instead return specific events in order to move the
+    ssh stream in and out. The core actually only contains the ssh2
+    protocol state machines and algorithms.
+
+    This makes this ssh2 implementation portable on any platform with
+    a network stack, provided that a C compiler is available. Some
+    helpers are provided for convenient use on POSIX platforms and
+    compatibility with various OpenSsh file formats.
+
+    A set of compile time configuration macros is available which
+    allows optimization of the library size on embedded targets. Its
+    modular design allows keeping only a small set of algorithms and
+    eases porting to platform with hardware accelerated cryptography.
+
+    Because the library comes with a set of standard ssh algorithm
+    implementations, it can be used standalone. The @em gcrypt and @em
+    zlib libraries are supported in order to extended to number of
+    supported algorithms.
+  @end section
+
+  @section {Clean design}
+    The modular approach makes the code more readable by not including
+    algorithms specific things in the core protocol implementation. It
+    provides well defined and documented APIs between modules which
+    eases the code review process and improves ability to write unit
+    tests.
+
+    The protocol implementation is based on state machines. The
+    various state machines used to implement the protocol are
+    documented in state diagrams.
+  @end section
+
+  @section {Security}
+    The library comes with implementations for many @xref {Supported
+    algorithms} {ssh algorithms}, @xref {user authentication methods},
+    as well as common ssh key formats. OpenSsh Encrypted key formats
+    can be loaded and saved.
+
+    User authentication may use externally generated signatures in
+    order to support hardware authentication tokens. Multi-factor
+    user authentication is supported. Password change requests are
+    supported as well.
+
+    All implementations of provided public key cryptography algorithms
+    relies on a big number engine with strict constant time operations
+    on secret values in order to prevent side channel attacks.
+
+    The library can be configured to store any sensitive data
+    including local variables and temporaries in secure memory.
+
+    The library is able to compute a safety factor based on algorithms
+    and keys involved in the key exchange. This can be used by the
+    application to warn the user and disable password authentication
+    when appropriate.
+  @end section
+
+  @section {Performances}
+    The library use a zero copy approach to handle data transfer
+    between the ssh stream and the session channels. It gives
+    application a direct access to buffers stored in the packet
+    objects.
+
+    An optional packet pool allocator is provided in order to recycle
+    packets and reduce pressure on the memory allocator.
+
+    The dynamic memory allocations performed by the core are only a
+    few Kbytes.
+  @end section
+
+  @section {Features}
+    @list
+      @item The library provides functions to create, validate, load
+        and save ssh keys in various formats.
+    @end list
+  @end section
+
+  @section {Test suite}
+    The library comes with unit tests and stress tests for the various
+    software components of the library.
+
+    Stress tests are implemented by making the server and client sides
+    talking to each other, making dozen of key-exchanges, user
+    authentications and channel operations. Because the library is not
+    bound to a particular network stack, the two instances are able to
+    quickly transfer the ssh stream using memory buffers.
+
+    Fuzzing is used in order to reach many corner cases. Randomly
+    corrupted packets and random memory allocation failure are
+    injected during stress tests.
   @end section
 
   @section {License}
     Libassh source code is covered by the LGPL 2.1 license.
+
+    This license allows using the library from a non-free application
+    but requires publishing modifications made to the code of library
+    itself. Contact the author for more details.
   @end section
 
 @end section

@@ -162,12 +162,12 @@ struct assh_event_userauth_client_pwchange_s
     authentication has been selected and the server sent a @ref
     SSH_MSG_USERAUTH_INFO_REQUEST message.
 
-    The @ref prompts array contains @ref count entries which must be
-    used to query the user. The @ref echos field is a bitmap which
+    The @tt prompts array contains @tt count entries which must be
+    used to query the user. The @tt echos field is a bitmap which
     indicates user entered values that should be displayed.
 
     Pointers and lengths of user entered values must be stored in the
-    @ref responses array. The prompt array may be reused or a pointer
+    @tt responses array. The prompt array may be reused or a pointer
     to an other array can be provided. In either cases, all entries must
     be initialized with user provided response buffers. These buffers
     can be released after calling the @ref assh_event_done function.

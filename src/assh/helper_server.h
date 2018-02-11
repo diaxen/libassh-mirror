@@ -43,18 +43,41 @@
 
 #include "assh.h"
 
+/** @This loads some host keys from standard locations.  The function
+    is successful when at least one key has been loaded. */
 assh_error_t
 assh_server_openssh_load_hk(struct assh_context_s *c);
 
+/** @This looks for a specific key in a pool of authorized user keys. */
 assh_error_t
 assh_server_openssh_ak_lookup(struct assh_session_s *s,
 			      const char *filename,
 			      const struct assh_key_s *key);
 
+/** @This handles the @ref ASSH_EVENT_USERAUTH_SERVER_USERKEY and @ref
+    ASSH_EVENT_USERAUTH_SERVER_PASSWORD events.
+
+    The public key authentication is handled by calling the @ref
+    assh_server_openssh_ak_lookup function on the user @tt
+    authorized_keys file.
+
+    The password authentication relies on the following libc
+    functions: @ref getpwnam_r, @ref getspnam_r and @ref crypt_r.
+    It requires access to the @tt /etc/shadow file.
+
+    @This takes care of calling the @ref assh_event_done function in
+    any case.
+*/
 assh_error_t
 assh_server_event_openssh_auth(struct assh_session_s *s,
 			       struct assh_event_s *event);
 
+/** This retrieves the user id and group id from a @ref
+    ASSH_EVENT_USERAUTH_SERVER_SUCCESS event.
+
+    @This takes care of calling the @ref assh_event_done function in
+    any case.
+*/
 assh_error_t
 assh_server_event_user_id(struct assh_session_s *s,
 			  uid_t *uid, gid_t *gid,

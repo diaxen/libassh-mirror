@@ -26,6 +26,17 @@
 
 */
 
+/*
+  This implements a toy ssh server example
+  with the following features:
+
+   - Fork on new connection.
+   - Event loop driven with fd polling for read and write.
+   - Password and public key user authentication.
+   - Handle interactive session with shell or command.
+   - Handle pseudo TTY allocation and pipes.
+*/
+
 #include "config.h"
 
 #include <assh/assh_session.h>
@@ -294,6 +305,9 @@ enum poll_e
   POLL_CHILD_STDERR,
 };
 
+/* Ssh event handling, This returns 0 when terminated. This returns 1
+   when not sure if an IO operation can be performed without blocking.
+*/
 static assh_bool_t
 ssh_loop(struct assh_session_s *session,
 	 struct pollfd *p)
@@ -339,6 +353,8 @@ ssh_loop(struct assh_session_s *session,
           break;
 
 	case ASSH_EVENT_ERROR:
+          /* Any error reported to the assh_event_done function will
+             end up here. */
 	  fprintf(stderr, "[%u] SSH error: %s\n", getpid(),
 		  assh_error_str(event.error.code));
 	  assh_event_done(session, &event, ASSH_OK);
@@ -354,10 +370,13 @@ ssh_loop(struct assh_session_s *session,
 
 	case ASSH_EVENT_USERAUTH_SERVER_USERKEY:
 	case ASSH_EVENT_USERAUTH_SERVER_PASSWORD:
+          /* let an helper function handle user authentication from
+	     system password file and user authorized_keys file. */
 	  assh_server_event_openssh_auth(session, &event);
 	  break;
 
 	case ASSH_EVENT_USERAUTH_SERVER_SUCCESS: {
+	  /* change user id when user authentication is over */
 	  uid_t uid;
 	  gid_t gid;
 	  if (assh_server_event_user_id(session, &uid, &gid, &event))
@@ -385,7 +404,7 @@ ssh_loop(struct assh_session_s *session,
 	  assh_error_t err = ASSH_OK;
 
 	  /* handle some standard requests associated to our session,
-	     relying on some standard requests data decoders. */
+	     relying on some request decoding functions. */
 
 	  if (ev->ch)
 	    {

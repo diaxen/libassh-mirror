@@ -214,7 +214,7 @@ extern const struct assh_algo_s *assh_algo_table[];
 const struct assh_algo_s *
 assh_algo_registered(struct assh_context_s *c, uint_fast16_t i);
 
-/** @internal @This registers the default set of available algorithms
+/** @This registers the default set of available algorithms
     depending on the library configuration. It relies on the @ref
     assh_algo_register_va function. */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
