@@ -178,7 +178,7 @@ assh_bignum_div_euclidean(assh_bnword_t * __restrict__ r,
   return ASSH_OK;
 }
 
-static void
+void
 assh_bignum_div_euclidean_ct(assh_bnword_t * __restrict__ rn,
                              uint_fast32_t r_len,
                              assh_bnword_t * __restrict__ dn,

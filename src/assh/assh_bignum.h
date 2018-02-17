@@ -397,8 +397,10 @@ enum assh_bignum_opcode_e
 
 /** @mgroup{Bytecode instructions}
     @internal This initializes a temporary montgomery multiplication
-    context from a modulus number. The context is released at the end
-    of the bytecode execution. */
+    context from a modulus number.
+
+    If the modulus is a secret number, its most significant bit must
+    be set. */
 #define ASSH_BOP_MTINIT(mt, mod) \
   ASSH_BOP_FMT2(ASSH_BIGNUM_OP_MTINIT, mt, mod)
 

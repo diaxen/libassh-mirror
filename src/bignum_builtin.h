@@ -132,8 +132,18 @@ assh_bnword_modinv(assh_bnword_t a, assh_bnword_t b)
 ASSH_INLINE assh_bnword_t
 assh_bnword_mt_modinv(assh_bnword_t a)
 {
-  uint_fast8_t sh = assh_bn_clz(a);
-  return assh_bnword_egcd(a, -(a << sh), -((assh_bnword_t)1 << sh));
+  assh_bnword_t b = 2 + a;
+
+  b *= 2 + b * a;
+  b *= 2 + b * a;
+  if (ASSH_BIGNUM_W >= 16)
+    b *= 2 + b * a;
+  if (ASSH_BIGNUM_W >= 32)
+    b *= 2 + b * a;
+  if (ASSH_BIGNUM_W >= 64)
+    b *= 2 + b * a;
+
+  return -b;
 }
 
 void
@@ -210,7 +220,15 @@ assh_bignum_addsub(struct assh_bignum_s *dst,
 
 /****************************** bignum_builtin_div.c */
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+void
+assh_bignum_div_euclidean_ct(assh_bnword_t * __restrict__ rn,
+                             uint_fast32_t r_len,
+                             assh_bnword_t * __restrict__ dn,
+                             uint_fast32_t d_len,
+                             const assh_bnword_t * __restrict__ bn,
+                             uint_fast32_t b_len, int_fast32_t bitlen_diff);
+
+assh_error_t
 assh_bignum_div_euclidean(assh_bnword_t * __restrict__ r,
                           uint_fast32_t r_len,
                           assh_bnword_t * __restrict__ d,

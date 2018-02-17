@@ -32,7 +32,6 @@ assh_bignum_mt_init(struct assh_context_s *c,
 {
   assh_error_t err;
 
-  assert(!mod->secret);
 
   /* check modulus is odd */
   ASSH_RET_IF_TRUE(!(*(assh_bnword_t*)mod->n & 1), ASSH_ERR_NUM_OVERFLOW);
@@ -58,7 +57,11 @@ assh_bignum_mt_init(struct assh_context_s *c,
     r2[i] = 0;
   r2[i] = 1;
 
-  ASSH_RET_ON_ERR(assh_bignum_div_euclidean(r2, ml * 2 + 1, NULL, 0, m, ml));
+  if (mod->secret)
+    assh_bignum_div_euclidean_ct(r2, ml * 2 + 1, NULL, 0, m, ml,
+                                 ml * ASSH_BIGNUM_W + 1);
+  else
+    assh_bignum_div_euclidean(r2, ml * 2 + 1, NULL, 0, m, ml);
 
   /* compute 1 in montgomery representation */
   assh_bnword_t *r1 = m + ml * 2;
@@ -67,7 +70,10 @@ assh_bignum_mt_init(struct assh_context_s *c,
     r1[i] = 0;
   r1[i] = 1;
 
-  ASSH_RET_ON_ERR(assh_bignum_div_euclidean(r1, ml + 1, NULL, 0, m, ml));
+  if (mod->secret)
+    assh_bignum_div_euclidean_ct(r1, ml + 1, NULL, 0, m, ml, 1);
+  else
+    assh_bignum_div_euclidean(r1, ml + 1, NULL, 0, m, ml);
 
   return ASSH_OK;
 }
@@ -419,8 +425,6 @@ assh_bignum_modinv_mt(struct assh_context_s *ctx,
   assert(mt->mod.bits == a->bits &&
          mt->mod.bits == r->bits);
 
-  /* prime modulus as been checked as non-secret in mt_init */
-
   size_t ml = assh_bignum_words(mt->mod.bits);
 
   assh_bnword_t *tmp = sq + ml;
@@ -441,10 +445,13 @@ assh_bignum_modinv_mt(struct assh_context_s *ctx,
       if (i % ASSH_BIGNUM_W == 0)
         p = t = (assh_bnslong_t)pn[i / ASSH_BIGNUM_W] + (t >> ASSH_BIGNUM_W);
 
-      if ((p >> (i % ASSH_BIGNUM_W)) & 1)
+      assh_bool_t c = (p >> (i % ASSH_BIGNUM_W)) & 1;
+      volatile assh_bool_t d = mt->mod.secret | c;
+
+      if (d)
         {
           assh_bignum_mt_mul(mt, tmp, rn, sq);
-          memcpy(rn, tmp, ml * sizeof(assh_bnword_t));
+          assh_bignum_cmove(rn, tmp, ml, c);
         }
 
       if (++i == mt->mod.bits)
