@@ -325,17 +325,26 @@ assh_bignum_mt_init(struct assh_context_s *c,
                     const struct assh_bignum_s *mod);
 
 size_t
-assh_bignum_mt_convert_sc_size(const struct assh_bignum_mt_s *mt,
-                               const struct assh_bignum_s *r,
-                               const struct assh_bignum_s *a);
+assh_bignum_mt_to_sc_size(const struct assh_bignum_s *r,
+                          const struct assh_bignum_s *a);
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_bignum_mt_convert(struct assh_context_s *ctx,
-                       assh_bnword_t *s,
-                       assh_bool_t fwd,
-                       const struct assh_bignum_mt_s *mt,
-                       struct assh_bignum_s *r,
-                       const struct assh_bignum_s *a);
+void
+assh_bignum_mt_to(struct assh_context_s *ctx,
+                  assh_bnword_t *s,
+                  const struct assh_bignum_mt_s *mt,
+                  struct assh_bignum_s *r,
+                  const struct assh_bignum_s *a);
+
+size_t
+assh_bignum_mt_from_sc_size(const struct assh_bignum_s *r,
+                            const struct assh_bignum_s *a);
+
+void
+assh_bignum_mt_from(struct assh_context_s *ctx,
+                    assh_bnword_t *s,
+                    const struct assh_bignum_mt_s *mt,
+                    struct assh_bignum_s *r,
+                    const struct assh_bignum_s *a);
 
 size_t
 assh_bignum_mul_mod_mt_sc_size(const struct assh_bignum_s *r,

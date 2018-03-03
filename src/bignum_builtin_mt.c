@@ -270,25 +270,21 @@ assh_bignum_mt_reduce(const struct assh_bignum_mt_s *mt,
 }
 
 size_t
-assh_bignum_mt_convert_sc_size(const struct assh_bignum_mt_s *mt,
-                               const struct assh_bignum_s *r,
-                               const struct assh_bignum_s *a)
+assh_bignum_mt_to_sc_size(const struct assh_bignum_s *r,
+                          const struct assh_bignum_s *a)
 {
   if (r == a)
-    return assh_bignum_words(mt->max_bits);
+    return assh_bignum_words(a->bits);
   return 0;
 }
 
-assh_error_t
-assh_bignum_mt_convert(struct assh_context_s *ctx,
-                       assh_bnword_t *s,
-                       assh_bool_t fwd,
-                       const struct assh_bignum_mt_s *mt,
-                       struct assh_bignum_s *r,
-                       const struct assh_bignum_s *a)
+void
+assh_bignum_mt_to(struct assh_context_s *ctx,
+                  assh_bnword_t *s,
+                  const struct assh_bignum_mt_s *mt,
+                  struct assh_bignum_s *r,
+                  const struct assh_bignum_s *a)
 {
-  assh_error_t err;
-
   assert(mt->mod.bits == a->bits && mt->mod.bits == r->bits);
   size_t ml = assh_bignum_words(mt->mod.bits);
   assh_bnword_t *t = r->n;
@@ -296,18 +292,40 @@ assh_bignum_mt_convert(struct assh_context_s *ctx,
   if (r == a)
     t = s;
 
-  if (fwd)
-    {
-      assh_bnword_t *r2 = (assh_bnword_t*)mt->mod.n + ml;
-      assh_bignum_mt_mul(mt, t, r2, a->n);
-    }
-  else
-    assh_bignum_mt_reduce(mt, t, a->n);
+  assh_bnword_t *r2 = (assh_bnword_t*)mt->mod.n + ml;
+  assh_bignum_mt_mul(mt, t, r2, a->n);
 
   if (r == a)
     memcpy(r->n, t, ml * sizeof(assh_bnword_t));
+}
 
-  return ASSH_OK;
+size_t
+assh_bignum_mt_from_sc_size(const struct assh_bignum_s *r,
+                            const struct assh_bignum_s *a)
+{
+  if (r == a)
+    return assh_bignum_words(a->bits);
+  return 0;
+}
+
+void
+assh_bignum_mt_from(struct assh_context_s *ctx,
+                    assh_bnword_t *s,
+                    const struct assh_bignum_mt_s *mt,
+                    struct assh_bignum_s *r,
+                    const struct assh_bignum_s *a)
+{
+  assert(mt->mod.bits == a->bits && mt->mod.bits == r->bits);
+  size_t ml = assh_bignum_words(mt->mod.bits);
+  assh_bnword_t *t = r->n;
+
+  if (r == a)
+    t = s;
+
+  assh_bignum_mt_reduce(mt, t, a->n);
+
+  if (r == a)
+    memcpy(r->n, t, ml * sizeof(assh_bnword_t));
 }
 
 size_t
