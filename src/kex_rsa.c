@@ -234,7 +234,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
   static const assh_bignum_op_t bytecode[] = {
     ASSH_BOP_SIZER(     A,      MT,     N		),
 
-    ASSH_BOP_MOVE(      A,      EM_data			),
+    ASSH_BOP_MOVES(     A,      EM_data                 ),
 
     ASSH_BOP_MTINIT(    MT,     N                       ),
     ASSH_BOP_MTTO(      A,      A,      A,      MT      ),
@@ -437,29 +437,54 @@ static assh_error_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
   assh_hexdump("emc", em, elen);
 #endif
 
+  /* use Chinese Remainder */
   enum bytecode_args_e
   {
-    EM_data,                    /* data buffer */
-    N, D,                       /* big number inputs */
-    A, B, MT                    /* big number temporaries */
+    EM_data,                    /* data buffers */
+    Q, P, DP, DQ, I, N,         /* big number inputs */
+    M2, EM, T0, T1, T2,         /* big number temporaries */
+    MT
   };
 
   static const assh_bignum_op_t bytecode[] = {
-    ASSH_BOP_SIZER(     A,      MT,     N		),
+    ASSH_BOP_SIZER(     M2,     EM,     N		),
+    ASSH_BOP_SIZER(     T0,     MT,     P		),
 
-    ASSH_BOP_MOVE(      A,      EM_data			),
+    ASSH_BOP_MOVE(      EM,     EM_data			),
 
-    ASSH_BOP_MTINIT(    MT,     N                       ),
-    ASSH_BOP_MTTO(      A,      A,      A,      MT      ),
-    ASSH_BOP_EXPM(      B,      A,      D,	MT	),
-    ASSH_BOP_MTFROM(    B,      B,      B,      MT      ),
+    /* m2 = em^dq % q */
+    ASSH_BOP_MOD(       T0,     EM,     Q               ),
+    ASSH_BOP_MTINIT(    MT,     Q                       ),
+    ASSH_BOP_MTTO(      T0,     T0,     T0,     MT      ),
+    ASSH_BOP_EXPM(      T0,     T0,     DQ,	MT	),
+    ASSH_BOP_MTFROM(    T0,     T0,     T0,     MT      ),
+    ASSH_BOP_MOVE(      M2,     T0			),
 
-    ASSH_BOP_MOVE(      EM_data, B			),
+    /* m1 = em^dp % p */
+    ASSH_BOP_MOD(       T1,     EM,     P               ),
+    ASSH_BOP_MTINIT(    MT,     P                       ),
+    ASSH_BOP_MTTO(      T1,     T1,     T1,     MT      ),
+    ASSH_BOP_EXPM(      T1,     T1,     DP,	MT	),
+
+    /* h = i * (m1 - m2) */
+    ASSH_BOP_MTTO(      T0,     T0,     T0,     MT      ),
+    ASSH_BOP_SUBM(      T1,     T1,     T0,     MT      ),
+    ASSH_BOP_MTTO(      T2,     T2,     I,      MT      ),
+    ASSH_BOP_MULM(      T0,     T1,     T2,     MT      ),
+    ASSH_BOP_MTFROM(    T1,     T1,     T0,     MT      ),
+
+    /* m = m2 + h * q */
+    ASSH_BOP_MUL(       EM,     T1,     Q               ),
+    ASSH_BOP_ADD(       M2,     M2,     EM              ),
+
+    ASSH_BOP_MOVE(      EM_data, M2			),
     ASSH_BOP_END(),
   };
 
-  ASSH_RET_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "DNNTTm",
-                 em, &t_key->nn, &t_key->dn));
+  ASSH_RET_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "DNNNNNNTTTTTm",
+                   /* Data */ em,
+                   /* Num  */ &t_key->qn, &t_key->pn, &t_key->dpn, &t_key->dqn,
+                                    &t_key->in, &t_key->nn));
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
   assh_hexdump("em", em, elen);

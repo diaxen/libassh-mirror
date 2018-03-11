@@ -86,33 +86,6 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_rsa_output)
     case ASSH_KEY_FMT_PV_PEM_ASN1: {
       ASSH_RET_IF_TRUE(assh_bignum_isempty(&k->dn), ASSH_ERR_MISSING_KEY);
 
-      enum bytecode_args_e { D, P, Q, DP, DQ, T0, T1 };
-
-      static const assh_bignum_op_t bytecode[] = {
-        ASSH_BOP_SIZER(  T0,    T1,     P               ),
-        ASSH_BOP_PRIVACY(DP,    0,      1               ),
-        ASSH_BOP_PRIVACY(DQ,    0,      1               ),
-        ASSH_BOP_PRIVACY(D,     0,      1               ),
-        ASSH_BOP_UINT(   T0,    1                       ),
-        ASSH_BOP_SUB(    T1,    P,      T0              ),
-        ASSH_BOP_PRIVACY(T1,    0,      1               ),
-        ASSH_BOP_MOD(    DP,    D,      T1              ),
-        ASSH_BOP_SUB(    T1,    Q,      T0              ),
-        ASSH_BOP_PRIVACY(T1,    0,      1               ),
-        ASSH_BOP_MOD(    DQ,    D,      T1              ),
-        ASSH_BOP_PRIVACY(D,     1,      0               ),
-        ASSH_BOP_PRIVACY(DP,    1,      0               ),
-        ASSH_BOP_PRIVACY(DQ,    1,      0               ),
-        ASSH_BOP_END(),
-      };
-
-      /* Compute dq and dp values if missing. This involves non
-         constant time operations on secret values. We do not want
-         to perform this computation every time a key is loaded. */
-      if (assh_bignum_isempty(&k->dpn))
-        ASSH_RET_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "NNNNNTT",
-                       &k->dn, &k->pn, &k->qn, &k->dpn, &k->dqn));
-
       bn_[2] = &k->dn;
       bn_[3] = &k->pn;
       bn_[4] = &k->qn;
@@ -292,8 +265,6 @@ static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
     ASSH_BOP_UINT(      E,      65537                   ),
     ASSH_BOP_INV(       D,      E,      T1              ),
 
-    ASSH_BOP_PRIVACY(   DP,     0,      1               ),
-    ASSH_BOP_PRIVACY(   DQ,     0,      1               ),
     ASSH_BOP_MOD(       T1,     D,      DP              ),
     ASSH_BOP_MOVE(      DP,     T1                      ),
     ASSH_BOP_MOD(       T1,     D,      DQ              ),
@@ -512,6 +483,25 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
                                        e_str, &k->en, NULL, 0), err_num);
      default:
       break;
+    }
+
+  /* Compute missing dq and dp values */
+  if (k->key.private && assh_bignum_isempty(&k->dpn))
+    {
+      enum bytecode_args_e { D, P, Q, DP, DQ, T0, T1 };
+
+      static const assh_bignum_op_t bytecode[] = {
+        ASSH_BOP_SIZER(  T0,    T1,     P               ),
+        ASSH_BOP_UINT(   T0,    1                       ),
+        ASSH_BOP_SUB(    T1,    P,      T0              ),
+        ASSH_BOP_MOD(    DP,    D,      T1              ),
+        ASSH_BOP_SUB(    T1,    Q,      T0              ),
+        ASSH_BOP_MOD(    DQ,    D,      T1              ),
+        ASSH_BOP_END(),
+      };
+
+      ASSH_RET_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "NNNNNTT",
+                                        &k->dn, &k->pn, &k->qn, &k->dpn, &k->dqn));
     }
 
   *key = &k->key;

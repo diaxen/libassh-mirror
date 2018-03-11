@@ -145,30 +145,54 @@ assh_sign_rsa_generate(struct assh_context_s *c,
   assh_hexdump("rsa generate em", em_buf, n);
 #endif
 
+  /* use Chinese Remainder */
   enum bytecode_args_e
   {
     C_data, EM_data,            /* data buffers */
-    N, D,                       /* big number inputs */
-    C, EM,                      /* big number temporaries */
+    Q, P, DP, DQ, I, N,         /* big number inputs */
+    M2, EM, T0, T1, T2,         /* big number temporaries */
     MT
   };
 
   static const assh_bignum_op_t bytecode[] = {
-    ASSH_BOP_SIZER(     C,      MT,     N		),
-    ASSH_BOP_MTINIT(    MT,     N                       ),
+    ASSH_BOP_SIZER(     M2,     EM,     N		),
+    ASSH_BOP_SIZER(     T0,     MT,     P		),
 
     ASSH_BOP_MOVE(      EM,     EM_data			),
-    ASSH_BOP_MTTO(      EM,     EM,     EM,     MT      ),
-    ASSH_BOP_EXPM(      C,      EM,     D,	MT	),
-    ASSH_BOP_MTFROM(    C,      C,      C,      MT      ),
 
-    ASSH_BOP_MOVE(      C_data, C			),
+    /* m2 = em^dq % q */
+    ASSH_BOP_MOD(       T0,     EM,     Q               ),
+    ASSH_BOP_MTINIT(    MT,     Q                       ),
+    ASSH_BOP_MTTO(      T0,     T0,     T0,     MT      ),
+    ASSH_BOP_EXPM(      T0,     T0,     DQ,	MT	),
+    ASSH_BOP_MTFROM(    T0,     T0,     T0,     MT      ),
+    ASSH_BOP_MOVE(      M2,     T0			),
+
+    /* m1 = em^dp % p */
+    ASSH_BOP_MOD(       T1,     EM,     P               ),
+    ASSH_BOP_MTINIT(    MT,     P                       ),
+    ASSH_BOP_MTTO(      T1,     T1,     T1,     MT      ),
+    ASSH_BOP_EXPM(      T1,     T1,     DP,	MT	),
+
+    /* h = i * (m1 - m2) */
+    ASSH_BOP_MTTO(      T0,     T0,     T0,     MT      ),
+    ASSH_BOP_SUBM(      T1,     T1,     T0,     MT      ),
+    ASSH_BOP_MTTO(      T2,     T2,     I,      MT      ),
+    ASSH_BOP_MULM(      T0,     T1,     T2,     MT      ),
+    ASSH_BOP_MTFROM(    T1,     T1,     T0,     MT      ),
+
+    /* m = m2 + h * q */
+    ASSH_BOP_MUL(       EM,     T1,     Q               ),
+    ASSH_BOP_ADD(       M2,     M2,     EM              ),
+
+    ASSH_BOP_MOVE(      C_data, M2			),
     ASSH_BOP_END(),
   };
 
-  ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "DDNNTTm",
+  ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "DDNNNNNNTTTTTm",
                    /* Data */ c_str, em_buf,
-                   /* Num  */ &k->nn, &k->dn), err_scratch);
+                   /* Num  */ &k->qn, &k->pn, &k->dpn, &k->dqn,
+                                    &k->in, &k->nn), err_scratch);
 
   err = ASSH_OK;
 
