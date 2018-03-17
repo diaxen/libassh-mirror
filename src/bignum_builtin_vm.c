@@ -658,7 +658,8 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
 #if !defined(NDEBUG) || defined(CONFIG_ASSH_DEBUG) 
               dsta->mt_num = 0;
 #endif
-              ASSH_JMP_ON_ERR(assh_bignum_realloc(c, dsta, 0, 0), err_sc);
+              ASSH_JMP_ON_ERR(assh_bignum_realloc(c, dsta,
+                             src1->secret | src2->secret, 0), err_sc);
             }
           if (ob != ASSH_BOP_NOREG)
             {
@@ -669,7 +670,8 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
                   dstb->mt_num = src2->mt_mod;
                   dstb->mt_id = src2->mt_id;
 #endif
-                  ASSH_JMP_ON_ERR(assh_bignum_realloc(c, dstb, src1->secret, 1), err_sc);
+                  ASSH_JMP_ON_ERR(assh_bignum_realloc(c, dstb,
+                                 src1->secret | src2->secret, 1), err_sc);
                 }
               if (src2->mt_mod)
                 {

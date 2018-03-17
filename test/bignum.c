@@ -1036,22 +1036,81 @@ assh_error_t test_div(unsigned int count)
     {
       enum bytecode_args_e
       {
-        A, B, C, D, E, S
+        A, B, C, D, E, S, Sb
       };
 
       static const assh_bignum_op_t bytecode[] = {
         ASSH_BOP_SIZE(  A,      S                       ),
-        ASSH_BOP_SIZE(  B,      S                       ),
+        ASSH_BOP_SIZE(  B,      Sb                      ),
         ASSH_BOP_SIZE(  C,      S                       ),
         ASSH_BOP_SIZE(  D,      S                       ),
         ASSH_BOP_SIZEM( E,      S,      0,      2       ),
 
+        /* test non constant time div */
         ASSH_BOP_RAND(  A,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
                                 ASSH_PRNG_QUALITY_WEAK  ),
+        ASSH_BOP_PRINT(	A,	'A'		),
+
         ASSH_BOP_RAND(  B,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
                                 ASSH_PRNG_QUALITY_WEAK  ),
+        ASSH_BOP_PRINT(	B,	'B'		),
 
         ASSH_BOP_DIVMOD(C,      D,      A,      B       ),
+        ASSH_BOP_PRINT(	C,	'C'		),
+        ASSH_BOP_PRINT(	D,	'D'		),
+
+        ASSH_BOP_CMPLT( D,      B,	0               ),
+        ASSH_BOP_CFAIL( 1,	0                       ),
+
+        ASSH_BOP_MUL(   E,      B,      C               ),
+        ASSH_BOP_ADD(   E,      E,      D               ),
+
+        ASSH_BOP_CMPEQ( E,      A,	0               ),
+        ASSH_BOP_CFAIL( 1,	0                       ),
+
+        /* test constant time div with secret A */
+        ASSH_BOP_RAND(  A,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
+                                ASSH_PRNG_QUALITY_WEAK  ),
+        ASSH_BOP_PRIVACY( A,    1,      0               ),
+        ASSH_BOP_PRINT(	A,	'A'		),
+
+        ASSH_BOP_RAND(  B,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
+                                ASSH_PRNG_QUALITY_WEAK  ),
+        ASSH_BOP_SET(B, 1, B, 1),
+        ASSH_BOP_PRINT(	B,	'B'		),
+
+        ASSH_BOP_DIVMOD(C,      D,      A,      B       ),
+
+        ASSH_BOP_PRINT(	C,	'C'		),
+        ASSH_BOP_PRINT(	D,	'D'		),
+
+        ASSH_BOP_CMPLT( D,      B,	0               ),
+        ASSH_BOP_CFAIL( 1,	0                       ),
+
+        ASSH_BOP_MUL(   E,      B,      C               ),
+        ASSH_BOP_ADD(   E,      E,      D               ),
+
+        ASSH_BOP_CMPEQ( E,      A,	0               ),
+        ASSH_BOP_CFAIL( 1,	0                       ),
+
+        /* test constant time div with secret B */
+        ASSH_BOP_RAND(  A,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
+                                ASSH_PRNG_QUALITY_WEAK  ),
+        ASSH_BOP_PRINT(	A,	'A'		),
+
+        ASSH_BOP_RAND(  B,      ASSH_BOP_NOREG, ASSH_BOP_NOREG,
+                                ASSH_PRNG_QUALITY_WEAK  ),
+        ASSH_BOP_SET(B, 1, B, 1),
+        ASSH_BOP_PRIVACY( B,    1,      0               ),
+        ASSH_BOP_PRINT(	B,	'B'		),
+
+        ASSH_BOP_DIVMOD(C,      D,      A,      B       ),
+
+        ASSH_BOP_PRINT(	C,	'C'		),
+        ASSH_BOP_PRINT(	D,	'D'		),
+
+        ASSH_BOP_CMPLT( D,      B,	0               ),
+        ASSH_BOP_CFAIL( 1,	0                       ),
 
         ASSH_BOP_MUL(   E,      B,      C               ),
         ASSH_BOP_ADD(   E,      E,      D               ),
@@ -1062,7 +1121,11 @@ assh_error_t test_div(unsigned int count)
         ASSH_BOP_END(),
       };
 
-      ASSH_RET_ON_ERR(assh_bignum_bytecode(&context, 0, bytecode, "TTTTTs", (size_t)256));
+      size_t b_size = 100 + rand() % 128;
+      size_t a_size = b_size + rand() % 128;
+
+      ASSH_RET_ON_ERR(assh_bignum_bytecode(&context, 2, bytecode, "TTTTTss",
+                                        a_size, b_size));
     }
 
   fprintf(stderr, "d");
