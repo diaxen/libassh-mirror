@@ -478,6 +478,9 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
 
       switch (op)
         {
+        case ASSH_BIGNUM_OP_NOP:
+          break;
+
         case ASSH_BIGNUM_OP_END:
           goto end;
 

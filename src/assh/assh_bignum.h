@@ -359,6 +359,7 @@ enum assh_bignum_opcode_e
   ASSH_BIGNUM_OP_PRINT     = 34,
   ASSH_BIGNUM_OP_TRACE     = 35,
   ASSH_BIGNUM_OP_SHRINK    = 36,
+  ASSH_BIGNUM_OP_NOP       = 37,
 };
 
 /** @internal */
@@ -371,7 +372,7 @@ enum assh_bignum_opcode_e
     "ladinit", "ladtest", "ladnext", "cswap",   \
     "cmove", "mtinit", "mtto", "mtfrom",        \
     "prime", "nextprime", "isprime", "bool",    \
-    "privacy", "print", "trace", "shrink"       \
+    "privacy", "print", "trace", "shrink", "nop" \
 }
 
 /** @internal Reserved big number bytecode register id. */
@@ -601,7 +602,7 @@ enum assh_bignum_opcode_e
 
 /** @mgroup{Bytecode instructions}
     @internal This instruction does nothing. */
-#define ASSH_BOP_NOP() ASSH_BOP_JMP(0)
+#define ASSH_BOP_NOP() ASSH_BOP_FMT1(ASSH_BIGNUM_OP_NOP, 0)
 
 /** @mgroup{Bytecode instructions}
     @internal This instruction jump to a different bytecode location
