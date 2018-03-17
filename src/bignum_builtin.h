@@ -220,21 +220,14 @@ assh_bignum_addsub(struct assh_bignum_s *dst,
 
 /****************************** bignum_builtin_div.c */
 
-void
-assh_bignum_div_euclidean_ct(assh_bnword_t * __restrict__ rn,
-                             uint_fast32_t r_len,
-                             assh_bnword_t * __restrict__ dn,
-                             uint_fast32_t d_len,
-                             const assh_bnword_t * __restrict__ bn,
-                             uint_fast32_t b_len, int_fast32_t bitlen_diff);
-
 assh_error_t
-assh_bignum_div_euclidean(assh_bnword_t * __restrict__ r,
+assh_bignum_div_euclidean(assh_bnword_t * __restrict__ rn,
                           uint_fast32_t r_len,
-                          assh_bnword_t * __restrict__ d,
+                          assh_bnword_t * __restrict__ dn,
                           uint_fast32_t d_len,
-                          const assh_bnword_t * __restrict__ b,
-                          uint_fast32_t b_len);
+                          const assh_bnword_t * __restrict__ bn,
+                          uint_fast32_t b_len,
+                          assh_bool_t secret, int_fast32_t bitlen_diff);
 
 size_t
 assh_bignum_div_sc_size(const struct assh_bignum_s *r,

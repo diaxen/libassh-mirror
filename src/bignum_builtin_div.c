@@ -135,13 +135,13 @@ assh_bignum_div_update_q(uint_fast32_t d_len, assh_bnword_t * __restrict__ d,
     }
 }
 
-assh_error_t
-assh_bignum_div_euclidean(assh_bnword_t * __restrict__ r,
-                          uint_fast32_t r_len,
-                          assh_bnword_t * __restrict__ d,
-                          uint_fast32_t d_len,
-                          const assh_bnword_t * __restrict__ b,
-                          uint_fast32_t b_len)
+static assh_error_t
+assh_bignum_div_euclidean_vt(assh_bnword_t * __restrict__ r,
+                             uint_fast32_t r_len,
+                             assh_bnword_t * __restrict__ d,
+                             uint_fast32_t d_len,
+                             const assh_bnword_t * __restrict__ b,
+                             uint_fast32_t b_len)
 {
   assh_error_t err;
   uint_fast32_t az, al, bz, bl, da, sa;
@@ -178,7 +178,7 @@ assh_bignum_div_euclidean(assh_bnword_t * __restrict__ r,
   return ASSH_OK;
 }
 
-void
+static void
 assh_bignum_div_euclidean_ct(assh_bnword_t * __restrict__ rn,
                              uint_fast32_t r_len,
                              assh_bnword_t * __restrict__ dn,
@@ -245,6 +245,25 @@ assh_bignum_div_euclidean_ct(assh_bnword_t * __restrict__ rn,
     rn[i] = t = (assh_bnlong_t)rn[i] + (t >> ASSH_BIGNUM_W);
 }
 
+assh_error_t
+assh_bignum_div_euclidean(assh_bnword_t * __restrict__ rn,
+                          uint_fast32_t r_len,
+                          assh_bnword_t * __restrict__ dn,
+                          uint_fast32_t d_len,
+                          const assh_bnword_t * __restrict__ bn,
+                          uint_fast32_t b_len,
+                          assh_bool_t secret, int_fast32_t bitlen_diff)
+{
+  assh_error_t err;
+
+  if (!secret)
+    ASSH_RET_ON_ERR(assh_bignum_div_euclidean_vt(rn, r_len, dn, d_len, bn, b_len));
+  else
+    assh_bignum_div_euclidean_ct(rn, r_len, dn, d_len, bn, b_len, bitlen_diff);
+
+  return ASSH_OK;
+}
+
 size_t
 assh_bignum_div_sc_size(const struct assh_bignum_s *r,
                         const struct assh_bignum_s *a)
@@ -298,11 +317,9 @@ assh_bignum_div(struct assh_context_s *ctx,
       memset(dn, 0, dl * sizeof(assh_bnword_t));
     }
 
-  if (a->secret || b->secret)
-    assh_bignum_div_euclidean_ct(rn, rl, dn, dl, b->n, bl,
-                                 a->bits - assh_bignum_bitlen(b));
-  else
-    ASSH_RET_ON_ERR(assh_bignum_div_euclidean(rn, rl, dn, dl, b->n, bl));
+  ASSH_RET_ON_ERR(assh_bignum_div_euclidean(rn, rl, dn, dl, b->n, bl,
+                                         a->secret || b->secret,
+                                         a->bits - assh_bignum_bitlen(b)));
 
   if (r != NULL && r->bits < a->bits)
     memcpy(r->n, rn, assh_bignum_words(r->bits) * sizeof(assh_bnword_t));
@@ -345,7 +362,7 @@ assh_bignum_modinv(struct assh_context_s *ctx,
   memcpy(p, an, al * sizeof(assh_bnword_t));
   memset(p + al, 0, (ml - al) * sizeof(assh_bnword_t));
 
-  ASSH_RET_ON_ERR(assh_bignum_div_euclidean(p, al, NULL, 0, r, ml));
+  ASSH_RET_ON_ERR(assh_bignum_div_euclidean_vt(p, al, NULL, 0, r, ml));
 
   memset(v, 0, ml * sizeof(assh_bnword_t));
   memset(un + 1, 0, (ul - 1) * sizeof(assh_bnword_t));

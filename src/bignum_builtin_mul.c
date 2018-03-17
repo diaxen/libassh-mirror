@@ -200,8 +200,6 @@ assh_bignum_mul_mod(struct assh_context_s *ctx,
 {
   assh_error_t err;
 
-  assert(!a->secret && !b->secret && !m->secret);
-
   ASSH_RET_IF_TRUE(r->bits < m->bits, ASSH_ERR_OUTPUT_OVERFLOW);
 
   size_t al = assh_bignum_words(a->bits);
@@ -218,7 +216,9 @@ assh_bignum_mul_mod(struct assh_context_s *ctx,
 #endif
     assh_bignum_school_mul(x, a->n, al, b->n, bl);
 
-  ASSH_RET_ON_ERR(assh_bignum_div_euclidean(x, l, NULL, 0, m->n, ml));
+  ASSH_RET_ON_ERR(assh_bignum_div_euclidean(x, l, NULL, 0, m->n, ml,
+                                         a->secret | b->secret | m->secret,
+                                         a->bits + b->bits - assh_bignum_bitlen(m)));
 
   memcpy(r->n, x, ml * sizeof(assh_bnword_t));
   memset(r->n + ml, 0, (rl - ml) * sizeof(assh_bnword_t));
