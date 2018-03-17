@@ -58,7 +58,7 @@ assh_bignum_mt_init(struct assh_context_s *c,
   r2[i] = 1;
 
   assh_bignum_div_euclidean(r2, ml * 2 + 1, NULL, 0, m, ml,
-                            mod->secret, ml * ASSH_BIGNUM_W + 1);
+                    mod->secret, 2 * ml * ASSH_BIGNUM_W + 1 - mod->bits);
 
   /* compute 1 in montgomery representation */
   assh_bnword_t *r1 = m + ml * 2;
@@ -67,7 +67,8 @@ assh_bignum_mt_init(struct assh_context_s *c,
     r1[i] = 0;
   r1[i] = 1;
 
-  assh_bignum_div_euclidean(r1, ml + 1, NULL, 0, m, ml, mod->secret, 1);
+  assh_bignum_div_euclidean(r1, ml + 1, NULL, 0, m, ml, mod->secret,
+                             ml * ASSH_BIGNUM_W + 1 - mod->bits);
 
   return ASSH_OK;
 }
