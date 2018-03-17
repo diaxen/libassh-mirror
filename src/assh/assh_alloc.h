@@ -86,14 +86,14 @@ ASSH_INLINE void assh_free(struct assh_context_s *c, void *ptr)
     @see #ASSH_SCRATCH_FREE.
 */
 # define ASSH_SCRATCH_ALLOC(context, type, name, size, sv, lbl)		\
-  size_t name##_size = (size) * sizeof(type);				\
-  type *name = (type*)alloca(name##_size);                              \
+  size_t name##_size_ = (size) * sizeof(type);				\
+  type *name = (type*)alloca(name##_size_);                              \
   if (0) goto lbl;
 
 /** @internal @This releases memory allocated by @ref
     #ASSH_SCRATCH_ALLOC. */
 # define ASSH_SCRATCH_FREE(context, name) \
-  do { assh_clear(name, name##_size); } while (0)
+  do { assh_clear(name, name##_size_); } while (0)
 
 #else
 
