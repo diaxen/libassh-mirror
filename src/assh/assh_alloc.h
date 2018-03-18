@@ -54,7 +54,9 @@ assh_alloc(struct assh_context_s *c, size_t size,
 	   enum assh_alloc_type_e type, void **result)
 {
   *result = NULL;
-  return c->f_alloc(c->alloc_pv, result, size, type);
+  return size != 0
+    ? c->f_alloc(c->alloc_pv, result, size, type)
+    : ASSH_OK;
 }
 
 /** @internal @This reallocates memory. */
