@@ -469,6 +469,13 @@ assh_error_t test_ops()
       ASSH_BOP_END(),
     };
 
+    static const assh_bignum_op_t bytecode_istrivial[] = {
+      ASSH_BOP_MOVE(	A,	A_mpint		),
+      ASSH_BOP_ISTRIVIAL(	A,	0	),
+      ASSH_BOP_CFAIL(	0,	0		),
+      ASSH_BOP_END(),
+    };
+
     static const assh_bignum_op_t bytecode_nextprime[] = {
       ASSH_BOP_SIZE(	M,	A		),
       ASSH_BOP_SIZE(	T,	A		),
@@ -857,9 +864,34 @@ assh_error_t test_ops()
       },
 
       {
+	256, 0, 0, 0, bytecode_istrivial,
+	"\x00\x00\x00\x20"
+        "\x7f\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff"
+        "\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xed"
+      },
+
+      {
 	32, 0, 0, 0, bytecode_isprime,
 	"\x00\x00\x00\x05"
         "\x00\xff\xff\xff\xfb"
+      },
+
+      {
+	32, 0, 0, 0, bytecode_istrivial,
+	"\x00\x00\x00\x05"
+        "\x00\xff\xff\xff\xfb"
+      },
+
+      {
+	64, 0, 0, 1, bytecode_isprime,
+	"\x00\x00\x00\x09"
+        "\x00\xff\xff\xff\xfa\x00\x00\x00\x09"
+      },
+
+      {
+	64, 0, 0, 0, bytecode_istrivial,
+	"\x00\x00\x00\x09"
+        "\x00\xff\xff\xff\xfa\x00\x00\x00\x09"
       },
 
       {

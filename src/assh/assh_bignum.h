@@ -360,6 +360,7 @@ enum assh_bignum_opcode_e
   ASSH_BIGNUM_OP_TRACE     = 35,
   ASSH_BIGNUM_OP_SHRINK    = 36,
   ASSH_BIGNUM_OP_NOP       = 37,
+  ASSH_BIGNUM_OP_ISTRIVIAL   = 38,
 };
 
 /** @internal */
@@ -372,7 +373,8 @@ enum assh_bignum_opcode_e
     "ladinit", "ladtest", "ladnext", "cswap",   \
     "cmove", "mtinit", "mtto", "mtfrom",        \
     "prime", "nextprime", "isprime", "bool",    \
-    "privacy", "print", "trace", "shrink", "nop" \
+    "privacy", "print", "trace", "shrink",      \
+    "nop", "trivial"                            \
 }
 
 /** @internal Reserved big number bytecode register id. */
@@ -700,6 +702,11 @@ enum assh_bignum_opcode_e
     greater and depends on the required probability. */
 #define ASSH_BOP_ISPRIME(src, rounds, condid)                  \
   ASSH_BOP_FMT3(ASSH_BIGNUM_OP_ISPRIME, condid, rounds, src)
+
+/** @mgroup{Bytecode instructions} @internal This instruction updates
+    the condition flag. It is set if the number has a small prime factor. */
+#define ASSH_BOP_ISTRIVIAL(src, condid)                  \
+  ASSH_BOP_FMT2(ASSH_BIGNUM_OP_ISTRIVIAL, condid, src)
 
 /** specify boolean operations for use with @ref #ASSH_BOP_BOOL */
 enum assh_bignum_bool_op

@@ -280,6 +280,34 @@ assh_bignum_miller_rabin(struct assh_context_s *c,
   return ASSH_OK;
 }
 
+void
+assh_bignum_check_trivial_composite(const struct assh_bignum_s *bn,
+                                    assh_bool_t *result)
+{
+  size_t l = assh_bignum_words(bn->bits);
+  assh_bnword_t *n = bn->n;
+  size_t i;
+
+  assert(!bn->secret);
+
+  assh_bool_t composite = 0;
+
+  if (l > 0)
+    {
+      composite |= !(n[0] & 1);
+
+      /* test bn % small primes */
+      for (i = 0; i < ASSH_SIEVE_PRIMES; i++)
+        {
+          uint16_t p = assh_primes[i];
+          uint16_t o = assh_bignum_sieve_mod(n, l, p);
+          composite |= assh_bignum_eqzero(o);
+        }
+    }
+
+  *result = composite;
+}
+
 assh_error_t ASSH_WARN_UNUSED_RESULT
 assh_bignum_check_prime(struct assh_context_s *ctx,
                         assh_bnword_t *s,
@@ -289,25 +317,16 @@ assh_bignum_check_prime(struct assh_context_s *ctx,
   assh_error_t err;
   size_t l = assh_bignum_words(bn->bits);
   assh_bnword_t *n = bn->n;
-  size_t i;
 
   *result = 0;
 
-  if (l == 0 || !(n[0] & 1))
+  if (l == 0)
     return ASSH_OK;
 
-  /* test bn % small primes */
-  assh_bool_t composite = 0;
+  assh_bool_t composite = !(n[0] & 1);
 
-  if (!bn->secret)
-    {
-      for (i = 0; i < ASSH_SIEVE_PRIMES; i++)
-        {
-          uint16_t p = assh_primes[i];
-          uint16_t o = assh_bignum_sieve_mod(n, l, p);
-          composite |= assh_bignum_eqzero(o);
-        }
-    }
+  if (!bn->secret && !composite)
+    assh_bignum_check_trivial_composite(bn, &composite);
 
   if (!composite)
     {

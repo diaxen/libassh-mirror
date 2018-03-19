@@ -398,4 +398,8 @@ assh_bignum_gen_prime(struct assh_context_s *c,
                       const struct assh_bignum_s *max,
                       enum assh_prng_quality_e quality);
 
+void
+assh_bignum_check_trivial_composite(const struct assh_bignum_s *bn,
+                                    assh_bool_t *result);
+
 #endif

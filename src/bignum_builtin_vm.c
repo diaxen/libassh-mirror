@@ -974,7 +974,6 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
         case ASSH_BIGNUM_OP_ISPRIME: {
           struct assh_bignum_s *src = args[od];
           assert(!src->mt_num);
-          assert(!src->secret);
           assert(oc > 0);
           uint8_t cond_mask = (1 << ob);
           assh_bool_t r;
@@ -982,6 +981,7 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           cond &= ~cond_mask;
           cond |= r << ob;
           cond_secret &= ~cond_mask;
+          cond_secret |= (src->secret << ob);
           break;
         }
 
@@ -1019,6 +1019,18 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
           if (trace & 2)
             assh_bignum_builtin_print(dst, ASSH_BIGNUM_NATIVE, 'R', pc, mt);
 #endif
+          break;
+        }
+
+        case ASSH_BIGNUM_OP_ISTRIVIAL: {
+          struct assh_bignum_s *src = args[od];
+          assert(!src->mt_num);
+          uint8_t cond_mask = (1 << oc);
+          assh_bool_t r;
+          assh_bignum_check_trivial_composite(src, &r);
+          cond &= ~cond_mask;
+          cond |= r << oc;
+          cond_secret &= ~cond_mask;
           break;
         }
 
