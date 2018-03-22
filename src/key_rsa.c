@@ -251,25 +251,34 @@ static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
     ASSH_BOP_CMPEQ(     P,      Q,      0               ),
     ASSH_BOP_CFAIL(     0,      0                       ),
 
+    /* N */
     ASSH_BOP_MUL(       N,      P,      Q               ),
     ASSH_BOP_PRIVACY(   N,      0,      0               ),
 
-    // FIXME could use T1 = N - (P + Q -1)
     ASSH_BOP_UINT(      T0,     1                       ),
-    ASSH_BOP_SUB(       DP,     P,      T0              ),
-    ASSH_BOP_SUB(       DQ,     Q,      T0              ),
-    ASSH_BOP_MUL(       T1,     DP,     DQ              ),
 
+    /* phi(N) */
+    ASSH_BOP_SUB(       T1,     N,      P               ),
+    ASSH_BOP_SUB(       T1,     T1,     Q               ),
+    ASSH_BOP_ADD(       T1,     T1,     T0              ),
+
+    /* E, D */
     ASSH_BOP_PRIVACY(   T1,     0,      1               ),
     ASSH_BOP_PRIVACY(   D,      0,      1               ),
     ASSH_BOP_UINT(      E,      65537                   ),
     ASSH_BOP_INV(       D,      E,      T1              ),
 
+    /* DP */
+    ASSH_BOP_SUB(       DP,     P,      T0              ),
     ASSH_BOP_MOD(       T1,     D,      DP              ),
     ASSH_BOP_MOVE(      DP,     T1                      ),
+
+    /* DQ */
+    ASSH_BOP_SUB(       DQ,     Q,      T0              ),
     ASSH_BOP_MOD(       T1,     D,      DQ              ),
     ASSH_BOP_MOVE(      DQ,     T1                      ),
 
+    /* I */
     ASSH_BOP_PRIVACY(   P,      0,      1               ),
     ASSH_BOP_PRIVACY(   Q,      0,      1               ),
     ASSH_BOP_PRIVACY(   I,      0,      1               ),
@@ -302,41 +311,90 @@ static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
 static ASSH_KEY_VALIDATE_FCN(assh_key_rsa_validate)
 {
   struct assh_key_rsa_s *k = (void*)key;
-  assh_error_t err = ASSH_OK;
-
-  uint_fast16_t n = assh_bignum_bits(&k->nn);
-
-  /* check key size */
-  ASSH_RET_IF_TRUE(n < 768 || n > 8192, ASSH_ERR_BAD_DATA);
+  assh_error_t err;
 
   enum bytecode_args_e
   {
-    N, D, E, T0
+    N, D, E, P, Q, DP, DQ, I,
+    T0, T1, T2
   };
-
-  /* FIXME add constant time private key validation  */
 
   static const assh_bignum_op_t bytecode[] = {
     ASSH_BOP_SIZE(      T0,     N                       ),
+    ASSH_BOP_SIZER(     T1,     T2,     P               ),
 
-    /* check N */
+    /* check range of N */
     ASSH_BOP_TEST(      N,      1,      N,      0       ),
     ASSH_BOP_CFAIL(     1,      0                       ),
     ASSH_BOP_TEST(      N,      0, ASSH_BOP_NOREG, 0    ),
     ASSH_BOP_CFAIL(     1,      0                       ),
 
-    /* check E */
+    /* check range of E */
     ASSH_BOP_TEST(      E,      0, ASSH_BOP_NOREG, 0    ),
     ASSH_BOP_CFAIL(     1,      0                       ),
     ASSH_BOP_UINT(      T0,     2                       ),
     ASSH_BOP_CMPLTEQ(   E,      T0,     0               ),
     ASSH_BOP_CFAIL(     0,      0                       ),
 
+    /* private key ? */
+    ASSH_BOP_CMPEQ(     P,      ASSH_BOP_NOREG, 0       ),
+    ASSH_BOP_CJMP(      3,      1,      0               ),
+
+    /* check for small factors in N */
+    ASSH_BOP_ISTRIVIAL( N,      0                       ),
+    ASSH_BOP_CFAIL(     0,      0                       ),
+
+    ASSH_BOP_JMP(       27 /* goto to end */            ),
+
+    /* check P != Q */
+    ASSH_BOP_CMPEQ(     Q,      P,     0                ),
+    ASSH_BOP_CFAIL(     0,      0                       ),
+
+    /* check P prime */
+    ASSH_BOP_ISPRIME(   P,      20,      0              ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
+
+    /* check Q prime */
+    ASSH_BOP_ISPRIME(   Q,      20,      0              ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
+
+    /* check Q*I % P == 1 */
+    ASSH_BOP_MULM(      T2,     Q,      I,     P       ),
+    ASSH_BOP_UINT(      T1,     1                       ),
+    ASSH_BOP_CMPEQ(     T2,     T1,     0               ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
+
+    /* check N == P * Q */
+    ASSH_BOP_MUL(       T0,     P,      Q               ),
+    ASSH_BOP_CMPEQ(     T0,     N,      0               ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
+
+    /* check D*E % phi(N) == 1 */
+    ASSH_BOP_SUB(       T0,     N,      P               ),
+    ASSH_BOP_SUB(       T0,     T0,     Q               ),
+    ASSH_BOP_ADD(       T0,     T0,     T1              ),
+    ASSH_BOP_MULM(      T0,     D,      E,      T0      ),
+    ASSH_BOP_CMPEQ(     T0,     T1,     0               ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
+
+    /* check DP == D % P */
+    ASSH_BOP_SUB(       T2,     P,      T1              ),
+    ASSH_BOP_MOD(       T0,     D,      T2              ),
+    ASSH_BOP_CMPEQ(     T0,     DP,     0               ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
+
+    /* check DQ == D % Q */
+    ASSH_BOP_SUB(       T2,     Q,      T1              ),
+    ASSH_BOP_MOD(       T0,     D,      T2              ),
+    ASSH_BOP_CMPEQ(     T0,     DQ,     0               ),
+    ASSH_BOP_CFAIL(     1,      0                       ),
+
     ASSH_BOP_END(),
   };
 
-  ASSH_RETURN(assh_bignum_bytecode(c, 0, bytecode, "NNNT",
-                                    &k->nn, &k->dn, &k->en));
+  ASSH_RETURN(assh_bignum_bytecode(c, 0, bytecode, "NNNNNNNNTTT",
+                                      &k->nn, &k->dn, &k->en, &k->pn,
+                                      &k->qn, &k->dpn, &k->dqn, &k->in));
 }
 
 static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
@@ -420,7 +478,12 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
   /* allocate key structure */
   ASSH_RET_IF_TRUE(n_len < 768 || n_len > 8192, ASSH_ERR_NOTSUP);
   ASSH_RET_IF_TRUE(e_len < 1 || e_len > 32, ASSH_ERR_NOTSUP);
-  ASSH_RET_IF_TRUE(d_str != NULL && (d_len < 768 || d_len > 8192), ASSH_ERR_NOTSUP);
+
+  if (d_str != NULL)
+    {
+      ASSH_RET_IF_TRUE(d_len < 768 || d_len > 8192, ASSH_ERR_NOTSUP);
+      ASSH_RET_IF_TRUE(n_len != p_len * 2 || n_len != q_len * 2, ASSH_ERR_NOTSUP);
+    }
 
   struct assh_key_rsa_s *k;
 
@@ -485,23 +548,40 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
       break;
     }
 
-  /* Compute missing dq and dp values */
-  if (k->key.private && assh_bignum_isempty(&k->dpn))
+  if (k->key.private)
     {
-      enum bytecode_args_e { D, P, Q, DP, DQ, T0, T1 };
+      enum bytecode_args_e
+      {
+        D, P, Q, DP, DQ, T0, T1
+      };
 
       static const assh_bignum_op_t bytecode[] = {
         ASSH_BOP_SIZER(  T0,    T1,     P               ),
+
+        /* check that msb of P and Q are set */
+        ASSH_BOP_TEST(   P,      1,      P,      0      ),
+        ASSH_BOP_TEST(   Q,      1,      Q,      1      ),
+        ASSH_BOP_BOOL(   0,      1,      0,      ASSH_BOP_BOOL_AND ),
+        ASSH_BOP_CFAIL(  1,      0                      ),
+
+        /* Compute missing dq and dp values */
         ASSH_BOP_UINT(   T0,    1                       ),
+
+        ASSH_BOP_CMPEQ(  DP,     ASSH_BOP_NOREG, 0      ),
+        ASSH_BOP_CJMP(   2,      1,      0              ),
         ASSH_BOP_SUB(    T1,    P,      T0              ),
         ASSH_BOP_MOD(    DP,    D,      T1              ),
+
+        ASSH_BOP_CMPEQ(  DQ,     ASSH_BOP_NOREG, 0      ),
+        ASSH_BOP_CJMP(   2,      1,      0              ),
         ASSH_BOP_SUB(    T1,    Q,      T0              ),
         ASSH_BOP_MOD(    DQ,    D,      T1              ),
+
         ASSH_BOP_END(),
       };
 
-      ASSH_RET_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "NNNNNTT",
-                                        &k->dn, &k->pn, &k->qn, &k->dpn, &k->dqn));
+      ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "NNNNNTT",
+                     &k->dn, &k->pn, &k->qn, &k->dpn, &k->dqn), err_num);
     }
 
   *key = &k->key;
