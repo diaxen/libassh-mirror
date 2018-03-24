@@ -241,11 +241,11 @@ static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
     ASSH_BOP_SIZE(      T1,     N                       ),
 
     /* generate 2 prime numbers with the 2 most significant bits set */
-    ASSH_BOP_UINT(      T0,     3                       ),
-    ASSH_BOP_SHL(       T0,     T0,     -2,     P       ),
-    ASSH_BOP_PRIME(     P,      T0,     ASSH_BOP_NOREG,
+    ASSH_BOP_UINT(      I,      3                       ),
+    ASSH_BOP_SHL(       I,      I,      -2,     P       ),
+    ASSH_BOP_PRIME(     P,      I,      ASSH_BOP_NOREG,
                         ASSH_PRNG_QUALITY_LONGTERM_KEY  ),
-    ASSH_BOP_PRIME(     Q,      T0,     ASSH_BOP_NOREG,
+    ASSH_BOP_PRIME(     Q,      I,      ASSH_BOP_NOREG,
                         ASSH_PRNG_QUALITY_LONGTERM_KEY  ),
     /* sanity check */
     ASSH_BOP_CMPEQ(     P,      Q,      0               ),
@@ -267,6 +267,10 @@ static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
     ASSH_BOP_PRIVACY(   D,      0,      1               ),
     ASSH_BOP_UINT(      E,      65537                   ),
     ASSH_BOP_INV(       D,      E,      T1              ),
+
+    /* choose P & Q again if phi(N) and E are not coprimes */
+    ASSH_BOP_CMPEQ(     D,      T0,      0              ),
+    ASSH_BOP_CJMP(      -16,    0,       0              ),
 
     /* DP */
     ASSH_BOP_SUB(       DP,     P,      T0              ),
