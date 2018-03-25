@@ -82,13 +82,9 @@ else
 libassh_la_SOURCES +=   hash_md5_builtin.c hash_sha1_builtin.c hash_sha2_builtin.c mac_builtin.c
 endif
 
-if COND_gcrypt_bignum
-libassh_la_SOURCES +=	bignum_gcrypt.c
-else
 libassh_la_SOURCES +=	bignum_builtin.h bignum_builtin.c bignum_builtin_vm.c \
 	bignum_builtin_add.c bignum_builtin_mul.c bignum_builtin_div.c \
 	bignum_builtin_shift.c bignum_builtin_prime.c bignum_builtin_mt.c
-endif
 
 if COND_gcrypt_prng
 libassh_la_SOURCES +=	prng_gcrypt.c

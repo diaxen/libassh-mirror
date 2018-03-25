@@ -41,7 +41,6 @@ basic:
 	grep -q "define CONFIG_ASSH_USE_GCRYPT" config.h
 	grep -q "define CONFIG_ASSH_USE_GCRYPT_HASH" config.h
 	grep -q "define CONFIG_ASSH_USE_GCRYPT_CIPHERS" config.h
-	grep -q "undef CONFIG_ASSH_USE_GCRYPT_BIGNUM" config.h
 	grep -q "define CONFIG_ASSH_USE_GCRYPT_ALLOC" config.h
 	grep -q "undef CONFIG_ASSH_USE_GCRYPT_PRNG" config.h
 	grep -q "undef CONFIG_ASSH_SERVER_AUTH_NONE" config.h

@@ -73,9 +73,6 @@ struct assh_context_s
     intptr_t prng_pvl;
   };
 
-  /** Big number engine */
-  const struct assh_bignum_algo_s *bignum;
-
   /** Head of loaded keys list */
   struct assh_key_s *keys;
 

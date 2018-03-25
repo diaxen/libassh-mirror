@@ -93,9 +93,6 @@ AC_ARG_ENABLE(gcrypt, AC_HELP_STRING(--disable-gcrypt, [Disable use of gcrypt su
 AC_ARG_ENABLE(gcrypt_hash, AC_HELP_STRING(--disable-gcrypt-hash, [Disable use of gcrypt hash algorithms]),
 		       enable_gcrypt_hash=$enableval, enable_gcrypt_hash=yes)
 
-AC_ARG_ENABLE(gcrypt_bignum, AC_HELP_STRING(--enable-gcrypt-bignum, [Enable use of gcrypt big number functions]),
-		       enable_gcrypt_bignum=$enableval, enable_gcrypt_bignum=no)
-
 AC_ARG_ENABLE(gcrypt_prng, AC_HELP_STRING(--enable-gcrypt-prng, [Enable use of gcrypt random number generation]),
 		       enable_gcrypt_prng=$enableval, enable_gcrypt_prng=no)
 
@@ -123,10 +120,6 @@ if test x$enable_gcrypt = xyes ; then
       if test x$enable_gcrypt_hash = xyes ; then
 	AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_HASH], [], [use of gcrypt hash algorithms])
         AC_DEFINE([CONFIG_ASSH_HASH_RIPEMD160], [], [RIPE-MD-160 message digest available])
-      fi
-
-      if test x$enable_gcrypt_bignum = xyes ; then
-	AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_BIGNUM], [], [use of gcrypt big number functions])
       fi
 
       if test x$enable_gcrypt_prng = xyes ; then
@@ -159,7 +152,6 @@ fi
 
 if test x$enable_gcrypt = xno ; then
    enable_gcrypt_hash=no
-   enable_gcrypt_bignum=no
    enable_gcrypt_prng=no
    enable_gcrypt_alloc=no
    enable_gcrypt_ciphers=no
@@ -201,7 +193,6 @@ AM_CONDITIONAL(COND_server,  [test x$enable_server = xyes])
 AM_CONDITIONAL(COND_client,  [test x$enable_client = xyes])
 
 AM_CONDITIONAL(COND_gcrypt_hash,    [test x$enable_gcrypt_hash = xyes])
-AM_CONDITIONAL(COND_gcrypt_bignum,  [test x$enable_gcrypt_bignum = xyes])
 AM_CONDITIONAL(COND_gcrypt_prng,    [test x$enable_gcrypt_prng = xyes])
 AM_CONDITIONAL(COND_gcrypt_alloc,   [test x$enable_gcrypt_alloc = xyes])
 AM_CONDITIONAL(COND_gcrypt_ciphers, [test x$enable_gcrypt_ciphers = xyes])

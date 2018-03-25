@@ -29,7 +29,6 @@
 #include <assh/assh_kex.h>
 #include <assh/assh_prng.h>
 #include <assh/assh_alloc.h>
-#include <assh/assh_bignum.h>
 
 #include <stdlib.h>
 
@@ -184,12 +183,6 @@ assh_context_init(struct assh_context_s *c,
 #endif
 
   c->srvs_count = 0;
-
-#ifdef CONFIG_ASSH_USE_GCRYPT_BIGNUM
-  c->bignum = &assh_bignum_gcrypt;
-#else
-  c->bignum = &assh_bignum_builtin;
-#endif
 
   return ASSH_OK;
 }

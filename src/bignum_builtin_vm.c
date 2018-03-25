@@ -60,7 +60,12 @@ assh_bignum_realloc(struct assh_context_s *c,
   return ASSH_OK;
 }
 
-static ASSH_BIGNUM_CONVERT_FCN(assh_bignum_builtin_convert)
+assh_error_t
+assh_bignum_builtin_convert(struct assh_context_s *c,
+                            enum assh_bignum_fmt_e srcfmt,
+                            enum assh_bignum_fmt_e dstfmt,
+                            const void *src, void *dst, uint8_t **next,
+                            assh_bool_t secret)
 {
   assh_error_t err;
 
@@ -189,7 +194,10 @@ assh_bignum_builtin_print(void *arg, enum assh_bignum_fmt_e fmt,
 #endif
 }
 
-static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
+assh_error_t
+assh_bignum_builtin_bytecode(struct assh_context_s *c, uint8_t cond,
+                             const assh_bignum_op_t *ops,
+                             const char *format, va_list ap)
 {
   uint_fast8_t flen, tlen, mlen;
   assh_error_t err;
@@ -1090,16 +1098,10 @@ static ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_builtin_bytecode)
   return err;
 }
 
-static ASSH_BIGNUM_RELEASE_FCN(assh_bignum_builtin_release)
+void
+assh_bignum_builtin_release(struct assh_context_s *ctx,
+                            struct assh_bignum_s *bn)
 {
   assh_free(ctx, bn->n);
 }
-
-const struct assh_bignum_algo_s assh_bignum_builtin =
-{
-  .name = "builtin",
-  .f_bytecode = assh_bignum_builtin_bytecode,
-  .f_convert = assh_bignum_builtin_convert,
-  .f_release = assh_bignum_builtin_release,
-};
 

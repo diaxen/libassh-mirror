@@ -234,10 +234,9 @@ assh_config.h
 
   Provided asymmetric crypto algorithms relies on stand-alone
   implementations. This include key-exchange and signature
-  algorithms. These implementations rely on a big number engine
-  module. A gcypt based and a built-in big number engines are
-  provided. The built-in engine supports strict constant time
-  computations in order to avoid side channel attacks.
+  algorithms. These implementations rely on a big number engine which
+  implements strict constant time computations in order to prevent side
+  channel attacks.
 
   Some gcypt based and built-in modules are provided for ciphers and MACs.
 

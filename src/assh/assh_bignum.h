@@ -131,50 +131,23 @@ struct assh_bignum_s
 };
 
 /** @internal @see assh_bignum_bytecode_t */
-#define ASSH_BIGNUM_BYTECODE_FCN(n)        \
-  ASSH_WARN_UNUSED_RESULT assh_error_t \
-  (n)(struct assh_context_s *c, uint8_t cond, \
-      const assh_bignum_op_t *ops,     \
-      const char *format, va_list ap)
-
-/** @internal @This defines the function type for the byte code
-    execution operation of the big number module interface. 
-    @see assh_bignum_bytecode */
-typedef ASSH_BIGNUM_BYTECODE_FCN(assh_bignum_bytecode_t);
-
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_bignum_builtin_bytecode(struct assh_context_s *c, uint8_t cond,
+                             const assh_bignum_op_t *ops,
+                             const char *format, va_list ap);
 
 /** @internal @see assh_bignum_convert_t */
-#define ASSH_BIGNUM_CONVERT_FCN(n)            \
-  ASSH_WARN_UNUSED_RESULT assh_error_t        \
-  (n)(struct assh_context_s *c,           \
-      enum assh_bignum_fmt_e srcfmt,      \
-      enum assh_bignum_fmt_e dstfmt,      \
-      const void *src, void *dst, uint8_t **next, \
-      assh_bool_t secret)
-
-/** @internal @This defines the function type for the number
-    conversion operation of the big number module interface.  @see
-    assh_bignum_convert */
-typedef ASSH_BIGNUM_CONVERT_FCN(assh_bignum_convert_t);
-
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_bignum_builtin_convert(struct assh_context_s *c,
+                            enum assh_bignum_fmt_e srcfmt,
+                            enum assh_bignum_fmt_e dstfmt,
+                            const void *src, void *dst, uint8_t **next,
+                            assh_bool_t secret);
 
 /** @internal @see assh_bignum_release_t */
-#define ASSH_BIGNUM_RELEASE_FCN(n) \
-  void (n)(struct assh_context_s *ctx, struct assh_bignum_s *bn)
-
-/** @internal @This defines the function type for the release
-    operation of the big number module interface.  @see
-    assh_bignum_release */
-typedef ASSH_BIGNUM_RELEASE_FCN(assh_bignum_release_t);
-
-/** @internal @This is the big number engine module interface structure. */
-struct assh_bignum_algo_s
-{
-  const char *name;
-  assh_bignum_bytecode_t *f_bytecode;
-  assh_bignum_convert_t *f_convert;
-  assh_bignum_release_t *f_release;
-};
+void
+assh_bignum_builtin_release(struct assh_context_s *ctx,
+                            struct assh_bignum_s *bn);
 
 /** @internal @This executes big number operations specified by the
     given bytecode. Operations are performed on arguments and
@@ -214,7 +187,7 @@ assh_bignum_bytecode(struct assh_context_s *c, uint8_t cond,
   va_list ap;
   assh_error_t err;
   va_start(ap, format);
-  err = c->bignum->f_bytecode(c, cond, ops, format, ap);
+  err = assh_bignum_builtin_bytecode(c, cond, ops, format, ap);
   va_end(ap);
   return err;
 }
@@ -246,7 +219,7 @@ assh_bignum_convert(struct assh_context_s *c,
                     const void *src, void *dst, uint8_t **next,
                     assh_bool_t dst_secret)
 {
-  return c->bignum->f_convert(c, src_fmt, dst_fmt, src, dst, next, dst_secret);
+  return assh_bignum_builtin_convert(c, src_fmt, dst_fmt, src, dst, next, dst_secret);
 }
 
 /** @internal @This returns the byte size needed to store a big number
@@ -316,7 +289,7 @@ ASSH_INLINE void
 assh_bignum_release(struct assh_context_s *ctx,
                     struct assh_bignum_s  *bn)
 {
-  ctx->bignum->f_release(ctx, bn);
+  assh_bignum_builtin_release(ctx, bn);
 }
 
 /** @internal */
@@ -742,13 +715,5 @@ enum assh_bignum_bool_op
 
 #define ASSH_BOP_TRACE(mode) \
   ASSH_BOP_FMT1(ASSH_BIGNUM_OP_TRACE, mode)
-
-/** @multiple @internal @This is a big number engine implementation
-    descriptor. */
-#ifdef CONFIG_ASSH_USE_GCRYPT_BIGNUM
-extern const struct assh_bignum_algo_s assh_bignum_gcrypt;
-#endif
-
-extern const struct assh_bignum_algo_s assh_bignum_builtin;
 
 #endif
