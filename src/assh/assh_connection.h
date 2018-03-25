@@ -165,8 +165,8 @@ enum assh_connection_reply_e
   ASSH_CONNECTION_REPLY_CLOSED,
 };
 
-#define ASSH_SRV_CN_DEFAULT_PKTSIZE (CONFIG_ASSH_MAX_PAYLOAD - 8)
-#define ASSH_SRV_CN_DEFAULT_WINDOW  (ASSH_SRV_CN_DEFAULT_PKTSIZE * 3)
+#define ASSH_SRV_CN_MAX_PKTSIZE (CONFIG_ASSH_MAX_PAYLOAD \
+             - /* extended data message header */ 3 * 4)
 
 /** This function sets the value of the channel private pointer. */
 void assh_channel_set_pv(struct assh_channel_s *ch, void *pv);
@@ -188,12 +188,7 @@ assh_channel_session(const struct assh_channel_s *ch);
 enum assh_channel_status_e
 assh_channel_status(const struct assh_channel_s *ch);
 
-/** This set the maximum size of the local window. The next window
-    adjust packet will increase the window size to match the given value. */
-void assh_channel_set_win_size(struct assh_channel_s *ch,
-                               uint32_t win_size);
-
-/** This returns the number of bytes left in current windows for a channel */
+/** This returns the size of the channel local and remote windows in bytes */
 void assh_channel_get_win_size(const struct assh_channel_s *ch,
                                uint32_t *local, uint32_t *remote);
 
@@ -389,13 +384,6 @@ assh_request(struct assh_session_s *s,
    available in the @ref type and @ref rq_data fields. These buffers
    will not remain valid after the call to @ref assh_event_done.
 
-   The @ref pkt_size and the @ref win_size fields initially contain
-   the maximum packet size accepted by the remote host for this
-   channel and the initial window data size. The values can be
-   modified if they need to be different for the other channel
-   direction. The maximum packet size value will be reduced if larger
-   than what the libassh transport layer can handle.
-
    The @ref reply field can be set to @ref
    ASSH_CONNECTION_REPLY_SUCCESS in order to successfully acknowledge
    the channel open. In this case, some response data may optionally
@@ -418,6 +406,10 @@ assh_request(struct assh_session_s *s,
    If some channel open are left postponed when the connection is
    ending, some @ref ASSH_EVENT_CHANNEL_ABORT events are reported.
 
+   The @ref pkt_size and @ref win_size fields are initially set to @tt
+   {-1} and can be modified. The meaning of these fields is as
+   described in @ref assh_channel_open.
+
    @see ASSH_EVENT_CHANNEL_OPEN
 */
 struct assh_event_channel_open_s
@@ -427,8 +419,8 @@ struct assh_event_channel_open_s
   ASSH_EV_CONST struct assh_cbuffer_s   rq_data;  //< input
   enum assh_connection_reply_e          reply;    //< output
   enum assh_channel_open_reason_e       reason;   //< output
-  uint32_t                              win_size; //< input/output
-  uint32_t                              pkt_size; //< input/output
+  int32_t                               win_size; //< input/output
+  int32_t                               pkt_size; //< input/output
   struct assh_cbuffer_s                 rsp_data; //< output
 };
 
@@ -448,14 +440,15 @@ struct assh_event_channel_abort_s
 
 /**
    This function is similar to @ref assh_channel_open_success_reply
-   but allows to specify the maximum packet size and the initial
-   window size for the output direction of the channel.
+   but allows overriding the maximum packet size and the initial
+   local window size specified when the @ref ASSH_EVENT_CHANNEL_OPEN
+   event has been reported.
 
    @see assh_channel_open_success_reply
 */
 assh_error_t
 assh_channel_open_success_reply2(struct assh_channel_s *ch,
-                                 uint32_t pkt_size, uint32_t win_size,
+                                 int32_t pkt_size, int32_t win_size,
                                  const uint8_t *rsp_data,
                                  size_t rsp_data_len);
 
@@ -534,20 +527,6 @@ struct assh_event_channel_open_reply_s
 };
 
 /**
-   This function is similar to @ref assh_channel_open but allows to
-   specify the maximum packet size and the initial window size for the
-   output direction of the channel.
-
-   @see assh_channel_open
-*/
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_channel_open2(struct assh_session_s *s,
-                   const char *type, size_t type_len,
-                   const uint8_t *data, size_t data_len,
-                   uint32_t pkt_size, uint32_t win_size,
-                   struct assh_channel_s **ch);
-
-/**
    This function allocates an @ref assh_channel_s object and send a
    @ref SSH_MSG_CHANNEL_OPEN message to the remote host.
 
@@ -558,6 +537,15 @@ assh_channel_open2(struct assh_session_s *s,
    The @tt data and @tt data_len parameters allow sending some channel
    type specific data along with the channel open message.
 
+   The maximum packet size and the initial size of the channel local
+   window may be specified. When the @tt pkt_size parameter is
+   negative, a default value is used. When the @tt win_size parameter
+   is negative, automatic local window adjustment is enabled for the
+   channel. When a positive value is used instead, it specifies the
+   initial size of the local window. In the later case, calls to the
+   @ref assh_channel_window_adjust function have to be performed in
+   order to keep the size of the local window above 0.
+
    If this function is called after disconnection, this function
    returns @ref ASSH_NO_DATA to indicate that it was not able to open
    the channel.
@@ -567,16 +555,11 @@ assh_channel_open2(struct assh_session_s *s,
    by calling the @ref assh_event_done function.
 */
 ASSH_WARN_UNUSED_RESULT assh_error_t
-ASSH_INLINE assh_channel_open(struct assh_session_s *s,
-                                const char *type, size_t type_len,
-                                const uint8_t *data, size_t data_len,
-                                struct assh_channel_s **ch)
-{
-  return assh_channel_open2(s, type, type_len, data, data_len,
-                            ASSH_SRV_CN_DEFAULT_PKTSIZE,
-                            ASSH_SRV_CN_DEFAULT_WINDOW,
-                            ch);
-}
+assh_channel_open(struct assh_session_s *s,
+                  const char *type, size_t type_len,
+                  const uint8_t *data, size_t data_len,
+                  int32_t pkt_size, int32_t win_size,
+                  struct assh_channel_s **ch);
 
 /************************************************* incoming channel data */
 
@@ -589,6 +572,18 @@ ASSH_INLINE assh_channel_open(struct assh_session_s *s,
    or if the value is less than @tt {data.size}. In the other case,
    the data buffers will not remain valid after the call to @ref
    assh_event_done.
+
+   The size of the local window for the channel is decreased by the
+   amount of received bytes when the event is first reported. When
+   automatic local window adjustment is not enabled for the channel,
+   the @ref assh_channel_window_adjust function must be called as soon
+   as it becomes possible to receive more data.
+
+   It's not possible to receive data from other channels until all
+   data provided by the event are consumed. When this is a problem,
+   automatic adjustment of the local window must not be used so that
+   the amount of data sent by the remote host can be kept under
+   control for all channels.
 
    @see ASSH_EVENT_CHANNEL_DATA
    @see assh_channel_more_data
@@ -614,11 +609,21 @@ struct assh_event_channel_data_s
 struct assh_channel_s *
 assh_channel_more_data(struct assh_session_s *s);
 
+/** This function can be used to advertise the remote host that we are
+    ready to receive more data over the channel.
+
+    This function increases the local window size and sends a @ref
+    SSH_MSG_CHANNEL_WINDOW_ADJUST message to the remote host. */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_channel_window_adjust(struct assh_channel_s *ch, size_t add);
+
 /**
    This event is reported when the @tt ssh-connection service is
-   running and a channel window message has been received.
+   running and a @ref SSH_MSG_CHANNEL_WINDOW_ADJUST message has been
+   received.
 
-   This event indicates that more data can be sent.
+   This event indicates the size of the remote window has increased.
+   This means that more data can be sent over the channel.
 
    @see ASSH_EVENT_CHANNEL_WINDOW
 */
@@ -643,7 +648,7 @@ struct assh_event_channel_window_s
 
    This function returns @ref ASSH_NO_DATA if @tt min_size is either
    larger than the maximum packet size for the channel or larger than
-   the channel current window. In this case no packet is allocated but
+   the channel remote window. In this case no packet is allocated but
    the @tt size parameter is still updated with the current largest
    possible size. The largest possible size is 0 either if there is no
    window space left or if the channel is closing.

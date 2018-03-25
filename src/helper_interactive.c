@@ -32,7 +32,7 @@ assh_inter_open_session(struct assh_session_s *s,
 
 {
   assh_error_t err;
-  ASSH_RET_ON_ERR(assh_channel_open(s, "session", 7, NULL, 0, ch));
+  ASSH_RET_ON_ERR(assh_channel_open(s, "session", 7, NULL, 0, -1, -1, ch));
 
   return ASSH_OK;
 }
@@ -327,7 +327,7 @@ assh_inter_open_x11(struct assh_session_s *s,
   uint8_t buf[sz];
 
   ASSH_ASSERT(assh_inter_encode_x11(buf, sz, i));
-  ASSH_RET_ON_ERR(assh_channel_open(s, "x11", 3, buf, sz, ch));
+  ASSH_RET_ON_ERR(assh_channel_open(s, "x11", 3, buf, sz, -1, -1, ch));
 
   return ASSH_OK;
 }
@@ -1264,7 +1264,7 @@ assh_inter_open_forwarded_tcpip(struct assh_session_s *s,
   uint8_t buf[sz];
 
   ASSH_ASSERT(assh_inter_encode_forwarded_tcpip(buf, sz, i));
-  ASSH_RET_ON_ERR(assh_channel_open(s, "forwarded-tcpip", 15, buf, sz, ch));
+  ASSH_RET_ON_ERR(assh_channel_open(s, "forwarded-tcpip", 15, buf, sz, -1, -1, ch));
 
   return ASSH_OK;
 }
@@ -1367,7 +1367,7 @@ assh_inter_open_direct_tcpip(struct assh_session_s *s,
   uint8_t buf[sz];
 
   ASSH_ASSERT(assh_inter_encode_direct_tcpip(buf, sz, i));
-  ASSH_RET_ON_ERR(assh_channel_open(s, "direct-tcpip", 12, buf, sz, ch));
+  ASSH_RET_ON_ERR(assh_channel_open(s, "direct-tcpip", 12, buf, sz, -1, -1, ch));
 
   return ASSH_OK;
 }

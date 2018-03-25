@@ -282,7 +282,7 @@ void test(int (*fend)(int, int), int cnt, int evrate,
 		    size_t data_len;
 		    const uint8_t *data;
 		    get_data(&data_len, &data);
-		    err = assh_channel_open2(&session[i], (const char *)data, data_len,
+		    err = assh_channel_open(&session[i], (const char *)data, data_len,
 					     data, data_len,
 					     assh_prng_rand() % 31 + 1, assh_prng_rand() % 128,
 					     &ch);
@@ -619,6 +619,7 @@ void test(int (*fend)(int, int), int cnt, int evrate,
 	      struct assh_event_channel_data_s *e = &event.connection.channel_data;
 	      e->transferred = assh_prng_rand() % (e->data.size + 1);
 	      ASSH_DEBUG("ASSH_EVENT_CHANNEL_DATA %p\n", e->ch);
+	      assh_channel_window_adjust(e->ch, e->transferred);
 	      ch_data_recv++;
 	      break;
 	    }

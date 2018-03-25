@@ -353,7 +353,7 @@ void test(int (*fend)(int, int), int n, int evrate)
 		    che->data_len = assh_prng_rand() % sizeof(che->data);
 		    memset(che->data, assh_prng_rand(), che->data_len);
 
-		    err = assh_channel_open2(&session[i], che->type, che->type_len,
+		    err = assh_channel_open(&session[i], che->type, che->type_len,
 					   che->data, che->data_len,
 					   assh_prng_rand() % 31 + 1, assh_prng_rand() % 128,
 					     &che->ch[i]);

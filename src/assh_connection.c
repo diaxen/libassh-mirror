@@ -107,12 +107,12 @@ struct assh_channel_s
   uint32_t remote_id;
   uint32_t rpkt_size;		//< remote packet size
   uint32_t lpkt_size;		//< local packet size
-  uint32_t lwin_size;		//< local window size
 
   uint32_t rwin_left;           //< remote window bytes left
   uint32_t lwin_left;           //< local window bytes left
 
-  enum assh_channel_status_e status:8;
+  enum assh_channel_status_e status:7;
+  assh_bool_t auto_window:1;
 };
 
 ASSH_FIRST_FIELD_ASSERT(assh_channel_s, qentry);
@@ -186,12 +186,6 @@ enum assh_channel_status_e
 assh_channel_status(const struct assh_channel_s *ch)
 {
   return ch->status;
-}
-
-void assh_channel_set_win_size(struct assh_channel_s *ch,
-                               uint32_t win_size)
-{
-  ch->lwin_size = ASSH_MAX(win_size, ch->lpkt_size * 2);
 }
 
 void assh_channel_get_win_size(const struct assh_channel_s *ch,
@@ -919,7 +913,7 @@ assh_channel_open_failed_reply(struct assh_channel_s *ch,
 
 assh_error_t
 assh_channel_open_success_reply2(struct assh_channel_s *ch,
-                                 uint32_t pkt_size, uint32_t win_size,
+                                 int32_t pkt_size, int32_t win_size,
                                  const uint8_t *rsp_data,
                                  size_t rsp_data_len)
 {
@@ -940,11 +934,15 @@ assh_channel_open_success_reply2(struct assh_channel_s *ch,
       ASSH_UNREACHABLE("call not allowed in current state");
     }
 
-  assert(pkt_size >= 1);
+  if (pkt_size <= 0)
+    pkt_size = ASSH_SRV_CN_MAX_PKTSIZE;
 
-  ch->lpkt_size = ASSH_MIN(pkt_size, CONFIG_ASSH_MAX_PAYLOAD
-                           - /* extended data message header */ 3 * 4);
-  ch->lwin_size = ch->lwin_left = ASSH_MAX(win_size, ch->lpkt_size * 4);
+  ch->auto_window = (win_size < 0);
+  if (ch->auto_window)
+    win_size = pkt_size;
+
+  ch->lpkt_size = ASSH_MIN(pkt_size, ASSH_SRV_CN_MAX_PKTSIZE);
+  ch->lwin_left = win_size;
 
   struct assh_packet_s *pout;
 
@@ -973,7 +971,7 @@ assh_channel_open_success_reply(struct assh_channel_s *ch,
                                 const uint8_t *rsp_data,
                                 size_t rsp_data_len)
 {
-  return assh_channel_open_success_reply2(ch, ch->lpkt_size, ch->lwin_size,
+  return assh_channel_open_success_reply2(ch, ch->lpkt_size, ch->lwin_left,
                                           rsp_data, rsp_data_len);
 }
 
@@ -1022,7 +1020,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_open_done)
     case ASSH_CONNECTION_REPLY_POSTPONED:
       /* keep values for assh_channel_open_success_reply */
       ch->lpkt_size = eo->pkt_size;
-      ch->lwin_size = eo->win_size;
+      ch->lwin_left = eo->win_size;
       return ASSH_OK;
 
     default:
@@ -1077,8 +1075,8 @@ assh_connection_got_channel_open(struct assh_session_s *s,
   type_->str = (char*)type + 4;
   type_->len = assh_load_u32(type);
 
-  ev->win_size = win_size;
-  ev->pkt_size = pkt_size;
+  ev->win_size = -1;
+  ev->pkt_size = -1;
 
   struct assh_cbuffer_s *rq_data = &ev->rq_data;
   rq_data->size = p->data + p->data_size - data;
@@ -1102,11 +1100,11 @@ assh_connection_got_channel_open(struct assh_session_s *s,
 /************************************************* outgoing channel open */
 
 assh_error_t
-assh_channel_open2(struct assh_session_s *s,
-                   const char *type, size_t type_len,
-                   const uint8_t *data, size_t data_len,
-                   uint32_t pkt_size, uint32_t win_size,
-		   struct assh_channel_s **ch_)
+assh_channel_open(struct assh_session_s *s,
+                  const char *type, size_t type_len,
+                  const uint8_t *data, size_t data_len,
+                  int32_t pkt_size, int32_t win_size,
+		  struct assh_channel_s **ch_)
 {
   assh_error_t err;
   struct assh_connection_context_s *pv = s->srv_pv;
@@ -1116,8 +1114,6 @@ assh_channel_open2(struct assh_session_s *s,
 
   if (s->tr_st >= ASSH_TR_DISCONNECT)
     return ASSH_NO_DATA;
-
-  assert(pkt_size >= 1);
 
   /* alloc open msg packet */
   struct assh_packet_s *pout;
@@ -1131,9 +1127,15 @@ assh_channel_open2(struct assh_session_s *s,
   ASSH_JMP_ON_ERR(assh_alloc(s->ctx, sizeof(*ch), ASSH_ALLOC_INTERNAL, (void**)&ch)
 	       | ASSH_ERRSV_CONTINUE, err_pkt);
 
-  ch->lpkt_size = ASSH_MIN(pkt_size, CONFIG_ASSH_MAX_PAYLOAD
-                           - /* extended data message header */ 3 * 4);
-  ch->lwin_size = ch->lwin_left = ASSH_MAX(win_size, ch->lpkt_size * 4);
+  if (pkt_size <= 0)
+    pkt_size = ASSH_SRV_CN_MAX_PKTSIZE;
+
+  ch->auto_window = (win_size < 0);
+  if (ch->auto_window)
+    win_size = pkt_size;
+
+  ch->lpkt_size = ASSH_MIN(pkt_size, ASSH_SRV_CN_MAX_PKTSIZE);
+  ch->lwin_left = win_size;
   ch->mentry.id = assh_channel_next_id(pv);
   ch->status = ASSH_CHANNEL_ST_OPEN_SENT;
   ch->session = s;
@@ -1271,8 +1273,48 @@ assh_connection_got_channel_open_reply(struct assh_session_s *s,
 
 /************************************************* incoming channel data */
 
+assh_error_t
+assh_channel_window_adjust(struct assh_channel_s *ch, size_t add)
+{
+  struct assh_session_s *s = ch->session;
+  assh_error_t err;
+
+  switch (ch->status)
+    {
+    case ASSH_CHANNEL_ST_OPEN_SENT:
+    case ASSH_CHANNEL_ST_OPEN_SENT_FORCE_CLOSE:
+    case ASSH_CHANNEL_ST_OPEN_RECEIVED:
+    case ASSH_CHANNEL_ST_OPEN_RECEIVED_FORCE_CLOSE:
+      ASSH_UNREACHABLE("call not allowed in current state");
+
+    case ASSH_CHANNEL_ST_EOF_SENT:
+    case ASSH_CHANNEL_ST_OPEN:
+      break;
+
+    case ASSH_CHANNEL_ST_EOF_CLOSE:
+    case ASSH_CHANNEL_ST_CLOSE_CALLED:
+    case ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING:
+    case ASSH_CHANNEL_ST_EOF_RECEIVED:
+    case ASSH_CHANNEL_ST_FORCE_CLOSE:
+    case ASSH_CHANNEL_ST_CLOSING:
+      return ASSH_NO_DATA;
+    }
+
+  struct assh_packet_s *pout;
+  ASSH_RET_ON_ERR(assh_packet_alloc(s->ctx, SSH_MSG_CHANNEL_WINDOW_ADJUST,
+                                     2 * 4, &pout));
+  ASSH_ASSERT(assh_packet_add_u32(pout, ch->remote_id));
+  ASSH_ASSERT(assh_packet_add_u32(pout, add));
+  assh_transport_push(s, pout);
+
+  ch->lwin_left += add;
+
+  return ASSH_OK;
+}
+
 static ASSH_EVENT_DONE_FCN(assh_event_channel_data_done)
 {
+  assh_error_t err;
   struct assh_connection_context_s *pv = s->srv_pv;
 
   assert(s->srv == &assh_service_connection);
@@ -1281,6 +1323,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_data_done)
   const struct assh_event_channel_data_s *ev =
     &e->connection.channel_data;
 
+  struct assh_channel_s *ch = ev->ch;
   size_t transferred = ASSH_ERR_ERROR(inerr) ? 0 : ev->transferred;
 
   assert(pv->in_data_left >= transferred);
@@ -1290,6 +1333,10 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_data_done)
     {
       assh_packet_release(pv->pck);
       pv->pck = NULL;
+
+      if (ch->auto_window && ch->lwin_left < ch->lpkt_size / 2)
+        ASSH_RET_ON_ERR(assh_channel_window_adjust(ch, ch->lpkt_size - ch->lwin_left)
+		     | ASSH_ERRSV_DISCONNECT);
     }
 
   pv->state = ASSH_CONNECTION_ST_IDLE;
@@ -1397,28 +1444,13 @@ assh_connection_got_channel_data(struct assh_session_s *s,
     size = ch->lwin_left;     /* ignore extra data, rfc4254 section 5.2 */
 #endif
 
-  /* update window and send adjustment */
+  /* update window */
   ch->lwin_left -= size;
 
 #if 0
-  ASSH_DEBUG("lwin_left=%u lwin_size=%u lpkt_size=%u\n",
-	     ch->lwin_left, ch->lwin_size, ch->lpkt_size);
+  ASSH_DEBUG("lwin_left=%u lpkt_size=%u\n",
+	     ch->lwin_left, ch->lpkt_size);
 #endif
-
-  if ((ch->lwin_left < ch->lwin_size / 2) &&
-      ch->status != ASSH_CHANNEL_ST_CLOSE_CALLED)
-    {
-      uint32_t inc = ch->lwin_size - ch->lwin_left;
-
-      struct assh_packet_s *pout;
-      ASSH_RET_ON_ERR(assh_packet_alloc(s->ctx, SSH_MSG_CHANNEL_WINDOW_ADJUST,
-                                     2 * 4, &pout));
-      ASSH_ASSERT(assh_packet_add_u32(pout, ch->remote_id));
-      ASSH_ASSERT(assh_packet_add_u32(pout, inc));
-      assh_transport_push(s, pout);
-
-      ch->lwin_left += inc;
-    }
 
   struct assh_event_channel_data_s *ev =
     &e->connection.channel_data;

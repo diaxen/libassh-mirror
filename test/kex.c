@@ -480,7 +480,7 @@ void test(const struct assh_algo_kex_s *kex,
 
             case ASSH_EVENT_SERVICE_START:
               if (event.service.start.srv == &assh_service_connection)
-		while (assh_channel_open(&session[i], "test", 4, NULL, 0, &ch[i]))
+		while (assh_channel_open(&session[i], "test", 4, NULL, 0, -1, -1, &ch[i]))
 		  ;
 	      break;
 
