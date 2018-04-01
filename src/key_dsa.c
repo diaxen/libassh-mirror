@@ -178,6 +178,7 @@ static ASSH_KEY_CLEANUP_FCN(assh_key_dsa_cleanup)
   assh_free(c, k);
 }
 
+#ifdef CONFIG_ASSH_KEY_CREATE
 static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
 {
   assh_error_t err;
@@ -289,7 +290,9 @@ static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
   assh_key_dsa_cleanup(c, &k->key);
   return err;
 }
+#endif
 
+#ifdef CONFIG_ASSH_KEY_VALIDATE
 static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
 {
   struct assh_key_dsa_s *k = (void*)key;
@@ -378,6 +381,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
   ASSH_RETURN(assh_bignum_bytecode(c, 0, bytecode1, "NNNNNTTm",
                              &k->pn, &k->qn, &k->gn, &k->xn, &k->yn));
 }
+#endif
 
 static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
 {
@@ -505,8 +509,12 @@ const struct assh_key_ops_s assh_key_dsa =
 {
   .type = "ssh-dss",
   .f_output = assh_key_dsa_output,
+#ifdef CONFIG_ASSH_KEY_CREATE
   .f_create = assh_key_dsa_create,
+#endif
+#ifdef CONFIG_ASSH_KEY_VALIDATE
   .f_validate = assh_key_dsa_validate,
+#endif
   .f_cmp = assh_key_dsa_cmp,
   .f_load = assh_key_dsa_load,
   .f_cleanup = assh_key_dsa_cleanup,

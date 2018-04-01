@@ -83,9 +83,11 @@ static const struct algo_with_key_s kex_list_slow[] =
   { &assh_kex_dh_group18_sha512,   NULL, NULL, 0 },
   { &assh_kex_dh_gex_sha1,	   NULL, NULL, 0 },
   { &assh_kex_dh_gex_sha256_12,  NULL, NULL, 0 },
+#ifdef CONFIG_ASSH_KEY_CREATE
   { &assh_kex_rsa1024_sha1,	   NULL, NULL, 0 },
   { &assh_kex_rsa1024_sha1,	   &assh_key_rsa, rsa1024_key, sizeof(rsa1024_key) },
   { &assh_kex_rsa2048_sha256,	   &assh_key_rsa, rsa2048_key, sizeof(rsa2048_key) },
+#endif
   { NULL },
 };
 
@@ -102,8 +104,10 @@ static const struct algo_with_key_s kex_list_long[] =
   { &assh_kex_dh_group1_sha1,	   NULL, NULL, 0 },
   { &assh_kex_dh_group14_sha256,   NULL, NULL, 0 },
   { &assh_kex_dh_gex_sha1,	   NULL, NULL, 0 },
+#ifdef CONFIG_ASSH_KEY_CREATE
   { &assh_kex_rsa1024_sha1,	   NULL, NULL, 0 },
   { &assh_kex_rsa2048_sha256,	   &assh_key_rsa, rsa2048_key, sizeof(rsa2048_key) },
+#endif
   { NULL },
 };
 
@@ -115,8 +119,10 @@ static const struct algo_with_key_s kex_list_all[] =
   { &assh_kex_sha2_nistp256,	   NULL, NULL, 0 },
   { &assh_kex_dh_group1_sha1,	   NULL, NULL, 0 },
   { &assh_kex_dh_gex_sha1,	   NULL, NULL, 0 },
+#ifdef CONFIG_ASSH_KEY_CREATE
   { &assh_kex_rsa1024_sha1,	   NULL, NULL, 0 },
   { &assh_kex_rsa1024_sha1,	   &assh_key_rsa, rsa1024_key, sizeof(rsa1024_key) },
+#endif
   { NULL },
 };
 

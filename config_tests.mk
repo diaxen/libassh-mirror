@@ -23,9 +23,11 @@ MAKE_TARGET=check
 
 .PHONY: all basic noserver noclient auth gcrypt nozlib nopacketpool alloca \
         nopubkeyauth nopasswordauth nohostbasedauth nokeyboardauth \
-        nogcrypt nogcrypthash nogcryptalloc nogcryptcipher gcryptprng
+        nogcrypt nogcrypthash nogcryptalloc nogcryptcipher gcryptprng \
+	nokeycreate nokeyvalidate
 
-all: basic noserver noclient auth gcrypt nozlib nopacketpool alloca
+all: basic noserver noclient auth gcrypt nozlib nopacketpool alloca \
+	nokeyvalidate nokeycreate
 
 auth: nopubkeyauth nopasswordauth nohostbasedauth nokeyboardauth noneauth
 
@@ -52,6 +54,8 @@ basic:
 	grep -q "define CONFIG_ASSH_SERVER_AUTH_HOSTBASED" config.h
 	grep -q "define CONFIG_ASSH_CLIENT_AUTH_KEYBOARD" config.h
 	grep -q "define CONFIG_ASSH_SERVER_AUTH_KEYBOARD" config.h
+	grep -q "define CONFIG_ASSH_KEY_CREATE" config.h
+	grep -q "define CONFIG_ASSH_KEY_VALIDATE" config.h
 	$(MAKE) $(MAKE_TARGET)
 
 noserver:
@@ -63,6 +67,18 @@ noclient:
 	./configure --disable-client
 	grep -q "undef CONFIG_ASSH_CLIENT" config.h
 	$(MAKE) $(MAKE_TARGET)
+
+nokeycreate:
+	./configure --disable-key-create
+	grep -q "undef CONFIG_ASSH_KEY_CREATE" config.h
+	$(MAKE)
+	test/kex
+
+nokeyvalidate:
+	./configure --disable-key-validate
+	grep -q "undef CONFIG_ASSH_KEY_VALIDATE" config.h
+	$(MAKE)
+	test/kex
 
 nopacketpool:
 	./configure --disable-packet-pool

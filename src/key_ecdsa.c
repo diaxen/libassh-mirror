@@ -240,6 +240,7 @@ static ASSH_KEY_CLEANUP_FCN(assh_key_ecdsa_cleanup)
   assh_free(c, k);
 }
 
+#ifdef CONFIG_ASSH_KEY_CREATE
 static assh_error_t
 assh_key_ecdsa_create(struct assh_context_s *c,
                       const struct assh_key_ops_s *algo,
@@ -318,7 +319,9 @@ assh_key_ecdsa_create(struct assh_context_s *c,
   assh_key_ecdsa_cleanup(c, &k->key);
   return err;
 }
+#endif
 
+#ifdef CONFIG_ASSH_KEY_VALIDATE
 static ASSH_KEY_VALIDATE_FCN(assh_key_ecdsa_validate)
 {
   assh_error_t err;
@@ -358,6 +361,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_ecdsa_validate)
   ASSH_RETURN(assh_bignum_bytecode(c, 0, bytecode, "DDNNTTTTTTm",
                  curve->p, curve->b, &k->xn, &k->yn));
 }
+#endif
 
 static ASSH_KEY_LOAD_FCN(assh_key_ecdsa_load)
 {
@@ -512,6 +516,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_ecdsa_load)
   return err;
 }
 
+#ifdef CONFIG_ASSH_KEY_CREATE
 static ASSH_KEY_CREATE_FCN(assh_key_ecdsa_nistp_create)
 {
   assh_error_t err;
@@ -519,14 +524,19 @@ static ASSH_KEY_CREATE_FCN(assh_key_ecdsa_nistp_create)
   ASSH_RET_IF_TRUE(id == NULL, ASSH_ERR_NOTSUP);
   ASSH_RETURN(assh_key_ecdsa_create(c, algo, key, id));
 }
+#endif
 
 const struct assh_key_ops_s assh_key_ecdsa_nistp =
 {
   .type = "ecdsa-sha2-nist",
   .f_output = assh_key_ecdsa_output,
+#ifdef CONFIG_ASSH_KEY_CREATE
   .f_create = assh_key_ecdsa_nistp_create,
+#endif
   .f_load = assh_key_ecdsa_load,
+#ifdef CONFIG_ASSH_KEY_VALIDATE
   .f_validate = assh_key_ecdsa_validate,
+#endif
   .f_cmp = assh_key_ecdsa_cmp,
   .f_cleanup = assh_key_ecdsa_cleanup,
 };

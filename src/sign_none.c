@@ -46,11 +46,13 @@ static ASSH_KEY_CMP_FCN(assh_key_none_cmp)
   return 1;
 }
 
+#ifdef CONFIG_ASSH_KEY_VALIDATE
 static ASSH_KEY_VALIDATE_FCN(assh_key_none_validate)
 {
   assert(key->algo == &assh_key_none);
   return ASSH_OK;
 }
+#endif
 
 static ASSH_KEY_LOAD_FCN(assh_key_none_load)
 {
@@ -66,6 +68,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_none_load)
   return ASSH_OK;
 }
 
+#ifdef CONFIG_ASSH_KEY_CREATE
 static ASSH_KEY_CREATE_FCN(assh_key_none_create)
 {
   assh_error_t err;
@@ -79,15 +82,20 @@ static ASSH_KEY_CREATE_FCN(assh_key_none_create)
 
   return ASSH_OK;
 }
+#endif
 
 const struct assh_key_ops_s assh_key_none =
 {
   .type = "none",
   .f_output = assh_key_none_output,
+#ifdef CONFIG_ASSH_KEY_VALIDATE
   .f_validate = assh_key_none_validate,
+#endif
   .f_cmp = assh_key_none_cmp,
   .f_load = assh_key_none_load,
+#ifdef CONFIG_ASSH_KEY_CREATE
   .f_create = assh_key_none_create,
+#endif
   .f_cleanup = assh_key_none_cleanup,
 };
 

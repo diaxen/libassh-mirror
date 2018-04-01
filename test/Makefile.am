@@ -34,6 +34,7 @@ hash_CFLAGS = -I$(top_srcdir)/src
 if COND_server
 if COND_client
 
+if COND_key_create
 noinst_PROGRAMS += userauth
 TESTS += userauth
 userauth_SOURCES = userauth.c
@@ -45,6 +46,7 @@ TESTS += userauth_server
 userauth_server_SOURCES = userauth_server.c
 userauth_server_LDADD = $(top_builddir)/src/libassh.la
 userauth_server_CFLAGS = -I$(top_srcdir)/src
+endif
 
 noinst_PROGRAMS += connection
 TESTS += connection
@@ -76,6 +78,8 @@ bignum_CFLAGS = -I$(top_srcdir)/src
 
 ############################## signature tests
 
+if COND_key_create
+if COND_key_validate
 noinst_PROGRAMS += key_io
 TESTS += key_io
 key_io_SOURCES = key_io.c
@@ -87,6 +91,8 @@ TESTS += signature
 signature_SOURCES = signature.c
 signature_LDADD = $(top_builddir)/src/libassh.la
 signature_CFLAGS = -I$(top_srcdir)/src
+endif
+endif
 
 noinst_PROGRAMS += algo_list
 TESTS += algo_list

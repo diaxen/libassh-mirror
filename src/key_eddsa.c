@@ -113,6 +113,7 @@ static ASSH_KEY_CMP_FCN(assh_key_eddsa_cmp)
   return !assh_memcmp(k->data, l->data, n);
 }
 
+#ifdef CONFIG_ASSH_KEY_CREATE
 static assh_error_t
 assh_key_eddsa_create(struct assh_context_s *c,
                       const struct assh_key_ops_s *algo,
@@ -244,7 +245,9 @@ assh_key_eddsa_create(struct assh_context_s *c,
   assh_free(c, k);
   return err;
 }
+#endif
 
+#ifdef CONFIG_ASSH_KEY_VALIDATE
 static ASSH_KEY_VALIDATE_FCN(assh_key_eddsa_validate)
 {
   struct assh_key_eddsa_s *k = (void*)key;
@@ -256,6 +259,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_eddsa_validate)
 
   return ASSH_OK;
 }
+#endif
 
 static assh_error_t
 assh_key_eddsa_load(struct assh_context_s *c,
@@ -375,18 +379,24 @@ static ASSH_KEY_LOAD_FCN(assh_key_ed25519_load)
                               &assh_ed25519_curve, &assh_hash_sha512);
 }
 
+#ifdef CONFIG_ASSH_KEY_CREATE
 static ASSH_KEY_CREATE_FCN(assh_key_ed25519_create)
 {
   return assh_key_eddsa_create(c, algo, key, &assh_ed25519_curve, &assh_hash_sha512);
 }
+#endif
 
 const struct assh_key_ops_s assh_key_ed25519 =
 {
   .type = "ssh-ed25519",
   .f_output = assh_key_eddsa_output,
+#ifdef CONFIG_ASSH_KEY_CREATE
   .f_create = assh_key_ed25519_create,
+#endif
   .f_load = assh_key_ed25519_load,
+#ifdef CONFIG_ASSH_KEY_VALIDATE
   .f_validate = assh_key_eddsa_validate,
+#endif
   .f_cmp = assh_key_eddsa_cmp,
   .f_cleanup = assh_key_eddsa_cleanup,
 };
@@ -423,19 +433,25 @@ static ASSH_KEY_LOAD_FCN(assh_key_eddsa_e382_load)
                              &assh_e382_curve, &assh_hash_shake_256);
 }
 
+#ifdef CONFIG_ASSH_KEY_CREATE
 static ASSH_KEY_CREATE_FCN(assh_key_eddsa_e382_create)
 {
   return assh_key_eddsa_create(c, algo, key,
                                &assh_e382_curve, &assh_hash_shake_256);
 }
+#endif
 
 const struct assh_key_ops_s assh_key_eddsa_e382 =
 {
   .type = "eddsa-e382-shake256@libassh.org",
   .f_output = assh_key_eddsa_output,
+#ifdef CONFIG_ASSH_KEY_CREATE
   .f_create = assh_key_eddsa_e382_create,
+#endif
   .f_load = assh_key_eddsa_e382_load,
+#ifdef CONFIG_ASSH_KEY_VALIDATE
   .f_validate = assh_key_eddsa_validate,
+#endif
   .f_cmp = assh_key_eddsa_cmp,
   .f_cleanup = assh_key_eddsa_cleanup,
 };
@@ -480,19 +496,25 @@ static ASSH_KEY_LOAD_FCN(assh_key_eddsa_e521_load)
                              &assh_e521_curve, &assh_hash_shake_256);
 }
 
+#ifdef CONFIG_ASSH_KEY_CREATE
 static ASSH_KEY_CREATE_FCN(assh_key_eddsa_e521_create)
 {
   return assh_key_eddsa_create(c, algo, key,
                                &assh_e521_curve, &assh_hash_shake_256);
 }
+#endif
 
 const struct assh_key_ops_s assh_key_eddsa_e521 =
 {
   .type = "eddsa-e521-shake256@libassh.org",
   .f_output = assh_key_eddsa_output,
+#ifdef CONFIG_ASSH_KEY_CREATE
   .f_create = assh_key_eddsa_e521_create,
+#endif
   .f_load = assh_key_eddsa_e521_load,
+#ifdef CONFIG_ASSH_KEY_VALIDATE
   .f_validate = assh_key_eddsa_validate,
+#endif
   .f_cmp = assh_key_eddsa_cmp,
   .f_cleanup = assh_key_eddsa_cleanup,
 };

@@ -87,6 +87,12 @@ AC_ARG_ENABLE(hostbased_userauth, AC_HELP_STRING(--disable-hostbased-userauth, [
 AC_ARG_ENABLE(keyboard_userauth, AC_HELP_STRING(--disable-keyboard-userauth, [Disable host based user authentication]),
 		       enable_keyboard_userauth=$enableval, enable_keyboard_userauth=yes)
 
+AC_ARG_ENABLE(key_validate, AC_HELP_STRING(--disable-key-validate, [Disable key validation code]),
+		       enable_key_validate=$enableval, enable_key_validate=yes)
+
+AC_ARG_ENABLE(key_create, AC_HELP_STRING(--disable-key-create, [Disable key creation code]),
+		       enable_key_create=$enableval, enable_key_create=yes)
+
 AC_ARG_ENABLE(gcrypt, AC_HELP_STRING(--disable-gcrypt, [Disable use of gcrypt support]),
 		       enable_gcrypt=$enableval, enable_gcrypt=yes)
 
@@ -207,6 +213,9 @@ AM_CONDITIONAL(COND_keyboard_userauth, [test x$enable_keyboard_userauth = xyes])
 AM_CONDITIONAL(COND_publickey_userauth, [test x$enable_publickey_userauth = xyes])
 AM_CONDITIONAL(COND_none_userauth, [test x$enable_none_userauth = xyes])
 
+AM_CONDITIONAL(COND_key_validate, [test x$enable_key_validate = xyes])
+AM_CONDITIONAL(COND_key_create, [test x$enable_key_create = xyes])
+
 if test x$enable_server = xyes ; then
    AC_DEFINE([CONFIG_ASSH_SERVER], [], [SSH server support])
    if test x$enable_publickey_userauth = xyes ; then
@@ -241,6 +250,14 @@ if test x$enable_client = xyes ; then
    if test x$enable_keyboard_userauth = xyes ; then
      AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_KEYBOARD], [], [SSH client authentication: keyboard interactive])
    fi
+fi
+
+if test x$enable_key_validate = xyes ; then
+  AC_DEFINE([CONFIG_ASSH_KEY_VALIDATE], [], [SSH key validation code])
+fi
+
+if test x$enable_key_create = xyes ; then
+  AC_DEFINE([CONFIG_ASSH_KEY_CREATE], [], [SSH key creation code])
 fi
 
 AC_DEFINE([CONFIG_ASSH_AUTH_USERNAME_LEN], [32], [SSH authentication max username length])

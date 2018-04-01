@@ -344,7 +344,9 @@ assh_client_event_openssh_hk_lookup_va(struct assh_session_s *s, FILE *out, FILE
       goto done;
     }
 
+#ifdef CONFIG_ASSH_KEY_VALIDATE
   ASSH_JMP_ON_ERR(assh_key_validate(c, ek), err_);
+#endif
 
   fprintf(out, "\nHave you verified the untrusted key? (type uppercase yes) : ");
 

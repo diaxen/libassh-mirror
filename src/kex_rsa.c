@@ -603,9 +603,13 @@ static assh_error_t assh_kex_rsa_init(struct assh_session_s *s,
     case ASSH_SERVER:
       if (assh_key_lookup(c, &pv->t_key, algo))
 	{
+#ifdef CONFIG_ASSH_KEY_CREATE
 	  ASSH_JMP_ON_ERR(assh_key_create(c, &c->keys, minklen, &assh_key_rsa,
 		       ASSH_ALGO_KEX), err);
 	  pv->t_key = c->keys;
+#else
+          ASSH_JMP_ON_ERR(ASSH_ERR_MISSING_KEY, err);
+#endif
 	}
       pv->state = ASSH_KEX_RSA_SERVER_SEND_PUBKEY;
       break;
@@ -687,7 +691,11 @@ static ASSH_KEX_INIT_FCN(assh_kex_rsa1024_sha1_init)
 static ASSH_ALGO_SUITABLE_KEY_FCN(assh_kex_rsa1024_suitable_key)
 {
   if (key == NULL)
+#ifdef CONFIG_ASSH_KEY_CREATE
     return 0;
+#else
+    return 1;
+#endif
   if (key->algo != &assh_key_rsa || key->role != ASSH_ALGO_KEX)
     return 0;
   const struct assh_key_rsa_s *k = (const void*)key;
@@ -718,7 +726,11 @@ static ASSH_KEX_INIT_FCN(assh_kex_rsa2048_sha256_init)
 static ASSH_ALGO_SUITABLE_KEY_FCN(assh_kex_rsa2048_suitable_key)
 {
   if (key == NULL)
+#ifdef CONFIG_ASSH_KEY_CREATE
     return 0;
+#else
+    return 1;
+#endif
   if (key->algo != &assh_key_rsa || key->role != ASSH_ALGO_KEX)
     return 0;
   const struct assh_key_rsa_s *k = (const void*)key;

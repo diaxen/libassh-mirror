@@ -201,6 +201,7 @@ static ASSH_KEY_CLEANUP_FCN(assh_key_rsa_cleanup)
   assh_free(c, k);
 }
 
+#ifdef CONFIG_ASSH_KEY_CREATE
 static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
 {
   assh_error_t err;
@@ -311,7 +312,9 @@ static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
   assh_key_rsa_cleanup(c, &k->key);
   return err;
 }
+#endif
 
+#ifdef CONFIG_ASSH_KEY_VALIDATE
 static ASSH_KEY_VALIDATE_FCN(assh_key_rsa_validate)
 {
   struct assh_key_rsa_s *k = (void*)key;
@@ -400,6 +403,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_rsa_validate)
                                       &k->nn, &k->dn, &k->en, &k->pn,
                                       &k->qn, &k->dpn, &k->dqn, &k->in));
 }
+#endif
 
 static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
 {
@@ -600,8 +604,12 @@ const struct assh_key_ops_s assh_key_rsa =
 {
   .type = "ssh-rsa",
   .f_output = assh_key_rsa_output,
+#ifdef CONFIG_ASSH_KEY_CREATE
   .f_create = assh_key_rsa_create,
+#endif
+#ifdef CONFIG_ASSH_KEY_VALIDATE
   .f_validate = assh_key_rsa_validate,
+#endif
   .f_cmp = assh_key_rsa_cmp,
   .f_load = assh_key_rsa_load,
   .f_cleanup = assh_key_rsa_cleanup,

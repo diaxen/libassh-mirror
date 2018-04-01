@@ -105,6 +105,7 @@ assh_error_t assh_key_load(struct assh_context_s *c,
   return ASSH_OK;
 }
 
+#ifdef CONFIG_ASSH_KEY_CREATE
 assh_error_t
 assh_key_create(struct assh_context_s *c,
                 struct assh_key_s **key, size_t bits,
@@ -125,6 +126,7 @@ assh_key_create(struct assh_context_s *c,
 
   return ASSH_OK;
 }
+#endif
 
 assh_error_t
 assh_key_comment(struct assh_context_s *c,
