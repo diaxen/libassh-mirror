@@ -326,6 +326,8 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_rsa_validate)
     T0, T1, T2
   };
 
+  assh_bool_t public = assh_bignum_isempty(&k->pn);
+
   static const assh_bignum_op_t bytecode[] = {
     ASSH_BOP_SIZE(      T0,     N                       ),
     ASSH_BOP_SIZER(     T1,     T2,     P               ),
@@ -344,8 +346,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_rsa_validate)
     ASSH_BOP_CFAIL(     0,      0                       ),
 
     /* private key ? */
-    ASSH_BOP_CMPEQ(     P,      ASSH_BOP_NOREG, 0       ),
-    ASSH_BOP_CJMP(      3,      1,      0               ),
+    ASSH_BOP_CJMP(      3,      1,      1               ),
 
     /* check for small factors in N */
     ASSH_BOP_ISTRIVIAL( N,      0                       ),
@@ -399,9 +400,26 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_rsa_validate)
     ASSH_BOP_END(),
   };
 
-  ASSH_RETURN(assh_bignum_bytecode(c, 0, bytecode, "NNNNNNNNTTT",
-                                      &k->nn, &k->dn, &k->en, &k->pn,
-                                      &k->qn, &k->dpn, &k->dqn, &k->in));
+  err = assh_bignum_bytecode(c, public << 1, bytecode, "NNNNNNNNTTT",
+                             &k->nn, &k->dn, &k->en, &k->pn,
+                             &k->qn, &k->dpn, &k->dqn, &k->in);
+
+  switch (err)
+    {
+    case ASSH_ERR_NUM_COMPARE_FAILED:
+    case ASSH_ERR_NUM_OVERFLOW:
+      return ASSH_OK;
+
+    case ASSH_OK:
+      if (public)
+        *result = ASSH_KEY_PARTIALLY_CHECKED;
+      else
+        *result = ASSH_KEY_GOOD;
+      return ASSH_OK;
+
+    default:
+      ASSH_RETURN(err);
+    }
 }
 #endif
 

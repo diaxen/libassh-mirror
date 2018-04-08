@@ -250,13 +250,7 @@ assh_key_eddsa_create(struct assh_context_s *c,
 #ifdef CONFIG_ASSH_KEY_VALIDATE
 static ASSH_KEY_VALIDATE_FCN(assh_key_eddsa_validate)
 {
-  struct assh_key_eddsa_s *k = (void*)key;
-
-  if (!k->key.private)
-    return ASSH_OK;
-
-#warning eddsa key validate
-
+  *result = ASSH_KEY_NOT_CHECKED;
   return ASSH_OK;
 }
 #endif

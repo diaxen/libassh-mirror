@@ -18,13 +18,11 @@ AM_CPPFLAGS = -I$(top_builddir)/src/assh
 
 noinst_PROGRAMS =
 
-if COND_key_validate
 if COND_key_create
 keygen_SOURCES = keygen.c
 keygen_LDADD = $(top_builddir)/src/libassh.la
 keygen_CFLAGS = -I$(top_srcdir)/src
 noinst_PROGRAMS += keygen
-endif
 endif
 
 if COND_client

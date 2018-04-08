@@ -97,7 +97,7 @@ enum assh_keygen_action_e
   ASSH_KEYGEN_SAVE     = 8,
 };
 
-#define ERROR(...) do { fprintf(stderr, __VA_ARGS__); exit(1); } while (0)
+#define ERROR(...) do { fprintf(stderr, "error: " __VA_ARGS__); exit(1); } while (0)
 
 static const struct assh_keygen_format_s * get_format(const char *fmt)
 {
@@ -367,9 +367,34 @@ int main(int argc, char *argv[])
 
   if (action_mask & ASSH_KEYGEN_VALIDATE)
     {
+#ifdef CONFIG_ASSH_KEY_VALIDATE
       fprintf(stderr, "Validating key...\n");
-      if (assh_key_validate(context, key))
-        ERROR("Key validation failed\n");
+
+      enum assh_key_validate_result_e r;
+      if (assh_key_validate(context, key, &r))
+        ERROR("Unexpected error during key validation\n");
+
+        switch (r)
+          {
+          case ASSH_KEY_BAD:
+            ERROR("The key is bad.\n");
+          case ASSH_KEY_NOT_SUPPORTED:
+            ERROR("The key uses some unsupported parameters.\n");
+
+          case ASSH_KEY_NOT_CHECKED:
+#endif
+            fprintf(stderr, "warning: Checking of this key is not supported.\n");
+#ifdef CONFIG_ASSH_KEY_VALIDATE
+            break;
+
+          case ASSH_KEY_PARTIALLY_CHECKED:
+            fprintf(stderr, "warning: This key can not be fully validated.\n");
+            break;
+
+          case ASSH_KEY_GOOD:
+            break;
+          }
+#endif
     }
 
   if (action_mask & ASSH_KEYGEN_SAVE)

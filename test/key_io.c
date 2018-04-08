@@ -231,8 +231,11 @@ static assh_error_t test_helper(struct assh_context_s *c)
       /* compare loaded key to original */
       TEST_ASSERT(assh_key_cmp(c, key1, key2, assh_key_pub_fmt(t->format)));
 
+#ifdef CONFIG_ASSH_KEY_VALIDATE
       /* validate loaded key */
-      TEST_ASSERT(!assh_key_validate(c, key2));
+      enum assh_key_validate_result_e r;
+      TEST_ASSERT(!assh_key_validate(c, key2, &r) && r > 0);
+#endif
 
       if (t->comment != NULL)
 	{

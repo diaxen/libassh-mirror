@@ -296,7 +296,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
 static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
 {
   struct assh_key_dsa_s *k = (void*)key;
-  assh_error_t err = ASSH_OK;
+  assh_error_t err;
 
   /*
    * FIPS 186-4 Appendix A2.2
@@ -307,8 +307,11 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
   uint_fast16_t n = assh_bignum_bits(&k->qn);
 
   /* check key size */
-  ASSH_RET_IF_TRUE(l < 768 || n < 160 || l > 4096 || n > 256 || l % 8 || n % 8,
-               ASSH_ERR_BAD_DATA);
+  if (l < 768 || n < 160 || l > 4096 || n > 256 || l % 8 || n % 8)
+    {
+      *result = ASSH_KEY_NOT_SUPPORTED;
+      return ASSH_OK;
+    }
 
   enum bytecode_args_e
   {
@@ -378,8 +381,22 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
     ASSH_BOP_END(),
   };
 
-  ASSH_RETURN(assh_bignum_bytecode(c, 0, bytecode1, "NNNNNTTm",
-                             &k->pn, &k->qn, &k->gn, &k->xn, &k->yn));
+  err = assh_bignum_bytecode(c, 0, bytecode1, "NNNNNTTm",
+                             &k->pn, &k->qn, &k->gn, &k->xn, &k->yn);
+
+  switch (err)
+    {
+    case ASSH_ERR_NUM_COMPARE_FAILED:
+    case ASSH_ERR_NUM_OVERFLOW:
+      return ASSH_OK;
+
+    case ASSH_OK:
+      *result = ASSH_KEY_GOOD;
+      return ASSH_OK;
+
+    default:
+      ASSH_RETURN(err);
+    }
 }
 #endif
 

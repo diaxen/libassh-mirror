@@ -330,9 +330,9 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_ecdsa_validate)
 
   assert(key->algo == &assh_key_ecdsa_nistp);
 
-  ASSH_RET_IF_TRUE(curve->bits != assh_bignum_bits(&k->xn) ||
-               curve->bits != assh_bignum_bits(&k->yn),
-               ASSH_ERR_OUTPUT_OVERFLOW);
+  if (curve->bits != assh_bignum_bits(&k->xn) ||
+      curve->bits != assh_bignum_bits(&k->yn))
+    return ASSH_OK;             /* *result is BAD */
 
   assert(curve->cofactor == 1); /* more checks needed if != 1 */
 
@@ -358,8 +358,22 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_ecdsa_validate)
     ASSH_BOP_END(),
   };
 
-  ASSH_RETURN(assh_bignum_bytecode(c, 0, bytecode, "DDNNTTTTTTm",
-                 curve->p, curve->b, &k->xn, &k->yn));
+  err = assh_bignum_bytecode(c, 0, bytecode, "DDNNTTTTTTm",
+                             curve->p, curve->b, &k->xn, &k->yn);
+
+  switch (err)
+    {
+    case ASSH_ERR_NUM_COMPARE_FAILED:
+    case ASSH_ERR_NUM_OVERFLOW:
+      return ASSH_OK;
+
+    case ASSH_OK:
+      *result = ASSH_KEY_PARTIALLY_CHECKED;
+      return ASSH_OK;
+
+    default:
+      ASSH_RETURN(err);
+    }
 }
 #endif
 

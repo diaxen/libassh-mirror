@@ -345,10 +345,13 @@ assh_client_event_openssh_hk_lookup_va(struct assh_session_s *s, FILE *out, FILE
     }
 
 #ifdef CONFIG_ASSH_KEY_VALIDATE
-  ASSH_JMP_ON_ERR(assh_key_validate(c, ek), err_);
+  enum assh_key_validate_result_e r;
+  ASSH_JMP_ON_ERR(assh_key_validate(c, ek, &r), err_);
+  ASSH_JMP_IF_TRUE(r < 0, ASSH_ERR_BAD_DATA, err_);
 #endif
 
-  fprintf(out, "\nHave you verified the untrusted key? (type uppercase yes) : ");
+  fprintf(out, "\nHave you verified the authenticity of the\n"
+	  "currently untrusted key? (type uppercase yes) : ");
 
   if (getc(in) != 'Y' || getc(in) != 'E' || getc(in) != 'S')
     goto done;

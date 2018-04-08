@@ -104,10 +104,29 @@ typedef ASSH_KEY_CREATE_FCN(assh_key_create_t);
 #endif
 
 #ifdef CONFIG_ASSH_KEY_VALIDATE
+/** @This specifies the possible results of key validation. */
+enum assh_key_validate_result_e
+{
+  /** Something is wrong with the key. */
+  ASSH_KEY_BAD = -2,
+  /** The key may not be bad but some of its parameters have unusual
+      values which make this key not supported by the implementation. */
+  ASSH_KEY_NOT_SUPPORTED = -1,
+  /** Checking this type of key is not supported yet or there is no
+      way to check this type of public key due to the algorithm design. */
+  ASSH_KEY_NOT_CHECKED = 2,
+  /** Some checks have been performed but there is no way to fully
+      validate this type of public key due to the algorithm design. */
+  ASSH_KEY_PARTIALLY_CHECKED = 3,
+  /** The key has passed a full validation check. */
+  ASSH_KEY_GOOD = 4,
+};
+
 /** @internal @see assh_key_validate_t */
 #define ASSH_KEY_VALIDATE_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t (n) \
   (struct assh_context_s *c,                                            \
-   const struct assh_key_s *key)
+   const struct assh_key_s *key,                                        \
+   enum assh_key_validate_result_e *result)
 
 /** @internal @This defines the function type for the key validation
     operation of the key module interface. @see assh_key_validate */
@@ -282,9 +301,11 @@ assh_key_refinc(struct assh_key_s *key)
 /** @This checks the validity of the key. */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_key_validate(struct assh_context_s *c,
-                  const struct assh_key_s *key)
+                  const struct assh_key_s *key,
+                  enum assh_key_validate_result_e *result)
 {
-  return key->algo->f_validate(c, key);
+  *result = ASSH_KEY_BAD;
+  return key->algo->f_validate(c, key, result);
 }
 #endif
 

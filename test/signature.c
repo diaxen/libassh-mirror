@@ -242,7 +242,10 @@ assh_error_t test_sign(unsigned int max_size)
       const uint8_t *kb = key_blob + 1;
       ASSH_RET_ON_ERR(assh_key_load(context, &key2, a->algo.key, ASSH_ALGO_SIGN,
 				 key_blob[0], &kb, sizeof(key_blob) - 1));
-      ASSH_RET_ON_ERR(assh_key_validate(context, key2));
+
+      enum assh_key_validate_result_e r;
+      ASSH_RET_ON_ERR(assh_key_validate(context, key2, &r));
+      TEST_ASSERT(r > 0);
 
       TEST_ASSERT(assh_key_cmp(context, key2, key2, 0));
       TEST_ASSERT(assh_key_cmp(context, key2, key2, 1));
@@ -260,7 +263,8 @@ assh_error_t test_sign(unsigned int max_size)
 	      ASSH_RET_ON_ERR(assh_key_create(context, &key, kbits,
 	                    a->algo.key, ASSH_ALGO_SIGN));
               fprintf(stderr, "C");
-	      ASSH_RET_ON_ERR(assh_key_validate(context, key));
+	      ASSH_RET_ON_ERR(assh_key_validate(context, key, &r));
+	      TEST_ASSERT(r > 0);
 
 	      TEST_ASSERT(assh_key_cmp(context, key, key, 0));
 	      TEST_ASSERT(assh_key_cmp(context, key, key, 1));
@@ -405,10 +409,10 @@ assh_error_t test_load(unsigned int max_size)
 	    {
 	      fprintf(stderr, "C");
 
-	      err = assh_key_validate(context, key);
+	      enum assh_key_validate_result_e r;
+	      ASSH_RET_ON_ERR(assh_key_validate(context, key, &r));
 
-	      TEST_ASSERT(bad || (err == ASSH_OK));
-	      //	  TEST_ASSERT(!bad || (err != ASSH_OK));
+	      TEST_ASSERT(bad || r > 0);
 
 	      assh_key_drop(context, &key);
 	    }

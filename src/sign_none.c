@@ -50,6 +50,7 @@ static ASSH_KEY_CMP_FCN(assh_key_none_cmp)
 static ASSH_KEY_VALIDATE_FCN(assh_key_none_validate)
 {
   assert(key->algo == &assh_key_none);
+  *result = ASSH_KEY_GOOD;
   return ASSH_OK;
 }
 #endif
