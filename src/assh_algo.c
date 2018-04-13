@@ -444,6 +444,7 @@ const struct assh_algo_s *assh_algo_table[] = {
 # endif
 # ifdef CONFIG_ASSH_HASH_RIPEMD160
   &assh_hmac_ripemd160.algo,
+  &assh_hmac_ripemd160_etm.algo,
 # endif
   /* compress */
   &assh_compress_none.algo,
