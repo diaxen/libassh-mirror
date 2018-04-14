@@ -14,6 +14,7 @@
 #endif
 
 #include "prng_weak.h"
+#include "leaks_check.h"
 #include "test.h"
 
 struct tests_s
@@ -266,7 +267,7 @@ int main(int argc, char **argv)
 #endif
 
   if (assh_context_create(&context, ASSH_CLIENT_SERVER,
-			NULL, NULL, &assh_prng_weak, NULL))
+			  assh_leaks_allocator, NULL, &assh_prng_weak, NULL))
     return -1;
 
   if (assh_algo_register_default(context, 99, 10, 0) != ASSH_OK)
@@ -286,7 +287,13 @@ int main(int argc, char **argv)
       	abort();
     }
 
-  assh_context_cleanup(context);
+  if (alloc_size == 0)
+    TEST_FAIL("leak checking not working\n");
+
+  assh_context_release(context);
+
+  if (alloc_size != 0)
+    TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
 
   fprintf(stderr, "\nDone.\n");
   return 0;
