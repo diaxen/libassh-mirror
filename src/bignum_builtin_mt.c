@@ -376,14 +376,11 @@ assh_bignum_expmod_mt(struct assh_context_s *ctx,
                       const struct assh_bignum_s *b,
                       const struct assh_bignum_mt_s *mt)
 {
-  assh_error_t err;
-
   assert(r != b);
   assert(mt->mod.bits == a->bits &&
          mt->mod.bits == r->bits);
 
   size_t ml = assh_bignum_words(mt->mod.bits);
-
 
   assh_bnword_t *tmp = sq + ml;
   assh_bnword_t *bn = b->n;
@@ -433,8 +430,6 @@ assh_bignum_modinv_mt(struct assh_context_s *ctx,
                       const struct assh_bignum_s *a,
                       const struct assh_bignum_mt_s *mt)
 {
-  assh_error_t err;
-
   assert(mt->mod.bits == a->bits &&
          mt->mod.bits == r->bits);
 

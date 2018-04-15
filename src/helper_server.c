@@ -186,7 +186,7 @@ assh_server_event_openssh_auth(struct assh_session_s *s,
   assh_error_t err;
 
   static const size_t str_size = 128;
-  ASSH_SCRATCH_ALLOC(s->ctx, uint8_t, str, str_size,
+  ASSH_SCRATCH_ALLOC(s->ctx, char, str, str_size,
 		     ASSH_ERRSV_CONTINUE, err);
 
   struct passwd pwd, *pwdp = NULL;
@@ -252,6 +252,9 @@ assh_server_event_openssh_auth(struct assh_session_s *s,
       break;
     }
 #endif
+
+    default:
+      ASSH_UNREACHABLE();
     }
 
   err = ASSH_OK;

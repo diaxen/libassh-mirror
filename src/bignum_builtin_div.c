@@ -431,8 +431,6 @@ assh_bignum_gcd(struct assh_context_s *ctx,
   size_t al = assh_bignum_words(a->bits);
   size_t bl = assh_bignum_words(b->bits);
 
-  size_t l = al > bl ? al : bl;
-
   assh_bnword_t * __restrict__ gn = g->n;
   const assh_bnword_t * __restrict__ an = a->n;
   const assh_bnword_t * __restrict__ bn = b->n;

@@ -479,7 +479,6 @@ assh_userauth_server_failure(struct assh_session_s *s,
                              struct assh_event_s *e)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
 
   assert(pv->pck == NULL);
   assh_userauth_server_flush_state(s);
