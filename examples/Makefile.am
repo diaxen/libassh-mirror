@@ -30,6 +30,11 @@ client_SOURCES = client.c
 client_LDADD = $(top_builddir)/src/libassh.la
 client_CFLAGS = -I$(top_srcdir)/src
 noinst_PROGRAMS += client
+
+rexec_SOURCES = rexec.c
+rexec_LDADD = $(top_builddir)/src/libassh.la
+rexec_CFLAGS = -I$(top_srcdir)/src
+noinst_PROGRAMS += rexec
 endif
 
 if COND_server
