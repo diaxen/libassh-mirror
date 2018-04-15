@@ -28,7 +28,7 @@ libassh_la_SOURCES = assh_context.c assh_session.c assh_packet.c	\
 	ecc_weierstrass.c ecc_weierstrass.h				\
 	mac_none.c							\
 	cipher_chacha_poly.c cipher_none.c				\
-	key_dsa.c key_rsa.c key_eddsa.c key_ecdsa.c			\
+	key_dsa.c key_rsa.c key_eddsa.c key_ecdsa.c key_none.c		\
 	sign_dsa.c sign_rsa.c sign_eddsa.c sign_ecdsa.c sign_none.c	\
 	compress_none.c							\
 	helper_key.c helper_fd.c helper_base64.c helper_bcrypt.c	\
