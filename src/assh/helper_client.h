@@ -199,6 +199,10 @@ struct assh_client_inter_session_s
     server. The associated event handler takes care of sending the
     appropriate requests to the remote host when the @tt
     {ssh-connection} service is started.
+
+    When the @tt command parameter is @tt NULL, execution of a shell
+    is requested. When the @tt term parameter is @tt NULL, no pty
+    allocation is requested.
 */
 void
 assh_client_init_inter_session(struct assh_client_inter_session_s *state,

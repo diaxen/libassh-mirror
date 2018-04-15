@@ -418,7 +418,8 @@ int main(int argc, char **argv)
 
   /* initializes an interactive session state machine object */
   struct assh_client_inter_session_s inter;
-  assh_client_init_inter_session(&inter, cmd, getenv("TERM"));
+  assh_client_init_inter_session(&inter, cmd,
+             isatty(0) ? getenv("TERM") : NULL);
 
   /* save terminal attributes */
   if (isatty(0))

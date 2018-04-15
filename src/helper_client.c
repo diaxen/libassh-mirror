@@ -772,6 +772,10 @@ assh_client_event_inter_session(struct assh_session_s *s,
 
       if (r != ASSH_CONNECTION_REPLY_SUCCESS)
 	goto err;
+
+      if (ctx->term == NULL)
+	goto exec;
+
       ctx->state = ASSH_CLIENT_INTER_ST_PTY;
 
       struct assh_inter_pty_req_s i;
@@ -814,6 +818,7 @@ assh_client_event_inter_session(struct assh_session_s *s,
       switch (ctx->state)
 	{
 	case ASSH_CLIENT_INTER_ST_PTY:
+	exec:
 	  if (ctx->command)
 	    {
 	      struct assh_inter_exec_s i;
