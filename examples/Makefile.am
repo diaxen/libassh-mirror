@@ -37,5 +37,10 @@ server_SOURCES = server.c
 server_LDADD = $(top_builddir)/src/libassh.la
 server_CFLAGS = -I$(top_srcdir)/src
 noinst_PROGRAMS += server
+
+loopback_SOURCES = loopback.c
+loopback_LDADD = $(top_builddir)/src/libassh.la
+loopback_CFLAGS = -I$(top_srcdir)/src
+noinst_PROGRAMS += loopback
 endif
 
