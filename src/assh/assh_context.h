@@ -138,6 +138,18 @@ ASSH_ALLOCATOR(assh_libc_allocator);
 ASSH_ALLOCATOR(assh_gcrypt_allocator);
 #endif
 
+/** @This takes care of performing the external libraries global
+    initialization. This typically calls the gcrypt initialization
+    functions when the gcrypt support has been compiled in.
+
+    The assh library does not use global variable nor does it require
+    global initialization. You do not need to call this function if
+    you know that you use a standalone build of assh or if you perform
+    the initialization of the required third party libraries in your
+    application code. */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_deps_init(void);
+
 /** @This allocates and initializes a context.
 
     If the @tt alloc parameter is @tt NULL, a default memory allocator

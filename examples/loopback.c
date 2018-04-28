@@ -48,10 +48,6 @@
 #include <assh/helper_server.h>
 #include <assh/helper_fd.h>
 
-#ifdef CONFIG_ASSH_USE_GCRYPT
-# include <gcrypt.h>
-#endif
-
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
@@ -66,11 +62,9 @@
 
 int main(int argc, char **argv)
 {
-#ifdef CONFIG_ASSH_USE_GCRYPT
-  if (!gcry_check_version(GCRYPT_VERSION))
-    ERROR("gcrypt initialization error\n");
-  gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
-#endif
+  /* perform initialization of third party libraries */
+  if (assh_deps_init())
+    ERROR("initialization error\n");
 
   /* create listening socket */
   int sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);

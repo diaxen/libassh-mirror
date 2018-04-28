@@ -30,10 +30,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef CONFIG_ASSH_USE_GCRYPT
-# include <gcrypt.h>
-#endif
-
 #define BUFSIZE 4096
 
 struct hash_test_s
@@ -113,15 +109,12 @@ const struct hash_test_s tests[] =
 int
 main(int argc, char **argv)
 {
+  if (assh_deps_init())
+    return -1;
+
   uint_fast8_t err = 0;
 
   struct assh_context_s context;
-
-#ifdef CONFIG_ASSH_USE_GCRYPT
-  if (!gcry_check_version(GCRYPT_VERSION))
-    return -1;
-  gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
-#endif
 
   if (assh_context_init(&context, ASSH_CLIENT_SERVER, NULL, NULL, NULL, NULL))
     return -1;

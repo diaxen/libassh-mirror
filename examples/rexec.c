@@ -45,10 +45,6 @@
 #include <assh/assh_event.h>
 #include <assh/assh_algo.h>
 
-#ifdef CONFIG_ASSH_USE_GCRYPT
-# include <gcrypt.h>
-#endif
-
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
@@ -66,11 +62,9 @@
 
 int main(int argc, char **argv)
 {
-#ifdef CONFIG_ASSH_USE_GCRYPT
-  if (!gcry_check_version(GCRYPT_VERSION))
-    ERROR("gcrypt initialization error\n");
-  gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
-#endif
+  /* perform initialization of third party libraries */
+  if (assh_deps_init())
+    ERROR("initialization error\n");
 
   if (argc < 3)
     ERROR("usage: ./rexec host 'command'\n");

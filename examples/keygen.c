@@ -36,10 +36,6 @@
 #include <assh/helper_key.h>
 #include <assh/helper_fd.h>
 
-#ifdef CONFIG_ASSH_USE_GCRYPT
-# include <gcrypt.h>
-#endif
-
 struct assh_keygen_format_s
 {
   const char *name;
@@ -186,11 +182,9 @@ static void usage(const char *program, assh_bool_t opts)
 
 int main(int argc, char *argv[])
 {
-#ifdef CONFIG_ASSH_USE_GCRYPT
-  if (!gcry_check_version(GCRYPT_VERSION))
-    return -1;
-  gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
-#endif
+  /* perform initialization of third party libraries */
+  if (assh_deps_init())
+    ERROR("initialization error\n");
 
   int opt;
   size_t bits = 0;

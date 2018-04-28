@@ -36,6 +36,21 @@
 # include <gcrypt.h>
 #endif
 
+assh_error_t
+assh_deps_init()
+{
+  assh_error_t err;
+
+#ifdef CONFIG_ASSH_USE_GCRYPT
+  ASSH_RET_IF_TRUE(!gcry_check_version(GCRYPT_VERSION),
+               ASSH_ERR_CRYPTO);
+
+  gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
+#endif
+
+  return ASSH_OK;
+}
+
 #ifdef CONFIG_ASSH_USE_GCRYPT_ALLOC
 
 # define ASSH_DEFAULT_ALLOCATOR assh_gcrypt_allocator

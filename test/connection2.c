@@ -49,10 +49,6 @@
 
 #include <errno.h>
 
-#ifdef CONFIG_ASSH_USE_GCRYPT
-# include <gcrypt.h>
-#endif
-
 #define RQ_FIFO_SIZE 32
 #define CH_MAP_SIZE 32
 
@@ -757,11 +753,8 @@ static int end_early_cleanup(int j, int n)
 
 int main(int argc, char **argv)
 {
-#ifdef CONFIG_ASSH_USE_GCRYPT
-  if (!gcry_check_version(GCRYPT_VERSION))
-    TEST_FAIL("init");
-  gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
-#endif
+  if (assh_deps_init())
+    return -1;
 
   unsigned int count = argc > 1 ? atoi(argv[1]) : 200;
   unsigned int action = argc > 2 ? atoi(argv[2]) : 31;

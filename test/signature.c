@@ -11,10 +11,6 @@
 #include "prng_weak.h"
 #include "test.h"
 
-#ifdef CONFIG_ASSH_USE_GCRYPT
-# include <gcrypt.h>
-#endif
-
 struct algo_s
 {
   const struct assh_algo_sign_s *algo;
@@ -428,11 +424,8 @@ int main(int argc, char **argv)
   assh_error_t err;
   int i;
 
-#ifdef CONFIG_ASSH_USE_GCRYPT
-  if (!gcry_check_version(GCRYPT_VERSION))
+  if (assh_deps_init())
     return -1;
-  gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
-#endif
 
   if (assh_context_create(&context, ASSH_CLIENT_SERVER,
 			NULL, NULL, &assh_prng_weak, NULL))

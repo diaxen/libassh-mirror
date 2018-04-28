@@ -27,10 +27,6 @@
 #include <assh/assh_context.h>
 #include <assh/assh_prng.h>
 
-#ifdef CONFIG_ASSH_USE_GCRYPT
-# include <gcrypt.h>
-#endif
-
 #include "prng_weak.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -1388,11 +1384,8 @@ int main(int argc, char **argv)
 {
   assh_error_t err;
 
-#ifdef CONFIG_ASSH_USE_GCRYPT
-  if (!gcry_check_version(GCRYPT_VERSION))
+  if (assh_deps_init())
     return -1;
-  gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
-#endif
 
   if (assh_context_init(&context, ASSH_CLIENT_SERVER,
                         NULL, NULL, &assh_prng_weak, NULL))

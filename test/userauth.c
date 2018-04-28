@@ -46,10 +46,6 @@
 #include "test.h"
 #include "cipher_fuzz.h"
 
-#ifdef CONFIG_ASSH_USE_GCRYPT
-# include <gcrypt.h>
-#endif
-
 static struct fifo_s fifo[2];
 static struct assh_context_s context[2];
 static struct assh_session_s session[2];
@@ -582,11 +578,8 @@ static int test()
 
 int main(int argc, char **argv)
 {
-#ifdef CONFIG_ASSH_USE_GCRYPT
-  if (!gcry_check_version(GCRYPT_VERSION))
-    TEST_FAIL("");
-  gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
-#endif
+  if (assh_deps_init())
+    return -1;
 
   unsigned int count = argc > 1 ? atoi(argv[1]) : 100;
   unsigned int action = argc > 2 ? atoi(argv[2]) : 7;
