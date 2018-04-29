@@ -260,6 +260,9 @@ assh_error_t assh_service_loop(struct assh_session_s *s,
     switch (s->srv_st)
       {
       case ASSH_SRV_NONE:
+        if (s->tr_st >= ASSH_TR_DISCONNECT)
+          return ASSH_OK;
+
         if (p != NULL)
           {
             /* no service is currently running, we should receive a
@@ -271,9 +274,6 @@ assh_error_t assh_service_loop(struct assh_session_s *s,
 # endif
                )
               {
-                if (s->tr_st >= ASSH_TR_DISCONNECT)
-                  return ASSH_OK;
-
                 ASSH_RET_ON_ERR(assh_service_got_request(s, p)
                              | ASSH_ERRSV_DISCONNECT);
 

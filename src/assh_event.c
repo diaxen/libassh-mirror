@@ -41,84 +41,98 @@ static ASSH_EVENT_DONE_FCN(assh_event_error_done)
 }
 
 assh_bool_t assh_event_get(struct assh_session_s *s,
-                           struct assh_event_s *event,
+                           struct assh_event_s *e,
                            assh_time_t time)
 {
   assh_error_t err;
 
   s->time = time;
 
-  if (s->last_err)
-    goto err_ev;
+  if (s->last_err != ASSH_OK)
+    goto err_event;        /* report an event for the pending error */
 
-  if (s->tr_st == ASSH_TR_CLOSED)
-    return 0;
-
-  event->id = ASSH_EVENT_INVALID;
-
-  /* process the next incoming deciphered packet */
-  ASSH_JMP_ON_ERR(assh_transport_dispatch(s, event), err);
-
-  if (event->id != ASSH_EVENT_INVALID)
-    goto done;
-
-  /* protocol timeout */
-  ASSH_JMP_IF_TRUE(s->tr_st < ASSH_TR_FIN &&
-               s->deadline != 0 && s->deadline <= s->time,
-               ASSH_ERR_TIMEOUT | ASSH_ERRSV_DISCONNECT, err);
-
-  /* key re-exchange should have occured at this point */
-  ASSH_JMP_IF_TRUE(s->tr_st < ASSH_TR_DISCONNECT &&
-               s->kex_bytes > ASSH_REKEX_THRESHOLD + CONFIG_ASSH_MAX_PAYLOAD * 16,
-               ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT, err);
-
-  /* initiate key re-exchange */
-  if (s->tr_st == ASSH_TR_SERVICE && s->kex_bytes > s->kex_max_bytes)
+  switch (s->tr_st)
     {
-      ASSH_JMP_ON_ERR(assh_kex_send_init(s) | ASSH_ERRSV_DISCONNECT, err);
-      ASSH_SET_STATE(s, tr_st, ASSH_TR_SERVICE_KEX);
-    }
+    case ASSH_TR_IDENT:
+    case ASSH_TR_KEX_INIT:
+    case ASSH_TR_KEX_WAIT:
+    case ASSH_TR_KEX_SKIP:
+    case ASSH_TR_KEX_RUNNING:
+    case ASSH_TR_NEWKEY:
+    case ASSH_TR_KEX_DONE:
+    case ASSH_TR_SERVICE:
+    case ASSH_TR_SERVICE_KEX:
 
-  /* run the state machine which converts output packets to enciphered
-     ssh stream */
-  if (s->tr_st < ASSH_TR_FIN)
-    {
-      ASSH_JMP_ON_ERR(assh_transport_write(s, event), err);
+      /* check protocol timeout */
+      ASSH_JMP_IF_TRUE(s->deadline != 0 && s->deadline <= s->time,
+                   ASSH_ERR_TIMEOUT | ASSH_ERRSV_DISCONNECT, err);
 
-      if (event->id != ASSH_EVENT_INVALID)
-        goto done;
-    }
+      e->id = ASSH_EVENT_INVALID;
 
-  if (s->tr_st == ASSH_TR_DISCONNECT)
-    {
-      return assh_event_get(s, event, time);
-      ASSH_SET_STATE(s, tr_st, ASSH_TR_FIN);
-    }
-  else if (s->tr_st > ASSH_TR_DISCONNECT)
-    {
-      /* all events have been reported, end of session. */
+      /* process the next input packet if any and run kex or service. */
+      ASSH_JMP_ON_ERR(assh_transport_dispatch(s, e), err);
+      if (e->id != ASSH_EVENT_INVALID)
+        goto got_event;
+
+      /* or, write output packets as ssh stream. */
+      ASSH_JMP_ON_ERR(assh_transport_write(s, e), err);
+      if (e->id != ASSH_EVENT_INVALID)
+        goto got_event;
+
+      /* or, request and process some input ssh stream. */
+      ASSH_JMP_ON_ERR(assh_transport_read(s, e), err);
+      goto got_event;
+
+    case ASSH_TR_DISCONNECT:
+
+      e->id = ASSH_EVENT_INVALID;
+
+      /* run service, get last events */
+      ASSH_JMP_ON_ERR(assh_service_loop(s, NULL, e), err);
+      if (e->id != ASSH_EVENT_INVALID)
+        goto got_event;
+
+      /* or, write disconnect packets as ssh stream */
+      ASSH_JMP_ON_ERR(assh_transport_write(s, e), err);
+      if (e->id != ASSH_EVENT_INVALID)
+        goto got_event;
+
+      /* or, close session */
       ASSH_SET_STATE(s, tr_st, ASSH_TR_CLOSED);
+      return 0;
+
+    case ASSH_TR_FIN:
+
+      e->id = ASSH_EVENT_INVALID;
+
+      /* run service, get last events */
+      ASSH_JMP_ON_ERR(assh_service_loop(s, NULL, e), err);
+      if (e->id != ASSH_EVENT_INVALID)
+        goto got_event;
+
+      /* or, close session */
+      ASSH_SET_STATE(s, tr_st, ASSH_TR_CLOSED);
+
+    case ASSH_TR_CLOSED:
       return 0;
     }
 
-  /* run the state machine which extracts deciphered packets from the
-     input ssh stream. */
-  ASSH_JMP_ON_ERR(assh_transport_read(s, event), err);
-
- done:
-#ifdef CONFIG_ASSH_DEBUG_EVENT
-  if (event->id > 2)
-    ASSH_DEBUG("ctx=%p session=%p event id=%u\n", s->ctx, s, event->id);
-#endif
-  return 1;
+  ASSH_UNREACHABLE();
 
  err:
   assh_session_error(s, err);
 
- err_ev:
-  event->id = ASSH_EVENT_ERROR;
-  event->f_done = assh_event_error_done;
-  event->error.code = s->last_err;
+ err_event:
+  e->id = ASSH_EVENT_ERROR;
+  e->f_done = assh_event_error_done;
+  e->error.code = s->last_err;
+
+ got_event:
+#ifdef CONFIG_ASSH_DEBUG_EVENT
+  if (e->id > 2)
+    ASSH_DEBUG("ctx=%p session=%p event id=%u\n", s->ctx, s, e->id);
+#endif
+
   return 1;
 }
 
