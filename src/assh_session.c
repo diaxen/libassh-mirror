@@ -47,7 +47,7 @@ assh_error_t assh_session_init(struct assh_context_s *c,
 
   s->ctx = c;
 
-  assh_transport_state(s, ASSH_TR_IDENT);
+  ASSH_SET_STATE(s, tr_st, ASSH_TR_IDENT);
 
   s->ident_len = 0;
   s->session_id_len = 0;
@@ -65,7 +65,7 @@ assh_error_t assh_session_init(struct assh_context_s *c,
   s->kex_host_key = NULL;
   s->srv_index = 0;
 #endif
-  s->srv_st = ASSH_SRV_NONE;
+  ASSH_SET_STATE(s, srv_st, ASSH_SRV_NONE);
   s->srv = NULL;
   s->tr_user_auth_done = 0;
   s->user_auth_done = 0;
@@ -74,7 +74,7 @@ assh_error_t assh_session_init(struct assh_context_s *c,
   s->time = 0;
   s->deadline = 0;
 
-  s->stream_out_st = ASSH_TR_OUT_IDENT;
+  ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_IDENT);
   assh_queue_init(&s->out_queue);
   assh_queue_init(&s->alt_queue);
   s->stream_out_size = 0;
@@ -82,7 +82,7 @@ assh_error_t assh_session_init(struct assh_context_s *c,
   s->new_keys_out = NULL;
   s->out_seq = 0;
 
-  s->stream_in_st = ASSH_TR_IN_IDENT;
+  ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_IDENT);
   s->stream_in_pck = NULL;
   s->stream_in_size = 0;
   s->in_pck = NULL;
@@ -249,14 +249,14 @@ assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t inerr)
 
   if ((inerr & ASSH_ERRSV_FATAL) || s->tr_st == ASSH_TR_CLOSED)
     {
-      assh_transport_state(s, ASSH_TR_CLOSED);
+      ASSH_SET_STATE(s, tr_st, ASSH_TR_CLOSED);
       return inerr | ASSH_ERRSV_FATAL;
     }
 
   if ((inerr & ASSH_ERRSV_FIN) || s->tr_st == ASSH_TR_FIN ||
       ((inerr & ASSH_ERRSV_DISCONNECT) && s->tr_st == ASSH_TR_DISCONNECT))
     {
-      assh_transport_state(s, ASSH_TR_FIN);
+      ASSH_SET_STATE(s, tr_st, ASSH_TR_FIN);
       return inerr | ASSH_ERRSV_FIN;
     }
 
@@ -278,7 +278,7 @@ assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t inerr)
     case ASSH_ERR_BAD_VERSION:
     case ASSH_ERR_DISCONNECTED:
     case ASSH_ERR_CLOSED:
-      assh_transport_state(s, ASSH_TR_FIN);
+      ASSH_SET_STATE(s, tr_st, ASSH_TR_FIN);
       return inerr | ASSH_ERRSV_FIN;
 
     case ASSH_ERR_MEM:
@@ -347,7 +347,7 @@ assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t inerr)
 
   ASSH_DEBUG("disconnect packet reason: %u (%s)\n", reason, desc);
 
-  assh_transport_state(s, ASSH_TR_DISCONNECT);
+  ASSH_SET_STATE(s, tr_st, ASSH_TR_DISCONNECT);
   assh_session_send_disconnect(s, reason, desc);
 
   return inerr | ASSH_ERRSV_FIN;
@@ -369,7 +369,7 @@ assh_session_disconnect(struct assh_session_s *s,
   switch (s->tr_st)
     {
     case ASSH_TR_IDENT:
-      assh_transport_state(s, ASSH_TR_CLOSED);
+      ASSH_SET_STATE(s, tr_st, ASSH_TR_CLOSED);
       return ASSH_OK;
 
     case ASSH_TR_KEX_INIT:
@@ -380,7 +380,7 @@ assh_session_disconnect(struct assh_session_s *s,
     case ASSH_TR_SERVICE:
     case ASSH_TR_SERVICE_KEX:
       ASSH_RET_ON_ERR(assh_session_send_disconnect(s, reason, desc));
-      assh_transport_state(s, ASSH_TR_DISCONNECT);
+      ASSH_SET_STATE(s, tr_st, ASSH_TR_DISCONNECT);
 
     case ASSH_TR_DISCONNECT:
       return ASSH_OK;

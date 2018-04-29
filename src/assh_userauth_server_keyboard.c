@@ -57,10 +57,10 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_kbresponse_done)
       ASSH_RET_ON_ERR(assh_userauth_server_failure(s, NULL) | ASSH_ERRSV_DISCONNECT);
       break;
     case ASSH_SERVER_KBSTATUS_SUCCESS:
-      pv->state = ASSH_USERAUTH_ST_SUCCESS;
+      ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_SUCCESS);
       break;
     case ASSH_SERVER_KBSTATUS_CONTINUE:
-      pv->state = ASSH_USERAUTH_ST_KEYBOARD_CONTINUE;
+      ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_KEYBOARD_CONTINUE);
       break;
     }
 
@@ -119,7 +119,7 @@ assh_userauth_server_kbresponse(struct assh_session_s *s,
   e->id = ASSH_EVENT_USERAUTH_SERVER_KBRESPONSE;
   e->f_done = assh_userauth_server_kbresponse_done;
 
-  pv->state = ASSH_USERAUTH_ST_KEYBOARD_RESPONSE;
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_KEYBOARD_RESPONSE);
 
   assert(pv->pck == NULL);
   pv->pck = assh_packet_refinc(p);
@@ -185,7 +185,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_kbinfo_done)
     }
 
   assh_transport_push(s, pout);
-  pv->state = ASSH_USERAUTH_ST_KEYBOARD_INFO_SENT;
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_KEYBOARD_INFO_SENT);
 
   return ASSH_OK;
 }
@@ -215,7 +215,7 @@ assh_userauth_server_kbinfo(struct assh_session_s *s,
   e->id = ASSH_EVENT_USERAUTH_SERVER_KBINFO;
   e->f_done = assh_userauth_server_kbinfo_done;
 
-  pv->state = ASSH_USERAUTH_ST_KEYBOARD_INFO;
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_KEYBOARD_INFO);
 
   return ASSH_OK;
 }

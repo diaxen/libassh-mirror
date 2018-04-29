@@ -134,7 +134,7 @@ static assh_error_t assh_kex_dh_client_send_expmod(struct assh_session_s *s)
   assh_packet_string_resized(p, e_str + 4);
 
   assh_transport_push(s, p);
-  pv->state = ASSH_KEX_DH_CLIENT_WAIT_F;
+  ASSH_SET_STATE(pv, state, ASSH_KEX_DH_CLIENT_WAIT_F);
   return ASSH_OK;
 
  err_p:
@@ -264,7 +264,7 @@ static assh_error_t assh_kex_dh_client_wait_f(struct assh_session_s *s,
   ASSH_RET_ON_ERR(assh_kex_client_get_key(s, ks_str, e,
                  &assh_kex_dh_host_key_lookup_done, pv));
 
-  pv->state = ASSH_KEX_DH_CLIENT_LOOKUP_HOST_KEY_WAIT;
+  ASSH_SET_STATE(pv, state, ASSH_KEX_DH_CLIENT_LOOKUP_HOST_KEY_WAIT);
   pv->pck = assh_packet_refinc(p);
 
   return ASSH_OK;
@@ -448,13 +448,13 @@ static assh_error_t assh_kex_dh_init(struct assh_session_s *s,
     {
 #ifdef CONFIG_ASSH_CLIENT
     case ASSH_CLIENT: {
-      pv->state = ASSH_KEX_DH_CLIENT_INIT;
+      ASSH_SET_STATE(pv, state, ASSH_KEX_DH_CLIENT_INIT);
       break;
     }
 #endif
 #ifdef CONFIG_ASSH_SERVER
     case ASSH_SERVER:
-      pv->state = ASSH_KEX_DH_SERVER_WAIT_E;
+      ASSH_SET_STATE(pv, state, ASSH_KEX_DH_SERVER_WAIT_E);
       break;
 #endif
     default:

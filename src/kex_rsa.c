@@ -264,7 +264,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
 
   assh_transport_push(s, pout);
 
-  pv->state = ASSH_KEX_RSA_CLIENT_WAIT_SIGN;
+  ASSH_SET_STATE(pv, state, ASSH_KEX_RSA_CLIENT_WAIT_SIGN);
 
   err = ASSH_OK;
 
@@ -291,7 +291,7 @@ static assh_error_t assh_kex_rsa_client_wait_pubkey(struct assh_session_s *s,
   ASSH_RET_ON_ERR(assh_kex_client_get_key(s, ks_str, e,
                  &assh_kex_rsa_host_key_lookup_done, pv));
 
-  pv->state = ASSH_KEX_RSA_CLIENT_LOOKUP_HOST_KEY_WAIT;
+  ASSH_SET_STATE(pv, state, ASSH_KEX_RSA_CLIENT_LOOKUP_HOST_KEY_WAIT);
   pv->pck = assh_packet_refinc(p);
 
   return ASSH_OK;
@@ -399,7 +399,7 @@ static assh_error_t assh_kex_rsa_server_send_pubkey(struct assh_session_s *s)
 
   /* send packet */
   assh_transport_push(s, pout);
-  pv->state = ASSH_KEX_RSA_SERVER_WAIT_SECRET;
+  ASSH_SET_STATE(pv, state, ASSH_KEX_RSA_SERVER_WAIT_SECRET);
 
   return ASSH_OK;
  err_p:
@@ -595,7 +595,7 @@ static assh_error_t assh_kex_rsa_init(struct assh_session_s *s,
     {
 #ifdef CONFIG_ASSH_CLIENT
     case ASSH_CLIENT: {
-      pv->state = ASSH_KEX_RSA_CLIENT_WAIT_PUBKEY;
+      ASSH_SET_STATE(pv, state, ASSH_KEX_RSA_CLIENT_WAIT_PUBKEY);
       break;
     }
 #endif
@@ -611,7 +611,7 @@ static assh_error_t assh_kex_rsa_init(struct assh_session_s *s,
           ASSH_JMP_ON_ERR(ASSH_ERR_MISSING_KEY, err);
 #endif
 	}
-      pv->state = ASSH_KEX_RSA_SERVER_SEND_PUBKEY;
+      ASSH_SET_STATE(pv, state, ASSH_KEX_RSA_SERVER_SEND_PUBKEY);
       break;
 #endif
     default:

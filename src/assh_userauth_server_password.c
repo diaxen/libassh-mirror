@@ -58,7 +58,7 @@ assh_userauth_server_pwchange(struct assh_session_s *s,
 
   assh_transport_push(s, pout);
 
-  pv->state = ASSH_USERAUTH_ST_PASSWORD_WAIT_CHANGE;
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_PASSWORD_WAIT_CHANGE);
 
   return ASSH_OK;
 }
@@ -86,7 +86,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_password_done)
       ASSH_RET_ON_ERR(assh_userauth_server_failure(s, NULL) | ASSH_ERRSV_DISCONNECT);
       break;
     case ASSH_SERVER_PWSTATUS_SUCCESS:
-      pv->state = ASSH_USERAUTH_ST_SUCCESS;
+      ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_SUCCESS);
       break;
     case ASSH_SERVER_PWSTATUS_CHANGE:
       ASSH_RET_ON_ERR(assh_userauth_server_pwchange(s, e) | ASSH_ERRSV_DISCONNECT);
@@ -140,7 +140,7 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_password)
   e->id = ASSH_EVENT_USERAUTH_SERVER_PASSWORD;
   e->f_done = assh_userauth_server_password_done;
 
-  pv->state = ASSH_USERAUTH_ST_PASSWORD;
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_PASSWORD);
 
   assert(pv->pck == NULL);
   pv->pck = assh_packet_refinc(p);

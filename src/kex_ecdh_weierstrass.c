@@ -300,7 +300,7 @@ static assh_error_t assh_kex_ecdhws_client_wait_reply(struct assh_session_s *s,
   ASSH_RET_ON_ERR(assh_kex_client_get_key(s, ks_str, e,
                  &assh_kex_ecdhws_host_key_lookup_done, pv));
 
-  pv->state = ASSH_KEX_ECDHWS_CLIENT_LOOKUP_HOST_KEY_WAIT;
+  ASSH_SET_STATE(pv, state, ASSH_KEX_ECDHWS_CLIENT_LOOKUP_HOST_KEY_WAIT);
   pv->pck = assh_packet_refinc(p);
 
   return ASSH_OK;
@@ -398,7 +398,7 @@ static ASSH_KEX_PROCESS_FCN(assh_kex_ecdhws_process)
       assert(p == NULL);
       ASSH_RET_ON_ERR(assh_kex_ecdhws_client_send_pubkey(s)
 		   | ASSH_ERRSV_DISCONNECT);
-      pv->state = ASSH_KEX_ECDHWS_CLIENT_SEND_PUB;
+      ASSH_SET_STATE(pv, state, ASSH_KEX_ECDHWS_CLIENT_SEND_PUB);
       return ASSH_OK;
 
     case ASSH_KEX_ECDHWS_CLIENT_SEND_PUB:
@@ -461,13 +461,13 @@ assh_kex_ecdhws_init(struct assh_session_s *s,
     {
 #ifdef CONFIG_ASSH_CLIENT
     case ASSH_CLIENT:
-      pv->state = ASSH_KEX_ECDHWS_CLIENT_INIT;
+      ASSH_SET_STATE(pv, state, ASSH_KEX_ECDHWS_CLIENT_INIT);
       pv->pck = NULL;
       break;
 #endif
 #ifdef CONFIG_ASSH_SERVER
     case ASSH_SERVER:
-      pv->state = ASSH_KEX_ECDHWS_SERVER_WAIT_E;
+      ASSH_SET_STATE(pv, state, ASSH_KEX_ECDHWS_SERVER_WAIT_E);
       break;
 #endif
     default:

@@ -458,8 +458,10 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
   s->host_sign_algo = sign;
 
   /* switch to key exchange running state */
-  assh_transport_state(s, guess_follows && !good_guess
-                       ? ASSH_TR_KEX_SKIP : ASSH_TR_KEX_RUNNING);
+  if (guess_follows && !good_guess)
+    ASSH_SET_STATE(s, tr_st, ASSH_TR_KEX_SKIP);
+  else
+    ASSH_SET_STATE(s, tr_st, ASSH_TR_KEX_RUNNING);
 
   return ASSH_OK;
 
@@ -896,7 +898,7 @@ assh_error_t assh_kex_end(struct assh_session_s *s, assh_bool_t accept)
   ASSH_RET_IF_TRUE(!accept, ASSH_ERR_KEX_FAILED);
 
   /* next state is wait for NEWKEY packet */
-  assh_transport_state(s, ASSH_TR_NEWKEY);
+  ASSH_SET_STATE(s, tr_st, ASSH_TR_NEWKEY);
 
   /* send a NEWKEY packet */
   struct assh_packet_s *p;
@@ -912,7 +914,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_kex_done_done)
 #ifdef CONFIG_ASSH_CLIENT
   assh_key_drop(s->ctx, &s->kex_host_key);
 #endif
-  assh_transport_state(s, ASSH_TR_SERVICE);
+  ASSH_SET_STATE(s, tr_st, ASSH_TR_SERVICE);
   s->kex_done = 1;
   return ASSH_OK;
 }

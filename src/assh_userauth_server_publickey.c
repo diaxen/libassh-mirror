@@ -43,7 +43,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
   switch (pv->state)
     {
     case ASSH_USERAUTH_ST_PUBKEY_PKOK: {      /* may need to send PK_OK */
-      pv->state = ASSH_USERAUTH_ST_WAIT_RQ;
+      ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_WAIT_RQ);
 
       if (ASSH_ERR_ERROR(inerr) || !ev->found)
         break;
@@ -73,7 +73,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
       assh_packet_shrink_string(pout, blob, blob_len);
 
       assh_transport_push(s, pout);
-      pv->pubkey_state = ASSH_USERAUTH_PUBKEY_FOUND;
+      ASSH_SET_STATE(pv, pubkey_state, ASSH_USERAUTH_PUBKEY_FOUND);
 
       return ASSH_OK;
      err_packet:
@@ -93,7 +93,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
       ASSH_RET_ON_ERR(assh_userauth_server_sign_check(s, pv->pck, pv->sign)
                    | ASSH_ERRSV_DISCONNECT);
 
-      pv->state = ASSH_USERAUTH_ST_SUCCESS;
+      ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_SUCCESS);
 
       assh_packet_release(pv->pck);
       pv->pck = NULL;
@@ -140,7 +140,7 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_pubkey)
       assh_key_flush(s->ctx, &pv->pub_key);
       pv->pub_key = pub_key;
       pv->algo = (void*)algo;
-      pv->pubkey_state = ASSH_USERAUTH_PUBKEY_NEW;
+      ASSH_SET_STATE(pv, pubkey_state, ASSH_USERAUTH_PUBKEY_NEW);
     }
   else
     {
@@ -162,14 +162,14 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_pubkey)
       pv->pck = assh_packet_refinc(p);
       pv->sign = sign;
 
-      pv->state = ASSH_USERAUTH_ST_PUBKEY_VERIFY;
+      ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_PUBKEY_VERIFY);
     }
   else
     {
       if (pv->pubkey_state == ASSH_USERAUTH_PUBKEY_FOUND)
         return ASSH_OK;
 
-      pv->state = ASSH_USERAUTH_ST_PUBKEY_PKOK;
+      ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_PUBKEY_PKOK);
     }
 
   struct assh_event_userauth_server_userkey_s *ev =

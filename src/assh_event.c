@@ -76,7 +76,7 @@ assh_bool_t assh_event_get(struct assh_session_s *s,
   if (s->tr_st == ASSH_TR_SERVICE && s->kex_bytes > s->kex_max_bytes)
     {
       ASSH_JMP_ON_ERR(assh_kex_send_init(s) | ASSH_ERRSV_DISCONNECT, err);
-      assh_transport_state(s, ASSH_TR_SERVICE_KEX);
+      ASSH_SET_STATE(s, tr_st, ASSH_TR_SERVICE_KEX);
     }
 
   /* run the state machine which converts output packets to enciphered
@@ -91,13 +91,13 @@ assh_bool_t assh_event_get(struct assh_session_s *s,
 
   if (s->tr_st == ASSH_TR_DISCONNECT)
     {
-      assh_transport_state(s, ASSH_TR_FIN);
       return assh_event_get(s, event, time);
+      ASSH_SET_STATE(s, tr_st, ASSH_TR_FIN);
     }
   else if (s->tr_st > ASSH_TR_DISCONNECT)
     {
       /* all events have been reported, end of session. */
-      assh_transport_state(s, ASSH_TR_CLOSED);
+      ASSH_SET_STATE(s, tr_st, ASSH_TR_CLOSED);
       return 0;
     }
 

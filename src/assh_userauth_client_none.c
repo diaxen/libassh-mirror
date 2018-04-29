@@ -40,7 +40,7 @@ static ASSH_USERAUTH_CLIENT_REQ(assh_userauth_client_none_req)
 
   assh_transport_push(s, pout);
 
-  pv->state = ASSH_USERAUTH_ST_SENT_NONE_RQ;
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_SENT_NONE_RQ);
 
   return ASSH_OK;
 }

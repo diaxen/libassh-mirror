@@ -98,7 +98,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_pubkey_sign_done)
   assh_free(s->ctx, pv->pubkey.auth_data);
   pv->pubkey.auth_data = NULL;
 
-  pv->state = ASSH_USERAUTH_ST_SENT_PUBKEY_RQ;
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_SENT_PUBKEY_RQ);
 
   return ASSH_OK;
 }
@@ -119,7 +119,7 @@ assh_userauth_client_send_pubkey(struct assh_session_s *s,
       ASSH_RET_ON_ERR(assh_userauth_client_pck_pubkey(s, &pout,
                      0, 0));
       assh_transport_push(s, pout);
-      pv->state = ASSH_USERAUTH_ST_SENT_PUBKEY;
+      ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_SENT_PUBKEY);
     }
   else
 #endif  /* compute and send the signature directly */
@@ -139,7 +139,7 @@ assh_userauth_client_send_pubkey(struct assh_session_s *s,
         {
           ASSH_JMP_ON_ERR(assh_userauth_client_send_sign(s, k, pout, sign_len),
                        err_packet);
-          pv->state = ASSH_USERAUTH_ST_SENT_PUBKEY_RQ;
+          ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_SENT_PUBKEY_RQ);
         }
       else
         {
@@ -148,7 +148,7 @@ assh_userauth_client_send_pubkey(struct assh_session_s *s,
 
           ASSH_JMP_ON_ERR(assh_userauth_client_get_sign(s, &e->userauth_client.sign,
                                                      k, pout, sign_len), err_packet);
-          pv->state = ASSH_USERAUTH_ST_SENT_PUBKEY_RQ_DONE;
+          ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_SENT_PUBKEY_RQ_DONE);
         }
     }
 
@@ -185,7 +185,7 @@ static ASSH_USERAUTH_CLIENT_REQ(assh_userauth_client_pubkey_req)
   ASSH_RET_IF_TRUE(k->keys == NULL,
                ASSH_ERR_NO_AUTH | ASSH_ERRSV_DISCONNECT);
 
-  pv->state = ASSH_USERAUTH_ST_SEND_PUBKEY;
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_SEND_PUBKEY);
 
   return ASSH_OK;
 }

@@ -51,7 +51,7 @@ static ASSH_USERAUTH_CLIENT_REQ(assh_userauth_client_keyboard_req)
 
   assh_transport_push(s, pout);
 
-  pv->state = ASSH_USERAUTH_ST_KEYBOARD_SENT_RQ;
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_KEYBOARD_SENT_RQ);
 
   return ASSH_OK;
 }
@@ -94,7 +94,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_keyboard_info_done)
     }
 
   assh_transport_push(s, pout);
-  pv->state = ASSH_USERAUTH_ST_KEYBOARD_SENT_INFO;
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_KEYBOARD_SENT_INFO);
 
   assh_free(c, pv->keyboard_array);
   pv->keyboard_array = NULL;
@@ -159,7 +159,7 @@ assh_userauth_client_req_keyboard_info(struct assh_session_s *s,
   e->id = ASSH_EVENT_USERAUTH_CLIENT_KEYBOARD;
   e->f_done = &assh_userauth_client_keyboard_info_done;
 
-  pv->state = ASSH_USERAUTH_ST_KEYBOARD_INFO;
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_KEYBOARD_INFO);
 
   assert(pv->pck == NULL);
   pv->pck = assh_packet_refinc(p);

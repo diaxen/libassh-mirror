@@ -417,6 +417,21 @@ void assh_hexdump(const char *name, const void *data, size_t len);
 
 #endif
 
+# ifdef CONFIG_ASSH_FSMTRACE
+/** @internal */
+# define ASSH_SET_STATE(obj, field, value)       \
+  do {                                           \
+    fprintf(stderr, "%s:%u:%s: " #field " update %u -> %u:" #value" \n", \
+            __FILE__, __LINE__, __func__, (obj)->field, value);         \
+    (obj)->field = value;                        \
+  } while (0)
+#else
+# define ASSH_SET_STATE(obj, field, value)       \
+  do {                                           \
+    (obj)->field = value;                        \
+  } while (0)
+#endif
+
 /** @internal */
 # define ASSH_JMP_IF_TRUE(cond, err, label) ASSH_JMP_ON_ERR(cond ? err : 0, label) 
 

@@ -124,7 +124,7 @@ static assh_error_t assh_kex_dh_gex_client_send_size(struct assh_session_s *s)
   ASSH_ASSERT(assh_packet_add_u32(p, DH_MAX_GRSIZE));
 
   assh_transport_push(s, p);
-  pv->state = ASSH_KEX_DH_GEX_CLIENT_WAIT_GROUP;
+  ASSH_SET_STATE(pv, state, ASSH_KEX_DH_GEX_CLIENT_WAIT_GROUP);
   return ASSH_OK;
 }
 
@@ -142,7 +142,7 @@ static assh_error_t assh_kex_dh_gex_client_send_size_old(struct assh_session_s *
   ASSH_ASSERT(assh_packet_add_u32(p, pv->algo_n));
 
   assh_transport_push(s, p);
-  pv->state = ASSH_KEX_DH_GEX_CLIENT_WAIT_GROUP_OLD;
+  ASSH_SET_STATE(pv, state, ASSH_KEX_DH_GEX_CLIENT_WAIT_GROUP_OLD);
   return ASSH_OK;
 }
 
@@ -250,7 +250,7 @@ static assh_error_t assh_kex_dh_gex_client_wait_group(struct assh_session_s *s,
   assh_packet_string_resized(pout, e_str + 4);
 
   assh_transport_push(s, pout);
-  pv->state = ASSH_KEX_DH_GEX_CLIENT_WAIT_F;
+  ASSH_SET_STATE(pv, state, ASSH_KEX_DH_GEX_CLIENT_WAIT_F);
   return ASSH_OK;
 
  err_p:
@@ -416,7 +416,7 @@ static assh_error_t assh_kex_dh_gex_client_wait_f(struct assh_session_s *s,
   ASSH_RET_ON_ERR(assh_kex_client_get_key(s, ks_str, e,
                  &assh_kex_dh_gex_host_key_lookup_done, pv));
 
-  pv->state = ASSH_KEX_DH_GEX_CLIENT_LOOKUP_HOST_KEY_WAIT;
+  ASSH_SET_STATE(pv, state, ASSH_KEX_DH_GEX_CLIENT_LOOKUP_HOST_KEY_WAIT);
   pv->pck = assh_packet_refinc(p);
 
   return ASSH_OK;
@@ -551,7 +551,7 @@ static assh_error_t assh_kex_dh_gex_server_wait_size(struct assh_session_s *s,
   g_str[4] = 2;
 
   assh_transport_push(s, pout);
-  pv->state = ASSH_KEX_DH_GEX_SERVER_WAIT_E;
+  ASSH_SET_STATE(pv, state, ASSH_KEX_DH_GEX_SERVER_WAIT_E);
   return ASSH_OK;
 
  err_p:
@@ -784,12 +784,12 @@ static assh_error_t assh_kex_dh_gex_init(struct assh_session_s *s,
     {
 #ifdef CONFIG_ASSH_CLIENT
     case ASSH_CLIENT:
-      pv->state = ASSH_KEX_DH_GEX_CLIENT_SEND_SIZE;
+      ASSH_SET_STATE(pv, state, ASSH_KEX_DH_GEX_CLIENT_SEND_SIZE);
       break;
 #endif
 #ifdef CONFIG_ASSH_SERVER
     case ASSH_SERVER:
-      pv->state = ASSH_KEX_DH_GEX_SERVER_WAIT_SIZE;
+      ASSH_SET_STATE(pv, state, ASSH_KEX_DH_GEX_SERVER_WAIT_SIZE);
       break;
 #endif
     default:

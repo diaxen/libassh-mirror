@@ -105,7 +105,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_hostbased_sign_done)
   assh_free(s->ctx, pv->hostkey.auth_data);
   pv->hostkey.auth_data = NULL;
 
-  pv->state = ASSH_USERAUTH_ST_SENT_HOSTBASED_RQ;
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_SENT_HOSTBASED_RQ);
 
   return ASSH_OK;
 }
@@ -129,7 +129,7 @@ assh_userauth_client_send_hostbased(struct assh_session_s *s,
     {
       ASSH_JMP_ON_ERR(assh_userauth_client_send_sign(s, k, pout, sign_len),
                    err_packet);
-      pv->state = ASSH_USERAUTH_ST_SENT_HOSTBASED_RQ;
+      ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_SENT_HOSTBASED_RQ);
     }
   else
     {
@@ -139,7 +139,7 @@ assh_userauth_client_send_hostbased(struct assh_session_s *s,
       ASSH_JMP_ON_ERR(assh_userauth_client_get_sign(s, &e->userauth_client.sign,
                                                  k, pout, sign_len),
                    err_packet);
-      pv->state = ASSH_USERAUTH_ST_SENT_HOSTBASED_RQ_DONE;
+      ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_SENT_HOSTBASED_RQ_DONE);
     }
 
   return ASSH_OK;
@@ -193,7 +193,7 @@ static ASSH_USERAUTH_CLIENT_REQ(assh_userauth_client_hostbased_req)
       memcpy(pv->host_username, ev->host_username.str, len);
     }
 
-  pv->state = ASSH_USERAUTH_ST_SEND_HOSTBASED;
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_SEND_HOSTBASED);
 
   return ASSH_OK;
 }

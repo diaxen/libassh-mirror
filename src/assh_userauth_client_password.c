@@ -68,7 +68,7 @@ assh_userauth_client_send_password(struct assh_session_s *s,
 
   assh_transport_push(s, pout);
 
-  pv->state = ASSH_USERAUTH_ST_SENT_PASSWORD_RQ;
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_SENT_PASSWORD_RQ);
 
   return ASSH_OK;
 }
@@ -100,7 +100,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_req_pwchange_done)
     }
   else
     {
-      pv->state = ASSH_USERAUTH_ST_PWCHANGE_SKIP;
+      ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_PWCHANGE_SKIP);
     }
 
   return ASSH_OK;
@@ -129,7 +129,7 @@ assh_userauth_client_req_pwchange(struct assh_session_s *s,
 
   e->id = ASSH_EVENT_USERAUTH_CLIENT_PWCHANGE;
   e->f_done = assh_userauth_client_req_pwchange_done;
-  pv->state = ASSH_USERAUTH_ST_GET_PWCHANGE;
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_GET_PWCHANGE);
 
   assert(pv->pck == NULL);
   pv->pck = assh_packet_refinc(p);

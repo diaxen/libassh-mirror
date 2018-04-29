@@ -195,7 +195,7 @@ assh_service_send_request(struct assh_session_s *s)
 
   s->srv_index++;
   s->srv = srv;
-  s->srv_st = ASSH_SRV_REQUESTED;
+  ASSH_SET_STATE(s, srv_st, ASSH_SRV_REQUESTED);
 
   return ASSH_OK;
 }
@@ -210,7 +210,7 @@ void assh_service_stop(struct assh_session_s *s)
       srv->f_cleanup(s);
 
       s->srv_pv = NULL;
-      s->srv_st = ASSH_SRV_NONE;
+      ASSH_SET_STATE(s, srv_st, ASSH_SRV_NONE);
     }
 }
 
@@ -220,7 +220,7 @@ void assh_service_start(struct assh_session_s *s,
   assh_service_stop(s);
 
   s->srv = next;
-  s->srv_st = ASSH_SRV_INIT;
+  ASSH_SET_STATE(s, srv_st, ASSH_SRV_INIT);
 }
 
 #ifdef CONFIG_ASSH_CLIENT
@@ -243,7 +243,7 @@ assh_service_next(struct assh_session_s *s,
 static ASSH_EVENT_DONE_FCN(assh_event_service_start_done)
 {
   assert(s->srv_st == ASSH_SRV_INIT_EVENT);
-  s->srv_st = ASSH_SRV_RUNNING;
+  ASSH_SET_STATE(s, srv_st, ASSH_SRV_RUNNING);
 
   return ASSH_OK;
 }
@@ -277,7 +277,7 @@ assh_error_t assh_service_loop(struct assh_session_s *s,
                 ASSH_RET_ON_ERR(assh_service_got_request(s, p)
                              | ASSH_ERRSV_DISCONNECT);
 
-                s->srv_st = ASSH_SRV_INIT;
+                ASSH_SET_STATE(s, srv_st, ASSH_SRV_INIT);
                 p = NULL;
                 continue;
               }
@@ -306,7 +306,7 @@ assh_error_t assh_service_loop(struct assh_session_s *s,
                 ASSH_RET_ON_ERR(assh_service_got_accept(s, p)
                              | ASSH_ERRSV_DISCONNECT);
 
-                s->srv_st = ASSH_SRV_INIT;
+                ASSH_SET_STATE(s, srv_st, ASSH_SRV_INIT);
                 p = NULL;
                 continue;
               }
@@ -326,7 +326,7 @@ assh_error_t assh_service_loop(struct assh_session_s *s,
         e->f_done = assh_event_service_start_done;
         e->service.start.srv = s->srv;
 
-        s->srv_st = ASSH_SRV_INIT_EVENT;
+        ASSH_SET_STATE(s, srv_st, ASSH_SRV_INIT_EVENT);
 
         /* packet not consumed by the init */
         return p != NULL ? ASSH_NO_DATA : ASSH_OK;

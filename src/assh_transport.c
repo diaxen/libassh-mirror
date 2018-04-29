@@ -120,13 +120,13 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 #ifdef CONFIG_ASSH_DEBUG_PROTOCOL
 		assh_hexdump("remote ident", s->ident_str, s->ident_len);
 #endif
-		assh_transport_state(s, ASSH_TR_KEX_INIT);
+		ASSH_SET_STATE(s, tr_st, ASSH_TR_KEX_INIT);
 
 		/* we might still have enough bytes to start packet decode */
 		if (s->stream_in_size >= hsize)
 		  goto head_done;
 
-		s->stream_in_st = ASSH_TR_IN_HEAD;
+		ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_HEAD);
 		return ASSH_OK;
 	      }
 
@@ -138,7 +138,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
       ASSH_RET_IF_TRUE(s->stream_in_size >= sizeof(s->ident_str),
 		   ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_FIN);
 
-      s->stream_in_st = ASSH_TR_IN_IDENT;
+      ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_IDENT);
       return ASSH_OK;
     }
 
@@ -148,7 +148,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
       if (s->stream_in_size < hsize)
 	{
 	  /* not enough header data yet to decipher the 1st block */
-	  s->stream_in_st = ASSH_TR_IN_HEAD;
+	  ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_HEAD);
 	  return ASSH_OK;
 	}
       head_done:
@@ -185,7 +185,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
       if (s->stream_in_size < p->data_size)
 	{
 	  /* not enough data for the whole packet yet */
-	  s->stream_in_st = ASSH_TR_IN_PAYLOAD;
+	  ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_PAYLOAD);
 	  return ASSH_OK;
 	}
 
@@ -267,7 +267,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 
       s->in_seq++;
       s->stream_in_pck = NULL;
-      s->stream_in_st = ASSH_TR_IN_HEAD;
+      ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_HEAD);
       s->stream_in_size = 0;
       return ASSH_OK;
     }
@@ -289,14 +289,14 @@ assh_error_t assh_transport_read(struct assh_session_s *s,
     /* read stream into ident buffer */
     case ASSH_TR_IN_IDENT:
       *data = s->ident_str + s->stream_in_size;
-      s->stream_in_st = ASSH_TR_IN_IDENT_DONE;
+      ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_IDENT_DONE);
       *size = ASSH_MIN(8, sizeof(s->ident_str) - s->stream_in_size);
       break;
 
     /* read stream into packet head buffer */
     case ASSH_TR_IN_HEAD: {
       *data = s->stream_in_stub.data + s->stream_in_size;
-      s->stream_in_st = ASSH_TR_IN_HEAD_DONE;
+      ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_HEAD_DONE);
       *size = k->cipher->head_size - s->stream_in_size;
       break;
     }
@@ -306,7 +306,7 @@ assh_error_t assh_transport_read(struct assh_session_s *s,
       struct assh_packet_s *p = s->stream_in_pck;
       *data = p->data + s->stream_in_size;
       *size = p->data_size - s->stream_in_size;
-      s->stream_in_st = ASSH_TR_IN_PAYLOAD_DONE;
+      ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_PAYLOAD_DONE);
       assert(s->in_pck == NULL);
       break;
     }
@@ -334,11 +334,11 @@ static ASSH_EVENT_DONE_FCN(assh_event_write_done)
     /* check if sending of ident string has completed */
     case ASSH_TR_OUT_IDENT_DONE:
       if (s->stream_out_size >= sizeof(ASSH_IDENT) - 1)
-	s->stream_out_st = ASSH_TR_OUT_PACKETS;
+	ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_PACKETS);
       else if (s->tr_st < ASSH_TR_DISCONNECT)
-	s->stream_out_st = ASSH_TR_OUT_IDENT_PAUSE;
+	ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_IDENT_PAUSE);
       else
-	s->stream_out_st = ASSH_TR_OUT_IDENT;
+	ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_IDENT);
 
       return ASSH_OK;
 
@@ -356,9 +356,9 @@ static ASSH_EVENT_DONE_FCN(assh_event_write_done)
 
 	  if (s->tr_st < ASSH_TR_DISCONNECT)
 	    /* Yield to the input state machine for now. */
-	    s->stream_out_st = ASSH_TR_OUT_PACKETS_PAUSE;
+	    ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_PACKETS_PAUSE);
 	  else
-	    s->stream_out_st = ASSH_TR_OUT_PACKETS_ENCIPHERED;
+	    ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_PACKETS_ENCIPHERED);
 
 	  return ASSH_OK;
 	}
@@ -370,7 +370,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_write_done)
       assh_queue_remove(e);
       assh_packet_release(p);
 
-      s->stream_out_st = ASSH_TR_OUT_PACKETS;
+      ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_PACKETS);
       return ASSH_OK;
     }
 
@@ -395,13 +395,13 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 
       *data = (uint8_t*)ASSH_IDENT + s->stream_out_size;
       *size = sizeof(ASSH_IDENT) - 1 - s->stream_out_size;
-      s->stream_out_st = ASSH_TR_OUT_IDENT_DONE;
+      ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_IDENT_DONE);
       break;
     }
 
     /* the last ident buffer write was incomplete, yield to input */
     case ASSH_TR_OUT_IDENT_PAUSE:
-      s->stream_out_st = ASSH_TR_OUT_IDENT;
+      ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_IDENT);
       return ASSH_OK;
 
     /* the next output packet must be enciphered before write */
@@ -519,7 +519,7 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 		       | ASSH_ERRSV_FIN);
 	}
 
-      s->stream_out_st = ASSH_TR_OUT_PACKETS_DONE;
+      ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_PACKETS_DONE);
       s->tr_user_auth_done |= msg == SSH_MSG_USERAUTH_SUCCESS;
 
       if (msg == SSH_MSG_NEWKEYS)
@@ -548,13 +548,13 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 
       *data = p->data + s->stream_out_size;
       *size = p->data_size - s->stream_out_size;
-      s->stream_out_st = ASSH_TR_OUT_PACKETS_DONE;
+      ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_PACKETS_DONE);
       break;
     }
 
     /* the last packet buffer write was incomplete, yield to input */
     case ASSH_TR_OUT_PACKETS_PAUSE:
-      s->stream_out_st = ASSH_TR_OUT_PACKETS_ENCIPHERED;
+      ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_PACKETS_ENCIPHERED);
       return ASSH_OK;
 
     default:
@@ -667,7 +667,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
     /* send first kex init packet during session init */
     case ASSH_TR_KEX_INIT:
       ASSH_RET_ON_ERR(assh_kex_send_init(s) | ASSH_ERRSV_DISCONNECT);
-      assh_transport_state(s, ASSH_TR_KEX_WAIT);
+      ASSH_SET_STATE(s, tr_st, ASSH_TR_KEX_WAIT);
 
     /* wait for initial kex init packet during session init */
     case ASSH_TR_KEX_WAIT:
@@ -724,7 +724,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 	  ASSH_RET_IF_TRUE(msg < SSH_MSG_KEXSPEC_FIRST ||
 		       msg > SSH_MSG_KEXSPEC_LAST,
 		       ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
-	  assh_transport_state(s, ASSH_TR_KEX_RUNNING);
+	  ASSH_SET_STATE(s, tr_st, ASSH_TR_KEX_RUNNING);
 	}
       break;
 
@@ -747,7 +747,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
       p = NULL;
       msg = SSH_MSG_INVALID;
 
-      assh_transport_state(s, ASSH_TR_KEX_DONE);
+      ASSH_SET_STATE(s, tr_st, ASSH_TR_KEX_DONE);
       s->kex_bytes = 0;
       assh_kex_done(s, e);
       break;

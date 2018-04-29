@@ -73,7 +73,7 @@ static ASSH_SERVICE_INIT_FCN(assh_userauth_server_init)
   pv->method = NULL;
   pv->methods = 0;
 
-  pv->state = ASSH_USERAUTH_ST_METHODS;
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_METHODS);
   pv->srv = NULL;
 
   pv->pck = NULL;
@@ -84,7 +84,7 @@ static ASSH_SERVICE_INIT_FCN(assh_userauth_server_init)
 #endif
 
 #ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
-  pv->pubkey_state = ASSH_USERAUTH_PUBKEY_NONE;
+  ASSH_SET_STATE(pv, pubkey_state, ASSH_USERAUTH_PUBKEY_NONE);
 #endif
 
 #ifdef CONFIG_ASSH_SERVER_AUTH_KEYBOARD
@@ -106,7 +106,7 @@ static void assh_userauth_server_flush_state(struct assh_session_s *s)
 #endif
 
 #ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
-  pv->pubkey_state = ASSH_USERAUTH_PUBKEY_NONE;
+  ASSH_SET_STATE(pv, pubkey_state, ASSH_USERAUTH_PUBKEY_NONE);
 #endif
 
 #ifdef CONFIG_ASSH_SERVER_AUTH_KEYBOARD
@@ -198,7 +198,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_success_done)
 
       assert(pv->pck == NULL);
       assh_userauth_server_flush_state(s);
-      pv->state = ASSH_USERAUTH_ST_WAIT_RQ;
+      ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_WAIT_RQ);
       ASSH_RETURN(assh_userauth_server_send_failure(s, 1)
                      | ASSH_ERRSV_DISCONNECT);
     }
@@ -233,7 +233,7 @@ assh_error_t assh_userauth_server_success(struct assh_session_s *s,
   e->id = ASSH_EVENT_USERAUTH_SERVER_SUCCESS;
   e->f_done = assh_userauth_server_success_done;
 
-  pv->state = ASSH_USERAUTH_ST_SUCCESS_DONE;
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_SUCCESS_DONE);
 
   return ASSH_OK;
 }
@@ -372,7 +372,7 @@ static assh_error_t assh_userauth_server_req(struct assh_session_s *s,
   pv->tries--;
 
   ASSH_RET_ON_ERR(assh_userauth_server_send_failure(s, 0));
-  pv->state = ASSH_USERAUTH_ST_WAIT_RQ;
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_WAIT_RQ);
 
   return ASSH_OK;
 }
@@ -417,7 +417,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_get_methods_done)
     ASSH_RET_ON_ERR(assh_userauth_server_send_failure(s, 0)
                  | ASSH_ERRSV_DISCONNECT);
 
-  pv->state = ASSH_USERAUTH_ST_WAIT_RQ;
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_WAIT_RQ);
 
   return ASSH_OK;
 }
@@ -445,7 +445,7 @@ assh_userauth_server_get_methods(struct assh_session_s *s,
   e->id = ASSH_EVENT_USERAUTH_SERVER_METHODS;
   e->f_done = assh_userauth_server_get_methods_done;
 
-  pv->state = ASSH_USERAUTH_ST_METHODS_DONE;
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_METHODS_DONE);
 
   return ASSH_OK;
 }
@@ -470,7 +470,7 @@ assh_userauth_server_get_methods_failed(struct assh_session_s *s,
   e->id = ASSH_EVENT_USERAUTH_SERVER_METHODS;
   e->f_done = assh_userauth_server_get_methods_done;
 
-  pv->state = ASSH_USERAUTH_ST_METHODS_DONE;
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_METHODS_DONE);
 }
 
 /* handle authentication failure */
@@ -486,7 +486,7 @@ assh_userauth_server_failure(struct assh_session_s *s,
   if (e)
     assh_userauth_server_get_methods_failed(s, e);
   else
-    pv->state = ASSH_USERAUTH_ST_FAILURE;
+    ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_FAILURE);
 
   assert(pv->tries > 0);
   pv->tries--;

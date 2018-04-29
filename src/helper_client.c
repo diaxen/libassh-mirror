@@ -725,7 +725,7 @@ void
 assh_client_init_inter_session(struct assh_client_inter_session_s *ctx,
                                const char *command, const char *term)
 {
-  ctx->state = ASSH_CLIENT_INTER_ST_INIT;
+  ASSH_SET_STATE(ctx, state, ASSH_CLIENT_INTER_ST_INIT);
   ctx->command = command;
   ctx->term = term;
   ctx->channel = NULL;
@@ -753,7 +753,7 @@ assh_client_event_inter_session(struct assh_session_s *s,
 	  if (assh_inter_open_session(s, &ctx->channel))
 	    goto err;
 
-	  ctx->state = ASSH_CLIENT_INTER_ST_SESSION;
+	  ASSH_SET_STATE(ctx, state, ASSH_CLIENT_INTER_ST_SESSION);
 	}
       return;
     }
@@ -776,7 +776,7 @@ assh_client_event_inter_session(struct assh_session_s *s,
       if (ctx->term == NULL)
 	goto exec;
 
-      ctx->state = ASSH_CLIENT_INTER_ST_PTY;
+      ASSH_SET_STATE(ctx, state, ASSH_CLIENT_INTER_ST_PTY);
 
       struct assh_inter_pty_req_s i;
       assh_inter_init_pty_req(&i, ctx->term, 0, 0, 0, 0, NULL);
@@ -794,7 +794,7 @@ assh_client_event_inter_session(struct assh_session_s *s,
       if (ev->ch != ctx->channel)
 	return;
 
-      ctx->state = ASSH_CLIENT_INTER_ST_CLOSED;
+      ASSH_SET_STATE(ctx, state, ASSH_CLIENT_INTER_ST_CLOSED);
       assh_event_done(s, event, ASSH_OK);
       return;
     }
@@ -825,18 +825,18 @@ assh_client_event_inter_session(struct assh_session_s *s,
 	      assh_buffer_strset(&i.command, ctx->command);
 	      if (assh_inter_send_exec(s, ctx->channel, &ctx->request, &i))
 		goto err;
-	      ctx->state = ASSH_CLIENT_INTER_ST_EXEC;
+	      ASSH_SET_STATE(ctx, state, ASSH_CLIENT_INTER_ST_EXEC);
 	    }
 	  else
 	    {
 	      if (assh_inter_send_shell(s, ctx->channel, &ctx->request))
 		goto err;
-	      ctx->state = ASSH_CLIENT_INTER_ST_EXEC;
+	      ASSH_SET_STATE(ctx, state, ASSH_CLIENT_INTER_ST_EXEC);
 	    }
 	  return;
 
 	case ASSH_CLIENT_INTER_ST_EXEC:
-	  ctx->state = ASSH_CLIENT_INTER_ST_OPEN;
+	  ASSH_SET_STATE(ctx, state, ASSH_CLIENT_INTER_ST_OPEN);
 	  return;
 
 	default:
@@ -855,13 +855,13 @@ err:
     {
     case ASSH_CLIENT_INTER_ST_INIT:
     case ASSH_CLIENT_INTER_ST_SESSION:
-      ctx->state = ASSH_CLIENT_INTER_ST_CLOSED;
+      ASSH_SET_STATE(ctx, state, ASSH_CLIENT_INTER_ST_CLOSED);
       break;
     case ASSH_CLIENT_INTER_ST_PTY:
     case ASSH_CLIENT_INTER_ST_EXEC:
     case ASSH_CLIENT_INTER_ST_OPEN:
       assh_channel_close(ctx->channel);
-      ctx->state = ASSH_CLIENT_INTER_ST_CLOSING;
+      ASSH_SET_STATE(ctx, state, ASSH_CLIENT_INTER_ST_CLOSING);
       break;
     case ASSH_CLIENT_INTER_ST_CLOSING:
     case ASSH_CLIENT_INTER_ST_CLOSED:

@@ -53,7 +53,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_hostbased_done)
       ASSH_RET_ON_ERR(assh_userauth_server_sign_check(s, pv->pck, pv->sign)
                    | ASSH_ERRSV_DISCONNECT);
 
-      pv->state = ASSH_USERAUTH_ST_SUCCESS;
+      ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_SUCCESS);
 
       assh_packet_release(pv->pck);
       pv->pck = NULL;
@@ -105,7 +105,7 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_hostbased)
   e->id = ASSH_EVENT_USERAUTH_SERVER_HOSTBASED;
   e->f_done = assh_userauth_server_hostbased_done;
 
-  pv->state = ASSH_USERAUTH_ST_HOSTBASED_VERIFY;
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_HOSTBASED_VERIFY);
 
   return err;
 }
