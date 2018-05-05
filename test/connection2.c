@@ -808,7 +808,7 @@ int main(int argc, char **argv)
 	fprintf(stderr, " seed=%u\n", seed);
     }
 
-  if (k % 16)
+  if (k % 12)
     fputc('\n', stderr);
 
   fprintf(stderr, "Summary:\n"

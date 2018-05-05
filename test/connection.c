@@ -1035,7 +1035,7 @@ int main(int argc, char **argv)
 	fprintf(stderr, " seed=%u\n", seed);
     }
 
-  if (k % 32)
+  if (k % 16)
     fputc('\n', stderr);
 
   fprintf(stderr, "Summary:\n"
