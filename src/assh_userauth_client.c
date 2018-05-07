@@ -402,8 +402,6 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_success_done)
   s->user_auth_done = 1;
   assh_service_start(s, pv->srv);
 
-  s->srv_index++;
-
   return ASSH_OK;
 }
 

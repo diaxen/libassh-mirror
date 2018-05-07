@@ -170,11 +170,13 @@ ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_service_next(struct assh_session_s *s,
                   const struct assh_service_s **srv);
 
-/** @internal @This stops the currently running service if any.
-    Designed for use by service implementations. */
+/** @internal @This stops the currently running service.
+    Designed for use by client service implementations. This will make
+    assh send a @ref SSH_MSG_SERVICE_REQUEST message to the server in
+    order to start the next service. */
 void assh_service_stop(struct assh_session_s *s);
 
-/** @internal @This stops the currently running service if any and
+/** @internal @This stops the currently running service and
     schedules execution of the specified service. Designed for use by
     service implementations. */
 void assh_service_start(struct assh_session_s *s,

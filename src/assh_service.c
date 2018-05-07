@@ -195,7 +195,6 @@ assh_service_send_request(struct assh_session_s *s)
 
   s->srv_index++;
   s->srv = srv;
-  ASSH_SET_STATE(s, srv_st, ASSH_SRV_REQUESTED);
 
   return ASSH_OK;
 }
@@ -203,23 +202,25 @@ assh_service_send_request(struct assh_session_s *s)
 
 void assh_service_stop(struct assh_session_s *s)
 {
-  if (s->srv_st == ASSH_SRV_RUNNING)
-    {
-      const struct assh_service_s *srv = s->srv;
+  assert(s->srv_st == ASSH_SRV_RUNNING &&
+         s->ctx->type == ASSH_CLIENT);
 
-      srv->f_cleanup(s);
+  s->srv->f_cleanup(s);
+  s->srv = NULL;
+  s->srv_pv = NULL;
 
-      s->srv_pv = NULL;
-      ASSH_SET_STATE(s, srv_st, ASSH_SRV_NONE);
-    }
+  ASSH_SET_STATE(s, srv_st, ASSH_SRV_NONE);
 }
 
 void assh_service_start(struct assh_session_s *s,
                         const struct assh_service_s *next)
 {
-  assh_service_stop(s);
+  assert(s->srv_st == ASSH_SRV_RUNNING);
 
+  s->srv->f_cleanup(s);
   s->srv = next;
+  s->srv_pv = NULL;
+
   ASSH_SET_STATE(s, srv_st, ASSH_SRV_INIT);
 }
 
@@ -291,7 +292,10 @@ assh_error_t assh_service_loop(struct assh_session_s *s,
            request packet on the client side. */
         if (s->ctx->type == ASSH_CLIENT)
 # endif
-          ASSH_RET_ON_ERR(assh_service_send_request(s) | ASSH_ERRSV_DISCONNECT);
+          {
+            ASSH_RET_ON_ERR(assh_service_send_request(s) | ASSH_ERRSV_DISCONNECT);
+            ASSH_SET_STATE(s, srv_st, ASSH_SRV_REQUESTED);
+          }
 #endif
         return ASSH_OK;
 
