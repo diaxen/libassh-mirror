@@ -64,6 +64,8 @@ static ASSH_SERVICE_INIT_FCN(assh_userauth_server_init)
   assh_error_t err;
   struct assh_userauth_context_s *pv;
 
+  ASSH_RET_IF_TRUE(s->user_auth_done, ASSH_ERR_PROTOCOL);
+
   ASSH_RET_ON_ERR(assh_alloc(s->ctx, sizeof(*pv),
                 ASSH_ALLOC_SECUR, (void**)&pv));
 
