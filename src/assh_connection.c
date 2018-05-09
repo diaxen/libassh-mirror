@@ -36,6 +36,9 @@
 
 ASSH_EVENT_SIZE_SASSERT(connection);
 
+#ifndef NDEBUG
+/* service state is actually only used to check consistency of event
+   handling by the application. it is useless when assert() are stripped. */
 enum assh_connection_state_e
 {
   ASSH_CONNECTION_ST_IDLE,
@@ -49,6 +52,7 @@ enum assh_connection_state_e
   ASSH_CONNECTION_ST_EVENT_CHANNEL_EOF,
   ASSH_CONNECTION_ST_FIN,
 };
+#endif
 
 struct assh_connection_context_s
 {
@@ -61,12 +65,15 @@ struct assh_connection_context_s
   struct assh_queue_s closing_queue;  //< closing channels with some pending requests left
 
   uint32_t ch_id_counter;
-  enum assh_connection_state_e state:8;
 
   /** bytes left to transfer from the partialy handled
       ASSH_CONNECTION_ST_EVENT_CHANNEL_DATA event. The associated
       incoming data packet is in the pck field. */
   uint32_t in_data_left:24;
+
+#ifndef NDEBUG
+  enum assh_connection_state_e state:8;
+#endif
 };
 
 struct assh_request_s
@@ -415,7 +422,9 @@ static ASSH_EVENT_DONE_FCN(assh_event_request_done)
   /* release request packet */
   assh_packet_release(pv->pck);
   pv->pck = NULL;
+#ifndef NDEBUG
   ASSH_SET_STATE(pv, state, ASSH_CONNECTION_ST_IDLE);
+#endif
 
   const struct assh_event_request_s *ev =
     &e->connection.request;
@@ -551,7 +560,9 @@ assh_connection_got_request(struct assh_session_s *s,
   /* keep packet for type and rq_data buffers */
   pv->pck = assh_packet_refinc(p);
 
+#ifndef NDEBUG
   ASSH_SET_STATE(pv, state, ASSH_CONNECTION_ST_EVENT_REQUEST);
+#endif
 
   return ASSH_OK;
 }
@@ -652,7 +663,9 @@ static ASSH_EVENT_DONE_FCN(assh_event_request_reply_done)
   /* release packet */
   assh_packet_release(pv->pck);
   pv->pck = NULL;
+#ifndef NDEBUG
   ASSH_SET_STATE(pv, state, ASSH_CONNECTION_ST_IDLE);
+#endif
 
   const struct assh_event_request_reply_s *ev =
     &e->connection.request_reply;
@@ -700,7 +713,9 @@ static assh_bool_t assh_request_reply_flush(struct assh_session_s *s,
   rsp_data->size = 0;
   rsp_data->data = NULL;
 
+#ifndef NDEBUG
   ASSH_SET_STATE(pv, state, ASSH_CONNECTION_ST_EVENT_REQUEST_REPLY);
+#endif
 
   return 1;
 }
@@ -713,7 +728,9 @@ static ASSH_EVENT_DONE_FCN(assh_event_request_abort_done)
   assert(s->srv == &assh_service_connection);
   assert(pv->state == ASSH_CONNECTION_ST_EVENT_REQUEST_ABORT);
 
+#ifndef NDEBUG
   ASSH_SET_STATE(pv, state, ASSH_CONNECTION_ST_IDLE);
+#endif
 
   const struct assh_event_request_abort_s *ev =
     &e->connection.request_abort;
@@ -765,8 +782,9 @@ assh_request_abort_flush(struct assh_session_s *s,
 
           ev->ch = ch;
           ev->rq = rq;
+#ifndef NDEBUG
           ASSH_SET_STATE(pv, state, ASSH_CONNECTION_ST_EVENT_REQUEST_ABORT);
-
+#endif
           return 1;
         }
     }
@@ -853,7 +871,9 @@ assh_connection_got_request_reply(struct assh_session_s *s,
   if (rsp_data->size > 0)
     pv->pck = assh_packet_refinc(p);
 
+#ifndef NDEBUG
   ASSH_SET_STATE(pv, state, ASSH_CONNECTION_ST_EVENT_REQUEST_REPLY);
+#endif
 
   return ASSH_OK;
 }
@@ -987,7 +1007,9 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_open_done)
   /* release channel open packet */
   assh_packet_release(pv->pck);
   pv->pck = NULL;
+#ifndef NDEBUG
   ASSH_SET_STATE(pv, state, ASSH_CONNECTION_ST_IDLE);
+#endif
 
   const struct assh_event_channel_open_s *eo =
     &e->connection.channel_open;
@@ -1092,7 +1114,9 @@ assh_connection_got_channel_open(struct assh_session_s *s,
   /* keep packet for type and rq_data */
   pv->pck = assh_packet_refinc(p);
 
+#ifndef NDEBUG
   ASSH_SET_STATE(pv, state, ASSH_CONNECTION_ST_EVENT_CHANNEL_OPEN);
+#endif
 
   return ASSH_OK;
 }
@@ -1176,7 +1200,10 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_open_reply_done)
   /* release packet */
   assh_packet_release(pv->pck);
   pv->pck = NULL;
+
+#ifndef NDEBUG
   ASSH_SET_STATE(pv, state, ASSH_CONNECTION_ST_IDLE);
+#endif
 
   struct assh_channel_s *ch = e->connection.channel_open_reply.ch;
 
@@ -1266,7 +1293,9 @@ assh_connection_got_channel_open_reply(struct assh_session_s *s,
   if (rsp_data->size > 0)
     pv->pck = assh_packet_refinc(p);
 
+#ifndef NDEBUG
   ASSH_SET_STATE(pv, state, ASSH_CONNECTION_ST_EVENT_CHANNEL_OPEN_REPLY);
+#endif
 
   return ASSH_OK;
 }
@@ -1339,7 +1368,9 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_data_done)
 		     | ASSH_ERRSV_DISCONNECT);
     }
 
+#ifndef NDEBUG
   ASSH_SET_STATE(pv, state, ASSH_CONNECTION_ST_IDLE);
+#endif
 
   return ASSH_OK;
 }
@@ -1385,7 +1416,9 @@ assh_connection_more_channel_data(struct assh_session_s *s,
   ev->data.data = (uint8_t*)data + size - pv->in_data_left;
   ev->transferred = 0;
 
+#ifndef NDEBUG
   ASSH_SET_STATE(pv, state, ASSH_CONNECTION_ST_EVENT_CHANNEL_DATA);
+#endif
 
   return ASSH_OK;
 }
@@ -1471,7 +1504,9 @@ assh_connection_got_channel_data(struct assh_session_s *s,
   pv->in_data_left = size;
   pv->pck = assh_packet_refinc(p);
 
+#ifndef NDEBUG
   ASSH_SET_STATE(pv, state, ASSH_CONNECTION_ST_EVENT_CHANNEL_DATA);
+#endif
 
   return ASSH_OK;
 }
@@ -1848,7 +1883,9 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_close_done)
   assert(s->srv == &assh_service_connection);
   assert(pv->state == ASSH_CONNECTION_ST_EVENT_CHANNEL_CLOSE);
 
+#ifndef NDEBUG
   ASSH_SET_STATE(pv, state, ASSH_CONNECTION_ST_IDLE);
+#endif
 
   struct assh_channel_s *ch = e->connection.channel_close.ch;
 
@@ -1864,7 +1901,9 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_eof_done)
   assert(s->srv == &assh_service_connection);
   assert(pv->state == ASSH_CONNECTION_ST_EVENT_CHANNEL_EOF);
 
+#ifndef NDEBUG
   ASSH_SET_STATE(pv, state, ASSH_CONNECTION_ST_IDLE);
+#endif
 
   return ASSH_OK;
 }
@@ -1922,7 +1961,9 @@ assh_connection_got_channel_eof(struct assh_session_s *s,
   e->f_done = assh_event_channel_eof_done;
   ev->ch = ch;
 
+#ifndef NDEBUG
   ASSH_SET_STATE(pv, state, ASSH_CONNECTION_ST_EVENT_CHANNEL_EOF);
+#endif
 
   return ASSH_OK;
 }
@@ -2039,7 +2080,9 @@ static ASSH_SERVICE_INIT_FCN(assh_connection_init)
 
   s->srv_pv = pv;
 
+#ifndef NDEBUG
   ASSH_SET_STATE(pv, state, ASSH_CONNECTION_ST_IDLE);
+#endif
 
   return ASSH_OK;
 }
@@ -2165,7 +2208,9 @@ static void assh_channel_pop_closing(struct assh_session_s *s,
       ASSH_UNREACHABLE("internal error");
     }
 
+#ifndef NDEBUG
   ASSH_SET_STATE(pv, state, ASSH_CONNECTION_ST_EVENT_CHANNEL_CLOSE);
+#endif
 
   /* remove from pv->closing_queue */
   assh_queue_remove((void*)ch);
