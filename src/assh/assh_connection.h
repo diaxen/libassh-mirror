@@ -75,7 +75,7 @@
 struct assh_request_s;
 
 /** @This specifies request status */
-enum assh_request_status_e
+enum assh_request_state_e
 {
   /** Outgoing request; not replied by remote host. */
   ASSH_REQUEST_ST_WAIT_REPLY,
@@ -86,7 +86,7 @@ enum assh_request_status_e
 };
 
 /** @This specifies channel status */
-enum assh_channel_status_e
+enum assh_channel_state_e
 {
   /** An open message has been sent to the remote host */
   ASSH_CHANNEL_ST_OPEN_SENT,
@@ -185,8 +185,8 @@ struct assh_session_s *
 assh_channel_session(const struct assh_channel_s *ch);
 
 /** This returns the current channel status */
-enum assh_channel_status_e
-assh_channel_status(const struct assh_channel_s *ch);
+enum assh_channel_state_e
+assh_channel_state(const struct assh_channel_s *ch);
 
 /** This returns the size of the channel local and remote windows in bytes */
 void assh_channel_get_win_size(const struct assh_channel_s *ch,
@@ -218,8 +218,8 @@ struct assh_channel_s *
 assh_request_channel(const struct assh_request_s *rq);
 
 /** This returns the current channel status */
-enum assh_request_status_e
-assh_request_status(struct assh_request_s *rq);
+enum assh_request_state_e
+assh_request_state(struct assh_request_s *rq);
 
 /************************************************* incoming request */
 
