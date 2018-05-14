@@ -109,9 +109,6 @@ enum assh_channel_state_e
       sent. Some request/data related events may still be reported
       before the channel object is released. */
   ASSH_CHANNEL_ST_CLOSING,
-  /** The @ref assh_channel_close function was called at some point
-      and the channel is closing as in @ref ASSH_CHANNEL_ST_CLOSING state. */
-  ASSH_CHANNEL_ST_CLOSE_CALLED_CLOSING,
   /** The connection is ending, an @ref ASSH_EVENT_CHANNEL_CLOSE event
       will be reported for this channel. */
   ASSH_CHANNEL_ST_FORCE_CLOSE,
