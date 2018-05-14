@@ -51,8 +51,6 @@ enum assh_transport_state_e
   ASSH_TR_KEX_RUNNING,
   /** The key exchange is over and a @ref SSH_MSG_NEWKEYS packet is expected. */
   ASSH_TR_NEWKEY,
-  /** Wait for acknowledgment of the @ref ASSH_EVENT_KEX_DONE event. */
-  ASSH_TR_KEX_DONE,
   /** No key exchange is running, service packets are allowed. */
   ASSH_TR_SERVICE,
   /** Key re-exchange packet sent but not received, service packets are allowed. */

@@ -90,6 +90,10 @@ assh_error_t assh_session_init(struct assh_context_s *c,
   s->new_keys_in = NULL;
   s->in_seq = 0;
 
+#ifndef NDEBUG
+  s->event_done = 1;
+#endif
+
   c->session_count++;
 
   return ASSH_OK;
@@ -122,7 +126,6 @@ void assh_session_cleanup(struct assh_session_s *s)
   switch (s->srv_st)
     {
     case ASSH_SRV_RUNNING:
-    case ASSH_SRV_INIT_EVENT:
       s->srv->f_cleanup(s);
     default:
       break;

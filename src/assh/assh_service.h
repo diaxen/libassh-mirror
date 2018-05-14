@@ -41,7 +41,6 @@ enum assh_service_state_e
   ASSH_SRV_NONE,
   ASSH_SRV_REQUESTED,
   ASSH_SRV_INIT,
-  ASSH_SRV_INIT_EVENT,
   ASSH_SRV_RUNNING,
 };
 

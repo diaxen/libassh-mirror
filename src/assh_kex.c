@@ -910,11 +910,9 @@ assh_error_t assh_kex_end(struct assh_session_s *s, assh_bool_t accept)
 
 static ASSH_EVENT_DONE_FCN(assh_event_kex_done_done)
 {
-  assert(s->tr_st == ASSH_TR_KEX_DONE);
 #ifdef CONFIG_ASSH_CLIENT
   assh_key_drop(s->ctx, &s->kex_host_key);
 #endif
-  ASSH_SET_STATE(s, tr_st, ASSH_TR_SERVICE);
   s->kex_done = 1;
   return ASSH_OK;
 }

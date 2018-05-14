@@ -66,7 +66,6 @@ void assh_transport_push(struct assh_session_s *s,
       if (!kex_msg)
 	q = &s->alt_queue;
 
-    case ASSH_TR_KEX_DONE:
     case ASSH_TR_SERVICE:
     case ASSH_TR_DISCONNECT:
       assh_queue_push_back(q, &p->entry);
@@ -748,7 +747,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
       p = NULL;
       msg = SSH_MSG_INVALID;
 
-      ASSH_SET_STATE(s, tr_st, ASSH_TR_KEX_DONE);
+      ASSH_SET_STATE(s, tr_st, ASSH_TR_SERVICE);
       s->kex_bytes = 0;
       assh_kex_done(s, e);
       break;
@@ -791,7 +790,6 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 
     case ASSH_TR_FIN:
     case ASSH_TR_DISCONNECT:
-    case ASSH_TR_KEX_DONE:
     case ASSH_TR_CLOSED:
       ASSH_UNREACHABLE();
     }

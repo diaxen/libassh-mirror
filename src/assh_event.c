@@ -48,6 +48,8 @@ assh_bool_t assh_event_get(struct assh_session_s *s,
 
   s->time = time;
 
+  assert(s->event_done);
+
   if (s->last_err != ASSH_OK)
     goto err_event;        /* report an event for the pending error */
 
@@ -59,7 +61,6 @@ assh_bool_t assh_event_get(struct assh_session_s *s,
     case ASSH_TR_KEX_SKIP:
     case ASSH_TR_KEX_RUNNING:
     case ASSH_TR_NEWKEY:
-    case ASSH_TR_KEX_DONE:
     case ASSH_TR_SERVICE:
     case ASSH_TR_SERVICE_KEX:
 
@@ -128,6 +129,9 @@ assh_bool_t assh_event_get(struct assh_session_s *s,
   e->error.code = s->last_err;
 
  got_event:
+#ifndef NDEBUG
+  s->event_done = 0;
+#endif
 #ifdef CONFIG_ASSH_DEBUG_EVENT
   if (e->id > 2)
     ASSH_DEBUG("ctx=%p session=%p event id=%u\n", s->ctx, s, e->id);
@@ -154,6 +158,10 @@ assh_event_done(struct assh_session_s *s,
   if (e->f_done != NULL)
     err = e->f_done(s, e, inerr);
   e->f_done = NULL;
+
+#ifndef NDEBUG
+  s->event_done = 1;
+#endif
 
   if (ASSH_ERR_SEVERITY(inerr) >= ASSH_ERR_SEVERITY(err))
     err = inerr | ASSH_ERR_EXTERNAL;

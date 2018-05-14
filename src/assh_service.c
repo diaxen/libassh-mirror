@@ -243,9 +243,6 @@ assh_service_next(struct assh_session_s *s,
 
 static ASSH_EVENT_DONE_FCN(assh_event_service_start_done)
 {
-  assert(s->srv_st == ASSH_SRV_INIT_EVENT);
-  ASSH_SET_STATE(s, srv_st, ASSH_SRV_RUNNING);
-
   return ASSH_OK;
 }
 
@@ -330,13 +327,10 @@ assh_error_t assh_service_loop(struct assh_session_s *s,
         e->f_done = assh_event_service_start_done;
         e->service.start.srv = s->srv;
 
-        ASSH_SET_STATE(s, srv_st, ASSH_SRV_INIT_EVENT);
+        ASSH_SET_STATE(s, srv_st, ASSH_SRV_RUNNING);
 
         /* packet not consumed by the init */
         return p != NULL ? ASSH_NO_DATA : ASSH_OK;
-
-      case ASSH_SRV_INIT_EVENT:
-        ASSH_UNREACHABLE();
 
       case ASSH_SRV_RUNNING:
         ASSH_RET_IF_TRUE(p != NULL &&

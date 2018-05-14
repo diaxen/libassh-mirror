@@ -192,6 +192,10 @@ struct assh_session_s
 
   /** Current state of service execution. */
   enum assh_service_state_e srv_st:3;
+
+#ifndef NDEBUG
+  assh_bool_t event_done:1;
+#endif
 };
 
 /** @This set the user private pointer of the session. */
