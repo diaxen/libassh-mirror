@@ -90,8 +90,6 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_hostbased_sign_done)
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
-  assert(pv->state == ASSH_USERAUTH_ST_SENT_HOSTBASED_RQ_DONE);
-
   /* promote event processing error */
   ASSH_RET_IF_TRUE(ASSH_ERR_ERROR(inerr), inerr | ASSH_ERRSV_DISCONNECT);
 
@@ -104,8 +102,6 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_hostbased_sign_done)
 
   assh_free(s->ctx, pv->hostkey.auth_data);
   pv->hostkey.auth_data = NULL;
-
-  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_SENT_HOSTBASED_RQ);
 
   return ASSH_OK;
 }
@@ -129,7 +125,6 @@ assh_userauth_client_send_hostbased(struct assh_session_s *s,
     {
       ASSH_JMP_ON_ERR(assh_userauth_client_send_sign(s, k, pout, sign_len),
                    err_packet);
-      ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_SENT_HOSTBASED_RQ);
     }
   else
     {
@@ -139,9 +134,9 @@ assh_userauth_client_send_hostbased(struct assh_session_s *s,
       ASSH_JMP_ON_ERR(assh_userauth_client_get_sign(s, &e->userauth_client.sign,
                                                  k, pout, sign_len),
                    err_packet);
-      ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_SENT_HOSTBASED_RQ_DONE);
     }
 
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_SENT_HOSTBASED_RQ);
   return ASSH_OK;
 
  err_packet:
@@ -160,7 +155,9 @@ static ASSH_USERAUTH_CLIENT_RETRY(assh_userauth_client_hostbased_retry)
   if (k->keys == NULL)
     return ASSH_NO_DATA;
 
-  /* some user keys are already available */
+  /* more keys are available */
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_SEND_HOSTBASED);
+
   ASSH_RETURN(assh_userauth_client_send_hostbased(s, e));
 }
 
@@ -209,8 +206,11 @@ static ASSH_USERAUTH_CLIENT_PROCESS(assh_userauth_client_hostbased_process)
       ASSH_RET_IF_TRUE(p != NULL, ASSH_ERR_PROTOCOL);
       ASSH_RETURN(assh_userauth_client_send_hostbased(s, e));
 
-    default:
+    case ASSH_USERAUTH_ST_SENT_HOSTBASED_RQ:
       ASSH_RETURN(assh_userauth_client_default_process(s, p, e));
+
+    default:
+      ASSH_UNREACHABLE();
     }
 }
 

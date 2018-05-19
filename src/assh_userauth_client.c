@@ -68,7 +68,7 @@ static ASSH_SERVICE_INIT_FCN(assh_userauth_client_init)
                     ASSH_ALLOC_SECUR, (void**)&pv));
 
   pv->methods = 0;
-  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_INIT);
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_GET_USERNAME);
 
   s->srv_pv = pv;
 
@@ -333,8 +333,6 @@ assh_userauth_client_username(struct assh_session_s *s,
   e->id = ASSH_EVENT_USERAUTH_CLIENT_USER;
   e->f_done = &assh_userauth_client_username_done;
 
-  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_GET_USERNAME);
-
   return ASSH_OK;
 }
 
@@ -455,7 +453,8 @@ assh_userauth_client_failure(struct assh_session_s *s,
             {
               pv->method = m;
 
-              /* test if the method wants to retry authentication on its own */
+              /* test if the method wants to retry authentication without
+                 requesting the appliction to select other methods */
               ASSH_RET_ON_ERR(m->f_retry(s, e));
               if (err != ASSH_NO_DATA)
                 return ASSH_OK;
@@ -550,7 +549,7 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_client_process)
 
   switch (pv->state)
     {
-    case ASSH_USERAUTH_ST_INIT:
+    case ASSH_USERAUTH_ST_GET_USERNAME:
       ASSH_RET_IF_TRUE(p != NULL, ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
       ASSH_RETURN(assh_userauth_client_username(s, e)
                      | ASSH_ERRSV_DISCONNECT);

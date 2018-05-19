@@ -62,8 +62,6 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_keyboard_info_done)
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
-  assert(pv->state == ASSH_USERAUTH_ST_KEYBOARD_INFO);
-
   assh_packet_release(pv->pck);
   pv->pck = NULL;
 
@@ -159,8 +157,6 @@ assh_userauth_client_req_keyboard_info(struct assh_session_s *s,
   e->id = ASSH_EVENT_USERAUTH_CLIENT_KEYBOARD;
   e->f_done = &assh_userauth_client_keyboard_info_done;
 
-  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_KEYBOARD_INFO);
-
   assert(pv->pck == NULL);
   pv->pck = assh_packet_refinc(p);
 
@@ -169,18 +165,29 @@ assh_userauth_client_req_keyboard_info(struct assh_session_s *s,
 
 static ASSH_USERAUTH_CLIENT_PROCESS(assh_userauth_client_keyboard_process)
 {
+  struct assh_context_s *c = s->ctx;
+  struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
-  if (p == NULL)
-    return ASSH_OK;
-
-  switch(p->head.msg)
+  switch (pv->state)
     {
-    case SSH_MSG_USERAUTH_INFO_REQUEST:
-      ASSH_RETURN(assh_userauth_client_req_keyboard_info(s, p, e));
+    case ASSH_USERAUTH_ST_KEYBOARD_SENT_RQ:
+    case ASSH_USERAUTH_ST_KEYBOARD_SENT_INFO:
+      if (p == NULL)
+        return ASSH_OK;
+
+      switch(p->head.msg)
+        {
+        case SSH_MSG_USERAUTH_INFO_REQUEST:
+          ASSH_RETURN(assh_userauth_client_req_keyboard_info(s, p, e));
+
+        default:
+          ASSH_RETURN(assh_userauth_client_default_process(s, p, e));
+        }
+      break;
 
     default:
-      ASSH_RETURN(assh_userauth_client_default_process(s, p, e));
+      ASSH_UNREACHABLE();
     }
 }
 

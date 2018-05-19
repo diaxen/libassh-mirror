@@ -87,8 +87,6 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_req_pwchange_done)
   const struct assh_event_userauth_client_pwchange_s *ev = &e->userauth_client.pwchange;
   assh_error_t err;
 
-  assert(pv->state == ASSH_USERAUTH_ST_GET_PWCHANGE);
-
   assh_packet_release(pv->pck);
   pv->pck = NULL;
 
@@ -129,7 +127,6 @@ assh_userauth_client_req_pwchange(struct assh_session_s *s,
 
   e->id = ASSH_EVENT_USERAUTH_CLIENT_PWCHANGE;
   e->f_done = assh_userauth_client_req_pwchange_done;
-  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_GET_PWCHANGE);
 
   assert(pv->pck == NULL);
   pv->pck = assh_packet_refinc(p);
