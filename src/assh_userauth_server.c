@@ -129,7 +129,7 @@ static ASSH_SERVICE_CLEANUP_FCN(assh_userauth_server_cleanup)
 }
 
 /* send the authentication failure packet */
-assh_error_t
+static assh_error_t
 assh_userauth_server_send_failure(struct assh_session_s *s,
                                   assh_bool_t partial)
 {
@@ -183,8 +183,6 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_success_done)
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
-  assert(pv->state == ASSH_USERAUTH_ST_SUCCESS_DONE);
-
   /* promote event processing error */
   ASSH_RET_IF_TRUE(ASSH_ERR_ERROR(inerr), inerr | ASSH_ERRSV_DISCONNECT);
 
@@ -234,8 +232,6 @@ assh_error_t assh_userauth_server_success(struct assh_session_s *s,
 
   e->id = ASSH_EVENT_USERAUTH_SERVER_SUCCESS;
   e->f_done = assh_userauth_server_success_done;
-
-  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_SUCCESS_DONE);
 
   return ASSH_OK;
 }
@@ -352,6 +348,7 @@ static assh_error_t assh_userauth_server_req(struct assh_session_s *s,
         {
           assert(pv->pck == NULL);
           assh_userauth_server_flush_state(s);
+          ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_WAIT_RQ);
 
           /* lookup service name */
           if (assh_service_by_name(s->ctx, assh_load_u32(srv_name),
@@ -364,10 +361,11 @@ static assh_error_t assh_userauth_server_req(struct assh_session_s *s,
           ASSH_RET_ON_ERR(assh_ssh_string_copy(username, pv->username, sizeof(pv->username)));
         }
 
-      ASSH_RETURN(m->f_req(s, p, e, auth_data)
-                    | ASSH_ERRSV_DISCONNECT);
+      ASSH_RET_ON_ERR(m->f_req(s, p, e, auth_data) | ASSH_ERRSV_DISCONNECT);
+      return ASSH_OK;
     }
 
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_FAILURE);
   assert(pv->pck == NULL);
   assh_userauth_server_flush_state(s);
   assert(pv->tries > 0);
@@ -383,8 +381,6 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_get_methods_done)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
-
-  assert(pv->state == ASSH_USERAUTH_ST_METHODS_DONE);
 
   /* promote event processing error */
   ASSH_RET_IF_TRUE(ASSH_ERR_ERROR(inerr), inerr | ASSH_ERRSV_DISCONNECT);
@@ -428,8 +424,6 @@ static assh_error_t
 assh_userauth_server_get_methods(struct assh_session_s *s,
                                  struct assh_event_s *e)
 {
-  struct assh_userauth_context_s *pv = s->srv_pv;
-
   struct assh_event_userauth_server_methods_s *ev =
     &e->userauth_server.methods;
 
@@ -446,8 +440,6 @@ assh_userauth_server_get_methods(struct assh_session_s *s,
 
   e->id = ASSH_EVENT_USERAUTH_SERVER_METHODS;
   e->f_done = assh_userauth_server_get_methods_done;
-
-  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_METHODS_DONE);
 
   return ASSH_OK;
 }
@@ -471,8 +463,6 @@ assh_userauth_server_get_methods_failed(struct assh_session_s *s,
 
   e->id = ASSH_EVENT_USERAUTH_SERVER_METHODS;
   e->f_done = assh_userauth_server_get_methods_done;
-
-  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_METHODS_DONE);
 }
 
 /* handle authentication failure */
@@ -485,10 +475,10 @@ assh_userauth_server_failure(struct assh_session_s *s,
   assert(pv->pck == NULL);
   assh_userauth_server_flush_state(s);
 
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_FAILURE);
+
   if (e)
     assh_userauth_server_get_methods_failed(s, e);
-  else
-    ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_FAILURE);
 
   assert(pv->tries > 0);
   pv->tries--;
@@ -532,10 +522,9 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_server_process)
                      | ASSH_ERRSV_DISCONNECT);
 
 #ifdef CONFIG_ASSH_SERVER_AUTH_KEYBOARD
-    case ASSH_USERAUTH_ST_KEYBOARD_INFO_SENT:
+    case ASSH_USERAUTH_ST_KEYBOARD_INFO:
     case ASSH_USERAUTH_ST_KEYBOARD_CONTINUE:
 #endif
-    case ASSH_USERAUTH_ST_CONTINUE:
       ASSH_RETURN(pv->method->f_process(s, p, e)
                     | ASSH_ERRSV_DISCONNECT);
 

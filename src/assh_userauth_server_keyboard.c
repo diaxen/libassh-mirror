@@ -36,8 +36,6 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_kbresponse_done)
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 
-  assert(pv->state == ASSH_USERAUTH_ST_KEYBOARD_RESPONSE);
-
   assh_free(s->ctx, pv->keyboard_array);
   pv->keyboard_array = NULL;
 
@@ -119,8 +117,6 @@ assh_userauth_server_kbresponse(struct assh_session_s *s,
   e->id = ASSH_EVENT_USERAUTH_SERVER_KBRESPONSE;
   e->f_done = assh_userauth_server_kbresponse_done;
 
-  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_KEYBOARD_RESPONSE);
-
   assert(pv->pck == NULL);
   pv->pck = assh_packet_refinc(p);
 
@@ -185,14 +181,12 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_kbinfo_done)
     }
 
   assh_transport_push(s, pout);
-  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_KEYBOARD_INFO_SENT);
 
   return ASSH_OK;
 }
 
 static assh_error_t
 assh_userauth_server_kbinfo(struct assh_session_s *s,
-                            struct assh_packet_s *p,
                             struct assh_event_s *e,
                             const uint8_t *sub)
 {
@@ -234,7 +228,9 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_kbinfo)
   assert(pv->pck == NULL);
   pv->pck = assh_packet_refinc(p);
 
-  ASSH_RETURN(assh_userauth_server_kbinfo(s, p, e, sub));
+  ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_KEYBOARD_CONTINUE);
+
+  ASSH_RETURN(assh_userauth_server_kbinfo(s, e, sub));
 }
 
 static ASSH_USERAUTH_SERVER_PROCESS(assh_userauth_server_kbprocess)
@@ -244,14 +240,14 @@ static ASSH_USERAUTH_SERVER_PROCESS(assh_userauth_server_kbprocess)
 
   switch (pv->state)
     {
-    case ASSH_USERAUTH_ST_KEYBOARD_INFO_SENT:
+    case ASSH_USERAUTH_ST_KEYBOARD_INFO:
       if (p == NULL)
         return ASSH_OK;
       ASSH_RETURN(assh_userauth_server_kbresponse(s, p, e)
                      | ASSH_ERRSV_DISCONNECT);
 
     case ASSH_USERAUTH_ST_KEYBOARD_CONTINUE:
-      ASSH_RET_ON_ERR(assh_userauth_server_kbinfo(s, p, e,
+      ASSH_RET_ON_ERR(assh_userauth_server_kbinfo(s, e,
                      (const uint8_t *)"\x00\x00\x00\x00")
                    | ASSH_ERRSV_DISCONNECT);
       return ASSH_NO_DATA;

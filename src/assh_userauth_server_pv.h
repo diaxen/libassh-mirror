@@ -29,7 +29,6 @@
 enum assh_userauth_state_e
 {
   ASSH_USERAUTH_ST_METHODS,   //< intial state
-  ASSH_USERAUTH_ST_METHODS_DONE,
   ASSH_USERAUTH_ST_FAILURE,
   ASSH_USERAUTH_ST_WAIT_RQ,
 #ifdef CONFIG_ASSH_SERVER_AUTH_PASSWORD
@@ -41,18 +40,13 @@ enum assh_userauth_state_e
   ASSH_USERAUTH_ST_PUBKEY_VERIFY , //< the public key event handler may check the signature
 #endif
 #ifdef CONFIG_ASSH_SERVER_AUTH_HOSTBASED
-  ASSH_USERAUTH_ST_HOSTBASED,
   ASSH_USERAUTH_ST_HOSTBASED_VERIFY,
 #endif
 #ifdef CONFIG_ASSH_SERVER_AUTH_KEYBOARD
   ASSH_USERAUTH_ST_KEYBOARD_INFO,
-  ASSH_USERAUTH_ST_KEYBOARD_INFO_SENT,
-  ASSH_USERAUTH_ST_KEYBOARD_RESPONSE,
   ASSH_USERAUTH_ST_KEYBOARD_CONTINUE,
 #endif
-  ASSH_USERAUTH_ST_CONTINUE,
   ASSH_USERAUTH_ST_SUCCESS,
-  ASSH_USERAUTH_ST_SUCCESS_DONE,
 };
 
 #define ASSH_USERAUTH_SERVER_REQ(n)                             \
@@ -119,11 +113,6 @@ struct assh_userauth_context_s
 
   assh_time_t deadline;
 };
-
-/* send the authentication failure packet */
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_userauth_server_send_failure(struct assh_session_s *s,
-                                  assh_bool_t partial);
 
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_userauth_server_failure(struct assh_session_s *s,
