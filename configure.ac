@@ -39,30 +39,30 @@ AC_C_INLINE
 AC_CHECK_SIZEOF(long)
 AC_CHECK_TYPE(long long, [bnlong_size=8], [bnlong_size=$ac_cv_sizeof_long])
 AC_CHECK_TYPE(__int128,  [bnlong_size=x])
-AC_CHECK_LIB(c, qsort_r, AC_DEFINE(CONFIG_ASSH_QSORTR, 1, [qsort_r available]))
+AC_CHECK_LIB(c, qsort_r, AC_DEFINE(CONFIG_ASSH_QSORTR, 1, [Use qsort_r from C lbirary when defined.]))
 
 AC_CHECK_LIB(c, posix_openpt,
-  AC_DEFINE(CONFIG_ASSH_POSIX_OPENPT, 1, [posix_openpt available])
+  AC_DEFINE(CONFIG_ASSH_POSIX_OPENPT, 1, [Use posix_openpt when defined.])
   AC_DEFINE(_XOPEN_SOURCE, 600, [_XOPEN_SOURCE])
 )
 
-AC_CHECK_LIB(c, getpwnam_r, AC_DEFINE(CONFIG_ASSH_GETPWNAM_R, 1, [getpwnam_r available]))
-AC_CHECK_LIB(c, getspnam_r, AC_DEFINE(CONFIG_ASSH_GETSPNAM_R, 1, [getspnam_r available]))
+AC_CHECK_LIB(c, getpwnam_r, AC_DEFINE(CONFIG_ASSH_GETPWNAM_R, 1, [Use getpwnam_r when defined.]))
+AC_CHECK_LIB(c, getspnam_r, AC_DEFINE(CONFIG_ASSH_GETSPNAM_R, 1, [Use getspnam_r when defined.]))
 
 AC_CHECK_LIB(crypt, crypt_r,
   LIBS="$LIBS -lcrypt"
-  AC_DEFINE(CONFIG_ASSH_CRYPT_R, 1, [crypt_r available])
+  AC_DEFINE(CONFIG_ASSH_CRYPT_R, 1, [Use crypt_r when defined.])
 )
 
 case "${ac_cv_sizeof_long}_${bnlong_size}" in
     8_x)
-         AC_DEFINE(CONFIG_ASSH_BIGNUM_WORD, 64, [Using 64 bits words for bignum.])
+         AC_DEFINE(CONFIG_ASSH_BIGNUM_WORD, 64, [Bignum uses 64 bits words when defined.])
     ;;
     8_8|4_8)
-         AC_DEFINE(CONFIG_ASSH_BIGNUM_WORD, 32, [Using 32 bits words for bignum.])
+         AC_DEFINE(CONFIG_ASSH_BIGNUM_WORD, 32, [Bignum uses 64 bits words when defined.])
     ;;
     *)
-         AC_DEFINE(CONFIG_ASSH_BIGNUM_WORD, 16, [Using 16 bits words for bignum.])
+         AC_DEFINE(CONFIG_ASSH_BIGNUM_WORD, 16, [Bignum uses 16 bits words when defined.])
     ;;
 esac
 
@@ -121,31 +121,31 @@ if test x$enable_gcrypt = xyes ; then
   AC_CHECK_LIB(gcrypt, gcry_check_version, [
     AC_CHECK_HEADERS(gcrypt.h, [
       LIBS="$LIBS -lgcrypt"
-      AC_DEFINE([CONFIG_ASSH_USE_GCRYPT], [], [Libgcrypt support])
+      AC_DEFINE([CONFIG_ASSH_USE_GCRYPT], [], [Enable the Libgcrypt support when defined.])
 
       if test x$enable_gcrypt_hash = xyes ; then
-	AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_HASH], [], [use of gcrypt hash algorithms])
-        AC_DEFINE([CONFIG_ASSH_HASH_RIPEMD160], [], [RIPE-MD-160 message digest available])
+	AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_HASH], [], [Use Libgcrypt hash algorithms implementations when defined.])
+        AC_DEFINE([CONFIG_ASSH_HASH_RIPEMD160], [], [Enable the RIPE-MD-160 MAC algorithm when defined.])
       fi
 
       if test x$enable_gcrypt_prng = xyes ; then
-	AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_PRNG], [], [use of gcrypt random number generation])
+	AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_PRNG], [], [Enable Libgcrypt random number generator when defined.])
       fi
 
       if test x$enable_gcrypt_alloc = xyes ; then
-	AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_ALLOC], [], [use of gcrypt secur memory allocation])
+	AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_ALLOC], [], [Enable Libgcrypt secur memory allocator when defined.])
       fi
 
       if test x$enable_gcrypt_ciphers = xyes ; then
-	AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_CIPHERS], [], [use of gcrypt cipherss])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_TDES], [], [Triple-DES cipher available])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_BLOWFISH], [], [Blowfish cipher available])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_TWOFISH], [], [Twofish cipher available])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_SERPENT], [], [Serpent cipher available])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_CAST128], [], [CAST128 cipher available])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_IDEA], [], [IDEA cipher available])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_CAMELLIA], [], [Camellia cipher available])
-        AC_DEFINE([CONFIG_ASSH_MODE_GCM], [], [GCM cipher mode available])
+	AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_CIPHERS], [], [Enable Libgcrypt cipher algorithms when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_TDES], [], [Enable the Triple-DES cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_BLOWFISH], [], [Enable the Blowfish cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_TWOFISH], [], [Enable the Twofish cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_SERPENT], [], [Enable the Serpent cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_CAST128], [], [Enable the CAST128 cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_IDEA], [], [Enable the IDEA cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_CAMELLIA], [], [Enable the Camellia cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_MODE_GCM], [], [Enable the GCM cipher mode when defined.])
       fi
 
     ], [
@@ -167,8 +167,8 @@ if test x$enable_zlib = xyes ; then
   AC_CHECK_LIB(z, zlibVersion, [
     AC_CHECK_HEADERS(zlib.h, [
       LIBS="$LIBS -lz"
-      AC_DEFINE([CONFIG_ASSH_USE_ZLIB], [], [zlib support])
-      AC_DEFINE([CONFIG_ASSH_ZLIB_ALLOC], [ASSH_ALLOC_INTERNAL], [zlib storage type])
+      AC_DEFINE([CONFIG_ASSH_USE_ZLIB], [], [Enable the zlib library when defined.])
+      AC_DEFINE([CONFIG_ASSH_ZLIB_ALLOC], [ASSH_ALLOC_INTERNAL], [Specifies the allocator storage type used for the zlib context.])
     ], [
       enable_zlib=no
     ])
@@ -178,22 +178,22 @@ if test x$enable_zlib = xyes ; then
 fi
 
 AC_CHECK_HEADERS(valgrind/memcheck.h, [
-  AC_DEFINE([CONFIG_ASSH_VALGRIND], [], [valgrind headers available])
+  AC_DEFINE([CONFIG_ASSH_VALGRIND], [], [Use valgrind headers for better checking when defined.])
 ])
 
 if test -e /dev/random ; then
-  AC_DEFINE([CONFIG_ASSH_USE_DEV_RANDOM], [], [use of unix /dev/u?random])
+  AC_DEFINE([CONFIG_ASSH_USE_DEV_RANDOM], [], [Enable support for unix @tt {/dev/u?random} random generator when defined.])
   enable_dev_random=yes
 fi
 
-AC_DEFINE([CONFIG_ASSH_CIPHER_AES], [], [AES cipher available])
-AC_DEFINE([CONFIG_ASSH_CIPHER_ARCFOUR], [], [Arcfour cipher available])
-AC_DEFINE([CONFIG_ASSH_CIPHER_CHACHAPOLY], [], [Chacha20-Poly1305 cipher available])
-AC_DEFINE([CONFIG_ASSH_MODE_CTR], [], [Counter cipher mode available])
-AC_DEFINE([CONFIG_ASSH_HASH_MD5], [], [MD5 message digest available])
-AC_DEFINE([CONFIG_ASSH_HASH_SHA1], [], [SHA1 message digest available])
-AC_DEFINE([CONFIG_ASSH_HASH_SHA2], [], [SHA2 message digest available])
-AC_DEFINE([CONFIG_ASSH_HASH_SHA3], [], [SHA3 message digest available])
+AC_DEFINE([CONFIG_ASSH_CIPHER_AES], [], [Enable the AES cipher when defined.])
+AC_DEFINE([CONFIG_ASSH_CIPHER_ARCFOUR], [], [Enable the Arcfour cipher when defined.])
+AC_DEFINE([CONFIG_ASSH_CIPHER_CHACHAPOLY], [], [Enable the Chacha20-Poly1305 cipher when defined.])
+AC_DEFINE([CONFIG_ASSH_MODE_CTR], [], [Enable the Counter cipher mode when defined.])
+AC_DEFINE([CONFIG_ASSH_HASH_MD5], [], [Enable the MD5 message digest when defined.])
+AC_DEFINE([CONFIG_ASSH_HASH_SHA1], [], [Enable the SHA1 message digest when defined.])
+AC_DEFINE([CONFIG_ASSH_HASH_SHA2], [], [Enable the SHA2 message digest when defined.])
+AC_DEFINE([CONFIG_ASSH_HASH_SHA3], [], [Enable the SHA3 message digest when defined.])
 
 AM_CONDITIONAL(COND_server,  [test x$enable_server = xyes])
 AM_CONDITIONAL(COND_client,  [test x$enable_client = xyes])
@@ -217,74 +217,76 @@ AM_CONDITIONAL(COND_key_validate, [test x$enable_key_validate = xyes])
 AM_CONDITIONAL(COND_key_create, [test x$enable_key_create = xyes])
 
 if test x$enable_server = xyes ; then
-   AC_DEFINE([CONFIG_ASSH_SERVER], [], [SSH server support])
+   AC_DEFINE([CONFIG_ASSH_SERVER], [], [Enable support for the server side of the SSH protocol when defined.])
    if test x$enable_publickey_userauth = xyes ; then
-     AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_PUBLICKEY], [], [SSH server authentication: public key support])
+     AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_PUBLICKEY], [], [Enable support for the @em{public key} user authentication method on server side when defined.])
    fi
    if test x$enable_password_userauth = xyes ; then
-     AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_PASSWORD], [], [SSH server authentication: password support])
+     AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_PASSWORD], [], [Enable support for the @em{password} user authentication method on server side when defined.])
    fi
    if test x$enable_hostbased_userauth = xyes ; then
-     AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_HOSTBASED], [], [SSH server authentication: host based])
+     AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_HOSTBASED], [], [Enable support for the @em{host based} user authentication method on server side when defined.])
    fi
    if test x$enable_keyboard_userauth = xyes ; then
-     AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_KEYBOARD], [], [SSH server authentication: keyboard interactive])
+     AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_KEYBOARD], [], [Enable support for the @em{keyboard interactive} user authentication method on server side when defined.])
    fi
    if test x$enable_none_userauth = xyes ; then
-     AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_NONE], [], [SSH server authentication: bypassed, grant access directly])
+     AC_DEFINE([CONFIG_ASSH_SERVER_AUTH_NONE], [], [Enable support for the @em{none} user authentication method on server side when defined.])
    fi
 fi
 
 if test x$enable_client = xyes ; then
-   AC_DEFINE([CONFIG_ASSH_CLIENT], [], [SSH client support])
+   AC_DEFINE([CONFIG_ASSH_CLIENT], [], [Enable support for the client side of the SSH protocol when defined.])
    if test x$enable_publickey_userauth = xyes ; then
-     AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY], [], [SSH client authentication: public key support])
-     AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_USE_PKOK], [], [SSH client authentication: public key signature is not sent directly])
+     AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY], [], [Enable support for the @em{public key support} user authentication method on server side when defined.])
+     AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_USE_PKOK], [], [Send a public key lookup packet first before sending the signature during user authentication when defined.])
    fi
    if test x$enable_password_userauth = xyes ; then
-     AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_PASSWORD], [], [SSH client authentication: password support])
+     AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_PASSWORD], [], [Enable support for the @em{password support} user authentication method on server side when defined.])
    fi
    if test x$enable_hostbased_userauth = xyes ; then
-     AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_HOSTBASED], [], [SSH client authentication: host based])
+     AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_HOSTBASED], [], [Enable support for the @em{host based} user authentication method on server side when defined.])
    fi
    if test x$enable_keyboard_userauth = xyes ; then
-     AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_KEYBOARD], [], [SSH client authentication: keyboard interactive])
+     AC_DEFINE([CONFIG_ASSH_CLIENT_AUTH_KEYBOARD], [], [Enable support for the @em{keyboard interactive} user authentication method on server side when defined.])
    fi
 fi
 
 if test x$enable_key_validate = xyes ; then
-  AC_DEFINE([CONFIG_ASSH_KEY_VALIDATE], [], [SSH key validation code])
+  AC_DEFINE([CONFIG_ASSH_KEY_VALIDATE], [], [Enable support for SSH key validation when defined.])
 fi
 
 if test x$enable_key_create = xyes ; then
-  AC_DEFINE([CONFIG_ASSH_KEY_CREATE], [], [SSH key creation code])
+  AC_DEFINE([CONFIG_ASSH_KEY_CREATE], [], [Enable support for SSH key creation when defined.])
 fi
 
-AC_DEFINE([CONFIG_ASSH_AUTH_USERNAME_LEN], [32], [SSH authentication max username length])
-AC_DEFINE([CONFIG_ASSH_AUTH_PASSWORD_LEN], [32], [SSH authentication max password length])
-AC_DEFINE([CONFIG_ASSH_AUTH_HOSTNAME_LEN], [128], [SSH authentication max hostname length])
+AC_DEFINE([CONFIG_ASSH_AUTH_USERNAME_LEN], [32], [Specifies maximum length of username for user authentication.])
+AC_DEFINE([CONFIG_ASSH_AUTH_PASSWORD_LEN], [32], [Specifies maximum length of password for user authentication.])
+AC_DEFINE([CONFIG_ASSH_AUTH_HOSTNAME_LEN], [128], [Specifies maximum length of hostname for user authentication.])
 
-# rfc4253 4.2 requires 255 here. Using a lower value on embedded targets would
-# reduce the size of the assh_session_s structure.
-AC_DEFINE([CONFIG_ASSH_IDENT_SIZE], [255], [Maximum length of the remote software identification string])
+AC_DEFINE([CONFIG_ASSH_IDENT_SIZE], [255], [Specifies the maximum length of the remote software identification string.
+				    rfc4253 section 4.2 requires 255 bytes which is almost never seen in practice.
+				    Using a lower value on embedded targets will reduce the size of the
+				    @ref assh_session_s structure.])
 
-# rfc4253 6.1 requires 32768 here. Using a lower value on embedded targets
-# would reduce the memory usage and resources exhaustion attacks.
-AC_DEFINE([CONFIG_ASSH_MAX_PAYLOAD], [32768], [Maximum size of supported ssh packet payload])
+AC_DEFINE([CONFIG_ASSH_MAX_PAYLOAD], [32768], [Specifies the maximum size of the ssh packet payload.
+				     rfc4253 section 6.1 requires 32768 bytes. Using a lower value on embedded
+				     targets will reduce the memory usage and limit resources exhaustion attacks.])
 
-AC_DEFINE([CONFIG_ASSH_MAX_SERVICES], [4], [Maximum number of registered services])
-AC_DEFINE([CONFIG_ASSH_ABI_WARN], [], [Warn when a function not relying on a stable ABI is used])
-AC_DEFINE([CONFIG_ASSH_LIBC_REALLOC], [], [Compile the assh_libc_allocator])
+AC_DEFINE([CONFIG_ASSH_MAX_SERVICES], [4], [Specifies the maximum number of registered services.])
+AC_DEFINE([CONFIG_ASSH_ABI_WARN], [], [Enable warning at compile time for use of functions which are not ABI stable.])
+AC_DEFINE([CONFIG_ASSH_LIBC_REALLOC], [], [Enable support for the C library allocator which is not secur on some platforms.])
 #AC_DEFINE([NDEBUG], [], [Disable asserts and some aborts])
-AC_DEFINE([CONFIG_ASSH_OPENSSH_PREFIX], ["/etc/ssh/"], [Path to openssh configuration])
+AC_DEFINE([CONFIG_ASSH_OPENSSH_PREFIX], ["/etc/ssh/"], [Specifies the path to OpenSSH key files for use by helpers.])
 
 if test x$enable_packet_pool = xyes ; then
-  AC_DEFINE([CONFIG_ASSH_PACKET_POOL], [], [Use a packet allocation pool])
-  AC_DEFINE([CONFIG_ASSH_PACKET_POOL_SIZE], [1048576], [Maximum byte amount of spare packets in the pool])
+  AC_DEFINE([CONFIG_ASSH_PACKET_POOL], [], [Enable the packet pool allocator when defined.])
+  AC_DEFINE([CONFIG_ASSH_PACKET_POOL_SIZE], [1048576], [Specifies the maximum byte amount of spare packets in the pool.])
 fi
 
 if test x$enable_alloca = xyes ; then
-  AC_DEFINE([CONFIG_ASSH_ALLOCA], [], [Store key related material on stack])
+  AC_DEFINE([CONFIG_ASSH_ALLOCA], [], [Enable storage of temporary buffers on stack.
+  				  This is not secur on platforms with memory swapping.])
 fi
 
 if test "$GCC" = "yes" ; then
