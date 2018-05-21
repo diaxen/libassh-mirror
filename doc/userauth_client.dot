@@ -1,0 +1,76 @@
+digraph {
+#   ->  [label=<>];
+
+  ASSH_init [label=<Service initialization>];
+
+  ASSH_init -> ASSH_USERAUTH_ST_GET_USERNAME [label=<Initialized>];
+
+  ASSH_USERAUTH_ST_GET_USERNAME [label=<<b>GET_USERNAME</b>:<br/>Get user name from app using<br/>EVENT_USERAUTH_CLIENT_USER>];
+
+  ASSH_USERAUTH_ST_GET_USERNAME -> ASSH_USERAUTH_ST_SENT_NONE_RQ [label=<Event acknowledged by app>];
+
+  ASSH_USERAUTH_ST_SENT_NONE_RQ [label=<<b>SENT_NONE_RQ</b>:<br/>Sent USERAUTH_REQUEST msg<br/>with the 'none' method,<br/>wait for reply>];
+
+  ASSH_USERAUTH_ST_SENT_NONE_RQ -> ASSH_USERAUTH_ST_SUCCESS [label=<Received USERAUTH_SUCCESS msg>];
+  ASSH_USERAUTH_ST_SENT_NONE_RQ -> ASSH_USERAUTH_ST_GET_METHODS [label=<Received USERAUTH_FAILURE msg>];
+
+  ASSH_USERAUTH_ST_GET_METHODS [label=<<b>GET_METHODS</b>:<br/>Get usable methods from app<br/>using EVENT_USERAUTH_CLIENT_METHODS>];
+
+  ASSH_USERAUTH_ST_GET_METHODS -> ASSH_USERAUTH_ST_SENT_NONE_RQ [label=<'none' method selected>]
+  ASSH_USERAUTH_ST_GET_METHODS -> ASSH_USERAUTH_ST_SENT_PASSWORD_RQ [label=<'password' method selected>]
+  ASSH_USERAUTH_ST_GET_METHODS -> ASSH_USERAUTH_ST_KEYBOARD_SENT_RQ [label=<'keyboard' method selected>]
+  ASSH_USERAUTH_ST_GET_METHODS -> ASSH_USERAUTH_ST_SEND_PUBKEY [label=<'publickey' method selected>]
+  ASSH_USERAUTH_ST_GET_METHODS -> ASSH_USERAUTH_ST_SEND_HOSTBASED [label=<'hostbased' method selected>]
+
+  ASSH_USERAUTH_ST_SEND_PUBKEY [label=<<b>SEND_PUBKEY</b>:<br/>Send USERAUTH_REQUEST msg<br/>with the 'publickey' method>];
+
+  ASSH_USERAUTH_ST_SEND_PUBKEY -> ASSH_USERAUTH_ST_SENT_PUBKEY_RQ [label=<Sent the USERAUTH_REQUEST msg<br/>(with signature)>];
+  ASSH_USERAUTH_ST_SEND_PUBKEY -> ASSH_USERAUTH_ST_SENT_PUBKEY_LOOKUP [label=<Sent the USERAUTH_REQUEST msg<br/>(lookup only)>];
+
+  ASSH_USERAUTH_ST_SENT_PUBKEY_LOOKUP [label=<<b>SENT_PUBKEY_LOOKUP</b>:<br/>Wait for public<br/>key lookup reply>];
+
+  ASSH_USERAUTH_ST_SENT_PUBKEY_LOOKUP -> ASSH_USERAUTH_ST_SENT_PUBKEY_RQ [label=<Received USERAUTH_PK_OK msg>];
+  ASSH_USERAUTH_ST_SENT_PUBKEY_LOOKUP -> ASSH_USERAUTH_ST_GET_METHODS [label=<Received USERAUTH_FAILURE msg,<br/>no more keys to try>];
+  ASSH_USERAUTH_ST_SENT_PUBKEY_LOOKUP -> ASSH_USERAUTH_ST_SEND_PUBKEY [label=<Received USERAUTH_FAILURE msg,<br/>more keys available>];
+
+  ASSH_USERAUTH_ST_SENT_PUBKEY_RQ [label=<<b>SENT_PUBKEY_RQ</b>:<br/>USERAUTH_REQUEST msg sent,<br/>Wait for authentication>];
+
+  ASSH_USERAUTH_ST_SENT_PUBKEY_RQ -> ASSH_USERAUTH_ST_SUCCESS [label=<Received USERAUTH_SUCCESS msg>];
+  ASSH_USERAUTH_ST_SENT_PUBKEY_RQ -> ASSH_USERAUTH_ST_GET_METHODS [label=<Received USERAUTH_FAILURE msg,<br/>no more keys to try>];
+  ASSH_USERAUTH_ST_SENT_PUBKEY_RQ -> ASSH_USERAUTH_ST_SEND_PUBKEY [label=<Received USERAUTH_FAILURE msg,<br/>more keys available>];
+
+  ASSH_USERAUTH_ST_SENT_PASSWORD_RQ [label=<<b>SENT_PASSWORD_RQ</b>:<br/>USERAUTH_REQUEST msg sent,<br/>Wait for authentication>];
+
+  ASSH_USERAUTH_ST_SENT_PASSWORD_RQ -> ASSH_USERAUTH_ST_SUCCESS [label=<Received USERAUTH_SUCCESS msg>];
+  ASSH_USERAUTH_ST_SENT_PASSWORD_RQ -> ASSH_USERAUTH_ST_GET_METHODS [label=<Received USERAUTH_FAILURE msg>];
+  ASSH_USERAUTH_ST_SENT_PASSWORD_RQ -> ASSH_USERAUTH_ST_PWCHANGE_SKIP [label=<Received USERAUTH_PASSWD_CHANGEREQ msg,<br/>declined by app>];
+  ASSH_USERAUTH_ST_SENT_PASSWORD_RQ -> ASSH_USERAUTH_ST_SENT_PASSWORD_RQ [label=<Received USERAUTH_PASSWD_CHANGEREQ msg,<br/>new passwd provided by app>];
+
+  ASSH_USERAUTH_ST_PWCHANGE_SKIP [label=<<b>PWCHANGE_SKIP</b>:<br/>Password method not usable<br/>>];
+
+  ASSH_USERAUTH_ST_PWCHANGE_SKIP -> ASSH_USERAUTH_ST_GET_METHODS;
+
+  ASSH_USERAUTH_ST_KEYBOARD_SENT_RQ [label=<<b>KEYBOARD_SENT_RQ</b>:<br/>USERAUTH_REQUEST msg sent,<br/>Wait for info request>];
+
+  ASSH_USERAUTH_ST_KEYBOARD_SENT_RQ -> ASSH_USERAUTH_ST_KEYBOARD_SENT_INFO [label=<Received USERAUTH_INFO_REQUEST msg>];
+  ASSH_USERAUTH_ST_KEYBOARD_SENT_RQ -> ASSH_USERAUTH_ST_SUCCESS [label=<Received USERAUTH_SUCCESS msg>];
+  ASSH_USERAUTH_ST_KEYBOARD_SENT_RQ -> ASSH_USERAUTH_ST_GET_METHODS [label=<Received USERAUTH_FAILURE msg>];
+
+  ASSH_USERAUTH_ST_KEYBOARD_SENT_INFO [label=<<b>KEYBOARD_SENT_INFO</b>:<br/>USERAUTH_INFO_REPLY msg sent,<br/>Wait for authentication<br/>or more info request>];
+
+  ASSH_USERAUTH_ST_KEYBOARD_SENT_INFO -> ASSH_USERAUTH_ST_KEYBOARD_SENT_INFO [label=<Received USERAUTH_INFO_REQUEST msg>];
+  ASSH_USERAUTH_ST_KEYBOARD_SENT_INFO -> ASSH_USERAUTH_ST_SUCCESS [label=<Received USERAUTH_SUCCESS msg>];
+  ASSH_USERAUTH_ST_KEYBOARD_SENT_INFO -> ASSH_USERAUTH_ST_GET_METHODS [label=<Received USERAUTH_FAILURE msg>];
+
+  ASSH_USERAUTH_ST_SEND_HOSTBASED [label=<<b>SEND_HOSTBASED</b>:<br/>Send USERAUTH_REQUEST msg<br/>with the 'hostbased' method>];
+
+  ASSH_USERAUTH_ST_SEND_HOSTBASED -> ASSH_USERAUTH_ST_SENT_HOSTBASED_RQ [label=<Signed blob and<br/>sent USERAUTH_REQUEST msg>];
+
+  ASSH_USERAUTH_ST_SENT_HOSTBASED_RQ [label=<<b>SENT_HOSTBASED_RQ</b>:<br/>USERAUTH_REQUEST msg sent,<br/>Wait for authentication>];
+
+  ASSH_USERAUTH_ST_SENT_HOSTBASED_RQ -> ASSH_USERAUTH_ST_SUCCESS [label=<Received USERAUTH_SUCCESS msg>];
+  ASSH_USERAUTH_ST_SENT_HOSTBASED_RQ -> ASSH_USERAUTH_ST_GET_METHODS [label=<Received USERAUTH_FAILURE msg,<br/>no more keys to try>];
+  ASSH_USERAUTH_ST_SENT_HOSTBASED_RQ -> ASSH_USERAUTH_ST_SEND_HOSTBASED [label=<Received USERAUTH_FAILURE msg<br/>more keys available>];
+
+  ASSH_USERAUTH_ST_SUCCESS [label=<<b>SUCCESS</b>:<br/>Report success to the app,<br/>and start the next service>];
+}

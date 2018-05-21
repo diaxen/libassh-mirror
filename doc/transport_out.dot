@@ -1,0 +1,36 @@
+digraph {
+  ASSH_init [label=<Session initialization>];
+
+  ASSH_init -> ASSH_TR_OUT_IDENT [label=<Initialized>];
+
+  ASSH_TR_OUT_IDENT [label=<<b>IDENT</b>:<br/>Request app to transmit ssh stream,<br/>containing ident string>];
+
+  ASSH_TR_OUT_IDENT -> ASSH_TR_OUT_IDENT_DONE [label=<ASSH_EVENT_WRITE<br/>acknowledged by app>];
+
+  ASSH_TR_OUT_IDENT_PAUSE [label=<<b>IDENT_PAUSE</b>:<br/>Yield>];
+
+  ASSH_TR_OUT_IDENT_PAUSE -> ASSH_TR_OUT_IDENT [label=<Yielded to input>];
+
+  ASSH_TR_OUT_IDENT_DONE [label=<<b>IDENT_DONE</b>:<br/>Test amount of<br/>data transmitted>];
+
+  ASSH_TR_OUT_IDENT_DONE -> ASSH_TR_OUT_IDENT_PAUSE [label=<String partially transmitted>];
+  ASSH_TR_OUT_IDENT_DONE -> ASSH_TR_OUT_PACKETS [label=<String transmitted>];
+
+  ASSH_TR_OUT_PACKETS [label=<<b>PACKETS</b>:<br/>Pop a packet from queue,<br/>Compress, encipher, authenticate.<br/>Request app to transmit ssh stream>];
+
+  ASSH_TR_OUT_PACKETS -> ASSH_TR_OUT_PACKETS_DONE [label=<ASSH_EVENT_WRITE<br/>acknowledged by app>];
+  ASSH_TR_OUT_PACKETS -> ASSH_TR_OUT_PACKETS [label=<No packet in queue,<br/>Yielded to input>];
+
+  ASSH_TR_OUT_PACKETS_PAUSE [label=<<b>PACKETS_PAUSE</b>:<br/>Yield>];
+
+  ASSH_TR_OUT_PACKETS_PAUSE -> ASSH_TR_OUT_PACKETS_ENCIPHERED [label=<Yielded to input>];
+
+  ASSH_TR_OUT_PACKETS_ENCIPHERED [label=<<b>PACKETS_ENCIPHERED</b>:<br/>Request app to transmit ssh stream>];
+
+  ASSH_TR_OUT_PACKETS_ENCIPHERED -> ASSH_TR_OUT_PACKETS_DONE [label=<ASSH_EVENT_WRITE<br/>acknowledged by app>];
+
+  ASSH_TR_OUT_PACKETS_DONE [label=<<b>PACKETS_DONE</b>:<br/>Test amount of data transmitted.>];
+
+  ASSH_TR_OUT_PACKETS_DONE -> ASSH_TR_OUT_PACKETS_PAUSE [label=<Packet partially transmitted>];
+  ASSH_TR_OUT_PACKETS_DONE -> ASSH_TR_OUT_PACKETS [label=<Packet transmitted>];
+}

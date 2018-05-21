@@ -1,0 +1,84 @@
+digraph {
+#   ->  [label=""];
+
+  ASSH_init [label=<Service initialization>];
+
+  ASSH_init -> ASSH_USERAUTH_ST_METHODS [label=<Initialized>];
+
+  ASSH_USERAUTH_ST_METHODS [label=<<b>METHODS</b>:<br/>Get usable methods from app<br/>using EVENT_USERAUTH_SERVER_METHODS>];
+
+  ASSH_USERAUTH_ST_METHODS -> ASSH_USERAUTH_ST_WAIT_RQ [label=<Event acknowledged by app>];
+
+  ASSH_USERAUTH_ST_FAILURE [label=<<b>FAILURE</b>:<br/>Report failure to the app<br/>and get usable methods using<br/>EVENT_USERAUTH_SERVER_METHODS>];
+
+  ASSH_USERAUTH_ST_FAILURE -> ASSH_USERAUTH_ST_WAIT_RQ [label=<Event acknowledged by app>];
+
+  ASSH_USERAUTH_ST_WAIT_RQ [label=<<b>WAIT_RQ</b>:<br/>Wait for USERAUTH_REQUEST<br/>msg from client>];
+
+  ASSH_USERAUTH_ST_WAIT_RQ -> ASSH_USERAUTH_ST_PASSWORD [label=<Received USERAUTH_REQUEST msg<br/>with the 'password' method>];
+  ASSH_USERAUTH_ST_WAIT_RQ -> ASSH_USERAUTH_ST_PUBKEY_PKOK [label=<Received USERAUTH_REQUEST msg<br/>with the 'publickey' method,<br/>lookup only>];
+  ASSH_USERAUTH_ST_WAIT_RQ -> ASSH_USERAUTH_ST_PUBKEY_VERIFY [label=<Received USERAUTH_REQUEST msg<br/>with the 'publickey' method,<br/>signature present>];
+  ASSH_USERAUTH_ST_WAIT_RQ -> ASSH_USERAUTH_ST_HOSTBASED_VERIFY [label=<Received USERAUTH_REQUEST msg<br/>with the 'hostbased' method>];
+  ASSH_USERAUTH_ST_WAIT_RQ -> ASSH_USERAUTH_ST_KEYBOARD_CONTINUE [label=<Received USERAUTH_REQUEST msg<br/>with the 'keyboard-interactive' method>];
+  ASSH_USERAUTH_ST_WAIT_RQ -> ASSH_USERAUTH_ST_FAILURE [label=<Received USERAUTH_REQUEST msg<br/>with unknown or disabled method>];
+
+  ASSH_USERAUTH_ST_PASSWORD [label=<<b>PASSWORD</b>:<br/>Query app about the password using<br/>EVENT_USERAUTH_SERVER_PASSWORD>];
+
+  ASSH_USERAUTH_ST_PASSWORD -> ASSH_USERAUTH_ST_SUCCESS [label=<Password match<br/>reported by app>];
+  ASSH_USERAUTH_ST_PASSWORD -> ASSH_USERAUTH_ST_FAILURE [label=<Password missmatch<br/>reported by app>];
+  ASSH_USERAUTH_ST_PASSWORD -> ASSH_USERAUTH_ST_PASSWORD_WAIT_CHANGE [label=<Password change<br/>required by app>];
+
+  ASSH_USERAUTH_ST_PASSWORD_WAIT_CHANGE [label=<<b>PASSWORD_WAIT_CHANGE</b>:<br/>Send USERAUTH_PASSWD_CHANGEREQ<br/>msg then wait for new password>];
+
+  ASSH_USERAUTH_ST_PASSWORD_WAIT_CHANGE -> ASSH_USERAUTH_ST_PASSWORD [label=<Client sent a new password>];
+  ASSH_USERAUTH_ST_PASSWORD_WAIT_CHANGE -> ASSH_USERAUTH_ST_FAILURE [label=<Client retried without<br/>sending a new password>];
+  ASSH_USERAUTH_ST_PASSWORD_WAIT_CHANGE -> ASSH_USERAUTH_ST_WAIT_RQ [label=<Client changed the<br/>authentication method>];
+
+  ASSH_USERAUTH_ST_PUBKEY_PKOK [label=<<b>PUBKEY_PKOK</b>:<br/>Query the app about the<br/>client provided user key using<br/>EVENT_USERAUTH_SERVER_USERKEY>];
+
+  ASSH_USERAUTH_ST_PUBKEY_PKOK -> ASSH_USERAUTH_ST_WAIT_RQ [label=<Key lookup success,<br/>reported by app>];
+  ASSH_USERAUTH_ST_PUBKEY_PKOK -> ASSH_USERAUTH_ST_FAILURE [label=<Key lookup failed,<br/>reported by app>];
+
+  ASSH_USERAUTH_ST_PUBKEY_VERIFY [label=<<b>PUBKEY_VERIFY</b>:<br/>Query the app about the<br/>client provided user key using<br/>EVENT_USERAUTH_SERVER_USERKEY<br/>then check provided signature>];
+
+  ASSH_USERAUTH_ST_PUBKEY_VERIFY -> ASSH_USERAUTH_ST_SUCCESS [label=<Signature good,<br/>reported by app>];
+  ASSH_USERAUTH_ST_PUBKEY_VERIFY -> ASSH_USERAUTH_ST_FAILURE [label=<Key lookup failed,<br/>reported by app>];
+
+  ASSH_USERAUTH_ST_HOSTBASED_VERIFY [label=<<b>HOSTBASED_VERIFY</b>:<br/>Query the app about the<br/>client provided host key using<br/>EVENT_USERAUTH_SERVER_HOSTBASED<br/>then check provided signature>];
+
+  ASSH_USERAUTH_ST_HOSTBASED_VERIFY -> ASSH_USERAUTH_ST_SUCCESS [label=<Signature good,<br/>reported by app>];
+  ASSH_USERAUTH_ST_HOSTBASED_VERIFY -> ASSH_USERAUTH_ST_FAILURE [label=<Key lookup failed,<br/>reported by app>];
+
+  ASSH_USERAUTH_ST_KEYBOARD_INFO [label=<<b>KEYBOARD_INFO</b>:<br/>send the USERAUTH_INFO_REQUEST msg<br/>and wait for reply, then notify app using<br/>EVENT_USERAUTH_SERVER_KBRESPONSE>];
+
+  ASSH_USERAUTH_ST_KEYBOARD_INFO -> ASSH_USERAUTH_ST_WAIT_RQ [label=<Client changed the<br/>authentication method>];
+  ASSH_USERAUTH_ST_KEYBOARD_INFO -> ASSH_USERAUTH_ST_SUCCESS [label=<Keyboard authentication<br/>success reported by app>];
+  ASSH_USERAUTH_ST_KEYBOARD_INFO -> ASSH_USERAUTH_ST_FAILURE [label=<Keyboard authentication<br/>failed reported by app>];
+  ASSH_USERAUTH_ST_KEYBOARD_INFO -> ASSH_USERAUTH_ST_KEYBOARD_CONTINUE [label=<App wants to request more info>];
+
+  ASSH_USERAUTH_ST_KEYBOARD_CONTINUE [label=<<b>KEYBOARD_CONTINUE</b>:<br/>Query app about info to request using<br/>EVENT_USERAUTH_SERVER_KBINFO>];
+
+  ASSH_USERAUTH_ST_KEYBOARD_CONTINUE -> ASSH_USERAUTH_ST_KEYBOARD_INFO;
+
+  ASSH_USERAUTH_ST_SUCCESS [label=<<b>SUCCESS</b>:<br/>Report authentication success<br/>to the app using<br/>ASSH_EVENT_USERAUTH_SERVER_SUCCESS<br/>then restart or start the next service>];
+
+  ASSH_USERAUTH_ST_SUCCESS -> ASSH_USERAUTH_ST_WAIT_RQ [label=<Multi-factor authentication<br/>requested by app>];
+
+  ASSH_init2 [label=<Service initialization>];
+
+  ASSH_init2 -> ASSH_USERAUTH_PUBKEY_NONE [label=<Initialized>];
+
+  ASSH_USERAUTH_PUBKEY_NONE [label=<<b>PUBKEY_NONE</b>:<br/>No user public key received>];
+
+  ASSH_USERAUTH_PUBKEY_NONE -> ASSH_USERAUTH_PUBKEY_NEW [label=<Received USERAUTH_REQUEST msg<br/>with the 'publickey' method>];
+
+  ASSH_USERAUTH_PUBKEY_NEW [label=<<b>PUBKEY_NEW</b>:<br/>Unknown user key<br/>provided by client>];
+
+  ASSH_USERAUTH_PUBKEY_NEW -> ASSH_USERAUTH_PUBKEY_NEW [label=<Received USERAUTH_REQUEST msg<br/>with the 'publickey' method<br/>using a different key>];
+  ASSH_USERAUTH_PUBKEY_NEW -> ASSH_USERAUTH_PUBKEY_NONE [label=<Authentication failure, or<br/>client changed method, or<br/>next authentication factor requested>];
+  ASSH_USERAUTH_PUBKEY_NEW -> ASSH_USERAUTH_PUBKEY_FOUND [label=<Key lookup success,<br/>reported by app>];
+
+  ASSH_USERAUTH_PUBKEY_FOUND [label=<<b>PUBKEY_FOUND</b>:<br/>Matching user key<br/>provided by client>];
+
+  ASSH_USERAUTH_PUBKEY_FOUND -> ASSH_USERAUTH_PUBKEY_NONE [label=<Authentication failure, or<br/>client changed method, or<br/>next authentication factor requested>];
+}

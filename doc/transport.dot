@@ -1,0 +1,66 @@
+digraph {
+  ASSH_init [label=<Session initialization>];
+
+  ASSH_init -> ASSH_TR_IDENT [label=<Initialized>];
+
+  ASSH_TR_IDENT [label=<<b>IDENT</b>:<br/>Wait for ident string>];
+
+  ASSH_TR_IDENT -> ASSH_TR_IDENT [label=<>];
+  ASSH_TR_IDENT -> ASSH_TR_KEX_INIT [label=<Parsed<br/>ident string>];
+
+  ASSH_TR_KEX_INIT [label=<<b>KEX_INIT</b>:<br/>Send KEX_INIT msg>];
+
+  ASSH_TR_KEX_INIT -> ASSH_TR_KEX_WAIT [label=<KEX_INIT sent>];
+
+  ASSH_TR_KEX_WAIT [label=<<b>KEX_WAIT</b>:<br/>Wait for remote KEX_INIT msg>]
+
+  ASSH_TR_KEX_WAIT -> ASSH_TR_KEX_WAIT [label=<>];
+  ASSH_TR_KEX_WAIT -> ASSH_TR_KEX_SKIP [label=<Received KEX_INIT<br/>with wrong guess>];
+  ASSH_TR_KEX_WAIT -> ASSH_TR_KEX_RUNNING [label=<Received KEX_INIT>];
+
+  ASSH_TR_KEX_SKIP [label=<<b>KEX_SKIP</b>:<br/>Wait for next msg>]
+
+  ASSH_TR_KEX_SKIP -> ASSH_TR_KEX_SKIP [label=<>];
+  ASSH_TR_KEX_SKIP -> ASSH_TR_KEX_RUNNING [label=<Discarded one msg>];
+
+  ASSH_TR_KEX_RUNNING [label=<<b>KEX_RUNNING</b>:<br/>Run the retained KEX algo>]
+
+  ASSH_TR_KEX_RUNNING -> ASSH_TR_KEX_RUNNING [label=<>];
+  ASSH_TR_KEX_RUNNING -> ASSH_TR_NEWKEY [label=<End of KEX process>];
+
+  ASSH_TR_NEWKEY [label=<<b>NEW_KEY</b>:<br/>Wait for remote NEWKEYS msg>]
+
+  ASSH_TR_NEWKEY -> ASSH_TR_NEWKEY [label=<>];
+  ASSH_TR_NEWKEY -> ASSH_TR_SERVICE [label=<Received NEWKEYS and reported<br/>KEX_DONE event to the app>];
+
+  ASSH_TR_SERVICE [label=<<b>SERVICE</b>:<br/>Run the service loop>]
+
+  ASSH_TR_SERVICE -> ASSH_TR_SERVICE [label=<>];
+  ASSH_TR_SERVICE -> ASSH_TR_SERVICE_KEX [label=<KEX threshold reached,<br/>KEX_INIT sent>];
+  ASSH_TR_SERVICE -> ASSH_TR_KEX_SKIP [label=<Received KEX_INIT<br/>with wrong guess>];
+  ASSH_TR_SERVICE -> ASSH_TR_KEX_RUNNING [label=<Received KEX_INIT>];
+
+  ASSH_TR_SERVICE_KEX [label=<<b>SERVICE_KEX</b>:<br/>Run the service loop,<br/>looking for KEX_INIT reply>]
+
+  ASSH_TR_SERVICE_KEX -> ASSH_TR_SERVICE_KEX [label=<>];
+  ASSH_TR_SERVICE_KEX -> ASSH_TR_KEX_SKIP [label=<Received KEX_INIT<br/>with wrong guess>];
+  ASSH_TR_SERVICE_KEX -> ASSH_TR_KEX_RUNNING [label=<Received KEX_INIT>];
+
+  ASSH_any_state [label=<Any state>];
+
+  ASSH_any_state -> ASSH_TR_DISCONNECT [label=<ASSH_ERRSV_DISCONNECT<br/>error occured or DISCONNECT<br/>msg received>];
+  ASSH_any_state -> ASSH_TR_FIN [label=<ASSH_ERRSV_FIN<br/>error occured>];
+  ASSH_any_state -> ASSH_TR_CLOSED [label=<ASSH_ERRSV_FATAL<br/>error occured>];
+
+  ASSH_TR_DISCONNECT [label=<<b>DISCONNECT</b>:<br/>Run the service loop,<br/>discarding ssh input>]
+
+  ASSH_TR_DISCONNECT -> ASSH_TR_DISCONNECT [label=<>];
+  ASSH_TR_DISCONNECT -> ASSH_TR_CLOSED [label=<No more event<br/>to report to app,<br/>no more packet<br/>to send>];
+
+  ASSH_TR_FIN [label=<<b>FIN</b>:<br/>Run the service loop,<br/>discarding ssh i/o>]
+
+  ASSH_TR_FIN -> ASSH_TR_FIN [label=<>];
+  ASSH_TR_FIN -> ASSH_TR_CLOSED [label=<No more event<br/>to report to app>];
+
+  ASSH_TR_CLOSED [label=<<b>CLOSED</b>>]
+}

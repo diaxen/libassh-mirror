@@ -1,0 +1,32 @@
+digraph {
+  ASSH_init [label=<Session initialization>];
+
+  ASSH_init -> ASSH_TR_IN_IDENT [label=<Initialized>];
+
+  ASSH_TR_IN_IDENT [label=<<b>IDENT</b>:<br/>Request input ssh stream from app,<br/>expecting ident string from remote host>];
+
+  ASSH_TR_IN_IDENT -> ASSH_TR_IN_IDENT_DONE [label=<ASSH_EVENT_READ<br/>acknowledged by app>];
+
+  ASSH_TR_IN_IDENT_DONE [label=<<b>IDENT_DONE</b>:<br/>Parse remote ident string>];
+
+  ASSH_TR_IN_IDENT_DONE -> ASSH_TR_IN_IDENT [label=<More input needed>];
+  ASSH_TR_IN_IDENT_DONE -> ASSH_TR_IN_HEAD [label=<Found end of string>];
+
+  ASSH_TR_IN_HEAD [label=<<b>HEAD</b>:<br/>Request input ssh stream from app,<br/>expecting header of binary packet>];
+
+  ASSH_TR_IN_HEAD -> ASSH_TR_IN_HEAD_DONE [label=<ASSH_EVENT_READ<br/>acknowledged by app>];
+
+  ASSH_TR_IN_HEAD_DONE [label=<<b>HEAD_DONE</b>:<br/>Decipher and check packet header>];
+
+  ASSH_TR_IN_HEAD_DONE -> ASSH_TR_IN_HEAD [label=<More input needed>];
+  ASSH_TR_IN_HEAD_DONE -> ASSH_TR_IN_PAYLOAD [label=<Packet header ok,<br/>length of payload is known>];
+
+  ASSH_TR_IN_PAYLOAD [label=<<b>PAYLOAD</b>:<br/>Request input ssh stream from app,<br/>expecting payload of binary packet>];
+
+  ASSH_TR_IN_PAYLOAD -> ASSH_TR_IN_PAYLOAD_DONE [label=<ASSH_EVENT_READ<br/>acknowledged by app>];
+
+  ASSH_TR_IN_PAYLOAD_DONE [label=<<b>PAYLOAD_DONE</b>:<br/>Decipher and check packet payload,<br/>then push packet for dispatch.>];
+
+  ASSH_TR_IN_PAYLOAD_DONE -> ASSH_TR_IN_PAYLOAD [label=<More input needed>];
+  ASSH_TR_IN_PAYLOAD_DONE -> ASSH_TR_IN_HEAD [label=<Packet pushed>];
+}

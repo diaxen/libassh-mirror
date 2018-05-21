@@ -1,0 +1,26 @@
+digraph {
+  ASSH_init [label="Session initialization"];
+
+  ASSH_init -> ASSH_SRV_NONE [label="Initialized"];
+
+  ASSH_SRV_NONE [label="NONE\nNo service currently started"];
+
+  ASSH_SRV_NONE -> ASSH_SRV_NONE [label="server: wait for\nSSH_MSG_SERVICE_REQUEST"];
+  ASSH_SRV_NONE -> ASSH_SRV_INIT [label="server: received\nSSH_MSG_SERVICE_REQUEST"];
+  ASSH_SRV_NONE -> ASSH_SRV_REQUESTED [label="client: popped next registered service"];
+
+  ASSH_SRV_REQUESTED [label="REQUESTED\nSend SSH_MSG_SERVICE_REQUEST"];
+
+  ASSH_SRV_REQUESTED -> ASSH_SRV_INIT [label="client: received\nSSH_MSG_SERVICE_ACCEPT"];
+  ASSH_SRV_REQUESTED -> ASSH_SRV_REQUESTED [label="client: wait for\nSSH_MSG_SERVICE_ACCEPT"];
+
+  ASSH_SRV_INIT [label="INIT\nInitialize selected service"];
+
+  ASSH_SRV_INIT -> ASSH_SRV_RUNNING [label="Service initialized and reported\nSERVICE_START event to the app"];
+
+  ASSH_SRV_RUNNING [label="RUNNING\nRun service processing function"];
+
+  ASSH_SRV_RUNNING -> ASSH_SRV_INIT [label="assh_service_start()\ncalled"];
+  ASSH_SRV_RUNNING -> ASSH_SRV_NONE [label="client: assh_service_stop()\ncalled"];
+  ASSH_SRV_RUNNING -> ASSH_SRV_RUNNING;
+}
