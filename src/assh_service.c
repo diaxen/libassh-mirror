@@ -354,7 +354,7 @@ assh_error_t assh_service_loop(struct assh_session_s *s,
         /* need to start the next service or
            packet not consumed yet */
         if (s->srv_st == ASSH_SRV_INIT ||
-            err == ASSH_NO_DATA)
+            ASSH_ERR_ERROR(err) == ASSH_NO_DATA)
           continue;
 
         return ASSH_OK;

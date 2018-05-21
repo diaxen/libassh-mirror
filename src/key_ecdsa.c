@@ -361,7 +361,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_ecdsa_validate)
   err = assh_bignum_bytecode(c, 0, bytecode, "DDNNTTTTTTm",
                              curve->p, curve->b, &k->xn, &k->yn);
 
-  switch (err)
+  switch (ASSH_ERR_ERROR(err))
     {
     case ASSH_ERR_NUM_COMPARE_FAILED:
     case ASSH_ERR_NUM_OVERFLOW:

@@ -512,7 +512,7 @@ assh_client_event_openssh_auth(struct assh_session_s *s, FILE *out, FILE *in,
 	      fputc('\n', out);
 	    }
 
-	  if (!err)
+	  if (ASSH_ERR_ERROR(err) == ASSH_OK)
 	    {
 	      /* select password authentication */
 	      assh_buffer_strset(&ev->password, pass);
@@ -565,14 +565,14 @@ assh_client_event_openssh_auth(struct assh_session_s *s, FILE *out, FILE *in,
       err = assh_fd_get_password(c, &old_pass, 80, fileno(in), 0);
       fputc('\n', out);
 
-      if (!err)
+      if (ASSH_ERR_ERROR(err) == ASSH_OK)
 	{
 	  fprintf(out, "New password for `%s@%s': ",
 		  user, host);
 	  err = assh_fd_get_password(c, &new_pass, 80, fileno(in), 0);
 	  fputc('\n', out);
 
-	  if (!err)
+	  if (ASSH_ERR_ERROR(err) == ASSH_OK)
 	    {
 	      assh_buffer_strset(&ev->old_password, old_pass);
 	      assh_buffer_strset(&ev->new_password, new_pass);
@@ -620,7 +620,7 @@ assh_client_event_openssh_auth(struct assh_session_s *s, FILE *out, FILE *in,
 	      const char *v;
 	      assh_client_print_string(out, &ev->prompts[i]);
 	      err = assh_fd_get_password(c, &v, 80, fileno(in), (ev->echos >> i) & 1);
-	      if (err)
+	      if (ASSH_ERR_ERROR(err) != ASSH_OK)
 		break;
 	      fputc('\n', out);
 	      assh_buffer_strset(&rsp[i], v);

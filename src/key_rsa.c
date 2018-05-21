@@ -404,7 +404,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_rsa_validate)
                              &k->nn, &k->dn, &k->en, &k->pn,
                              &k->qn, &k->dpn, &k->dqn, &k->in);
 
-  switch (err)
+  switch (ASSH_ERR_ERROR(err))
     {
     case ASSH_ERR_NUM_COMPARE_FAILED:
     case ASSH_ERR_NUM_OVERFLOW:

@@ -783,7 +783,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
       /* run the service loop */
       err = assh_service_loop(s, p, e);
 
-      if (err == ASSH_NO_DATA)
+      if (ASSH_ERR_ERROR(err) == ASSH_NO_DATA)
 	return ASSH_OK;	/* do not consume the input packet */
 
       break;

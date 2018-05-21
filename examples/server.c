@@ -231,7 +231,7 @@ interactive_session_child2channel(assh_bool_t e)
   else
     err = assh_channel_data_alloc(its_channel, &buf, &s, 1);
 
-  if (err == ASSH_OK)
+  if (ASSH_ERR_ERROR(err) == ASSH_OK)
     {
       /* read data from the child directly in the
 	 buffer of the outgoing packet then send it. */
@@ -412,7 +412,8 @@ ssh_loop(struct assh_session_s *session,
 		  err = assh_inter_decode_pty_req(&rqi, ev->rq_data.data,
 						  ev->rq_data.size);
 
-		  if (!err && !interactive_session_pty(&rqi))
+		  if (ASSH_ERR_ERROR(err) == ASSH_OK &&
+		      !interactive_session_pty(&rqi))
 		    ev->reply = ASSH_CONNECTION_REPLY_SUCCESS;
 #endif
 		}
@@ -431,7 +432,7 @@ ssh_loop(struct assh_session_s *session,
 		  err = assh_inter_decode_exec(&rqi, ev->rq_data.data,
 					       ev->rq_data.size);
 
-		  if (!err)
+		  if (ASSH_ERR_ERROR(err) == ASSH_OK)
 		    {
 		      const char *cmd = assh_buffer_strdup(&rqi.command);
 		      if (!interactive_session_exec(cmd))

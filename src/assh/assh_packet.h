@@ -289,7 +289,7 @@ assh_packet_add_u32(struct assh_packet_s *p, uint32_t value)
 {
   uint8_t *be;
   assh_error_t err = assh_packet_add_array(p, 4, &be);
-  if (!err)
+  if (ASSH_ERR_ERROR(err) == ASSH_OK)
     assh_store_u32(be, value);
   return err;
 }
@@ -392,7 +392,7 @@ assh_packet_check_u32(const struct assh_packet_s *p, uint32_t *u32,
 		      const uint8_t *data, const uint8_t **next)
 {
   assh_error_t err = assh_packet_check_array(p, data, 4, next);
-  if (!err)
+  if (ASSH_ERR_ERROR(err) == ASSH_OK)
     *u32 = assh_load_u32(data);
   return err;
 }

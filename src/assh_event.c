@@ -35,8 +35,8 @@
 
 static ASSH_EVENT_DONE_FCN(assh_event_error_done)
 {
-  assert(s->last_err != 0);
-  s->last_err = 0;
+  assert(ASSH_ERR_ERROR(s->last_err) != ASSH_OK);
+  s->last_err = ASSH_OK;
   return ASSH_OK;
 }
 
@@ -50,7 +50,7 @@ assh_bool_t assh_event_get(struct assh_session_s *s,
 
   assert(s->event_done);
 
-  if (s->last_err != ASSH_OK)
+  if (ASSH_ERR_ERROR(s->last_err) != ASSH_OK)
     goto err_event;        /* report an event for the pending error */
 
   switch (s->tr_st)

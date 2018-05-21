@@ -70,7 +70,7 @@ assh_error_t assh_session_init(struct assh_context_s *c,
   s->tr_user_auth_done = 0;
   s->user_auth_done = 0;
 
-  s->last_err = 0;
+  s->last_err = ASSH_OK;
   s->time = 0;
   s->deadline = 0;
 

@@ -280,7 +280,8 @@ assh_load_rfc4716_rfc1421(struct assh_context_s *c, FILE *file,
     }
 
  err_:
-  if (err != ASSH_OK && comment != NULL && *comment != NULL)
+  if (ASSH_ERR_ERROR(err) != ASSH_OK &&
+      comment != NULL && *comment != NULL)
     assh_free(c, (void*)*comment);
 
   return err;
@@ -444,7 +445,7 @@ assh_load_openssh_v1_blob(struct assh_context_s *c,
       cipher->f_cleanup(c, cipher_ctx);
     err_sc:
       ASSH_SCRATCH_FREE(c, sc);
-      if (err != ASSH_OK)
+      if (ASSH_ERR_ERROR(err) != ASSH_OK)
         return err;
     }
 
@@ -781,7 +782,7 @@ assh_save_openssh_v1_blob(struct assh_context_s *c,
           cipher->f_cleanup(c, cipher_ctx);
         err_sc:
           ASSH_SCRATCH_FREE(c, sc);
-          if (err != ASSH_OK)
+          if (ASSH_ERR_ERROR(err) != ASSH_OK)
             return err;
         }
 
@@ -905,7 +906,7 @@ assh_save_rfc1421(struct assh_context_s *c,
       cipher->f_cleanup(c, cipher_ctx);
     err_sc:
       ASSH_SCRATCH_FREE(c, sc);
-      if (err != ASSH_OK)
+      if (ASSH_ERR_ERROR(err) != ASSH_OK)
         return err;
     }
 

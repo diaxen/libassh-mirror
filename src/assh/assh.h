@@ -224,10 +224,11 @@ const char * assh_error_str(assh_error_t err);
 
 /** @This extracts the @ref assh_error_e part of an error code
     returned by a function. */
-#define ASSH_ERR_ERROR(code) ((code) & 0xfff)
+#define ASSH_ERR_ERROR(code) ((enum assh_error_e)((code) & 0xfff))
+
 /** @This extracts the @ref assh_error_severity_e part of an error
     code returned by a function. This consists of ored flag values. */
-#define ASSH_ERR_SEVERITY(code) ((code) & 0xf000)
+#define ASSH_ERR_SEVERITY(code) ((enum assh_error_severity_e)((code) & 0xf000))
 
 /** @This flag is set in the error code when the error has been
     reported to the @ref assh_event_done function by the application.

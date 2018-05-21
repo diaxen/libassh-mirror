@@ -184,10 +184,10 @@ int main(int argc, char **argv)
 
 	      /* allocate output data packet */
 	      uint8_t *data;
-	      assh_error_t perr = assh_channel_data_alloc(ev->ch, &data, &size, size);
+	      assh_error_t err = assh_channel_data_alloc(ev->ch, &data, &size, size);
 
 	      /* copy input data to the output buffer */
-	      if (perr == ASSH_OK)
+	      if (ASSH_ERR_ERROR(err) == ASSH_OK)
 		{
 		  memcpy(data, ev->data.data, size);
 		  ev->transferred = size;
@@ -196,7 +196,7 @@ int main(int argc, char **argv)
 	      /* acknowledge input data event before sending */
 	      assh_event_done(session, &event, ASSH_OK);
 
-	      if (perr == ASSH_OK)  /* send back output data */
+	      if (ASSH_ERR_ERROR(err) == ASSH_OK)  /* send back output data */
 		assh_channel_data_send(ev->ch, size);
 
 	      break;

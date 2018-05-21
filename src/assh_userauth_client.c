@@ -456,7 +456,7 @@ assh_userauth_client_failure(struct assh_session_s *s,
               /* test if the method wants to retry authentication without
                  requesting the appliction to select other methods */
               ASSH_RET_ON_ERR(m->f_retry(s, e));
-              if (err != ASSH_NO_DATA)
+              if (ASSH_ERR_ERROR(err) != ASSH_NO_DATA)
                 return ASSH_OK;
 
               mask |= m->mask;
