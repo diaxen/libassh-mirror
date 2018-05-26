@@ -72,8 +72,8 @@ AC_ARG_ENABLE(server, AC_HELP_STRING(--disable-server, [Disable SSH server suppo
 AC_ARG_ENABLE(client, AC_HELP_STRING(--disable-client, [Disable SSH client support]),
 		       enable_client=$enableval, enable_client=yes)
 
-AC_ARG_ENABLE(none_userauth, AC_HELP_STRING(--enable-none, [Enable none authentication]),
-		       enable_none_userauth=$enableval, enable_none_userauth=no)
+AC_ARG_ENABLE(none_userauth, AC_HELP_STRING(--disable-none-userauth, [Disable none authentication]),
+		       enable_none_userauth=$enableval, enable_none_userauth=yes)
 
 AC_ARG_ENABLE(publickey_userauth, AC_HELP_STRING(--disable-publickey-userauth, [Disable public key user authentication]),
 		       enable_publickey_userauth=$enableval, enable_publickey_userauth=yes)

@@ -72,6 +72,21 @@ struct assh_event_userauth_server_methods_s
 };
 
 /** This event is reported when the server-side user authentication
+    service is running and the client has selected the @em none
+    method.
+
+    The @tt accept field must be updated before calling the @ref
+    assh_event_done function.
+
+    @see ASSH_EVENT_USERAUTH_SERVER_NONE */
+struct assh_event_userauth_server_none_s
+{
+  ASSH_EV_CONST struct assh_cbuffer_s     username;  //< input
+  const struct assh_service_s * ASSH_EV_CONST service;   //< input
+  assh_bool_t                             accept;    //< output
+};
+
+/** This event is reported when the server-side user authentication
     service is running and the client has selected the user public key
     method.
 
@@ -229,6 +244,7 @@ struct assh_event_userauth_server_success_s
 union assh_event_userauth_server_u
 {
   struct assh_event_userauth_server_methods_s methods;
+  struct assh_event_userauth_server_none_s none;
   struct assh_event_userauth_server_userkey_s  userkey;
   struct assh_event_userauth_server_password_s password;
   struct assh_event_userauth_server_hostbased_s hostbased;

@@ -69,18 +69,20 @@ enum assh_event_id_e
 
   /** @see assh_event_userauth_server_methods_s */
   ASSH_EVENT_USERAUTH_SERVER_METHODS     = 20,
+  /** @see assh_event_userauth_server_none_s */
+  ASSH_EVENT_USERAUTH_SERVER_NONE        = 21,
   /** @see assh_event_userauth_server_userkey_s */
-  ASSH_EVENT_USERAUTH_SERVER_USERKEY     = 21,
+  ASSH_EVENT_USERAUTH_SERVER_USERKEY     = 22,
   /** @see assh_event_userauth_server_password_s */
-  ASSH_EVENT_USERAUTH_SERVER_PASSWORD    = 22,
+  ASSH_EVENT_USERAUTH_SERVER_PASSWORD    = 23,
   /** @see assh_event_userauth_server_kbinfo_s */
-  ASSH_EVENT_USERAUTH_SERVER_KBINFO      = 23,
+  ASSH_EVENT_USERAUTH_SERVER_KBINFO      = 24,
   /** @see assh_event_userauth_server_kbresponse_s */
-  ASSH_EVENT_USERAUTH_SERVER_KBRESPONSE  = 24,
+  ASSH_EVENT_USERAUTH_SERVER_KBRESPONSE  = 25,
   /** @see assh_event_userauth_server_hostbased_s */
-  ASSH_EVENT_USERAUTH_SERVER_HOSTBASED   = 25,
+  ASSH_EVENT_USERAUTH_SERVER_HOSTBASED   = 26,
   /** @see assh_event_userauth_server_success_s */
-  ASSH_EVENT_USERAUTH_SERVER_SUCCESS     = 26,
+  ASSH_EVENT_USERAUTH_SERVER_SUCCESS     = 27,
 
   /** @see assh_event_request_s */
   ASSH_EVENT_REQUEST                     = 30,
@@ -185,7 +187,7 @@ struct assh_event_s
 #endif
 
     /** @internal Padding */
-    uintptr_t params[11];
+    uintptr_t params[12];
   };
 
 };

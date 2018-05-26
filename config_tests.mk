@@ -29,7 +29,7 @@ MAKE_TARGET=check
 all: basic noserver noclient auth gcrypt nozlib nopacketpool alloca \
 	nokeyvalidate nokeycreate
 
-auth: nopubkeyauth nopasswordauth nohostbasedauth nokeyboardauth noneauth
+auth: nopubkeyauth nopasswordauth nohostbasedauth nokeyboardauth nononeauth
 
 gcrypt: nogcrypt nogcrypthash nogcryptalloc nogcryptcipher gcryptprng
 
@@ -45,7 +45,7 @@ basic:
 	grep -q "define CONFIG_ASSH_USE_GCRYPT_CIPHERS" config.h
 	grep -q "define CONFIG_ASSH_USE_GCRYPT_ALLOC" config.h
 	grep -q "undef CONFIG_ASSH_USE_GCRYPT_PRNG" config.h
-	grep -q "undef CONFIG_ASSH_SERVER_AUTH_NONE" config.h
+	grep -q "define CONFIG_ASSH_SERVER_AUTH_NONE" config.h
 	grep -q "define CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY" config.h
 	grep -q "define CONFIG_ASSH_SERVER_AUTH_PUBLICKEY" config.h
 	grep -q "define CONFIG_ASSH_CLIENT_AUTH_PASSWORD" config.h
@@ -132,9 +132,9 @@ gcryptprng:
 	test/kex
 	test/bignum
 
-noneauth:
-	./configure --enable-none-userauth
-	grep -q "define CONFIG_ASSH_SERVER_AUTH_NONE" config.h
+nononeauth:
+	./configure --disable-none-userauth
+	grep -q "undef CONFIG_ASSH_SERVER_AUTH_NONE" config.h
 	$(MAKE)
 	test/userauth
 	test/userauth_server

@@ -62,10 +62,19 @@ enum test_state_e
   /* TEST01: check none pass */
   TEST01_ST_INIT,
   TEST01_ST_SEND_NONE,
+  TEST01_ST_WAIT_NONE,
   TEST01_ST_WAIT_SUCCESS,
   TEST01_ST_SERVER_SUCCESS,
   TEST01_ST_SUCCESS,
   TEST01_ST_DONE,
+  /* TEST29: check none pass */
+  TEST29_ST_INIT,
+  TEST29_ST_SEND_NONE,
+  TEST29_ST_WAIT_NONE,
+  TEST29_ST_WAIT_FAIL,
+  TEST29_ST_SERVER_FAILED,
+  TEST29_ST_FAILED,
+  TEST29_ST_DONE,
 #endif
 #if defined(CONFIG_ASSH_SERVER_AUTH_PUBLICKEY)
   /* TEST02: check key found with valid pubkey signature */
@@ -653,7 +662,7 @@ static ASSH_SERVICE_PROCESS_FCN(test_userauth_client_process)
       /*************************************************** TEST01 */
     case TEST01_ST_SEND_NONE:
       test_userauth_client_none(s, "allowed");
-      test_state_set(TEST01_ST_WAIT_SUCCESS);
+      test_state_set(TEST01_ST_WAIT_NONE);
       goto no_packet;
 
     case TEST01_ST_SERVER_SUCCESS:
@@ -662,6 +671,20 @@ static ASSH_SERVICE_PROCESS_FCN(test_userauth_client_process)
       if (p->head.msg != SSH_MSG_USERAUTH_SUCCESS)
 	TEST_FAIL("");
       test_state_set(TEST01_ST_SUCCESS);
+      break;
+
+      /*************************************************** TEST29 */
+    case TEST29_ST_SEND_NONE:
+      test_userauth_client_none(s, "allowed");
+      test_state_set(TEST29_ST_WAIT_NONE);
+      goto no_packet;
+
+    case TEST29_ST_SERVER_FAILED:
+      if (p == NULL)
+	break;
+      if (p->head.msg != SSH_MSG_USERAUTH_FAILURE)
+	TEST_FAIL("");
+      test_state_set(TEST29_ST_FAILED);
       break;
 #endif
 
@@ -1317,6 +1340,15 @@ static void test()
 	      event.userauth_server.methods.methods =
 		ASSH_USERAUTH_METHOD_NONE;
 	      break;
+	      /*************************************************** TEST29 */
+	    case TEST29_ST_INIT:
+	      test_state_set(TEST29_ST_SEND_NONE);
+	      event.userauth_server.methods.methods =
+		ASSH_USERAUTH_METHOD_NONE;
+	      break;
+	    case TEST29_ST_WAIT_FAIL:
+	      test_state_set(TEST29_ST_SERVER_FAILED);
+	      break;
 #endif
 
 #if defined(CONFIG_ASSH_SERVER_AUTH_PUBLICKEY)
@@ -1971,6 +2003,24 @@ static void test()
         }
 #endif
 
+#if defined(CONFIG_ASSH_SERVER_AUTH_NONE)
+	case ASSH_EVENT_USERAUTH_SERVER_NONE:
+	  switch (test_state)
+	    {
+	    case TEST01_ST_WAIT_NONE:
+              event.userauth_server.none.accept = 1;
+	      test_state_set(TEST01_ST_WAIT_SUCCESS);
+	      break;
+	    case TEST29_ST_WAIT_NONE:
+              event.userauth_server.none.accept = 0;
+	      test_state_set(TEST29_ST_WAIT_FAIL);
+	      break;
+            default:
+              TEST_FAIL("");
+            }
+          break;
+#endif
+
 	case ASSH_EVENT_USERAUTH_SERVER_SUCCESS:
 	  stall = 0;
 	  switch (test_state)
@@ -2121,6 +2171,9 @@ static void test()
 #if defined(CONFIG_ASSH_SERVER_AUTH_NONE)
 	case TEST01_ST_SUCCESS:
 	  test_state_set(TEST01_ST_DONE);
+	  goto done;
+	case TEST29_ST_FAILED:
+	  test_state_set(TEST29_ST_DONE);
 	  goto done;
 #endif
 
@@ -2303,6 +2356,11 @@ int main()
   test_state_set(TEST01_ST_INIT);
   test();
   if (test_state != TEST01_ST_DONE)
+    TEST_FAIL("");
+  /*************************************************** TEST29 */
+  test_state_set(TEST29_ST_INIT);
+  test();
+  if (test_state != TEST29_ST_DONE)
     TEST_FAIL("");
 #endif
 

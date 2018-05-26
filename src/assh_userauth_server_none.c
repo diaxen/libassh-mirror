@@ -28,10 +28,40 @@
 #include <assh/assh_session.h>
 #include <assh/assh_packet.h>
 #include <assh/assh_transport.h>
+#include <assh/assh_event.h>
+
+static ASSH_EVENT_DONE_FCN(assh_userauth_server_none_done)
+{
+  struct assh_userauth_context_s *pv = s->srv_pv;
+  assh_error_t err;
+
+  const struct assh_event_userauth_server_none_s *ev =
+    &e->userauth_server.none;
+
+  if (ASSH_ERR_ERROR(inerr) || !ev->accept)
+    ASSH_RET_ON_ERR(assh_userauth_server_failure(s, NULL) | ASSH_ERRSV_DISCONNECT);
+  else
+    ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_SUCCESS);
+
+  return ASSH_OK;
+}
 
 static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_none)
 {
-  return assh_userauth_server_success(s, e);
+  struct assh_userauth_context_s *pv = s->srv_pv;
+
+  struct assh_event_userauth_server_none_s *ev =
+    &e->userauth_server.none;
+
+  ev->username.str = pv->username;
+  ev->username.len = strlen(pv->username);
+  ev->service = pv->srv;
+  ev->accept = 0;
+
+  e->id = ASSH_EVENT_USERAUTH_SERVER_NONE;
+  e->f_done = assh_userauth_server_none_done;
+
+  return ASSH_OK;
 }
 
 const struct assh_userauth_server_method_s assh_userauth_server_none =

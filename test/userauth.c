@@ -220,6 +220,9 @@ static int test()
 
 	  break;
 
+	case ASSH_EVENT_USERAUTH_SERVER_NONE:
+	  break;
+
 	case ASSH_EVENT_USERAUTH_SERVER_USERKEY: {
 	  stall = 0;
 	  assh_bool_t found = assh_prng_rand() & 1;
