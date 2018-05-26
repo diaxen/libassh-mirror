@@ -95,6 +95,7 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_hostbased)
 
   ev->username.str = pv->username;
   ev->username.len = strlen(pv->username);
+  ev->service = pv->srv;
   ev->host_key = pub_key;
   ev->hostname.data = hostname + 4;
   ev->hostname.len = assh_load_u32(hostname);

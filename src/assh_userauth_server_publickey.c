@@ -177,6 +177,7 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_pubkey)
 
   ev->username.str = pv->username;
   ev->username.len = strlen(pv->username);
+  ev->service = pv->srv;
   ev->pub_key = pv->pub_key;
   ev->found = 0;
 

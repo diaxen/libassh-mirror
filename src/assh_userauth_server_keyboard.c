@@ -197,6 +197,7 @@ assh_userauth_server_kbinfo(struct assh_session_s *s,
 
   ev->username.str = pv->username;
   ev->username.len = strlen(pv->username);
+  ev->service = pv->srv;
   ev->sub.data = sub + 4;
   ev->sub.len = assh_load_u32(sub);
 

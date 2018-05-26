@@ -84,6 +84,7 @@ struct assh_event_userauth_server_methods_s
 struct assh_event_userauth_server_userkey_s
 {
   ASSH_EV_CONST struct assh_cbuffer_s     username;  //< input
+  const struct assh_service_s * ASSH_EV_CONST    service;   //< input
   struct assh_key_s * ASSH_EV_CONST       pub_key;   //< input
   assh_bool_t                             found;     //< output
 };
@@ -114,6 +115,7 @@ enum assh_event_userauth_server_pwstatus_s
 struct assh_event_userauth_server_password_s
 {
   ASSH_EV_CONST struct assh_cbuffer_s username;    //< input
+  const struct assh_service_s * ASSH_EV_CONST service;    //< input
   ASSH_EV_CONST struct assh_cbuffer_s password;    //< input
   ASSH_EV_CONST struct assh_cbuffer_s new_password; //< input
   struct assh_cbuffer_s               change_prompt; //< output
@@ -134,6 +136,7 @@ struct assh_event_userauth_server_password_s
 struct assh_event_userauth_server_hostbased_s
 {
   ASSH_EV_CONST struct assh_cbuffer_s username;    //< input
+  const struct assh_service_s * ASSH_EV_CONST service;    //< input
   struct assh_key_s * ASSH_EV_CONST   host_key;    //< input
   ASSH_EV_CONST struct assh_cbuffer_s hostname;    //< input
   ASSH_EV_CONST struct assh_cbuffer_s host_username; //< input
@@ -164,6 +167,7 @@ struct assh_event_userauth_server_hostbased_s
 struct assh_event_userauth_server_kbinfo_s
 {
   ASSH_EV_CONST struct assh_cbuffer_s username;  //< input
+  const struct assh_service_s * ASSH_EV_CONST service;  //< input
   ASSH_EV_CONST struct assh_cbuffer_s sub; //< input
   struct assh_cbuffer_s name; //< output
   struct assh_cbuffer_s instruction; //< output
@@ -215,6 +219,7 @@ struct assh_event_userauth_server_kbresponse_s
 struct assh_event_userauth_server_success_s
 {
   ASSH_EV_CONST struct assh_cbuffer_s username;  //< input
+  const struct assh_service_s * ASSH_EV_CONST service;  //< input
   ASSH_EV_CONST enum assh_userauth_methods_e method; //< input
   enum assh_userauth_methods_e       methods;        //< output
   ASSH_EV_CONST assh_safety_t        sign_safety;    //< input
