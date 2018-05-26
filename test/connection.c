@@ -120,6 +120,8 @@ struct ch_map_entry_s
 
 struct ch_map_entry_s ch_map[CH_MAP_SIZE];
 unsigned int ch_refs;
+unsigned int rq_refs_in;
+unsigned int rq_refs_out;
 
 #define ch_report(che) \
   ASSH_DEBUG("%u:CHANNEL %p: s=%u status=%u ch0=%p ch1=%p\n", \
@@ -183,7 +185,8 @@ void test(int (*fend)(int, int), int n, int evrate)
       assh_algo_register_static(&context[1], algos))
     TEST_FAIL("init");
 
-  ch_refs = 0;
+  ch_refs = rq_refs_in = rq_refs_out = 0;
+
   for (j = 0; j < CH_MAP_SIZE; j++)
     {
       for (i = 0; i < 2; i++)
@@ -273,6 +276,8 @@ void test(int (*fend)(int, int), int n, int evrate)
 		if (err > ASSH_NO_DATA)
 		  TEST_FAIL("(ctx %u seed %u) assh_request failed 0x%lx\n", i, seed, err);
 		ASSH_DEBUG("assh_request %p\n", &rqe->srq);
+		if (want_reply)
+		  rq_refs_out++;
 		rq_send_count++;
 		if (want_reply)
 		  assh_request_set_pv(rqe->srq, rqe);
@@ -317,6 +322,7 @@ void test(int (*fend)(int, int), int n, int evrate)
 		    if (er > ASSH_NO_DATA)
 		      TEST_FAIL("(ctx %u seed %u) assh_request_reply(ASSH_CONNECTION_REPLY_SUCCESS)\n", i, seed);
 		    ASSH_DEBUG("assh_request_success_reply %p\n", rqe->rrq);
+		    rq_refs_in--;
 		    rq_reply_success++;
 		    rqe->status = RQ_SUCCESS;
 		    break;
@@ -326,6 +332,7 @@ void test(int (*fend)(int, int), int n, int evrate)
 		    if (er > ASSH_NO_DATA)
 		      TEST_FAIL("(ctx %u seed %u) assh_request_reply(ASSH_CONNECTION_REPLY_FAILED)\n", i, seed);
 		    ASSH_DEBUG("assh_request_failed_reply %p\n", rqe->rrq);
+		    rq_refs_in--;
 		    rq_reply_failed++;
 		    rqe->status = RQ_FAIL;
 		    break;
@@ -454,9 +461,12 @@ void test(int (*fend)(int, int), int n, int evrate)
 
 	      if (closed[0] && closed[1])
 		{
-#warning test rq_refs too
 		  if (ch_refs)
 		    TEST_FAIL("(ctx %u seed %u) not all channels are closed\n", i, seed);
+		  if (rq_refs_in)
+		    TEST_FAIL("(ctx %u seed %u) incoming requests are pending\n", i, seed);
+		  if (rq_refs_out)
+		    TEST_FAIL("(ctx %u seed %u) outgoing requests are pending\n", i, seed);
 		  goto done;
 		}
 
@@ -601,6 +611,7 @@ void test(int (*fend)(int, int), int n, int evrate)
 		      break;
 		  TEST_ASSERT(n < RQ_POSTPONED_SIZE);
 		  rq_postponed[n] = rqe;
+		  rq_refs_in++;
 		  break;
 		}
 		}
@@ -614,6 +625,7 @@ void test(int (*fend)(int, int), int n, int evrate)
 	      struct assh_event_request_abort_s *e = &event.connection.request_abort;
 	      ASSH_DEBUG("ASSH_EVENT_REQUEST_ABORT %p\n", e->rq);
 	      struct rq_fifo_entry_s *rqe = assh_request_pv(e->rq);
+	      rq_refs_in--;
 
 	      unsigned int n;
 	      for (n = 0; n < RQ_POSTPONED_SIZE; n++)
@@ -632,6 +644,8 @@ void test(int (*fend)(int, int), int n, int evrate)
 	      struct assh_event_request_reply_s *e = &event.connection.request_reply;
 	      struct rq_fifo_s *lrqf = &global_rq_fifo[i];
 	      struct ch_map_entry_s *che = NULL;
+
+	      rq_refs_out--;
 	      if (e->ch != NULL)
 		{
 		  che = assh_channel_pv(e->ch);
