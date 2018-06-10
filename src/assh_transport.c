@@ -37,7 +37,6 @@
 #include <assh/assh_prng.h>
 #include <assh/assh_compress.h>
 
-#include <assert.h>
 #include <string.h>
 #include <stdlib.h>
 

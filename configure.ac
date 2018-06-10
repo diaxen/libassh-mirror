@@ -117,6 +117,9 @@ AC_ARG_ENABLE(packet_pool, AC_HELP_STRING(--disable-packet-pool, [Disable use of
 AC_ARG_ENABLE(alloca, AC_HELP_STRING(--enable-alloca, [Store key related material on stack]),
 		       enable_alloca=$enableval, enable_alloca=no)
 
+AC_ARG_ENABLE(assert, AC_HELP_STRING(--disable-assert, [Disable assert() by defining the NDEBUG macro]),
+		       enable_assert=$enableval, enable_assert=yes)
+
 if test x$enable_gcrypt = xyes ; then
   AC_CHECK_LIB(gcrypt, gcry_check_version, [
     AC_CHECK_HEADERS(gcrypt.h, [
@@ -287,6 +290,10 @@ fi
 if test x$enable_alloca = xyes ; then
   AC_DEFINE([CONFIG_ASSH_ALLOCA], [], [Enable storage of temporary buffers on stack.
   				  This is not secur on platforms with memory swapping.])
+fi
+
+if test x$enable_assert = xno ; then
+  AC_DEFINE([NDEBUG], [], [Enable assert()])
 fi
 
 if test "$GCC" = "yes" ; then

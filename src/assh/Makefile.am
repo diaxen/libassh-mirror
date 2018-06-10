@@ -30,5 +30,5 @@ pkginclude_HEADERS = assh.h assh_algo.h assh_alloc.h assh_bignum.h \
 	helper_interactive.h helper_client.h helper_server.h
 
 assh_config.h: $(top_builddir)/config.h
-	grep CONFIG_ASSH $(top_builddir)/config.h > $@ || true
+	grep 'NDEBUG\|CONFIG_ASSH' $(top_builddir)/config.h > $@ || true
 

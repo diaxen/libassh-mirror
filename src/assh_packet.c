@@ -27,7 +27,6 @@
 #include <assh/assh_session.h>
 #include <assh/assh_alloc.h>
 
-#include <assert.h>
 #include <string.h>
 
 #ifdef CONFIG_ASSH_PACKET_POOL

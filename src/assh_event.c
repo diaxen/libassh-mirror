@@ -31,8 +31,6 @@
 #include <assh/assh_service.h>
 #include <assh/assh_event.h>
 
-#include <assert.h>
-
 static ASSH_EVENT_DONE_FCN(assh_event_error_done)
 {
   assert(ASSH_ERR_ERROR(s->last_err) != ASSH_OK);

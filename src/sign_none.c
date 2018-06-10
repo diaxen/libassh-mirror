@@ -25,8 +25,6 @@
 #include <assh/assh_context.h>
 #include <assh/assh_alloc.h>
 
-#include <assert.h>
-
 static ASSH_SIGN_GENERATE_FCN(assh_sign_none_generate)
 {
   *sign_len = 0;

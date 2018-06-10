@@ -24,7 +24,7 @@ MAKE_TARGET=check
 .PHONY: all basic noserver noclient auth gcrypt nozlib nopacketpool alloca \
         nopubkeyauth nopasswordauth nohostbasedauth nokeyboardauth \
         nogcrypt nogcrypthash nogcryptalloc nogcryptcipher gcryptprng \
-	nokeycreate nokeyvalidate
+	nokeycreate nokeyvalidate ndebug
 
 all: basic noserver noclient auth gcrypt nozlib nopacketpool alloca \
 	nokeyvalidate nokeycreate
@@ -56,6 +56,7 @@ basic:
 	grep -q "define CONFIG_ASSH_SERVER_AUTH_KEYBOARD" config.h
 	grep -q "define CONFIG_ASSH_KEY_CREATE" config.h
 	grep -q "define CONFIG_ASSH_KEY_VALIDATE" config.h
+	grep -q "undef NDEBUG" config.h
 	$(MAKE) $(MAKE_TARGET)
 
 noserver:
@@ -92,6 +93,11 @@ nopacketpool:
 alloca:
 	./configure --enable-alloca
 	grep -q "define CONFIG_ASSH_ALLOCA" config.h
+	$(MAKE) $(MAKE_TARGET)
+
+ndebug:
+	./configure --disable-assert
+	grep -q "define NDEBUG" config.h
 	$(MAKE) $(MAKE_TARGET)
 
 nozlib:

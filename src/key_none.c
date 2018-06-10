@@ -25,8 +25,6 @@
 #include <assh/assh_context.h>
 #include <assh/assh_alloc.h>
 
-#include <assert.h>
-
 static ASSH_KEY_CLEANUP_FCN(assh_key_none_cleanup)
 {
   assh_free(c, key);

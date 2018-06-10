@@ -31,11 +31,11 @@
 
 #include "assh_platform.h"
 
-#include <assert.h>
-
 #ifdef HAVE_CONFIG_H
 # include "assh_config.h"
 #endif
+
+#include <assert.h>
 
 #if !defined(CONFIG_ASSH_SERVER) && !defined(CONFIG_ASSH_CLIENT)
 # error CONFIG_ASSH_SERVER and CONFIG_ASSH_CLIENT are both undefined
@@ -275,7 +275,7 @@ const char * assh_error_str(assh_error_t err);
 #define ASSH_TIMEOUT_KEEPALIVE 600
 
 /** @internal */
-#define ASSH_ASSERT(expr) do { assh_error_t _e_ = (expr); assert((_e_ & 0xfff) == ASSH_OK); } while(0)
+#define ASSH_ASSERT(expr) do { assh_error_t _e_ = (expr); (void)_e_; assert((_e_ & 0xfff) == ASSH_OK); } while(0)
 
 #ifndef CONFIG_ASSH_DEBUG
 
