@@ -126,11 +126,11 @@ typedef int_fast16_t assh_error_t;
 */
 typedef uint8_t assh_safety_t;
 
-/** @This specify the error severity and must be used along with error
-    code constants (@ref assh_error_e).
+/** @This specify the error severity and must be ored with an
+    @ref assh_error_e value.
 
-    These values indicate how the state of the session has been
-    impacted by the error.
+    These values indicate how the state of the session is
+    impacted by the associated error.
 
     Multiple error severity bits may be ored together; in this case
     the highest bit set prevails. This allows increasing the error
@@ -153,15 +153,15 @@ enum assh_error_severity_e
 };
 
 /** @This specify possible return codes returned by @em libassh
-    functions. All codes indicating an error must always be ored with
-    a severity code (@ref assh_error_severity_e). */
+    functions. All codes indicating an error (>= 256) must be ored
+    with a severity code (@ref assh_error_severity_e). */
 enum assh_error_e
 {
-  /** Success error code. */
+  /** Success. */
   ASSH_OK                          = 0,
-  /** No data were available, this is not fatal. */
+  /** No data were available, This is not an error. */
   ASSH_NO_DATA                     = 1,
-  /** The requested entry was not found, this is not fatal. */
+  /** The requested entry was not found, This is not an error. */
   ASSH_NOT_FOUND                   = 2,
 
   /** IO error. */
@@ -274,7 +274,8 @@ const char * assh_error_str(assh_error_t err);
 /** connection service keepalive inteval in seconds */
 #define ASSH_TIMEOUT_KEEPALIVE 600
 
-/** @internal */
+/** @internal @This takes an @ref assh_error_t value returned by a
+    function and asserts that the error code is @ref ASSH_OK. */
 #define ASSH_ASSERT(expr)                      \
   do {                                         \
     assh_error_t _e_ = (expr);                 \
@@ -294,21 +295,53 @@ assh_hexdump(const char *name, const void *data, size_t len)
 {
 }
 
-/** @internal */
-/** @internal */
-/** @internal */
+/** @internal @This takes an @ref assh_error_t value returned by a
+    function of the library and assigns it to the locally defined @tt
+    err variable.
+
+    It jumps to the provided label for any error codes >= 256.  If the
+    code is not an error, the execution continues to the next line..
+
+    It can be made verbose by defining the @ref #CONFIG_ASSH_DEBUG and
+    @ref CONFIG_ASSH_CALLTRACE macros.
+
+    @see assh_error_e @see assh_error_t
+    @see #ASSH_RET_ON_ERR @see ASSH_RETURN */
 # define ASSH_JMP_ON_ERR(expr, label)           \
   do {                                          \
     if ((err = (expr)) & 0x100)                 \
       goto label;                               \
   } while (0)
 
+/** @internal @This takes an @ref assh_error_t value returned by a
+    function and assigns it to the locally defined @tt err variable.
+
+    It forwards the error to the calling function for any error codes
+    >= 256. If the code is not an error, the execution continues to
+    the next line.
+
+    It can be made verbose by defining the @ref #CONFIG_ASSH_DEBUG and
+    @ref CONFIG_ASSH_CALLTRACE macros.
+
+    @see assh_error_e @see assh_error_t
+    @see #ASSH_JMP_ON_ERR @see ASSH_RETURN */
 # define ASSH_RET_ON_ERR(expr)                  \
   do {                                          \
     if ((err = (expr)) & 0x100)                 \
       return err;                               \
   } while (0)
 
+/** @internal @This takes an @ref assh_error_t value returned by a
+    function and forwards it to the calling function in any case.
+
+    The execution never continues to the next line.
+
+    It can be made verbose by defining the @ref #CONFIG_ASSH_DEBUG and
+    @ref CONFIG_ASSH_CALLTRACE macros. In the other case, it only
+    performs a function return.
+
+    @see assh_error_t
+    @see #ASSH_JMP_ON_ERR @see #ASSH_RET_ON_ERR */
 # define ASSH_RETURN(expr)                      \
   do {                                          \
     (void)err;                                  \
@@ -328,7 +361,7 @@ void assh_hexdump(const char *name, const void *data, size_t len);
 
 # ifndef CONFIG_ASSH_CALLTRACE
 
-/** @internal */
+/** @hidden */
 # define ASSH_JMP_ON_ERR(expr, label)					\
   do {									\
     err = (expr);							\
@@ -340,7 +373,7 @@ void assh_hexdump(const char *name, const void *data, size_t len);
       }									\
   } while (0)
 
-/** @internal */
+/** @hidden */
 # define ASSH_RET_ON_ERR(expr)						\
   do {									\
     err = (expr);							\
@@ -352,7 +385,7 @@ void assh_hexdump(const char *name, const void *data, size_t len);
       }									\
   } while (0)
 
-/** @internal */
+/** @hidden */
 # define ASSH_RETURN(expr)						\
   do {									\
     err = (expr);							\
@@ -366,11 +399,11 @@ void assh_hexdump(const char *name, const void *data, size_t len);
 
 # else
 
-/** @internal */
+/** @hidden */
 # define ASSH_JMP_ON_ERR(expr, label)					\
   do {									\
     fprintf(stderr, "%s:%u:assh >>> in %s, expr:`%s'\n",                \
-            __FILE__, __LINE__, __func__, #expr);                  \
+            __FILE__, __LINE__, __func__, #expr);                       \
     err = (expr);							\
     if (err & 0x100) {							\
       fprintf(stderr, "%s:%u:assh <<< ERROR %u in %s, expr:`%s'\n",     \
@@ -382,7 +415,7 @@ void assh_hexdump(const char *name, const void *data, size_t len);
     }									\
   } while (0)
 
-/** @internal */
+/** @hidden */
 # define ASSH_RET_ON_ERR(expr)						\
   do {									\
     fprintf(stderr, "%s:%u:assh >>> in %s, expr:`%s'\n",                \
@@ -398,7 +431,7 @@ void assh_hexdump(const char *name, const void *data, size_t len);
     }									\
   } while (0)
 
-/** @internal */
+/** @hidden */
 # define ASSH_RETURN(expr)						\
   do {									\
     fprintf(stderr, "%s:%u:assh >>> in %s, expr:`%s'\n",                \
@@ -411,6 +444,7 @@ void assh_hexdump(const char *name, const void *data, size_t len);
       fprintf(stderr, "%s:%u:assh <<< OK in %s, expr:`%s'\n",           \
               __FILE__, __LINE__, __func__, #expr);                     \
     }									\
+    return err;                                                         \
   } while (0)
 
 
@@ -419,7 +453,9 @@ void assh_hexdump(const char *name, const void *data, size_t len);
 #endif
 
 # ifdef CONFIG_ASSH_FSMTRACE
-/** @internal */
+/** @internal @This is used to change the state variable of finite
+    state machines. It can be made verbose by defining the @ref
+    #CONFIG_ASSH_FSMTRACE macro. */
 # define ASSH_SET_STATE(obj, field, value)       \
   do {                                           \
     fprintf(stderr, "%s:%u:%s: " #field " update %u -> %u:" #value" \n", \
@@ -427,17 +463,22 @@ void assh_hexdump(const char *name, const void *data, size_t len);
     (obj)->field = value;                        \
   } while (0)
 #else
+/** @hidden */
 # define ASSH_SET_STATE(obj, field, value)       \
   do {                                           \
     (obj)->field = value;                        \
   } while (0)
 #endif
 
-/** @internal */
-# define ASSH_JMP_IF_TRUE(cond, err, label) ASSH_JMP_ON_ERR(cond ? err : 0, label) 
+/** @internal @This reports on error to the @ref #ASSH_JMP_ON_ERR
+    macro if the given expression is @em{true}. */
+# define ASSH_JMP_IF_TRUE(cond, err, label)     \
+  ASSH_JMP_ON_ERR(cond ? err : 0, label)
 
-/** @internal */
-# define ASSH_RET_IF_TRUE(cond, err) ASSH_RET_ON_ERR(cond ? err : 0) 
+/** @internal @This reports on error to the @ref #ASSH_RET_ON_ERR
+    macro if the given expression is @em{true}. */
+# define ASSH_RET_IF_TRUE(cond, err)            \
+  ASSH_RET_ON_ERR(cond ? err : 0)
 
 /** @internal SSH implementation identification string */
 #define ASSH_IDENT "SSH-2.0-LIBASSH\r\n"
