@@ -275,7 +275,12 @@ const char * assh_error_str(assh_error_t err);
 #define ASSH_TIMEOUT_KEEPALIVE 600
 
 /** @internal */
-#define ASSH_ASSERT(expr) do { assh_error_t _e_ = (expr); (void)_e_; assert((_e_ & 0xfff) == ASSH_OK); } while(0)
+#define ASSH_ASSERT(expr)                      \
+  do {                                         \
+    assh_error_t _e_ = (expr);                 \
+    (void)_e_;                                 \
+    assert((_e_ & 0xfff) == ASSH_OK);          \
+  } while(0)
 
 #ifndef CONFIG_ASSH_DEBUG
 
@@ -290,11 +295,25 @@ assh_hexdump(const char *name, const void *data, size_t len)
 }
 
 /** @internal */
-# define ASSH_JMP_ON_ERR(expr, label) do { if ((err = (expr)) & 0x100) goto label; err &= 0xff; } while (0)
 /** @internal */
-# define ASSH_RET_ON_ERR(expr) do { if ((err = (expr)) & 0x100) return err; err &= 0xff; } while (0)
 /** @internal */
-# define ASSH_RETURN(expr) do { if ((err = (expr)) & 0x100) return err; return err & 0xff; } while (0)
+# define ASSH_JMP_ON_ERR(expr, label)           \
+  do {                                          \
+    if ((err = (expr)) & 0x100)                 \
+      goto label;                               \
+  } while (0)
+
+# define ASSH_RET_ON_ERR(expr)                  \
+  do {                                          \
+    if ((err = (expr)) & 0x100)                 \
+      return err;                               \
+  } while (0)
+
+# define ASSH_RETURN(expr)                      \
+  do {                                          \
+    (void)err;                                  \
+    return (expr);                              \
+  } while (0)
 
 #else
 
@@ -319,9 +338,6 @@ void assh_hexdump(const char *name, const void *data, size_t len);
 		__FILE__, __LINE__, err, __func__, #expr);              \
 	goto label;							\
       }									\
-    else {								\
-      err &= 0xff;							\
-    }									\
   } while (0)
 
 /** @internal */
@@ -334,9 +350,6 @@ void assh_hexdump(const char *name, const void *data, size_t len);
 		__FILE__, __LINE__, err, __func__, #expr);              \
 	return err;							\
       }									\
-    else {								\
-      err &= 0xff;							\
-    }									\
   } while (0)
 
 /** @internal */
@@ -347,11 +360,8 @@ void assh_hexdump(const char *name, const void *data, size_t len);
       {									\
 	fprintf(stderr, "%s:%u:assh ERROR %u in %s, expr:`%s'\n",	\
 		__FILE__, __LINE__, err, __func__, #expr);              \
-	return err;							\
       }									\
-    else {								\
-      return err & 0xff;                                                \
-    }									\
+    return err;                                                         \
   } while (0)
 
 # else
@@ -362,16 +372,13 @@ void assh_hexdump(const char *name, const void *data, size_t len);
     fprintf(stderr, "%s:%u:assh >>> in %s, expr:`%s'\n",                \
             __FILE__, __LINE__, __func__, #expr);                  \
     err = (expr);							\
-    if (err & 0x100)							\
-      {									\
-	fprintf(stderr, "%s:%u:assh ERROR %u in %s, expr:`%s'\n",	\
-		__FILE__, __LINE__, err, __func__, #expr);              \
-	goto label;							\
-      }									\
-    else {								\
-      err &= 0xff;							\
-      fprintf(stderr, "%s:%u:assh <<< in %s.\n",                        \
-              __FILE__, __LINE__, __func__);      			\
+    if (err & 0x100) {							\
+      fprintf(stderr, "%s:%u:assh <<< ERROR %u in %s, expr:`%s'\n",     \
+              __FILE__, __LINE__, err, __func__, #expr);                \
+      goto label;							\
+    } else {								\
+      fprintf(stderr, "%s:%u:assh <<< OK in %s, expr:`%s'\n",           \
+              __FILE__, __LINE__, __func__, #expr);                     \
     }									\
   } while (0)
 
@@ -381,16 +388,13 @@ void assh_hexdump(const char *name, const void *data, size_t len);
     fprintf(stderr, "%s:%u:assh >>> in %s, expr:`%s'\n",                \
             __FILE__, __LINE__, __func__, #expr);                       \
     err = (expr);							\
-    if (err & 0x100)							\
-      {									\
-	fprintf(stderr, "%s:%u:assh ERROR %u in %s, expr:`%s'\n",	\
-		__FILE__, __LINE__, err, __func__, #expr);              \
-	return err;							\
-      }									\
-    else {								\
-      err &= 0xff;							\
-      fprintf(stderr, "%s:%u:assh <<< in %s.\n",                        \
-              __FILE__, __LINE__, __func__);                            \
+    if (err & 0x100) {							\
+      fprintf(stderr, "%s:%u:assh <<< ERROR %u in %s, expr:`%s'\n",     \
+              __FILE__, __LINE__, err, __func__, #expr);                \
+      return err;							\
+    } else {								\
+      fprintf(stderr, "%s:%u:assh <<< OK in %s, expr:`%s'\n",           \
+              __FILE__, __LINE__, __func__, #expr);                     \
     }									\
   } while (0)
 
@@ -400,16 +404,12 @@ void assh_hexdump(const char *name, const void *data, size_t len);
     fprintf(stderr, "%s:%u:assh >>> in %s, expr:`%s'\n",                \
             __FILE__, __LINE__, __func__, #expr);                       \
     err = (expr);							\
-    if (err & 0x100)							\
-      {									\
-	fprintf(stderr, "%s:%u:assh ERROR %u in %s, expr:`%s'\n",	\
-		__FILE__, __LINE__, err, __func__, #expr);              \
-	return err;							\
-      }									\
-    else {								\
-      return err & 0xff;                                                \
-      fprintf(stderr, "%s:%u:assh <<< in %s.\n",                        \
-              __FILE__, __LINE__, __func__);                            \
+    if (err & 0x100) {							\
+      fprintf(stderr, "%s:%u:assh <<< ERROR %u in %s, expr:`%s'\n",     \
+              __FILE__, __LINE__, err, __func__, #expr);                \
+    } else {								\
+      fprintf(stderr, "%s:%u:assh <<< OK in %s, expr:`%s'\n",           \
+              __FILE__, __LINE__, __func__, #expr);                     \
     }									\
   } while (0)
 
