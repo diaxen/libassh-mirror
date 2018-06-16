@@ -274,6 +274,15 @@ assh_algo_safety_name(const struct assh_algo_s *algo)
   return assh_safety_name(algo->safety);
 }
 
+/** @This find an algorithm with matching class and name in a @tt NULL
+    terminated array of pointers to algorithm descriptors. @see
+    assh_algo_table */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_algo_by_name_static(const struct assh_algo_s **table,
+                         enum assh_algo_class_e class_, const char *name,
+                         size_t name_len, const struct assh_algo_s **algo,
+                         const struct assh_algo_name_s **namep);
+
 /** @internal @This finds a registered algorithm with matching class
     and name. If the @tt namep parameter is not @tt NULL, the matched
     algorithm name is returned. */

@@ -455,32 +455,67 @@ const struct assh_algo_s *assh_algo_table[] = {
   NULL
 };
 
-assh_error_t assh_algo_by_name(struct assh_context_s *c,
-			       enum assh_algo_class_e class_, const char *name,
-			       size_t name_len, const struct assh_algo_s **algo,
-                               const struct assh_algo_name_s **namep)
+static const struct assh_algo_name_s *
+assh_algo_name_match(const struct assh_algo_s *a,
+                     enum assh_algo_class_e class_,
+                     const char *name, size_t name_len)
+{
+  if (class_ == ASSH_ALGO_ANY || a->class_ == class_)
+    {
+      const struct assh_algo_name_s *n;
+      for (n = a->names; n->spec; n++)
+        {
+          if (!strncmp(name, n->name, name_len) &&
+              n->name[name_len] == '\0')
+            return n;
+        }
+    }
+  return NULL;
+}
+
+assh_error_t
+assh_algo_by_name_static(const struct assh_algo_s **table,
+                         enum assh_algo_class_e class_, const char *name,
+                         size_t name_len, const struct assh_algo_s **algo,
+                         const struct assh_algo_name_s **namep)
+{
+  const struct assh_algo_s *a;
+
+  while ((a = *table++) != NULL)
+    {
+      const struct assh_algo_name_s *n
+        = assh_algo_name_match(a, class_, name, name_len);
+      if (n != NULL)
+        {
+          *algo = a;
+          if (namep != NULL)
+            *namep = n;
+          return ASSH_OK;
+        }
+    }
+
+  return ASSH_NOT_FOUND;
+}
+
+assh_error_t
+assh_algo_by_name(struct assh_context_s *c,
+                  enum assh_algo_class_e class_, const char *name,
+                  size_t name_len, const struct assh_algo_s **algo,
+                  const struct assh_algo_name_s **namep)
 {
   uint_fast16_t i;
-  const struct assh_algo_s *a;
 
   for (i = 0; i < c->algo_cnt; i++)
     {
-      a = c->algos[i];
-
-      if (class_ == ASSH_ALGO_ANY || a->class_ == class_)
+      const struct assh_algo_s *a = c->algos[i];
+      const struct assh_algo_name_s *n
+        = assh_algo_name_match(a, class_, name, name_len);
+      if (n != NULL)
         {
-          const struct assh_algo_name_s *n;
-          for (n = a->names; n->spec; n++)
-            {
-              if (!strncmp(name, n->name, name_len) && 
-                  n->name[name_len] == '\0')
-                {
-                  *algo = a;
-                  if (namep != NULL)
-                    *namep = n;
-                  return ASSH_OK;
-                }
-            }
+          *algo = a;
+          if (namep != NULL)
+            *namep = n;
+          return ASSH_OK;
         }
     }
   return ASSH_NOT_FOUND;
