@@ -6,22 +6,28 @@
 #include <stdlib.h>
 #include <assh/assh_prng.h>
 
-static uint64_t prng_seed = 1;
 static const uint32_t prng_rand_max = 0xffffffffULL;
 
-uint32_t assh_prng_rand()
+uint32_t assh_prng_rand_seed(uint64_t *seed)
 {
   /* 64 bits lfsr */
-  prng_seed = (-(prng_seed & 1) & 0x81ec82f69eb5a9d3ULL)
-            ^ (prng_seed >> 1);
+  *seed = (-(*seed & 1) & 0x81ec82f69eb5a9d3ULL)
+            ^ (*seed >> 1);
 
   /* diffusion */
-  uint64_t r = prng_seed;
+  uint64_t r = *seed;
   uint64_t c = 2466808117;
   r = ((uint32_t)r * c) ^ ((uint32_t)(r >> 32) * c);
   r = r ^ (r >> 32);
 
   return r;
+}
+
+static uint64_t prng_seed = 1;
+
+uint32_t assh_prng_rand()
+{
+  return assh_prng_rand_seed(&prng_seed);
 }
 
 void assh_prng_seed(uint64_t seed)
