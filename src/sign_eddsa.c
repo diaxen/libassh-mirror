@@ -40,7 +40,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
   const struct assh_hash_algo_s *hash = k->hash;
 
   size_t n = ASSH_ALIGN8(k->curve->bits) / 8;
-  size_t tlen = strlen(k->key.algo->type);
+  size_t tlen = strlen(k->key.algo->name);
   size_t len = 4 + tlen + 4 + 2 * n;
 
   /* check/return signature length */
@@ -57,7 +57,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
   *sign_len = len;
 
   assh_store_u32(sign, tlen);
-  memcpy(sign + 4, k->key.algo->type, tlen);
+  memcpy(sign + 4, k->key.algo->name, tlen);
   assh_store_u32(sign + 4 + tlen, 2 * n);
   uint8_t *r_str = sign + 4 + tlen + 4;
   uint8_t *s_str = r_str + n;
@@ -259,12 +259,12 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
   const struct assh_hash_algo_s *hash = k->hash;
 
   size_t n = ASSH_ALIGN8(k->curve->bits) / 8;
-  size_t tlen = strlen(k->key.algo->type);
+  size_t tlen = strlen(k->key.algo->name);
 
   ASSH_RET_IF_TRUE(sign_len != 4 + tlen + 4 + 2 * n, ASSH_ERR_INPUT_OVERFLOW);
 
   ASSH_RET_IF_TRUE(tlen != assh_load_u32(sign), ASSH_ERR_BAD_DATA);
-  ASSH_RET_IF_TRUE(memcmp(sign + 4, k->key.algo->type, tlen), ASSH_ERR_BAD_DATA);
+  ASSH_RET_IF_TRUE(memcmp(sign + 4, k->key.algo->name, tlen), ASSH_ERR_BAD_DATA);
 
   uint8_t *rs_str = (uint8_t*)sign + 4 + tlen;
   ASSH_RET_IF_TRUE(assh_load_u32(rs_str) != n * 2, ASSH_ERR_INPUT_OVERFLOW);

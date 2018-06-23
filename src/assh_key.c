@@ -60,8 +60,8 @@ assh_key_algo_guess(struct assh_context_s *c,
           if (ops == NULL || algo->class_ != role)
             continue;
 
-          if (!strncmp(ops->type, name, name_len) &&
-              !ops->type[name_len])
+          if (!strncmp(ops->name, name, name_len) &&
+              !ops->name[name_len])
             return ops;
         }
 

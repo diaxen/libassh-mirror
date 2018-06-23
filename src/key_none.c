@@ -85,7 +85,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_none_create)
 
 const struct assh_key_ops_s assh_key_none =
 {
-  .type = "none",
+  .name = "none",
   .f_output = assh_key_none_output,
 #ifdef CONFIG_ASSH_KEY_VALIDATE
   .f_validate = assh_key_none_validate,

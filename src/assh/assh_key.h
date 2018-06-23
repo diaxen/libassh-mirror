@@ -168,7 +168,8 @@ typedef ASSH_KEY_CLEANUP_FCN(assh_key_cleanup_t);
     key module interface. */
 struct assh_key_ops_s
 {
-  const char *type;
+  const char *name;
+
   assh_key_load_t *f_load;
 #ifdef CONFIG_ASSH_KEY_CREATE
   assh_key_create_t *f_create;
@@ -320,7 +321,7 @@ assh_key_lookup(struct assh_context_s *c,
 ASSH_INLINE const char *
 assh_key_type_name(struct assh_key_s *key)
 {
-  return key->type ? key->type : key->algo->type;
+  return key->type ? key->type : key->algo->name;
 }
 
 /** @This returns the estimated algorithm safety. */

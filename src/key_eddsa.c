@@ -37,7 +37,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_eddsa_output)
   assh_error_t err;
 
   size_t n = ASSH_ALIGN8(k->curve->bits) / 8;
-  size_t tlen = strlen(k->key.algo->type);
+  size_t tlen = strlen(k->key.algo->name);
 
   const uint8_t *kp = k->data;
   const uint8_t *ks = k->data + n;
@@ -54,7 +54,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_eddsa_output)
       if (blob != NULL)
         {
           assh_store_u32(blob, tlen);  
-          memcpy(blob + 4, k->key.algo->type, tlen);
+          memcpy(blob + 4, k->key.algo->name, tlen);
           assh_store_u32(blob + 4 + tlen, n);
           memcpy(blob + 4 + tlen + 4, kp, n);
         }
@@ -72,7 +72,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_eddsa_output)
       if (blob != NULL)
         {
           assh_store_u32(blob, tlen);  
-          memcpy(blob + 4, k->key.algo->type, tlen);
+          memcpy(blob + 4, k->key.algo->name, tlen);
           uint8_t *p = blob + 4 + tlen;
           assh_store_u32(p, n);
           memcpy(p + 4, kp, n);
@@ -130,7 +130,7 @@ assh_key_eddsa_create(struct assh_context_s *c,
                           ASSH_ALLOC_SECUR, (void**)&k));
 
   k->key.algo = algo;
-  k->key.type = algo->type;
+  k->key.type = algo->name;
   k->key.safety = curve->safety;
   k->key.private = 1;
   k->curve = curve;
@@ -271,7 +271,7 @@ assh_key_eddsa_load(struct assh_context_s *c,
   struct assh_key_eddsa_s *k;
 
   size_t n = ASSH_ALIGN8(curve->bits) / 8;
-  size_t tlen = strlen(algo->type);
+  size_t tlen = strlen(algo->name);
 
   /* parse the key blob */
   switch (format)
@@ -284,7 +284,7 @@ assh_key_eddsa_load(struct assh_context_s *c,
       k->key.private = 0;
       ASSH_JMP_IF_TRUE(blob_len < len, ASSH_ERR_INPUT_OVERFLOW, err_key);
       ASSH_JMP_IF_TRUE(assh_load_u32(blob) != tlen, ASSH_ERR_BAD_DATA, err_key);
-      ASSH_JMP_IF_TRUE(memcmp(algo->type, blob + 4, tlen), ASSH_ERR_BAD_DATA, err_key);
+      ASSH_JMP_IF_TRUE(memcmp(algo->name, blob + 4, tlen), ASSH_ERR_BAD_DATA, err_key);
       const uint8_t *p = (uint8_t*)blob + 4 + tlen;
       ASSH_JMP_IF_TRUE(assh_load_u32(p) != n, ASSH_ERR_BAD_DATA, err_key);
       memcpy(k->data, p + 4, n);
@@ -301,7 +301,7 @@ assh_key_eddsa_load(struct assh_context_s *c,
       k->key.private = 1;
       ASSH_JMP_IF_TRUE(blob_len < len, ASSH_ERR_INPUT_OVERFLOW, err_key);
       ASSH_JMP_IF_TRUE(assh_load_u32(blob) != tlen, ASSH_ERR_BAD_DATA, err_key);
-      ASSH_JMP_IF_TRUE(memcmp(algo->type, blob + 4, tlen), ASSH_ERR_BAD_DATA, err_key);
+      ASSH_JMP_IF_TRUE(memcmp(algo->name, blob + 4, tlen), ASSH_ERR_BAD_DATA, err_key);
       const uint8_t *p = (uint8_t*)blob + 4 + tlen;
       ASSH_JMP_IF_TRUE(assh_load_u32(p) != n, ASSH_ERR_BAD_DATA, err_key);
       memcpy(k->data, p + 4, n);
@@ -319,7 +319,7 @@ assh_key_eddsa_load(struct assh_context_s *c,
     }
 
   k->key.algo = algo;
-  k->key.type = algo->type;
+  k->key.type = algo->name;
   k->key.safety = curve->safety;
   k->curve = curve;
   k->hash = hash;
@@ -382,7 +382,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_ed25519_create)
 
 const struct assh_key_ops_s assh_key_ed25519 =
 {
-  .type = "ssh-ed25519",
+  .name = "ssh-ed25519",
   .f_output = assh_key_eddsa_output,
 #ifdef CONFIG_ASSH_KEY_CREATE
   .f_create = assh_key_ed25519_create,
@@ -437,7 +437,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_eddsa_e382_create)
 
 const struct assh_key_ops_s assh_key_eddsa_e382 =
 {
-  .type = "eddsa-e382-shake256@libassh.org",
+  .name = "eddsa-e382-shake256@libassh.org",
   .f_output = assh_key_eddsa_output,
 #ifdef CONFIG_ASSH_KEY_CREATE
   .f_create = assh_key_eddsa_e382_create,
@@ -500,7 +500,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_eddsa_e521_create)
 
 const struct assh_key_ops_s assh_key_eddsa_e521 =
 {
-  .type = "eddsa-e521-shake256@libassh.org",
+  .name = "eddsa-e521-shake256@libassh.org",
   .f_output = assh_key_eddsa_output,
 #ifdef CONFIG_ASSH_KEY_CREATE
   .f_create = assh_key_eddsa_e521_create,

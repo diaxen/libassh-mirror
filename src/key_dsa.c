@@ -524,7 +524,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
 
 const struct assh_key_ops_s assh_key_dsa =
 {
-  .type = "ssh-dss",
+  .name = "ssh-dss",
   .f_output = assh_key_dsa_output,
 #ifdef CONFIG_ASSH_KEY_CREATE
   .f_create = assh_key_dsa_create,

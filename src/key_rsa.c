@@ -620,7 +620,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
 
 const struct assh_key_ops_s assh_key_rsa =
 {
-  .type = "ssh-rsa",
+  .name = "ssh-rsa",
   .f_output = assh_key_rsa_output,
 #ifdef CONFIG_ASSH_KEY_CREATE
   .f_create = assh_key_rsa_create,

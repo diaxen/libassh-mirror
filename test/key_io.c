@@ -70,7 +70,7 @@ static assh_error_t test_algo(struct assh_context_s *c)
 	{
 	  /* create new key */
 	  size_t bits = t->bits_min + assh_prng_rand() % (t->bits_max - t->bits_min + 1);
-	  fprintf(stderr, "\nkey type: %s, size: %zu\n", t->algo->type, bits);
+	  fprintf(stderr, "\nkey type: %s, size: %zu\n", t->algo->name, bits);
 	  assh_key_drop(c, &key1);
 	  TEST_ASSERT(!assh_key_create(c, &key1, bits, t->algo, ASSH_ALGO_SIGN));
 	}
@@ -209,7 +209,7 @@ static assh_error_t test_helper(struct assh_context_s *c)
 	  /* create new key */
 	  assh_key_drop(c, &key1);
 	  size_t bits = t->bits_min + assh_prng_rand() % (t->bits_max - t->bits_min + 1);
-	  fprintf(stderr, "\nkey type: %s, size: %zu\n", t->algo->type, bits);
+	  fprintf(stderr, "\nkey type: %s, size: %zu\n", t->algo->name, bits);
 	  TEST_ASSERT(!assh_key_create(c, &key1, bits, t->algo, ASSH_ALGO_SIGN));
 	}
 

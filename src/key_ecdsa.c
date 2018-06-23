@@ -542,7 +542,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_ecdsa_nistp_create)
 
 const struct assh_key_ops_s assh_key_ecdsa_nistp =
 {
-  .type = "ecdsa-sha2-nist",
+  .name = "ecdsa-sha2-nist",
   .f_output = assh_key_ecdsa_output,
 #ifdef CONFIG_ASSH_KEY_CREATE
   .f_create = assh_key_ecdsa_nistp_create,
