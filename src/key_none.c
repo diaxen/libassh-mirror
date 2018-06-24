@@ -86,6 +86,20 @@ static ASSH_KEY_CREATE_FCN(assh_key_none_create)
 const struct assh_key_ops_s assh_key_none =
 {
   .name = "none",
+  .min_bits = 0,
+  .bits = 0,
+  .max_bits = 0,
+
+  .formats = (enum assh_key_format_e[]){
+    ASSH_KEY_FMT_PV_OPENSSH_V1,
+    ASSH_KEY_FMT_PUB_RFC4716,
+    ASSH_KEY_FMT_PUB_RFC4253,
+    ASSH_KEY_FMT_PUB_OPENSSH,
+    ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB,
+    ASSH_KEY_FMT_PV_OPENSSH_V1_KEY,
+    0,
+  },
+
   .f_output = assh_key_none_output,
 #ifdef CONFIG_ASSH_KEY_VALIDATE
   .f_validate = assh_key_none_validate,

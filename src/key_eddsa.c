@@ -383,6 +383,20 @@ static ASSH_KEY_CREATE_FCN(assh_key_ed25519_create)
 const struct assh_key_ops_s assh_key_ed25519 =
 {
   .name = "ssh-ed25519",
+  .min_bits = 255,
+  .bits = 255,
+  .max_bits = 255,
+
+  .formats = (enum assh_key_format_e[]){
+    ASSH_KEY_FMT_PV_OPENSSH_V1,
+    ASSH_KEY_FMT_PUB_RFC4716,
+    ASSH_KEY_FMT_PUB_RFC4253,
+    ASSH_KEY_FMT_PUB_OPENSSH,
+    ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB,
+    ASSH_KEY_FMT_PV_OPENSSH_V1_KEY,
+    0,
+  },
+
   .f_output = assh_key_eddsa_output,
 #ifdef CONFIG_ASSH_KEY_CREATE
   .f_create = assh_key_ed25519_create,
@@ -438,6 +452,20 @@ static ASSH_KEY_CREATE_FCN(assh_key_eddsa_e382_create)
 const struct assh_key_ops_s assh_key_eddsa_e382 =
 {
   .name = "eddsa-e382-shake256@libassh.org",
+  .min_bits = 382,
+  .bits = 382,
+  .max_bits = 382,
+
+  .formats = (enum assh_key_format_e[]){
+    ASSH_KEY_FMT_PV_OPENSSH_V1,
+    ASSH_KEY_FMT_PUB_RFC4716,
+    ASSH_KEY_FMT_PUB_RFC4253,
+    ASSH_KEY_FMT_PUB_OPENSSH,
+    ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB,
+    ASSH_KEY_FMT_PV_OPENSSH_V1_KEY,
+    0,
+  },
+
   .f_output = assh_key_eddsa_output,
 #ifdef CONFIG_ASSH_KEY_CREATE
   .f_create = assh_key_eddsa_e382_create,
@@ -501,6 +529,20 @@ static ASSH_KEY_CREATE_FCN(assh_key_eddsa_e521_create)
 const struct assh_key_ops_s assh_key_eddsa_e521 =
 {
   .name = "eddsa-e521-shake256@libassh.org",
+  .min_bits = 521,
+  .bits = 521,
+  .max_bits = 521,
+
+  .formats = (enum assh_key_format_e[]){
+    ASSH_KEY_FMT_PV_OPENSSH_V1,
+    ASSH_KEY_FMT_PUB_RFC4716,
+    ASSH_KEY_FMT_PUB_RFC4253,
+    ASSH_KEY_FMT_PUB_OPENSSH,
+    ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB,
+    ASSH_KEY_FMT_PV_OPENSSH_V1_KEY,
+    0,
+  },
+
   .f_output = assh_key_eddsa_output,
 #ifdef CONFIG_ASSH_KEY_CREATE
   .f_create = assh_key_eddsa_e521_create,

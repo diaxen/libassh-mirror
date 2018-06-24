@@ -543,6 +543,22 @@ static ASSH_KEY_CREATE_FCN(assh_key_ecdsa_nistp_create)
 const struct assh_key_ops_s assh_key_ecdsa_nistp =
 {
   .name = "ecdsa-sha2-nist",
+  .min_bits = 256,
+  .bits = 256,
+  .max_bits = 521,
+
+  .formats = (enum assh_key_format_e[]){
+    ASSH_KEY_FMT_PV_PEM,
+    ASSH_KEY_FMT_PUB_RFC4716,
+    ASSH_KEY_FMT_PUB_RFC4253,
+    ASSH_KEY_FMT_PUB_OPENSSH,
+    ASSH_KEY_FMT_PV_OPENSSH_V1,
+    ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB,
+    ASSH_KEY_FMT_PV_OPENSSH_V1_KEY,
+    ASSH_KEY_FMT_PV_PEM_ASN1,
+    0,
+  },
+
   .f_output = assh_key_ecdsa_output,
 #ifdef CONFIG_ASSH_KEY_CREATE
   .f_create = assh_key_ecdsa_nistp_create,

@@ -621,6 +621,24 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
 const struct assh_key_ops_s assh_key_rsa =
 {
   .name = "ssh-rsa",
+  .min_bits = 1024,
+  .bits = 2048,
+  .max_bits = 8192,
+
+  .formats = (enum assh_key_format_e[]){
+    ASSH_KEY_FMT_PV_PEM,
+    ASSH_KEY_FMT_PUB_RFC4716,
+    ASSH_KEY_FMT_PUB_RFC4253,
+    ASSH_KEY_FMT_PUB_OPENSSH,
+    ASSH_KEY_FMT_PUB_PEM,
+    ASSH_KEY_FMT_PUB_PEM_ASN1,
+    ASSH_KEY_FMT_PV_OPENSSH_V1,
+    ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB,
+    ASSH_KEY_FMT_PV_OPENSSH_V1_KEY,
+    ASSH_KEY_FMT_PV_PEM_ASN1,
+    0,
+  },
+
   .f_output = assh_key_rsa_output,
 #ifdef CONFIG_ASSH_KEY_CREATE
   .f_create = assh_key_rsa_create,

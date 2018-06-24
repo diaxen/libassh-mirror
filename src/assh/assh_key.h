@@ -33,23 +33,12 @@
 
 #include <string.h>
 
-/** @This specifies the storage formats of SSH keys. */
+/** @This specifies the storage formats of SSH keys.
+    Private key formats are listed first.
+    @see assh_key_format_desc_s */
 enum assh_key_format_e
 {
   ASSH_KEY_FMT_NONE,
-
-  /** Public key in standard base64 format as described in rfc4716. */
-  ASSH_KEY_FMT_PUB_RFC4716,
-  /** Public key in standard binary format as described in rfc4253
-      section 6.6. */
-  ASSH_KEY_FMT_PUB_RFC4253,
-  /** Public key in legacy openssh base64 format. */
-  ASSH_KEY_FMT_PUB_OPENSSH,
-  /** Public key in rfc2440 like format.
-      Base64 encoding of @ref ASSH_KEY_FMT_PUB_PEM_ASN1. */
-  ASSH_KEY_FMT_PUB_PEM,
-  /** Public key in PEM Asn1 DER format. */
-  ASSH_KEY_FMT_PUB_PEM_ASN1,
 
   /** Keys openssh-key-v1 base64 format */
   ASSH_KEY_FMT_PV_OPENSSH_V1,
@@ -64,7 +53,20 @@ enum assh_key_format_e
   /** Private key in PEM Asn1 DER format. */
   ASSH_KEY_FMT_PV_PEM_ASN1,
 
-  ASSH_KEY_FMT_LAST = ASSH_KEY_FMT_PV_PEM_ASN1,
+  /** Public key in standard base64 format as described in rfc4716. */
+  ASSH_KEY_FMT_PUB_RFC4716,
+  /** Public key in standard binary format as described in rfc4253
+      section 6.6. */
+  ASSH_KEY_FMT_PUB_RFC4253,
+  /** Public key in legacy openssh base64 format. */
+  ASSH_KEY_FMT_PUB_OPENSSH,
+  /** Public key in rfc2440 like format.
+      Base64 encoding of @ref ASSH_KEY_FMT_PUB_PEM_ASN1. */
+  ASSH_KEY_FMT_PUB_PEM,
+  /** Public key in PEM Asn1 DER format. */
+  ASSH_KEY_FMT_PUB_PEM_ASN1,
+
+  ASSH_KEY_FMT_LAST = ASSH_KEY_FMT_PUB_PEM_ASN1,
 };
 
 /** @This returns true if the specified key format store public content only. */
@@ -180,7 +182,46 @@ struct assh_key_ops_s
 #endif
   assh_key_cmp_t *f_cmp;
   assh_key_cleanup_t *f_cleanup;
+
+  /** Supported storage formats, zero terminated. This includes
+      container formats supported by helper functions. The preferred
+      storage formats for private and public keys are the first and
+      second entries respectively. */
+  const enum assh_key_format_e *formats;
+
+  /** minimum number of bits for @ref assh_key_create */
+  uint16_t min_bits;
+  /** suggested number of bits for @ref assh_key_create */
+  uint16_t bits;
+  /** maximuu number of bits for @ref assh_key_create */
+  uint16_t max_bits;
 };
+
+/** @tt NULL terminated array of key algorithms supported by the library. */
+extern const struct assh_key_ops_s *assh_key_algo_table[];
+
+/** @This describes a key format.
+    @see assh_key_format_table */
+struct assh_key_format_desc_s
+{
+  /** A short human readable identifier for the format. */
+  const char *name;
+  /** A long description string for the format. */
+  const char *desc;
+  /** True for public key only formats. */
+  assh_bool_t public;
+  /** True when the format is not commonly used for key storage. */
+  assh_bool_t internal;
+  /** True when the format supports encryption. */
+  assh_bool_t encrypted;
+};
+
+/** Array of descritors for key storage formats supported by the
+    library. Valid array indices are defined in @ref
+    assh_key_format_e. Any entry with a @tt NULL name must be
+    ignored. */
+extern const struct assh_key_format_desc_s
+assh_key_format_table[ASSH_KEY_FMT_LAST + 1];
 
 /** @internalmembers @This is the generic SSH key structure. Other key
     structures inherit from this type. */
@@ -340,6 +381,11 @@ assh_key_safety_name(struct assh_key_s *key)
 
 /** Dummy key algorithm */
 extern const struct assh_key_ops_s assh_key_none;
+
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_key_algo_by_name_static(const struct assh_key_ops_s **table,
+                             const char *name, size_t name_len,
+                             const struct assh_key_ops_s **algo);
 
 #endif
 
