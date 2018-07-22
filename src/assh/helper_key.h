@@ -43,6 +43,9 @@
     type of key is not supported by a registered algorithm, the
     function fails but the position of the file handle is advanced.
 
+    When the @ref ASSH_KEY_FMT_NONE format is specified, multiple
+    supported formats are tried.
+
     When a binary format is used, the @tt size_hint argument specifies
     the amount of bytes that must be read from the file. When a text
     format is used, the @tt size_hint argument only controls the

@@ -505,6 +505,39 @@ static assh_error_t assh_key_file_size(FILE *file, size_t *size)
   return ASSH_OK;
 }
 
+static assh_error_t
+assh_load_key_file_guess(struct assh_context_s *c,
+                         struct assh_key_s **head,
+                         const struct assh_key_ops_s *algo,
+                         enum assh_algo_class_e role,
+                         FILE *file, const char *passphrase,
+                         size_t size_hint)
+{
+  assh_error_t err;
+  uint_fast8_t i;
+
+  long pos = ftell(file);
+  ASSH_RET_IF_TRUE(pos < 0, ASSH_ERR_IO);
+
+  for (i = 0; i <= ASSH_KEY_FMT_LAST; i++)
+    {
+      const struct assh_key_format_desc_s *f = assh_key_format_table + i;
+
+      if (f->name == NULL || f->internal)
+        continue;
+
+      ASSH_RET_IF_TRUE(fseek(file, pos, SEEK_SET), ASSH_ERR_IO);
+
+      if (assh_load_key_file(c, head, algo, role, file,
+                             i, passphrase, size_hint))
+        continue;
+
+      return ASSH_OK;
+    }
+
+  ASSH_RETURN(ASSH_ERR_MISSING_ALGO);
+}
+
 assh_error_t assh_load_key_file(struct assh_context_s *c,
 				struct assh_key_s **head,
 				const struct assh_key_ops_s *algo,
@@ -513,6 +546,11 @@ assh_error_t assh_load_key_file(struct assh_context_s *c,
 				const char *passphrase, size_t size_hint)
 {
   assh_error_t err = ASSH_OK;
+
+  if (format == ASSH_KEY_FMT_NONE)
+    ASSH_RETURN(assh_load_key_file_guess(c, head, algo, role,
+                                         file, passphrase, size_hint));
+
   char *comment = NULL;
   size_t size_default = 4096;
   size_t blob_len = size_hint ? size_hint : size_default;
