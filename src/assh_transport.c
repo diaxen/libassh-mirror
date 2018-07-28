@@ -121,11 +121,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 		ASSH_SET_STATE(s, tr_st, ASSH_TR_KEX_INIT);
 
 		/* we might still have enough bytes to start packet decode */
-		if (s->stream_in_size >= hsize)
-		  goto head_done;
-
-		ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_HEAD);
-		return ASSH_OK;
+		goto head_done;
 	      }
 
 	    /* discard this line */
@@ -142,6 +138,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 
     /* decipher packet head, compute packet length and allocate packet */
     case ASSH_TR_IN_HEAD_DONE: {
+      head_done:
 
       if (s->stream_in_size < hsize)
 	{
@@ -149,7 +146,6 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 	  ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_HEAD);
 	  return ASSH_OK;
 	}
-      head_done:
 
       /* decipher head */
       if (!k->mac->etm)
@@ -288,7 +284,9 @@ assh_error_t assh_transport_read(struct assh_session_s *s,
     case ASSH_TR_IN_IDENT:
       *data = s->ident_str + s->stream_in_size;
       ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_IDENT_DONE);
-      *size = ASSH_MIN(8, sizeof(s->ident_str) - s->stream_in_size);
+      /* any indent residue must fit in stream_in_stub */
+      *size = ASSH_MIN(sizeof(s->stream_in_stub),
+		       sizeof(s->ident_str) - s->stream_in_size);
       break;
 
     /* read stream into packet head buffer */
