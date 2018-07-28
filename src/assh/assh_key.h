@@ -230,13 +230,13 @@ struct assh_key_s
   const char *type;
   char *comment;
 
-  /* Next key in the list */
+  /** Next key in the list */
   struct assh_key_s *next;
 
-  /* Functions operating on this key */
+  /** Key algorithm */
   const struct assh_key_ops_s *algo;
 
-  /* Class of algorithm the key is intended to be used with */
+  /** Class of algorithm the key is intended to be used with */
   enum assh_algo_class_e role:3;
 
   assh_bool_t private:1;
@@ -382,6 +382,9 @@ assh_key_safety_name(struct assh_key_s *key)
 /** Dummy key algorithm */
 extern const struct assh_key_ops_s assh_key_none;
 
+/** @This find a key algorithm with matching  name in a @tt NULL
+    terminated array of pointers to algorithm descriptors. @see
+    assh_key_algo_table */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_key_algo_by_name_static(const struct assh_key_ops_s **table,
                              const char *name, size_t name_len,

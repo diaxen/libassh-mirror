@@ -206,7 +206,8 @@ ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_register_static(struct assh_context_s *c,
                           const struct assh_algo_s *table[]);
 
-/** NULL terminated array of available algorithms. */
+/** @tt NULL terminated array of algorithms provided by the library.
+    Multiple variants of the same algorithm may exist. */
 extern const struct assh_algo_s *assh_algo_table[];
 
 /** @This returns registered algorithms indexed from 0. @tt NULL is
@@ -275,8 +276,8 @@ assh_algo_safety_name(const struct assh_algo_s *algo)
 }
 
 /** @This find an algorithm with matching class and name in a @tt NULL
-    terminated array of pointers to algorithm descriptors. @see
-    assh_algo_table */
+    terminated array of pointers to algorithm descriptors.
+    @see assh_algo_table */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_by_name_static(const struct assh_algo_s **table,
                          enum assh_algo_class_e class_, const char *name,
