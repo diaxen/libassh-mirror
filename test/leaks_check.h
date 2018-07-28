@@ -30,6 +30,8 @@
 # include <valgrind/memcheck.h>
 #endif
 
+#include "prng_weak.h"
+
 static size_t alloc_size = 0;
 static uint32_t alloc_fuzz = 0;
 static unsigned long alloc_fuzz_fails = 0;
