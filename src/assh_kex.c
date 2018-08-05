@@ -60,7 +60,9 @@ assh_kex_list(struct assh_session_s *s, struct assh_packet_s *p,
 
   ASSH_RET_ON_ERR(assh_packet_add_string(p, 0, &list));
 
+#ifdef CONFIG_ASSH_DEBUG_KEX
   ASSH_DEBUG("kex send: ");
+#endif
 
   for (; *algoidx < c->algo_cnt; (*algoidx)++)
     {
@@ -90,11 +92,15 @@ assh_kex_list(struct assh_session_s *s, struct assh_packet_s *p,
             s->kex_preferred[class_] = a; /* keep prefered algorithm */
 
           first = 1;
+#ifdef CONFIG_ASSH_DEBUG_KEX
           ASSH_DEBUG_("%s ", name->name);
+#endif
         }
     }
 
+#ifdef CONFIG_ASSH_DEBUG_KEX
   ASSH_DEBUG_("\n");
+#endif
 
   ASSH_RET_IF_TRUE(!first, ASSH_ERR_MISSING_ALGO);
 
@@ -473,7 +479,9 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
 
 void assh_kex_lower_safety(struct assh_session_s *s, assh_safety_t safety)
 {
+#ifdef CONFIG_ASSH_DEBUG_KEX
   ASSH_DEBUG("lowering safety to %u\n", safety);
+#endif
   s->new_keys_in->safety = ASSH_MIN(safety, s->new_keys_in->safety);
   s->new_keys_out->safety = ASSH_MIN(safety, s->new_keys_out->safety);
 }
