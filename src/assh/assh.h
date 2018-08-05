@@ -274,6 +274,9 @@ const char * assh_error_str(assh_error_t err);
 /** connection service keepalive inteval in seconds */
 #define ASSH_TIMEOUT_KEEPALIVE 600
 
+/** @internal */
+void assh_hexdump(const char *name, const void *data, size_t len);
+
 /** @internal @This takes an @ref assh_error_t value returned by a
     function and asserts that the error code is @ref ASSH_OK. */
 #define ASSH_ASSERT(expr)                      \
@@ -288,12 +291,6 @@ const char * assh_error_str(assh_error_t err);
 /** @internal */
 # define ASSH_DEBUG(...)
 # define ASSH_DEBUG_(...)
-
-/** @internal */
-ASSH_INLINE void
-assh_hexdump(const char *name, const void *data, size_t len)
-{
-}
 
 /** @internal @This takes an @ref assh_error_t value returned by a
     function of the library and assigns it to the locally defined @tt
@@ -355,9 +352,6 @@ assh_hexdump(const char *name, const void *data, size_t len)
 /** @internal */
 # define ASSH_DEBUG(...) fprintf(stderr, "assh_debug: " __VA_ARGS__)
 # define ASSH_DEBUG_(...) fprintf(stderr, __VA_ARGS__)
-
-/** @internal */
-void assh_hexdump(const char *name, const void *data, size_t len);
 
 # ifndef CONFIG_ASSH_CALLTRACE
 
