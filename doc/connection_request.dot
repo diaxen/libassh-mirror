@@ -1,0 +1,24 @@
+digraph {
+#   ->  [label=<>];
+
+  ASSH_none [label=<Request object<br/>does not exist>];
+
+  ASSH_none -> ASSH_none [label=<request msg received,<br/>reported EVENT_REQUEST<br/>to the app,<br/>replied immediately<br/>>];
+  ASSH_none -> ASSH_REQUEST_ST_REPLY_POSTPONED [label=<request received,<br/>reported EVENT_REQUEST<br/>to the app,<br/>reply postponed by app>];
+  ASSH_none -> ASSH_REQUEST_ST_WAIT_REPLY [label=<assh_request(rq != NULL) called,<br/>sent request msg>];
+
+  ASSH_REQUEST_ST_WAIT_REPLY [label=<<b>WAIT_REPLY</b>:<br/>Outgoing request, not<br/>replied by remote host>];
+  ASSH_REQUEST_ST_WAIT_REPLY -> ASSH_none [label=<Disconnected<br/>,reported EVENT_REQUEST_REPLY<br/>to the app>];
+  ASSH_REQUEST_ST_WAIT_REPLY -> ASSH_none [label=<reply msg received<br/>,reported EVENT_REQUEST_REPLY<br/>to the app>];
+
+  ASSH_REQUEST_ST_REPLY_POSTPONED [label=<<b>REPLY_POSTPONED</b>:<br/>Incoming request; reply<br/>postponed by app.>];
+
+  ASSH_REQUEST_ST_REPLY_POSTPONED -> ASSH_REQUEST_ST_REPLY_READY [label=<assh_request_failed_reply() or<br/>assh_request_success_reply() called>];
+  ASSH_REQUEST_ST_REPLY_POSTPONED -> ASSH_none [label=<Disconnected, reported<br/>EVENT_REQUEST_ABORT<br/>to the app>];
+
+  ASSH_REQUEST_ST_REPLY_READY [label=<<b>REPLY_READY</b>:<br/>Reply in ordered request output queue>];
+
+  ASSH_REQUEST_ST_REPLY_READY -> ASSH_REQUEST_ST_REPLY_READY [label=<Blocked by previous<br/>requests in queue>];
+  ASSH_REQUEST_ST_REPLY_READY -> ASSH_none [label=<Reached queue head,<br/>sent reply msg>];
+  ASSH_REQUEST_ST_REPLY_READY -> ASSH_none [label=<Disconnected>];
+}

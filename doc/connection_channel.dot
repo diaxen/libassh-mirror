@@ -1,0 +1,80 @@
+digraph {
+#   ->  [label=<>];
+
+  ASSH_none [label=<Channel object<br/>does not exist>];
+
+  ASSH_none -> ASSH_CHANNEL_ST_OPEN_RECEIVED [label=<received CHANNEL_OPEN msg>];
+  ASSH_none -> ASSH_CHANNEL_ST_OPEN_SENT [label=<assh_channel_open() called,<br/>CHANNEL_OPEN msg sent>];
+
+  ASSH_CHANNEL_ST_OPEN_SENT [label=<<b>OPEN_SENT</b>:<br/>CHANNEL_OPEN msg sent,<br/>waiting for reply>];
+
+  ASSH_CHANNEL_ST_OPEN_SENT -> ASSH_CHANNEL_ST_OPEN [label=<received OPEN_CONFIRMATION msg>];
+  ASSH_CHANNEL_ST_OPEN_SENT -> ASSH_none [label=<received OPEN_FAILURE msg>];
+  ASSH_CHANNEL_ST_OPEN_SENT -> ASSH_CHANNEL_ST_OPEN_SENT_FORCE_CLOSE [label=<Disconnected>];
+
+  ASSH_CHANNEL_ST_OPEN_RECEIVED [label=<<b>OPEN_RECEIVED</b>:<br/>report EVENT_CHANNEL_OPEN to the app>];
+
+  ASSH_CHANNEL_ST_OPEN_RECEIVED -> ASSH_CHANNEL_ST_OPEN_RECEIVED [label=<event acknowledged,<br/>open postponed by app>];
+  ASSH_CHANNEL_ST_OPEN_RECEIVED -> ASSH_CHANNEL_ST_OPEN_RECEIVED_FORCE_CLOSE [label=<Disconnected>];
+  ASSH_CHANNEL_ST_OPEN_RECEIVED -> ASSH_CHANNEL_ST_OPEN [label=<event acknowledged,<br/>open allowed by app,<br/>CHANNEL_OPEN_CONFIRMATION msg sent>];
+  ASSH_CHANNEL_ST_OPEN_RECEIVED -> ASSH_CHANNEL_ST_OPEN [label=<assh_channel_open_success_reply()<br/>called after postpone,<br/>CHANNEL_OPEN_CONFIRMATION msg sent>];
+  ASSH_CHANNEL_ST_OPEN_RECEIVED -> ASSH_none [label=<event acknowledged,<br/>open declined by app,<br/>CHANNEL_OPEN_FAILURE msg sent>];
+  ASSH_CHANNEL_ST_OPEN_RECEIVED -> ASSH_none [label=<assh_channel_open_failed_reply()<br/>called after postpone,<br/>CHANNEL_OPEN_FAILURE msg sent>];
+
+  ASSH_CHANNEL_ST_OPEN [label=<<b>OPEN</b>:<br/>The channel is open.<br/>Exchange data and<br/> handle requests.>];
+
+  ASSH_CHANNEL_ST_OPEN -> ASSH_CHANNEL_ST_CLOSING [label=<received CHANNEL_CLOSE,<br/>sent CHANNEL_CLOSE msg>];
+  ASSH_CHANNEL_ST_OPEN -> ASSH_CHANNEL_ST_EOF_RECEIVED [label=<received CHANNEL_EOF>];
+  ASSH_CHANNEL_ST_OPEN -> ASSH_CHANNEL_ST_EOF_SENT [label=<assh_channel_eof()<br/>called by app,<br/>sent CHANNEL_EOF msg>];
+  ASSH_CHANNEL_ST_OPEN -> ASSH_CHANNEL_ST_CLOSE_CALLED [label=<assh_channel_close()<br/>called by app>];
+  ASSH_CHANNEL_ST_OPEN -> ASSH_CHANNEL_ST_FORCE_CLOSE [label=<Disconnected>];
+  ASSH_CHANNEL_ST_OPEN -> ASSH_CHANNEL_ST_OPEN [label=<>];
+
+  ASSH_CHANNEL_ST_EOF_SENT [label=<<b>EOF_SENT</b>:<br/>The channel is half open.<br/>Receive data and<br/>handle requests.>];
+
+  ASSH_CHANNEL_ST_EOF_SENT -> ASSH_CHANNEL_ST_CLOSING [label=<received CHANNEL_CLOSE,<br/>sent CHANNEL_CLOSE msg>];
+  ASSH_CHANNEL_ST_EOF_SENT -> ASSH_CHANNEL_ST_EOF_CLOSE [label=<received CHANNEL_EOF,<br/>sent CHANNEL_CLOSE msg>];
+  ASSH_CHANNEL_ST_EOF_SENT -> ASSH_CHANNEL_ST_CLOSE_CALLED [label=<assh_channel_close()<br/>called by app>];
+  ASSH_CHANNEL_ST_EOF_SENT -> ASSH_CHANNEL_ST_FORCE_CLOSE [label=<Disconnected>];
+  ASSH_CHANNEL_ST_EOF_SENT -> ASSH_CHANNEL_ST_EOF_SENT [label=<>];
+
+  ASSH_CHANNEL_ST_EOF_RECEIVED [label=<<b>EOF_RECEIVED</b>:<br/>The channel is half open.<br/>Transmit data and<br/>handle requests.>];
+
+  ASSH_CHANNEL_ST_EOF_RECEIVED -> ASSH_CHANNEL_ST_CLOSING [label=<received CHANNEL_CLOSE,<br/>sent CHANNEL_CLOSE msg>];
+  ASSH_CHANNEL_ST_EOF_RECEIVED -> ASSH_CHANNEL_ST_EOF_CLOSE [label=<assh_channel_eof()<br/>called by app,<br/>sent CHANNEL_CLOSE msg>];
+  ASSH_CHANNEL_ST_EOF_RECEIVED -> ASSH_CHANNEL_ST_CLOSE_CALLED [label=<assh_channel_close()<br/>called by app>];
+  ASSH_CHANNEL_ST_EOF_RECEIVED -> ASSH_CHANNEL_ST_FORCE_CLOSE [label=<Disconnected>];
+  ASSH_CHANNEL_ST_EOF_RECEIVED -> ASSH_CHANNEL_ST_EOF_RECEIVED [label=<>];
+
+  ASSH_CHANNEL_ST_EOF_CLOSE [label=<<b>EOF_CLOSE</b>:<br/>Channel half closed twice>];
+
+  ASSH_CHANNEL_ST_EOF_CLOSE -> ASSH_CHANNEL_ST_CLOSING [label=<received CHANNEL_CLOSE>];
+  ASSH_CHANNEL_ST_EOF_CLOSE -> ASSH_CHANNEL_ST_CLOSE_CALLED [label=<assh_channel_close()<br/>called by app>];
+  ASSH_CHANNEL_ST_EOF_CLOSE -> ASSH_CHANNEL_ST_FORCE_CLOSE [label=<Disconnected>];
+
+  ASSH_CHANNEL_ST_CLOSE_CALLED [label=<<b>CLOSE_CALLED</b>:<br/>CHANNEL_CLOSE msg sent,<br/>waiting for reply>];
+
+  ASSH_CHANNEL_ST_CLOSE_CALLED -> ASSH_CHANNEL_ST_CLOSING [label=<received CHANNEL_CLOSE>];
+  ASSH_CHANNEL_ST_CLOSE_CALLED -> ASSH_CHANNEL_ST_CLOSE_CALLED [label=<received CHANNEL_EOF>];
+  ASSH_CHANNEL_ST_CLOSE_CALLED -> ASSH_CHANNEL_ST_FORCE_CLOSE [label=<Disconnected>];
+
+  ASSH_CHANNEL_ST_CLOSING [label=<<b>CLOSING</b>:<br/>Report pending requests and data<br/>events to the app>];
+
+  ASSH_CHANNEL_ST_CLOSING -> ASSH_CHANNEL_ST_CLOSING [label=<assh_channel_eof() or<br/>assh_channel_close()<br/>called by app>];
+  ASSH_CHANNEL_ST_CLOSING -> ASSH_none [label=<no more channel<br/>related events to report>];
+
+  ASSH_CHANNEL_ST_FORCE_CLOSE [label=<<b>FORCE_CLOSE</b>:<br/>Report pending request and data<br/>events to the app,<br/>then report EVENT_CHANNEL_CLOSE>];
+
+#  ASSH_CHANNEL_ST_FORCE_CLOSE -> ASSH_CHANNEL_ST_FORCE_CLOSE [label=<assh_channel_eof()<br/> or assh_channel_close()<br/>called by app>];
+  ASSH_CHANNEL_ST_FORCE_CLOSE -> ASSH_CHANNEL_ST_FORCE_CLOSE [label=<event acknowledged by app>];
+  ASSH_CHANNEL_ST_FORCE_CLOSE -> ASSH_none [label=<No more channel<br/>related events to report>];
+
+  ASSH_CHANNEL_ST_OPEN_SENT_FORCE_CLOSE [label=<<b>OPEN_SENT_FORCE_CLOSE</b>:<br/>Report failed EVENT_CHANNEL_OPEN_REPLY<br/>to the app>];
+
+  ASSH_CHANNEL_ST_OPEN_SENT_FORCE_CLOSE -> ASSH_none [label=<event acknowledged by app>];
+
+  ASSH_CHANNEL_ST_OPEN_RECEIVED_FORCE_CLOSE [label=<<b>OPEN_RECEIVED_FORCE_CLOSE</b>:<br/>Report EVENT_CHANNEL_ABORT<br/>to the app>];
+
+#  ASSH_CHANNEL_ST_OPEN_RECEIVED_FORCE_CLOSE -> ASSH_CHANNEL_ST_OPEN_RECEIVED_FORCE_CLOSE [label=<assh_channel_open_failed_reply() or,<br/>assh_channel_open_success_reply()<br/>called by app>];
+  ASSH_CHANNEL_ST_OPEN_RECEIVED_FORCE_CLOSE -> ASSH_none [label=<event acknowledged by app>];
+}

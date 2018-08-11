@@ -19,8 +19,20 @@ ACLOCAL_AMFLAGS=-Im4
 
 doc: manual internals
 
-manual:
+DOTS=doc/connection_channel.dot \
+	doc/connection_request.dot \
+	doc/service.dot \
+	doc/transport.dot \
+	doc/transport_in.dot \
+	doc/transport_out.dot \
+	doc/userauth_client.dot \
+	doc/userauth_server.dot
+
+doc/%.png: doc/%.dot
+	dot -Tpng -Kdot -Emargin=1 -Granksep=1 $< > $@
+
+manual: $(DOTS:.dot=.png)
 	mkdoc -I doc/ -I src/ --conf-file manual.conf
 
-internals:
+internals: $(DOTS)
 	mkdoc -I doc/ -I src/ --conf-file internals.conf
