@@ -558,7 +558,7 @@ assh_kex_new_keys(struct assh_session_s *s,
 #endif
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
-  assh_hexdump("exchange hash", ex_hash, hash_algo->hash_size);
+  ASSH_DEBUG_HEXDUMP("exchange hash", ex_hash, hash_algo->hash_size);
 #endif
 
   ASSH_SCRATCH_ALLOC(s->ctx, uint8_t, scratch, hash_algo->ctx_size +
@@ -592,8 +592,8 @@ assh_kex_new_keys(struct assh_session_s *s,
   next_in_ctx += kin->cipher->ctx_size;
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
-  assh_hexdump("in iv", iv, kin->cipher->iv_size);
-  assh_hexdump("in ekey", key, kin->cipher->key_size);
+  ASSH_DEBUG_HEXDUMP("in iv", iv, kin->cipher->iv_size);
+  ASSH_DEBUG_HEXDUMP("in ekey", key, kin->cipher->key_size);
 #endif
 
   ASSH_JMP_ON_ERR(kin->cipher->f_init(s->ctx, kin->cipher_ctx, key, iv, 0), err_cipher_in);
@@ -615,8 +615,8 @@ assh_kex_new_keys(struct assh_session_s *s,
   next_out_ctx += kout->cipher->ctx_size;
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
-  assh_hexdump("out iv", iv, kout->cipher->iv_size);
-  assh_hexdump("out ekey", key, kout->cipher->key_size);
+  ASSH_DEBUG_HEXDUMP("out iv", iv, kout->cipher->iv_size);
+  ASSH_DEBUG_HEXDUMP("out ekey", key, kout->cipher->key_size);
 #endif
 
   ASSH_JMP_ON_ERR(kout->cipher->f_init(s->ctx, kout->cipher_ctx, key, iv, 1), err_cipher_out);
@@ -628,7 +628,7 @@ assh_kex_new_keys(struct assh_session_s *s,
                                     secret_str, *c,
                                     key, kin->mac->key_size), err_mac_in);
 #ifdef CONFIG_ASSH_DEBUG_KEX
-      assh_hexdump("in ikey", key, kin->mac->key_size);
+      ASSH_DEBUG_HEXDUMP("in ikey", key, kin->mac->key_size);
 #endif
     }
   kin->mac_ctx = (void*)next_in_ctx;
@@ -643,7 +643,7 @@ assh_kex_new_keys(struct assh_session_s *s,
                                     secret_str, *c,
                                     key, kout->mac->key_size), err_mac_out);
 #ifdef CONFIG_ASSH_DEBUG_KEX
-      assh_hexdump("out ikey", key, kout->mac->key_size);
+      ASSH_DEBUG_HEXDUMP("out ikey", key, kout->mac->key_size);
 #endif
     }
   kout->mac_ctx = (void*)next_out_ctx;

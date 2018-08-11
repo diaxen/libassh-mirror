@@ -291,6 +291,7 @@ void assh_hexdump(const char *name, const void *data, size_t len);
 /** @internal */
 # define ASSH_DEBUG(...)
 # define ASSH_DEBUG_(...)
+# define ASSH_DEBUG_HEXDUMP(...)
 
 /** @internal @This takes an @ref assh_error_t value returned by a
     function of the library and assigns it to the locally defined @tt
@@ -352,6 +353,7 @@ void assh_hexdump(const char *name, const void *data, size_t len);
 /** @internal */
 # define ASSH_DEBUG(...) fprintf(stderr, "assh_debug: " __VA_ARGS__)
 # define ASSH_DEBUG_(...) fprintf(stderr, __VA_ARGS__)
+# define ASSH_DEBUG_HEXDUMP(...) assh_hexdump(__VA_ARGS__)
 
 # ifndef CONFIG_ASSH_CALLTRACE
 

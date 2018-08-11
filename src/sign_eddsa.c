@@ -84,7 +84,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
   assh_hash_cleanup(hash_ctx);
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
-  assh_hexdump("h", h, 2 * n);
+  ASSH_DEBUG_HEXDUMP("h", h, 2 * n);
 #endif
 
   /* a is h[0,n-1] */
@@ -99,7 +99,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
   assh_hash_cleanup(hash_ctx);
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
-  assh_hexdump("r", r, 2 * n);
+  ASSH_DEBUG_HEXDUMP("r", r, 2 * n);
 #endif
 
   {
@@ -179,7 +179,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
   assh_edward_encode(curve, r_str, rx);
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
-  assh_hexdump("rxy", r_str, n);
+  ASSH_DEBUG_HEXDUMP("rxy", r_str, n);
 #endif
 
   /* hram */
@@ -192,7 +192,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
   assh_hash_cleanup(hash_ctx);
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
-  assh_hexdump("hram", hram, 2 * n);
+  ASSH_DEBUG_HEXDUMP("hram", hram, 2 * n);
 #endif
 
   ASSH_JMP_ON_ERR(assh_hash_init(c, hash_ctx, hash), err_scratch);
@@ -203,7 +203,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
   assh_edward_adjust(curve, az);
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
-  assh_hexdump("az", az, 2 * n);
+  ASSH_DEBUG_HEXDUMP("az", az, 2 * n);
 #endif
 
   {
@@ -291,7 +291,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
   assh_hash_cleanup(hash_ctx);
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
-  assh_hexdump("pub", kp, n);
+  ASSH_DEBUG_HEXDUMP("pub", kp, n);
 #endif
 
   /* key X sign bit as mpint */
@@ -493,9 +493,9 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
   assh_edward_encode(curve, ry, rx);
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
-  assh_hexdump("hram", hram, 2 * n);
-  assh_hexdump("sign", rs_str + 4, 2 * n);
-  assh_hexdump("rxy", ry, n);
+  ASSH_DEBUG_HEXDUMP("hram", hram, 2 * n);
+  ASSH_DEBUG_HEXDUMP("sign", rs_str + 4, 2 * n);
+  ASSH_DEBUG_HEXDUMP("rxy", ry, n);
 #endif
 
   ASSH_JMP_IF_TRUE(assh_memcmp(rs_str + 4, ry, n),

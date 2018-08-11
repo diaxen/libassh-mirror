@@ -188,7 +188,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
   secret[4] &= 0x7f & (0xff >> ((8 - sbits) & 7));
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
-  assh_hexdump("secret", secret, slen);
+  ASSH_DEBUG_HEXDUMP("secret", secret, slen);
 #endif
 
   /* encode secret using OAEP */
@@ -208,7 +208,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
   memcpy(m, secret, slen);
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
-  assh_hexdump("e", em, elen);
+  ASSH_DEBUG_HEXDUMP("e", em, elen);
 #endif
 
   ASSH_JMP_ON_ERR(assh_kex_rsa_mgf1(c, pv->hash,
@@ -219,7 +219,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
                | ASSH_ERRSV_DISCONNECT, err_tkey);
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
-  assh_hexdump("em", em, elen);
+  ASSH_DEBUG_HEXDUMP("em", em, elen);
 #endif
 
   /* encrypt encoded secret using the transient RSA key */
@@ -250,7 +250,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
                | ASSH_ERRSV_DISCONNECT, err_tkey);
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
-  assh_hexdump("emc", em, elen);
+  ASSH_DEBUG_HEXDUMP("emc", em, elen);
 #endif
 
   /* send packet with encrypted secret */
@@ -434,7 +434,7 @@ static assh_error_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
   uint8_t *em = e_str + 4;
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
-  assh_hexdump("emc", em, elen);
+  ASSH_DEBUG_HEXDUMP("emc", em, elen);
 #endif
 
   /* use Chinese Remainder */
@@ -487,7 +487,7 @@ static assh_error_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
                                     &t_key->in, &t_key->nn));
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
-  assh_hexdump("em", em, elen);
+  ASSH_DEBUG_HEXDUMP("em", em, elen);
 #endif
 
   /* em[0] should be 0 here. We do not check in order to prevent a
@@ -501,7 +501,7 @@ static assh_error_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
 	         em + 1, hlen, db, elen - hlen - 1));
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
-  assh_hexdump("e", em, elen);
+  ASSH_DEBUG_HEXDUMP("e", em, elen);
 #endif
 
   ASSH_RET_IF_TRUE(assh_memcmp(db, pv->lhash, hlen), ASSH_ERR_BAD_DATA);

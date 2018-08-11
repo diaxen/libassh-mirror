@@ -116,7 +116,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 		  i--;
 		s->ident_len = i;
 #ifdef CONFIG_ASSH_DEBUG_PROTOCOL
-		assh_hexdump("remote ident", s->ident_str, s->ident_len);
+		ASSH_DEBUG_HEXDUMP("remote ident", s->ident_str, s->ident_len);
 #endif
 		ASSH_SET_STATE(s, tr_st, ASSH_TR_KEX_INIT);
 
@@ -247,7 +247,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 #ifdef CONFIG_ASSH_DEBUG_PROTOCOL
       ASSH_DEBUG("incoming packet: session=%p tr_st=%i, size=%zu, msg=%u\n",
 		 s, s->tr_st, data_size, p->head.msg);
-      assh_hexdump("in packet", data, data_size);
+      ASSH_DEBUG_HEXDUMP("in packet", data, data_size);
 #endif
 
 #ifdef CONFIG_ASSH_CLIENT
@@ -426,7 +426,7 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 #ifdef CONFIG_ASSH_DEBUG_PROTOCOL
       ASSH_DEBUG("outgoing packet: session=%p tr_st=%i, size=%zu, msg=%u\n",
 		 s, s->tr_st, p->data_size, p->head.msg);
-      assh_hexdump("out packet", p->data, p->data_size);
+      ASSH_DEBUG_HEXDUMP("out packet", p->data, p->data_size);
 #endif
 
       struct assh_packet_s *p_ = p;

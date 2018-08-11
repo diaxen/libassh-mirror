@@ -142,7 +142,7 @@ assh_sign_rsa_generate(struct assh_context_s *c,
   uint8_t *c_str = sign + id_len + 4;
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
-  assh_hexdump("rsa generate em", em_buf, n);
+  ASSH_DEBUG_HEXDUMP("rsa generate em", em_buf, n);
 #endif
 
   /* use Chinese Remainder */
@@ -253,7 +253,7 @@ assh_sign_rsa_check(struct assh_context_s *c,
                    /* Nun  */ &k->nn, &k->en), err_em);
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
-  assh_hexdump("rsa check em", em, n);
+  ASSH_DEBUG_HEXDUMP("rsa check em", em, n);
 #endif
 
   uint8_t *em_end = em + n;
@@ -298,7 +298,7 @@ assh_sign_rsa_check(struct assh_context_s *c,
   assh_hash_cleanup(hash_ctx);
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
-  assh_hexdump("rsa check hash", hash, digest->algo->hash_size);
+  ASSH_DEBUG_HEXDUMP("rsa check hash", hash, digest->algo->hash_size);
 #endif
 
   *safety = ASSH_MIN(*safety, digest->algo->safety);
