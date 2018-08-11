@@ -618,7 +618,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
   return err;
 }
 
-const struct assh_key_ops_s assh_key_rsa =
+const struct assh_key_algo_s assh_key_rsa =
 {
   .name = "ssh-rsa",
   .min_bits = 1024,

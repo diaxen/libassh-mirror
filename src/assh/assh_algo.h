@@ -137,7 +137,7 @@ struct assh_algo_s
   const char *variant;
 
   /** Pointer to associated key operations, may be @tt NULL. */
-  const struct assh_key_ops_s *key;
+  const struct assh_key_algo_s *key;
   /** Test if a key can be used with the algorithm, may be @tt NULL. */
   assh_algo_suitable_key_t *f_suitable_key;
 };

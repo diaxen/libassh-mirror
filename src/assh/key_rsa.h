@@ -52,7 +52,7 @@ struct assh_key_rsa_s
 ASSH_FIRST_FIELD_ASSERT(assh_key_rsa_s, key);
 
 /** Key operations descriptor for RSA keys */
-extern const struct assh_key_ops_s assh_key_rsa;
+extern const struct assh_key_algo_s assh_key_rsa;
 
 /** @internal */
 #define ASSH_RSA_ID     "\x00\x00\x00\x07ssh-rsa"

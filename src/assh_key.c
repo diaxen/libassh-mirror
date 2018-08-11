@@ -35,7 +35,7 @@
 
 #include <string.h>
 
-static const struct assh_key_ops_s *
+static const struct assh_key_algo_s *
 assh_key_algo_guess(struct assh_context_s *c,
                     enum assh_key_format_e format,
                     const uint8_t *blob, size_t blob_len,
@@ -61,7 +61,7 @@ assh_key_algo_guess(struct assh_context_s *c,
         {
           algo = c->algos[i];
 
-          const struct assh_key_ops_s *ops = algo->key;
+          const struct assh_key_algo_s *ops = algo->key;
           if (ops == NULL || algo->class_ != role)
             continue;
 
@@ -85,7 +85,7 @@ assh_key_algo_guess(struct assh_context_s *c,
 
 assh_error_t assh_key_load(struct assh_context_s *c,
                            struct assh_key_s **key,
-                           const struct assh_key_ops_s *algo,
+                           const struct assh_key_algo_s *algo,
                            enum assh_algo_class_e role,
                            enum assh_key_format_e format,
                            const uint8_t **blob, size_t blob_len)
@@ -114,7 +114,7 @@ assh_error_t assh_key_load(struct assh_context_s *c,
 assh_error_t
 assh_key_create(struct assh_context_s *c,
                 struct assh_key_s **key, size_t bits,
-                const struct assh_key_ops_s *algo,
+                const struct assh_key_algo_s *algo,
                 enum assh_algo_class_e role)
 {
   assh_error_t err;
@@ -177,11 +177,11 @@ assh_key_lookup(struct assh_context_s *c,
 }
 
 assh_error_t
-assh_key_algo_by_name_static(const struct assh_key_ops_s **table,
+assh_key_algo_by_name_static(const struct assh_key_algo_s **table,
                              const char *name, size_t name_len,
-                             const struct assh_key_ops_s **algo)
+                             const struct assh_key_algo_s **algo)
 {
-  const struct assh_key_ops_s *a;
+  const struct assh_key_algo_s *a;
 
   while ((a = *table++) != NULL)
     {
@@ -195,7 +195,7 @@ assh_key_algo_by_name_static(const struct assh_key_ops_s **table,
   return ASSH_NOT_FOUND;
 }
 
-const struct assh_key_ops_s *assh_key_algo_table[] = {
+const struct assh_key_algo_s *assh_key_algo_table[] = {
   &assh_key_none,
   &assh_key_dsa,
   &assh_key_rsa,

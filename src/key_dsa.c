@@ -522,7 +522,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
   return err;
 }
 
-const struct assh_key_ops_s assh_key_dsa =
+const struct assh_key_algo_s assh_key_dsa =
 {
   .name = "ssh-dss",
   .min_bits = 1024,

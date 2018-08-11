@@ -59,7 +59,7 @@ struct assh_key_ecdsa_s
 ASSH_FIRST_FIELD_ASSERT(assh_key_ecdsa_s, key);
 
 /** @multiple Key operations descriptor for Ecdsa keys */
-extern const struct assh_key_ops_s assh_key_ecdsa_nistp;
+extern const struct assh_key_algo_s assh_key_ecdsa_nistp;
 
 #endif
 

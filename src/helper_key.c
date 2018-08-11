@@ -63,7 +63,7 @@ struct assh_rfc1421_key_ops_s
 {
   const char *name;
   enum assh_key_format_e format;
-  const struct assh_key_ops_s *algo;
+  const struct assh_key_algo_s *algo;
 };
 
 static const struct assh_rfc1421_key_ops_s
@@ -128,7 +128,7 @@ assh_evp_bytes_to_key(struct assh_context_s *c,
 static ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_load_rfc4716_rfc1421(struct assh_context_s *c, FILE *file,
                           uint8_t *kdata, size_t *klen, assh_bool_t enc,
-                          const struct assh_key_ops_s **algo,
+                          const struct assh_key_algo_s **algo,
                           const char *passphrase, char **comment)
 {
   struct assh_base64_ctx_s ctx;
@@ -290,7 +290,7 @@ assh_load_rfc4716_rfc1421(struct assh_context_s *c, FILE *file,
 static ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_load_pub_openssh(struct assh_context_s *c, FILE *file,
                       uint8_t *kdata, size_t *klen,
-                      const struct assh_key_ops_s **algo,
+                      const struct assh_key_algo_s **algo,
                       char **comment)
 {
   struct assh_base64_ctx_s ctx;
@@ -372,7 +372,7 @@ assh_load_pub_openssh(struct assh_context_s *c, FILE *file,
 static ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_load_openssh_v1_blob(struct assh_context_s *c,
 			  struct assh_key_s **head,
-			  const struct assh_key_ops_s *algo,
+			  const struct assh_key_algo_s *algo,
 			  enum assh_algo_class_e role,
                           uint8_t *blob, size_t blob_len,
 			  const char *passphrase)
@@ -508,7 +508,7 @@ static assh_error_t assh_key_file_size(FILE *file, size_t *size)
 static assh_error_t
 assh_load_key_file_guess(struct assh_context_s *c,
                          struct assh_key_s **head,
-                         const struct assh_key_ops_s *algo,
+                         const struct assh_key_algo_s *algo,
                          enum assh_algo_class_e role,
                          FILE *file, const char *passphrase,
                          size_t size_hint)
@@ -540,7 +540,7 @@ assh_load_key_file_guess(struct assh_context_s *c,
 
 assh_error_t assh_load_key_file(struct assh_context_s *c,
 				struct assh_key_s **head,
-				const struct assh_key_ops_s *algo,
+				const struct assh_key_algo_s *algo,
 				enum assh_algo_class_e role,
 				FILE *file, enum assh_key_format_e format,
 				const char *passphrase, size_t size_hint)
@@ -631,7 +631,7 @@ assh_error_t assh_load_key_file(struct assh_context_s *c,
 
 assh_error_t assh_load_key_filename(struct assh_context_s *c,
 				    struct assh_key_s **head,
-				    const struct assh_key_ops_s *algo,
+				    const struct assh_key_algo_s *algo,
 				    enum assh_algo_class_e role,
 				    const char *filename,
 				    enum assh_key_format_e format,
@@ -651,7 +651,7 @@ assh_error_t assh_load_key_filename(struct assh_context_s *c,
 }
 
 assh_error_t assh_load_hostkey_file(struct assh_context_s *c,
-				    const struct assh_key_ops_s *algo,
+				    const struct assh_key_algo_s *algo,
 				    enum assh_algo_class_e role,
 				    FILE *file,
 				    enum assh_key_format_e format, size_t size_hint)
@@ -665,7 +665,7 @@ assh_error_t assh_load_hostkey_file(struct assh_context_s *c,
 }
 
 assh_error_t assh_load_hostkey_filename(struct assh_context_s *c,
-					const struct assh_key_ops_s *algo,
+					const struct assh_key_algo_s *algo,
 					enum assh_algo_class_e role,
 					const char *filename,
 					enum assh_key_format_e format, size_t size_hint)

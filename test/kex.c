@@ -55,7 +55,7 @@ struct assh_session_s session[2];
 struct algo_with_key_s
 {
   const void *algo;
-  const struct assh_key_ops_s *key_algo;
+  const struct assh_key_algo_s *key_algo;
   const uint8_t *key_blob;
   size_t key_size;
 };

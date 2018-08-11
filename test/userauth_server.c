@@ -46,7 +46,7 @@ static struct fifo_s fifo[2];
 static struct assh_context_s context[2];
 static struct assh_session_s session[2];
 
-static const struct assh_key_ops_s *key_algo = &assh_key_ed25519;
+static const struct assh_key_algo_s *key_algo = &assh_key_ed25519;
 static const struct assh_algo_sign_s *sign_algo = &assh_sign_ed25519;
 static struct assh_key_s *key_s, *key_c, *key_cbad;
 

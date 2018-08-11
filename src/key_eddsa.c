@@ -116,7 +116,7 @@ static ASSH_KEY_CMP_FCN(assh_key_eddsa_cmp)
 #ifdef CONFIG_ASSH_KEY_CREATE
 static assh_error_t
 assh_key_eddsa_create(struct assh_context_s *c,
-                      const struct assh_key_ops_s *algo,
+                      const struct assh_key_algo_s *algo,
                       struct assh_key_s **key,
                       const struct assh_edward_curve_s *curve,
                       const struct assh_hash_algo_s *hash)
@@ -257,7 +257,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_eddsa_validate)
 
 static assh_error_t
 assh_key_eddsa_load(struct assh_context_s *c,
-                    const struct assh_key_ops_s *algo,
+                    const struct assh_key_algo_s *algo,
                     const uint8_t **blob_, size_t blob_len,
                     struct assh_key_s **key,
                     enum assh_key_format_e format,
@@ -380,7 +380,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_ed25519_create)
 }
 #endif
 
-const struct assh_key_ops_s assh_key_ed25519 =
+const struct assh_key_algo_s assh_key_ed25519 =
 {
   .name = "ssh-ed25519",
   .min_bits = 255,
@@ -449,7 +449,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_eddsa_e382_create)
 }
 #endif
 
-const struct assh_key_ops_s assh_key_eddsa_e382 =
+const struct assh_key_algo_s assh_key_eddsa_e382 =
 {
   .name = "eddsa-e382-shake256@libassh.org",
   .min_bits = 382,
@@ -526,7 +526,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_eddsa_e521_create)
 }
 #endif
 
-const struct assh_key_ops_s assh_key_eddsa_e521 =
+const struct assh_key_algo_s assh_key_eddsa_e521 =
 {
   .name = "eddsa-e521-shake256@libassh.org",
   .min_bits = 521,

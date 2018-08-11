@@ -83,7 +83,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_none_create)
 }
 #endif
 
-const struct assh_key_ops_s assh_key_none =
+const struct assh_key_algo_s assh_key_none =
 {
   .name = "none",
   .min_bits = 0,

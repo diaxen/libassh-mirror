@@ -15,7 +15,7 @@
 
 struct tests_s
 {
-  const struct assh_key_ops_s *algo;
+  const struct assh_key_algo_s *algo;
   size_t bits_min, bits_max;
   enum assh_key_format_e format;
   const char *pass, *comment;
@@ -60,7 +60,7 @@ static assh_error_t test_algo(struct assh_context_s *c)
     };
 
   const struct tests_s *t;
-  const struct assh_key_ops_s *algo = NULL;
+  const struct assh_key_algo_s *algo = NULL;
   size_t bits_min = 0, bits_max = 0;
   struct assh_key_s *key1 = NULL, *key2;
 
@@ -198,7 +198,7 @@ static assh_error_t test_helper(struct assh_context_s *c)
     };
 
   const struct tests_s *t;
-  const struct assh_key_ops_s *algo = NULL;
+  const struct assh_key_algo_s *algo = NULL;
   size_t bits_min = 0, bits_max = 0;
   struct assh_key_s *key1 = NULL, *key2;
 

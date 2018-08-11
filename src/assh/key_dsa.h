@@ -51,7 +51,7 @@ struct assh_key_dsa_s
 ASSH_FIRST_FIELD_ASSERT(assh_key_dsa_s, key);
 
 /** Key operations descriptor for DSA keys */
-extern const struct assh_key_ops_s assh_key_dsa;
+extern const struct assh_key_algo_s assh_key_dsa;
 
 /** @internal */
 #define ASSH_DSA_ID     "\x00\x00\x00\x07ssh-dss"

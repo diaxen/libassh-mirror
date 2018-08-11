@@ -73,9 +73,9 @@ static FILE * get_file(const char *file, const char *mode)
   exit(1);
 }
 
-static const struct assh_key_ops_s * get_type(const char *type)
+static const struct assh_key_algo_s * get_type(const char *type)
 {
-  const struct assh_key_ops_s **types = assh_key_algo_table;
+  const struct assh_key_algo_s **types = assh_key_algo_table;
   unsigned i;
   if (type)
     for (i = 0; types[i] != NULL; i++)
@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
   assh_bool_t no_outpass = 0;
   enum assh_key_format_e ifmt = ASSH_KEY_FMT_NONE;
   enum assh_key_format_e ofmt = ASSH_KEY_FMT_NONE;
-  const struct assh_key_ops_s *type = NULL;
+  const struct assh_key_algo_s *type = NULL;
   const char *passphrase = NULL;
   const char *comment = NULL;
   FILE *ifile = NULL;

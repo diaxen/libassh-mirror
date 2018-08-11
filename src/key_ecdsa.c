@@ -243,7 +243,7 @@ static ASSH_KEY_CLEANUP_FCN(assh_key_ecdsa_cleanup)
 #ifdef CONFIG_ASSH_KEY_CREATE
 static assh_error_t
 assh_key_ecdsa_create(struct assh_context_s *c,
-                      const struct assh_key_ops_s *algo,
+                      const struct assh_key_algo_s *algo,
                       struct assh_key_s **key,
                       const struct assh_key_ecdsa_id_s *id)
 {
@@ -540,7 +540,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_ecdsa_nistp_create)
 }
 #endif
 
-const struct assh_key_ops_s assh_key_ecdsa_nistp =
+const struct assh_key_algo_s assh_key_ecdsa_nistp =
 {
   .name = "ecdsa-sha2-nist",
   .min_bits = 256,

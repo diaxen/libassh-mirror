@@ -385,7 +385,7 @@ assh_client_print_string(FILE *out, const struct assh_cbuffer_s *str)
 static assh_error_t
 assh_client_load_key_passphrase(struct assh_context_s *c, FILE *out, FILE *in,
 				struct assh_key_s **head,
-				const struct assh_key_ops_s *algo,
+				const struct assh_key_algo_s *algo,
 				enum assh_algo_class_e role,
 				const char *filename,
 				enum assh_key_format_e format)

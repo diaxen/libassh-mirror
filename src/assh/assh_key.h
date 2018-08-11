@@ -84,7 +84,7 @@ ASSH_INLINE assh_bool_t assh_key_pub_fmt(enum assh_key_format_e f)
 /** @internal @see assh_key_load_t */
 #define ASSH_KEY_LOAD_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t (n)   \
   (struct assh_context_s *c,                                            \
-   const struct assh_key_ops_s *algo,                                   \
+   const struct assh_key_algo_s *algo,                                   \
    const uint8_t **blob_, size_t blob_len,                              \
    struct assh_key_s **key,                                             \
    enum assh_key_format_e format)
@@ -97,7 +97,7 @@ typedef ASSH_KEY_LOAD_FCN(assh_key_load_t);
 /** @internal @see assh_key_create_t */
 #define ASSH_KEY_CREATE_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t (n) \
   (struct assh_context_s *c,                                            \
-   const struct assh_key_ops_s *algo,                                  \
+   const struct assh_key_algo_s *algo,                                  \
    size_t bits, struct assh_key_s **key)
 
 /** @internal @This defines the function type for the key create
@@ -168,7 +168,7 @@ typedef ASSH_KEY_CLEANUP_FCN(assh_key_cleanup_t);
 
 /** @internalmembers @This is the key algorithm descriptor of the SSH
     key module interface. */
-struct assh_key_ops_s
+struct assh_key_algo_s
 {
   const char *name;
 
@@ -198,7 +198,7 @@ struct assh_key_ops_s
 };
 
 /** @tt NULL terminated array of key algorithms supported by the library. */
-extern const struct assh_key_ops_s *assh_key_algo_table[];
+extern const struct assh_key_algo_s *assh_key_algo_table[];
 
 /** @This describes a key format.
     @see assh_key_format_table */
@@ -234,7 +234,7 @@ struct assh_key_s
   struct assh_key_s *next;
 
   /** Key algorithm */
-  const struct assh_key_ops_s *algo;
+  const struct assh_key_algo_s *algo;
 
   /** Class of algorithm the key is intended to be used with */
   enum assh_algo_class_e role:3;
@@ -256,7 +256,7 @@ struct assh_key_s
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_key_load(struct assh_context_s *c,
               struct assh_key_s **key,
-              const struct assh_key_ops_s *algo,
+              const struct assh_key_algo_s *algo,
               enum assh_algo_class_e role,
               enum assh_key_format_e format,
               const uint8_t **blob, size_t blob_len);
@@ -267,7 +267,7 @@ assh_key_load(struct assh_context_s *c,
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_key_create(struct assh_context_s *c,
                 struct assh_key_s **key, size_t bits,
-                const struct assh_key_ops_s *algo,
+                const struct assh_key_algo_s *algo,
                 enum assh_algo_class_e role);
 #endif
 
@@ -380,15 +380,15 @@ assh_key_safety_name(struct assh_key_s *key)
 }
 
 /** Dummy key algorithm */
-extern const struct assh_key_ops_s assh_key_none;
+extern const struct assh_key_algo_s assh_key_none;
 
 /** @This find a key algorithm with matching  name in a @tt NULL
     terminated array of pointers to algorithm descriptors. @see
     assh_key_algo_table */
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_key_algo_by_name_static(const struct assh_key_ops_s **table,
+assh_key_algo_by_name_static(const struct assh_key_algo_s **table,
                              const char *name, size_t name_len,
-                             const struct assh_key_ops_s **algo);
+                             const struct assh_key_algo_s **algo);
 
 #endif
 

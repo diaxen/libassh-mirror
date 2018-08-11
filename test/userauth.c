@@ -61,7 +61,7 @@ struct test_key_s
 static struct test_key_s keys[TEST_KEYS_COUNT];
 
 struct {
-  const struct assh_key_ops_s *algo;
+  const struct assh_key_algo_s *algo;
   size_t bits;
 } keys_algo[TEST_KEYS_COUNT] = {
   { &assh_key_rsa, 1024 },
