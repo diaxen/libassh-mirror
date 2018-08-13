@@ -199,6 +199,8 @@ enum assh_error_e
   ASSH_ERR_MISSING_KEY             = 0x110,
   /** The required algorithm is not available. */
   ASSH_ERR_MISSING_ALGO            = 0x111,
+  /** The key failed to decipher */
+  ASSH_ERR_WRONG_KEY               = 0x112,
   /** The host key verification has failed */
   ASSH_ERR_HOSTKEY_SIGNATURE       = 0x113,
   /** The requested service is not available */

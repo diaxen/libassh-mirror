@@ -254,13 +254,16 @@ int main(int argc, char *argv[])
             {
             case ASSH_OK:
               break;
+
+            case ASSH_ERR_WRONG_KEY:
+              fprintf(stderr, "bad passphrase\n");
+              if (passphrase != NULL)
+                ERROR("Unable to load key\n"); /* do not retry with -p */
             case ASSH_ERR_MISSING_KEY:
-              if (p == NULL)
-                {
-                  p = get_passphrase("input key passphrase: ", context);
-                  fseek(ifile, 0, SEEK_SET);
-                  continue;
-                }
+              p = get_passphrase("input key passphrase: ", context);
+              fseek(ifile, 0, SEEK_SET);
+              continue;
+
             default:
               if (ifmt == ASSH_KEY_FMT_NONE)
                 ERROR("Unable to guess input key format, use -g\n");

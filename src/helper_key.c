@@ -269,9 +269,9 @@ assh_load_rfc4716_rfc1421(struct assh_context_s *c, FILE *file,
 
       /* check padding content */
       uint8_t j = kdata[len - 1];
-      ASSH_JMP_IF_TRUE(j < 1 || j > cipher->block_size, ASSH_ERR_BAD_DATA, err_cipher);
+      ASSH_JMP_IF_TRUE(j < 1 || j > cipher->block_size, ASSH_ERR_WRONG_KEY, err_cipher);
       for (i = len - j; i < len; i++)
-        ASSH_JMP_IF_TRUE(kdata[i] != j, ASSH_ERR_BAD_DATA, err_cipher);
+        ASSH_JMP_IF_TRUE(kdata[i] != j, ASSH_ERR_WRONG_KEY, err_cipher);
 
     err_cipher:
       cipher->f_cleanup(c, cipher_ctx);
@@ -399,8 +399,9 @@ assh_load_openssh_v1_blob(struct assh_context_s *c,
   size_t pv_len, enc_len = assh_load_u32(enc_str);
   uint8_t *enc = (uint8_t*)enc_str + 4;
   const uint8_t *pv_str, *cmt_str;
+  assh_bool_t encrypted = !!assh_ssh_string_compare(cipher_name, "none");
 
-  if (assh_ssh_string_compare(cipher_name, "none"))
+  if (encrypted)
     {
       ASSH_RET_IF_TRUE(assh_ssh_string_compare(kdf_name, "bcrypt"), ASSH_ERR_NOTSUP);
 
@@ -450,7 +451,9 @@ assh_load_openssh_v1_blob(struct assh_context_s *c,
     }
 
   ASSH_RET_ON_ERR(assh_check_array(enc, enc_len, enc, 8, &pv_str));
-  ASSH_RET_IF_TRUE(assh_load_u32(enc) != assh_load_u32(enc + 4), ASSH_ERR_BAD_DATA);
+
+  ASSH_RET_IF_TRUE(assh_load_u32(enc) != assh_load_u32(enc + 4),
+                   encrypted ? ASSH_ERR_WRONG_KEY : ASSH_ERR_BAD_DATA);
 
 #if 0
   /* what is specified in openssh PROTOCOL.key */
@@ -528,11 +531,18 @@ assh_load_key_file_guess(struct assh_context_s *c,
 
       ASSH_RET_IF_TRUE(fseek(file, pos, SEEK_SET), ASSH_ERR_IO);
 
-      if (assh_load_key_file(c, head, algo, role, file,
-                             i, passphrase, size_hint))
-        continue;
+      err = assh_load_key_file(c, head, algo, role, file,
+                               i, passphrase, size_hint);
 
-      return ASSH_OK;
+      switch (ASSH_ERR_ERROR(err))
+        {
+        case ASSH_ERR_MISSING_KEY:
+        case ASSH_ERR_WRONG_KEY:
+        case ASSH_OK:
+          return err;
+        default:
+          continue;
+        }
     }
 
   ASSH_RETURN(ASSH_ERR_MISSING_ALGO);
