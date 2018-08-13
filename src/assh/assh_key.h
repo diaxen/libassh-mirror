@@ -60,6 +60,12 @@ enum assh_key_format_e
   ASSH_KEY_FMT_PUB_RFC4253,
   /** Public key in legacy openssh base64 format. */
   ASSH_KEY_FMT_PUB_OPENSSH,
+  /** Keys openssh-key-v1 base64 format.
+      Load public key part only */
+  ASSH_KEY_FMT_PUB_OPENSSH_V1,
+  /** Keys blob openssh-key-v1 binary format,
+      Load public key part only */
+  ASSH_KEY_FMT_PUB_OPENSSH_V1_BLOB,
   /** Public key in rfc2440 like format.
       Base64 encoding of @ref ASSH_KEY_FMT_PUB_PEM_ASN1. */
   ASSH_KEY_FMT_PUB_PEM,
@@ -209,11 +215,14 @@ struct assh_key_format_desc_s
   /** A long description string for the format. */
   const char *desc;
   /** True for public key only formats. */
-  assh_bool_t public;
+  assh_bool_t public:1;
   /** True when the format is not commonly used for key storage. */
-  assh_bool_t internal;
+  assh_bool_t internal:1;
   /** True when the format supports encryption. */
-  assh_bool_t encrypted;
+  assh_bool_t encrypted:1;
+  /** True when this format is a public subset of a private format.
+      Only loading feature is provided in this case. */
+  assh_bool_t pub_part:1;
 };
 
 /** Array of descritors for key storage formats supported by the

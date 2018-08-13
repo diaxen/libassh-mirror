@@ -210,42 +210,50 @@ const struct assh_key_format_desc_s
 assh_key_format_table[ASSH_KEY_FMT_LAST + 1] = {
   [ASSH_KEY_FMT_PV_OPENSSH_V1] = {
     "openssh_v1", "openssh v1 ASCII private keys",
-    .public = 0, .internal = 0, .encrypted = 1
+    .public = 0, .internal = 0, .encrypted = 1, .pub_part = 0
   },
   [ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB] = {
     "openssh_v1_bin", "openssh_v1 underlying binary",
-    .public = 0, .internal = 1, .encrypted = 1
+    .public = 0, .internal = 1, .encrypted = 1, .pub_part = 0
   },
   [ASSH_KEY_FMT_PV_OPENSSH_V1_KEY] = {
     "openssh_v1_pv", "openssh_v1_bin underlying single private key",
-    .public = 0, .internal = 1, .encrypted = 0
+    .public = 0, .internal = 1, .encrypted = 0, .pub_part = 0
   },
   [ASSH_KEY_FMT_PV_PEM] = {
     "pem_pv", "PEM ASCII private key",
-    .public = 0, .internal = 0, .encrypted = 1
+    .public = 0, .internal = 0, .encrypted = 1, .pub_part = 0
   },
   [ASSH_KEY_FMT_PV_PEM_ASN1] = {
     "pem_pv_bin", "PEM private key underlying binary",
-    .public = 0, .internal = 1, .encrypted = 0
+    .public = 0, .internal = 1, .encrypted = 0, .pub_part = 0
   },
   [ASSH_KEY_FMT_PUB_RFC4716] = {
     "rfc4716", "ssh standard ASCII public key",
-    .public = 1, .internal = 0, .encrypted = 0
+    .public = 1, .internal = 0, .encrypted = 0, .pub_part = 0
   },
   [ASSH_KEY_FMT_PUB_RFC4253] = {
     "rfc4253", "ssh standard binary public key",
-    .public = 1, .internal = 1, .encrypted = 0
+    .public = 1, .internal = 1, .encrypted = 0, .pub_part = 0
   },
   [ASSH_KEY_FMT_PUB_OPENSSH] = {
     "openssh_pub", "openssh legacy ASCII public key",
-    .public = 1, .internal = 0, .encrypted = 0
+    .public = 1, .internal = 0, .encrypted = 0, .pub_part = 0
+  },
+  [ASSH_KEY_FMT_PUB_OPENSSH_V1] = {
+    "openssh_v1_pub", "openssh v1 ASCII key, public part",
+    .public = 1, .internal = 0, .encrypted = 0, .pub_part = 1
+  },
+  [ASSH_KEY_FMT_PUB_OPENSSH_V1_BLOB] = {
+    "openssh_v1_pub_bin", "openssh_v1 underlying binary, public part",
+    .public = 1, .internal = 1, .encrypted = 0, .pub_part = 1
   },
   [ASSH_KEY_FMT_PUB_PEM] = {
     "pem_pub", "PEM ASCII public key",
-    .public = 0, .internal = 0, .encrypted = 0
+    .public = 1, .internal = 0, .encrypted = 0, .pub_part = 0
   },
   [ASSH_KEY_FMT_PUB_PEM_ASN1] = {
     "pem_pub_bin", "PEM public key underlying binary",
-    .public = 0, .internal = 1, .encrypted = 0
+    .public = 1, .internal = 1, .encrypted = 0, .pub_part = 0
   },
 };
