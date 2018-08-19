@@ -333,7 +333,8 @@ enum assh_bignum_opcode_e
   ASSH_BIGNUM_OP_TRACE     = 35,
   ASSH_BIGNUM_OP_SHRINK    = 36,
   ASSH_BIGNUM_OP_NOP       = 37,
-  ASSH_BIGNUM_OP_ISTRIVIAL   = 38,
+  ASSH_BIGNUM_OP_ISTRIVIAL = 38,
+  ASSH_BIGNUM_OP_MOVEA     = 39,
 };
 
 /** @internal */
@@ -364,6 +365,14 @@ enum assh_bignum_opcode_e
     formats. It is equivalent to the @ref assh_bignum_convert_t function. */
 #define ASSH_BOP_MOVE(dst, src) \
   ASSH_BOP_FMT3(ASSH_BIGNUM_OP_MOVE, 0, dst, src)
+
+/** @mgroup{Bytecode instructions}
+    @internal This instruction is similar to @ref ASSH_BOP_MOVE.
+    Once the bignum has been written, the next argument is set to
+    point after the output, so that multiple serialized bignums can
+    be made contiguous.*/
+#define ASSH_BOP_MOVEA(dst, src) \
+  ASSH_BOP_FMT3(ASSH_BIGNUM_OP_MOVEA, 0, dst, src)
 
 /** @mgroup{Bytecode instructions}
     @internal Same behavior as @ref #ASSH_BOP_MOVE, set the secret

@@ -492,15 +492,19 @@ assh_bignum_builtin_bytecode(struct assh_context_s *c, uint8_t cond,
         case ASSH_BIGNUM_OP_END:
           goto end;
 
+        case ASSH_BIGNUM_OP_MOVEA:
         case ASSH_BIGNUM_OP_MOVE: {
           void *dst = args[oc];
           uint8_t *next;
           ASSH_JMP_ON_ERR(assh_bignum_builtin_convert(c,
                     format[od], format[oc], args[od], dst, &next, ob), err_sc);
 
-          /* deduce pointer of next buffer arg */
-          if (oc + 1 < flen && args[oc + 1] == NULL)
-            args[oc + 1] = next;
+          if (op == ASSH_BIGNUM_OP_MOVEA)
+            {
+              /* deduce pointer of next buffer arg */
+              assert(oc + 1 < flen);
+              args[oc + 1] = next;
+            }
 
 #if defined(CONFIG_ASSH_DEBUG_BIGNUM_TRACE)
           switch (format[oc])

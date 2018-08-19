@@ -179,7 +179,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_ecdsa_generate)
     ASSH_BOP_PRINT(     T1,    'S'                      ),
 #endif
 
-    ASSH_BOP_MOVE(      R_mpint,	T0              ),
+    ASSH_BOP_MOVEA(     R_mpint,	T0              ),
     ASSH_BOP_MOVE(      S_mpint,	T1              ),
 
     ASSH_BOP_END(),
