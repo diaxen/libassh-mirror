@@ -419,5 +419,41 @@ ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_strdup(struct assh_context_s *c, char **r,
             const char *str, enum assh_alloc_type_e type);
 
+/** @This scans a sequence of numbers and data fields and
+    optionnaly test and stores their pointer and length. The @tt blob
+    and @tt blob_len values are updated when the function is successfull.
+
+    The format string may contains the following characters:
+
+    @table 2
+     @item @tt s       @item ssh string or ssh mpint object.
+     @item @tt aX      @item ASN1 object of given type in decimal.
+     @item @tt lX      @item fixed size LSB byte array object of given byte size.
+     @item @tt l       @item fixed size LSB byte array object of byte size passed in arguments.
+     @item @tt mX      @item fixed size MSB byte array object of given byte size.
+     @item @tt m       @item fixed size MSB byte array object of byte size passed in arguments.
+
+     @item @tt P       @item store pointer to last object.
+     @item @tt R       @item store pointer to content of the last object.
+     @item @tt N       @item store pointer to the next object.
+     @item @tt S       @item store size of the last object in a size_t.
+     @item @tt L       @item store size of the content of the last object in a size_t.
+     @item @tt B       @item store bits size of the bignum value of the last object as a size_t.
+
+     @item @tt T       @item check that content of last object has content size passed in arguments.
+     @item @tt HL      @item check that content of last object has size L in decimal.
+     @item @tt Q       @item check that content of last object matches a nul terminated string passed in arguments.
+     @item @tt M       @item check that content of last object matches a buffer (ptr, size) passed in arguments.
+     @item @tt EO;L;X  @item check that content of last object matches string X of len L at offset O.
+
+     @item @tt (       @item start scanning the content of the last object instead of juming over.
+                           5 levels of nesting can be used.
+     @item @tt )       @item end nested scanning
+     @item @tt SPACE   @item ignored
+    @end table
+*/
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_scan_blob(const char *format, const uint8_t **blob, size_t *blob_len, ...);
+
 #endif
 
