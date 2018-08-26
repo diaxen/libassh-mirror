@@ -1107,5 +1107,6 @@ assh_bignum_builtin_release(struct assh_context_s *ctx,
                             struct assh_bignum_s *bn)
 {
   assh_free(ctx, bn->n);
+  bn->n = NULL;
 }
 
