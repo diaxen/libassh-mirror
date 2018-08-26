@@ -389,87 +389,53 @@ static ASSH_KEY_LOAD_FCN(assh_key_ecdsa_load)
     {
     case ASSH_KEY_FMT_PUB_RFC4253:
     case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY: {
-
       /* lookup key type */
-      ASSH_RET_IF_TRUE(blob_len < 4, ASSH_ERR_INPUT_OVERFLOW);
-      size_t id_len = assh_load_u32(blob);
-      ASSH_RET_IF_TRUE(blob_len < 4 + id_len, ASSH_ERR_INPUT_OVERFLOW);
-      id = assh_key_ecdsa_lookup_name((const char*)blob + 4, id_len);
+      size_t id_len;
+      const char *id_str;
+      ASSH_RET_ON_ERR(assh_scan_blob("sRL", &blob, &blob_len,
+                                      &id_str, &id_len));
 
+      id = assh_key_ecdsa_lookup_name(id_str, id_len);
       ASSH_RET_IF_TRUE(id == NULL, ASSH_ERR_NOTSUP);
 
       size_t n = ASSH_ALIGN8(id->curve->bits) / 8;
-      size_t tlen = strlen(id->name);
-      size_t dlen = strlen(id->curve->name);
       size_t kp_len = 1 + 2 * n;
 
-      size_t min_len = /* algo id*/ 4 + tlen
-        + /* curve id */ 4 + dlen
-        + /* curve point */ 4 + kp_len;
+      ASSH_RET_ON_ERR(assh_scan_blob(/* curve name */ "sQ"
+                                     /* pub blob */ "sT("
+                                       /* encoding */ "l1 E;1;\x04"
+                                       /* X */ "lR"
+                                       /* Y */ "lR"
+                                     ")", &blob, &blob_len,
+                                      id->curve->name, kp_len,
+                                      n, &x_str, n, &y_str));
 
       if (format == ASSH_KEY_FMT_PV_OPENSSH_V1_KEY)
-        min_len += 4;           /* scalar mpint */
-
-      ASSH_RET_IF_TRUE(blob_len < min_len, ASSH_ERR_INPUT_OVERFLOW);
-
-      ASSH_RET_IF_TRUE(assh_load_u32(blob) != tlen, ASSH_ERR_BAD_DATA);
-      ASSH_RET_IF_TRUE(memcmp(id->name, blob + 4, tlen), ASSH_ERR_BAD_DATA);
-      blob += 4 + tlen;
-      blob_len -= 4 + tlen;
-
-      ASSH_RET_IF_TRUE(assh_load_u32(blob) != dlen, ASSH_ERR_BAD_DATA);
-      ASSH_RET_IF_TRUE(memcmp(id->curve->name, blob + 4, dlen), ASSH_ERR_BAD_DATA);
-      blob += 4 + dlen;
-      blob_len -= 4 + dlen;
-
-      ASSH_RET_IF_TRUE(assh_load_u32(blob) != kp_len, ASSH_ERR_BAD_DATA);
-      /* point compression not supported */
-      ASSH_RET_IF_TRUE(blob[4] != 4, ASSH_ERR_NOTSUP);
-      x_str = blob + 4 + 1;
-      y_str = blob + 4 + 1 + n;
-      s_str = blob + 4 + kp_len;
-
-      if (format == ASSH_KEY_FMT_PV_OPENSSH_V1_KEY)
-        ASSH_RET_ON_ERR(assh_check_string(blob, blob_len, s_str, blob_));
-      else
-        *blob_ = s_str;
+        ASSH_RET_ON_ERR(assh_scan_blob("sP", &blob, &blob_len, &s_str));
 
       break;
     }
 
     case ASSH_KEY_FMT_PV_PEM_ASN1: {
-      const uint8_t *seq, *seq_end, *val, *next;
+      const uint8_t *id_str, *pub_str;
+      size_t id_len, pub_len;
 
-      ASSH_RET_ON_ERR(assh_check_asn1(blob, blob_len, blob, &seq, &seq_end,
-                                   /* seq */ 0x30));
+      ASSH_RET_ON_ERR(assh_scan_blob("a48(" /* version */ "a2 H1 E;1;\x01"
+                                            /* pv key */ "a4P"
+                                            /* curve name */ "a160(a6RL)"
+                                            /* pub key */ "a161(a3RL E1;1;\x04))",
+                                     &blob, &blob_len,
+                                     &s_str, &id_str, &id_len, &pub_str, &pub_len));
 
-      /* version */
-      ASSH_RET_ON_ERR(assh_check_asn1(blob, blob_len, seq, &val, &s_str,
-                                   /* integer */ 0x02));
-      ASSH_RET_IF_TRUE(val + 1 != s_str || val[0] != 1, ASSH_ERR_BAD_DATA);
-
-      /* private key */
-      ASSH_RET_ON_ERR(assh_check_asn1(blob, blob_len, s_str, NULL, &next,
-                                   /* octet string */ 0x04));
-
-      /* domain parameters */
-      ASSH_RET_ON_ERR(assh_check_asn1(blob, blob_len, next, &val, &next, 0xa0));
-      ASSH_RET_ON_ERR(assh_check_asn1(blob, blob_len, val, &val, NULL, 0x06));
-      id = assh_key_ecdsa_lookup_oid(val, next - val);
-
+      id = assh_key_ecdsa_lookup_oid(id_str, id_len);
       ASSH_RET_IF_TRUE(id == NULL, ASSH_ERR_NOTSUP);
       size_t n = ASSH_ALIGN8(id->curve->bits) / 8;
 
-      /* public key */
-      ASSH_RET_ON_ERR(assh_check_asn1(blob, blob_len, next, &val, NULL, 0xa1));
-      ASSH_RET_ON_ERR(assh_check_asn1(blob, blob_len, val, &x_str, &next, 0x03));
+      ASSH_RET_IF_TRUE(pub_len != 2 + 2 * n, ASSH_ERR_BAD_DATA);
 
-      ASSH_RET_IF_TRUE(x_str + 2 + 2 * n != next, ASSH_ERR_BAD_DATA);
-      ASSH_RET_IF_TRUE(x_str[1] != 0x04 /* no point compression */, ASSH_ERR_NOTSUP);
-      x_str += 2;
+      x_str = pub_str + 2;
       y_str = x_str + n;
 
-      *blob_ = y_str + n;
       break;
     }
 
@@ -522,7 +488,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_ecdsa_load)
   k->id = id;
 
   *key = &k->key;
-
+  *blob_ = blob;
   return ASSH_OK;
 
  err_key:

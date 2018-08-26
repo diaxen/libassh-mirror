@@ -273,58 +273,58 @@ assh_key_eddsa_load(struct assh_context_s *c,
   size_t n = ASSH_ALIGN8(curve->bits) / 8;
   size_t tlen = strlen(algo->name);
 
+  const uint8_t *pv_str;
+  const uint8_t *pub_str;
+
   /* parse the key blob */
   switch (format)
     {
-    case ASSH_KEY_FMT_PUB_RFC4253: {
-      size_t len = 4 + tlen + 4 + n;
-      ASSH_RET_ON_ERR(assh_alloc(c, sizeof(struct assh_key_eddsa_s) + n,
-                              ASSH_ALLOC_SECUR, (void**)&k));
-
-      k->key.private = 0;
-      ASSH_JMP_IF_TRUE(blob_len < len, ASSH_ERR_INPUT_OVERFLOW, err_key);
-      ASSH_JMP_IF_TRUE(assh_load_u32(blob) != tlen, ASSH_ERR_BAD_DATA, err_key);
-      ASSH_JMP_IF_TRUE(memcmp(algo->name, blob + 4, tlen), ASSH_ERR_BAD_DATA, err_key);
-      const uint8_t *p = (uint8_t*)blob + 4 + tlen;
-      ASSH_JMP_IF_TRUE(assh_load_u32(p) != n, ASSH_ERR_BAD_DATA, err_key);
-      memcpy(k->data, p + 4, n);
-
-      *blob_ = p + 4 + n;
+    case ASSH_KEY_FMT_PUB_RFC4253:
+      ASSH_RET_ON_ERR(assh_scan_blob(/* curve name */ "sQ"
+                                     /* pub key */ "sTR",
+                                     &blob, &blob_len,
+                                     algo->name, n, &pub_str));
       break;
-    }
 
-    case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY: {
-      size_t len = 4 + tlen + 4 + n + 4 + 2 * n;
-      ASSH_RET_ON_ERR(assh_alloc(c, sizeof(struct assh_key_eddsa_s) + 2 * n,
-                              ASSH_ALLOC_SECUR, (void**)&k));
-
-      k->key.private = 1;
-      ASSH_JMP_IF_TRUE(blob_len < len, ASSH_ERR_INPUT_OVERFLOW, err_key);
-      ASSH_JMP_IF_TRUE(assh_load_u32(blob) != tlen, ASSH_ERR_BAD_DATA, err_key);
-      ASSH_JMP_IF_TRUE(memcmp(algo->name, blob + 4, tlen), ASSH_ERR_BAD_DATA, err_key);
-      const uint8_t *p = (uint8_t*)blob + 4 + tlen;
-      ASSH_JMP_IF_TRUE(assh_load_u32(p) != n, ASSH_ERR_BAD_DATA, err_key);
-      memcpy(k->data, p + 4, n);
-      const uint8_t *s = p + 4 + n;
-      ASSH_JMP_IF_TRUE(assh_load_u32(s) != 2 * n, ASSH_ERR_BAD_DATA, err_key);
-      ASSH_JMP_IF_TRUE(memcmp(p + 4, s + 4 + n, n), ASSH_ERR_BAD_DATA, err_key);
-      memcpy(k->data + n, s + 4, n);
-
-      *blob_ = s + 4 + 2 * n;
+    case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY:
+      ASSH_RET_ON_ERR(assh_scan_blob(/* curve name */ "sQ"
+                                     /* pub key */ "sT"
+                                     /* pv+pub key */ "sT("
+                                       /* pv key */  "lR"
+                                       /* pub key */ "lR"
+                                     ")", &blob, &blob_len,
+                                     algo->name, n, 2 * n,
+                                     n, &pv_str, n, &pub_str));
       break;
-    }
 
     default:
       ASSH_RETURN(ASSH_ERR_NOTSUP);
     }
 
+  ASSH_RET_ON_ERR(assh_alloc(c, sizeof(struct assh_key_eddsa_s) + 2 * n,
+                             ASSH_ALLOC_SECUR, (void**)&k));
+
+  k->key.private = 0;
   k->key.algo = algo;
   k->key.type = algo->name;
   k->key.safety = curve->safety;
   k->curve = curve;
   k->hash = hash;
 
+  switch (format)
+    {
+    case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY:
+      memcpy(k->data + n, pv_str, n);
+      k->key.private = 1;
+    case ASSH_KEY_FMT_PUB_RFC4253:
+      memcpy(k->data, pub_str, n);
+      break;
+    default:
+      ASSH_UNREACHABLE();
+    }
+
   *key = &k->key;
+  *blob_ = blob;
   return ASSH_OK;
 
  err_key:
