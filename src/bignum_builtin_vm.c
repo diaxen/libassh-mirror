@@ -167,6 +167,7 @@ assh_bignum_builtin_print(void *arg, enum assh_bignum_fmt_e fmt,
     {
     case ASSH_BIGNUM_NATIVE:
     case ASSH_BIGNUM_TEMP:
+    case ASSH_BIGNUM_MT:
       fprintf(stderr, "[bits=%zu] ", src->bits);
       if (src->secret)
         fprintf(stderr, "secret ");
