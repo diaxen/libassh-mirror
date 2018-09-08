@@ -268,7 +268,7 @@ assh_key_eddsa_load(struct assh_context_s *c,
   assh_error_t err;
 
   /* allocate key structure */
-  struct assh_key_eddsa_s *k;
+  struct assh_key_eddsa_s *k = (void*)*key;
 
   size_t n = ASSH_ALIGN8(curve->bits) / 8;
   size_t tlen = strlen(algo->name);
@@ -280,6 +280,8 @@ assh_key_eddsa_load(struct assh_context_s *c,
   switch (format)
     {
     case ASSH_KEY_FMT_PUB_RFC4253:
+      ASSH_RET_IF_TRUE(k != NULL, ASSH_ERR_BAD_ARG);
+
       ASSH_RET_ON_ERR(assh_scan_blob(/* curve name */ "sQ"
                                      /* pub key */ "sTR",
                                      &blob, &blob_len,
@@ -287,6 +289,8 @@ assh_key_eddsa_load(struct assh_context_s *c,
       break;
 
     case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY:
+      ASSH_RET_IF_TRUE(k != NULL, ASSH_ERR_BAD_ARG);
+
       ASSH_RET_ON_ERR(assh_scan_blob(/* curve name */ "sQ"
                                      /* pub key */ "sT"
                                      /* pv+pub key */ "sT("
@@ -301,15 +305,18 @@ assh_key_eddsa_load(struct assh_context_s *c,
       ASSH_RETURN(ASSH_ERR_NOTSUP);
     }
 
-  ASSH_RET_ON_ERR(assh_alloc(c, sizeof(struct assh_key_eddsa_s) + 2 * n,
-                             ASSH_ALLOC_SECUR, (void**)&k));
+  if (k == NULL)
+    {
+      ASSH_RET_ON_ERR(assh_alloc(c, sizeof(struct assh_key_eddsa_s) + 2 * n,
+                                 ASSH_ALLOC_SECUR, (void**)&k));
 
-  k->key.private = 0;
-  k->key.algo = algo;
-  k->key.type = algo->name;
-  k->key.safety = curve->safety;
-  k->curve = curve;
-  k->hash = hash;
+      k->key.private = 0;
+      k->key.algo = algo;
+      k->key.type = algo->name;
+      k->key.safety = curve->safety;
+      k->curve = curve;
+      k->hash = hash;
+    }
 
   switch (format)
     {
@@ -326,10 +333,6 @@ assh_key_eddsa_load(struct assh_context_s *c,
   *key = &k->key;
   *blob_ = blob;
   return ASSH_OK;
-
- err_key:
-  assh_free(c, k);
-  return err;
 }
 
 static ASSH_KEY_CLEANUP_FCN(assh_key_eddsa_cleanup)

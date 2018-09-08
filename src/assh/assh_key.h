@@ -223,6 +223,9 @@ struct assh_key_format_desc_s
   /** True when this format is a public subset of a private format.
       Only loading feature is provided in this case. */
   assh_bool_t pub_part:1;
+  /** True when this format only contains the private key data. The
+      loading function will complete an exisiting public key. */
+  assh_bool_t pv_part:1;
 };
 
 /** Array of descritors for key storage formats supported by the
@@ -269,6 +272,12 @@ assh_key_load(struct assh_context_s *c,
               enum assh_algo_class_e role,
               enum assh_key_format_e format,
               const uint8_t **blob, size_t blob_len);
+
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_key_load_pv(struct assh_context_s *c,
+                 struct assh_key_s *key,
+                 enum assh_key_format_e format,
+                 const uint8_t **blob, size_t blob_len);
 
 #ifdef CONFIG_ASSH_KEY_CREATE
 /** @This creates a new key of specified type and bits

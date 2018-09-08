@@ -96,7 +96,7 @@ assh_error_t assh_key_load(struct assh_context_s *c,
     algo = assh_key_algo_guess(c, format, *blob, blob_len, role);
   ASSH_RET_IF_TRUE(algo == NULL, ASSH_ERR_MISSING_ALGO);
 
-  struct assh_key_s *k;
+  struct assh_key_s *k = NULL;
 
   ASSH_RET_ON_ERR(algo->f_load(c, algo, blob, blob_len, &k, format));
 
@@ -106,6 +106,19 @@ assh_error_t assh_key_load(struct assh_context_s *c,
   k->stored = 0;
   k->comment = NULL;
   *key = k;
+
+  return ASSH_OK;
+}
+
+assh_error_t
+assh_key_load_pv(struct assh_context_s *c,
+                 struct assh_key_s *key,
+                 enum assh_key_format_e format,
+                 const uint8_t **blob, size_t blob_len)
+{
+  assh_error_t err;
+
+  ASSH_RET_ON_ERR(key->algo->f_load(c, key->algo, blob, blob_len, &key, format));
 
   return ASSH_OK;
 }
