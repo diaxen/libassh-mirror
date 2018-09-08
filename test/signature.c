@@ -32,7 +32,7 @@ struct algo_s algos[] = {
     "\xe3\x4a\x1b\x20\x23\xfc\xd9\x6a\x9b\xd6\x2e\x43\x21\xdf\xa3\xc6"
     "\x24\xa7\x47\x84\x1a\x8b\xf1" },
 
-  { &assh_sign_rsa_sha1_md5,    rsa1024_key, 1, 1024, 1024, sizeof(rsa1024_key),
+  { &assh_sign_rsa_sha1_md5,    rsa1024_key, 1, 1024, 1536, sizeof(rsa1024_key),
     143, (const uint8_t *)
     "\x00\x00\x00\x07\x73\x73\x68\x2d\x72\x73\x61\x00\x00\x00\x80\x4d"
     "\x18\xf5\xdf\xea\x0c\x3e\x15\xa0\x75\x50\x8b\x4f\x56\xa3\x3d\x6e"
@@ -376,7 +376,7 @@ assh_error_t test_load(unsigned int max_size)
           memcpy(key_blob, algos[i].key, sizeof(key_blob));
 	  int bad = j > 0;
 
-	  if (bad)		/* mangle key blob on odd iterations */
+	  if (bad)
 	    {
 	      unsigned int r1 = assh_prng_rand() % sizeof(key_blob);
 	      unsigned char r2 = assh_prng_rand();
@@ -435,7 +435,7 @@ int main(int argc, char **argv)
     ASSH_RET_ON_ERR(assh_algo_register_va(context, 0, 0, 0, algos[i].algo, NULL));
 
   assh_prng_seed(s);
-  fprintf(stderr, "\nSeed: %u\n", s);
+  fprintf(stderr, "Seed: %u", s);
 
   if (test_const())
     return 1;

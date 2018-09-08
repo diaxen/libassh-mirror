@@ -1,5 +1,7 @@
 
 #include <assh/assh_key.h>
+#include <assh/assh_sign.h>
+#include <assh/assh_cipher.h>
 #include <assh/helper_key.h>
 
 #include <assh/key_rsa.h>
@@ -18,43 +20,65 @@ struct tests_s
   const struct assh_key_algo_s *algo;
   size_t bits_min, bits_max;
   enum assh_key_format_e format;
+  assh_bool_t private;
   const char *pass, *comment;
 };
 
+static void
+test_sign(struct assh_context_s *c,
+	  struct assh_key_s *pvkey, struct assh_key_s *pubkey)
+{
+  const struct assh_algo_sign_s *salgo;
+  TEST_ASSERT(!assh_algo_by_key(c, pvkey, NULL,
+	         (const struct assh_algo_s **)&salgo));
+
+  struct assh_cbuffer_s buf;
+  buf.str = "test";
+  buf.len = 4;
+
+  size_t slen;
+  TEST_ASSERT(!assh_sign_generate(c, salgo, pvkey, 1, &buf, NULL, &slen));
+  uint8_t sign[slen];
+  TEST_ASSERT(!assh_sign_generate(c, salgo, pvkey, 1, &buf, sign, &slen));
+
+  assh_safety_t safety;
+  TEST_ASSERT(!assh_sign_check(c, salgo, pubkey, 1, &buf, sign, slen, &safety));
+}
+
 /* test key blob load/store functions implemented in key modules */
-static assh_error_t test_algo(struct assh_context_s *c)
+static assh_error_t test_algo(struct assh_context_s *c, size_t count)
 {
   static const struct tests_s algo_tests[] =
     {
-      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PUB_RFC4253 },
-      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PUB_PEM_ASN1 },
-      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY },
-      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PV_PEM_ASN1 },
+      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PUB_PEM_ASN1, 0 },
+      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
+      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PV_PEM_ASN1, 1 },
 
-      { &assh_key_dsa, 1024, 1536, ASSH_KEY_FMT_PUB_RFC4253 },
-      { &assh_key_dsa, 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY },
-      { &assh_key_dsa, 1024, 1536, ASSH_KEY_FMT_PV_PEM_ASN1 },
+      { &assh_key_dsa, 1024, 1536, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+      { &assh_key_dsa, 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
+      { &assh_key_dsa, 1024, 1536, ASSH_KEY_FMT_PV_PEM_ASN1, 1 },
 
-      { &assh_key_ecdsa_nistp, 256, 256, ASSH_KEY_FMT_PUB_RFC4253 },
-      { &assh_key_ecdsa_nistp, 256, 256, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY },
-      { &assh_key_ecdsa_nistp, 256, 256, ASSH_KEY_FMT_PV_PEM_ASN1 },
+      { &assh_key_ecdsa_nistp, 256, 256, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+      { &assh_key_ecdsa_nistp, 256, 256, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
+      { &assh_key_ecdsa_nistp, 256, 256, ASSH_KEY_FMT_PV_PEM_ASN1, 1 },
 
-      { &assh_key_ecdsa_nistp, 384, 384, ASSH_KEY_FMT_PUB_RFC4253 },
-      { &assh_key_ecdsa_nistp, 384, 384, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY },
-      { &assh_key_ecdsa_nistp, 384, 384, ASSH_KEY_FMT_PV_PEM_ASN1 },
+      { &assh_key_ecdsa_nistp, 384, 384, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+      { &assh_key_ecdsa_nistp, 384, 384, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
+      { &assh_key_ecdsa_nistp, 384, 384, ASSH_KEY_FMT_PV_PEM_ASN1, 1 },
 
-      { &assh_key_ecdsa_nistp, 521, 521, ASSH_KEY_FMT_PUB_RFC4253 },
-      { &assh_key_ecdsa_nistp, 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY },
-      { &assh_key_ecdsa_nistp, 521, 521, ASSH_KEY_FMT_PV_PEM_ASN1 },
+      { &assh_key_ecdsa_nistp, 521, 521, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+      { &assh_key_ecdsa_nistp, 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
+      { &assh_key_ecdsa_nistp, 521, 521, ASSH_KEY_FMT_PV_PEM_ASN1, 1 },
 
-      { &assh_key_ed25519, 255, 255, ASSH_KEY_FMT_PUB_RFC4253 },
-      { &assh_key_ed25519, 255, 255, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY },
+      { &assh_key_ed25519, 255, 255, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+      { &assh_key_ed25519, 255, 255, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
 
-      { &assh_key_eddsa_e382, 382, 382, ASSH_KEY_FMT_PUB_RFC4253 },
-      { &assh_key_eddsa_e382, 382, 382, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY },
+      { &assh_key_eddsa_e382, 382, 382, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+      { &assh_key_eddsa_e382, 382, 382, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
 
-      { &assh_key_eddsa_e521, 521, 521, ASSH_KEY_FMT_PUB_RFC4253 },
-      { &assh_key_eddsa_e521, 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY },
+      { &assh_key_eddsa_e521, 521, 521, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+      { &assh_key_eddsa_e521, 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
 
       { NULL }
     };
@@ -62,15 +86,24 @@ static assh_error_t test_algo(struct assh_context_s *c)
   const struct tests_s *t;
   const struct assh_key_algo_s *algo = NULL;
   size_t bits_min = 0, bits_max = 0;
+  enum assh_key_format_e format = ASSH_KEY_FMT_NONE;
   struct assh_key_s *key1 = NULL, *key2;
+  size_t i;
 
   for (t = algo_tests; t->algo != NULL; t++)
+   for (i = 0; i < count; i++)
     {
+      if (format != t->format || t->algo != algo)
+	{
+	  format = t->format;
+	  fprintf(stderr, "\n%s, %s format: ",
+		  t->algo->name, assh_key_format_table[t->format].name);
+	}
+
       if (t->algo != algo || t->bits_min != bits_min || t->bits_max != bits_max)
 	{
 	  /* create new key */
 	  size_t bits = t->bits_min + assh_prng_rand() % (t->bits_max - t->bits_min + 1);
-	  fprintf(stderr, "\nkey type: %s, size: %zu\n", t->algo->name, bits);
 	  assh_key_drop(c, &key1);
 	  TEST_ASSERT(!assh_key_create(c, &key1, bits, t->algo, ASSH_ALGO_SIGN));
 	}
@@ -103,6 +136,13 @@ static assh_error_t test_algo(struct assh_context_s *c)
       /* check loaded blob end pointer */
       TEST_ASSERT(blob1 + blob_len2 == blob2);
 
+      TEST_ASSERT(assh_key_cmp(c, key1, key2, !t->private));
+      TEST_ASSERT(assh_key_cmp(c, key2, key1, !t->private));
+
+      test_sign(c, key1, key2);
+      if (t->private)
+	test_sign(c, key2, key1);
+
       algo = t->algo;
       bits_min = t->bits_min;
       bits_max = t->bits_max;
@@ -117,82 +157,82 @@ static assh_error_t test_algo(struct assh_context_s *c)
 }
 
 /* test key container load/save functions implemented in helpers */
-static assh_error_t test_helper(struct assh_context_s *c)
+static assh_error_t test_helper(struct assh_context_s *c, size_t count)
 {
   static const struct tests_s helper_tests[] =
     {
-      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PUB_RFC4253 },
-      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PUB_RFC4716 },
-      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PUB_RFC4716, NULL, "com ent" },
-      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PUB_OPENSSH },
-      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PUB_OPENSSH, NULL, "com ent" },
-      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PUB_PEM_ASN1 },
-      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PUB_PEM },
-      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY },
-      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB },
-      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1 },
-      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1, NULL, "com ent" },
-      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1, "passphrase" },
-      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1, "passphrase", "com ent" },
-      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PV_PEM_ASN1 },
-      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PV_PEM },
-      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PV_PEM, "passphrase" },
+      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PUB_RFC4716, 0 },
+      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PUB_RFC4716, 0, NULL, "com ent" },
+      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PUB_OPENSSH, 0 },
+      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PUB_OPENSSH, 0, NULL, "com ent" },
+      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PUB_PEM_ASN1, 0 },
+      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PUB_PEM, 0 },
+      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
+      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB, 1 },
+      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1, 1 },
+      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1, 1, NULL, "com ent" },
+      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1, 1, "passphrase" },
+      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1, 1, "passphrase", "com ent" },
+      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PV_PEM_ASN1, 1 },
+      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PV_PEM, 1 },
+      { &assh_key_rsa, 1024, 1536, ASSH_KEY_FMT_PV_PEM, 1, "passphrase" },
 
-      { &assh_key_dsa, 1024, 1536, ASSH_KEY_FMT_PUB_RFC4253 },
-      { &assh_key_dsa, 1024, 1536, ASSH_KEY_FMT_PUB_RFC4716 },
-      { &assh_key_dsa, 1024, 1536, ASSH_KEY_FMT_PUB_OPENSSH },
-      { &assh_key_dsa, 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY },
-      { &assh_key_dsa, 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB },
-      { &assh_key_dsa, 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1 },
-      { &assh_key_dsa, 1024, 1536, ASSH_KEY_FMT_PV_PEM_ASN1 },
-      { &assh_key_dsa, 1024, 1536, ASSH_KEY_FMT_PV_PEM },
-      { &assh_key_dsa, 1024, 1536, ASSH_KEY_FMT_PV_PEM, "passphrase" },
+      { &assh_key_dsa, 1024, 1536, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+      { &assh_key_dsa, 1024, 1536, ASSH_KEY_FMT_PUB_RFC4716, 0 },
+      { &assh_key_dsa, 1024, 1536, ASSH_KEY_FMT_PUB_OPENSSH, 0 },
+      { &assh_key_dsa, 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
+      { &assh_key_dsa, 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB, 1 },
+      { &assh_key_dsa, 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1, 1 },
+      { &assh_key_dsa, 1024, 1536, ASSH_KEY_FMT_PV_PEM_ASN1, 1 },
+      { &assh_key_dsa, 1024, 1536, ASSH_KEY_FMT_PV_PEM, 1 },
+      { &assh_key_dsa, 1024, 1536, ASSH_KEY_FMT_PV_PEM, 1, "passphrase" },
 
-      { &assh_key_ecdsa_nistp, 256, 256, ASSH_KEY_FMT_PUB_RFC4253 },
-      { &assh_key_ecdsa_nistp, 256, 256, ASSH_KEY_FMT_PUB_RFC4716 },
-      { &assh_key_ecdsa_nistp, 256, 256, ASSH_KEY_FMT_PUB_OPENSSH },
-      { &assh_key_ecdsa_nistp, 256, 256, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY },
-      { &assh_key_ecdsa_nistp, 256, 256, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB },
-      { &assh_key_ecdsa_nistp, 256, 256, ASSH_KEY_FMT_PV_OPENSSH_V1 },
-      { &assh_key_ecdsa_nistp, 256, 256, ASSH_KEY_FMT_PV_OPENSSH_V1, "passphrase" },
-      { &assh_key_ecdsa_nistp, 256, 256, ASSH_KEY_FMT_PV_PEM_ASN1 },
-      { &assh_key_ecdsa_nistp, 256, 256, ASSH_KEY_FMT_PV_PEM },
-      { &assh_key_ecdsa_nistp, 256, 256, ASSH_KEY_FMT_PV_PEM, "passphrase" },
+      { &assh_key_ecdsa_nistp, 256, 256, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+      { &assh_key_ecdsa_nistp, 256, 256, ASSH_KEY_FMT_PUB_RFC4716, 0 },
+      { &assh_key_ecdsa_nistp, 256, 256, ASSH_KEY_FMT_PUB_OPENSSH, 0 },
+      { &assh_key_ecdsa_nistp, 256, 256, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
+      { &assh_key_ecdsa_nistp, 256, 256, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB, 1 },
+      { &assh_key_ecdsa_nistp, 256, 256, ASSH_KEY_FMT_PV_OPENSSH_V1, 1 },
+      { &assh_key_ecdsa_nistp, 256, 256, ASSH_KEY_FMT_PV_OPENSSH_V1, 1, "passphrase" },
+      { &assh_key_ecdsa_nistp, 256, 256, ASSH_KEY_FMT_PV_PEM_ASN1, 1 },
+      { &assh_key_ecdsa_nistp, 256, 256, ASSH_KEY_FMT_PV_PEM, 1 },
+      { &assh_key_ecdsa_nistp, 256, 256, ASSH_KEY_FMT_PV_PEM, 1, "passphrase" },
 
-      { &assh_key_ecdsa_nistp, 521, 521, ASSH_KEY_FMT_PUB_RFC4253 },
-      { &assh_key_ecdsa_nistp, 521, 521, ASSH_KEY_FMT_PUB_RFC4716 },
-      { &assh_key_ecdsa_nistp, 521, 521, ASSH_KEY_FMT_PUB_OPENSSH },
-      { &assh_key_ecdsa_nistp, 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY },
-      { &assh_key_ecdsa_nistp, 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB },
-      { &assh_key_ecdsa_nistp, 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1 },
-      { &assh_key_ecdsa_nistp, 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1, "passphrase" },
-      { &assh_key_ecdsa_nistp, 521, 521, ASSH_KEY_FMT_PV_PEM_ASN1 },
-      { &assh_key_ecdsa_nistp, 521, 521, ASSH_KEY_FMT_PV_PEM },
-      { &assh_key_ecdsa_nistp, 521, 521, ASSH_KEY_FMT_PV_PEM, "passphrase" },
+      { &assh_key_ecdsa_nistp, 521, 521, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+      { &assh_key_ecdsa_nistp, 521, 521, ASSH_KEY_FMT_PUB_RFC4716, 0 },
+      { &assh_key_ecdsa_nistp, 521, 521, ASSH_KEY_FMT_PUB_OPENSSH, 0 },
+      { &assh_key_ecdsa_nistp, 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
+      { &assh_key_ecdsa_nistp, 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB, 1 },
+      { &assh_key_ecdsa_nistp, 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1, 1 },
+      { &assh_key_ecdsa_nistp, 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1, 1, "passphrase" },
+      { &assh_key_ecdsa_nistp, 521, 521, ASSH_KEY_FMT_PV_PEM_ASN1, 1 },
+      { &assh_key_ecdsa_nistp, 521, 521, ASSH_KEY_FMT_PV_PEM, 1 },
+      { &assh_key_ecdsa_nistp, 521, 521, ASSH_KEY_FMT_PV_PEM, 1, "passphrase" },
 
-      { &assh_key_ed25519, 255, 255, ASSH_KEY_FMT_PUB_RFC4253 },
-      { &assh_key_ed25519, 255, 255, ASSH_KEY_FMT_PUB_RFC4716 },
-      { &assh_key_ed25519, 255, 255, ASSH_KEY_FMT_PUB_OPENSSH },
-      { &assh_key_ed25519, 255, 255, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY },
-      { &assh_key_ed25519, 255, 255, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB },
-      { &assh_key_ed25519, 255, 255, ASSH_KEY_FMT_PV_OPENSSH_V1 },
-      { &assh_key_ed25519, 255, 255, ASSH_KEY_FMT_PV_OPENSSH_V1, "passphrase" },
+      { &assh_key_ed25519, 255, 255, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+      { &assh_key_ed25519, 255, 255, ASSH_KEY_FMT_PUB_RFC4716, 0 },
+      { &assh_key_ed25519, 255, 255, ASSH_KEY_FMT_PUB_OPENSSH, 0 },
+      { &assh_key_ed25519, 255, 255, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
+      { &assh_key_ed25519, 255, 255, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB, 1 },
+      { &assh_key_ed25519, 255, 255, ASSH_KEY_FMT_PV_OPENSSH_V1, 1 },
+      { &assh_key_ed25519, 255, 255, ASSH_KEY_FMT_PV_OPENSSH_V1, 1, "passphrase" },
 
-      { &assh_key_eddsa_e382, 382, 382, ASSH_KEY_FMT_PUB_RFC4253 },
-      { &assh_key_eddsa_e382, 382, 382, ASSH_KEY_FMT_PUB_RFC4716 },
-      { &assh_key_eddsa_e382, 382, 382, ASSH_KEY_FMT_PUB_OPENSSH },
-      { &assh_key_eddsa_e382, 382, 382, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY },
-      { &assh_key_eddsa_e382, 382, 382, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB },
-      { &assh_key_eddsa_e382, 382, 382, ASSH_KEY_FMT_PV_OPENSSH_V1 },
-      { &assh_key_eddsa_e382, 382, 382, ASSH_KEY_FMT_PV_OPENSSH_V1, "passphrase" },
+      { &assh_key_eddsa_e382, 382, 382, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+      { &assh_key_eddsa_e382, 382, 382, ASSH_KEY_FMT_PUB_RFC4716, 0 },
+      { &assh_key_eddsa_e382, 382, 382, ASSH_KEY_FMT_PUB_OPENSSH, 0 },
+      { &assh_key_eddsa_e382, 382, 382, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
+      { &assh_key_eddsa_e382, 382, 382, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB, 1 },
+      { &assh_key_eddsa_e382, 382, 382, ASSH_KEY_FMT_PV_OPENSSH_V1, 1 },
+      { &assh_key_eddsa_e382, 382, 382, ASSH_KEY_FMT_PV_OPENSSH_V1, 1, "passphrase" },
 
-      { &assh_key_eddsa_e521, 521, 521, ASSH_KEY_FMT_PUB_RFC4253 },
-      { &assh_key_eddsa_e521, 521, 521, ASSH_KEY_FMT_PUB_RFC4716 },
-      { &assh_key_eddsa_e521, 521, 521, ASSH_KEY_FMT_PUB_OPENSSH },
-      { &assh_key_eddsa_e521, 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY },
-      { &assh_key_eddsa_e521, 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB },
-      { &assh_key_eddsa_e521, 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1 },
-      { &assh_key_eddsa_e521, 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1, "passphrase" },
+      { &assh_key_eddsa_e521, 521, 521, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+      { &assh_key_eddsa_e521, 521, 521, ASSH_KEY_FMT_PUB_RFC4716, 0 },
+      { &assh_key_eddsa_e521, 521, 521, ASSH_KEY_FMT_PUB_OPENSSH, 0 },
+      { &assh_key_eddsa_e521, 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
+      { &assh_key_eddsa_e521, 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB, 1 },
+      { &assh_key_eddsa_e521, 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1, 1 },
+      { &assh_key_eddsa_e521, 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1, 1, "passphrase" },
 
       { NULL }
     };
@@ -200,16 +240,25 @@ static assh_error_t test_helper(struct assh_context_s *c)
   const struct tests_s *t;
   const struct assh_key_algo_s *algo = NULL;
   size_t bits_min = 0, bits_max = 0;
+  enum assh_key_format_e format = ASSH_KEY_FMT_NONE;
   struct assh_key_s *key1 = NULL, *key2;
+  size_t i;
 
   for (t = helper_tests; t->algo != NULL; t++)
+   for (i = 0; i < count; i++)
     {
+      if (format != t->format || t->algo != algo)
+	{
+	  format = t->format;
+	  fprintf(stderr, "\n%s, %s format: ",
+		  t->algo->name, assh_key_format_table[t->format].name);
+	}
+
       if (t->algo != algo || t->bits_min != bits_min || t->bits_max != bits_max)
 	{
 	  /* create new key */
 	  assh_key_drop(c, &key1);
 	  size_t bits = t->bits_min + assh_prng_rand() % (t->bits_max - t->bits_min + 1);
-	  fprintf(stderr, "\nkey type: %s, size: %zu\n", t->algo->name, bits);
 	  TEST_ASSERT(!assh_key_create(c, &key1, bits, t->algo, ASSH_ALGO_SIGN));
 	}
 
@@ -226,7 +275,12 @@ static assh_error_t test_helper(struct assh_context_s *c)
 			  ASSH_ALGO_SIGN, "test.key", t->format, t->pass, 0));
 
       /* compare loaded key to original */
-      TEST_ASSERT(assh_key_cmp(c, key1, key2, assh_key_pub_fmt(t->format)));
+      TEST_ASSERT(assh_key_cmp(c, key1, key2, !t->private));
+      TEST_ASSERT(assh_key_cmp(c, key2, key1, !t->private));
+
+      test_sign(c, key1, key2);
+      if (t->private)
+	test_sign(c, key2, key1);
 
 #ifdef CONFIG_ASSH_KEY_VALIDATE
       /* validate loaded key */
@@ -263,22 +317,31 @@ int main(int argc, char **argv)
 			  assh_leaks_allocator, NULL, &assh_prng_weak, NULL))
     return -1;
 
-  if (assh_algo_register_default(context, 99, 10, 0) != ASSH_OK)
+  if (assh_algo_register_va(context, 0, 0, 0,
+			    &assh_cipher_aes128_cbc,
+			    &assh_cipher_aes256_cbc,
+			    &assh_sign_rsa_sha1,
+			    &assh_sign_dsa1024,
+			    &assh_sign_nistp256,
+			    &assh_sign_nistp384,
+			    &assh_sign_nistp521,
+			    &assh_sign_ed25519,
+			    &assh_sign_eddsa_e382,
+			    &assh_sign_eddsa_e521,
+			    NULL) != ASSH_OK)
     return -1;
 
-  size_t k, count = argc > 1 ? atoi(argv[1]) : 10;
+  size_t acount = argc > 1 ? atoi(argv[1]) : 10;
+  size_t hcount = argc > 2 ? atoi(argv[2]) : 2;
 
   int t = time(0);
   assh_prng_seed(t);
-  fprintf(stderr, "Seed: %u\n", t);
+  fprintf(stderr, "Seed: %u", t);
 
-  for (k = 0; k < count; k++)
-    {
-      if (test_algo(context))
-	abort();
-      if (test_helper(context))
-      	abort();
-    }
+  if (test_algo(context, acount))
+    abort();
+  if (test_helper(context, hcount))
+    abort();
 
   if (alloc_size == 0)
     TEST_FAIL("leak checking not working\n");
