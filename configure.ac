@@ -296,6 +296,8 @@ if test x$enable_assert = xno ; then
   AC_DEFINE([NDEBUG], [], [Enable assert()])
 fi
 
+AC_DEFINE([CONFIG_ASSH_VERBOSE_ERROR], [], [Include error strings in the library])
+
 if test "$GCC" = "yes" ; then
     CFLAGS="-Wall -Wno-enum-compare $CFLAGS"
 fi

@@ -194,7 +194,7 @@ const char * assh_error_str(assh_error_t err)
     [ASSH_ERR_NO_AUTH - 0x100]
     = "No more authentication method",
     [ASSH_ERR_DISCONNECTED - 0x100]
-    = "Disconnect by remote host",
+    = "Disconnected by remote host",
     [ASSH_ERR_NO_MORE_SERVICE - 0x100]
     = "No more service",
     [ASSH_ERR_CLOSED - 0x100]
@@ -270,10 +270,8 @@ assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t inerr)
     {
     case ASSH_ERR_BAD_DATA:
     case ASSH_ERR_PROTOCOL:
-#ifdef CONFIG_ASSH_VERBOSE_ERROR
       reason = SSH_DISCONNECT_PROTOCOL_ERROR;
       break;
-#endif
 
     case ASSH_ERR_INPUT_OVERFLOW:
     case ASSH_ERR_OUTPUT_OVERFLOW:
@@ -284,44 +282,11 @@ assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t inerr)
       ASSH_SET_STATE(s, tr_st, ASSH_TR_FIN);
       return inerr | ASSH_ERRSV_FIN;
 
-    case ASSH_ERR_MEM:
-      reason = SSH_DISCONNECT_RESERVED;
-#ifdef CONFIG_ASSH_VERBOSE_ERROR
-      desc = "memory resource shortage";
-#endif
-      break;
-    case ASSH_ERR_NUM_OVERFLOW:
-      reason = SSH_DISCONNECT_RESERVED;
-#ifdef CONFIG_ASSH_VERBOSE_ERROR
-      desc = "numerical overflow";
-#endif
-      break;
     case ASSH_ERR_MAC:
-#ifdef CONFIG_ASSH_VERBOSE_ERROR
-      desc = "mac error";
-#endif
       reason = SSH_DISCONNECT_MAC_ERROR;
-      break;
-    case ASSH_ERR_CRYPTO:
-#ifdef CONFIG_ASSH_VERBOSE_ERROR
-      desc = "crypto error";
-#endif
-      reason = SSH_DISCONNECT_RESERVED;
-      break;
-    case ASSH_ERR_NOTSUP:
-      desc = "not supported";
-      reason = SSH_DISCONNECT_RESERVED;
       break;
     case ASSH_ERR_KEX_FAILED:
       reason = SSH_DISCONNECT_KEY_EXCHANGE_FAILED;
-      break;
-    case ASSH_ERR_MISSING_KEY:
-      desc = "missing key";
-      reason = SSH_DISCONNECT_RESERVED;
-      break;
-    case ASSH_ERR_MISSING_ALGO:
-      desc = "algorithm not available";
-      reason = SSH_DISCONNECT_RESERVED;
       break;
     case ASSH_ERR_HOSTKEY_SIGNATURE:
       reason = SSH_DISCONNECT_HOST_KEY_NOT_VERIFIABLE;
@@ -336,14 +301,19 @@ assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t inerr)
       reason = SSH_DISCONNECT_BY_APPLICATION;
       break;
     case ASSH_ERR_WEAK_ALGORITHM:
-      desc = "weak key or algorithm parameters";
       reason = SSH_DISCONNECT_RESERVED;
       break;
     case ASSH_ERR_TIMEOUT:
-      desc = "protocol timeout";
       reason = SSH_DISCONNECT_PROTOCOL_ERROR;
       break;
+    default:
+      reason = SSH_DISCONNECT_RESERVED;
+      break;
     }
+
+#ifdef CONFIG_ASSH_VERBOSE_ERROR
+  desc = assh_error_str(inerr);
+#endif
 
   if (!(inerr & ASSH_ERRSV_DISCONNECT))
     return inerr;
