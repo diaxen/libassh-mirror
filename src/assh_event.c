@@ -162,7 +162,7 @@ assh_event_done(struct assh_session_s *s,
 #endif
 
   if (ASSH_ERR_SEVERITY(inerr) >= ASSH_ERR_SEVERITY(err))
-    err = inerr | ASSH_ERR_EXTERNAL;
+    err = inerr;
 
   if (err & 0x100)
     assh_session_error(s, err);

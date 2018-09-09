@@ -232,11 +232,6 @@ const char * assh_error_str(assh_error_t err);
     code returned by a function. This consists of ored flag values. */
 #define ASSH_ERR_SEVERITY(code) ((enum assh_error_severity_e)((code) & 0xf000))
 
-/** @This flag is set in the error code when the error has been
-    reported to the @ref assh_event_done function by the application.
-    It is cleared if the error comes from the library. */
-#define ASSH_ERR_EXTERNAL 0x10000
-
 /** @internal Log2 of smallest packet size bucket in the packet
     allocator pool. */
 #define ASSH_PCK_POOL_MIN 6

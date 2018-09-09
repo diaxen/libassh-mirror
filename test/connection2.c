@@ -638,10 +638,11 @@ void test(int (*fend)(int, int), int cnt, int evrate,
 	    case ASSH_EVENT_ERROR: {
 	      everr = ASSH_OK;
 	      err = event.error.code;
-	      if (err & ASSH_ERR_EXTERNAL)
-		break;
 	      if (ASSH_ERR_SEVERITY(err))
 		started[i] = 0;
+	      if (session[i^1].tr_st >= ASSH_TR_DISCONNECT &&
+		  (ASSH_ERR_ERROR(err) == ASSH_ERR_IO))
+		break;
 	      if (disco && (ASSH_ERR_ERROR(err) == ASSH_ERR_DISCONNECTED))
 		break;
 	      if (!evrate && !packet_fuzz && !alloc_fuzz)
