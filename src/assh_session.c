@@ -266,7 +266,7 @@ assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t inerr)
   uint32_t reason = SSH_DISCONNECT_RESERVED;
   const char *desc = NULL;
 
-  switch (inerr & 0xfff)
+  switch (ASSH_ERR_ERROR(inerr))
     {
     case ASSH_ERR_BAD_DATA:
     case ASSH_ERR_PROTOCOL:
@@ -300,14 +300,11 @@ assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t inerr)
     case ASSH_ERR_NO_MORE_SERVICE:
       reason = SSH_DISCONNECT_BY_APPLICATION;
       break;
-    case ASSH_ERR_WEAK_ALGORITHM:
-      reason = SSH_DISCONNECT_RESERVED;
-      break;
     case ASSH_ERR_TIMEOUT:
       reason = SSH_DISCONNECT_PROTOCOL_ERROR;
       break;
     default:
-      reason = SSH_DISCONNECT_RESERVED;
+      reason = SSH_DISCONNECT_PRIVATE + inerr;
       break;
     }
 

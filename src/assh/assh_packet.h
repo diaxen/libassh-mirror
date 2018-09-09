@@ -201,6 +201,7 @@ enum assh_ssh_disconnect_e
   SSH_DISCONNECT_AUTH_CANCELLED_BY_USER         = 13,
   SSH_DISCONNECT_NO_MORE_AUTH_METHODS_AVAILABLE = 14,
   SSH_DISCONNECT_ILLEGAL_USER_NAME              = 15,
+  SSH_DISCONNECT_PRIVATE                        = 0xfe000000
 };
 
 /** @internal @This allocates a new packet. The @tt buffer_size
