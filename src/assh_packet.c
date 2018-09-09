@@ -105,7 +105,7 @@ assh_packet_alloc_raw(struct assh_context_s *c, size_t raw_size,
 
   /* init */
   p->ref_count = 1;
-  p->sent = 0;
+  p->sent = p->last = 0;
   p->ctx = c;
   p->data_size = 0;
   p->alloc_size = raw_size;

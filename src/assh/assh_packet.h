@@ -93,6 +93,10 @@ struct assh_packet_s
       used. */
   uint8_t sent:1;
 
+  /** This is set for outgoing @ref SSH_MSG_DISCONNECT packets before
+      encryption. */
+  uint8_t last:1;
+
   /** Number of references to this packet. */
   uint8_t ref_count:5;
 

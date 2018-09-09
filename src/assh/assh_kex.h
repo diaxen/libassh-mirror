@@ -125,7 +125,7 @@ assh_kex_client_get_key(struct assh_session_s *s,
                         const uint8_t *ks_str, struct assh_event_s *e,
                         assh_error_t (*done)(struct assh_session_s *s,
                                              const struct assh_event_s *e,
-                                             assh_error_t inerr), void *pv);
+                                             enum assh_error_e inerr), void *pv);
 #endif
 
 #ifdef CONFIG_ASSH_SERVER

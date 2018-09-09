@@ -47,6 +47,12 @@ void assh_transport_push(struct assh_session_s *s,
 {
   struct assh_queue_s *q = &s->out_queue;
 
+  if (s->stream_out_st == ASSH_TR_OUT_CLOSED)
+    {
+      assh_packet_release(p);
+      return;
+    }
+
   /* sending of service packets is postponed during kex */
   assh_bool_t kex_msg = p->head.msg <= SSH_MSG_KEXSPEC_LAST &&
     p->head.msg != SSH_MSG_SERVICE_REQUEST &&
@@ -70,10 +76,8 @@ void assh_transport_push(struct assh_session_s *s,
       assh_queue_push_back(q, &p->entry);
       break;
 
-    case ASSH_TR_FIN:
     case ASSH_TR_CLOSED:
-      assh_packet_release(p);
-      break;
+      ASSH_UNREACHABLE();
     }
 }
 
@@ -83,8 +87,13 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
   struct assh_kex_keys_s *k = s->cur_keys_in;
   uint_fast8_t hsize = k->cipher->head_size;
 
-  size_t rd_size = ASSH_ERR_ERROR(inerr)
-    ? 0 : e->transport.read.transferred;
+  if (inerr)
+    {
+      ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_CLOSED);
+      ASSH_RETURN(inerr | ASSH_ERRSV_DISCONNECT);
+    }
+
+  size_t rd_size = e->transport.read.transferred;
 
   assert(rd_size <= e->transport.read.buf.size);
   s->stream_in_size += rd_size;
@@ -106,7 +115,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 	      {
 		ASSH_RET_IF_TRUE(strncmp((char*)s->ident_str + 4, "2.0", 3) &&
 			     strncmp((char*)s->ident_str + 4, "1.9", 3),
-			     ASSH_ERR_BAD_VERSION | ASSH_ERRSV_FIN);
+			     ASSH_ERR_BAD_VERSION | ASSH_ERRSV_DISCONNECT);
 
 		/* copy remaining unused bytes to packet header buffer */
 		memcpy(s->stream_in_stub.data, s->ident_str + i + 1, s->stream_in_size);
@@ -130,7 +139,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 	  }
 
       ASSH_RET_IF_TRUE(s->stream_in_size >= sizeof(s->ident_str),
-		   ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_FIN);
+		   ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
 
       ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_IDENT);
       return ASSH_OK;
@@ -278,6 +287,9 @@ assh_error_t assh_transport_read(struct assh_session_s *s,
   uint8_t **data = &e->transport.read.buf.data;
   size_t *size = &e->transport.read.buf.size;
 
+  if (s->tr_st >= ASSH_TR_DISCONNECT)
+    ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_CLOSED);
+
   switch (s->stream_in_st)
     {
     /* read stream into ident buffer */
@@ -307,6 +319,9 @@ assh_error_t assh_transport_read(struct assh_session_s *s,
       break;
     }
 
+    case ASSH_TR_IN_CLOSED:
+      return ASSH_OK;
+
     default:
       ASSH_UNREACHABLE();
     }
@@ -319,8 +334,15 @@ assh_error_t assh_transport_read(struct assh_session_s *s,
 
 static ASSH_EVENT_DONE_FCN(assh_event_write_done)
 {
-  size_t wr_size = ASSH_ERR_ERROR(inerr)
-    ? 0 : e->transport.write.transferred;
+  assh_error_t err;
+
+  if (inerr)
+    {
+      ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_CLOSED);
+      ASSH_RETURN(inerr);
+    }
+
+  size_t wr_size = e->transport.write.transferred;
 
   assert(wr_size <= e->transport.write.buf.size);
   s->stream_out_size += wr_size;
@@ -354,11 +376,15 @@ static ASSH_EVENT_DONE_FCN(assh_event_write_done)
       p->seq = s->out_seq++;
       p->sent = 1;
 
+      if (p->last)
+	ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_CLOSED);
+      else
+	ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_PACKETS);
+
       /* pop and release packet */
       assh_queue_remove(e);
       assh_packet_release(p);
 
-      ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_PACKETS);
       return ASSH_OK;
     }
 
@@ -378,14 +404,16 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
     {
     /* the last ident buffer write was incomplete, yield to input */
     case ASSH_TR_OUT_IDENT_PAUSE:
-      if (s->tr_st < ASSH_TR_DISCONNECT)
+      if (s->stream_in_st != ASSH_TR_IN_CLOSED &&
+	  s->tr_st < ASSH_TR_DISCONNECT)
 	ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_IDENT);
 
       return ASSH_OK;
 
     /* the write stream buffer is the constant ident string */
     case ASSH_TR_OUT_IDENT: {
-      if (s->tr_st >= ASSH_TR_DISCONNECT)
+      if (s->stream_in_st == ASSH_TR_IN_CLOSED ||
+	  s->tr_st >= ASSH_TR_DISCONNECT)
 	return ASSH_OK;
 
       *data = (uint8_t*)ASSH_IDENT + s->stream_out_size;
@@ -409,12 +437,10 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 
 	  p = (void*)assh_queue_front(q);
 	  msg = p->head.msg;
-
-	  if (s->tr_st < ASSH_TR_DISCONNECT)
-	    break;
+	  p->last = (msg == SSH_MSG_DISCONNECT);
 
 	  /* discard any packets other than SSH_MSG_DISCONNECT */
-	  if (msg == SSH_MSG_DISCONNECT)
+	  if (s->tr_st < ASSH_TR_DISCONNECT || p->last)
 	    break;
 
 	  assh_queue_remove(&p->entry);
@@ -432,7 +458,7 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
       struct assh_packet_s *p_ = p;
       /* compress payload */
       ASSH_RET_ON_ERR(k->cmp->f_process(s->ctx, k->cmp_ctx, &p, s->tr_user_auth_done)
-		   | ASSH_ERRSV_FIN);
+		   | ASSH_ERRSV_DISCONNECT);
 
       if (p_ != p)
 	{
@@ -478,7 +504,7 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 
       if (pad_len > 0)
 	ASSH_RET_ON_ERR(assh_prng_get(s->ctx, pad, pad_len, ASSH_PRNG_QUALITY_PADDING)
-		     | ASSH_ERRSV_FIN);
+		     | ASSH_ERRSV_DISCONNECT);
 
       uint32_t seq = s->out_seq;
 
@@ -487,26 +513,26 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 	  assert(k->cipher->auth_size != 0);
 	  ASSH_RET_ON_ERR(k->cipher->f_process(k->cipher_ctx, p->data,
 			    p->data_size, ASSH_CIPHER_PCK_TAIL, seq)
-		       | ASSH_ERRSV_FIN);
+		       | ASSH_ERRSV_DISCONNECT);
 	}
       else if (k->mac->etm)	/* Encrypt then Mac */
 	{
 	  ASSH_RET_ON_ERR(k->cipher->f_process(k->cipher_ctx, p->data + 4,
 			    p->data_size - mac_len - 4, ASSH_CIPHER_PCK_TAIL, seq)
-		       | ASSH_ERRSV_FIN);
+		       | ASSH_ERRSV_DISCONNECT);
 
 	  ASSH_RET_ON_ERR(k->mac->f_compute(k->mac_ctx, seq, p->data,
 			 p->data_size - mac_len, mac_ptr)
-		       | ASSH_ERRSV_FIN);
+		       | ASSH_ERRSV_DISCONNECT);
 	}
       else			/* Mac and Encrypt */
 	{
 	  ASSH_RET_ON_ERR(k->mac->f_compute(k->mac_ctx, seq, p->data,
-			 p->data_size - mac_len, mac_ptr) | ASSH_ERRSV_FIN);
+			 p->data_size - mac_len, mac_ptr) | ASSH_ERRSV_DISCONNECT);
 
 	  ASSH_RET_ON_ERR(k->cipher->f_process(k->cipher_ctx, p->data,
 			    p->data_size - mac_len, ASSH_CIPHER_PCK_TAIL, seq)
-		       | ASSH_ERRSV_FIN);
+		       | ASSH_ERRSV_DISCONNECT);
 	}
 
       ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_PACKETS_DONE);
@@ -532,7 +558,8 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 
     /* the last packet buffer write was incomplete, yield to input */
     case ASSH_TR_OUT_PACKETS_PAUSE:
-      if (s->tr_st < ASSH_TR_DISCONNECT)
+      if (s->stream_in_st != ASSH_TR_IN_CLOSED &&
+	  s->tr_st < ASSH_TR_DISCONNECT)
 	{
 	  ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_PACKETS_ENCIPHERED);
 	  return ASSH_OK;
@@ -552,6 +579,9 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 
     default:
       ASSH_UNREACHABLE();
+
+    case ASSH_TR_OUT_CLOSED:
+      return ASSH_OK;
     }
 
   /* a buffer is available for output, return a write event */
@@ -564,9 +594,6 @@ assh_error_t assh_transport_write(struct assh_session_s *s,
 assh_bool_t
 assh_transport_has_output(struct assh_session_s *s)
 {
-  if (s->tr_st >= ASSH_TR_FIN)
-    return 0;
-
   switch (s->stream_out_st)
     {
     case ASSH_TR_OUT_IDENT:
@@ -620,10 +647,14 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
       switch (msg)
 	{
 	case SSH_MSG_INVALID:
-	  ASSH_RETURN(ASSH_ERR_PROTOCOL | ASSH_ERRSV_FIN);
+	  ASSH_RETURN(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
 
 	case SSH_MSG_DISCONNECT:
-	  ASSH_RETURN(ASSH_ERR_DISCONNECTED | ASSH_ERRSV_FIN);
+	  ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_CLOSED);
+	  ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_CLOSED);
+	  ASSH_SET_STATE(s, tr_st, ASSH_TR_DISCONNECT);
+	  p = NULL;
+	  break;
 
 	case SSH_MSG_DEBUG:
 	case SSH_MSG_IGNORE:
@@ -759,7 +790,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
       if (msg == SSH_MSG_KEXINIT)
 	{
 	  /* received a rekeying request, reply and switch to ASSH_TR_KEX_RUNNING */
-	  ASSH_RET_IF_TRUE(s->new_keys_out != NULL, ASSH_ERR_PROTOCOL | ASSH_ERRSV_FIN);
+	  ASSH_RET_IF_TRUE(s->new_keys_out != NULL, ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
 	  ASSH_RET_ON_ERR(assh_kex_send_init(s) | ASSH_ERRSV_DISCONNECT);
 	  goto kex_init;
 	}
@@ -777,6 +808,8 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 		   msg <= SSH_MSG_KEXSPEC_LAST,
 		   ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
 
+    case ASSH_TR_DISCONNECT:
+
       /* run the service loop */
       err = assh_service_loop(s, p, e);
 
@@ -785,8 +818,6 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 
       break;
 
-    case ASSH_TR_FIN:
-    case ASSH_TR_DISCONNECT:
     case ASSH_TR_CLOSED:
       ASSH_UNREACHABLE();
     }

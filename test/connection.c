@@ -479,9 +479,6 @@ void test(int (*fend)(int, int), int n, int evrate)
 	    {
 	      ev_err_count++;
 	      everr = (assh_prng_rand() % 32 + 0x100);
-	      everr |= ((1 << (12 + assh_prng_rand() % 3))
-			& (ASSH_ERRSV_DISCONNECT | ASSH_ERRSV_FIN));
-
 	      if (ASSH_ERR_ERROR(everr) == ASSH_ERR_PROTOCOL)
 		everr = ASSH_OK;
 	    }

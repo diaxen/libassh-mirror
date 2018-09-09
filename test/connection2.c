@@ -426,9 +426,6 @@ void test(int (*fend)(int, int), int cnt, int evrate,
 	    {
 	      ev_err_count++;
 	      everr = (assh_prng_rand() % 32 + 0x100);
-	      everr |= ((1 << (12 + assh_prng_rand() % 3))
-			& (ASSH_ERRSV_DISCONNECT | ASSH_ERRSV_FIN));
-
 	      if (ASSH_ERR_ERROR(everr) == ASSH_ERR_PROTOCOL && !packet_fuzz)
 		everr = ASSH_OK;
 	    }
@@ -673,7 +670,7 @@ void test(int (*fend)(int, int), int cnt, int evrate,
 	    case ASSH_EVENT_WRITE:
 	      if (session[i ^ 1].tr_st >= ASSH_TR_DISCONNECT)
 		{
-		  everr = ASSH_ERR_IO | ASSH_ERRSV_FIN;
+		  everr = ASSH_ERR_IO;
 		}
 	      else
 		{

@@ -256,12 +256,17 @@ assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t inerr)
       return inerr | ASSH_ERRSV_FATAL;
     }
 
-  if ((inerr & ASSH_ERRSV_FIN) || s->tr_st == ASSH_TR_FIN ||
-      ((inerr & ASSH_ERRSV_DISCONNECT) && s->tr_st == ASSH_TR_DISCONNECT))
+  if ((inerr & ASSH_ERRSV_DISCONNECT) || s->tr_st == ASSH_TR_DISCONNECT)
     {
-      ASSH_SET_STATE(s, tr_st, ASSH_TR_FIN);
-      return inerr | ASSH_ERRSV_FIN;
+      ASSH_SET_STATE(s, tr_st, ASSH_TR_DISCONNECT);
+      return inerr | ASSH_ERRSV_DISCONNECT;
     }
+
+  if (!(inerr & ASSH_ERRSV_DISCONNECT))
+    return inerr;
+
+  if (s->stream_out_st == ASSH_TR_OUT_CLOSED)
+    return inerr | ASSH_ERRSV_DISCONNECT;
 
   uint32_t reason = SSH_DISCONNECT_RESERVED;
   const char *desc = NULL;
@@ -272,16 +277,6 @@ assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t inerr)
     case ASSH_ERR_PROTOCOL:
       reason = SSH_DISCONNECT_PROTOCOL_ERROR;
       break;
-
-    case ASSH_ERR_INPUT_OVERFLOW:
-    case ASSH_ERR_OUTPUT_OVERFLOW:
-    case ASSH_ERR_IO:
-    case ASSH_ERR_BAD_VERSION:
-    case ASSH_ERR_DISCONNECTED:
-    case ASSH_ERR_CLOSED:
-      ASSH_SET_STATE(s, tr_st, ASSH_TR_FIN);
-      return inerr | ASSH_ERRSV_FIN;
-
     case ASSH_ERR_MAC:
       reason = SSH_DISCONNECT_MAC_ERROR;
       break;
@@ -312,15 +307,12 @@ assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t inerr)
   desc = assh_error_str(inerr);
 #endif
 
-  if (!(inerr & ASSH_ERRSV_DISCONNECT))
-    return inerr;
-
   ASSH_DEBUG("disconnect packet reason: %u (%s)\n", reason, desc);
 
   ASSH_SET_STATE(s, tr_st, ASSH_TR_DISCONNECT);
   assh_session_send_disconnect(s, reason, desc);
 
-  return inerr | ASSH_ERRSV_FIN;
+  return inerr | ASSH_ERRSV_DISCONNECT;
 }
 
 uint_fast8_t assh_session_safety(struct assh_session_s *s)
@@ -356,7 +348,6 @@ assh_session_disconnect(struct assh_session_s *s,
       return ASSH_OK;
 
     case ASSH_TR_CLOSED:
-    case ASSH_TR_FIN:
       ASSH_RETURN(ASSH_ERR_CLOSED);
 
     default:

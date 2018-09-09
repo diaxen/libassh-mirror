@@ -76,7 +76,7 @@ typedef ASSH_SERVICE_CLEANUP_FCN(assh_service_cleanup_t);
     the ssh service module interface. This function is called from the
     @ref assh_transport_dispatch function when the current state of
     the transport layer is @ref ASSH_TR_SERVICE, @ref
-    ASSH_TR_SERVICE_KEX, @ref ASSH_TR_DISCONNECT or @ref ASSH_TR_FIN.
+    ASSH_TR_SERVICE_KEX or @ref ASSH_TR_DISCONNECT.
     It must update the @ref assh_session_s::deadline field when the
     state is less than @ref ASSH_TR_DISCONNECT.
 
@@ -98,8 +98,8 @@ typedef ASSH_SERVICE_CLEANUP_FCN(assh_service_cleanup_t);
 
     This function should check the current state of the transport
     layer and report any termination related events when the state is
-    @ref ASSH_TR_FIN. If the function reports no event and return
-    @ref ASSH_OK when the state is @ref ASSH_TR_FIN, the state will
+    @ref ASSH_TR_DISCONNECT. If the function reports no event and return
+    @ref ASSH_OK when the state is @ref ASSH_TR_DISCONNECT, the state will
     change to ASSH_TR_CLOSED and the function will not be called any more. */
 typedef ASSH_SERVICE_PROCESS_FCN(assh_service_process_t);
 

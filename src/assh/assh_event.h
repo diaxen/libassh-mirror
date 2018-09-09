@@ -126,7 +126,7 @@ struct assh_event_error_s
 #define ASSH_EVENT_DONE_FCN(n)                                          \
   ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_session_s *s,    \
                                            const struct assh_event_s *e, \
-                                           assh_error_t inerr)
+                                           enum assh_error_e inerr)
 
 /** @internal @This is called when the event has been processed.
     @see assh_event_done */
@@ -235,7 +235,7 @@ assh_event_get(struct assh_session_s *s,
 void
 assh_event_done(struct assh_session_s *s,
                 struct assh_event_s *e,
-                assh_error_t err);
+                enum assh_error_e err);
 
 #endif
 

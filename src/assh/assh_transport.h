@@ -57,8 +57,6 @@ enum assh_transport_state_e
   ASSH_TR_SERVICE_KEX,
   /** Only outgoing packets are processed so that a disconnection packet can be sent. */
   ASSH_TR_DISCONNECT,
-  /** Do not exchange packets with the remote side anymore. Report last events. */
-  ASSH_TR_FIN,
   /** Session closed, no more event will be reported. */
   ASSH_TR_CLOSED,
 };
@@ -72,6 +70,7 @@ enum assh_stream_in_state_e
   ASSH_TR_IN_HEAD_DONE,
   ASSH_TR_IN_PAYLOAD,
   ASSH_TR_IN_PAYLOAD_DONE,
+  ASSH_TR_IN_CLOSED,
 };
 
 /** @internal @This specifies state of the output stream generator */
@@ -84,6 +83,7 @@ enum assh_stream_out_state_e
   ASSH_TR_OUT_PACKETS_ENCIPHERED,
   ASSH_TR_OUT_PACKETS_PAUSE,
   ASSH_TR_OUT_PACKETS_DONE,
+  ASSH_TR_OUT_CLOSED,
 };
 
 /** The @ref ASSH_EVENT_READ event is reported in order to gather
@@ -99,8 +99,8 @@ enum assh_stream_out_state_e
     next time this event is reported.
 
     When the underlying communication channel is not able to provide
-    more data, the @tt {(ASSH_ERR_IO | ASSH_ERRSV_DISCONNECT)} error
-    has to be reported to the @ref assh_event_done function.
+    more data, the @ref ASSH_ERR_IO error has to be reported to the
+    @ref assh_event_done function.
 */
 struct assh_event_transport_read_s
 {
@@ -121,9 +121,8 @@ struct assh_event_transport_read_s
     will be provided again the next time this event is returned.
 
     When the underlying communication channel is closed and it is not
-    possible to send more data, the @tt {(ASSH_ERR_IO | ASSH_ERRSV_FIN)}
-    error has to be reported to the @ref assh_event_done function in
-    order to prevent a stall.
+    possible to send more data, the @ref ASSH_ERR_IO
+    error has to be reported to the @ref assh_event_done function.
 */
 struct assh_event_transport_write_s
 {

@@ -143,13 +143,10 @@ enum assh_error_severity_e
   /** The error prevent further communication with the remote host but
       a disconnect packet may still be send before closing the connection. */
   ASSH_ERRSV_DISCONNECT            = 0x2000,
-  /** The error prevent further communication with the remote host due
-      to irrecoverable protocol error. */
-  ASSH_ERRSV_FIN                   = 0x4000,
   /** The error is due to an implementation related issue. It's not
       possible to continue, cleanup functions may be called. This
       should never happen. */
-  ASSH_ERRSV_FATAL                 = 0x8000,
+  ASSH_ERRSV_FATAL                 = 0x4000,
 };
 
 /** @This specify possible return codes returned by @em libassh

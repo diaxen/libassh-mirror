@@ -40,7 +40,7 @@ digraph {
   ASSH_TR_SERVICE -> ASSH_TR_KEX_SKIP [label=<Received KEX_INIT<br/>with wrong guess>];
   ASSH_TR_SERVICE -> ASSH_TR_KEX_RUNNING [label=<Received KEX_INIT>];
 
-  ASSH_TR_SERVICE_KEX [label=<<b>SERVICE_KEX</b>:<br/>Run the service loop,<br/>looking for KEX_INIT reply>]
+  ASSH_TR_SERVICE_KEX [label=<<b>SERVICE_KEX</b>:<br/>Run the service loop,<br/>waiting for KEX_INIT reply>]
 
   ASSH_TR_SERVICE_KEX -> ASSH_TR_SERVICE_KEX [label=<>];
   ASSH_TR_SERVICE_KEX -> ASSH_TR_KEX_SKIP [label=<Received KEX_INIT<br/>with wrong guess>];
@@ -49,18 +49,11 @@ digraph {
   ASSH_any_state [label=<Any state>];
 
   ASSH_any_state -> ASSH_TR_DISCONNECT [label=<ASSH_ERRSV_DISCONNECT<br/>error occured or DISCONNECT<br/>msg received>];
-  ASSH_any_state -> ASSH_TR_FIN [label=<ASSH_ERRSV_FIN<br/>error occured>];
   ASSH_any_state -> ASSH_TR_CLOSED [label=<ASSH_ERRSV_FATAL<br/>error occured>];
 
   ASSH_TR_DISCONNECT [label=<<b>DISCONNECT</b>:<br/>Run the service loop,<br/>discarding ssh input>]
 
-  ASSH_TR_DISCONNECT -> ASSH_TR_DISCONNECT [label=<>];
-  ASSH_TR_DISCONNECT -> ASSH_TR_CLOSED [label=<No more event<br/>to report to app,<br/>no more packet<br/>to send>];
-
-  ASSH_TR_FIN [label=<<b>FIN</b>:<br/>Run the service loop,<br/>discarding ssh i/o>]
-
-  ASSH_TR_FIN -> ASSH_TR_FIN [label=<>];
-  ASSH_TR_FIN -> ASSH_TR_CLOSED [label=<No more event<br/>to report to app>];
+  ASSH_TR_DISCONNECT -> ASSH_TR_CLOSED [label=<No more event<br/>to report to app>];
 
   ASSH_TR_CLOSED [label=<<b>CLOSED</b>>]
 }

@@ -259,7 +259,7 @@ interactive_session_channel2child(struct assh_event_channel_data_s *ev,
   /* write to stdout */
   ssize_t r = write(its_child_stdin_fd, ev->data.data, ev->data.size);
   if (r < 0)
-    *err = ASSH_ERR_IO | ASSH_ERRSV_DISCONNECT;
+    *err = ASSH_ERR_IO;
   else
     ev->transferred = r;
 }

@@ -46,25 +46,19 @@ assh_bool_t assh_event_get(struct assh_session_s *s,
 
   s->time = time;
 
-  assert(s->event_done);
-
-  if (ASSH_ERR_ERROR(s->last_err) != ASSH_OK)
-    goto err_event;        /* report an event for the pending error */
-
-  switch (s->tr_st)
+  while (s->tr_st != ASSH_TR_CLOSED)
     {
-    case ASSH_TR_IDENT:
-    case ASSH_TR_KEX_INIT:
-    case ASSH_TR_KEX_WAIT:
-    case ASSH_TR_KEX_SKIP:
-    case ASSH_TR_KEX_RUNNING:
-    case ASSH_TR_NEWKEY:
-    case ASSH_TR_SERVICE:
-    case ASSH_TR_SERVICE_KEX:
+      assert(s->event_done);
 
-      /* check protocol timeout */
-      ASSH_JMP_IF_TRUE(s->deadline != 0 && s->deadline <= s->time,
-                   ASSH_ERR_TIMEOUT | ASSH_ERRSV_DISCONNECT, err);
+      if (ASSH_ERR_ERROR(s->last_err) != ASSH_OK)
+        goto err_event;        /* report an event for the pending error */
+
+      if (s->tr_st < ASSH_TR_DISCONNECT)
+        {
+          /* check protocol timeout */
+          ASSH_JMP_IF_TRUE(s->deadline != 0 && s->deadline <= s->time,
+                           ASSH_ERR_TIMEOUT | ASSH_ERRSV_DISCONNECT, err);
+        }
 
       e->id = ASSH_EVENT_INVALID;
 
@@ -80,43 +74,21 @@ assh_bool_t assh_event_get(struct assh_session_s *s,
 
       /* or, request and process some input ssh stream. */
       ASSH_JMP_ON_ERR(assh_transport_read(s, e), err);
-      goto got_event;
-
-    case ASSH_TR_DISCONNECT:
-
-      e->id = ASSH_EVENT_INVALID;
-
-      /* run service, get last events */
-      ASSH_JMP_ON_ERR(assh_service_loop(s, NULL, e), err);
       if (e->id != ASSH_EVENT_INVALID)
         goto got_event;
 
-      /* or, write disconnect packets as ssh stream */
-      ASSH_JMP_ON_ERR(assh_transport_write(s, e), err);
-      if (e->id != ASSH_EVENT_INVALID)
-        goto got_event;
+      if (s->tr_st == ASSH_TR_DISCONNECT)
+        {
+          ASSH_SET_STATE(s, tr_st, ASSH_TR_CLOSED);
+          break;
+        }
 
-      /* or, close session */
-      ASSH_SET_STATE(s, tr_st, ASSH_TR_CLOSED);
-      return 0;
-
-    case ASSH_TR_FIN:
-
-      e->id = ASSH_EVENT_INVALID;
-
-      /* run service, get last events */
-      ASSH_JMP_ON_ERR(assh_service_loop(s, NULL, e), err);
-      if (e->id != ASSH_EVENT_INVALID)
-        goto got_event;
-
-      /* or, close session */
-      ASSH_SET_STATE(s, tr_st, ASSH_TR_CLOSED);
-
-    case ASSH_TR_CLOSED:
-      return 0;
+      /* one more iteration so that service can report disconnection
+         related events. */
+      ASSH_SET_STATE(s, tr_st, ASSH_TR_DISCONNECT);
     }
 
-  ASSH_UNREACHABLE();
+  return 0;
 
  err:
   assh_session_error(s, err);
@@ -141,30 +113,25 @@ assh_bool_t assh_event_get(struct assh_session_s *s,
 void
 assh_event_done(struct assh_session_s *s,
                 struct assh_event_s *e,
-                assh_error_t inerr)
+                enum assh_error_e inerr)
 {
-  assh_error_t err = ASSH_OK;
-
 #ifdef CONFIG_ASSH_DEBUG_EVENT
   if (e->id > 2)
     ASSH_DEBUG("ctx=%p session=%p event done id=%u\n", s->ctx, s, e->id);
 #endif
 
+  assert((inerr & ~0x1ff) == 0);
+
   if (s->tr_st == ASSH_TR_CLOSED)
     return;
 
   if (e->f_done != NULL)
-    err = e->f_done(s, e, inerr);
+    assh_session_error(s,
+      e->f_done(s, e, inerr));
   e->f_done = NULL;
 
 #ifndef NDEBUG
   s->event_done = 1;
 #endif
-
-  if (ASSH_ERR_SEVERITY(inerr) >= ASSH_ERR_SEVERITY(err))
-    err = inerr;
-
-  if (err & 0x100)
-    assh_session_error(s, err);
 }
 

@@ -195,7 +195,7 @@ int main(int argc, char **argv)
 	     standard output. */
           ssize_t r = write(1, ev->data.data, ev->data.size);
           if (r < 0)
-            err = ASSH_ERR_IO | ASSH_ERRSV_DISCONNECT;
+            err = ASSH_ERR_IO;
           else
             ev->transferred = r;
 

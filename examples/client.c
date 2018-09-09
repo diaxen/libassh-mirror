@@ -234,7 +234,7 @@ ssh_loop(struct assh_session_s *session,
           /* write to stdout */
           ssize_t r = write(p[POLL_STDOUT].fd, ev->data.data, ev->data.size);
           if (r < 0)
-            err = ASSH_ERR_IO | ASSH_ERRSV_DISCONNECT;
+            err = ASSH_ERR_IO;
           else
             ev->transferred = r;
 
