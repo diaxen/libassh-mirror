@@ -130,11 +130,33 @@ struct assh_event_transport_write_s
   size_t                             transferred; //< output
 };
 
+/** The @ref ASSH_EVENT_DISCONNECT event is reported when the remote
+    host transmitted an @ref SSH_MSG_DISCONNECT message.  This may not
+    occur if the connection is dropped or if we already sent such a
+    message. */
+struct assh_event_transport_disconnect_s
+{
+  ASSH_EV_CONST uint32_t reason;                    //< input
+  ASSH_EV_CONST struct assh_cbuffer_s desc;         //< input
+  ASSH_EV_CONST struct assh_cbuffer_s lang;         //< input
+};
+
+/** The @ref ASSH_EVENT_DEBUG event is reported when the remote host
+    transmitted an @ref SSH_MSG_DEBUG message. */
+struct assh_event_transport_debug_s
+{
+  ASSH_EV_CONST assh_bool_t display;                //< input
+  ASSH_EV_CONST struct assh_cbuffer_s msg;          //< input
+  ASSH_EV_CONST struct assh_cbuffer_s lang;         //< input
+};
+
 /** @internal */
 union assh_event_transport_u
 {
   struct assh_event_transport_read_s  read;
   struct assh_event_transport_write_s write;
+  struct assh_event_transport_disconnect_s disconnect;
+  struct assh_event_transport_debug_s debug;
 };
 
 /** @internal This function puts a packet in the output queue. The
@@ -174,6 +196,12 @@ assh_transport_dispatch(struct assh_session_s *s,
 /** This function returns true if there is pending output ssh stream. */
 assh_bool_t
 assh_transport_has_output(struct assh_session_s *s);
+
+/** This function sends a @ref SSH_MSG_DEBUG message. */
+assh_error_t
+assh_transport_debug(struct assh_session_s *s,
+		     assh_bool_t display, const char *msg,
+		     const char *lang);
 
 #endif
 

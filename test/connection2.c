@@ -632,6 +632,15 @@ void test(int (*fend)(int, int), int cnt, int evrate,
 	      break;
 	    }
 
+	    case ASSH_EVENT_DISCONNECT: {
+	      if (!disco && !evrate && !packet_fuzz && !alloc_fuzz)
+		TEST_FAIL("unexpected disconnection %x : %.*s\n",
+			  event.transport.disconnect.reason,
+			  (int)event.transport.disconnect.desc.len,
+			  event.transport.disconnect.desc.str);
+	      break;
+	    }
+
 	    case ASSH_EVENT_ERROR: {
 	      everr = ASSH_OK;
 	      err = event.error.code;
@@ -639,8 +648,6 @@ void test(int (*fend)(int, int), int cnt, int evrate,
 		started[i] = 0;
 	      if (session[i^1].tr_st >= ASSH_TR_DISCONNECT &&
 		  (ASSH_ERR_ERROR(err) == ASSH_ERR_IO))
-		break;
-	      if (disco && (ASSH_ERR_ERROR(err) == ASSH_ERR_DISCONNECTED))
 		break;
 	      if (!evrate && !packet_fuzz && !alloc_fuzz)
 		TEST_FAIL("(ctx %u seed %u) unexpected error event 0x%lx\n", i, seed, err);

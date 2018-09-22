@@ -230,14 +230,6 @@ assh_client_event_inter_session(struct assh_session_s *s,
 void
 assh_client_print_string(FILE *out, const struct assh_cbuffer_s *str);
 
-/** @This prints details of the error event.
-
-    @This takes care of calling the @ref assh_event_done function.
- */
-void
-assh_client_event_print_error(struct assh_session_s *s,
-                              FILE *out, struct assh_event_s *event);
-
 #endif
 
 #endif

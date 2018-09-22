@@ -86,6 +86,8 @@ struct assh_event_request_reply_s;
 struct assh_event_request_s;
 struct assh_event_transport_read_s;
 struct assh_event_transport_write_s;
+struct assh_event_transport_disconnect_s;
+struct assh_event_transport_debug_s;
 struct assh_event_userauth_client_banner_s;
 struct assh_event_userauth_client_keyboard_s;
 struct assh_event_userauth_client_methods_s;

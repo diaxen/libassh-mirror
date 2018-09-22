@@ -612,6 +612,96 @@ assh_transport_has_output(struct assh_session_s *s)
     }
 }
 
+static ASSH_EVENT_DONE_FCN(assh_transport_pkt_event_done)
+{
+  assh_packet_release(s->in_pck);
+  s->in_pck = NULL;
+  return ASSH_OK;
+}
+
+static assh_error_t
+assh_transport_got_disconnect(struct assh_session_s *s,
+			      struct assh_event_s *e,
+			      struct assh_packet_s *p)
+{
+  assh_error_t err;
+  struct assh_event_transport_disconnect_s *ev
+    = &e->transport.disconnect;
+
+  const uint8_t *reason = p->head.end;
+  const uint8_t *desc, *lang;
+
+  ASSH_RET_ON_ERR(assh_packet_check_array(p, reason, 4, &desc));
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, desc, &lang));
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, lang, NULL));
+
+  ev->reason = assh_load_u32(reason);
+  ev->desc.data = desc + 4;
+  ev->desc.len = assh_load_u32(desc);
+  ev->lang.data = lang + 4;
+  ev->lang.len = assh_load_u32(lang);
+
+  e->id = ASSH_EVENT_DISCONNECT;
+  e->f_done = &assh_transport_pkt_event_done;
+
+  return ASSH_OK;
+}
+
+static assh_error_t
+assh_transport_got_debug(struct assh_session_s *s,
+			 struct assh_event_s *e,
+			 struct assh_packet_s *p)
+{
+  assh_error_t err;
+  struct assh_event_transport_debug_s *ev
+    = &e->transport.debug;
+
+  const uint8_t *display = p->head.end;
+  const uint8_t *msg, *lang;
+
+  ASSH_RET_ON_ERR(assh_packet_check_array(p, display, 1, &msg));
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, msg, &lang));
+  ASSH_RET_ON_ERR(assh_packet_check_string(p, lang, NULL));
+
+  ev->display = *display;
+  ev->msg.data = msg + 4;
+  ev->msg.len = assh_load_u32(msg);
+  ev->lang.data = lang + 4;
+  ev->lang.len = assh_load_u32(lang);
+
+  e->id = ASSH_EVENT_DEBUG;
+  e->f_done = &assh_transport_pkt_event_done;
+
+  return ASSH_OK;
+}
+
+assh_error_t
+assh_transport_debug(struct assh_session_s *s,
+		     assh_bool_t display, const char *msg,
+		     const char *lang)
+{
+  assh_error_t err;
+  struct assh_packet_s *pout;
+
+  size_t msg_len = strlen(msg);
+  size_t lang_len = strlen(lang);
+
+  ASSH_RET_ON_ERR(assh_packet_alloc(s->ctx, SSH_MSG_DEBUG,
+      1 + 4 + msg_len + 4 + lang_len, &pout) | ASSH_ERRSV_CONTINUE);
+
+  uint8_t *tmp;
+  ASSH_ASSERT(assh_packet_add_array(pout, 1, &tmp));
+  *tmp = display;
+  ASSH_ASSERT(assh_packet_add_string(pout, msg_len, &tmp));
+  memcpy(tmp, msg, msg_len);
+  ASSH_ASSERT(assh_packet_add_string(pout, lang_len, &tmp));
+  memcpy(tmp, lang, lang_len);
+
+  assh_transport_push(s, pout);
+
+  return ASSH_OK;
+}
+
 assh_error_t assh_transport_unimp(struct assh_session_s *s,
 				  struct assh_packet_s *pin)
 {
@@ -653,10 +743,13 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 	  ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_CLOSED);
 	  ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_CLOSED);
 	  ASSH_SET_STATE(s, tr_st, ASSH_TR_DISCONNECT);
-	  p = NULL;
-	  break;
+	  ASSH_RET_ON_ERR(assh_transport_got_disconnect(s, e, p));
+	  return ASSH_OK;
 
 	case SSH_MSG_DEBUG:
+	  ASSH_RET_ON_ERR(assh_transport_got_debug(s, e, p));
+	  return ASSH_OK;
+
 	case SSH_MSG_IGNORE:
 	  goto done;
 

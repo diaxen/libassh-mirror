@@ -42,13 +42,18 @@ enum assh_event_id_e
   ASSH_EVENT_READ                        = 1,
   /** @see assh_event_transport_write_s */
   ASSH_EVENT_WRITE                       = 2,
+  /** @see assh_event_transport_disconnect_s */
+  ASSH_EVENT_DISCONNECT                  = 3,
+  /** @see assh_event_transport_debug_s */
+  ASSH_EVENT_DEBUG                       = 4,
+
   /** @see assh_event_error_s */
-  ASSH_EVENT_ERROR                       = 3,
+  ASSH_EVENT_ERROR                       = 5,
 
   /** @see assh_event_kex_hostkey_lookup_s */
-  ASSH_EVENT_KEX_HOSTKEY_LOOKUP          = 5,
+  ASSH_EVENT_KEX_HOSTKEY_LOOKUP          = 6,
   /** @see assh_event_kex_done_s */
-  ASSH_EVENT_KEX_DONE                    = 6,
+  ASSH_EVENT_KEX_DONE                    = 7,
 
   /** @see assh_event_service_start_s */
   ASSH_EVENT_SERVICE_START               = 9,

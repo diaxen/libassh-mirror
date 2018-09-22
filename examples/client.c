@@ -153,9 +153,17 @@ ssh_loop(struct assh_session_s *session,
           break;
 
         case ASSH_EVENT_ERROR:
-          /* Any error reported to the assh_event_done function will
-             end up here. */
-          assh_client_event_print_error(session, stderr, &event);
+          /* print errors */
+          fprintf(stderr, "SSH error: %s\n", assh_error_str(event.error.code));
+          assh_event_done(session, &event, ASSH_OK);
+          break;
+
+        case ASSH_EVENT_DISCONNECT:
+          /* print disconnect message */
+          fputs("SSH disconnect: ", stderr);
+          assh_client_print_string(stderr, &event.transport.disconnect.desc);
+          fputc('\n', stderr);
+          assh_event_done(session, &event, ASSH_OK);
           break;
 
         case ASSH_EVENT_KEX_HOSTKEY_LOOKUP:

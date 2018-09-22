@@ -868,31 +868,3 @@ err:
       break;
     }
 }
-
-void
-assh_client_event_print_error(struct assh_session_s *s,
-			      FILE *out, struct assh_event_s *event)
-{
-  assert(event->id == ASSH_EVENT_ERROR);
-
-  struct assh_event_error_s *ev = &event->error;
-  /* report library error code */
-  fprintf(out, "SSH error: %s\n",
-	  assh_error_str(ev->code));
-
-  if (ASSH_ERR_ERROR(ev->code) == ASSH_ERR_DISCONNECTED)
-    {
-      /* report remote host disconnect message if any */
-      uint32_t reason;
-      struct assh_cbuffer_s desc;
-      if (!assh_session_disconnect_msg(s, &reason, &desc))
-	{
-	  fprintf(out, "Server message: ");
-	  assh_client_print_string(out, &desc);
-	  fprintf(out, " (reason=%u)\n", reason);
-	}
-    }
-
-  assh_event_done(s, event, ASSH_OK);
-}
-
