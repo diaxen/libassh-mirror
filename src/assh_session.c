@@ -242,34 +242,34 @@ assh_session_send_disconnect(struct assh_session_s *s,
   return ASSH_OK;
 }
 
-assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t inerr)
+void assh_session_error(struct assh_session_s *s, assh_error_t inerr)
 {
   if (!(inerr & 0x100))
-      return inerr;
+    return;
 
-  if (ASSH_ERR_SEVERITY(inerr) >= ASSH_ERR_SEVERITY(s->last_err))
-    s->last_err = inerr;
+  if (ASSH_ERR_SEVERITY(inerr) <= ASSH_ERR_SEVERITY(s->last_err))
+    return;
 
-  if ((inerr & ASSH_ERRSV_FATAL) || s->tr_st == ASSH_TR_CLOSED)
+  if (s->tr_st == ASSH_TR_CLOSED)
+    return;
+
+  s->last_err = inerr;
+
+  if (inerr & ASSH_ERRSV_FATAL)
     {
       ASSH_SET_STATE(s, tr_st, ASSH_TR_CLOSED);
-      return inerr | ASSH_ERRSV_FATAL;
+      return;
     }
 
-  if ((inerr & ASSH_ERRSV_DISCONNECT) || s->tr_st == ASSH_TR_DISCONNECT)
-    {
-      ASSH_SET_STATE(s, tr_st, ASSH_TR_DISCONNECT);
-      return inerr | ASSH_ERRSV_DISCONNECT;
-    }
+  if (!(inerr & ASSH_ERRSV_DISCONNECT) || s->tr_st == ASSH_TR_DISCONNECT)
+    return;
 
-  if (!(inerr & ASSH_ERRSV_DISCONNECT))
-    return inerr;
+  ASSH_SET_STATE(s, tr_st, ASSH_TR_DISCONNECT);
 
   if (s->stream_out_st == ASSH_TR_OUT_CLOSED)
-    return inerr | ASSH_ERRSV_DISCONNECT;
+    return;
 
   uint32_t reason = SSH_DISCONNECT_RESERVED;
-  const char *desc = NULL;
 
   switch (ASSH_ERR_ERROR(inerr))
     {
@@ -303,16 +303,14 @@ assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t inerr)
       break;
     }
 
+  const char *desc = NULL;
 #ifdef CONFIG_ASSH_VERBOSE_ERROR
   desc = assh_error_str(inerr);
 #endif
 
   ASSH_DEBUG("disconnect packet reason: %u (%s)\n", reason, desc);
 
-  ASSH_SET_STATE(s, tr_st, ASSH_TR_DISCONNECT);
   assh_session_send_disconnect(s, reason, desc);
-
-  return inerr | ASSH_ERRSV_DISCONNECT;
 }
 
 uint_fast8_t assh_session_safety(struct assh_session_s *s)

@@ -344,7 +344,8 @@ assh_request_failed_reply(struct assh_request_s *rq)
 
   return ASSH_OK;
  err:
-  return assh_session_error(s, err);
+  assh_session_error(s, err);
+  return err;
 }
 
 assh_error_t
@@ -412,7 +413,8 @@ assh_request_success_reply(struct assh_request_s *rq,
 
   return ASSH_OK;
  err:
-  return assh_session_error(s, err);
+  assh_session_error(s, err);
+  return err;
 }
 
 /* event done, may send a reply */
@@ -656,7 +658,8 @@ assh_error_t assh_request(struct assh_session_s *s,
  err_pkt:
   assh_packet_release(pout);
  err:
-  return assh_session_error(s, err);
+  assh_session_error(s, err);
+  return err;
 }
 
 /* cleanup request reply event */
@@ -934,7 +937,8 @@ assh_channel_open_failed_reply(struct assh_channel_s *ch,
 
   return ASSH_OK;
  err:
-  return assh_session_error(s, err);
+  assh_session_error(s, err);
+  return err;
 }
 
 assh_error_t
@@ -989,7 +993,8 @@ assh_channel_open_success_reply2(struct assh_channel_s *ch,
 
   return ASSH_OK;
  err:
-  return assh_session_error(s, err);
+  assh_session_error(s, err);
+  return err;
 }
 
 assh_error_t
@@ -1199,7 +1204,8 @@ assh_channel_open(struct assh_session_s *s,
  err_pkt:
   assh_packet_release(pout);
  err:
-  return assh_session_error(s, err);
+  assh_session_error(s, err);
+  return err;
 }
 
 static ASSH_EVENT_DONE_FCN(assh_event_channel_open_reply_done)
@@ -1687,7 +1693,8 @@ assh_channel_data_alloc(struct assh_channel_s *ch,
 
   return ASSH_OK;
  err:
-  return assh_session_error(s, err);
+  assh_session_error(s, err);
+  return err;
 }
 
 assh_error_t
@@ -1716,7 +1723,8 @@ assh_channel_data_alloc_ext(struct assh_channel_s *ch,
 
   return ASSH_OK;
  err:
-  return assh_session_error(s, err);
+  assh_session_error(s, err);
+  return err;
 }
 
 assh_error_t
@@ -1768,7 +1776,8 @@ assh_channel_data_send(struct assh_channel_s *ch, size_t size)
 
   return ASSH_OK;
  err:
-  return assh_session_error(s, err);
+  assh_session_error(s, err);
+  return err;
 }
 
 assh_error_t
@@ -1811,7 +1820,8 @@ assh_channel_dummy(struct assh_channel_s *ch, size_t size)
   return ASSH_OK;
 
  err:
-  return assh_session_error(s, err);
+  assh_session_error(s, err);
+  return err;
 }
 
 /************************************************* incoming channel close/eof */
@@ -2056,7 +2066,8 @@ assh_channel_close(struct assh_channel_s *ch)
 
   return ASSH_OK;
  err:
-  return assh_session_error(s, err);
+  assh_session_error(s, err);
+  return err;
 }
 
 /************************************************* connection service */

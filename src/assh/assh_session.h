@@ -240,7 +240,7 @@ void assh_session_release(struct assh_session_s *s);
 
     @see assh_error_e @see assh_error_severity_e
 */
-assh_error_t assh_session_error(struct assh_session_s *s, assh_error_t err);
+void assh_session_error(struct assh_session_s *s, assh_error_t err);
 
 /** @This schedules the end of the session and sends a
     SSH_MSG_DISCONNECT packet to the remote host. The @ref
