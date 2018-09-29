@@ -1815,6 +1815,8 @@ assh_channel_dummy(struct assh_channel_s *ch, size_t size)
 
   ASSH_JMP_ON_ERR(assh_packet_alloc(s->ctx, SSH_MSG_IGNORE,
 		 2 * 4 + size, &pout) | ASSH_ERRSV_CONTINUE, err);
+  uint8_t *tmp;
+  ASSH_ASSERT(assh_packet_add_string(pout, 4 + size, &tmp));
 
   assh_transport_push(s, pout);
   return ASSH_OK;
@@ -2344,8 +2346,11 @@ static ASSH_SERVICE_PROCESS_FCN(assh_connection_process)
     {
       /* send keep alive */
       struct assh_packet_s *pout;
-      if (!assh_packet_alloc(s->ctx, SSH_MSG_IGNORE, 0, &pout))
-        assh_transport_push(s, pout);
+      if (!assh_packet_alloc(s->ctx, SSH_MSG_IGNORE, 4, &pout))
+        {
+          ASSH_ASSERT(assh_packet_add_u32(pout, 0));
+          assh_transport_push(s, pout);
+        }
       s->deadline = s->time + ASSH_TIMEOUT_KEEPALIVE;
     }
 
