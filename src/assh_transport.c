@@ -726,8 +726,8 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
   struct assh_packet_s *p = s->in_pck;
 
   /* test if a key re-exchange should have occured at this point */
-  ASSH_RET_IF_TRUE(s->kex_bytes > ASSH_REKEX_THRESHOLD + CONFIG_ASSH_MAX_PAYLOAD * 16,
-	       ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+  ASSH_JMP_IF_TRUE(s->kex_bytes > ASSH_REKEX_THRESHOLD + CONFIG_ASSH_MAX_PAYLOAD * 16,
+		   ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT, done);
 
   if (p != NULL)
     {
@@ -737,17 +737,19 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
       switch (msg)
 	{
 	case SSH_MSG_INVALID:
-	  ASSH_RETURN(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+	  ASSH_JMP_ON_ERR(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT, done);
 
 	case SSH_MSG_DISCONNECT:
 	  ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_CLOSED);
 	  ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_CLOSED);
 	  ASSH_SET_STATE(s, tr_st, ASSH_TR_DISCONNECT);
-	  ASSH_RET_ON_ERR(assh_transport_got_disconnect(s, e, p));
+	  ASSH_JMP_ON_ERR(assh_transport_got_disconnect(s, e, p)
+			  | ASSH_ERRSV_DISCONNECT, done);
 	  return ASSH_OK;
 
 	case SSH_MSG_DEBUG:
-	  ASSH_RET_ON_ERR(assh_transport_got_debug(s, e, p));
+	  ASSH_JMP_ON_ERR(assh_transport_got_debug(s, e, p)
+			  | ASSH_ERRSV_DISCONNECT, done);
 	  return ASSH_OK;
 
 	case SSH_MSG_IGNORE:
@@ -755,8 +757,8 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 
 	case SSH_MSG_UNIMPLEMENTED: {
 	  uint8_t *seqp = p->head.end;
-	  ASSH_RET_ON_ERR(assh_packet_check_array(p, seqp, 4, NULL)
-		       | ASSH_ERRSV_DISCONNECT);
+	  ASSH_JMP_ON_ERR(assh_packet_check_array(p, seqp, 4, NULL)
+			  | ASSH_ERRSV_DISCONNECT, done);
 	  p->seq = assh_load_u32(seqp);
 
 #ifdef CONFIG_ASSH_DEBUG_PROTOCOL
@@ -772,7 +774,8 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 	    case SSH_MSG_SERVICE_ACCEPT:
 	      break;
 	    }
-	  ASSH_RET_ON_ERR(assh_transport_unimp(s, p));
+	  ASSH_JMP_ON_ERR(assh_transport_unimp(s, p)
+			  | ASSH_ERRSV_DISCONNECT, done);
 	  goto done;
 	}
     }
@@ -787,29 +790,30 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 
     /* send first kex init packet during session init */
     case ASSH_TR_KEX_INIT:
-      ASSH_RET_ON_ERR(assh_kex_send_init(s) | ASSH_ERRSV_DISCONNECT);
+      ASSH_JMP_ON_ERR(assh_kex_send_init(s) | ASSH_ERRSV_DISCONNECT, done);
       ASSH_SET_STATE(s, tr_st, ASSH_TR_KEX_WAIT);
 
     /* wait for initial kex init packet during session init */
     case ASSH_TR_KEX_WAIT:
       if (msg == SSH_MSG_INVALID)
 	break;
-      ASSH_RET_IF_TRUE(msg != SSH_MSG_KEXINIT, ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+      ASSH_JMP_IF_TRUE(msg != SSH_MSG_KEXINIT,
+		       ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT, done);
     kex_init:
 
 #ifdef CONFIG_ASSH_SERVER
       /* server does not allow multiple key exchanges before user
 	 authentication. */
-      ASSH_RET_IF_TRUE(
+      ASSH_JMP_IF_TRUE(
 # ifdef CONFIG_ASSH_CLIENT
 		   s->ctx->type == ASSH_SERVER &&
 # endif
 		   s->kex_done && !s->user_auth_done,
-		   ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+		   ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT, done);
 #endif
 
       s->deadline = s->time + ASSH_TIMEOUT_KEX;
-      ASSH_RET_ON_ERR(assh_kex_got_init(s, p) | ASSH_ERRSV_DISCONNECT);
+      ASSH_JMP_ON_ERR(assh_kex_got_init(s, p) | ASSH_ERRSV_DISCONNECT, done);
 
       p = NULL;
       msg = SSH_MSG_INVALID;
@@ -822,19 +826,21 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 	case SSH_MSG_NEWKEYS:
 	case SSH_MSG_SERVICE_REQUEST:
 	case SSH_MSG_SERVICE_ACCEPT:
-	  ASSH_RETURN(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+	  ASSH_JMP_ON_ERR(ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT, done);
 
 	default:
-	  ASSH_RET_IF_TRUE(msg >= SSH_MSG_SERVICE_FIRST,
-		       ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+	  ASSH_JMP_IF_TRUE(msg >= SSH_MSG_SERVICE_FIRST,
+			   ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT, done);
 	  if (msg >= SSH_MSG_KEXSPEC_FIRST)
 	    {
 	    case SSH_MSG_INVALID:
 	    case SSH_MSG_UNIMPLEMENTED:
-	      ASSH_RET_ON_ERR(s->kex->f_process(s, p, e) | ASSH_ERRSV_DISCONNECT);
+	      ASSH_JMP_ON_ERR(s->kex->f_process(s, p, e)
+			      | ASSH_ERRSV_DISCONNECT, done);
 	      break;
 	    }
-	  ASSH_RET_ON_ERR(assh_transport_unimp(s, p));
+	  ASSH_JMP_ON_ERR(assh_transport_unimp(s, p)
+			  | ASSH_ERRSV_DISCONNECT, done);
 	}
       break;
 
@@ -842,9 +848,9 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
     case ASSH_TR_KEX_SKIP:
       if (msg != SSH_MSG_INVALID)
 	{
-	  ASSH_RET_IF_TRUE(msg < SSH_MSG_KEXSPEC_FIRST ||
-		       msg > SSH_MSG_KEXSPEC_LAST,
-		       ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+	  ASSH_JMP_IF_TRUE(msg < SSH_MSG_KEXSPEC_FIRST ||
+			   msg > SSH_MSG_KEXSPEC_LAST,
+			   ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT, done);
 	  ASSH_SET_STATE(s, tr_st, ASSH_TR_KEX_RUNNING);
 	}
       break;
@@ -853,7 +859,8 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
     case ASSH_TR_NEWKEY:
       if (msg == SSH_MSG_INVALID)
 	break;
-      ASSH_RET_IF_TRUE(msg != SSH_MSG_NEWKEYS, ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+      ASSH_JMP_IF_TRUE(msg != SSH_MSG_NEWKEYS,
+		       ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT, done);
 
       /* release the old input cipher/mac context and install the new one */
       assert(s->new_keys_in != NULL);
@@ -883,8 +890,10 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
       if (msg == SSH_MSG_KEXINIT)
 	{
 	  /* received a rekeying request, reply and switch to ASSH_TR_KEX_RUNNING */
-	  ASSH_RET_IF_TRUE(s->new_keys_out != NULL, ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
-	  ASSH_RET_ON_ERR(assh_kex_send_init(s) | ASSH_ERRSV_DISCONNECT);
+	  ASSH_JMP_IF_TRUE(s->new_keys_out != NULL,
+			   ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT, done);
+	  ASSH_JMP_ON_ERR(assh_kex_send_init(s)
+			  | ASSH_ERRSV_DISCONNECT, done);
 	  goto kex_init;
 	}
 
@@ -892,14 +901,15 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 	  s->tr_st == ASSH_TR_SERVICE)
         {
           /* initiate key re-exchange as needed */
-          ASSH_RET_ON_ERR(assh_kex_send_init(s) | ASSH_ERRSV_DISCONNECT);
+          ASSH_JMP_ON_ERR(assh_kex_send_init(s)
+			  | ASSH_ERRSV_DISCONNECT, done);
           ASSH_SET_STATE(s, tr_st, ASSH_TR_SERVICE_KEX);
         }
 
       /* dispatch packet to service */
-      ASSH_RET_IF_TRUE(msg >= SSH_MSG_ALGONEG_FIRST &&
-		   msg <= SSH_MSG_KEXSPEC_LAST,
-		   ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT);
+      ASSH_JMP_IF_TRUE(msg >= SSH_MSG_ALGONEG_FIRST &&
+		       msg <= SSH_MSG_KEXSPEC_LAST,
+		       ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT, done);
 
     case ASSH_TR_DISCONNECT:
 
@@ -918,6 +928,6 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
  done:
   assh_packet_release(s->in_pck);
   s->in_pck = NULL;
-  ASSH_RETURN(err | ASSH_ERRSV_DISCONNECT);
+  ASSH_RETURN(err);
 }
 
