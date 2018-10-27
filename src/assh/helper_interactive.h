@@ -27,7 +27,8 @@
 
    This headers provides some helper to decode and encode data in
    standard requests related to interactive sessions as described in
-   rfc4254 section 6.
+   @invoke{4254}rfc section 6 "@em{Interactive Sessions}" and section
+   7 "@em{TCP/IP Port Forwarding}".
 */
 
 #ifndef ASSH_HELPER_INTERACTIVE_H_

@@ -357,7 +357,7 @@ assh_key_validate(struct assh_context_s *c,
 }
 #endif
 
-/** @internal @This looks for a key usable with the given algorithm
+/** @This looks for a key usable with the given algorithm
     among keys registered on the context. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_key_lookup(struct assh_context_s *c,

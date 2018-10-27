@@ -9,6 +9,14 @@
 
 @c @include modules.mkdoc
 
+@macro rfc number
+  @url {https://tools.ietf.org/html/rfc@number@}{ rfc@number@ }
+@end macro
+
+@macro wp article text
+  @url {https://en.wikipedia.org/wiki/@article@}{ @text@ }
+@end macro
+
 @parse {
 assh/assh.h
 assh/assh_platform.h
@@ -47,7 +55,7 @@ assh/key_dsa.h
 assh/key_eddsa.h
 assh/key_ecdsa.h
 assh/key_rsa.h
-assh_config.h
+doc/config.h
 }
 
 @insert title
