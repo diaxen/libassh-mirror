@@ -31,6 +31,12 @@ hash_CFLAGS = -I$(top_srcdir)/src
 
 ############################## protocol tests
 
+noinst_PROGRAMS += replay
+TESTS += replay
+replay_SOURCES = replay.c
+replay_LDADD = $(top_builddir)/src/libassh.la
+replay_CFLAGS = -I$(top_srcdir)/src
+
 if COND_server
 if COND_client
 
