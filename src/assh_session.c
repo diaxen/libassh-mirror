@@ -193,12 +193,8 @@ const char * assh_error_str(assh_error_t err)
     = "Service not available",
     [ASSH_ERR_NO_AUTH - 0x100]
     = "No more authentication method",
-    [ASSH_ERR_DISCONNECTED - 0x100]
-    = "Disconnected by remote host",
     [ASSH_ERR_NO_MORE_SERVICE - 0x100]
     = "No more service",
-    [ASSH_ERR_CLOSED - 0x100]
-    = "Session closed",
     [ASSH_ERR_WEAK_ALGORITHM - 0x100]
     = "Weak algorithm or key",
     [ASSH_ERR_TIMEOUT - 0x100]
@@ -343,10 +339,8 @@ assh_session_disconnect(struct assh_session_s *s,
       ASSH_SET_STATE(s, tr_st, ASSH_TR_DISCONNECT);
 
     case ASSH_TR_DISCONNECT:
-      return ASSH_OK;
-
     case ASSH_TR_CLOSED:
-      ASSH_RETURN(ASSH_ERR_CLOSED);
+      return ASSH_OK;
 
     default:
       ASSH_UNREACHABLE();

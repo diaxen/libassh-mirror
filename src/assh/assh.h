@@ -206,16 +206,12 @@ enum assh_error_e
   ASSH_ERR_SERVICE_NA              = 0x114,
   /** No more authentication method available. */
   ASSH_ERR_NO_AUTH                 = 0x115,
-  /** The remote host sent a disconnect packet. */
-  ASSH_ERR_DISCONNECTED            = 0x116,
   /** The client has reached the end of list of services to request. */
-  ASSH_ERR_NO_MORE_SERVICE         = 0x117,
-  /** The session is closed. */
-  ASSH_ERR_CLOSED                  = 0x118,
+  ASSH_ERR_NO_MORE_SERVICE         = 0x116,
   /** Algorithm or key security level is below defined threshold. */
-  ASSH_ERR_WEAK_ALGORITHM          = 0x119,
+  ASSH_ERR_WEAK_ALGORITHM          = 0x117,
   /** Protocol timeout. */
-  ASSH_ERR_TIMEOUT                 = 0x120,
+  ASSH_ERR_TIMEOUT                 = 0x118,
   /** @internal */
   ASSH_ERR_count,
 };
