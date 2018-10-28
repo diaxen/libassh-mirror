@@ -29,7 +29,7 @@
 #ifndef ASSH_SRV_USERAUTH_H_
 #define ASSH_SRV_USERAUTH_H_
 
-#include "assh.h"
+#include "assh_session.h"
 
 /** @internal specifies authentication methods */
 enum assh_userauth_methods_e
@@ -76,5 +76,13 @@ enum assh_userauth_methods_e
 #endif
 };
 
-#endif
+/** @This marks the user as authenticated. This is usually called by
+    the user authentication services. On rare cases when one of these
+    services is not used, it may be called directly by the application. */
+ASSH_INLINE void
+assh_userauth_done(struct assh_session_s *s)
+{
+  s->user_auth_done = 1;
+}
 
+#endif

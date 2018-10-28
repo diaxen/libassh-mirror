@@ -39,6 +39,7 @@
 #include <assh/assh_transport.h>
 #include <assh/assh_connection.h>
 #include <assh/assh_event.h>
+#include <assh/assh_userauth.h>
 #include <assh/helper_key.h>
 
 #include "prng_weak.h"
@@ -147,7 +148,7 @@ void test(int (*fend)(int, int), int cnt, int evrate,
 	TEST_FAIL("init");
       assh_cipher_fuzz_initreg(&context[i], &session[i]);
 
-      session[i].user_auth_done = 1;
+      assh_userauth_done(&session[i]);
       if (assh_kex_set_threshold(&session[i], 1 + assh_prng_rand() % 16384))
 	TEST_FAIL("init");
 

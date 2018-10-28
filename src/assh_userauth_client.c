@@ -397,7 +397,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_success_done)
   assert(pv->state == ASSH_USERAUTH_ST_SUCCESS);
 
   /* cleanup the authentication service and start the next service. */
-  s->user_auth_done = 1;
+  assh_userauth_done(s);
   assh_service_start(s, pv->srv);
 
   return ASSH_OK;

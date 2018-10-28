@@ -33,6 +33,7 @@
 #include <assh/assh_connection.h>
 #include <assh/assh_service.h>
 #include <assh/assh_event.h>
+#include <assh/assh_userauth.h>
 
 #include <assh/key_rsa.h>
 #include <assh/key_dsa.h>
@@ -422,7 +423,7 @@ void test(const struct assh_algo_kex_s *kex,
 	  assh_kex_set_threshold(&session[i], 1024 + assh_prng_rand() % 1024))
 	TEST_FAIL("sessions init");
 
-      session[i].user_auth_done = 1;
+      assh_userauth_done(&session[i]);
       assh_cipher_fuzz_initreg(c, &session[i]);
     }
 

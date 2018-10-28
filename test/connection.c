@@ -40,6 +40,7 @@
 #include <assh/assh_transport.h>
 #include <assh/assh_connection.h>
 #include <assh/assh_event.h>
+#include <assh/assh_userauth.h>
 #include <assh/helper_key.h>
 
 #include "prng_weak.h"
@@ -209,7 +210,7 @@ void test(int (*fend)(int, int), int n, int evrate)
       if (assh_session_init(&context[i], &session[i]) != ASSH_OK)
 	TEST_FAIL("init");
 
-      session[i].user_auth_done = 1;
+      assh_userauth_done(&session[i]);
       if (assh_kex_set_threshold(&session[i], 1 + assh_prng_rand() % 4096))
 	TEST_FAIL("init");
     }
