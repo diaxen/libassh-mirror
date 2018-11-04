@@ -801,7 +801,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 		       ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT, done);
     kex_init:
 
-#ifdef CONFIG_ASSH_SERVER
+#if defined(CONFIG_ASSH_SERVER) && defined (CONFIG_ASSH_NO_REKEX_BEFORE_AUTH)
       /* server does not allow multiple key exchanges before user
 	 authentication. */
       ASSH_JMP_IF_TRUE(

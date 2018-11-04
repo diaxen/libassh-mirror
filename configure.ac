@@ -263,6 +263,8 @@ if test x$enable_key_create = xyes ; then
   AC_DEFINE([CONFIG_ASSH_KEY_CREATE], [], [Enable support for SSH key creation when defined.])
 fi
 
+AC_DEFINE([CONFIG_ASSH_NO_REKEX_BEFORE_AUTH], [], [Disallow performing multiple key exchanges before user authentication.])
+
 AC_DEFINE([CONFIG_ASSH_AUTH_USERNAME_LEN], [32], [Specifies maximum length of username for user authentication.])
 AC_DEFINE([CONFIG_ASSH_AUTH_PASSWORD_LEN], [32], [Specifies maximum length of password for user authentication.])
 AC_DEFINE([CONFIG_ASSH_AUTH_HOSTNAME_LEN], [128], [Specifies maximum length of hostname for user authentication.])

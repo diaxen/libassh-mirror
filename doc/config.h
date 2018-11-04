@@ -231,3 +231,6 @@
 
 /** This includes strings for ssh error reasons in the library. */
 #define CONFIG_ASSH_VERBOSE_ERROR
+
+/** This disallows performing multiple key exchanges before user authentication. */
+#define CONFIG_ASSH_NO_REKEX_BEFORE_AUTH
