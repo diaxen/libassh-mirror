@@ -101,7 +101,7 @@
 #include <assh/assh_userauth_server.h>
 #include <assh/assh_event.h>
 #include <assh/helper_key.h>
-#include <assh/helper_client.h>
+#include <assh/helper_io.h>
 
 #include <assh/key_rsa.h>
 #include <assh/key_dsa.h>

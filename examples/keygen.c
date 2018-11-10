@@ -30,7 +30,7 @@
 #include <assh/assh_alloc.h>
 
 #include <assh/helper_key.h>
-#include <assh/helper_fd.h>
+#include <assh/helper_io.h>
 
 enum assh_keygen_action_e
 {

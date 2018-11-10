@@ -46,7 +46,7 @@
 
 #include <assh/helper_key.h>
 #include <assh/helper_server.h>
-#include <assh/helper_fd.h>
+#include <assh/helper_io.h>
 
 #include <errno.h>
 #include <fcntl.h>

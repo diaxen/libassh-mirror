@@ -28,7 +28,7 @@
 
 #include <assh/helper_client.h>
 #include <assh/helper_key.h>
-#include <assh/helper_fd.h>
+#include <assh/helper_io.h>
 #include <assh/helper_interactive.h>
 #include <assh/assh_key.h>
 #include <assh/key_rsa.h>

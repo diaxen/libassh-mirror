@@ -49,7 +49,7 @@
 #include <assh/helper_interactive.h>
 #include <assh/helper_client.h>
 #include <assh/assh_kex.h>
-#include <assh/helper_fd.h>
+#include <assh/helper_io.h>
 #include <assh/assh_event.h>
 #include <assh/assh_algo.h>
 

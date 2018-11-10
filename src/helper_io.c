@@ -30,7 +30,7 @@
 #include <assh/assh_transport.h>
 #include <assh/assh_alloc.h>
 
-#include <assh/helper_fd.h>
+#include <assh/helper_io.h>
 #include <assh/assh_event.h>
 
 #include <termios.h>

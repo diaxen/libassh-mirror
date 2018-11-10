@@ -52,7 +52,7 @@
 
 #include <assh/helper_key.h>
 #include <assh/helper_server.h>
-#include <assh/helper_fd.h>
+#include <assh/helper_io.h>
 #include <assh/helper_interactive.h>
 
 #include <errno.h>
