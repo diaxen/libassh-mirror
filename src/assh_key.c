@@ -219,7 +219,7 @@ const struct assh_key_algo_s *assh_key_algo_table[] = {
   NULL
 };
 
-const struct assh_key_format_desc_s
+static const struct assh_key_format_desc_s
 assh_key_format_table[ASSH_KEY_FMT_LAST + 1] = {
   [ASSH_KEY_FMT_PV_OPENSSH_V1] = {
     "openssh_v1", "openssh v1 ASCII private keys",
@@ -270,3 +270,11 @@ assh_key_format_table[ASSH_KEY_FMT_LAST + 1] = {
     .public = 1, .internal = 1, .encrypted = 0, .pub_part = 0
   },
 };
+
+const struct assh_key_format_desc_s *
+assh_key_format_desc(enum assh_key_format_e fmt)
+{
+  if (fmt > ASSH_KEY_FMT_LAST)
+    return NULL;
+  return assh_key_format_table + fmt;
+}

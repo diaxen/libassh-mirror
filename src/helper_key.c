@@ -557,7 +557,7 @@ assh_load_key_file_guess(struct assh_context_s *c,
 
   for (i = 0; i <= ASSH_KEY_FMT_LAST; i++)
     {
-      const struct assh_key_format_desc_s *f = assh_key_format_table + i;
+      const struct assh_key_format_desc_s *f = assh_key_format_desc(i);
 
       if (f->name == NULL || f->internal || f->pub_part)
         continue;

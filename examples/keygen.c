@@ -44,20 +44,26 @@ enum assh_keygen_action_e
 
 static enum assh_key_format_e get_format(const char *fmt)
 {
-  const struct assh_key_format_desc_s *f = assh_key_format_table;
+  const struct assh_key_format_desc_s *f;
   unsigned i;
 
   if (fmt)
     for (i = 0; i <= ASSH_KEY_FMT_LAST; i++)
-      if (f[i].name && !strcmp(f[i].name, fmt))
-        return i;
+      {
+        f = assh_key_format_desc(i);
+        if (f->name && !strcmp(f->name, fmt))
+          return i;
+      }
 
   fprintf(stderr, "Supported key formats:\n");
   for (i = 0; i <= ASSH_KEY_FMT_LAST; i++)
+    {
+      f = assh_key_format_desc(i);
 #ifndef CONFIG_ASSH_DEBUG
-    if (f[i].name && !f[i].internal)
+      if (f->name && !f->internal)
 #endif
-      fprintf(stderr, "  %-15s : %s\n", f[i].name, f[i].desc);
+        fprintf(stderr, "  %-15s : %s\n", f->name, f->desc);
+    }
 
   if (fmt)
     exit(1);
@@ -215,7 +221,7 @@ int main(int argc, char *argv[])
     }
 
   const struct assh_key_format_desc_s *ofmt_desc
-    = assh_key_format_table + ofmt;
+    = assh_key_format_desc(ofmt);
 
   struct assh_key_s *key;
 

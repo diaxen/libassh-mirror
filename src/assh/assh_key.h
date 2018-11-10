@@ -195,7 +195,7 @@ struct assh_key_algo_s
 extern const struct assh_key_algo_s *assh_key_algo_table[];
 
 /** @This describes a key format.
-    @see assh_key_format_table */
+    @see assh_key_format_desc */
 struct assh_key_format_desc_s
 {
   /** A short human readable identifier for the format. */
@@ -216,12 +216,13 @@ struct assh_key_format_desc_s
   assh_bool_t pv_part:1;
 };
 
-/** Array of descritors for key storage formats supported by the
-    library. Valid array indices are defined in @ref
-    assh_key_format_e. Any entry with a @tt NULL name must be
-    ignored. */
-extern const struct assh_key_format_desc_s
-assh_key_format_table[ASSH_KEY_FMT_LAST + 1];
+/** Return a descritors for the specified key storage format.
+
+    When iterating over formats, entries with a @tt NULL name must be
+    ignored. The function returns @tt NULL when @tt fmt is beyond the
+    last supported format. */
+const struct assh_key_format_desc_s *
+assh_key_format_desc(enum assh_key_format_e fmt);
 
 /** @internalmembers @This is the generic SSH key structure. Other key
     structures inherit from this type. */

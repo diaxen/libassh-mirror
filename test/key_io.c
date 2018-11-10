@@ -97,7 +97,7 @@ static assh_error_t test_algo(struct assh_context_s *c, size_t count)
 	{
 	  format = t->format;
 	  fprintf(stderr, "\n%s, %s format: ",
-		  t->algo->name, assh_key_format_table[t->format].name);
+		  t->algo->name, assh_key_format_desc(t->format)->name);
 	}
 
       if (t->algo != algo || t->bits_min != bits_min || t->bits_max != bits_max)
@@ -251,7 +251,7 @@ static assh_error_t test_helper(struct assh_context_s *c, size_t count)
 	{
 	  format = t->format;
 	  fprintf(stderr, "\n%s, %s format: ",
-		  t->algo->name, assh_key_format_table[t->format].name);
+		  t->algo->name, assh_key_format_desc(t->format)->name);
 	}
 
       if (t->algo != algo || t->bits_min != bits_min || t->bits_max != bits_max)
