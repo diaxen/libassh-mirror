@@ -157,11 +157,6 @@ assh_client_event_openssh_auth(struct assh_session_s *s, FILE *out, FILE *in,
 			       const struct assh_client_openssh_user_key_s *key_files,
 			       struct assh_event_s *event);
 
-/** @This prints a list of algorithms selected by the kex exchange. */
-void
-assh_client_print_kex_details(struct assh_session_s *s, FILE *out,
-			      const struct assh_event_s *event);
-
 /** @This specifies the current state of an interactive session.
     @see assh_client_inter_session_s */
 enum assh_client_inter_session_state_e
@@ -224,11 +219,6 @@ void
 assh_client_event_inter_session(struct assh_session_s *s,
                                 struct assh_event_s *event,
                                 struct assh_client_inter_session_s *state);
-
-/** @This writes a string to the passed stream, filtering out terminal
-    control characters. */
-void
-assh_client_print_string(FILE *out, const struct assh_cbuffer_s *str);
 
 #endif
 

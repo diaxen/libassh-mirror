@@ -41,9 +41,6 @@
 #include <assh/assh_session.h>
 #include <assh/assh_connection.h>
 #include <assh/assh_event.h>
-#include <assh/assh_cipher.h>
-#include <assh/assh_compress.h>
-#include <assh/assh_mac.h>
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -367,21 +364,6 @@ assh_client_event_openssh_hk_lookup_va(struct assh_session_s *s, FILE *out, FILE
   assh_event_done(s, event, err);
 }
 
-/* print string, skipping any terminal control characters */
-void
-assh_client_print_string(FILE *out, const struct assh_cbuffer_s *str)
-{
-  size_t i;
-
-  for (i = 0; i < str->len; i++)
-    {
-      char c = str->str[i];
-
-      if ((c >= ' ' && c <= 127) || c == '\n' || c == '\t')
-	fputc(c, out);
-    }
-}
-
 static assh_error_t
 assh_client_load_key_passphrase(struct assh_context_s *c, FILE *out, FILE *in,
 				struct assh_key_s **head,
@@ -446,7 +428,7 @@ assh_client_event_openssh_auth(struct assh_session_s *s, FILE *out, FILE *in,
 	&event->userauth_client.banner;
 
       assert(event->id == ASSH_EVENT_USERAUTH_CLIENT_BANNER);
-      assh_client_print_string(out, &ev->text);
+      assh_print_string(out, &ev->text);
       fputc('\n', out);
 
       assh_event_done(s, event, ASSH_OK);
@@ -556,7 +538,7 @@ assh_client_event_openssh_auth(struct assh_session_s *s, FILE *out, FILE *in,
       struct assh_event_userauth_client_pwchange_s *ev =
 	&event->userauth_client.pwchange;
 
-      assh_client_print_string(out, &ev->prompt);
+      assh_print_string(out, &ev->prompt);
       fputc('\n', out);
 
       const char *old_pass, *new_pass;
@@ -611,14 +593,14 @@ assh_client_event_openssh_auth(struct assh_session_s *s, FILE *out, FILE *in,
 
 	  if (ev->instruction.len)
 	    {
-	      assh_client_print_string(out, &ev->instruction);
+	      assh_print_string(out, &ev->instruction);
 	      fputc('\n', out);
 	    }
 
 	  for (; i < count; i++)
 	    {
 	      const char *v;
-	      assh_client_print_string(out, &ev->prompts[i]);
+	      assh_print_string(out, &ev->prompts[i]);
 	      err = assh_fd_get_password(c, &v, 80, fileno(in), (ev->echos >> i) & 1);
 	      if (ASSH_ERR_ERROR(err) != ASSH_OK)
 		break;
@@ -640,85 +622,6 @@ assh_client_event_openssh_auth(struct assh_session_s *s, FILE *out, FILE *in,
     default:
       ASSH_UNREACHABLE();
     }
-}
-
-void
-assh_client_print_kex_details(struct assh_session_s *s, FILE *out,
-			      const struct assh_event_s *event)
-{
-  const struct assh_event_kex_done_s *ev = &event->kex.done;
-
-  assert(event->id == ASSH_EVENT_KEX_DONE);
-  const struct assh_algo_kex_s *kex = ev->algo_kex;
-
-  fprintf(out,
-	  "Key exchange details:\n"
-	  "  remote software   : ");
-  assh_client_print_string(out, &ev->ident);
-
-  fprintf(out, "\n"
-	  "  key exchange      : %-38s safety %u%% (%s)\n",
-	  assh_algo_name(&kex->algo),
-	  assh_algo_safety(&kex->algo),
-	  assh_algo_safety_name(&kex->algo)
-	  );
-
-  if (ev->host_key)
-    fprintf(out,
-	  "  host key          : %-38s safety %u%% (%s)\n",
-	  assh_key_type_name(ev->host_key),
-	  assh_key_safety(ev->host_key),
-	  assh_key_safety_name(ev->host_key)
-	  );
-
-  const struct assh_algo_cipher_s *cipher_in = ev->algos_in->cipher;
-  const struct assh_algo_cipher_s *cipher_out = ev->algos_out->cipher;
-
-  fprintf(out,
-	  "  input cipher      : %-38s safety %u%% (%s)\n"
-	  "  output cipher     : %-38s safety %u%% (%s)\n",
-	  assh_algo_name(&cipher_in->algo),
-	  assh_algo_safety(&cipher_in->algo),
-	  assh_algo_safety_name(&cipher_in->algo),
-	  assh_algo_name(&cipher_out->algo),
-	  assh_algo_safety(&cipher_out->algo),
-	  assh_algo_safety_name(&cipher_out->algo)
-	  );
-
-  const struct assh_algo_mac_s *mac_in = ev->algos_in->mac;
-  const struct assh_algo_mac_s *mac_out = ev->algos_out->mac;
-
-  if (!cipher_in->auth_size)
-    fprintf(out,
-	  "  input mac         : %-38s safety %u%% (%s)\n",
-	  assh_algo_name(&mac_in->algo),
-	  assh_algo_safety(&mac_in->algo),
-          assh_algo_safety_name(&mac_in->algo)
-	    );
-
-  if (!cipher_out->auth_size)
-    fprintf(out,
-	  "  output mac        : %-38s safety %u%% (%s)\n",
-	  assh_algo_name(&mac_out->algo),
-	  assh_algo_safety(&mac_out->algo),
-	  assh_algo_safety_name(&mac_out->algo)
-	    );
-
-  if (ev->algos_in->cmp != &assh_compress_none)
-    fprintf(out,
-	  "  input compression : %-38s safety %u%% (%s)\n",
-	  assh_algo_name(&ev->algos_in->cmp->algo),
-	  assh_algo_safety(&ev->algos_in->cmp->algo),
-	  assh_algo_safety_name(&ev->algos_in->cmp->algo)
-	  );
-
-  if (ev->algos_out->cmp != &assh_compress_none)
-    fprintf(out,
-	  "  output compression: %-38s safety %u%% (%s)\n",
-	  assh_algo_name(&ev->algos_out->cmp->algo),
-	  assh_algo_safety(&ev->algos_out->cmp->algo),
-	  assh_algo_safety_name(&ev->algos_out->cmp->algo)
-	  );
 }
 
 void

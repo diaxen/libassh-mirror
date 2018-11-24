@@ -161,7 +161,7 @@ ssh_loop(struct assh_session_s *session,
         case ASSH_EVENT_DISCONNECT:
           /* print disconnect message */
           fputs("SSH disconnect: ", stderr);
-          assh_client_print_string(stderr, &event.transport.disconnect.desc);
+          assh_print_string(stderr, &event.transport.disconnect.desc);
           fputc('\n', stderr);
           assh_event_done(session, &event, ASSH_OK);
           break;
@@ -188,7 +188,7 @@ ssh_loop(struct assh_session_s *session,
             }
 
           if (verbose || warn)  /* be verbose about negotiated algorithms */
-            assh_client_print_kex_details(session, stderr, &event);
+            assh_print_kex_details(session, stderr, &event);
 
           /* let an helper function register new host key as needed */
           assh_client_event_openssh_hk_add(session, hostname, &event);

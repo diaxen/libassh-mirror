@@ -576,7 +576,7 @@ static void test()
 	      if (verbose > 0)
 		fprintf(stderr, "[%s] Kex done.\n", side);
 	      if (verbose > 1)
-		assh_client_print_kex_details(&session[i], stderr, &event);
+		assh_print_kex_details(&session[i], stderr, &event);
 	      break;
 
 	    case ASSH_EVENT_SERVICE_START:
