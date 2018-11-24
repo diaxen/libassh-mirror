@@ -271,7 +271,6 @@ assh_key_eddsa_load(struct assh_context_s *c,
   struct assh_key_eddsa_s *k = (void*)*key;
 
   size_t n = ASSH_ALIGN8(curve->bits) / 8;
-  size_t tlen = strlen(algo->name);
 
   const uint8_t *pv_str;
   const uint8_t *pub_str;

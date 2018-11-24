@@ -165,7 +165,6 @@ assh_userauth_client_req_keyboard_info(struct assh_session_s *s,
 
 static ASSH_USERAUTH_CLIENT_PROCESS(assh_userauth_client_keyboard_process)
 {
-  struct assh_context_s *c = s->ctx;
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_error_t err;
 

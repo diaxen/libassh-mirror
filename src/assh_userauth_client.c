@@ -323,8 +323,6 @@ static assh_error_t
 assh_userauth_client_username(struct assh_session_s *s,
                               struct assh_event_s *e)
 {
-  struct assh_userauth_context_s *pv = s->srv_pv;
-
   struct assh_event_userauth_client_user_s *ev = &e->userauth_client.user;
 
   ev->username.str = NULL;
