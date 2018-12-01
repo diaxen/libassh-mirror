@@ -76,6 +76,18 @@ struct assh_context_s
   /** Head of loaded keys list */
   struct assh_key_s *keys;
 
+  /** Registered algorithms */
+  const struct assh_algo_s **algos;
+
+  /** Set if @tt algos is not a static array */
+  size_t algo_realloc:1;
+
+  /** Number of algorithm slots */
+  size_t algo_max:15;
+
+  /** Number of registered algorithms */
+  size_t algo_cnt:16;
+
 #ifdef CONFIG_ASSH_PACKET_POOL
   /** Packet pool: maximum allocated size in a single bucket. */
   uint32_t pck_pool_max_bsize;
@@ -102,7 +114,6 @@ struct assh_context_s
   /** Number of initialized sessions attached to this context. */
   size_t session_count:8;
 
-  size_t algo_realloc:1;
   /** Timeout waiting for reply to the version string and service
       start requests. Expressed in seconds minus 1. */
   uint8_t timeout_transport;
@@ -118,18 +129,9 @@ struct assh_context_s
       when 0. */
   uint16_t timeout_keepalive;
 
-  /** Number of algorithm slots */
-  size_t algo_max:15;
-
-  /** Number of registered algorithms */
-  size_t algo_cnt:16;
-
   /** Estimated size of the kex init packet, computed when new
       algorithms are registered. */
   size_t kex_init_size:16;
-
-  /** Registered algorithms */
-  const struct assh_algo_s **algos;
 };
 
 /** @This sets various timeout delays related to the transport
