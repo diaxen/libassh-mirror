@@ -110,8 +110,6 @@ struct assh_userauth_context_s
   struct assh_key_s *pub_key;
   const uint8_t *sign;
 #endif
-
-  assh_time_t deadline;
 };
 
 ASSH_WARN_UNUSED_RESULT assh_error_t

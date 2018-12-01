@@ -103,6 +103,20 @@ struct assh_context_s
   size_t session_count:8;
 
   size_t algo_realloc:1;
+  /** Timeout waiting for reply to the version string and service
+      start requests. Expressed in seconds minus 1. */
+  uint8_t timeout_transport;
+  /** Maximum duration of a key exchange, in seconds minus 1. */
+  uint8_t timeout_kex;
+  /** Duration before initiating a new key exchanges, in seconds minus 1. */
+  uint16_t timeout_rekex;
+  /** Maximum duration of the user authentication process, in
+      seconds minus 1. */
+  uint16_t timeout_userauth;
+  /** Delay between transmission of the @ref SSH_MSG_IGNORE packets by
+      the running service for keepalive purpose, in seconds. Disabled
+      when 0. */
+  uint16_t timeout_keepalive;
 
   /** Number of algorithm slots */
   size_t algo_max:15;
@@ -117,6 +131,20 @@ struct assh_context_s
   /** Registered algorithms */
   const struct assh_algo_s **algos;
 };
+
+/** @This sets various timeout delays related to the transport
+    layer. Values are expressed in second unit. When passing 0, the
+    delay is not changed. */
+void
+assh_context_timeouts(struct assh_context_s *c,
+                      uint_fast8_t transport, uint_fast8_t kex,
+                      uint_fast16_t rekex, uint_fast16_t userauth);
+
+/** @This sets the idle delay before transmission of a keep-alive
+    message by the running service. No keep-alive messages are
+    transmitted when 0. */
+void
+assh_context_keepalive(struct assh_context_s *c, uint_fast16_t keepalive);
 
 #ifdef CONFIG_ASSH_LIBC_REALLOC
 /** This allocator relies on the libc @tt realloc function. This

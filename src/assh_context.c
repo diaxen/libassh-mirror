@@ -199,6 +199,12 @@ assh_context_init(struct assh_context_s *c,
 
   c->srvs_count = 0;
 
+  c->timeout_transport = 10 - 1;
+  c->timeout_kex = 30 - 1;
+  c->timeout_userauth = 60 - 1;
+  c->timeout_rekex = 3600 - 1;
+  c->timeout_keepalive = 300;
+
   return ASSH_OK;
 }
 
@@ -266,4 +272,25 @@ void assh_context_set_pv(struct assh_context_s *ctx,
 void * assh_context_get_pv(struct assh_context_s *ctx)
 {
   return ctx->user_pv;
+}
+
+void
+assh_context_timeouts(struct assh_context_s *c,
+                      uint_fast8_t transport, uint_fast8_t kex,
+                      uint_fast16_t rekex, uint_fast16_t userauth)
+{
+  if (transport)
+    c->timeout_transport = transport - 1;
+  if (kex)
+    c->timeout_kex = kex - 1;
+  if (rekex)
+    c->timeout_rekex = rekex - 1;
+  if (userauth)
+    c->timeout_userauth = userauth - 1;
+}
+
+void
+assh_context_keepalive(struct assh_context_s *c, uint_fast16_t keepalive)
+{
+  c->timeout_keepalive = keepalive;
 }

@@ -452,7 +452,6 @@ int main(int argc, char **argv)
 
     /* get the appropriate ssh protocol timeout */
     int timeout = assh_session_delay(session, time(NULL)) * 1000;
-    ASSH_DEBUG("Timeout %i\n", timeout);
 
     if (poll(p, 3, timeout) <= 0)
       continue;

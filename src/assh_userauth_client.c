@@ -90,6 +90,8 @@ static ASSH_SERVICE_INIT_FCN(assh_userauth_client_init)
   pv->pck = NULL;
   pv->srv = srv;
 
+  s->srv_deadline = s->time + s->ctx->timeout_userauth + 1;
+
   return ASSH_OK;
 }
 
@@ -542,8 +544,11 @@ static ASSH_SERVICE_PROCESS_FCN(assh_userauth_client_process)
   if (s->tr_st >= ASSH_TR_DISCONNECT)
     return ASSH_OK;
 
+  ASSH_RET_IF_TRUE(s->srv_deadline <= s->time,
+		   ASSH_ERR_TIMEOUT | ASSH_ERRSV_DISCONNECT);
+
   if (p != NULL)
-    s->deadline = s->time + ASSH_TIMEOUT_USERAUTH;
+    s->srv_deadline = s->time + s->ctx->timeout_userauth + 1;
 
   switch (pv->state)
     {

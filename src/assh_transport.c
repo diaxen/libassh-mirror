@@ -76,6 +76,7 @@ void assh_transport_push(struct assh_session_s *s,
       assh_queue_push_back(q, &p->entry);
       break;
 
+    case ASSH_TR_INIT:
     case ASSH_TR_CLOSED:
       ASSH_UNREACHABLE();
     }
@@ -729,6 +730,12 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
   ASSH_JMP_IF_TRUE(s->kex_bytes > ASSH_REKEX_THRESHOLD + CONFIG_ASSH_MAX_PAYLOAD * 16,
 		   ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT, done);
 
+  /* check protocol timeout */
+  ASSH_JMP_IF_TRUE(s->tr_st > ASSH_TR_INIT &&
+		   s->tr_st < ASSH_TR_DISCONNECT &&
+		   s->tr_deadline <= s->time,
+		   ASSH_ERR_TIMEOUT | ASSH_ERRSV_DISCONNECT, done);
+
   if (p != NULL)
     {
       msg = p->head.msg;
@@ -783,9 +790,12 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
   /* transport protocol state machine */
   switch (s->tr_st)
     {
+    case ASSH_TR_INIT:
+      /* set next transport timeout */
+      s->tr_deadline = s->time + s->ctx->timeout_transport + 1;
+      ASSH_SET_STATE(s, tr_st, ASSH_TR_IDENT);
+
     case ASSH_TR_IDENT:
-      if (s->deadline == 0)
-	s->deadline = s->time + ASSH_TIMEOUT_IDENT;
       return ASSH_OK;
 
     /* send first kex init packet during session init */
@@ -812,7 +822,8 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 		   ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT, done);
 #endif
 
-      s->deadline = s->time + ASSH_TIMEOUT_KEX;
+      /* set next transport timeout */
+      s->tr_deadline = s->time + s->ctx->timeout_kex + 1;
       ASSH_JMP_ON_ERR(assh_kex_got_init(s, p) | ASSH_ERRSV_DISCONNECT, done);
 
       p = NULL;
@@ -874,6 +885,14 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
       /* switch to service running state */
       p = NULL;
       msg = SSH_MSG_INVALID;
+      s->rekex_deadline = s->time + s->ctx->timeout_rekex + 1;
+
+      /* set next transport timeout */
+      if (s->srv_st == ASSH_SRV_RUNNING)
+	s->tr_deadline = s->rekex_deadline + s->ctx->timeout_kex;
+      else
+	/* service start timeout */
+	s->tr_deadline = s->time + s->ctx->timeout_transport + 1;
 
       ASSH_SET_STATE(s, tr_st, ASSH_TR_SERVICE);
       s->kex_bytes = 0;
@@ -897,7 +916,8 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
 	  goto kex_init;
 	}
 
-      if (s->kex_bytes > s->kex_max_bytes &&
+      if ((s->time > s->rekex_deadline ||
+	   s->kex_bytes > s->kex_max_bytes) &&
 	  s->tr_st == ASSH_TR_SERVICE)
         {
           /* initiate key re-exchange as needed */

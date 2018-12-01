@@ -257,15 +257,6 @@ const char * assh_error_str(assh_error_t err);
 /** @internal Default key re-echange threshold in bytes */
 #define ASSH_REKEX_THRESHOLD (1 << 31)
 
-/** remote identification string protocol timeout in seconds */
-#define ASSH_TIMEOUT_IDENT 10
-/** kex exchange protocol timeout in seconds */
-#define ASSH_TIMEOUT_KEX 10
-/** user authentication protocol timeout in seconds */
-#define ASSH_TIMEOUT_USERAUTH 60
-/** connection service keepalive inteval in seconds */
-#define ASSH_TIMEOUT_KEEPALIVE 600
-
 /** @internal */
 void assh_hexdump(const char *name, const void *data, size_t len);
 

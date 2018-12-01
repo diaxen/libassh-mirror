@@ -134,12 +134,23 @@ struct assh_session_s
 
   /** Current date as reported by the last IO request. */
   assh_time_t time;
+
   /** The session will terminate with the @ref ASSH_ERR_TIMEOUT error
-      if this field contains a value less then the @ref time
-      field. It is updated by the transport layer during key exchange
-      and by the @ref assh_service_process_t function of the running
-      service. */
-  assh_time_t deadline;
+      if this field contains a value less than the @ref time field. It
+      is updated by the transport layer. */
+  assh_time_t tr_deadline;
+
+  /** The running service may update this field and check when this
+      field contains a value less than the @ref time field. When not
+      used, it must be set to 0 so that it is excluded from the
+      computation of the next protocol timeout reported to the
+      application. */
+  assh_time_t srv_deadline;
+
+  /** The key-exchange process will be stated again when this field
+      contains a value less then the @ref time field and the transport
+      state is @ref ASSH_TR_SERVICE. */
+  assh_time_t rekex_deadline;
 
   /** Size of valid data in the @ref stream_in_pck packet */
   size_t stream_in_size:32;
@@ -272,18 +283,16 @@ assh_session_algo_filter(struct assh_session_s *s,
 
     @see assh_session_delay
 */
-ASSH_INLINE assh_time_t
-assh_session_deadline(struct assh_session_s *s)
-{
-  return s->deadline;
-}
+assh_time_t
+assh_session_deadline(struct assh_session_s *s);
 
 /** @This returns the delay between the next protocol deadline and the
-    current time. If the deadline is in the past, the function returns 1. */
+    current time. If the deadline is in the past, the function returns 0. */
 ASSH_INLINE assh_time_t
 assh_session_delay(struct assh_session_s *s, assh_time_t time)
 {
-  return time < s->deadline ? s->deadline - time : 0;
+  assh_time_t d = assh_session_deadline(s);
+  return time < d ? d - time : 0;
 }
 
 #endif

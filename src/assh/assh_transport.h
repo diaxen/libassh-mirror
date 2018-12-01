@@ -39,6 +39,8 @@
 /** @internal @This specifies the transport status of an ssh session. */
 enum assh_transport_state_e
 {
+  /** Session just initilized, first call to @ref assh_event_get expected. */
+  ASSH_TR_INIT,
   /** Wait for end of identification string exchange */
   ASSH_TR_IDENT,
   /** send a @ref SSH_MSG_KEXINIT packet then go to @ref ASSH_TR_KEX_WAIT */

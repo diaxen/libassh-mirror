@@ -565,7 +565,6 @@ server_connected(struct assh_context_s *context,
 
     /* get the appropriate ssh protocol timeout */
     int timeout = assh_session_delay(session, time(NULL)) * 1000;
-    ASSH_DEBUG("Timeout %i\n", timeout);
 
     if (poll(p, poll_count, timeout) <= 0)
       continue;

@@ -329,6 +329,10 @@ assh_error_t assh_service_loop(struct assh_session_s *s,
 
         ASSH_SET_STATE(s, srv_st, ASSH_SRV_RUNNING);
 
+        /* cancel service start timeout */
+        if (s->tr_st == ASSH_TR_SERVICE)
+          s->tr_deadline = s->rekex_deadline + s->ctx->timeout_kex;
+
         /* packet not consumed by the init */
         return p != NULL ? ASSH_NO_DATA : ASSH_OK;
 
@@ -340,6 +344,9 @@ assh_error_t assh_service_loop(struct assh_session_s *s,
 
         /* call service processing function, p may be NULL */
         ASSH_RET_ON_ERR(s->srv->f_process(s, p, e));
+
+        if (s->srv_deadline <= s->time)
+          s->srv_deadline = 0;
 
         /* Handle as a consumed packet when no packet passed to
            service. The pointer might have been set to NULL in a

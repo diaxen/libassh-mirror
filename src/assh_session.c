@@ -47,7 +47,7 @@ assh_error_t assh_session_init(struct assh_context_s *c,
 
   s->ctx = c;
 
-  ASSH_SET_STATE(s, tr_st, ASSH_TR_IDENT);
+  ASSH_SET_STATE(s, tr_st, ASSH_TR_INIT);
 
   s->ident_len = 0;
   s->session_id_len = 0;
@@ -72,7 +72,7 @@ assh_error_t assh_session_init(struct assh_context_s *c,
 
   s->last_err = ASSH_OK;
   s->time = 0;
-  s->deadline = 0;
+  s->tr_deadline = 0;
 
   ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_IDENT);
   assh_queue_init(&s->out_queue);
@@ -233,7 +233,7 @@ assh_session_send_disconnect(struct assh_session_s *s,
 
   assh_transport_push(s, pout);
 
-  s->deadline = s->time + 1;
+  s->tr_deadline = s->time + 1;
 
   return ASSH_OK;
 }
@@ -363,6 +363,27 @@ assh_session_algo_filter(struct assh_session_s *s,
         ? filter : assh_session_kex_filter;
       return ASSH_OK;
     }
+}
+
+assh_time_t
+assh_session_deadline(struct assh_session_s *s)
+{
+  ASSH_DEBUG("deadlines: tr=%lu rekex=%lu srv=%lu\n",
+             s->tr_deadline - s->time,
+             s->rekex_deadline - s->time,
+             s->srv_deadline - s->time);
+
+  assh_time_t d = s->tr_deadline;
+
+  if (s->tr_st == ASSH_TR_SERVICE &&
+      s->rekex_deadline < d)
+    d = s->rekex_deadline;
+
+  if (s->srv_st == ASSH_SRV_RUNNING &&
+      s->srv_deadline && s->srv_deadline < d)
+    d = s->srv_deadline;
+
+  return d;
 }
 
 void assh_session_set_pv(struct assh_session_s *ctx,

@@ -53,13 +53,6 @@ assh_bool_t assh_event_get(struct assh_session_s *s,
       if (ASSH_ERR_ERROR(s->last_err) != ASSH_OK)
         goto err_event;        /* report an event for the pending error */
 
-      if (s->tr_st < ASSH_TR_DISCONNECT)
-        {
-          /* check protocol timeout */
-          ASSH_JMP_IF_TRUE(s->deadline != 0 && s->deadline <= s->time,
-                           ASSH_ERR_TIMEOUT | ASSH_ERRSV_DISCONNECT, err);
-        }
-
       e->id = ASSH_EVENT_INVALID;
 
       /* process the next input packet if any and run kex or service. */

@@ -228,6 +228,13 @@ assh_channel_next_id(struct assh_connection_context_s *pv)
   return id;
 }
 
+static inline void
+assh_connection_update_keepalive(struct assh_session_s *s)
+{
+  uint_fast16_t ka = s->ctx->timeout_keepalive;
+  s->srv_deadline = ka ? s->time + ka : 0;
+}
+
 static void assh_request_queue_cleanup(struct assh_session_s *s,
 				       struct assh_queue_s *q)
 {
@@ -2090,8 +2097,8 @@ static ASSH_SERVICE_INIT_FCN(assh_connection_init)
   pv->channel_map = NULL;
   pv->pck = NULL;
   pv->ch_id_counter = 0;
-  s->deadline = s->time + ASSH_TIMEOUT_KEEPALIVE;
   pv->in_data_left = 0;
+  assh_connection_update_keepalive(s);
 
   s->srv_pv = pv;
 
@@ -2246,7 +2253,7 @@ static ASSH_SERVICE_PROCESS_FCN(assh_connection_process)
   /* handle incoming packet, if any */
   if (p != NULL)
     {
-      s->deadline = s->time + ASSH_TIMEOUT_KEEPALIVE;
+      assh_connection_update_keepalive(s);
 
       switch (p->head.msg)
         {
@@ -2342,7 +2349,7 @@ static ASSH_SERVICE_PROCESS_FCN(assh_connection_process)
           assh_request_abort_flush(s, NULL, e))
         return ASSH_OK;
     }
-  else if (s->deadline <= s->time)
+  else if (s->srv_deadline && s->srv_deadline <= s->time)
     {
       /* send keep alive */
       struct assh_packet_s *pout;
@@ -2351,7 +2358,8 @@ static ASSH_SERVICE_PROCESS_FCN(assh_connection_process)
           ASSH_ASSERT(assh_packet_add_u32(pout, 0));
           assh_transport_push(s, pout);
         }
-      s->deadline = s->time + ASSH_TIMEOUT_KEEPALIVE;
+
+      assh_connection_update_keepalive(s);
     }
 
   /* report channel closing related events */

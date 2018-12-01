@@ -1,7 +1,7 @@
 digraph {
-  ASSH_init [label=<Session initialization>];
+  ASSH_TR_INIT [label=<Session initialization>];
 
-  ASSH_init -> ASSH_TR_IDENT [label=<Initialized>];
+  ASSH_TR_INIT -> ASSH_TR_IDENT [label=<Initialized>];
 
   ASSH_TR_IDENT [label=<<b>IDENT</b>:<br/>Wait for ident string>];
 
