@@ -102,5 +102,8 @@ endif
 if COND_gcrypt_ciphers
 libassh_la_SOURCES +=	cipher_gcrypt.c
 else
+if COND_openssl_ciphers
+libassh_la_SOURCES +=	cipher_openssl.c
+endif
 libassh_la_SOURCES +=	cipher_arc4_builtin.c cipher_aes_builtin.c
 endif
