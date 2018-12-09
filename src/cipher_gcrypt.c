@@ -25,12 +25,16 @@
 
 #include <gcrypt.h>
 
+#ifdef CONFIG_ASSH_VALGRIND
+# include <valgrind/memcheck.h>
+#endif
+
 struct assh_cipher_gcrypt_context_s
 {
   const struct assh_algo_cipher_s *cipher;
   gcry_cipher_hd_t hd;
   assh_bool_t encrypt;
-  uint8_t *iv;
+  uint8_t iv[12];
 };
 
 static assh_error_t
@@ -52,13 +56,10 @@ assh_cipher_gcrypt_init(const struct assh_algo_cipher_s *cipher,
 
   ctx->cipher = cipher;
   ctx->encrypt = encrypt;
-  ctx->iv = NULL;
 
   switch (mode)
     {
     case GCRY_CIPHER_MODE_GCM:
-      ctx->iv = gcry_malloc_secure(cipher->iv_size);
-      ASSH_JMP_IF_TRUE(ctx->iv == NULL, ASSH_ERR_MEM, err_open);
       memcpy(ctx->iv, iv, cipher->iv_size);
       break;
 
@@ -77,11 +78,12 @@ assh_cipher_gcrypt_init(const struct assh_algo_cipher_s *cipher,
       if (cipher == &assh_cipher_arc4_128 ||
 	  cipher == &assh_cipher_arc4_256)
 	{
-#warning should be secure alloced
 	  uint8_t dummy[128];
 	  uint_fast16_t i;
 
-	  memset(dummy, 0, sizeof(dummy));
+# ifdef CONFIG_ASSH_VALGRIND
+          VALGRIND_MAKE_MEM_DEFINED(dummy, sizeof(dummy));
+# endif
 	  for (i = 0; i < 1536; i += sizeof(dummy))
 	    if (encrypt)
 	      ASSH_JMP_IF_TRUE(gcry_cipher_encrypt(ctx->hd, dummy, sizeof(dummy), NULL, 0),
@@ -167,7 +169,6 @@ static ASSH_CIPHER_PROCESS_FCN(assh_cipher_gcrypt_process)
 static ASSH_CIPHER_CLEANUP_FCN(assh_cipher_gcrypt_cleanup)
 {
   struct assh_cipher_gcrypt_context_s *ctx = ctx_;
-  gcry_free(ctx->iv);
   gcry_cipher_close(ctx->hd);
 }
 
