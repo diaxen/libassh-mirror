@@ -21,13 +21,19 @@ AM_CPPFLAGS = -I$(top_builddir)/src/assh
 noinst_PROGRAMS =
 TESTS =
 
-############################## hash tests
+############################## crypto tests
 
 noinst_PROGRAMS += hash
 TESTS += hash
 hash_SOURCES = hash.c
 hash_LDADD = $(top_builddir)/src/libassh.la
 hash_CFLAGS = -I$(top_srcdir)/src
+
+noinst_PROGRAMS += cipher
+TESTS += cipher
+cipher_SOURCES = cipher.c
+cipher_LDADD = $(top_builddir)/src/libassh.la
+cipher_CFLAGS = -I$(top_srcdir)/src
 
 ############################## protocol tests
 
