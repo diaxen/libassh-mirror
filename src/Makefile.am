@@ -27,7 +27,6 @@ libassh_la_SOURCES = assh_context.c assh_session.c assh_packet.c	\
 	kex_ecdh_montgomery.c kex_ecdh_weierstrass.c			\
 	ecc_weierstrass.c ecc_weierstrass.h				\
 	mac_none.c							\
-	cipher_chacha_poly.c cipher_none.c				\
 	key_dsa.c key_rsa.c key_eddsa.c key_ecdsa.c key_none.c		\
 	sign_dsa.c sign_rsa.c sign_eddsa.c sign_ecdsa.c sign_none.c	\
 	compress_none.c							\
@@ -101,9 +100,12 @@ endif
 
 if COND_gcrypt_ciphers
 libassh_la_SOURCES +=	cipher_gcrypt.c
-else
+endif
 if COND_openssl_ciphers
 libassh_la_SOURCES +=	cipher_openssl.c
 endif
+if COND_builtin_ciphers
 libassh_la_SOURCES +=	cipher_arc4_builtin.c cipher_aes_builtin.c
 endif
+
+libassh_la_SOURCES +=	cipher_chacha_poly.c cipher_none.c
