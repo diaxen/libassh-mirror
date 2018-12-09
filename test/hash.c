@@ -30,6 +30,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "test.h"
+#include "leaks_check.h"
+
 #define BUFSIZE 4096
 
 struct hash_test_s
@@ -112,16 +115,15 @@ main(int argc, char **argv)
   if (assh_deps_init())
     return -1;
 
-  uint_fast8_t err = 0;
-
   struct assh_context_s context;
-
-  if (assh_context_init(&context, ASSH_CLIENT_SERVER, NULL, NULL, NULL, NULL))
-    return -1;
 
   uint_fast8_t i;
   for (i = 0; tests[i].algo != NULL; i++)
     {
+      if (assh_context_init(&context, ASSH_CLIENT_SERVER, assh_leaks_allocator,
+			    NULL, NULL, NULL))
+	TEST_FAIL("context init");
+
       const struct assh_hash_algo_s *algo = tests[i].algo;
 
       uint8_t buf[BUFSIZE];
@@ -136,17 +138,17 @@ main(int argc, char **argv)
 #if 0
       assh_hash_init(&context, ctx, algo);
       assh_hash_final(ctx, buf, hash_size);
-#ifdef CONFIG_ASSH_DEBUG
+# ifdef CONFIG_ASSH_DEBUG
       assh_hexdump("empty", buf, hash_size);
-#endif
+# endif
       assh_hash_cleanup(ctx);
 
       assh_hash_init(&context, ctx, algo);
       assh_hash_update(ctx, "abc", 3);
       assh_hash_final(ctx, buf, hash_size);
-#ifdef CONFIG_ASSH_DEBUG
+# ifdef CONFIG_ASSH_DEBUG
       assh_hexdump("abc", buf, hash_size);
-#endif
+# endif
       assh_hash_cleanup(ctx);
 #endif
 
@@ -154,20 +156,13 @@ main(int argc, char **argv)
       for (j = 0; j <= BUFSIZE; j++)
 	{
 	  if (assh_hash_init(&context, ctx, algo))
-	    {
-	      err++;
-	      break;
-	    }
+	    TEST_FAIL("hash init");
 	  assh_hash_update(ctx, buf, j);
 
 	  if (j == BUFSIZE / 2)
 	    {
 	      if (assh_hash_copy(ctx2, ctx))
-		{
-		  err++;
-		  assh_hash_cleanup(ctx);
-		  break;
-		}
+		TEST_FAIL("hash copy");
 	      assh_hash_cleanup(ctx);
 	      void *tmp = ctx;
 	      ctx = ctx2;
@@ -184,14 +179,17 @@ main(int argc, char **argv)
 
       if (memcmp(buf, tests[i].out, hash_size))
 	{
-#ifdef CONFIG_ASSH_DEBUG
 	  assh_hexdump("hash result", buf, hash_size);
 	  assh_hexdump("expected   ", tests[i].out, hash_size);
-#endif
-	  err++;
+	  TEST_FAIL("hash result");
 	}
-    }  
 
-  return err > 0;
+      assh_context_cleanup(&context);
+
+      if (alloc_size != 0)
+	TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
+    }
+
+  return 0;
 }
 
