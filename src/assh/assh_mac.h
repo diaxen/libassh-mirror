@@ -104,7 +104,7 @@ extern const struct assh_algo_mac_s assh_hmac_sha1_96_etm;
 extern const struct assh_algo_mac_s assh_hmac_sha256_etm;
 extern const struct assh_algo_mac_s assh_hmac_sha512_etm;
 
-#ifdef CONFIG_ASSH_USE_GCRYPT_HASH
+#ifdef CONFIG_ASSH_HASH_RIPEMD160
 extern const struct assh_algo_mac_s assh_hmac_ripemd160;
 extern const struct assh_algo_mac_s assh_hmac_ripemd160_etm;
 #endif

@@ -32,7 +32,7 @@ libassh_la_SOURCES = assh_context.c assh_session.c assh_packet.c	\
 	sign_dsa.c sign_rsa.c sign_eddsa.c sign_ecdsa.c sign_none.c	\
 	compress_none.c							\
 	helper_key.c helper_io.c helper_base64.c helper_bcrypt.c	\
-	hash_sha3_builtin.c prng_xswap_builtin.c helper_interactive.c
+	prng_xswap_builtin.c helper_interactive.c
 
 if COND_client
 libassh_la_SOURCES +=   assh_userauth_client.c assh_userauth_client_none.c \
@@ -77,9 +77,14 @@ libassh_la_SOURCES +=   compress_zlib.c
 endif
 
 if COND_gcrypt_hash
-libassh_la_SOURCES +=   hash_gcrypt.c mac_gcrypt.c
-else
-libassh_la_SOURCES +=   hash_md5_builtin.c hash_sha1_builtin.c hash_sha2_builtin.c mac_builtin.c
+libassh_la_SOURCES +=   hash_gcrypt.c hash_sha3_builtin.c  mac_gcrypt.c
+endif
+if COND_openssl_hash
+libassh_la_SOURCES +=   hash_openssl.c hash_sha3_builtin.c mac_openssl.c
+endif
+if COND_builtin_hash
+libassh_la_SOURCES +=   hash_md5_builtin.c hash_sha1_builtin.c \
+			hash_sha2_builtin.c hash_sha3_builtin.c mac_builtin.c
 endif
 
 libassh_la_SOURCES +=	bignum_builtin.h bignum_builtin.c bignum_builtin_vm.c \
@@ -99,5 +104,3 @@ libassh_la_SOURCES +=	cipher_gcrypt.c
 else
 libassh_la_SOURCES +=	cipher_arc4_builtin.c cipher_aes_builtin.c
 endif
-
-
