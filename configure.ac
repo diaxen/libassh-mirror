@@ -141,14 +141,36 @@ if test x$enable_gcrypt = xyes ; then
 
       if test x$enable_gcrypt_ciphers = xyes ; then
 	AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_CIPHERS], [], [Enable Libgcrypt cipher algorithms when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_TDES], [], [Enable the Triple-DES cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_BLOWFISH], [], [Enable the Blowfish cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_TWOFISH], [], [Enable the Twofish cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_SERPENT], [], [Enable the Serpent cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_CAST128], [], [Enable the CAST128 cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_IDEA], [], [Enable the IDEA cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_CAMELLIA], [], [Enable the Camellia cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_MODE_GCM], [], [Enable the GCM cipher mode when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_TDES_CBC], [], [Enable the Triple-DES cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_TDES_CTR], [], [Enable the Triple-DES cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_CAST128_CBC], [], [Enable the CAST128 cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_CAST128_CTR], [], [Enable the CAST128 cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_IDEA_CBC], [], [Enable the IDEA cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_IDEA_CTR], [], [Enable the IDEA cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_BLOWFISH_CBC], [], [Enable the Blowfish cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_BLOWFISH_CTR], [], [Enable the Blowfish cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_AES128_GCM], [], [Enable the AES cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_AES256_GCM], [], [Enable the AES cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_TWOFISH128_CBC], [], [Enable the Twofish cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_TWOFISH256_CBC], [], [Enable the Twofish cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_TWOFISH128_CTR], [], [Enable the Twofish cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_TWOFISH256_CTR], [], [Enable the Twofish cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_TWOFISH128_GCM], [], [Enable the Twofish cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_TWOFISH256_GCM], [], [Enable the Twofish cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_SERPENT128_CBC], [], [Enable the Serpent cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_SERPENT192_CBC], [], [Enable the Serpent cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_SERPENT256_CBC], [], [Enable the Serpent cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_SERPENT128_CTR], [], [Enable the Serpent cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_SERPENT192_CTR], [], [Enable the Serpent cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_SERPENT256_CTR], [], [Enable the Serpent cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_SERPENT128_GCM], [], [Enable the Serpent cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_SERPENT256_GCM], [], [Enable the Serpent cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_CAMELLIA128_CBC], [], [Enable the Camellia cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_CAMELLIA192_CBC], [], [Enable the Camellia cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_CAMELLIA256_CBC], [], [Enable the Camellia cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_CAMELLIA128_CTR], [], [Enable the Camellia cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_CAMELLIA192_CTR], [], [Enable the Camellia cipher when defined.])
+        AC_DEFINE([CONFIG_ASSH_CIPHER_CAMELLIA256_CTR], [], [Enable the Camellia cipher when defined.])
       fi
 
     ], [
@@ -167,6 +189,14 @@ if test x$enable_gcrypt = xno ; then
 fi
 
 if test x$enable_zlib = xyes ; then
+  AC_DEFINE([CONFIG_ASSH_CIPHER_ARCFOUR], [], [Enable the Arcfour cipher when defined.])
+  AC_DEFINE([CONFIG_ASSH_CIPHER_AES128_CBC], [], [Enable the Serpent cipher when defined.])
+  AC_DEFINE([CONFIG_ASSH_CIPHER_AES192_CBC], [], [Enable the Serpent cipher when defined.])
+  AC_DEFINE([CONFIG_ASSH_CIPHER_AES256_CBC], [], [Enable the Serpent cipher when defined.])
+  AC_DEFINE([CONFIG_ASSH_CIPHER_AES128_CTR], [], [Enable the Serpent cipher when defined.])
+  AC_DEFINE([CONFIG_ASSH_CIPHER_AES192_CTR], [], [Enable the Serpent cipher when defined.])
+  AC_DEFINE([CONFIG_ASSH_CIPHER_AES256_CTR], [], [Enable the Serpent cipher when defined.])
+AC_DEFINE([CONFIG_ASSH_CIPHER_CHACHAPOLY], [], [Enable the Chacha20-Poly1305 cipher when defined.])
   AC_CHECK_LIB(z, zlibVersion, [
     AC_CHECK_HEADERS(zlib.h, [
       LIBS="$LIBS -lz"
@@ -189,9 +219,6 @@ if test -e /dev/random ; then
   enable_dev_random=yes
 fi
 
-AC_DEFINE([CONFIG_ASSH_CIPHER_AES], [], [Enable the AES cipher when defined.])
-AC_DEFINE([CONFIG_ASSH_CIPHER_ARCFOUR], [], [Enable the Arcfour cipher when defined.])
-AC_DEFINE([CONFIG_ASSH_CIPHER_CHACHAPOLY], [], [Enable the Chacha20-Poly1305 cipher when defined.])
 AC_DEFINE([CONFIG_ASSH_MODE_CTR], [], [Enable the Counter cipher mode when defined.])
 AC_DEFINE([CONFIG_ASSH_HASH_MD5], [], [Enable the MD5 message digest when defined.])
 AC_DEFINE([CONFIG_ASSH_HASH_SHA1], [], [Enable the SHA1 message digest when defined.])

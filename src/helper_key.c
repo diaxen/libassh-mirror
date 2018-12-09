@@ -49,11 +49,13 @@ struct assh_rfc1421_cipher_s
 
 static const struct assh_rfc1421_cipher_s
 assh_rfc1421_ciphers[] = {
-#ifdef CONFIG_ASSH_CIPHER_AES
+#ifdef CONFIG_ASSH_CIPHER_AES128_CBC
   { "AES-128-CBC", &assh_cipher_aes128_cbc },
+#endif
+#ifdef CONFIG_ASSH_CIPHER_AES256_CBC
   { "AES-256-CBC", &assh_cipher_aes256_cbc },
 #endif
-#ifdef CONFIG_ASSH_CIPHER_TDES
+#ifdef CONFIG_ASSH_CIPHER_TDES_CBC
   { "DES-EDE3-CBC", &assh_cipher_tdes_cbc },
 #endif
   { NULL }

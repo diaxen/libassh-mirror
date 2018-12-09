@@ -30,7 +30,6 @@ struct assh_hmac_gcrypt_context_s
 {
   const struct assh_algo_mac_s *mac;
   gcry_mac_hd_t hd;
-  uint_fast8_t gcry_mac_len;
 };
 
 static ASSH_MAC_CLEANUP_FCN(assh_hmac_gcrypt_cleanup)
@@ -88,7 +87,7 @@ static assh_error_t assh_hmac_gcrypt_init(const struct assh_algo_mac_s *mac,
 			     NULL), ASSH_ERR_CRYPTO);
   ASSH_JMP_IF_TRUE(gcry_mac_setkey(ctx->hd, key, mac->key_size),
 	       ASSH_ERR_CRYPTO, err_hd);
-  ctx->gcry_mac_len = gcry_mac_get_algo_maclen(algo);
+
   return ASSH_OK;
  err_hd:
   gcry_mac_close(ctx->hd);

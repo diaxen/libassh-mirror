@@ -331,92 +331,132 @@ const struct assh_algo_s *assh_algo_table[] = {
   &assh_sign_nistp521.algo,
   /* ciphers */
 
-# ifdef CONFIG_ASSH_CIPHER_TDES
-  &assh_cipher_tdes_cbc.algo,
-#  ifdef CONFIG_ASSH_MODE_CTR
-  &assh_cipher_tdes_ctr.algo,
-#  endif
-# endif
-
-# ifdef CONFIG_ASSH_CIPHER_CAST128
-  &assh_cipher_cast128_cbc.algo,
-#  ifdef CONFIG_ASSH_MODE_CTR
-  &assh_cipher_cast128_ctr.algo,
-#  endif
-# endif
-
-# ifdef CONFIG_ASSH_CIPHER_IDEA
-  &assh_cipher_idea_cbc.algo,
-#  ifdef CONFIG_ASSH_MODE_CTR
-  &assh_cipher_idea_ctr.algo,
-#  endif
-# endif
-
-# ifdef CONFIG_ASSH_CIPHER_BLOWFISH
-  &assh_cipher_blowfish_cbc.algo,
-#  ifdef CONFIG_ASSH_MODE_CTR
-  &assh_cipher_blowfish_ctr.algo,
-#  endif
-# endif
-
-# ifdef CONFIG_ASSH_CIPHER_TWOFISH
-  &assh_cipher_twofish128_cbc.algo,
-  &assh_cipher_twofish256_cbc.algo,
-#  ifdef CONFIG_ASSH_MODE_CTR
-  &assh_cipher_twofish128_ctr.algo,
-  &assh_cipher_twofish256_ctr.algo,
-#  endif
-#  ifdef CONFIG_ASSH_MODE_GCM
-  &assh_cipher_twofish128_gcm.algo,
-  &assh_cipher_twofish256_gcm.algo,
-#  endif
-# endif
-
-# ifdef CONFIG_ASSH_CIPHER_SERPENT
-  &assh_cipher_serpent128_cbc.algo,
-  &assh_cipher_serpent192_cbc.algo,
-  &assh_cipher_serpent256_cbc.algo,
-#  ifdef CONFIG_ASSH_MODE_CTR
-  &assh_cipher_serpent128_ctr.algo,
-  &assh_cipher_serpent192_ctr.algo,
-  &assh_cipher_serpent256_ctr.algo,
-#  endif
-#  ifdef CONFIG_ASSH_MODE_GCM
-  &assh_cipher_serpent128_gcm.algo,
-  &assh_cipher_serpent256_gcm.algo,
-#  endif
-# endif
-
 # ifdef CONFIG_ASSH_CIPHER_ARCFOUR
   &assh_cipher_arc4.algo,
   &assh_cipher_arc4_128.algo,
   &assh_cipher_arc4_256.algo,
 # endif
 
-# ifdef CONFIG_ASSH_CIPHER_AES
-  &assh_cipher_aes128_cbc.algo,
-  &assh_cipher_aes192_cbc.algo,
-  &assh_cipher_aes256_cbc.algo,
-#  ifdef CONFIG_ASSH_MODE_CTR
-  &assh_cipher_aes128_ctr.algo,
-  &assh_cipher_aes192_ctr.algo,
-  &assh_cipher_aes256_ctr.algo,
-#  endif
-#  ifdef CONFIG_ASSH_MODE_GCM
-  &assh_cipher_aes128_gcm.algo,
-  &assh_cipher_aes256_gcm.algo,
-#  endif
+# ifdef CONFIG_ASSH_CIPHER_TDES_CBC
+  &assh_cipher_tdes_cbc.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_TDES_CTR
+  &assh_cipher_tdes_ctr.algo,
 # endif
 
-# ifdef CONFIG_ASSH_CIPHER_CAMELLIA
+# ifdef CONFIG_ASSH_CIPHER_CAST128_CBC
+  &assh_cipher_cast128_cbc.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_CAST128_CTR
+  &assh_cipher_cast128_ctr.algo,
+# endif
+
+# ifdef CONFIG_ASSH_CIPHER_IDEA_CBC
+  &assh_cipher_idea_cbc.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_IDEA_CTR
+  &assh_cipher_idea_ctr.algo,
+# endif
+
+# ifdef CONFIG_ASSH_CIPHER_BLOWFISH_CBC
+  &assh_cipher_blowfish_cbc.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_BLOWFISH_CTR
+  &assh_cipher_blowfish_ctr.algo,
+# endif
+
+# ifdef CONFIG_ASSH_CIPHER_TWOFISH128_CBC
+  &assh_cipher_twofish128_cbc.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_TWOFISH192_CBC
+  &assh_cipher_twofish192_cbc.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_TWOFISH256_CBC
+  &assh_cipher_twofish256_cbc.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_TWOFISH128_CTR
+  &assh_cipher_twofish128_ctr.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_TWOFISH192_CTR
+  &assh_cipher_twofish192_ctr.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_TWOFISH256_CTR
+  &assh_cipher_twofish256_ctr.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_TWOFISH128_GCM
+  &assh_cipher_twofish128_gcm.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_TWOFISH256_GCM
+  &assh_cipher_twofish256_gcm.algo,
+# endif
+
+# ifdef CONFIG_ASSH_CIPHER_SERPENT128_CBC
+  &assh_cipher_serpent128_cbc.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_SERPENT192_CBC
+  &assh_cipher_serpent192_cbc.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_SERPENT256_CBC
+  &assh_cipher_serpent256_cbc.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_SERPENT128_CTR
+  &assh_cipher_serpent128_ctr.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_SERPENT192_CTR
+  &assh_cipher_serpent192_ctr.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_SERPENT256_CTR
+  &assh_cipher_serpent256_ctr.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_SERPENT128_GCM
+  &assh_cipher_serpent128_gcm.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_SERPENT256_GCM
+  &assh_cipher_serpent256_gcm.algo,
+# endif
+
+# ifdef CONFIG_ASSH_CIPHER_AES128_CBC
+  &assh_cipher_aes128_cbc.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_AES192_CBC
+  &assh_cipher_aes192_cbc.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_AES256_CBC
+  &assh_cipher_aes256_cbc.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_AES128_CTR
+  &assh_cipher_aes128_ctr.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_AES192_CTR
+  &assh_cipher_aes192_ctr.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_AES256_CTR
+  &assh_cipher_aes256_ctr.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_AES128_GCM
+  &assh_cipher_aes128_gcm.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_AES256_GCM
+  &assh_cipher_aes256_gcm.algo,
+# endif
+
+# ifdef CONFIG_ASSH_CIPHER_CAMELLIA128_CBC
   &assh_cipher_camellia128_cbc.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_CAMELLIA192_CBC
   &assh_cipher_camellia192_cbc.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_CAMELLIA256_CBC
   &assh_cipher_camellia256_cbc.algo,
-#  ifdef CONFIG_ASSH_MODE_CTR
+# endif
+# ifdef CONFIG_ASSH_CIPHER_CAMELLIA128_CTR
   &assh_cipher_camellia128_ctr.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_CAMELLIA192_CTR
   &assh_cipher_camellia192_ctr.algo,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_CAMELLIA256_CTR
   &assh_cipher_camellia256_ctr.algo,
-#  endif
 # endif
 
 # ifdef CONFIG_ASSH_CIPHER_CHACHAPOLY

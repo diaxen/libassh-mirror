@@ -215,60 +215,82 @@ static const struct assh_algo_mac_s *mac_list_fuzz[] =
 /* all cipher algorithms */
 static const struct assh_algo_cipher_s *cipher_list_long[] =
 {
-# ifdef CONFIG_ASSH_CIPHER_TDES
+# ifdef CONFIG_ASSH_CIPHER_TDES_CBC
   &assh_cipher_tdes_cbc,
-#  ifdef CONFIG_ASSH_MODE_CTR
+# endif
+# ifdef CONFIG_ASSH_CIPHER_TDES_CTR
   &assh_cipher_tdes_ctr,
-#  endif
 # endif
 
-# ifdef CONFIG_ASSH_CIPHER_CAST128
+# ifdef CONFIG_ASSH_CIPHER_CAST128_CBC
   &assh_cipher_cast128_cbc,
-#  ifdef CONFIG_ASSH_MODE_CTR
+# endif
+# ifdef CONFIG_ASSH_CIPHER_CAST128_CTR
   &assh_cipher_cast128_ctr,
-#  endif
 # endif
 
-# ifdef CONFIG_ASSH_CIPHER_IDEA
+# ifdef CONFIG_ASSH_CIPHER_IDEA_CBC
   &assh_cipher_idea_cbc,
-#  ifdef CONFIG_ASSH_MODE_CTR
+# endif
+# ifdef CONFIG_ASSH_CIPHER_IDEA_CTR
   &assh_cipher_idea_ctr,
-#  endif
 # endif
 
-# ifdef CONFIG_ASSH_CIPHER_BLOWFISH
+# ifdef CONFIG_ASSH_CIPHER_BLOWFISH_CBC
   &assh_cipher_blowfish_cbc,
-#  ifdef CONFIG_ASSH_MODE_CTR
+# endif
+# ifdef CONFIG_ASSH_CIPHER_BLOWFISH_CTR
   &assh_cipher_blowfish_ctr,
-#  endif
 # endif
 
-# ifdef CONFIG_ASSH_CIPHER_TWOFISH
+# ifdef CONFIG_ASSH_CIPHER_TWOFISH128_CBC
   &assh_cipher_twofish128_cbc,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_TWOFISH192_CBC
+  &assh_cipher_twofish192_cbc,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_TWOFISH256_CBC
   &assh_cipher_twofish256_cbc,
-#  ifdef CONFIG_ASSH_MODE_CTR
+# endif
+# ifdef CONFIG_ASSH_CIPHER_TWOFISH128_CTR
   &assh_cipher_twofish128_ctr,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_TWOFISH192_CTR
+  &assh_cipher_twofish192_ctr,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_TWOFISH256_CTR
   &assh_cipher_twofish256_ctr,
-#  endif
-#  ifdef CONFIG_ASSH_MODE_GCM
+# endif
+# ifdef CONFIG_ASSH_CIPHER_TWOFISH128_GCM
   &assh_cipher_twofish128_gcm,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_TWOFISH256_GCM
   &assh_cipher_twofish256_gcm,
-#  endif
 # endif
 
-# ifdef CONFIG_ASSH_CIPHER_SERPENT
+# ifdef CONFIG_ASSH_CIPHER_SERPENT128_CBC
   &assh_cipher_serpent128_cbc,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_SERPENT192_CBC
   &assh_cipher_serpent192_cbc,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_SERPENT256_CBC
   &assh_cipher_serpent256_cbc,
-#  ifdef CONFIG_ASSH_MODE_CTR
+# endif
+# ifdef CONFIG_ASSH_CIPHER_SERPENT128_CTR
   &assh_cipher_serpent128_ctr,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_SERPENT192_CTR
   &assh_cipher_serpent192_ctr,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_SERPENT256_CTR
   &assh_cipher_serpent256_ctr,
-#  endif
-#  ifdef CONFIG_ASSH_MODE_GCM
+# endif
+# ifdef CONFIG_ASSH_CIPHER_SERPENT128_GCM
   &assh_cipher_serpent128_gcm,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_SERPENT256_GCM
   &assh_cipher_serpent256_gcm,
-#  endif
 # endif
 
 # ifdef CONFIG_ASSH_CIPHER_ARCFOUR
@@ -277,30 +299,48 @@ static const struct assh_algo_cipher_s *cipher_list_long[] =
   &assh_cipher_arc4_256,
 # endif
 
-# ifdef CONFIG_ASSH_CIPHER_AES
+# ifdef CONFIG_ASSH_CIPHER_AES128_CBC
   &assh_cipher_aes128_cbc,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_AES192_CBC
   &assh_cipher_aes192_cbc,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_AES256_CBC
   &assh_cipher_aes256_cbc,
-#  ifdef CONFIG_ASSH_MODE_CTR
+# endif
+# ifdef CONFIG_ASSH_CIPHER_AES128_CTR
   &assh_cipher_aes128_ctr,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_AES192_CTR
   &assh_cipher_aes192_ctr,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_AES256_CTR
   &assh_cipher_aes256_ctr,
-#  endif
-#  ifdef CONFIG_ASSH_MODE_GCM
+# endif
+# ifdef CONFIG_ASSH_CIPHER_AES128_GCM
   &assh_cipher_aes128_gcm,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_AES256_GCM
   &assh_cipher_aes256_gcm,
-#  endif
 # endif
 
-# ifdef CONFIG_ASSH_CIPHER_CAMELLIA
+# ifdef CONFIG_ASSH_CIPHER_CAMELLIA128_CBC
   &assh_cipher_camellia128_cbc,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_CAMELLIA192_CBC
   &assh_cipher_camellia192_cbc,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_CAMELLIA256_CBC
   &assh_cipher_camellia256_cbc,
-#  ifdef CONFIG_ASSH_MODE_CTR
+# endif
+# ifdef CONFIG_ASSH_CIPHER_CAMELLIA128_CTR
   &assh_cipher_camellia128_ctr,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_CAMELLIA192_CTR
   &assh_cipher_camellia192_ctr,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_CAMELLIA256_CTR
   &assh_cipher_camellia256_ctr,
-#  endif
 # endif
 
 # ifdef CONFIG_ASSH_CIPHER_CHACHAPOLY
@@ -313,8 +353,14 @@ static const struct assh_algo_cipher_s *cipher_list_long[] =
 static const struct assh_algo_cipher_s *cipher_list_short[] =
 {
   &assh_cipher_none,
+# ifdef CONFIG_ASSH_CIPHER_ARCFOUR
   &assh_cipher_arc4,
+# endif
+# ifdef CONFIG_ASSH_CIPHER_AES256_CTR
   &assh_cipher_aes256_ctr,
+#elif defined(CONFIG_ASSH_CIPHER_AES256_CBC)
+  &assh_cipher_aes256_cbc,
+# endif
   NULL
 };
 
