@@ -112,6 +112,13 @@ algo_list_SOURCES = algo_list.c
 algo_list_LDADD = $(top_builddir)/src/libassh.la
 algo_list_CFLAGS = -I$(top_srcdir)/src
 
+noinst_PROGRAMS += fail
+fail_SOURCES = fail.c
+fail_LDADD = $(top_builddir)/src/libassh.la
+fail_CFLAGS = -I$(top_srcdir)/src
+TESTS += fail
+XFAIL_TESTS = fail
+
 EXTRA_DIST = \
 fifo.h \
 keys.h \
