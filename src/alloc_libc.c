@@ -40,7 +40,8 @@ ASSH_ALLOCATOR(assh_libc_allocator)
   if (*ptr)
     {
       size_t tail = malloc_usable_size(*ptr);
-      assh_clear(*ptr + size, tail - size);
+      if (tail > size)
+        assh_clear(*ptr + size, tail - size);
     }
 #endif
 
