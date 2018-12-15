@@ -39,6 +39,9 @@ endif
 if COND_gcrypt_alloc
 libassh_la_SOURCES +=	alloc_gcrypt.c
 endif
+if COND_openssl_alloc
+libassh_la_SOURCES +=	alloc_openssl.c
+endif
 
 if COND_client
 libassh_la_SOURCES +=   assh_userauth_client.c assh_userauth_client_none.c \

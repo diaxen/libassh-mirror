@@ -36,6 +36,10 @@
 # include <gcrypt.h>
 #endif
 
+#ifdef CONFIG_ASSH_USE_OPENSSL_ALLOC
+# include <openssl/crypto.h>
+#endif
+
 assh_error_t
 assh_deps_init()
 {
@@ -48,6 +52,12 @@ assh_deps_init()
   gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
 
+#ifdef CONFIG_ASSH_USE_OPENSSL_ALLOC
+  if (!CRYPTO_secure_malloc_initialized())
+    ASSH_RET_IF_TRUE(CRYPTO_secure_malloc_init(
+                       CONFIG_ASSH_USE_OPENSSL_HEAP_SIZE, 64) != 1,
+                     ASSH_ERR_CRYPTO);
+#endif
 
   return ASSH_OK;
 }
@@ -58,6 +68,9 @@ assh_default_alloc()
 #if defined(CONFIG_ASSH_USE_GCRYPT_ALLOC)
   if (gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P))
     return &assh_gcrypt_allocator;
+
+#elif defined(CONFIG_ASSH_USE_OPENSSL_ALLOC)
+  return &assh_openssl_allocator;
 
 #elif defined(CONFIG_ASSH_USE_LIBC_ALLOC)
 # warning The default allocator relies on the standard non-secur realloc function

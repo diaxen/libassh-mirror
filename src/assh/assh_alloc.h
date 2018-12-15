@@ -129,4 +129,19 @@ ASSH_ALLOCATOR(assh_libc_allocator);
 ASSH_ALLOCATOR(assh_gcrypt_allocator);
 # endif
 
+# ifdef CONFIG_ASSH_USE_OPENSSL_ALLOC
+/** This allocator relies on the secur memory allocation functions
+    provided by the openssl library.
+
+    It does not requires private data; @tt NULL may be passed as @tt
+    alloc_pv parameter of the initialization function.
+
+    When this is enabled in the build, the @ref assh_deps_init
+    function calls the openssl @tt CRYPTO_secure_malloc_init function
+    unless the @tt CRYPTO_secure_malloc_initialized function indicates
+    that it has already been performed.
+*/
+ASSH_ALLOCATOR(assh_openssl_allocator);
+# endif
+
 #endif

@@ -218,6 +218,12 @@ if test x$with_openssl = xyes ; then
 	 ])
       fi
 
+      if test x$with_alloc = xopenssl || test x$with_alloc = xexternal ; then
+        with_alloc=openssl
+	AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_ALLOC], [], [Enable openssl secur memory allocator when defined.])
+	AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_HEAP_SIZE], [0x10000], [Value passed to the CRYPTO_secure_malloc_init function.])
+      fi
+
       if test x$with_ciphers = xopenssl ; then
         with_ciphers=openssl
 	AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_CIPHERS], [], [Enable openssl cipher algorithms when defined.])
