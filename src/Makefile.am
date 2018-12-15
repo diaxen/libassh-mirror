@@ -33,6 +33,13 @@ libassh_la_SOURCES = assh_context.c assh_session.c assh_packet.c	\
 	helper_key.c helper_io.c helper_base64.c helper_bcrypt.c	\
 	prng_xswap_builtin.c helper_interactive.c
 
+if COND_libc_alloc
+libassh_la_SOURCES +=	alloc_libc.c
+endif
+if COND_gcrypt_alloc
+libassh_la_SOURCES +=	alloc_gcrypt.c
+endif
+
 if COND_client
 libassh_la_SOURCES +=   assh_userauth_client.c assh_userauth_client_none.c \
 			assh_userauth_client_pv.h helper_client.c

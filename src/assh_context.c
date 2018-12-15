@@ -48,67 +48,24 @@ assh_deps_init()
   gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
 #endif
 
+
   return ASSH_OK;
 }
 
-#ifdef CONFIG_ASSH_USE_GCRYPT_ALLOC
-
-# define ASSH_DEFAULT_ALLOCATOR assh_gcrypt_allocator
-ASSH_ALLOCATOR(assh_gcrypt_allocator)
+static assh_allocator_t *
+assh_default_alloc()
 {
-  assh_error_t err;
+#if defined(CONFIG_ASSH_USE_GCRYPT_ALLOC)
+  if (gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P))
+    return &assh_gcrypt_allocator;
 
-  if (size == 0)
-    {
-      gcry_free(*ptr);
-      return ASSH_OK;
-    }
-  else if (*ptr == NULL)
-    {
-      switch (type)
-	{
-        case ASSH_ALLOC_NONE:
-          ASSH_UNREACHABLE();
-	case ASSH_ALLOC_INTERNAL:
-	case ASSH_ALLOC_PACKET:
-	  *ptr = gcry_malloc(size);
-	  break;
-	case ASSH_ALLOC_SECUR:
-	case ASSH_ALLOC_SCRATCH:
-	  *ptr = gcry_malloc_secure(size);
-	  break;
-	}
-      ASSH_RET_IF_TRUE(*ptr == NULL, ASSH_ERR_MEM);
-      return ASSH_OK;
-    }
-  else
-    {
-      *ptr = gcry_realloc(*ptr, size);
-      ASSH_RET_IF_TRUE(*ptr == NULL, ASSH_ERR_MEM);
-      return ASSH_OK;
-    }
-
-  return ASSH_OK;
-}
-
+#elif defined(CONFIG_ASSH_USE_LIBC_ALLOC)
+# warning The default allocator relies on the standard non-secur realloc function
+  return &assh_libc_allocator;
 #endif
 
-#ifdef CONFIG_ASSH_LIBC_REALLOC
-
-# ifndef ASSH_DEFAULT_ALLOCATOR
-#  warning The default allocator relies on the standard non-secur realloc function
-#  define ASSH_DEFAULT_ALLOCATOR assh_libc_allocator
-# endif
-
-ASSH_ALLOCATOR(assh_libc_allocator)
-{
-  assh_error_t err;
-
-  *ptr = realloc(*ptr, size);
-  ASSH_RET_IF_TRUE(size != 0 && *ptr == NULL, ASSH_ERR_MEM);
-  return ASSH_OK;
+  return NULL;
 }
-#endif
 
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_context_init(struct assh_context_s *c,
@@ -146,19 +103,14 @@ assh_context_init(struct assh_context_s *c,
 
   c->type = type;
 
-#ifdef ASSH_DEFAULT_ALLOCATOR
   if (alloc == NULL)
-    alloc = ASSH_DEFAULT_ALLOCATOR;
-#else
-  ASSH_RET_IF_TRUE(alloc == NULL,
-               ASSH_ERR_MISSING_ALGO | ASSH_ERRSV_FATAL);
-#endif
+    {
+      alloc = assh_default_alloc();
+      alloc_pv = NULL;
+    }
 
-#ifdef CONFIG_ASSH_USE_GCRYPT_ALLOC
-  ASSH_RET_IF_TRUE(alloc == &assh_gcrypt_allocator &&
-               !gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P),
-               ASSH_ERR_CRYPTO | ASSH_ERRSV_FATAL);
-#endif
+  ASSH_RET_IF_TRUE(alloc == NULL,
+                   ASSH_ERR_MISSING_ALGO | ASSH_ERRSV_FATAL);
 
   c->f_alloc = alloc;
   c->alloc_pv = alloc_pv;
@@ -217,15 +169,13 @@ assh_context_create(struct assh_context_s **ctx,
 {
   assh_error_t err;
 
-#ifdef ASSH_DEFAULT_ALLOCATOR
   if (alloc == NULL)
     {
-      alloc = ASSH_DEFAULT_ALLOCATOR;
+      alloc = assh_default_alloc();
       alloc_pv = NULL;
     }
-#else
+
   ASSH_RET_IF_TRUE(alloc == NULL, ASSH_ERR_MISSING_ALGO | ASSH_ERRSV_FATAL);
-#endif
 
   *ctx = NULL;
   ASSH_RET_ON_ERR(alloc(alloc_pv, (void**)ctx, sizeof(**ctx),

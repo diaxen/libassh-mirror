@@ -148,26 +148,6 @@ assh_context_timeouts(struct assh_context_s *c,
 void
 assh_context_keepalive(struct assh_context_s *c, uint_fast16_t keepalive);
 
-#ifdef CONFIG_ASSH_LIBC_REALLOC
-/** This allocator relies on the libc @tt realloc function. This
-    allocator @b{is not} able to provide secure memory.
-
-    It does not requires private data; @tt NULL may be passed as @tt
-    alloc_pv parameter of the initialization function.
-*/
-ASSH_ALLOCATOR(assh_libc_allocator);
-#endif
-
-#ifdef CONFIG_ASSH_USE_GCRYPT_ALLOC
-/** This allocator relies on the various memory allocation functions
-    provided by libgcrypt.
-
-    It does not requires private data; @tt NULL may be passed as @tt
-    alloc_pv parameter of the initialization function.
-*/
-ASSH_ALLOCATOR(assh_gcrypt_allocator);
-#endif
-
 /** @This takes care of performing the external libraries global
     initialization. This typically calls the gcrypt initialization
     functions when the gcrypt support has been compiled in.

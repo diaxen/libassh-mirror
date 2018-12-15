@@ -109,5 +109,24 @@ ASSH_INLINE void assh_free(struct assh_context_s *c, void *ptr)
 
 #endif
 
-#endif
+# ifdef CONFIG_ASSH_USE_LIBC_ALLOC
+/** This allocator relies on the libc @tt realloc function. This
+    allocator @b{is not} able to provide secure memory.
 
+    It does not requires private data; @tt NULL may be passed as @tt
+    alloc_pv parameter of the initialization function.
+*/
+ASSH_ALLOCATOR(assh_libc_allocator);
+# endif
+
+# ifdef CONFIG_ASSH_USE_GCRYPT_ALLOC
+/** This allocator relies on the secur memory allocation functions
+    provided by libgcrypt.
+
+    It does not requires private data; @tt NULL may be passed as @tt
+    alloc_pv parameter of the initialization function.
+*/
+ASSH_ALLOCATOR(assh_gcrypt_allocator);
+# endif
+
+#endif

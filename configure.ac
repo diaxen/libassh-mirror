@@ -40,6 +40,7 @@ AC_CHECK_SIZEOF(long)
 AC_CHECK_TYPE(long long, [bnlong_size=8], [bnlong_size=$ac_cv_sizeof_long])
 AC_CHECK_TYPE(__int128,  [bnlong_size=x])
 AC_CHECK_LIB(c, qsort_r, AC_DEFINE(CONFIG_ASSH_QSORTR, 1, [Use qsort_r from C lbirary when defined.]))
+AC_CHECK_LIB(c, malloc_usable_size, AC_DEFINE(CONFIG_ASSH_MALLOC_USABLE_SIZE, 1, [Use malloc_usable_size from C lbirary when defined.]))
 
 AC_CHECK_LIB(c, posix_openpt,
   AC_DEFINE(CONFIG_ASSH_POSIX_OPENPT, 1, [Use posix_openpt when defined.])
@@ -102,7 +103,7 @@ AC_ARG_WITH(ciphers, AC_HELP_STRING(--with-ciphers, [Specifies backend to use fo
 AC_ARG_WITH(prng, AC_HELP_STRING(--with-prng, [Specifies backend to use for random source (builtin, external, gcrypt, openssl)]),
 		       [with_prng=$withval], with_prng=builtin)
 
-AC_ARG_WITH(alloc, AC_HELP_STRING(--with-alloc, [Specifies backend to use for secure memory allocation (none, external, gcrypt, openssl)]),
+AC_ARG_WITH(alloc, AC_HELP_STRING(--with-alloc, [Specifies backend to use for secure memory allocation (none, libc, external, gcrypt, openssl)]),
 		       [with_alloc=$withval], with_alloc=external)
 
 AC_ARG_WITH(gcrypt, AC_HELP_STRING(--without-gcrypt, [Disable use of gcrypt support]),
@@ -277,7 +278,7 @@ fi
 
 if test x$with_gcrypt = xno && test x$with_openssl = xno ; then
   with_hashes=builtin
-  with_alloc=builtin
+  with_alloc=libc
   with_ciphers=builtin
   with_prng=builtin
 fi
@@ -290,6 +291,10 @@ if test x$with_ciphers = xbuiltin ; then
   AC_DEFINE([CONFIG_ASSH_CIPHER_AES128_CTR], [], [Enable the AES cipher when defined.])
   AC_DEFINE([CONFIG_ASSH_CIPHER_AES192_CTR], [], [Enable the AES cipher when defined.])
   AC_DEFINE([CONFIG_ASSH_CIPHER_AES256_CTR], [], [Enable the AES cipher when defined.])
+fi
+
+if test x$with_alloc = xlibc ; then
+  AC_DEFINE([CONFIG_ASSH_USE_LIBC_ALLOC], [], [Enable support for the C library allocator which is not secur on some platforms.])
 fi
 
 AC_DEFINE([CONFIG_ASSH_CIPHER_CHACHAPOLY], [], [Enable the Chacha20-Poly1305 cipher when defined.])
@@ -324,8 +329,9 @@ fi
 AM_CONDITIONAL(COND_server,  [test x$enable_server = xyes])
 AM_CONDITIONAL(COND_client,  [test x$enable_client = xyes])
 
+AM_CONDITIONAL(COND_libc_alloc,      [test x$with_alloc = xlibc])
+
 AM_CONDITIONAL(COND_builtin_hash,    [test x$with_hashes = xbuiltin])
-AM_CONDITIONAL(COND_builtin_alloc,   [test x$with_alloc = xbuiltin])
 AM_CONDITIONAL(COND_builtin_ciphers, [test x$with_ciphers = xbuiltin])
 AM_CONDITIONAL(COND_dev_random,      [test x$with_prng = xbuiltin])
 
@@ -411,7 +417,7 @@ AC_DEFINE([CONFIG_ASSH_MAX_PAYLOAD], [32768], [Specifies the maximum size of the
 
 AC_DEFINE([CONFIG_ASSH_MAX_SERVICES], [4], [Specifies the maximum number of registered services.])
 AC_DEFINE([CONFIG_ASSH_ABI_WARN], [], [Enable warning at compile time for use of functions which are not ABI stable.])
-AC_DEFINE([CONFIG_ASSH_LIBC_REALLOC], [], [Enable support for the C library allocator which is not secur on some platforms.])
+
 #AC_DEFINE([NDEBUG], [], [Disable asserts and some aborts])
 AC_DEFINE([CONFIG_ASSH_OPENSSH_PREFIX], ["/etc/ssh/"], [Specifies the path to OpenSSH key files for use by helpers.])
 
