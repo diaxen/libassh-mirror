@@ -195,6 +195,11 @@ if test x$with_gcrypt = xyes ; then
         AC_DEFINE([CONFIG_ASSH_CIPHER_CAMELLIA256_CTR], [], [Enable the Camellia cipher when defined.])
       fi
 
+      AC_TRY_COMPILE([#include <gcrypt.h>], [return GCRY_MD_SHA3_256;], [
+        AC_DEFINE([CONFIG_ASSH_GCRYPT_HAS_SHA3], [], [Enable gcrypt implementation of SHA3])
+	with_gcrypt_sha3=yes
+      ])
+
       if test x$with_hashes = xgcrypt ||
       	 test x$with_alloc = xgcrypt ||
       	 test x$with_ciphers = xgcrypt ||
@@ -353,6 +358,7 @@ AM_CONDITIONAL(COND_builtin_prng,    [test x$with_prng = xbuiltin])
 AM_CONDITIONAL(COND_dev_random,      [test x$with_prng = xdevrandom])
 
 AM_CONDITIONAL(COND_gcrypt_hash,     [test x$with_hashes = xgcrypt])
+AM_CONDITIONAL(COND_gcrypt_sha3,     [test x$with_gcrypt_sha3 = xyes])
 AM_CONDITIONAL(COND_gcrypt_alloc,    [test x$with_alloc = xgcrypt])
 AM_CONDITIONAL(COND_gcrypt_ciphers,  [test x$with_ciphers = xgcrypt])
 AM_CONDITIONAL(COND_gcrypt_prng,     [test x$with_prng = xgcrypt])

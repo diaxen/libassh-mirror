@@ -60,22 +60,7 @@ static ASSH_HASH_CLEANUP_FCN(assh_gcrypt_hash_cleanup)
   gcry_md_close(gctx->hd);
 }
 
-#define ASSH_GCRYPT_HASH(id_, algo_, hsize_, bsize_, safety_)           \
-                                                                        \
-static ASSH_HASH_INIT_FCN(assh_gcrypt_hash_##id_##_init)                \
-{                                                                       \
-  struct assh_hash_gcrypt_context_s *gctx = (void*)hctx;                \
-  assh_error_t err;                                                     \
-                                                                        \
-  ASSH_RET_IF_TRUE(!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P),        \
-               ASSH_ERR_CRYPTO);                                        \
-                                                                        \
-  ASSH_RET_IF_TRUE(gcry_md_open(&gctx->hd, algo_, GCRY_MD_FLAG_SECURE),     \
-	       ASSH_ERR_CRYPTO);                                        \
-                                                                        \
-  return ASSH_OK;                                                       \
-}                                                                       \
-                                                                        \
+#define ASSH_GCRYPT_HASH_FINAL_FIXED(id_, hsize_)                       \
 static ASSH_HASH_FINAL_FCN(assh_gcrypt_hash_##id_##_final)              \
 {                                                                       \
   struct assh_hash_gcrypt_context_s *gctx = (void*)hctx;                \
@@ -83,8 +68,35 @@ static ASSH_HASH_FINAL_FCN(assh_gcrypt_hash_##id_##_final)              \
   assert(len == hsize_);                                                \
                                                                         \
   if (hash != NULL)                                                     \
-    memcpy(hash, gcry_md_read(gctx->hd, 0), hsize_);                    \
+    memcpy(hash, gcry_md_read(gctx->hd, 0), len);                       \
+}
+
+#define ASSH_GCRYPT_HASH_FINAL_XOF(id_, hsize_)                         \
+static ASSH_HASH_FINAL_FCN(assh_gcrypt_hash_##id_##_final)              \
+{                                                                       \
+  struct assh_hash_gcrypt_context_s *gctx = (void*)hctx;                \
+                                                                        \
+  if (hash != NULL)                                                     \
+    gcry_md_extract(gctx->hd, 0, hash, len);                            \
+}
+
+#define ASSH_GCRYPT_HASH(id_, algo_, hsize_, bsize_, safety_, out_)     \
+                                                                        \
+static ASSH_HASH_INIT_FCN(assh_gcrypt_hash_##id_##_init)                \
+{                                                                       \
+  struct assh_hash_gcrypt_context_s *gctx = (void*)hctx;                \
+  assh_error_t err;                                                     \
+                                                                        \
+  ASSH_RET_IF_TRUE(!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P),    \
+               ASSH_ERR_CRYPTO);                                        \
+                                                                        \
+  ASSH_RET_IF_TRUE(gcry_md_open(&gctx->hd, algo_, GCRY_MD_FLAG_SECURE), \
+	       ASSH_ERR_CRYPTO);                                        \
+                                                                        \
+  return ASSH_OK;                                                       \
 }                                                                       \
+                                                                        \
+ASSH_GCRYPT_HASH_FINAL_##out_(id_, hsize_);                             \
                                                                         \
 const struct assh_hash_algo_s assh_hash_##id_ =                         \
 {                                                                       \
@@ -100,10 +112,18 @@ const struct assh_hash_algo_s assh_hash_##id_ =                         \
   .f_cleanup = assh_gcrypt_hash_cleanup,                                \
 };
 
-ASSH_GCRYPT_HASH(md5,    GCRY_MD_MD5,    16, 64,  ASSH_SAFETY_MD5);
-ASSH_GCRYPT_HASH(sha1,   GCRY_MD_SHA1,   20, 64,  ASSH_SAFETY_SHA1);
-ASSH_GCRYPT_HASH(sha224, GCRY_MD_SHA224, 28, 64,  ASSH_SAFETY_SHA2_224);
-ASSH_GCRYPT_HASH(sha256, GCRY_MD_SHA256, 32, 64,  ASSH_SAFETY_SHA2_256);
-ASSH_GCRYPT_HASH(sha384, GCRY_MD_SHA384, 48, 128, ASSH_SAFETY_SHA2_384);
-ASSH_GCRYPT_HASH(sha512, GCRY_MD_SHA512, 64, 128, ASSH_SAFETY_SHA2_512);
+ASSH_GCRYPT_HASH(md5,    GCRY_MD_MD5,    16, 64,  ASSH_SAFETY_MD5, FIXED);
+ASSH_GCRYPT_HASH(sha1,   GCRY_MD_SHA1,   20, 64,  ASSH_SAFETY_SHA1, FIXED);
+ASSH_GCRYPT_HASH(sha224, GCRY_MD_SHA224, 28, 64,  ASSH_SAFETY_SHA2_224, FIXED);
+ASSH_GCRYPT_HASH(sha256, GCRY_MD_SHA256, 32, 64,  ASSH_SAFETY_SHA2_256, FIXED);
+ASSH_GCRYPT_HASH(sha384, GCRY_MD_SHA384, 48, 128, ASSH_SAFETY_SHA2_384, FIXED);
+ASSH_GCRYPT_HASH(sha512, GCRY_MD_SHA512, 64, 128, ASSH_SAFETY_SHA2_512, FIXED);
 
+#ifdef CONFIG_ASSH_GCRYPT_HAS_SHA3
+ASSH_GCRYPT_HASH(sha3_224, GCRY_MD_SHA3_224, 28, 144, ASSH_SAFETY_SHA3_224, FIXED);
+ASSH_GCRYPT_HASH(sha3_256, GCRY_MD_SHA3_256, 32, 136, ASSH_SAFETY_SHA3_256, FIXED);
+ASSH_GCRYPT_HASH(sha3_384, GCRY_MD_SHA3_384, 48, 104, ASSH_SAFETY_SHA3_384, FIXED);
+ASSH_GCRYPT_HASH(sha3_512, GCRY_MD_SHA3_512, 64, 72,  ASSH_SAFETY_SHA3_512, FIXED);
+ASSH_GCRYPT_HASH(shake_128, GCRY_MD_SHAKE128, 0, 168,  ASSH_SAFETY_SHAKE128, XOF);
+ASSH_GCRYPT_HASH(shake_256, GCRY_MD_SHAKE256, 0, 136,  ASSH_SAFETY_SHAKE256, XOF);
+#endif

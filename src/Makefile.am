@@ -86,8 +86,13 @@ libassh_la_SOURCES +=   compress_zlib.c
 endif
 
 if COND_gcrypt_hash
-libassh_la_SOURCES +=   hash_gcrypt.c hash_sha3_builtin.c  mac_gcrypt.c
+libassh_la_SOURCES +=   hash_gcrypt.c mac_gcrypt.c
+if COND_gcrypt_sha3
+else
+libassh_la_SOURCES +=   hash_sha3_builtin.c
 endif
+endif
+
 if COND_openssl_hash
 libassh_la_SOURCES +=   hash_openssl.c hash_sha3_builtin.c mac_openssl.c
 endif
