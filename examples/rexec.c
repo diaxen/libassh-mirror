@@ -60,12 +60,13 @@
 
 #define ERROR(...) do { fprintf(stderr, __VA_ARGS__); exit(1); } while (0)
 
+                                                        /* anchor main */
 int main(int argc, char **argv)
 {
   /* perform initialization of third party libraries */
   if (assh_deps_init())
     ERROR("initialization error\n");
-
+                                                        /* anchor args */
   if (argc < 3)
     ERROR("usage: ./rexec host 'command'\n");
 
@@ -74,7 +75,7 @@ int main(int argc, char **argv)
     ERROR("Unspecified user name\n");
 
   const char *hostname = argv[1];
-  const char *cmd = argv[2];
+  const char *command = argv[2];
   const char *port = "22";
 
   /* resolve host name and open socket */
@@ -111,8 +112,8 @@ int main(int argc, char **argv)
 
   signal(SIGPIPE, SIG_IGN);
 
-  /* initialize an assh context object,
-     register services and algorithms */
+                                                        /* anchor initc */
+  /* initialize an assh context, register services and algorithms */
   struct assh_context_s *context;
 
   if (assh_context_create(&context, ASSH_CLIENT,
@@ -121,21 +122,26 @@ int main(int argc, char **argv)
       assh_algo_register_default(context, 50, 20, 0) != ASSH_OK)
     ERROR("Unable to create an assh context.\n");
 
+                                                        /* anchor inits */
   /* initialize an assh session object */
   struct assh_session_s *session;
 
   if (assh_session_create(context, &session) != ASSH_OK)
     ERROR("Unable to create an assh session.\n");
 
+                                                        /* anchor initi */
+  /* initializes an interactive session state machine object */
+  struct assh_client_inter_session_s inter;
+  assh_client_init_inter_session(&inter, command, NULL);
+
+                                                        /* anchor inita */
   /* specify user authentication methods to use */
-  static enum assh_userauth_methods_e auth_methods =
+  enum assh_userauth_methods_e auth_methods =
     ASSH_USERAUTH_METHOD_PASSWORD |
     ASSH_USERAUTH_METHOD_PUBKEY |
     ASSH_USERAUTH_METHOD_KEYBOARD;
 
-  /* initializes an interactive session state machine object */
-  struct assh_client_inter_session_s inter;
-  assh_client_init_inter_session(&inter, cmd, NULL);
+                                                        /* anchor loop */
 
   /** get events from the core. */
   struct assh_event_s event;
@@ -144,6 +150,7 @@ int main(int argc, char **argv)
     {
       switch (event.id)
 	{
+                                                        /* anchor evio */
 	case ASSH_EVENT_READ:
 	case ASSH_EVENT_WRITE:
 	  /* use helpers to read/write the ssh stream from/to our
@@ -151,6 +158,7 @@ int main(int argc, char **argv)
 	  assh_fd_event(session, &event, sock);
 	  break;
 
+                                                        /* anchor everr */
 	case ASSH_EVENT_ERROR:
 	  /* report any error to the terminal */
 	  fprintf(stderr, "SSH error: %s\n",
@@ -158,12 +166,14 @@ int main(int argc, char **argv)
 	  assh_event_done(session, &event, ASSH_OK);
 	  break;
 
+                                                        /* anchor evhk */
         case ASSH_EVENT_KEX_HOSTKEY_LOOKUP:
           /* let an helper function lookup host key in openssh
              standard files and query the user */
           assh_client_event_openssh_hk_lookup(session, stderr, stdin, hostname, &event);
           break;
 
+                                                        /* anchor evua */
         case ASSH_EVENT_USERAUTH_CLIENT_BANNER:
         case ASSH_EVENT_USERAUTH_CLIENT_USER:
         case ASSH_EVENT_USERAUTH_CLIENT_METHODS:
@@ -174,6 +184,7 @@ int main(int argc, char **argv)
              &auth_methods, assh_client_openssh_user_key_default, &event);
           break;
 
+                                                        /* anchor evcn */
         case ASSH_EVENT_SERVICE_START:
         case ASSH_EVENT_CHANNEL_OPEN_REPLY:
         case ASSH_EVENT_REQUEST_REPLY:
@@ -187,6 +198,7 @@ int main(int argc, char **argv)
 	    assh_session_disconnect(session, SSH_DISCONNECT_BY_APPLICATION, NULL);
           break;
 
+                                                        /* anchor evdata */
 	case ASSH_EVENT_CHANNEL_DATA: {
           struct assh_event_channel_data_s *ev = &event.connection.channel_data;
           assh_error_t err = ASSH_OK;
@@ -202,12 +214,14 @@ int main(int argc, char **argv)
           assh_event_done(session, &event, err);
 	}
 
+                                                        /* anchor evdflt */
 	default:
 	  /* acknowledge any unhandled event */
 	  assh_event_done(session, &event, ASSH_OK);
 	}
     }
 
+                                                        /* anchor cleanup */
   fprintf(stderr, "Connection closed\n");
 
   assh_session_release(session);

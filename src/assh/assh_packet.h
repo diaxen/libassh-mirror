@@ -24,7 +24,6 @@
 /**
    @file
    @short SSH packets management
-   @internal
 */
 
 #ifndef ASSH_PACKET_H_
@@ -127,7 +126,7 @@ enum assh_ssh_msg_ranges_e
   SSH_MSG_SERVICE_FIRST   = 50,
 };
 
-/** @internal @This specifies the standard values for ssh message ids. */
+/** @This specifies the standard values for ssh message ids. */
 enum assh_ssh_msg_e
 {
   SSH_MSG_INVALID                   =   0,

@@ -60,6 +60,8 @@
 
 #define ERROR(...) do { fprintf(stderr, __VA_ARGS__); exit(1); } while (0)
 
+                                                        /* anchor main */
+
 int main(int argc, char **argv)
 {
   /* perform initialization of third party libraries */
@@ -86,10 +88,13 @@ int main(int argc, char **argv)
   if (listen(sock, 8) < 0)
     ERROR("Unable to listen: %s\n", strerror(errno));
 
-  /* init an assh server context */
-  struct assh_context_s *context;
+  signal(SIGPIPE, SIG_IGN);
 
   fprintf(stderr, "Listening on port 22222\n");
+
+							/* anchor initc */
+  /* init an assh server context */
+  struct assh_context_s *context;
 
   if (assh_context_create(&context, ASSH_SERVER,
 			  NULL, NULL, NULL, NULL) != ASSH_OK ||
@@ -97,6 +102,7 @@ int main(int argc, char **argv)
       assh_algo_register_default(context, 50, 20, 0) != ASSH_OK)
     ERROR("Unable to create an assh context.\n");
 
+							/* anchor reghk */
   /* load or create host key(s) */
   if (assh_server_openssh_load_hk(context)
 #ifdef CONFIG_ASSH_KEY_CREATE
@@ -105,8 +111,7 @@ int main(int argc, char **argv)
       )
     ERROR("Unable to load or create host key.\n");
 
-  signal(SIGPIPE, SIG_IGN);
-
+                                                        /* anchor loop */
   while (1)
     {
       struct sockaddr_in con_addr;
@@ -117,14 +122,15 @@ int main(int argc, char **argv)
       if (conn < 0)
 	continue;
 
+      fprintf(stderr, "Incoming connection\n");
+
       /** init a session for the incoming connection */
       struct assh_session_s *session;
 
       if (assh_session_create(context, &session) != ASSH_OK)
 	ERROR("Unable to create an assh session.\n");
 
-      fprintf(stderr, "Incoming connection\n");
-
+                                                        /* anchor loopev */
       struct assh_event_s event;
 
       /** get events from the core. */
@@ -132,6 +138,7 @@ int main(int argc, char **argv)
 	{
 	  switch (event.id)
 	    {
+                                                        /* anchor helperev */
 	    case ASSH_EVENT_READ:
 	    case ASSH_EVENT_WRITE:
 	      /* use helpers to read/write the ssh stream from/to our
@@ -152,6 +159,7 @@ int main(int argc, char **argv)
 	      assh_server_event_openssh_auth(session, &event);
 	      break;
 
+                                                        /* anchor chopenev */
 	    case ASSH_EVENT_CHANNEL_OPEN: {
 	      struct assh_event_channel_open_s *ev =
 		&event.connection.channel_open;
@@ -167,8 +175,9 @@ int main(int argc, char **argv)
 	    case ASSH_EVENT_REQUEST: {
 	      struct assh_event_request_s *ev = &event.connection.request;
 
-	      /* accept a shell execution request on any open channel */
-	      if (ev->ch)
+	      /* accept a shell request on any open channel,
+		 but do not actually execute a shell process */
+	      if (ev->ch != NULL)
 		if (!assh_buffer_strcmp(&ev->type, "shell"))
 		  ev->reply = ASSH_CONNECTION_REPLY_SUCCESS;
 
@@ -176,6 +185,7 @@ int main(int argc, char **argv)
 	      break;
 	    }
 
+                                                        /* anchor evdataalloc */
 	    case ASSH_EVENT_CHANNEL_DATA: {
 	      struct assh_event_channel_data_s *ev = &event.connection.channel_data;
 
@@ -184,8 +194,9 @@ int main(int argc, char **argv)
 
 	      /* allocate output data packet */
 	      uint8_t *data;
-	      assh_error_t err = assh_channel_data_alloc(ev->ch, &data, &size, size);
+	      assh_error_t err = assh_channel_data_alloc(ev->ch, &data, &size, 1);
 
+                                                        /* anchor evdatasend */
 	      /* copy input data to the output buffer */
 	      if (ASSH_ERR_ERROR(err) == ASSH_OK)
 		{
@@ -196,22 +207,26 @@ int main(int argc, char **argv)
 	      /* acknowledge input data event before sending */
 	      assh_event_done(session, &event, ASSH_OK);
 
-	      if (ASSH_ERR_ERROR(err) == ASSH_OK)  /* send back output data */
+	      if (ASSH_ERR_ERROR(err) == ASSH_OK)  /* send data */
 		assh_channel_data_send(ev->ch, size);
 
 	      break;
 	    }
 
+                                                        /* anchor evdflt */
 	    default:
 	      /* acknowledge any unhandled event */
 	      assh_event_done(session, &event, ASSH_OK);
 	    }
+
+                                                        /* anchor sclean */
 	}
 
       fprintf(stderr, "Connection closed\n");
       assh_session_release(session);
     }
 
+                                                        /* anchor cclean */
   assh_context_release(context);
 
   return 0;

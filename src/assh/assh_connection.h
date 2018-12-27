@@ -25,21 +25,13 @@
    @file
    @short SSH connection service (rfc4254 channels and requests)
 
-   This header file defines events and functions which are used
-   when the @tt ssh-connection service is running.
+   This header file defines events and functions which are used when
+   the @xref{connlayer}{connection protocol} service is running.
 
-   This standard service described in @invoke{4254}rfc sections 4
-   "@em{Global Requests}" and 5 "@em{Channel Mechanism}" is
-   implemented as a pluggable service module for @em {libassh}.
+   As explined in the @xref {Connection protocol API} section, this
+   module implements sections 4 and 5 of @invoke{4254}rfc.
 
-   The interactive sessions part of the standard is not implemented by
-   this module. The @ref @assh/helper_interactive.h header supports
-   this part.
-
-   @ifnopt hide_internal
-     Here is an overview of the implemented channel state machine:
-     @image channel_fsm.png
-   @end if
+   @see @assh/helper_interactive.h
 */
 
 #ifndef ASSH_SRV_CONNECTION_H_

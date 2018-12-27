@@ -25,10 +25,13 @@
    @file
    @short SSH interactive session helpers (rfc4254 interactive sessions)
 
-   This headers provides some helper to decode and encode data in
-   standard requests related to interactive sessions as described in
-   @invoke{4254}rfc section 6 "@em{Interactive Sessions}" and section
-   7 "@em{TCP/IP Port Forwarding}".
+   This headers provides some helper functions able load and store
+   data embedded in standard @em requests and @em channels open messages
+   related to interactive sessions and port forwarding, specified as
+   part of the @xref{connlayer}{connection protocol}.
+
+   @xsee {Connection protocol API}
+   @see @assh/assh_connection.h
 */
 
 #ifndef ASSH_HELPER_INTERACTIVE_H_

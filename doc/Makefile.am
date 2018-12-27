@@ -19,3 +19,6 @@ EXTRA_DIST = Makefile.am assh_config.h fdl-1.3.mkdoc internals.conf	\
 
 %.pdf: %.dot
 	dot -Tpdf -Kdot -Emargin=1 -Granksep=1 $< > $@
+
+%.png: %.dot
+	dot -Tpng -Kdot -Emargin=1 -Granksep=1 $< > $@

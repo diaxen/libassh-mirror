@@ -56,7 +56,8 @@ typedef ASSH_SIGN_GENERATE_FCN(assh_sign_generate_t);
     @see assh_sign_check */
 typedef ASSH_SIGN_CHECK_FCN(assh_sign_check_t);
 
-
+/** @internalmembers @This is the signature algorithm descriptor
+    structure. It can be casted to the @ref assh_algo_s type. */
 struct assh_algo_sign_s
 {
   struct assh_algo_s algo;

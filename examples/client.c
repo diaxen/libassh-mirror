@@ -105,15 +105,16 @@ enum poll_e
   POLL_SOCKET,
 };
 
+/* Process all events from the assh session until we encounter one
+   which involves an IO operation that may be blocking. */
+                                                        /* anchor sshloop */
 static assh_bool_t
 ssh_loop(struct assh_session_s *session,
-          struct assh_client_inter_session_s *inter,
-          struct pollfd *p)
+         struct assh_client_inter_session_s *inter,
+         struct pollfd *p)
 {
   time_t t = time(NULL);
 
-  /* Process all events from the assh session until we encounter one
-     which involves an IO operation that may be blocking. */
   while (1)
     {
       struct assh_event_s event;
@@ -121,6 +122,7 @@ ssh_loop(struct assh_session_s *session,
       /* Get the next event from the assh library. */
       if (!assh_event_get(session, &event, t))
         return 0;
+                                                        /* anchor eventread */
 
       switch (event.id)
         {
@@ -135,9 +137,10 @@ ssh_loop(struct assh_session_s *session,
 
           /* let an helper function read ssh stream from socket */
           assh_fd_event(session, &event, p[POLL_SOCKET].fd);
-          p[POLL_SOCKET].revents ^= POLLIN;
+          p[POLL_SOCKET].revents &= ~POLLIN;
           break;
 
+                                                        /* anchor eventwrite */
         case ASSH_EVENT_WRITE:
           /* return if we are not sure that we can write some ssh
              stream to the socket without blocking */
@@ -149,9 +152,10 @@ ssh_loop(struct assh_session_s *session,
 
           /* let an helper function write ssh stream to socket */
           assh_fd_event(session, &event, p[POLL_SOCKET].fd);
-          p[POLL_SOCKET].revents ^= POLLOUT;
+          p[POLL_SOCKET].revents &= ~POLLOUT;
           break;
 
+                                                        /* anchor events */
         case ASSH_EVENT_ERROR:
           /* print errors */
           fprintf(stderr, "SSH error: %s\n", assh_error_str(event.error.code));
@@ -226,6 +230,7 @@ ssh_loop(struct assh_session_s *session,
           assh_client_event_inter_session(session, &event, inter);
           break;
 
+                                                        /* anchor eventdata */
         case ASSH_EVENT_CHANNEL_DATA: {
           assh_error_t err = ASSH_OK;
 
@@ -237,6 +242,8 @@ ssh_loop(struct assh_session_s *session,
               return 1;
             }
 
+          p[POLL_STDOUT].revents &= ~POLLOUT;
+
           struct assh_event_channel_data_s *ev = &event.connection.channel_data;
 
           /* write to stdout */
@@ -247,16 +254,17 @@ ssh_loop(struct assh_session_s *session,
             ev->transferred = r;
 
           assh_event_done(session, &event, err);
-          p[POLL_STDOUT].revents ^= POLLOUT;
           break;
         }
 
+                                                        /* anchor eventother */
         default:
           ASSH_DEBUG("event %u not handled\n", event.id);
           assh_event_done(session, &event, ASSH_OK);
         }
     }
 }
+                                                        /* anchor usage */
 
 static void usage(const char *program, assh_bool_t opts)
 {
@@ -427,12 +435,14 @@ int main(int argc, char **argv)
   if (isatty(0))
     tcgetattr(0, &term);
 
+                                                        /* anchor pollstruct */
   /* main IOs polling loop */
   struct pollfd p[3];
   p[POLL_STDIN].fd = 0;
   p[POLL_STDOUT].fd = 1;
   p[POLL_SOCKET].fd = sock;
 
+                                                        /* anchor mainloop */
   do {
     p[POLL_STDIN].events = 0;
     p[POLL_STDOUT].events = 0;
@@ -450,14 +460,20 @@ int main(int argc, char **argv)
     if (assh_transport_has_output(session))
       p[POLL_SOCKET].events |= POLLOUT;
 
+                                                        /* anchor poll */
     /* get the appropriate ssh protocol timeout */
     int timeout = assh_session_delay(session, time(NULL)) * 1000;
 
     if (poll(p, 3, timeout) <= 0)
       continue;
 
-    /* we may need to write data from the terminal to the
-       interactive session channel */
+                                                        /* anchor disco */
+    /* disconnect on interactive session close. */
+    if (inter.state == ASSH_CLIENT_INTER_ST_CLOSED)
+      assh_session_disconnect(session, SSH_DISCONNECT_BY_APPLICATION, NULL);
+
+                                                        /* anchor stdin */
+    /* write data from the terminal to the session channel */
     if (p[POLL_STDIN].revents)
       {
         assert(inter.state == ASSH_CLIENT_INTER_ST_OPEN);
@@ -475,20 +491,17 @@ int main(int argc, char **argv)
           }
        }
 
-    /* we disconnect when the remote side has closed the interactive
-       session. */
-    if (inter.state == ASSH_CLIENT_INTER_ST_CLOSED)
-      assh_session_disconnect(session, SSH_DISCONNECT_BY_APPLICATION, NULL);
-
+                                                        /* anchor sshloopcall */
     /* let our ssh event loop handle ssh stream io events, channel data
        input events and any other ssh related events. */
   } while (ssh_loop(session, &inter, p));
 
+                                                        /* anchor termset */
   /* restore terminal attributes */
   if (isatty(0))
     tcsetattr(0, 0, &term);
 
-  /* not useful here as we are about to leave... */
+                                                        /* anchor cleanup */
   assh_session_release(session);
   assh_context_release(context);
 

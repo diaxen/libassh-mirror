@@ -217,7 +217,7 @@ interactive_session_exec(const char *cmd)
   return 0;
 }
 
-/* forward data from the command in the child process to the remote client */
+/* forward data from the child process to the remote client */
 static void
 interactive_session_child2channel(assh_bool_t e)
 {

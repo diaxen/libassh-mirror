@@ -31,7 +31,7 @@
 
 #include "assh_session.h"
 
-/** @internal specifies authentication methods */
+/** @This specifies authentication methods */
 enum assh_userauth_methods_e
 {
   ASSH_USERAUTH_METHOD_NONE       = 0x01,

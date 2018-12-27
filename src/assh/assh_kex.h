@@ -67,8 +67,9 @@
 #include "assh_algo.h"
 #include "assh_buffer.h"
 
-/** This function sets the amount of ssh stream that can flow between
-    the client and server between re-keying requests. */
+/** This function changes the amount of ssh stream that is allowed to
+    flow between the client and server before starting a new
+    key-exchange process. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_kex_set_threshold(struct assh_session_s *s, uint32_t bytes);
 
