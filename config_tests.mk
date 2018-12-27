@@ -20,21 +20,28 @@
 
 MAKE=make
 MAKE_TARGET=check
+ASSH_PATH=.
+TEST_PATH=test/
 
-.PHONY: all basic noserver noclient auth gcrypt nozlib nopacketpool alloca \
-        nopubkeyauth nopasswordauth nohostbasedauth nokeyboardauth \
-        nogcrypt nogcrypthash nogcryptalloc nogcryptcipher gcryptprng \
-	nokeycreate nokeyvalidate ndebug
+.PHONY: all auth.cfgtest gcrypt.cfgtest openssl.cfgtest builtin.cfgtest
+#       basic noserver noclient nozlib nopacketpool alloca \
+#        nopubkeyauth nopasswordauth nohostbasedauth nokeyboardauth \
+#        nogcrypt gcrypthash gcryptalloc gcryptcipher gcryptprng \
+#	noopenssl opensslhash opensslalloc opensslcipher opensslprng \
+#	builtinhash builtinalloc builtincipher builtinprng \
+#	nokeycreate nokeyvalidate ndebug
 
-all: basic noserver noclient auth gcrypt nozlib nopacketpool alloca \
-	nokeyvalidate nokeycreate
+all: basic.cfgtest noserver.cfgtest noclient.cfgtest auth.cfgtest gcrypt.cfgtest openssl.cfgtest builtin.cfgtest nozlib.cfgtest	\
+	nopacketpool.cfgtest alloca.cfgtest nokeyvalidate.cfgtest nokeycreate.cfgtest
 
-auth: nopubkeyauth nopasswordauth nohostbasedauth nokeyboardauth nononeauth
+auth.cfgtest: nopubkeyauth.cfgtest nopasswordauth.cfgtest nohostbasedauth.cfgtest nokeyboardauth.cfgtest nononeauth.cfgtest
 
-gcrypt: nogcrypt nogcrypthash nogcryptalloc nogcryptcipher gcryptprng
+gcrypt.cfgtest: nogcrypt.cfgtest gcrypthash.cfgtest gcryptalloc.cfgtest gcryptcipher.cfgtest gcryptprng.cfgtest
+openssl.cfgtest: noopenssl.cfgtest opensslhash.cfgtest opensslalloc.cfgtest opensslcipher.cfgtest opensslprng.cfgtest
+builtin.cfgtest: builtinhash.cfgtest builtinalloc.cfgtest builtincipher.cfgtest builtinprng.cfgtest
 
-basic:
-	./configure
+basic.cfgtest:
+	$(ASSH_PATH)/configure
 	grep -q "define CONFIG_ASSH_SERVER" config.h
 	grep -q "define CONFIG_ASSH_CLIENT" config.h
 	grep -q "define CONFIG_ASSH_PACKET_POOL" config.h
@@ -45,6 +52,11 @@ basic:
 	grep -q "define CONFIG_ASSH_USE_GCRYPT_CIPHERS" config.h
 	grep -q "define CONFIG_ASSH_USE_GCRYPT_ALLOC" config.h
 	grep -q "undef CONFIG_ASSH_USE_GCRYPT_PRNG" config.h
+	grep -q "undef CONFIG_ASSH_USE_OPENSSL" config.h
+	grep -q "undef CONFIG_ASSH_USE_OPENSSL_HASH" config.h
+	grep -q "undef CONFIG_ASSH_USE_OPENSSL_CIPHERS" config.h
+	grep -q "undef CONFIG_ASSH_USE_OPENSSL_ALLOC" config.h
+	grep -q "undef CONFIG_ASSH_USE_OPENSSL_PRNG" config.h
 	grep -q "define CONFIG_ASSH_SERVER_AUTH_NONE" config.h
 	grep -q "define CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY" config.h
 	grep -q "define CONFIG_ASSH_SERVER_AUTH_PUBLICKEY" config.h
@@ -58,122 +70,223 @@ basic:
 	grep -q "define CONFIG_ASSH_KEY_VALIDATE" config.h
 	grep -q "undef NDEBUG" config.h
 	$(MAKE) $(MAKE_TARGET)
+	touch $@
 
-noserver:
-	./configure --disable-server
+noserver.cfgtest:
+	$(ASSH_PATH)/configure --disable-server
 	grep -q "undef CONFIG_ASSH_SERVER" config.h
 	$(MAKE) $(MAKE_TARGET)
+	touch $@
 
-noclient:
-	./configure --disable-client
+noclient.cfgtest:
+	$(ASSH_PATH)/configure --disable-client
 	grep -q "undef CONFIG_ASSH_CLIENT" config.h
 	$(MAKE) $(MAKE_TARGET)
+	touch $@
 
-nokeycreate:
-	./configure --disable-key-create
+nokeycreate.cfgtest:
+	$(ASSH_PATH)/configure --disable-key-create
 	grep -q "undef CONFIG_ASSH_KEY_CREATE" config.h
 	$(MAKE)
-	test/kex
+	$(TEST_PATH)/kex
+	touch $@
 
-nokeyvalidate:
-	./configure --disable-key-validate
+nokeyvalidate.cfgtest:
+	$(ASSH_PATH)/configure --disable-key-validate
 	grep -q "undef CONFIG_ASSH_KEY_VALIDATE" config.h
 	$(MAKE)
-	test/kex
+	$(TEST_PATH)/kex
+	touch $@
 
-nopacketpool:
-	./configure --disable-packet-pool
+nopacketpool.cfgtest:
+	$(ASSH_PATH)/configure --disable-packet-pool
 	grep -q "undef CONFIG_ASSH_PACKET_POOL" config.h
 	$(MAKE)
-	test/connection
-	test/userauth
-	test/userauth_server
-	test/kex
+	$(TEST_PATH)/connection
+	$(TEST_PATH)/userauth
+	$(TEST_PATH)/userauth_server
+	$(TEST_PATH)/kex
+	touch $@
 
-alloca:
-	./configure --enable-alloca
+alloca.cfgtest:
+	$(ASSH_PATH)/configure --enable-alloca
 	grep -q "define CONFIG_ASSH_ALLOCA" config.h
 	$(MAKE) $(MAKE_TARGET)
+	touch $@
 
-ndebug:
-	./configure --disable-assert
+ndebug.cfgtest:
+	$(ASSH_PATH)/configure --disable-assert
 	grep -q "define NDEBUG" config.h
 	$(MAKE) $(MAKE_TARGET)
+	touch $@
 
-nozlib:
-	./configure --disable-zlib
+nozlib.cfgtest:
+	$(ASSH_PATH)/configure --without-zlib
 	grep -q "undef CONFIG_ASSH_USE_ZLIB" config.h
 	$(MAKE)
-	test/kex
+	$(TEST_PATH)/kex
+	touch $@
 
-nogcrypt:
-	./configure --disable-gcrypt
+nogcrypt.cfgtest:
+	$(ASSH_PATH)/configure --without-gcrypt
 	grep -q "undef CONFIG_ASSH_USE_GCRYPT" config.h
-	$(MAKE) $(MAKE_TARGET)
-
-nogcrypthash:
-	./configure --disable-gcrypt-hash
 	grep -q "undef CONFIG_ASSH_USE_GCRYPT_HASH" config.h
-	$(MAKE)
-	test/hash
-	test/kex
-	test/signature
-
-nogcryptcipher:
-	./configure --disable-gcrypt-ciphers
 	grep -q "undef CONFIG_ASSH_USE_GCRYPT_CIPHERS" config.h
-	$(MAKE)
-	test/kex
-	test/key_io
-
-nogcryptalloc:
-	./configure --disable-gcrypt-alloc
 	grep -q "undef CONFIG_ASSH_USE_GCRYPT_ALLOC" config.h
-	$(MAKE) $(MAKE_TARGET)
+	grep -q "undef CONFIG_ASSH_USE_GCRYPT_PRNG" config.h
+	$(MAKE)
+	$(TEST_PATH)/hash
+	$(TEST_PATH)/cipher
+	$(TEST_PATH)/kex
+	touch $@
 
-gcryptprng:
-	./configure --enable-gcrypt-prng
+gcrypthash.cfgtest:
+	$(ASSH_PATH)/configure --with-hashes=gcrypt
+	grep -q "define CONFIG_ASSH_USE_GCRYPT_HASH" config.h
+	$(MAKE)
+	$(TEST_PATH)/hash
+	$(TEST_PATH)/signature
+	touch $@
+
+gcryptcipher.cfgtest:
+	$(ASSH_PATH)/configure --with-ciphers=gcrypt
+	grep -q "define CONFIG_ASSH_USE_GCRYPT_CIPHERS" config.h
+	$(MAKE)
+	$(TEST_PATH)/cipher
+	$(TEST_PATH)/kex
+	$(TEST_PATH)/key_io
+	touch $@
+
+gcryptalloc.cfgtest:
+	$(ASSH_PATH)/configure --with-alloc=gcrypt
+	grep -q "define CONFIG_ASSH_USE_GCRYPT_ALLOC" config.h
+	$(MAKE) $(MAKE_TARGET)
+	touch $@
+
+gcryptprng.cfgtest:
+	$(ASSH_PATH)/configure --with-prng=gcrypt
 	grep -q "define CONFIG_ASSH_USE_GCRYPT_PRNG" config.h
 	$(MAKE)
-	test/kex
-	test/bignum
+	$(TEST_PATH)/bignum
+	touch $@
 
-nononeauth:
-	./configure --disable-none-userauth
+noopenssl.cfgtest:
+	$(ASSH_PATH)/configure --without-openssl
+	grep -q "undef CONFIG_ASSH_USE_OPENSSL" config.h
+	grep -q "undef CONFIG_ASSH_USE_OPENSSL_HASH" config.h
+	grep -q "undef CONFIG_ASSH_USE_OPENSSL_CIPHERS" config.h
+	grep -q "undef CONFIG_ASSH_USE_OPENSSL_ALLOC" config.h
+	grep -q "undef CONFIG_ASSH_USE_OPENSSL_PRNG" config.h
+	$(MAKE)
+	$(TEST_PATH)/hash
+	$(TEST_PATH)/cipher
+	$(TEST_PATH)/kex
+	touch $@
+
+opensslhash.cfgtest:
+	$(ASSH_PATH)/configure --with-hashes=openssl
+	grep -q "define CONFIG_ASSH_USE_OPENSSL_HASH" config.h
+	$(MAKE)
+	$(TEST_PATH)/hash
+	$(TEST_PATH)/signature
+	touch $@
+
+opensslcipher.cfgtest:
+	$(ASSH_PATH)/configure --with-ciphers=openssl
+	grep -q "define CONFIG_ASSH_USE_OPENSSL_CIPHERS" config.h
+	$(MAKE)
+	$(TEST_PATH)/cipher
+	$(TEST_PATH)/kex
+	$(TEST_PATH)/key_io
+	touch $@
+
+opensslalloc.cfgtest:
+	$(ASSH_PATH)/configure --with-alloc=openssl
+	grep -q "define CONFIG_ASSH_USE_OPENSSL_ALLOC" config.h
+	$(MAKE)
+	touch $@
+
+opensslprng.cfgtest:
+	$(ASSH_PATH)/configure --with-prng=openssl
+	grep -q "define CONFIG_ASSH_USE_OPENSSL_PRNG" config.h
+	$(MAKE)
+	$(TEST_PATH)/bignum
+	touch $@
+
+builtinhash.cfgtest:
+	$(ASSH_PATH)/configure --with-hashes=builtin
+	grep -q "undef CONFIG_ASSH_USE_GCRYPT_HASH" config.h
+	grep -q "undef CONFIG_ASSH_USE_OPENSSL_HASH" config.h
+	$(MAKE)
+	$(TEST_PATH)/hash
+	$(TEST_PATH)/signature
+	touch $@
+
+builtincipher.cfgtest:
+	$(ASSH_PATH)/configure --with-ciphers=builtin
+	grep -q "undef CONFIG_ASSH_USE_GCRYPT_CIPHERS" config.h
+	grep -q "undef CONFIG_ASSH_USE_OPENSSL_CIPHERS" config.h
+	$(MAKE)
+	$(TEST_PATH)/cipher
+	$(TEST_PATH)/kex
+	$(TEST_PATH)/key_io
+	touch $@
+
+builtinalloc.cfgtest:
+	$(ASSH_PATH)/configure --with-alloc=builtin
+	grep -q "undef CONFIG_ASSH_USE_GCRYPT_ALLOC" config.h
+	grep -q "undef CONFIG_ASSH_USE_OPENSSL_ALLOC" config.h
+	$(MAKE)
+	touch $@
+
+builtinprng.cfgtest:
+	$(ASSH_PATH)/configure --with-prng=builtin
+	grep -q "undef CONFIG_ASSH_USE_GCRYPT_PRNG" config.h
+	grep -q "undef CONFIG_ASSH_USE_OPENSSL_PRNG" config.h
+	$(MAKE)
+	$(TEST_PATH)/bignum
+	touch $@
+
+nononeauth.cfgtest:
+	$(ASSH_PATH)/configure --disable-none-userauth
 	grep -q "undef CONFIG_ASSH_SERVER_AUTH_NONE" config.h
 	$(MAKE)
-	test/userauth
-	test/userauth_server
+	$(TEST_PATH)/userauth
+	$(TEST_PATH)/userauth_server
+	touch $@
 
-nopubkeyauth:
-	./configure --disable-publickey-userauth
+nopubkeyauth.cfgtest:
+	$(ASSH_PATH)/configure --disable-publickey-userauth
 	grep -q "undef CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY" config.h
 	grep -q "undef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY" config.h
 	$(MAKE)
-	test/userauth
-	test/userauth_server
+	$(TEST_PATH)/userauth
+	$(TEST_PATH)/userauth_server
+	touch $@
 
-nopasswordauth:
-	./configure --disable-password-userauth
+nopasswordauth.cfgtest:
+	$(ASSH_PATH)/configure --disable-password-userauth
 	grep -q "undef CONFIG_ASSH_CLIENT_AUTH_PASSWORD" config.h
 	grep -q "undef CONFIG_ASSH_SERVER_AUTH_PASSWORD" config.h
 	$(MAKE)
-	test/userauth
-	test/userauth_server
+	$(TEST_PATH)/userauth
+	$(TEST_PATH)/userauth_server
+	touch $@
 
-nohostbasedauth:
-	./configure --disable-hostbased-userauth
+nohostbasedauth.cfgtest:
+	$(ASSH_PATH)/configure --disable-hostbased-userauth
 	grep -q "undef CONFIG_ASSH_CLIENT_AUTH_HOSTBASED" config.h
 	grep -q "undef CONFIG_ASSH_SERVER_AUTH_HOSTBASED" config.h
 	$(MAKE)
-	test/userauth
-	test/userauth_server
+	$(TEST_PATH)/userauth
+	$(TEST_PATH)/userauth_server
+	touch $@
 
-nokeyboardauth:
-	./configure --disable-keyboard-userauth
+nokeyboardauth.cfgtest:
+	$(ASSH_PATH)/configure --disable-keyboard-userauth
 	grep -q "undef CONFIG_ASSH_CLIENT_AUTH_KEYBOARD" config.h
 	grep -q "undef CONFIG_ASSH_SERVER_AUTH_KEYBOARD" config.h
 	$(MAKE)
-	test/userauth
-	test/userauth_server
-
+	$(TEST_PATH)/userauth
+	$(TEST_PATH)/userauth_server
+	touch $@
