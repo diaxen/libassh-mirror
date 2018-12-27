@@ -100,6 +100,10 @@ extern const struct assh_prng_s assh_prng_xswap;
 extern const struct assh_prng_s assh_prng_gcrypt;
 #endif
 
+#ifdef CONFIG_ASSH_USE_OPENSSL_PRNG
+extern const struct assh_prng_s assh_prng_openssl;
+#endif
+
 #ifdef CONFIG_ASSH_USE_DEV_RANDOM
 extern const struct assh_prng_s assh_prng_dev_random;
 #endif

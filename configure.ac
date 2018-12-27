@@ -101,7 +101,7 @@ AC_ARG_WITH(ciphers, AC_HELP_STRING(--with-ciphers, [Specifies backend to use fo
 		       [with_ciphers=$withval], with_ciphers=external)
 
 AC_ARG_WITH(prng, AC_HELP_STRING(--with-prng, [Specifies backend to use for random source (builtin, external, gcrypt, openssl)]),
-		       [with_prng=$withval], with_prng=builtin)
+		       [with_prng=$withval], with_prng=external)
 
 AC_ARG_WITH(alloc, AC_HELP_STRING(--with-alloc, [Specifies backend to use for secure memory allocation (none, libc, external, gcrypt, openssl)]),
 		       [with_alloc=$withval], with_alloc=external)
@@ -123,6 +123,15 @@ AC_ARG_ENABLE(alloca, AC_HELP_STRING(--enable-alloca, [Store key related materia
 
 AC_ARG_ENABLE(assert, AC_HELP_STRING(--disable-assert, [Disable assert() by defining the NDEBUG macro]),
 		       enable_assert=$enableval, enable_assert=yes)
+
+if test -e /dev/random ; then
+  if test x$with_prng = xdevrandom || test x$with_prng = xexternal ; then
+    AC_DEFINE([CONFIG_ASSH_USE_DEV_RANDOM], [], [Enable support for unix @tt {/dev/u?random} random generator when defined.])
+    with_prng=devrandom
+  fi
+else
+  with_devrandom=no
+fi
 
 if test x$with_gcrypt = xyes ; then
   AC_CHECK_LIB(gcrypt, gcry_check_version, [
@@ -218,13 +227,17 @@ if test x$with_openssl = xyes ; then
 	 ])
       fi
 
+      if test x$with_prng = xopenssl || test x$with_prng = xexternal ; then
+	AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_PRNG], [], [Enable openssl random number generator when defined.])
+      fi
+
       if test x$with_alloc = xopenssl || test x$with_alloc = xexternal ; then
         with_alloc=openssl
 	AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_ALLOC], [], [Enable openssl secur memory allocator when defined.])
 	AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_HEAP_SIZE], [0x10000], [Value passed to the CRYPTO_secure_malloc_init function.])
       fi
 
-      if test x$with_ciphers = xopenssl ; then
+      if test x$with_ciphers = xopenssl || test x$with_ciphers = xexternal ; then
         with_ciphers=openssl
 	AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_CIPHERS], [], [Enable openssl cipher algorithms when defined.])
 	AC_CHECK_LIB(crypto, EVP_rc4, [
@@ -286,7 +299,9 @@ if test x$with_gcrypt = xno && test x$with_openssl = xno ; then
   with_hashes=builtin
   with_alloc=libc
   with_ciphers=builtin
-  with_prng=builtin
+  if test x$with_devrandom = xno ; then
+    with_prng=builtin
+  fi
 fi
 
 if test x$with_ciphers = xbuiltin ; then
@@ -327,11 +342,6 @@ AC_CHECK_HEADERS(valgrind/memcheck.h, [
   AC_DEFINE([CONFIG_ASSH_VALGRIND], [], [Use valgrind headers for better checking when defined.])
 ])
 
-if test -e /dev/random ; then
-  AC_DEFINE([CONFIG_ASSH_USE_DEV_RANDOM], [], [Enable support for unix @tt {/dev/u?random} random generator when defined.])
-  enable_dev_random=yes
-fi
-
 AM_CONDITIONAL(COND_server,  [test x$enable_server = xyes])
 AM_CONDITIONAL(COND_client,  [test x$enable_client = xyes])
 
@@ -339,7 +349,8 @@ AM_CONDITIONAL(COND_libc_alloc,      [test x$with_alloc = xlibc])
 
 AM_CONDITIONAL(COND_builtin_hash,    [test x$with_hashes = xbuiltin])
 AM_CONDITIONAL(COND_builtin_ciphers, [test x$with_ciphers = xbuiltin])
-AM_CONDITIONAL(COND_dev_random,      [test x$with_prng = xbuiltin])
+AM_CONDITIONAL(COND_builtin_prng,    [test x$with_prng = xbuiltin])
+AM_CONDITIONAL(COND_dev_random,      [test x$with_prng = xdevrandom])
 
 AM_CONDITIONAL(COND_gcrypt_hash,     [test x$with_hashes = xgcrypt])
 AM_CONDITIONAL(COND_gcrypt_alloc,    [test x$with_alloc = xgcrypt])

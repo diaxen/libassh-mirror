@@ -103,7 +103,9 @@ libassh_la_SOURCES +=	bignum_builtin.h bignum_builtin.c bignum_builtin_vm.c \
 if COND_gcrypt_prng
 libassh_la_SOURCES +=	prng_gcrypt.c
 endif
-
+if COND_openssl_prng
+libassh_la_SOURCES +=	prng_openssl.c
+endif
 if COND_dev_random
 libassh_la_SOURCES +=	prng_dev_random.c
 endif

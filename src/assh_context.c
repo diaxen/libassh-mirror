@@ -132,6 +132,8 @@ assh_context_init(struct assh_context_s *c,
     {
 #ifdef CONFIG_ASSH_USE_GCRYPT_PRNG
       prng = &assh_prng_gcrypt;
+#elif defined(CONFIG_ASSH_USE_OPENSSL_PRNG)
+      prng = &assh_prng_openssl;
 #elif defined(CONFIG_ASSH_USE_DEV_RANDOM)
       prng = &assh_prng_dev_random;
 #else
