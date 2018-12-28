@@ -88,6 +88,12 @@ bignum_SOURCES = bignum.c
 bignum_LDADD = $(top_builddir)/src/libassh.la
 bignum_CFLAGS = -I$(top_srcdir)/src
 
+noinst_PROGRAMS += gex_primes
+#TESTS += gex_primes
+gex_primes_SOURCES = gex_primes.c
+gex_primes_LDADD = $(top_builddir)/src/libassh.la
+gex_primes_CFLAGS = -I$(top_srcdir)/src
+
 ############################## signature tests
 
 if COND_key_create
