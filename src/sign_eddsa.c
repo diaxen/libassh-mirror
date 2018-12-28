@@ -170,8 +170,8 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
 
     ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode1,
       "MMMMMsdsddTTTTTTTTTTTTTTTTmT", curve->bx, curve->by,
-      curve->a, curve->p, curve->d, curve->bits,
-      r, n * 8 * 2,             /* scalar */
+      curve->a, curve->p, curve->d, (size_t)curve->bits,
+      r, (size_t)(n * 8 * 2),             /* scalar */
       rx, r_str), err_scratch);
   }
 
@@ -238,7 +238,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_eddsa_generate)
     };
 
     ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode2, "MddddsTTTmT",
-      curve->l, hram, az, r, s_str, n * 8), err_scratch);
+      curve->l, hram, az, r, s_str, (size_t)(n * 8)), err_scratch);
   }
 
   ASSH_SCRATCH_FREE(c, sc);
@@ -485,8 +485,8 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_eddsa_check)
   ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, kx_sign, bytecode,
           "MMMMMMsdddsddTTTTTTTTTTTTTTTTTmTT", curve->bx, curve->by,
           curve->a, curve->p, curve->d, curve->i,
-          curve->bits, kp,
-          hram, rs_str + 4 + n, n * 8, /* scalars */
+          (size_t)curve->bits, kp,
+          hram, rs_str + 4 + n, (size_t)(n * 8), /* scalars */
           rx, ry), err_scratch);
 
   /* encode point */

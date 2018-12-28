@@ -243,7 +243,7 @@ static assh_error_t assh_kex_dh_gex_client_wait_group(struct assh_session_s *s,
   ASSH_JMP_ON_ERR(assh_bignum_bytecode(s->ctx, 0, bytecode, "MMMNNNNTTTms",
                                     /* M */ g_str, p_str, e_str,
                                     /* N */ &pv->gn, &pv->pn, &pv->en, &pv->xn,
-                                    /* S */ n), err_p);
+                                    /* S */ (size_t)n), err_p);
 
   assert(pv->xn.secret);
 
@@ -540,7 +540,7 @@ static assh_error_t assh_kex_dh_gex_server_wait_size(struct assh_session_s *s,
   assh_safeprime_get(&assh_safeprimes, bits, base, &offset);
 
   ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "MsidNT", p_str,
-                                    bits, offset, base, &pv->pn), err_p);
+                                    (size_t)bits, offset, base, &pv->pn), err_p);
 
   assh_packet_string_resized(pout, p_str + 4);
 
@@ -656,7 +656,7 @@ static assh_error_t assh_kex_dh_gex_server_wait_e(struct assh_session_s *s,
 
   ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "MMMNsTTTTTm",
                    e_str, f_str, secret, &pv->pn,
-                   pv->exp_n), err_p);
+                   (size_t)pv->exp_n), err_p);
 
   assh_packet_string_resized(pout, f_str + 4);
 

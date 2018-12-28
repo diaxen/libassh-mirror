@@ -122,7 +122,8 @@ assh_weierstrass_base_mul(struct assh_session_s *s)
   memcpy(ry, curve->gy, pv->size);
 
   ASSH_RETURN(assh_bignum_bytecode(s->ctx, 0, bytecode,
-                "DDDDTTTTTTTTTTTTTTms", rx, ry, curve->p, pv->pvkey, curve->bits));
+                "DDDDTTTTTTTTTTTTTTms", rx, ry, curve->p, pv->pvkey,
+                (size_t)curve->bits));
 }
 
 static assh_error_t ASSH_WARN_UNUSED_RESULT

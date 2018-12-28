@@ -187,7 +187,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_ecdsa_generate)
 
   ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "DDDDDDNMMTTTTTTTTTTTTTmTss",
 	    curve->gx, curve->gy, curve->p, curve->n,
-            hm, k_, &k->sn, rs_str, NULL, curve->bits, hsize * 8 * 2), err_scratch);
+            hm, k_, &k->sn, rs_str, NULL, (size_t)curve->bits, (size_t)(hsize * 8 * 2)), err_scratch);
 
   size_t rlen = 4 + assh_load_u32(rs_str);
   size_t slen = 4 + assh_load_u32(rs_str + rlen);
@@ -344,7 +344,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_ecdsa_check)
 
   ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "DDNNDDDMMTTTTTTTTTTTTTTTTTTms",
             curve->gx, curve->gy, &k->xn, &k->yn, curve->p, curve->n,
-            hm, r_mpint, s_mpint, curve->bits), err_scratch);
+            hm, r_mpint, s_mpint, (size_t)curve->bits), err_scratch);
 
   err = ASSH_OK;
 

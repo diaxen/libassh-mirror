@@ -196,7 +196,7 @@ assh_montgomery_point_mul(struct assh_session_s *s, uint8_t *result,
   };
 
   ASSH_RETURN(assh_bignum_bytecode(s->ctx, 0, bytecode, "dddMMTTTTTTTTTms",
-          result, basepoint, scalar, curve->prime, curve->a24, curve->bits));
+          result, basepoint, scalar, curve->prime, curve->a24, (size_t)curve->bits));
 }
 
 static assh_error_t ASSH_WARN_UNUSED_RESULT
