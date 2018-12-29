@@ -396,9 +396,14 @@ assh_request(struct assh_session_s *s,
    If some channel open are left postponed when the connection is
    ending, some @ref ASSH_EVENT_CHANNEL_ABORT events are reported.
 
-   The @ref pkt_size and @ref win_size fields are initially set to @tt
-   {-1} and can be modified. The meaning of these fields is as
-   described in @ref assh_channel_open.
+   Ths @ref rpkt_size and @ref rwin_size fields contains the initial
+   aviable window size and the packet size advertised by the remote
+   host for sending to data through the channel.
+
+   The @ref pkt_size and @ref win_size fields are used to advertise
+   our receive window and packet size and can be modified. The meaning
+   of these fields is as described in @ref assh_channel_open. They are
+   initially set to @tt {-1}.
 
    @see ASSH_EVENT_CHANNEL_OPEN
 */
@@ -411,6 +416,8 @@ struct assh_event_channel_open_s
   enum assh_channel_open_reason_e       reason;   //< output
   int32_t                               win_size; //< input/output
   int32_t                               pkt_size; //< input/output
+  ASSH_EV_CONST uint32_t                rwin_size; //< input
+  ASSH_EV_CONST uint32_t                rpkt_size; //< input
   struct assh_cbuffer_s                 rsp_data; //< output
 };
 
@@ -501,7 +508,10 @@ assh_channel_open_failed_reply(struct assh_channel_s *ch,
    the channel open has been confirmed by the remote side.
 
    If the open is successful, some response specific data may be
-   available in the @ref rsp_data field.
+   available in the @ref rsp_data field. The @ref rwin_size and @ref
+   rpkt_size fields also contains the initial aviable window size and
+   the packet size advertised by the remote host for sending to data
+   through the channel.
 
    If the open has failed, the associated @ref assh_channel_s object
    will be released when the @ref assh_event_done function is called.
@@ -514,6 +524,8 @@ struct assh_event_channel_open_reply_s
   ASSH_EV_CONST enum assh_connection_reply_e    reply;      //< input
   ASSH_EV_CONST enum assh_channel_open_reason_e reason;     //< input
   ASSH_EV_CONST struct assh_cbuffer_s           rsp_data;   //< input
+  ASSH_EV_CONST uint32_t                        rwin_size; //< input
+  ASSH_EV_CONST uint32_t                        rpkt_size; //< input
 };
 
 /**
@@ -612,8 +624,8 @@ assh_channel_window_adjust(struct assh_channel_s *ch, size_t add);
    running and a @ref SSH_MSG_CHANNEL_WINDOW_ADJUST message has been
    received.
 
-   This event indicates the size of the remote window has increased.
-   This means that more data can be sent over the channel.
+   This event indicates that the size of the remote window has
+   increased. This means that more data can be sent over the channel.
 
    @see ASSH_EVENT_CHANNEL_WINDOW
 */
