@@ -258,12 +258,8 @@ assh_bignum_init(struct assh_context_s *c,
                  struct assh_bignum_s  *bn,
                  size_t bits)
 {
+  memset(bn, 0, sizeof(*bn));
   bn->bits = bits;
-  bn->secret = 0;
-  bn->secure = 0;
-  bn->mt_mod = 0;
-  bn->mt_num = 0;
-  bn->tmp = 0;
   bn->n = NULL;
 }
 
