@@ -166,12 +166,32 @@ int main(int argc, char **argv)
 
 	      /* make our server accept interactive sessions from the client */
 	      if (!assh_buffer_strcmp(&ev->type, "session"))
-		ev->reply = ASSH_CONNECTION_REPLY_SUCCESS;
+		{
+		  ev->reply = ASSH_CONNECTION_REPLY_SUCCESS;
+                                                        /* anchor chopenwin */
+		  /* disable automatic window management for the channel */
+		  ev->win_size = ev->rwin_size;
+		  ev->pkt_size = ev->rpkt_size;
+		}
 
 	      assh_event_done(session, &event, ASSH_OK);
 	      break;
 	    }
 
+                                                        /* anchor evwin */
+	    case ASSH_EVENT_CHANNEL_WINDOW: {
+	      struct assh_event_channel_window_s *ev = &event.connection.channel_window;
+
+	      /* find the extra amount of bytes we are allowed to send */
+	      size_t diff = ev->new_size - ev->old_size;
+
+	      assh_event_done(session, &event, ASSH_OK);
+
+	      /* allow the remote host to send more bytes */
+	      assh_channel_window_adjust(ev->ch, diff);
+	      break;
+	    }
+                                                        /* anchor rqev */
 	    case ASSH_EVENT_REQUEST: {
 	      struct assh_event_request_s *ev = &event.connection.request;
 
