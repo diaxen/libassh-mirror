@@ -92,20 +92,22 @@ assh_fd_get_password(struct assh_context_s *c, const char **pass,
   return err;
 }
 
-void
+size_t
 assh_fd_event(struct assh_session_s *s,
               struct assh_event_s *e, int fd)
 {
   assh_error_t err = ASSH_OK;
+  ssize_t r;
 
   switch (e->id)
     {
     case ASSH_EVENT_READ: {
       struct assh_event_transport_read_s *te = &e->transport.read;
-      ssize_t r = read(fd, te->buf.data, te->buf.size);
+      r = read(fd, te->buf.data, te->buf.size);
       switch (r)
         {
         case -1:
+          r = 0;
           if (errno == EAGAIN || errno == EWOULDBLOCK)
             break;
         case 0:
@@ -120,10 +122,11 @@ assh_fd_event(struct assh_session_s *s,
 
     case ASSH_EVENT_WRITE: {
       struct assh_event_transport_write_s *te = &e->transport.write;
-      ssize_t r = write(fd, te->buf.data, te->buf.size);
+      r = write(fd, te->buf.data, te->buf.size);
       switch (r)
         {
         case -1:
+          r = 0;
           if (errno == EAGAIN || errno == EWOULDBLOCK)
             break;
         case 0:
@@ -142,6 +145,7 @@ assh_fd_event(struct assh_session_s *s,
 
  err_:
   assh_event_done(s, e, err);
+  return r;
 }
 
 void
