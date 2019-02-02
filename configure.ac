@@ -47,6 +47,12 @@ AC_CHECK_LIB(c, posix_openpt,
   AC_DEFINE(_XOPEN_SOURCE, 600, [_XOPEN_SOURCE])
 )
 
+AC_CHECK_LIB(c, setgroups,
+  AC_DEFINE(CONFIG_ASSH_POSIX_SETGROUPS, 1, [Use setgroups when defined.])
+  AC_DEFINE(_DEFAULT_SOURCE, 1, [_DEFAULT_SOURCE])
+  AC_DEFINE(_BSD_SOURCE, 1, [_BSD_SOURCE])
+)
+
 AC_CHECK_LIB(c, getpwnam_r, AC_DEFINE(CONFIG_ASSH_GETPWNAM_R, 1, [Use getpwnam_r when defined.]))
 AC_CHECK_LIB(c, getspnam_r, AC_DEFINE(CONFIG_ASSH_GETSPNAM_R, 1, [Use getspnam_r when defined.]))
 
