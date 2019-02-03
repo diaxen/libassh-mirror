@@ -106,7 +106,8 @@ int main(int argc, char **argv)
   /* load or create host key(s) */
   if (assh_server_openssh_load_hk(context)
 #ifdef CONFIG_ASSH_KEY_CREATE
-      && assh_key_create(context, &context->keys, 255, &assh_key_ed25519, ASSH_ALGO_SIGN)
+      && assh_key_create(context, assh_context_keys(context),
+			 255, &assh_key_ed25519, ASSH_ALGO_SIGN)
 #endif
       )
     ERROR("Unable to load or create host key.\n");

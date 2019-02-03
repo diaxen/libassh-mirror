@@ -239,6 +239,12 @@ void * assh_context_get_pv(struct assh_context_s *ctx)
   return ctx->user_pv;
 }
 
+struct assh_key_s **
+assh_context_keys(struct assh_context_s *ctx)
+{
+  return &ctx->keys;
+}
+
 void
 assh_context_timeouts(struct assh_context_s *c,
                       uint_fast8_t transport, uint_fast8_t kex,
