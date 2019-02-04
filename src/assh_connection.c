@@ -2015,9 +2015,6 @@ assh_channel_eof(struct assh_channel_s *ch)
     case ASSH_CHANNEL_ST_OPEN_SENT_FORCE_CLOSE:
     case ASSH_CHANNEL_ST_OPEN_RECEIVED:
     case ASSH_CHANNEL_ST_OPEN_RECEIVED_FORCE_CLOSE:
-    case ASSH_CHANNEL_ST_EOF_SENT:
-    case ASSH_CHANNEL_ST_EOF_CLOSE:
-    case ASSH_CHANNEL_ST_CLOSE_CALLED:
       ASSH_UNREACHABLE("call not allowed in current state");
 
     case ASSH_CHANNEL_ST_OPEN:
@@ -2031,6 +2028,11 @@ assh_channel_eof(struct assh_channel_s *ch)
 		   | ASSH_ERRSV_CONTINUE);
       ASSH_SET_STATE(ch, state, ASSH_CHANNEL_ST_EOF_CLOSE);
       break;
+
+    case ASSH_CHANNEL_ST_EOF_SENT:
+    case ASSH_CHANNEL_ST_EOF_CLOSE:
+    case ASSH_CHANNEL_ST_CLOSE_CALLED:
+      ASSH_RET_ON_ERR(ASSH_ERR_BUSY);
 
     case ASSH_CHANNEL_ST_CLOSING:
     case ASSH_CHANNEL_ST_FORCE_CLOSE:
@@ -2057,7 +2059,6 @@ assh_channel_close(struct assh_channel_s *ch)
     case ASSH_CHANNEL_ST_OPEN_RECEIVED:
     case ASSH_CHANNEL_ST_OPEN_SENT_FORCE_CLOSE:
     case ASSH_CHANNEL_ST_OPEN_RECEIVED_FORCE_CLOSE:
-    case ASSH_CHANNEL_ST_CLOSE_CALLED:
       ASSH_UNREACHABLE("call not allowed in current state");
 
     case ASSH_CHANNEL_ST_OPEN:
@@ -2071,6 +2072,9 @@ assh_channel_close(struct assh_channel_s *ch)
     case ASSH_CHANNEL_ST_EOF_CLOSE:
       ASSH_SET_STATE(ch, state, ASSH_CHANNEL_ST_CLOSE_CALLED);
       break;
+
+    case ASSH_CHANNEL_ST_CLOSE_CALLED:
+      ASSH_RET_ON_ERR(ASSH_ERR_BUSY);
 
     case ASSH_CHANNEL_ST_CLOSING:
     case ASSH_CHANNEL_ST_FORCE_CLOSE:
