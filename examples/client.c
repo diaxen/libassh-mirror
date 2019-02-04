@@ -473,24 +473,31 @@ int main(int argc, char **argv)
       assh_session_disconnect(session, SSH_DISCONNECT_BY_APPLICATION, NULL);
 
                                                         /* anchor stdin */
-    /* write data from the terminal to the session channel */
-    if (p[POLL_STDIN].revents)
+    if (inter.state == ASSH_CLIENT_INTER_ST_OPEN)
       {
-        assert(inter.state == ASSH_CLIENT_INTER_ST_OPEN);
-
-        /* let the library allocate an output buffer for us */
-        uint8_t *buf;
-        size_t s = 256;
-        if (assh_channel_data_alloc(inter.channel, &buf, &s, 1) == ASSH_OK)
+        /* write data from the terminal to the session channel */
+        if (p[POLL_STDIN].revents & POLLIN)
           {
-            /* read data from the terminal directly in the
-               buffer of the outgoing packet then send it. */
-            ssize_t r = read(p[POLL_STDIN].fd, buf, s);
-            if (r > 0)
-              assh_channel_data_send(inter.channel, r);
+            /* let the library allocate an output buffer for us */
+            uint8_t *buf;
+            size_t s = 256;
+            if (assh_channel_data_alloc(inter.channel, &buf, &s, 1) == ASSH_OK)
+              {
+                /* read data from the terminal directly in the
+                   buffer of the outgoing packet then send it. */
+                ssize_t r = read(p[POLL_STDIN].fd, buf, s);
+                if (r > 0)
+                  assh_channel_data_send(inter.channel, r);
+              }
           }
-       }
 
+                                                        /* anchor close */
+        /* close the session channel on stdio errors */
+        if (p[POLL_STDOUT].revents & (POLLERR | POLLHUP))
+          assh_channel_close(inter.channel);
+        else if (p[POLL_STDIN].revents & (POLLERR | POLLHUP))
+          assh_channel_eof(inter.channel);
+      }
                                                         /* anchor sshloopcall */
     /* let our ssh event loop handle ssh stream io events, channel data
        input events and any other ssh related events. */
