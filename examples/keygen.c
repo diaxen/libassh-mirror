@@ -39,6 +39,7 @@ enum assh_keygen_action_e
   ASSH_KEYGEN_CREATE   = 2,
   ASSH_KEYGEN_VALIDATE = 4,
   ASSH_KEYGEN_SAVE     = 8,
+  ASSH_KEYGEN_FP       = 16,
 };
 
 #define ERROR(...) do { fprintf(stderr, "error: " __VA_ARGS__); exit(1); } while (0)
@@ -114,7 +115,7 @@ get_passphrase(const char *prompt, struct assh_context_s *context)
 
 static void usage(const char *program, assh_bool_t opts)
 {
-  fprintf(stderr, "usage: %s [-h | options] create|validate|convert|list\n", program);
+  fprintf(stderr, "usage: %s [-h | options] create|validate|convert|fingerprint|list\n", program);
 
   if (opts)
     fprintf(stderr, "List of available options:\n\n"
@@ -218,6 +219,8 @@ int main(int argc, char *argv[])
     action_mask = ASSH_KEYGEN_LOAD | ASSH_KEYGEN_VALIDATE;
   else if (!strcmp(action, "convert"))
     action_mask = ASSH_KEYGEN_LOAD | ASSH_KEYGEN_SAVE;
+  else if (!strcmp(action, "fingerprint"))
+    action_mask = ASSH_KEYGEN_LOAD | ASSH_KEYGEN_FP;
   else if (!strcmp(action, "list"))
     {
       get_type(NULL);
@@ -338,6 +341,8 @@ int main(int argc, char *argv[])
 #endif
     }
 
+  /* save key to file */
+
   if (action_mask & ASSH_KEYGEN_SAVE)
     {
       if (ofile == NULL)
@@ -374,6 +379,30 @@ int main(int argc, char *argv[])
 
       if (assh_save_key_file(context, key, ofile, ofmt, passphrase))
         ERROR("Unable to save key.\n");
+    }
+
+  /* display fingerprint in all supported formats as needed */
+
+  if (action_mask & ASSH_KEYGEN_FP)
+    {
+      enum assh_fingerprint_fmt_e fpf = 0;
+
+      while (1)
+        {
+          const char * fpf_name;
+          char fp[128];
+          size_t fps = sizeof(fp);
+
+          assh_error_t err = assh_key_fingerprint(context, key,
+                                         fpf, fp, &fps, &fpf_name);
+          if (err == ASSH_NO_DATA)
+            break;
+
+          if (err == ASSH_OK)
+            fprintf(stderr, "%-16s: %s\n", fpf_name, fp);
+
+          fpf++;
+        }
     }
 
   assh_context_release(context);
