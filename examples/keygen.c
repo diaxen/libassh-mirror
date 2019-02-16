@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include <assh/assh_context.h>
 #include <assh/assh_cipher.h>
@@ -70,13 +71,15 @@ static enum assh_key_format_e get_format(const char *fmt)
   return ASSH_KEY_FMT_NONE;
 }
 
-static FILE * get_file(const char *file, const char *mode)
+static FILE * get_file(const char *file, int mode)
 {
-  FILE *r = fopen(file, mode);
-  if (r != NULL)
-    return r;
-  fprintf(stderr, "Can not open `%s' key file.\n", file);
-  exit(1);
+  int fd = open(file, mode, 0600);
+  if (fd < 0)
+    {
+      fprintf(stderr, "Can not open `%s' key file.\n", file);
+      exit(1);
+    }
+  return fdopen(fd, mode & O_WRONLY ? "wb" : "rb");
 }
 
 static const struct assh_key_algo_s * get_type(const char *type)
@@ -162,10 +165,10 @@ int main(int argc, char *argv[])
           ifmt = get_format(optarg);
           break;
         case 'o':
-          ofile = get_file(optarg, "wb");
+          ofile = get_file(optarg, O_CREAT | O_WRONLY);
           break;
         case 'i':
-          ifile = get_file(optarg, "rb");
+          ifile = get_file(optarg, O_RDONLY);
           break;
         case 't':
           type = get_type(optarg);
