@@ -241,11 +241,11 @@ assh_client_event_openssh_hk_lookup_va(struct assh_session_s *s, FILE *out, FILE
 
   size_t fp_size = sizeof(fp_md5);
   ASSH_JMP_ON_ERR(assh_key_fingerprint(c, ek, ASSH_FP_RFC4716_MD5,
-				    fp_md5, &fp_size), err_);
+				    fp_md5, &fp_size, NULL), err_);
 
   fp_size = sizeof(fp_sha);
   ASSH_JMP_ON_ERR(assh_key_fingerprint(c, ek, ASSH_FP_BASE64_SHA256,
-				    fp_sha, &fp_size), err_);
+				    fp_sha, &fp_size, NULL), err_);
 
   for (mk = k = keys; k != NULL; k = k->next)
     {

@@ -123,12 +123,17 @@ enum assh_fingerprint_fmt_e
 
 /** @This writes a fingerprint string of a key in the provided
     buffer. The value of @tt buf_size is updated with the required
-    size when a @tt NULL buffer is passed. */
+    size when a @tt NULL buffer is passed. The string is null
+    terminated.
+
+    The function returns @ref ASSH_NO_DATA when the format is not
+    known. All supported format ids are contiguous, starting at 0. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_key_fingerprint(struct assh_context_s *c,
 		     const struct assh_key_s *key,
 		     enum assh_fingerprint_fmt_e fmt,
-		     char *buf, size_t *buf_size);
+		     char *buf, size_t *buf_size,
+                     const char **fmt_name);
 
 #endif
 

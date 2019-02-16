@@ -1150,10 +1150,12 @@ ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_key_fingerprint(struct assh_context_s *c,
 		     const struct assh_key_s *key,
 		     enum assh_fingerprint_fmt_e fmt,
-		     char *buf, size_t *buf_size)
+		     char *buf, size_t *buf_size,
+                     const char **fmt_name)
 {
   assh_error_t err;
   size_t msize;
+  const char *name;
 
   const struct assh_hash_algo_s *halgo;
   switch (fmt)
@@ -1161,22 +1163,29 @@ assh_key_fingerprint(struct assh_context_s *c,
     case ASSH_FP_RFC4716_MD5:
       msize = /* hash hex */ 16*2 + /* colons */ 15 + /* nul */ 1;
       halgo = &assh_hash_md5;
+      name = "rfc4716 md5";
       break;
     case ASSH_FP_RFC6594_SHA256:
       halgo = &assh_hash_sha256;
       msize = /* hash hex */ 2 * halgo->hash_size + /* nul */ 1;
+      name = "rfc6594 sha256";
       break;
     case ASSH_FP_RFC4255_SHA1:
       halgo = &assh_hash_sha1;
       msize = /* hash hex */ 2 * halgo->hash_size + /* nul */ 1;
+      name = "rfc4255 sha1";
       break;
     case ASSH_FP_BASE64_SHA256:
       msize = /* hash base64 */ 43 + /* nul */ 1;
       halgo = &assh_hash_sha256;
+      name = "base64 sha256";
       break;
     default:
-      ASSH_UNREACHABLE();
+      return ASSH_NO_DATA;
     }
+
+  if (fmt_name)
+    *fmt_name = name;
 
   if (!buf)
     {
