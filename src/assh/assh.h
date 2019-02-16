@@ -137,8 +137,22 @@ typedef int_fast16_t assh_error_t;
 */
 typedef uint8_t assh_safety_t;
 
-/** @This specify the error severity and must be ored with an
-    @ref assh_error_e value.
+/** @This returns the name associated to an
+    @xref{algorithm} safety factor value. */
+ASSH_INLINE const char *
+assh_safety_name(assh_safety_t safety)
+{
+  if (safety >= 50)
+    return "strong";
+  if (safety >= 26)
+    return "medium";
+  if (safety >= 20)
+    return "weak";
+  return "broken";
+}
+
+/** @This specifies the error severity and must be ored with
+    an @ref assh_error_e value.
 
     These values indicate how the state of the session is
     impacted by the associated error.

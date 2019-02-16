@@ -282,19 +282,6 @@ assh_algo_safety(const struct assh_algo_s *algo)
   return algo->safety;
 }
 
-/* @This returns the name associated to a safety. */
-ASSH_INLINE const char *
-assh_safety_name(assh_safety_t safety)
-{
-  if (safety >= 50)
-    return "strong";
-  if (safety >= 26)
-    return "medium";
-  if (safety >= 20)
-    return "weak";
-  return "broken";
-}
-
 /* @see assh_safety_name @see assh_algo_safety. */
 ASSH_INLINE const char *
 assh_algo_safety_name(const struct assh_algo_s *algo)
