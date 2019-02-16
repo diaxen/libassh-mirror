@@ -24,6 +24,14 @@
 /**
    @file
    @short Key support for the ECDSA signature algorithm
+
+   This header file contains the API descriptor for the ECDSA key
+   support module.
+
+   @xsee{keysalgos}
+   @xsee{ECDSA signature}
+   @xsee{coremod}
+   @see{@assh/assh_key.h}
 */
 
 #ifndef ASSH_KEY_ECDSA_H_

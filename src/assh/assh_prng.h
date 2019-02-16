@@ -24,6 +24,11 @@
 /**
    @file
    @short Random generator module interface
+
+   This header file contains descriptors for random number generator
+   modules implemented in the library.
+
+   @xsee{coremod}
 */
 
 #ifndef ASSH_PRNG_H_
@@ -76,7 +81,7 @@ typedef ASSH_PRNG_GET_FCN(assh_prng_get_t);
 typedef ASSH_PRNG_CLEANUP_FCN(assh_prng_cleanup_t);
 
 /** @internalmembers @This is the prng module interface descriptor
-    structure. */
+    structure. @xsee{coremod} */
 struct assh_prng_s
 {
   assh_prng_init_t    *f_init;
@@ -93,18 +98,27 @@ assh_prng_get(struct assh_context_s *c,
   return c->prng->f_get(c, rdata, rdata_len, quality);
 }
 
-/** @multiple @This is a prng algorithm implementation descriptor. */
+/** @This is a descriptor for the builtin xswap prng.
+
+    When this prng is used, a seed of at least 16 bytes
+    must be passed to the @ref assh_context_create function. */
 extern const struct assh_prng_s assh_prng_xswap;
 
 #ifdef CONFIG_ASSH_USE_GCRYPT_PRNG
+/** @This is a descriptor for the @em Libgcrypt random number
+    generator module. */
 extern const struct assh_prng_s assh_prng_gcrypt;
 #endif
 
 #ifdef CONFIG_ASSH_USE_OPENSSL_PRNG
+/** @This is a descriptor for the @em OpenSSL random number
+    generator module. */
 extern const struct assh_prng_s assh_prng_openssl;
 #endif
 
 #ifdef CONFIG_ASSH_USE_DEV_RANDOM
+/** @This is a descriptor for the @tt /dev/random random number
+    generator module. */
 extern const struct assh_prng_s assh_prng_dev_random;
 #endif
 

@@ -24,6 +24,14 @@
 /**
    @file
    @short Key support for the Digitial Signature Algorithm
+
+   This header file contains the API descriptor for the DSA key
+   support module.
+
+   @xsee{keysalgos}
+   @xsee{DSA signature}
+   @xsee{coremod}
+   @see{@assh/assh_key.h}
 */
 
 #ifndef ASSH_KEY_DSA_H_

@@ -24,6 +24,13 @@
 /**
    @file
    @short SSH service module interface
+
+   This header file provides declarations related to the
+   @xref{service} module interface. Functions are provided to register
+   @xref{services} on a library @ref assh_context_s object.
+
+   @xsee {coremod}
+   @xsee {srvlayer}
 */
 
 #ifndef ASSH_SERVICE_H_
@@ -103,7 +110,8 @@ typedef ASSH_SERVICE_CLEANUP_FCN(assh_service_cleanup_t);
     change to ASSH_TR_CLOSED and the function will not be called any more. */
 typedef ASSH_SERVICE_PROCESS_FCN(assh_service_process_t);
 
-/** @This describes the implementation of an ssh service. */
+/** @internalmembers @This describes the implementation of an ssh
+    service.  @xsee{coremod} */
 struct assh_service_s
 {
   const char *name;
@@ -123,28 +131,29 @@ struct assh_event_service_start_s
   const struct assh_service_s * ASSH_EV_CONST srv;
 };
 
-/** @internal */
+/** @This contains all service related event structures. */
 union assh_event_service_u
 {
   struct assh_event_service_start_s start;
 };
 
-/** @This function registers a single @ref assh_service_s for use by
+/** @This registers a single @ref assh_service_s for use by
     the given context. @see assh_service_register_va */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_service_register(struct assh_context_s *c,
 		      struct assh_service_s *srv);
 
-/** @This function registers one or more @ref assh_service_s for use
+/** @This registers one or more @ref assh_service_s for use
     by the given context.
 
     When registering services onto a client context, the registration
-    order determines the order in which the services will be
-    requested. @see assh_service_register */
+    order determines the order used to request execution of the
+    services.
+    @see assh_service_register */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_service_register_va(struct assh_context_s *c, ...);
 
-/** @This function registers the standard @tt ssh-userauth and @tt
+/** @This registers the standard @tt ssh-userauth and @tt
     ssh-connection services. The appropriate client or server services
     are used depending on the context type. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
@@ -156,7 +165,7 @@ assh_service_loop(struct assh_session_s *s,
                   struct assh_packet_s *p,
                   struct assh_event_s *e);
 
-/** @This lookup a registered service. */
+/** @This lookup a registered service by name. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_service_by_name(struct assh_context_s *c,
                      size_t name_len, const char *name,

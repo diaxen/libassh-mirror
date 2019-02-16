@@ -182,7 +182,7 @@
 
 /** When defined, @this enables code which relies on the @tt
     malloc_usable_size function from the C library. */
-#define CONFIG_ASSH_QSORTR
+#define CONFIG_ASSH_MALLOC_USABLE_SIZE
 
 /** When defined, @this enables support for the server side of the SSH protocol. */
 #define CONFIG_ASSH_SERVER
@@ -306,5 +306,5 @@
 /** When defined, @this disallows performing multiple key exchanges
     before user authentication.  This is not required by the
     specification but helps preventing a simple resource exhaustion
-    attack. */
+    attacks. */
 #define CONFIG_ASSH_NO_REKEX_BEFORE_AUTH

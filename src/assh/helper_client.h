@@ -30,12 +30,12 @@
    @file
    @short SSH client application helpers
 
-   This header provides helper functions designed to ease development
-   of simple ssh client applications.
+   This header file provides @xref{helper} functions designed to ease
+   development of simple @em ssh2 client applications.
 
    Implementation of client applications may want to reuse and adapt
-   code from this module as allowed by the license exception covering
-   the module source code.
+   code from this module, as allowed by the @xref{license} exception
+   covering the source code of this module.
 */
 
 #ifndef ASSH_HELPER_CLIENT_H_

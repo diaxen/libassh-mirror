@@ -24,6 +24,12 @@
 /**
    @file
    @short SSH cipher module interface
+
+   This header file contains API descriptors for cipher
+   @xref{algorithm} modules implemented in the library.
+
+   @xsee{cipheralgos}
+   @xsee{coremod}
 */
 
 #ifndef ASSH_CIPHER_H_
@@ -72,8 +78,8 @@ typedef ASSH_CIPHER_PROCESS_FCN(assh_cipher_process_t);
 typedef ASSH_CIPHER_CLEANUP_FCN(assh_cipher_cleanup_t);
 
 
-/** @internalmembers @This is the cipher algorithm descriptor
-    structure. It can be casted to the @ref assh_algo_s type. */
+/** @internalmembers @This is the cipher algorithm descriptor. It can
+    be casted to the @ref assh_algo_s type. @xsee{coremod} */
 struct assh_algo_cipher_s
 {
   struct assh_algo_s algo;
@@ -97,7 +103,8 @@ struct assh_algo_cipher_s
 
 ASSH_FIRST_FIELD_ASSERT(assh_algo_cipher_s, algo);
 
-/** Dummy cipher algorithm. */
+/** @multiple @This is a cipher algorithm implementation descriptor
+    for the dummy @tt none algorithm. */
 extern const struct assh_algo_cipher_s assh_cipher_none;
 
 # ifdef CONFIG_ASSH_CIPHER_ARCFOUR

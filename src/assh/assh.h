@@ -23,7 +23,10 @@
 
 /**
    @file
-   @short Some constants and forward declarations of structures
+   @short Constants and forward declarations
+
+   This header contains declarations of types used across the library
+   as well as error related enums and macros.
 */
 
 #ifndef ASSH_H_
@@ -109,15 +112,19 @@ enum assh_ssh_msg_e;
 enum assh_algo_class_e;
 enum assh_userauth_methods_e;
 
-/** boolean type */
+/** A simple boolean type used in @em {assh}. */
 typedef uint8_t assh_bool_t;
 
-/** error code type */
+/** The error code integer type returned by @em assh functions. It is
+    composed of two parts specified by the @ref assh_error_e and @ref
+    assh_error_severity_e enums.
+    @see #ASSH_ERR_ERROR
+    @see #ASSH_ERR_SEVERITY
+*/
 typedef int_fast16_t assh_error_t;
 
-/**
-   This is used to estimate algorithms and keys safety. The safety
-   factor is defined as follow:
+/** This is used to estimate algorithms and keys safety. The safety
+    factor ranges are defined as this:
 
    @list
      @item 0-19: broken
@@ -125,6 +132,8 @@ typedef int_fast16_t assh_error_t;
      @item 26-49: medium
      @item 50-99: strong
    @end list
+
+   @see assh_safety_name
 */
 typedef uint8_t assh_safety_t;
 
@@ -151,9 +160,8 @@ enum assh_error_severity_e
   ASSH_ERRSV_FATAL                 = 0x4000,
 };
 
-/** @This specify possible return codes returned by @em libassh
-    functions. All codes indicating an error (>= 256) must be ored
-    with a severity code (@ref assh_error_severity_e). */
+/** @This specifies the possible errors returned by the @em libassh
+    functions and passed to the @ref assh_event_done function. */
 enum assh_error_e
 {
   /** Success. */
@@ -216,15 +224,18 @@ enum assh_error_e
   ASSH_ERR_count,
 };
 
-/** @This returns an error string */
+/** @This returns an error string description of the passed error
+    code. */
 const char * assh_error_str(assh_error_t err);
 
 /** @This extracts the @ref assh_error_e part of an error code
-    returned by a function. */
+    returned by a function.
+    @see assh_error_t @see assh_error_e */
 #define ASSH_ERR_ERROR(code) ((enum assh_error_e)((code) & 0xfff))
 
 /** @This extracts the @ref assh_error_severity_e part of an error
-    code returned by a function. This consists of ored flag values. */
+    code returned by a function.
+    @see assh_error_t @see assh_error_severity_e */
 #define ASSH_ERR_SEVERITY(code) ((enum assh_error_severity_e)((code) & 0xf000))
 
 /** @internal Log2 of smallest packet size bucket in the packet
@@ -459,17 +470,24 @@ void assh_hexdump(const char *name, const void *data, size_t len);
 # define ASSH_RET_IF_TRUE(cond, err)            \
   ASSH_RET_ON_ERR(cond ? err : 0)
 
-/** @internal SSH implementation identification string */
+/** @internal The SSH implementation identification string. Because
+    this is involved in the shared secret generation process, Changing
+    this breaks the testsuite. */
 #define ASSH_IDENT "SSH-2.0-LIBASSH\r\n"
 
-/** @internal This macro specifies the prototype of a memory allocator function. */
+/** @internal This macro specifies the prototype of a memory allocator function.
+    @see assh_allocator_t */
 #define ASSH_ALLOCATOR(n) assh_error_t (n)(void *alloc_pv, void **ptr, \
 					   size_t size, enum assh_alloc_type_e type)
 
-/** Memory allocator function type, same behavior as standard @tt realloc. */
+/** This is the memory allocator function type. A pointer to function
+    of this type may be passed to the @ref assh_context_create
+    function. The same behavior as the standard @tt realloc function is
+    expected. @xsee{coremod} */
 typedef ASSH_ALLOCATOR(assh_allocator_t);
 
-/** @internal @hidecontent */
+/** @internal @hidecontent This checks at compile time that a field is
+    at offset 0 in a structure. */
 #define ASSH_FIRST_FIELD_ASSERT(struct_name, field)                   \
   /** @hidden */                                                      \
   typedef int field##_must_be_the_first_field_in_struct_##struct_name \

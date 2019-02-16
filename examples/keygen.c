@@ -146,6 +146,8 @@ int main(int argc, char *argv[])
   FILE *ifile = NULL;
   FILE *ofile = NULL;
 
+  /* parse command list arguments */
+
   while ((opt = getopt(argc, argv, "hb:f:g:o:i:t:r:p:Pc:")) != -1)
     {
       switch (opt)
@@ -191,6 +193,8 @@ int main(int argc, char *argv[])
   if (optind + 1 != argc)
     usage(argv[0], 0);
 
+  /* create a library context */
+
   struct assh_context_s *context;
 
   if (assh_context_create(&context, ASSH_CLIENT_SERVER,
@@ -202,6 +206,8 @@ int main(int argc, char *argv[])
 
   const char *action = argv[optind];
   unsigned action_mask = 0;
+
+  /* set action flags */
 
   if (!strcmp(action, "create"))
     action_mask = ASSH_KEYGEN_CREATE | ASSH_KEYGEN_SAVE;
@@ -220,10 +226,14 @@ int main(int argc, char *argv[])
       usage(argv[0], 0);
     }
 
+  /* lookup output format descriptor */
+
   const struct assh_key_format_desc_s *ofmt_desc
     = assh_key_format_desc(ofmt);
 
   struct assh_key_s *key;
+
+  /* handle generation of a new key as needed */
 
   if (action_mask & ASSH_KEYGEN_CREATE)
     {
@@ -245,6 +255,8 @@ int main(int argc, char *argv[])
               assh_key_safety_name(key), assh_key_safety(key));
     }
 
+  /* load an existing key from file as needed */
+
   if (action_mask & ASSH_KEYGEN_LOAD)
     {
       const char *p = passphrase;
@@ -264,9 +276,9 @@ int main(int argc, char *argv[])
             case ASSH_ERR_WRONG_KEY:
               fprintf(stderr, "bad passphrase\n");
               if (passphrase != NULL)
-                ERROR("Unable to load key\n"); /* do not retry with -p */
+                ERROR("Unable to load key\n"); /* do not retry when -p is used */
             case ASSH_ERR_MISSING_KEY:
-              p = get_passphrase("input key passphrase: ", context);
+              p = get_passphrase("Input key passphrase: ", context);
               fseek(ifile, 0, SEEK_SET);
               continue;
 
@@ -288,6 +300,8 @@ int main(int argc, char *argv[])
       if (key->comment != NULL)
         fprintf(stderr, "Key comment: %s\n", key->comment);
     }
+
+  /* start key validation as needed */
 
   if (action_mask & ASSH_KEYGEN_VALIDATE)
     {

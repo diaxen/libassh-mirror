@@ -24,6 +24,12 @@
 /**
    @file
    @short SSH signature module interface
+
+   This header file contains API descriptors for signature
+   @xref{algorithm} modules implemented in the library.
+
+   @xsee{authalgos}
+   @xsee{coremod}
 */
 
 #ifndef ASSH_SIGN_H_
@@ -57,7 +63,8 @@ typedef ASSH_SIGN_GENERATE_FCN(assh_sign_generate_t);
 typedef ASSH_SIGN_CHECK_FCN(assh_sign_check_t);
 
 /** @internalmembers @This is the signature algorithm descriptor
-    structure. It can be casted to the @ref assh_algo_s type. */
+    structure. It can be casted to the @ref assh_algo_s type.
+    @xsee{coremod} */
 struct assh_algo_sign_s
 {
   struct assh_algo_s algo;

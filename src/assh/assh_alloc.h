@@ -22,8 +22,20 @@
 */
 
 /**
-   @file @internal
+   @file
    @short Pluggable memory allocation functions used by the library
+
+   This header file contains some default memory allocator functions
+   which can be registered for use by the library.
+
+   @xsee{coremod}
+
+   @ifnopt hide_internal
+
+   It also provide allocator functions wrappers for use inside the
+   library and modules.
+
+   @end if
 */
 
 #ifndef ASSH_ALLOC_H_
@@ -99,11 +111,13 @@ ASSH_INLINE void assh_free(struct assh_context_s *c, void *ptr)
 
 #else
 
+/** @internal */
 # define ASSH_SCRATCH_ALLOC(context, type, name, size, sv, lbl)		\
   type *name;								\
   ASSH_JMP_ON_ERR(assh_alloc(context, (size) * sizeof(type),		\
 			  ASSH_ALLOC_SCRATCH, (void**)&name) | sv, lbl);
 
+/** @internal */
 # define ASSH_SCRATCH_FREE(context, name)				\
   do { assh_free(context, name); } while (0)
 

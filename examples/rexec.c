@@ -129,17 +129,17 @@ int main(int argc, char **argv)
   if (assh_session_create(context, &session) != ASSH_OK)
     ERROR("Unable to create an assh session.\n");
 
-                                                        /* anchor initi */
-  /* initializes an interactive session state machine object */
-  struct assh_client_inter_session_s inter;
-  assh_client_init_inter_session(&inter, command, NULL);
-
                                                         /* anchor inita */
   /* specify user authentication methods to use */
   enum assh_userauth_methods_e auth_methods =
     ASSH_USERAUTH_METHOD_PASSWORD |
     ASSH_USERAUTH_METHOD_PUBKEY |
     ASSH_USERAUTH_METHOD_KEYBOARD;
+
+                                                        /* anchor initi */
+  /* initializes an interactive session state machine object */
+  struct assh_client_inter_session_s inter;
+  assh_client_init_inter_session(&inter, command, NULL);
 
                                                         /* anchor loop */
 

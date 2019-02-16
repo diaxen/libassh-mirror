@@ -25,8 +25,9 @@
    @file
    @short Main context structure and related functions
 
-   The library main context structure hold stuff common to multiple
-   sessions. This includes registered algorithms and host keys.
+   The library uses a context structure to store stuff common to
+   multiple @xref{sessions}. This header file provides declaration of
+   the @ref assh_context_s structure and related functions.
 */
 
 #ifndef ASSH_CONTEXT_H_
@@ -34,11 +35,15 @@
 
 #include "assh.h"
 
-/** This specifies the type of ssh session. */
+/** This specifies the type of ssh sessions that will be created. */
 enum assh_context_type_e
 {
+  /** Sessions associated to the context will be server side. */
   ASSH_SERVER,
+  /** Sessions associated to the context will be client side. */
   ASSH_CLIENT,
+  /** No session can be associated to the context. The context may
+      still be used to perform key management operations. */
   ASSH_CLIENT_SERVER,
 };
 
@@ -52,7 +57,19 @@ struct assh_packet_pool_s
   size_t size;
 };
 
-/** @internalmembers @This is the library main context structure. */
+/** @internalmembers @This is the library main context structure. It
+    is designed to store resources shared between multiple @ref
+    assh_session_s instances.
+
+    It stores the following resources:
+    @list
+    @item the set of registered @xref{algorithms},
+    @item the memory allocator context,
+    @item the random generator context,
+    @item the user configurable protocol timeouts,
+    @item the list of server host keys.
+    @end list
+*/
 struct assh_context_s
 {
   /** User private data */
@@ -149,24 +166,24 @@ void
 assh_context_keepalive(struct assh_context_s *c, uint_fast16_t keepalive);
 
 /** @This takes care of performing the external libraries global
-    initialization. This typically calls the gcrypt initialization
-    functions when the gcrypt support has been compiled in.
+    initialization.
 
-    The assh library does not use global variable nor does it require
-    global initialization. You do not need to call this function if
-    you know that you use a standalone build of assh or if you perform
-    the initialization of the required third party libraries in your
-    application code. */
+    The assh library does not use global variables and does not
+    require global initialization. You do not need to call this
+    function if you know that you use a standalone build of assh or if
+    you already perform the initialization of the required third party
+    libraries in your application code. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_deps_init(void);
 
-/** @This allocates and initializes a context.
+/** @This allocates and initializes an @ref assh_context_s instance.
 
     If the @tt alloc parameter is @tt NULL, a default memory allocator
-    will be used provided that one have been compiled in the
-    library. If the @tt prng parameter is @tt NULL, a default random
-    generator will be used. Some random number generator require a
-    seed.
+    will be used provided that one have been compiled in the library.
+
+    If the @tt prng parameter is @tt NULL, a default random generator
+    will be used. Some random number generator require the seed
+    argument to be not @tt {NULL}.
 
     @see assh_context_release */
 ASSH_WARN_UNUSED_RESULT assh_error_t
@@ -176,25 +193,21 @@ assh_context_create(struct assh_context_s **ctx,
                     const struct assh_prng_s *prng,
                     const struct assh_buffer_s *prng_seed);
 
-/** @This cleanups and releases a context created by the @ref
-    assh_context_create function. All existing @ref assh_session_s
-    objects must have been released when calling this function.
+/** @This releases an @ref assh_context_s instance created by the @ref
+    assh_context_create function as well as associated resources.
+
+    All existing @ref assh_session_s objects must have been released
+    when this function is called.
 
     @see assh_context_create */
 void assh_context_release(struct assh_context_s *ctx);
 
-/** @This initializes a context for use as a client or server. This
-    can be used to initialize a statically allocated context
-    object.
+/** @This initializes an user allocated @ref assh_context_s
+    instance.  When a stable ABI is needed, the @ref
+    assh_context_create function must be used instead.
 
-    If the @tt alloc parameter is @tt NULL, a default memory allocator
-    will be used provided that one have been compiled in the
-    library. If the @tt prng parameter is @tt NULL, a default random
-    generator will be used. Some random number generator require a
-    seed.
-
-    When a stable ABI is needed, use the @ref assh_context_create
-    function instead.
+    This requires the same arguments as the @ref assh_context_create
+    function.
 
     @see assh_context_cleanup
 */
@@ -205,22 +218,32 @@ assh_context_init(struct assh_context_s *ctx,
                   const struct assh_prng_s *prng,
                   const struct assh_buffer_s *prng_seed);
 
-/** @This releases resources associated with a context. All existing
-    @ref assh_session_s objects must have been released when calling
-    this function. @see assh_context_init */
+/** @This releases resources associated with an user allocated @ref
+    assh_context_s instance.
+
+    Any associated @ref assh_session_s objects must have been released
+    when this function is called.
+
+    @see assh_context_init */
 ASSH_ABI_UNSAFE void
 assh_context_cleanup(struct assh_context_s *ctx);
 
-/** @This set the user private pointer of the context. */
+/** @This sets the user private pointer of the context.
+    @see assh_context_get_pv */
 void assh_context_set_pv(struct assh_context_s *ctx,
                          void *private);
 
-/** @This get the user private pointer of the context. */
+/** @This retrieves the user private pointer attached to the context.
+    @see assh_context_set_pv */
 void * assh_context_get_pv(struct assh_context_s *ctx);
 
-/** @This returns the list haed of keys attached to the context.  It
+/** @This returns the list head of keys attached to the context.  It
     can be used to attach more keys. The @ref assh_key_flush
-    function will be called on context cleanup. */
+    function will be called on this list on context cleanup.
+
+    @see assh_load_hostkey_file
+    @see assh_load_hostkey_filename
+ */
 struct assh_key_s **
 assh_context_keys(struct assh_context_s *ctx);
 

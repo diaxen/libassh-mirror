@@ -21,6 +21,12 @@
 
 */
 
+/**
+   @file
+   @internal
+   @short Base64 encoder and decoder
+*/
+
 #ifndef ASSH_HELPER_BASE64_H_
 #define ASSH_HELPER_BASE64_H_
 

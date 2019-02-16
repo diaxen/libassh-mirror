@@ -70,39 +70,74 @@
 #define ERROR(...) do { fprintf(stderr, __VA_ARGS__); exit(1); } while (0)
 
 static const char *port = "22222";
-
+                                                        /* anchor fsm */
 /* our interactive session state */
 enum interactive_session_state_e
 {
-  SESSION_PIPE,
-  SESSION_PTY,
-  SESSION_OPEN,
-  SESSION_HALF_NO_SEND,
-  SESSION_HALF_NO_RECV,
-  SESSION_CLOSED,
+  ITS_PIPE,                 /* use pipe() to redirect child IOs in its_exec */
+  ITS_PTY,                  /* use a pty to redirect child IOs in its_exec */
+  ITS_OPEN,                 /* channel is open and child is running */
+  ITS_HALF_NO_SEND,         /* channel half closed, sending is not allowed */
+  ITS_HALF_NO_RECV,         /* channel half closed, receiving is not possible */
+  ITS_CLOSED,               /* channel is closed */
 };
-
+                                                        /* anchor state */
 /* our interactive session context */
 struct its_s
 {
   enum interactive_session_state_e state;
+
   struct assh_channel_s *channel;
+
+  int child_pid;
   int child_stderr_fd;
   int child_stdout_fd;
   int child_stdin_fd;
-  int child_pid;
   int poll_index;
 };
-
+                                                        /* anchor itstable */
 #define MAX_ITS_COUNT 10
-#define MAX_POLL_ENTRIES (1 + MAX_ITS_COUNT * 3)
+#define MAX_POLL_ENTRIES (/* socket */ 1 + /* childs IOs */ MAX_ITS_COUNT * 3)
 
 static struct its_s *its_table[MAX_ITS_COUNT];
 static size_t its_table_count = 0;
+                                                        /* anchor itsapiopen */
+static struct its_s *
+its_open(struct assh_channel_s *ch);
+                                                        /* anchor itsapipty */
+static int
+its_pty(struct its_s *its);
+                                                        /* anchor itsapiexec */
+static int
+its_exec(struct its_s *its,
+	 const char *cmd);
+                                                        /* anchor itsapipoll */
+static void
+its_poll_setup(struct its_s *its,
+	       struct assh_session_s *session,
+	       struct pollfd p[], int *poll_i);
+                                                        /* anchor itsapidata */
+static void
+its_child2channel(struct its_s *its,
+		  const struct pollfd p[]);
+                                                        /* anchor itsapidata2 */
+static assh_bool_t
+its_channel2child(struct its_s *its, struct pollfd *p,
+		  struct assh_event_channel_data_s *ev,
+		  assh_error_t *err);
+                                                        /* anchor itsapiclose */
+static void
+its_eof(struct its_s *its,
+	struct assh_event_channel_eof_s *ev);
 
+static void
+its_close(struct its_s *its,
+	  struct assh_event_channel_close_s *ev);
+
+                                                        /* anchor itscode */
 /* iniate a new interactive session */
 static struct its_s *
-interactive_session_open(struct assh_channel_s *ch)
+its_open(struct assh_channel_s *ch)
 {
   if (its_table_count >= MAX_ITS_COUNT)
     return NULL;
@@ -111,7 +146,7 @@ interactive_session_open(struct assh_channel_s *ch)
 
   if (its != NULL)
     {
-      its->state = SESSION_PIPE;
+      its->state = ITS_PIPE;
       its->channel = ch;
       its->poll_index = -1;
       its_table[its_table_count++] = its;
@@ -126,10 +161,9 @@ interactive_session_open(struct assh_channel_s *ch)
 #ifdef CONFIG_ASSH_POSIX_OPENPT
 /* allocate pty for a session */
 static int
-interactive_session_pty(struct its_s *its,
-			const struct assh_inter_pty_req_s *rqi)
+its_pty(struct its_s *its)
 {
-  if (its->state != SESSION_PIPE)
+  if (its->state != ITS_PIPE)
     return -1;
 
   int fd = posix_openpt(O_RDWR | O_NOCTTY);
@@ -141,7 +175,7 @@ interactive_session_pty(struct its_s *its,
 
   its->child_stdout_fd = its->child_stdin_fd = fd;
   its->child_stderr_fd = -1;
-  its->state = SESSION_PTY;
+  its->state = ITS_PTY;
 
   return 0;
 }
@@ -149,14 +183,14 @@ interactive_session_pty(struct its_s *its,
 
 /* execute a command in a session */
 static int
-interactive_session_exec(struct its_s *its,
+its_exec(struct its_s *its,
 			 const char *cmd)
 {
   int child_pid;
 
   switch (its->state)
     {
-    case SESSION_PIPE: {
+    case ITS_PIPE: {
       int child_stderr[2];
       int child_stdout[2];
       int child_stdin[2];
@@ -203,7 +237,7 @@ interactive_session_exec(struct its_s *its,
     }
 
 #ifdef CONFIG_ASSH_POSIX_OPENPT
-    case SESSION_PTY:
+    case ITS_PTY:
       /* fork child process */
       child_pid = fork();
       if (child_pid < 0)
@@ -235,7 +269,7 @@ interactive_session_exec(struct its_s *its,
     }
 
   its->child_pid = child_pid;
-  its->state = SESSION_OPEN;
+  its->state = ITS_OPEN;
 
   return 0;
 }
@@ -249,15 +283,15 @@ enum poll_e
 };
 
 static void
-interactive_session_poll_setup(struct assh_session_s *session,
-			       struct its_s *its, struct pollfd p[],
-			       int *poll_i)
+its_poll_setup(struct its_s *its,
+			       struct assh_session_s *session,
+			       struct pollfd p[], int *poll_i)
 {
   int i = *poll_i;
   its->poll_index = i;
 
-  if (its->state == SESSION_OPEN ||
-      its->state == SESSION_HALF_NO_SEND)
+  if (its->state == ITS_OPEN ||
+      its->state == ITS_HALF_NO_SEND)
     {
       /* poll for writting to child stdin if we have some incoming
 	 data from the channel. */
@@ -271,8 +305,8 @@ interactive_session_poll_setup(struct assh_session_s *session,
       (*poll_i)++;
     }
 
-  if (its->state == SESSION_OPEN ||
-      its->state == SESSION_HALF_NO_RECV)
+  if (its->state == ITS_OPEN ||
+      its->state == ITS_HALF_NO_RECV)
     {
       /* poll for reading from the channel. */
       p[i + POLL_CHILD_STDOUT].fd = its->child_stdout_fd;
@@ -289,14 +323,14 @@ interactive_session_poll_setup(struct assh_session_s *session,
 }
 
 static void
-interactive_session_child2channel(struct its_s *its,
+its_child2channel(struct its_s *its,
 				  const struct pollfd p[])
 {
   int i = its->poll_index;
   uint8_t *buf;
 
-  if (its->state == SESSION_OPEN ||
-      its->state == SESSION_HALF_NO_RECV)
+  if (its->state == ITS_OPEN ||
+      its->state == ITS_HALF_NO_RECV)
     {
       int revents = p[i + POLL_CHILD_STDOUT].revents;
 
@@ -340,20 +374,20 @@ interactive_session_child2channel(struct its_s *its,
 	{
 	  assh_channel_eof(its->channel);
 
-	  if (its->state == SESSION_OPEN)
-	    its->state = SESSION_HALF_NO_SEND;
+	  if (its->state == ITS_OPEN)
+	    its->state = ITS_HALF_NO_SEND;
 	  else
-	    its->state = SESSION_CLOSED;
+	    its->state = ITS_CLOSED;
 	}
     }
 
-  if (its->state == SESSION_OPEN ||
-      its->state == SESSION_HALF_NO_SEND)
+  if (its->state == ITS_OPEN ||
+      its->state == ITS_HALF_NO_SEND)
     {
       if (p[i + POLL_CHILD_STDIN].revents & (POLLERR | POLLHUP))
 	{
 	  /* close the channel on broken pipe */
-	  its->state = SESSION_CLOSED;
+	  its->state = ITS_CLOSED;
 	  assh_channel_close(its->channel);
 	}
     }
@@ -361,7 +395,7 @@ interactive_session_child2channel(struct its_s *its,
 
 /* forward data from the remote client to the command in the child process */
 static assh_bool_t
-interactive_session_channel2child(struct its_s *its, struct pollfd *p,
+its_channel2child(struct its_s *its, struct pollfd *p,
 				  struct assh_event_channel_data_s *ev,
 				  assh_error_t *err)
 {
@@ -372,8 +406,8 @@ interactive_session_channel2child(struct its_s *its, struct pollfd *p,
 
   switch (its->state)
     {
-    case SESSION_OPEN:
-    case SESSION_HALF_NO_SEND:
+    case ITS_OPEN:
+    case ITS_HALF_NO_SEND:
 
       /* break the loop if we are not sure that we can write some data
 	 to the standard output right now */
@@ -401,18 +435,18 @@ interactive_session_channel2child(struct its_s *its, struct pollfd *p,
 
 /* half close pipe to the command in the child process */
 static void
-interactive_session_eof(struct its_s *its,
+its_eof(struct its_s *its,
 			struct assh_event_channel_eof_s *ev)
 {
   assert(ev->ch == its->channel);
 
   switch (its->state)
     {
-    case SESSION_OPEN:
-      its->state = SESSION_HALF_NO_RECV;
+    case ITS_OPEN:
+      its->state = ITS_HALF_NO_RECV;
       break;
-    case SESSION_HALF_NO_SEND:
-      its->state = SESSION_CLOSED;
+    case ITS_HALF_NO_SEND:
+      its->state = ITS_CLOSED;
       break;
     default:
       abort();
@@ -427,7 +461,7 @@ interactive_session_eof(struct its_s *its,
 
 /* close pipe to the command in the child process */
 static void
-interactive_session_close(struct its_s *its,
+its_close(struct its_s *its,
 			  struct assh_event_channel_close_s *ev)
 {
   assert(ev->ch == its->channel);
@@ -453,8 +487,8 @@ interactive_session_close(struct its_s *its,
 }
 
 /* Ssh event handling, This returns 0 when terminated. This returns 1
-   when not sure if an IO operation can be performed without blocking.
-*/
+   when not sure if an IO operation can be performed without blocking. */
+                                                        /* anchor evloop */
 static assh_bool_t
 ssh_loop(struct assh_session_s *session,
 	 struct pollfd *p)
@@ -471,6 +505,7 @@ ssh_loop(struct assh_session_s *session,
 
       switch (event.id)
 	{
+                                                        /* anchor evnetio */
         case ASSH_EVENT_READ:
           /* return if we are not sure that we can read some ssh
              stream from the socket without blocking */
@@ -482,7 +517,7 @@ ssh_loop(struct assh_session_s *session,
 
           /* let an helper function read ssh stream from socket */
           assh_fd_event(session, &event, p[0].fd);
-          p[0].revents ^= POLLIN;
+          p[0].revents &= ~POLLIN;
           break;
 
         case ASSH_EVENT_WRITE:
@@ -496,9 +531,9 @@ ssh_loop(struct assh_session_s *session,
 
           /* let an helper function write ssh stream to the socket */
           assh_fd_event(session, &event, p[0].fd);
-          p[0].revents ^= POLLOUT;
+          p[0].revents &= ~POLLOUT;
           break;
-
+                                                        /* anchor everror */
 	case ASSH_EVENT_ERROR:
           /* Any error reported to the assh_event_done function will
              end up here. */
@@ -506,9 +541,9 @@ ssh_loop(struct assh_session_s *session,
 		  assh_error_str(event.error.code));
 	  assh_event_done(session, &event, ASSH_OK);
 	  break;
-
+                                                        /* anchor evauth */
 	case ASSH_EVENT_USERAUTH_SERVER_METHODS:
-	  /* report the user authentication methods we will accept. */
+	  /* report the user authentication methods we accept. */
 	  event.userauth_server.methods.methods =
 	    ASSH_USERAUTH_METHOD_PUBKEY |
 	    ASSH_USERAUTH_METHOD_PASSWORD;
@@ -535,7 +570,7 @@ ssh_loop(struct assh_session_s *session,
 	  setuid(uid);
 	  break;
 	}
-
+                                                        /* anchor evchopen */
 	case ASSH_EVENT_CHANNEL_OPEN: {
 	  struct assh_event_channel_open_s *ev =
 	    &event.connection.channel_open;
@@ -543,7 +578,7 @@ ssh_loop(struct assh_session_s *session,
 	  /* only accept session channels */
 	  if (!assh_buffer_strcmp(&ev->type, "session"))
 	    {
-	      struct its_s *its = interactive_session_open(ev->ch);
+	      struct its_s *its = its_open(ev->ch);
 	      if (its != NULL)
 		{
 		  assh_channel_set_pv(ev->ch, its);
@@ -554,18 +589,17 @@ ssh_loop(struct assh_session_s *session,
 	  assh_event_done(session, &event, ASSH_OK);
 	  break;
 	}
-
+                                                        /* anchor evrq */
 	case ASSH_EVENT_REQUEST: {
 	  struct assh_event_request_s *ev = &event.connection.request;
 	  assh_error_t err = ASSH_OK;
 
 	  /* handle some standard requests associated to our session,
 	     relying on some request decoding functions. */
-
-	  if (ev->ch)
+	  if (ev->ch != NULL)
 	    {
 	      struct its_s *its = assh_channel_pv(ev->ch);
-
+                                                        /* anchor evrqpty */
 	      /* PTY request from the remote client */
 	      if (!assh_buffer_strcmp(&ev->type, "pty-req"))
 		{
@@ -574,19 +608,18 @@ ssh_loop(struct assh_session_s *session,
 		  err = assh_inter_decode_pty_req(&rqi, ev->rq_data.data,
 						  ev->rq_data.size);
 
-		  if (ASSH_ERR_ERROR(err) == ASSH_OK &&
-		      !interactive_session_pty(its, &rqi))
+		  if (ASSH_ERR_ERROR(err) == ASSH_OK && !its_pty(its))
 		    ev->reply = ASSH_CONNECTION_REPLY_SUCCESS;
 #endif
 		}
-
+                                                        /* anchor evrqshell */
 	      /* shell exec from the remote client */
 	      else if (!assh_buffer_strcmp(&ev->type, "shell"))
 		{
-		  if (!interactive_session_exec(its, "/bin/sh"))
+		  if (!its_exec(its, "/bin/sh"))
 		    ev->reply = ASSH_CONNECTION_REPLY_SUCCESS;
 		}
-
+                                                        /* anchor evrqexec */
 	      /* command exec from the remote client */
 	      else if (!assh_buffer_strcmp(&ev->type, "exec"))
 		{
@@ -597,64 +630,64 @@ ssh_loop(struct assh_session_s *session,
 		  if (ASSH_ERR_ERROR(err) == ASSH_OK)
 		    {
 		      const char *cmd = assh_buffer_strdup(&rqi.command);
-		      if (!interactive_session_exec(its, cmd))
+		      if (!its_exec(its, cmd))
 			ev->reply = ASSH_CONNECTION_REPLY_SUCCESS;
 		      free((char*)cmd);
 		    }
 		}
-
+                                                        /* anchor evrqdone */
 	    }
 
 	  assh_event_done(session, &event, err);
 	  break;
 	}
+                                                        /* anchor eveof */
+	case ASSH_EVENT_CHANNEL_EOF: {
+	  struct assh_event_channel_eof_s *ev = &event.connection.channel_eof;
+	  struct its_s *its = assh_channel_pv(ev->ch);
 
+	  /* handle session EOF */
+	  its_eof(its, ev);
+	  assh_event_done(session, &event, ASSH_OK);
+
+	  break;
+	}
+                                                        /* anchor evclose */
+	case ASSH_EVENT_CHANNEL_CLOSE: {
+	  struct assh_event_channel_close_s *ev = &event.connection.channel_close;
+	  struct its_s *its = assh_channel_pv(ev->ch);
+
+	  /* handle session close */
+	  its_close(its, ev);
+	  assh_event_done(session, &event, ASSH_OK);
+	  break;
+	}
+                                                        /* anchor evdata */
 	case ASSH_EVENT_CHANNEL_DATA: {
           struct assh_event_channel_data_s *ev = &event.connection.channel_data;
 	  struct its_s *its = assh_channel_pv(ev->ch);
 	  assh_error_t err;
 
-	  assh_bool_t wait = interactive_session_channel2child(its, p, ev, &err);
+	  assh_bool_t wait = its_channel2child(its, p, ev, &err);
 	  assh_event_done(session, &event, err);
 
 	  if (wait)
 	    return 1;
 	  break;
 	}
-
-	case ASSH_EVENT_CHANNEL_EOF: {
-	  struct assh_event_channel_eof_s *ev = &event.connection.channel_eof;
-	  struct its_s *its = assh_channel_pv(ev->ch);
-
-	  /* handle session EOF */
-	  interactive_session_eof(its, ev);
-	  assh_event_done(session, &event, ASSH_OK);
-
-	  break;
-	}
-
-	case ASSH_EVENT_CHANNEL_CLOSE: {
-	  struct assh_event_channel_close_s *ev = &event.connection.channel_close;
-	  struct its_s *its = assh_channel_pv(ev->ch);
-
-	  /* handle session close */
-	  interactive_session_close(its, ev);
-	  assh_event_done(session, &event, ASSH_OK);
-	  break;
-	}
-
+                                                        /* anchor evother */
 	default:
 	  assh_event_done(session, &event, ASSH_OK);
 	}
     }
 }
-
+                                                        /* anchor algofilter */
 static ASSH_KEX_FILTER_FCN(algo_filter)
 {
   return (name->spec & ASSH_ALGO_ASSH) ||
          (name->spec & ASSH_ALGO_COMMON);
 }
-
+                                                        /* anchor connected */
 static int
 server_connected(struct assh_context_s *context,
 		 int conn, const struct sockaddr_in *con_addr)
@@ -667,7 +700,7 @@ server_connected(struct assh_context_s *context,
   if (assh_session_create(context, &session) != ASSH_OK ||
       assh_session_algo_filter(session, &algo_filter) != ASSH_OK)
     ERROR("Unable to create assh session.\n");
-
+                                                        /* anchor pollloop */
   struct pollfd p[MAX_POLL_ENTRIES];
 
   do {
@@ -681,18 +714,20 @@ server_connected(struct assh_context_s *context,
 
     /* also register file descriptors of child processes */
     for (int i = 0; i < its_table_count; i++)
-      interactive_session_poll_setup(session, its_table[i], p, &poll_i);
-
+      its_poll_setup(its_table[i], session, p, &poll_i);
+                                                        /* anchor poll */
     /* get the appropriate ssh protocol timeout */
     int timeout = assh_session_delay(session, time(NULL)) * 1000;
 
     if (poll(p, poll_i, timeout) <= 0)
       continue;
 
+                                                        /* anchor chi2cha */
     /* read from childs and transmit over ssh */
     for (int i = 0; i < its_table_count; i++)
-      interactive_session_child2channel(its_table[i], p);
+      its_child2channel(its_table[i], p);
 
+                                                        /* anchor loopcall */
     /* let our ssh event loop handle ssh stream io events, channel data
        input events and any other ssh related events. */
   } while (ssh_loop(session, p));
@@ -704,7 +739,7 @@ server_connected(struct assh_context_s *context,
 
   return 0;
 }
-
+                                                        /* anchor usage */
 static void usage(const char *program, assh_bool_t opts)
 {
   fprintf(stderr, "usage: %s [-h | options]\n", program);
@@ -717,7 +752,7 @@ static void usage(const char *program, assh_bool_t opts)
 
   exit(1);
 }
-
+                                                        /* anchor main */
 int main(int argc, char **argv)
 {
   /* perform initialization of third party libraries */
@@ -782,6 +817,7 @@ int main(int argc, char **argv)
 
   fprintf(stderr, "Listening on port %s\n", port);
 
+                                                        /* anchor mainloop */
   while (1)
     {
       /* handle incoming connections */
@@ -805,9 +841,8 @@ int main(int argc, char **argv)
 	  break;
 	}
     }
-
+                                                        /* anchor maincleanup */
   assh_context_release(context);
 
   return 0;
 }
-

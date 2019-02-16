@@ -252,7 +252,7 @@ ${prefix}_size_$packet->{id}(const struct ${prefix}_$packet->{id}_s *i);
 ";
 
 	print HFILE "
-/** \@This function encodes the $packet->{desc} in a buffer suitable for
+/** \@This encodes the $packet->{desc} in a buffer suitable for
     calling the \@ref assh_request function. This function fails when
     the provided buffer is not large enough. */";
 

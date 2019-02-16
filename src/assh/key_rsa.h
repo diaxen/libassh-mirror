@@ -24,6 +24,14 @@
 /**
    @file
    @short Key support for the RSA signature algorithm
+
+   This header file contains the API descriptor for the RSA key
+   support module.
+
+   @xsee{keysalgos}
+   @xsee{RSA signature}
+   @xsee{coremod}
+   @see{@assh/assh_key.h}
 */
 
 #ifndef ASSH_KEY_RSA_H_

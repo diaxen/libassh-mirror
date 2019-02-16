@@ -25,10 +25,10 @@
    @file
    @short SSH interactive session helpers (rfc4254 interactive sessions)
 
-   This headers provides some helper functions able load and store
-   data embedded in standard @em requests and @em channels open messages
-   related to interactive sessions and port forwarding, specified as
-   part of the @xref{connlayer}{connection protocol}.
+   This headers file provides some @xref{helper} functions able load
+   and store data embedded in standard @xref{requests} and
+   @xref{channels} open messages related to the @xref{interactive
+   sessions} and @xref{port forwarding} features of @em {ssh2}.
 
    @xsee {Connection protocol API}
    @see @assh/assh_connection.h
@@ -79,7 +79,7 @@ assh_inter_init_pty_req(struct assh_inter_pty_req_s *i,
 size_t
 assh_inter_size_pty_req(const struct assh_inter_pty_req_s *i);
 
-/** @This function encodes the pty request object in a buffer suitable
+/** @This encodes the pty request object in a buffer suitable
     for calling the @ref assh_request function. This function fails
     when the provided buffer is not large enough. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
@@ -98,7 +98,7 @@ assh_inter_send_pty_req(struct assh_session_s *s,
 
 #ifdef CONFIG_ASSH_SERVER
 
-/** @This function decodes the pty request object from the passed
+/** @This decodes the pty request object from the passed
     buffer. The @tt data buffer must remain valid because string
     buffers are not copied. This function fails when the buffer contains
     invalid data. */
@@ -133,7 +133,7 @@ assh_inter_init_x11_req(struct assh_inter_x11_req_s *i,
 size_t
 assh_inter_size_x11_req(const struct assh_inter_x11_req_s *i);
 
-/** @This function encodes the x11 forwarding request object in a
+/** @This encodes the x11 forwarding request object in a
     buffer suitable for calling the @ref assh_request function. This
     function fails when the provided buffer is not large enough. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
@@ -152,7 +152,7 @@ assh_inter_send_x11_req(struct assh_session_s *s,
 
 #ifdef CONFIG_ASSH_SERVER
 
-/** @This function decodes the x11 forwarding request object from the
+/** @This decodes the x11 forwarding request object from the
     passed buffer. The @tt data buffer must remain valid because
     string buffers are not copied. This function fails when the buffer
     contains invalid data. */
@@ -181,7 +181,7 @@ assh_inter_init_x11(struct assh_inter_x11_s *i,
 size_t
 assh_inter_size_x11(const struct assh_inter_x11_s *i);
 
-/** @This function encodes the x11 channel object in a buffer suitable
+/** @This encodes the x11 channel object in a buffer suitable
     for calling the @ref assh_request function. This function fails
     when the provided buffer is not large enough. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
@@ -196,7 +196,7 @@ assh_inter_open_x11(struct assh_session_s *s,
                     struct assh_channel_s **ch,
                     const struct assh_inter_x11_s *i);
 
-/** @This function decodes the x11 channel object from the passed
+/** @This decodes the x11 channel object from the passed
     buffer. The @tt data buffer must remain valid because string
     buffers are not copied. This function fails when the buffer
     contains invalid data. */
@@ -226,7 +226,7 @@ assh_inter_init_env(struct assh_inter_env_s *i,
 size_t
 assh_inter_size_env(const struct assh_inter_env_s *i);
 
-/** @This function encodes the environment variable object in a buffer
+/** @This encodes the environment variable object in a buffer
     suitable for calling the @ref assh_request function. This function
     fails when the provided buffer is not large enough. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
@@ -245,7 +245,7 @@ assh_inter_send_env(struct assh_session_s *s,
 
 #ifdef CONFIG_ASSH_SERVER
 
-/** @This function decodes the environment variable object from the
+/** @This decodes the environment variable object from the
     passed buffer. The @tt data buffer must remain valid because
     string buffers are not copied. This function fails when the buffer
     contains invalid data. */
@@ -284,7 +284,7 @@ assh_inter_init_exec(struct assh_inter_exec_s *i,
 size_t
 assh_inter_size_exec(const struct assh_inter_exec_s *i);
 
-/** @This function encodes the command execution object in a buffer
+/** @This encodes the command execution object in a buffer
     suitable for calling the @ref assh_request function. This function
     fails when the provided buffer is not large enough. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
@@ -303,7 +303,7 @@ assh_inter_send_exec(struct assh_session_s *s,
 
 #ifdef CONFIG_ASSH_SERVER
 
-/** @This function decodes the command execution object from the
+/** @This decodes the command execution object from the
     passed buffer. The @tt data buffer must remain valid because
     string buffers are not copied. This function fails when the buffer
     contains invalid data. */
@@ -332,7 +332,7 @@ assh_inter_init_subsystem(struct assh_inter_subsystem_s *i,
 size_t
 assh_inter_size_subsystem(const struct assh_inter_subsystem_s *i);
 
-/** @This function encodes the subsystem execution object in a buffer
+/** @This encodes the subsystem execution object in a buffer
     suitable for calling the @ref assh_request function. This function
     fails when the provided buffer is not large enough. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
@@ -351,7 +351,7 @@ assh_inter_send_subsystem(struct assh_session_s *s,
 
 #ifdef CONFIG_ASSH_SERVER
 
-/** @This function decodes the subsystem execution object from the
+/** @This decodes the subsystem execution object from the
     passed buffer. The @tt data buffer must remain valid because
     string buffers are not copied. This function fails when the buffer
     contains invalid data. */
@@ -386,7 +386,7 @@ assh_inter_init_window_change(struct assh_inter_window_change_s *i,
 size_t
 assh_inter_size_window_change(const struct assh_inter_window_change_s *i);
 
-/** @This function encodes the window size changed object in a buffer
+/** @This encodes the window size changed object in a buffer
     suitable for calling the @ref assh_request function. This function
     fails when the provided buffer is not large enough. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
@@ -404,7 +404,7 @@ assh_inter_send_window_change(struct assh_session_s *s,
 
 #ifdef CONFIG_ASSH_SERVER
 
-/** @This function decodes the window size changed object from the
+/** @This decodes the window size changed object from the
     passed buffer. The @tt data buffer must remain valid because
     string buffers are not copied. This function fails when the buffer
     contains invalid data. */
@@ -431,7 +431,7 @@ assh_inter_init_xon_xoff(struct assh_inter_xon_xoff_s *i,
 size_t
 assh_inter_size_xon_xoff(const struct assh_inter_xon_xoff_s *i);
 
-/** @This function encodes the client xon/xoff allowed object in a
+/** @This encodes the client xon/xoff allowed object in a
     buffer suitable for calling the @ref assh_request function. This
     function fails when the provided buffer is not large enough. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
@@ -446,7 +446,7 @@ assh_inter_send_xon_xoff(struct assh_session_s *s,
                          struct assh_channel_s *ch,
                          const struct assh_inter_xon_xoff_s *i);
 
-/** @This function decodes the client xon/xoff allowed object from the
+/** @This decodes the client xon/xoff allowed object from the
     passed buffer. The @tt data buffer must remain valid because
     string buffers are not copied. This function fails when the buffer
     contains invalid data. */
@@ -474,7 +474,7 @@ assh_inter_init_signal(struct assh_inter_signal_s *i,
 size_t
 assh_inter_size_signal(const struct assh_inter_signal_s *i);
 
-/** @This function encodes the signal delivery object in a buffer
+/** @This encodes the signal delivery object in a buffer
     suitable for calling the @ref assh_request function. This function
     fails when the provided buffer is not large enough. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
@@ -492,7 +492,7 @@ assh_inter_send_signal(struct assh_session_s *s,
 
 #ifdef CONFIG_ASSH_SERVER
 
-/** @This function decodes the signal delivery object from the passed
+/** @This decodes the signal delivery object from the passed
     buffer. The @tt data buffer must remain valid because string
     buffers are not copied. This function fails when the buffer
     contains invalid data. */
@@ -519,7 +519,7 @@ assh_inter_init_exit_status(struct assh_inter_exit_status_s *i,
 size_t
 assh_inter_size_exit_status(const struct assh_inter_exit_status_s *i);
 
-/** @This function encodes the command exit status object in a buffer
+/** @This encodes the command exit status object in a buffer
     suitable for calling the @ref assh_request function. This function
     fails when the provided buffer is not large enough. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
@@ -534,7 +534,7 @@ assh_inter_send_exit_status(struct assh_session_s *s,
                             struct assh_channel_s *ch,
                             const struct assh_inter_exit_status_s *i);
 
-/** @This function decodes the command exit status object from the
+/** @This decodes the command exit status object from the
     passed buffer. The @tt data buffer must remain valid because
     string buffers are not copied. This function fails when the buffer
     contains invalid data. */
@@ -566,7 +566,7 @@ assh_inter_init_exit_signal(struct assh_inter_exit_signal_s *i,
 size_t
 assh_inter_size_exit_signal(const struct assh_inter_exit_signal_s *i);
 
-/** @This function encodes the command kill status object in a buffer
+/** @This encodes the command kill status object in a buffer
     suitable for calling the @ref assh_request function. This function
     fails when the provided buffer is not large enough. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
@@ -581,7 +581,7 @@ assh_inter_send_exit_signal(struct assh_session_s *s,
                             struct assh_channel_s *ch,
                             const struct assh_inter_exit_signal_s *i);
 
-/** @This function decodes the command kill status object from the passed
+/** @This decodes the command kill status object from the passed
     buffer. The @tt data buffer must remain valid because string
     buffers are not copied. This function fails when the buffer contains
     invalid data. */
@@ -611,7 +611,7 @@ assh_inter_init_tcpip_forward(struct assh_inter_tcpip_forward_s *i,
 size_t
 assh_inter_size_tcpip_forward(const struct assh_inter_tcpip_forward_s *i);
 
-/** @This function encodes the port forwarding request object in a
+/** @This encodes the port forwarding request object in a
     buffer suitable for calling the @ref assh_request function. This
     function fails when the provided buffer is not large enough. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
@@ -629,7 +629,7 @@ assh_inter_send_tcpip_forward(struct assh_session_s *s,
 
 #ifdef CONFIG_ASSH_SERVER
 
-/** @This function decodes the port forwarding request object from the
+/** @This decodes the port forwarding request object from the
     passed buffer. The @tt data buffer must remain valid because
     string buffers are not copied. This function fails when the buffer
     contains invalid data. */
@@ -656,14 +656,14 @@ assh_inter_init_tcpip_forward_reply(struct assh_inter_tcpip_forward_reply_s *i,
 size_t
 assh_inter_size_tcpip_forward_reply(const struct assh_inter_tcpip_forward_reply_s *i);
 
-/** @This function encodes the port forwarding request reply object in
+/** @This encodes the port forwarding request reply object in
     a buffer suitable for calling the @ref assh_request function. This
     function fails when the provided buffer is not large enough. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_inter_encode_tcpip_forward_reply(uint8_t *data, size_t size,
                                       const struct assh_inter_tcpip_forward_reply_s *i);
 
-/** @This function decodes the port forwarding request reply object
+/** @This decodes the port forwarding request reply object
     from the passed buffer. The @tt data buffer must remain valid
     because string buffers are not copied. This function fails when
     the buffer contains invalid data. */
@@ -693,7 +693,7 @@ assh_inter_init_cancel_tcpip_forward(struct assh_inter_cancel_tcpip_forward_s *i
 size_t
 assh_inter_size_cancel_tcpip_forward(const struct assh_inter_cancel_tcpip_forward_s *i);
 
-/** @This function encodes the port forwarding cancel object in a
+/** @This encodes the port forwarding cancel object in a
     buffer suitable for calling the @ref assh_request function. This
     function fails when the provided buffer is not large enough. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
@@ -711,7 +711,7 @@ assh_inter_send_cancel_tcpip_forward(struct assh_session_s *s,
 
 #ifdef CONFIG_ASSH_SERVER
 
-/** @This function decodes the port forwarding cancel object from the
+/** @This decodes the port forwarding cancel object from the
     passed buffer. The @tt data buffer must remain valid because
     string buffers are not copied. This function fails when the buffer
     contains invalid data. */
@@ -744,7 +744,7 @@ assh_inter_init_forwarded_tcpip(struct assh_inter_forwarded_tcpip_s *i,
 size_t
 assh_inter_size_forwarded_tcpip(const struct assh_inter_forwarded_tcpip_s *i);
 
-/** @This function encodes the incoming forwarded connection channel
+/** @This encodes the incoming forwarded connection channel
     object in a buffer suitable for calling the @ref assh_request
     function. This function fails when the provided buffer is not
     large enough. */
@@ -760,7 +760,7 @@ assh_inter_open_forwarded_tcpip(struct assh_session_s *s,
                                 struct assh_channel_s **ch,
                                 const struct assh_inter_forwarded_tcpip_s *i);
 
-/** @This function decodes the incoming forwarded connection channel
+/** @This decodes the incoming forwarded connection channel
     object from the passed buffer. The @tt data buffer must remain
     valid because string buffers are not copied. This function fails
     when the buffer contains invalid data. */
@@ -794,7 +794,7 @@ assh_inter_init_direct_tcpip(struct assh_inter_direct_tcpip_s *i,
 size_t
 assh_inter_size_direct_tcpip(const struct assh_inter_direct_tcpip_s *i);
 
-/** @This function encodes the direct tcp/ip forwarding channel object
+/** @This encodes the direct tcp/ip forwarding channel object
     in a buffer suitable for calling the @ref assh_request
     function. This function fails when the provided buffer is not
     large enough. */
@@ -813,7 +813,7 @@ assh_inter_open_direct_tcpip(struct assh_session_s *s,
 
 #ifdef CONFIG_ASSH_SERVER
 
-/** @This function decodes the direct tcp/ip forwarding channel object
+/** @This decodes the direct tcp/ip forwarding channel object
     from the passed buffer. The @tt data buffer must remain valid
     because string buffers are not copied. This function fails when
     the buffer contains invalid data. */

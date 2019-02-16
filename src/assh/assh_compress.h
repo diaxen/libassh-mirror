@@ -24,6 +24,12 @@
 /**
    @file
    @short SSH compression module interface
+
+   This header file contains API descriptors for compression
+   @xref{algorithm} modules implemented in the library.
+
+   @xsee{compalgos}
+   @xsee{coremod}
 */
 
 #ifndef ASSH_COMPRESS_H_
@@ -60,7 +66,8 @@ typedef ASSH_COMPRESS_PROCESS_FCN(assh_compress_process_t);
 typedef ASSH_COMPRESS_CLEANUP_FCN(assh_compress_cleanup_t);
 
 /** @internalmembers @This is the compression algorithm descriptor
-    structure. It can be casted to the @ref assh_algo_s type. */
+    structure. It can be casted to the @ref assh_algo_s type.
+    @xsee{coremod} */
 struct assh_algo_compress_s
 {
   struct assh_algo_s algo;

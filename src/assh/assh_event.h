@@ -24,6 +24,12 @@
 /**
    @file
    @short Event reporting structure and related functions
+
+   The API of the library is event based, as explained in the @xref
+   {evts} section.
+
+   This header contains declaration of the @ref assh_event_s
+   structure as well as event management functions.
 */
 
 #ifndef ASSH_EVENT_H_
@@ -140,7 +146,7 @@ union assh_event_userauth_client_u;
 union assh_event_userauth_server_u;
 union assh_event_connection_u;
 
-/** @This hold an event returned by the library. */
+/** @This holds an event reported by the @ref assh_event_get function. */
 struct assh_event_s
 {
   /** Id of the event. */
@@ -201,28 +207,32 @@ struct assh_event_s
        <= sizeof(((struct assh_event_s*)0)->params)) - 1];
 
 /** This function runs the various state machines which implement the
-    ssh protocol including the currently running service. It then
-    reports the next available event.
+    @em ssh2 protocol including the currently running @xref{service}
+    and @xref{kex-exchange}. It then reports the next available
+    @xref{event}.
 
     The @ref assh_event_done function must be called after each
     successful call to this function, before requesting the next event.
 
-    This function can be called in a loop until false is returned.
+    This function can be called again unless @tt 0 is returned
+    eventually. This occurs when the session terminates.
+
     When the function returns true, the passed object event is
-    initialized. The function returns false when the sessions has
-    ended and no more event will be reported.
+    initialized and can be examined by the application.
 
     In order for the library to handle protocol timeouts properly, the
     current time in seconds must be passed to this function. The @ref
     assh_session_deadline function can then be used to get the next
     deadline.
+
+    @xsee{fsms}
 */
 ASSH_WARN_UNUSED_RESULT assh_bool_t
 assh_event_get(struct assh_session_s *s,
                struct assh_event_s *e,
                assh_time_t time);
 
-/** @This acknowledges the last event returned by the @ref
+/** @This acknowledges the last @xref{event} returned by the @ref
     assh_event_get function.
 
     If an error occurred during event processing, it should be
@@ -230,9 +240,11 @@ assh_event_get(struct assh_session_s *s,
     terminate the session.
 
     When an error is reported, the content of the event object is
-    considered undefined. The error will be reported by an @ref
-    ASSH_EVENT_ERROR event unless shadowed by an other error of higher
-    severity.
+    considered undefined by the library. The error will later be
+    reported by an @ref ASSH_EVENT_ERROR event unless shadowed by an
+    other error of higher severity.
+
+    @xsee{fsms}
 */
 void
 assh_event_done(struct assh_session_s *s,

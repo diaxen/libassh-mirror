@@ -24,6 +24,10 @@
 /**
    @file
    @short Session structure and related functions
+
+   This header file provides declaration of the @ref assh_session_s
+   structure and related functions, used to create and manage @em ssh2
+   @xref{sessions}.
 */
 
 #ifndef ASSH_SESSION_H_
@@ -43,20 +47,29 @@
 
 /** This is a per session algorithm filtering function.
 
-    True must be returned in order to make the algorithm available for
+    @tt 1 must be returned in order to make the algorithm available for
     the session. The result of this function must not vary for a given
     algorithm unless the @ref assh_session_algo_filter function has
     been called successfully.
 
     The @tt out parameter specifies the direction and is relevant for
-    cipher, mac and compression algorithms. */
+    cipher, mac and compression algorithms.
+
+    @xsee {suppalgos} */
 typedef ASSH_KEX_FILTER_FCN(assh_kex_filter_t);
 
 #if CONFIG_ASSH_IDENT_SIZE < 8 || CONFIG_ASSH_IDENT_SIZE > 255
 # error CONFIG_ASSH_IDENT_SIZE out of range
 #endif
 
-/** @internalmembers @This is the session context structure. */
+/** @internalmembers @This is the @em ssh2 @xref {session} state
+    structure.
+
+    A @xref{session} instance is associated to an @ref assh_context_s
+    object which holds resources shared between multiple sessions.
+
+    It is @b not related to @xref {interactive sessions} which are
+    part of the @xref{connlayer}{connection protocol}. */
 struct assh_session_s
 {
   /** User private pointer */
@@ -209,33 +222,41 @@ struct assh_session_s
 #endif
 };
 
-/** @This set the user private pointer of the session. */
+/** @This sets the user private pointer of the session.
+    @see assh_session_get_pv */
 void assh_session_set_pv(struct assh_session_s *ctx,
                          void *private);
 
-/** @This get the user private pointer of the session. */
+/** @This retrieves the user private pointer of the session.
+    @see assh_session_set_pv */
 void * assh_session_get_pv(struct assh_session_s *ctx);
 
-/** @This initializes a new ssh session object. When a stable ABI is
-    needed, use the @ref assh_context_create function instead. This
-    can be used to initialize a statically allocated session
-    object. The @tt alloc parameter may be @tt NULL. */
+/** @This initializes an user allocated session
+    instance.  When a stable ABI is needed, the @ref
+    assh_session_create function muse be used instead.
+
+    @see assh_session_cleanup
+*/
 ASSH_ABI_UNSAFE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_session_init(struct assh_context_s *c,
 		  struct assh_session_s *s);
 
-/** @This allocates and initializes a ssh session. The @tt alloc
-    parameter may be @tt NULL. @see assh_session_init */
+/** @This allocates and initializes an @ref assh_session_s instance.
+
+    @see assh_session_release
+*/
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_session_create(struct assh_context_s *c,
 		    struct assh_session_s **s);
 
-/** @This cleanups a ssh session object. */
+/** @This releases the resources associated with an user allocated
+    @ref assh_session_s instance. */
 ASSH_ABI_UNSAFE void
 assh_session_cleanup(struct assh_session_s *s);
 
-/** @This cleanups and releases a session created by the @ref
-    assh_session_create function. */
+/** @This releases an @ref assh_session_s instance created by the
+    @ref assh_session_create function as well as associated
+    resources. */
 void assh_session_release(struct assh_session_s *s);
 
 /** @internal This changes the session state according to the provided
@@ -253,8 +274,8 @@ void assh_session_release(struct assh_session_s *s);
 */
 void assh_session_error(struct assh_session_s *s, assh_error_t err);
 
-/** @This schedules the end of the session and sends a
-    SSH_MSG_DISCONNECT packet to the remote host. The @ref
+/** @This schedules the end of the session and sends an
+    SSH_MSG_DISCONNECT message to the remote host. The @ref
     assh_event_get function must still be called until no more events
     are available. */
 assh_error_t
@@ -263,15 +284,14 @@ assh_session_disconnect(struct assh_session_s *s,
                         const char *desc);
 
 /** @This returns the current session safety factor which depends on
-    algorithms chosen during the last key exchange. The safety
-    factor may change during the session lifetime.
-    @see assh_algo_register_va
-*/
+    algorithms and keys involved in the last @xref{kex}{key-exchange
+    process}. The safety factor may change during the session
+    lifetime.  @see assh_algo_register_va */
 assh_safety_t assh_session_safety(struct assh_session_s *s);
 
 /** @This setups a per session algorithm filter. The @tt filter
     parameter may be @tt NULL to disable filtering. It will fail if a
-    key exchange in ongoing. */
+    key exchange in ongoing. @xsee{Supported algorithms} */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_session_algo_filter(struct assh_session_s *s,
                          assh_kex_filter_t *filter);
@@ -287,7 +307,12 @@ assh_time_t
 assh_session_deadline(struct assh_session_s *s);
 
 /** @This returns the delay between the next protocol deadline and the
-    current time. If the deadline is in the past, the function returns 0. */
+    current time. The current time must be passed to the function in
+    second units. If the next deadline is in the past, the function
+    returns 0.
+
+    @see assh_session_deadline
+*/
 ASSH_INLINE assh_time_t
 assh_session_delay(struct assh_session_s *s, assh_time_t time)
 {

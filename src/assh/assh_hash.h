@@ -25,6 +25,11 @@
    @file
    @short Hashing module interface
    @internal
+
+   This header file contains descriptors for cryptographic hash
+   function modules implemented and used in the library.
+
+   @xsee{coremod}
 */
 
 #ifndef ASSH_HASH_H_

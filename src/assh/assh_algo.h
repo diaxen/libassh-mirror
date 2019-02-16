@@ -24,6 +24,19 @@
 /**
    @file
    @short SSH algorithms base descriptor structure and related functions
+
+   This header file contains the declaration of the @xref{algorithm}
+   base module interface common to all five types of algorithms used
+   by @em ssh2. It also provides functions to register
+   @xref{algorithms} on an @ref assh_context_s object.
+
+   @xsee{suppalgos}
+   @xsee{coremod}
+   @see{@assh/assh_kex.h}
+   @see{@assh/assh_sign.h}
+   @see{@assh/assh_cipher.h}
+   @see{@assh/assh_mac.h}
+   @see{@assh/assh_compress.h}
 */
 
 #ifndef ASSH_ALGO_H_
@@ -38,11 +51,11 @@
    const struct assh_key_s *key)
 
 /** @internal @This defines the function type for the key
-    compatibility checking operation common to all the algorithm
-    module interfaces. @see assh_algo_suitable_key */
+    compatibility checking operation common to all the
+    algorithm module interfaces. @see assh_algo_suitable_key */
 typedef ASSH_ALGO_SUITABLE_KEY_FCN(assh_algo_suitable_key_t);
 
-/** @This specifies classes of SSH algorithm */
+/** @This specifies classes for SSH @xref{algorithms}. */
 enum assh_algo_class_e
 {
   ASSH_ALGO_KEX,
@@ -57,7 +70,8 @@ enum assh_algo_class_e
 #define ASSH_ALGO_CLASS_NAMES \
   { "KEX", "SIGN", "CIPHER", "MAC", "COMPRESS", "ANY" }
 
-/** @This specifies various algorithm specification status. */
+/** @This specifies various @xref{algorithms} specification status.
+    Values can be ored together. */
 enum assh_algo_spec_e
 {
   /** The algorithm is specified in an approved IETF standard. */
@@ -111,9 +125,15 @@ struct assh_algo_name_s
     See @sourcelink doc/dh @see assh_algo_register_va */
 #define ASSH_SAFETY_PRIMEFIELD(n) ((n) / 128 + 12)
 
-/** @internalmembers @This is the generic algorithm descriptor
-    structure. Other algorithm descriptor structures iherit from this
-    type. */
+/** @internalmembers @This is the generic @xref{algorithm} descriptor
+    structure.
+
+    Descriptor structures for specific algorithm types inherit from
+    this structure. This means that algorithm descriptors have this
+    structure as first field.
+
+    @xsee{coremod} @see{assh_algo_cipher_s, assh_algo_mac_s,
+    assh_algo_sign_s, assh_algo_kex_s, assh_algo_compress_s} */
 struct assh_algo_s
 {
   /** module API version */
@@ -143,21 +163,8 @@ struct assh_algo_s
 };
 
 /**
-   @This registers the specified array of algorithms for use by the
-   given library context. The last entry must be @tt NULL.
-
-   The array is copied and the algorithms are sorted depending on
-   their safety factor and speed factor. The @tt safety parameter
-   indicates how algorithms safety must be favored over speed. Valid
-   range for this parameter is [0, 99]. Algorithms with a safety
-   factor or speed factor less than @tt min_safety and @tt min_speed
-   are skipped.
-
-   If multiple implementations of the same algorithm are registered,
-   the variant which appears first in the list after sorting is kept
-   and subsequent variants with the same name are discarded. This
-   should retain the less secure variants of the same algorithm not
-   filtered by the value of @tt min_safety.
+   @This registers the specified array of @xref{algorithms} for use by
+   the given library context. The last entry must be @tt NULL.
 
    If this function is called more than once, the internal array of
    algorithms is resized and new algorithms are appended.
@@ -168,16 +175,30 @@ struct assh_algo_s
    session algorithm filter.
 
    @see assh_algo_register_default
+   @see assh_algo_register
 */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_register_va(struct assh_context_s *c, assh_safety_t safety,
 		      assh_safety_t min_safety, uint8_t min_speed, ...);
 
 /**
-   @This registers the specified array of algorithms for use by the
-   given library context. The last entry must be @tt NULL.
+   @This registers the specified array of @xref{algorithms} for use by
+   the given library context. The last entry must be @tt NULL.
 
-   @see assh_algo_register_va
+   The array is copied and the algorithms are sorted depending on
+   their safety factor and speed factor. The @tt safety parameter
+   indicates how algorithms safety must be favored over speed. Valid
+   range for this parameter is [0, 99]. Algorithms with a safety
+   factor or speed factor less than @tt min_safety and @tt min_speed
+   are discarded.
+
+   When multiple implementations of the same algorithm are registered,
+   the variant which appears first in the list after sorting is kept
+   and subsequent variants with the same name are discarded. This
+   should retain the less secure variants of the same algorithm not
+   filtered by the value of @tt min_safety.
+
+   @see assh_algo_register_default
 */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_register(struct assh_context_s *c, assh_safety_t safety,
@@ -185,8 +206,8 @@ assh_algo_register(struct assh_context_s *c, assh_safety_t safety,
                    const struct assh_algo_s *table[]);
 
 /**
-   @This registers the specified array of algorithms for use by the
-   given library context. The last entry must be @tt NULL.
+   @This registers the specified array of @xref{algorithms} for use by
+   the given library context. The last entry must be @tt NULL.
 
    The algorithms must be sorted in ascending class order. The array
    is not copied and must remain valid.
@@ -194,8 +215,9 @@ assh_algo_register(struct assh_context_s *c, assh_safety_t safety,
    If this function is called more than once, the array of algorithms
    is replaced.
 
-   It is not possible to register more algorithms by calling @ref
-   assh_algo_register without first calling @ref assh_algo_unregister.
+   When this function has been called, it is not possible to register
+   more algorithms by calling @ref assh_algo_register without first
+   calling @ref assh_algo_unregister.
 
    It is not possible to modify registered algorithms when some
    sessions are associated to the context.  The @ref
@@ -206,18 +228,20 @@ ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_register_static(struct assh_context_s *c,
                           const struct assh_algo_s *table[]);
 
-/** @tt NULL terminated array of algorithms provided by the library.
-    Multiple variants of the same algorithm may exist. */
+/** This is a @tt NULL terminated array of descriptors for
+    @xref{algorithm} provided by the library. Multiple variants of the
+    same algorithm may exist. */
 extern const struct assh_algo_s *assh_algo_table[];
 
-/** @This returns registered algorithms indexed from 0. @tt NULL is
-    returned when out of range. */
+/** @This returns a pointer to the descriptor of the registered
+    @xref{algorithm} at specified index. The first valid index is
+    0. @tt NULL is returned when out of range. */
 const struct assh_algo_s *
 assh_algo_registered(struct assh_context_s *c, uint_fast16_t i);
 
-/** @This registers the default set of available algorithms
+/** @This registers the default set of available @xref{algorithms}
     depending on the library configuration. It relies on the @ref
-    assh_algo_register_va function. */
+    assh_algo_register function. */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_register_default(struct assh_context_s *c,
                            assh_safety_t safety,
@@ -227,7 +251,7 @@ assh_algo_register_default(struct assh_context_s *c,
   return assh_algo_register(c, safety, min_safety, min_speed, assh_algo_table);
 }
 
-/** Unregister all algorithms.
+/** Unregister all @xref{algorithms}.
 
     It is not possible to modify registered algorithms when some
     sessions are associated to the context.
@@ -235,20 +259,23 @@ assh_algo_register_default(struct assh_context_s *c,
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_unregister(struct assh_context_s *c);
 
-/** @This returns the algorithm default name */
+/** @This returns the @xref{algorithm} default name from its descriptor. */
 ASSH_INLINE const char * assh_algo_name(const struct assh_algo_s *algo)
 {
   return algo->names[0].name;
 }
 
-/* @This returns the variant name of an algorithm. */
+/** @This returns the name of the @xref{algorithm} variant from its
+    descriptor. */
 ASSH_INLINE const char *
 assh_algo_variant(const struct assh_algo_s *algo)
 {
   return algo->variant ? algo->variant : "default";
 }
 
-/** @This returns the estimated algorithm safety */
+/** @This returns the estimated @xref{algorithm} safety factor value
+    from its descriptor.
+    @see assh_algo_register */
 ASSH_INLINE assh_safety_t
 assh_algo_safety(const struct assh_algo_s *algo)
 {
@@ -275,8 +302,8 @@ assh_algo_safety_name(const struct assh_algo_s *algo)
   return assh_safety_name(algo->safety);
 }
 
-/** @This find an algorithm with matching class and name in a @tt NULL
-    terminated array of pointers to algorithm descriptors.
+/** @This finds an @xref{algorithm} with matching class and name in a
+    @tt NULL terminated array of pointers to algorithm descriptors.
     @see assh_algo_table */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_by_name_static(const struct assh_algo_s **table,
@@ -284,26 +311,26 @@ assh_algo_by_name_static(const struct assh_algo_s **table,
                          size_t name_len, const struct assh_algo_s **algo,
                          const struct assh_algo_name_s **namep);
 
-/** @internal @This finds a registered algorithm with matching class
-    and name. If the @tt namep parameter is not @tt NULL, the matched
-    algorithm name is returned. */
+/** @internal @This finds a registered @xref{algorithm} with matching
+    class and name. If the @tt namep parameter is not @tt NULL, the
+    matched algorithm name is returned. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_by_name(struct assh_context_s *c,
 		  enum assh_algo_class_e class_, const char *name,
                   size_t name_len, const struct assh_algo_s **algo,
                   const struct assh_algo_name_s **namep);
 
-/** @internal @This finds a registered algorithm which can be used
-    with the given key. If the @tt pos parameter is not @tt NULL, it
-    specifies the starting index of the search and it will be updated
-    with the index of the matching entry. */
+/** @internal @This finds a registered @xref{algorithm} which can be
+    used with the given key. If the @tt pos parameter is not @tt NULL,
+    it specifies the starting index of the search and it will be
+    updated with the index of the matching entry. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_by_key(struct assh_context_s *c,
                  const struct assh_key_s *key, uint16_t *pos,
                  const struct assh_algo_s **algo);
 
 /** @internal @This returns true if the provided key can be used with
-    the algorithm and has been loaded or created for that purpose.
+    the @xref{algorithm} and has been loaded or created for that purpose.
     When the @tt key parameter is @tt NULL, the return value indicates
     if the algorithm needs a key when used during a key exchange.
 

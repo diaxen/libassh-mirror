@@ -24,6 +24,14 @@
 /**
    @file
    @short SSH keys base structure and related functions
+
+   This header file contains descriptors for key management modules
+   implemented in the library as well as @xref{SSH keys} management
+   related declarations.
+
+   @xsee{keysalgos}
+   @xsee{coremod}
+   @see{@assh/helper_key.h}
 */
 
 #ifndef ASSH_KEY_H_
@@ -33,7 +41,7 @@
 
 #include <string.h>
 
-/** @This specifies the storage formats of SSH keys.
+/** @This specifies the storage formats of @em ssh2 keys.
     Private key formats are listed first.
     @see assh_key_format_desc_s */
 enum assh_key_format_e
@@ -160,8 +168,11 @@ typedef ASSH_KEY_CMP_FCN(assh_key_cmp_t);
     @see assh_key_drop @see assh_key_flush */
 typedef ASSH_KEY_CLEANUP_FCN(assh_key_cleanup_t);
 
-/** @internalmembers @This is the key algorithm descriptor of the SSH
-    key module interface. */
+/** @internalmembers @This is the key algorithm descriptor of the @em
+    ssh2 key module interface.
+
+    A key @em algorithm is able to handle a single type of key as
+    described in @xref{keysalgos}. @xsee{coremod} */
 struct assh_key_algo_s
 {
   const char *name;
@@ -216,7 +227,7 @@ struct assh_key_format_desc_s
   assh_bool_t pv_part:1;
 };
 
-/** Return a descritors for the specified key storage format.
+/** @This returns a descritor for the specified key storage format.
 
     When iterating over formats, entries with a @tt NULL name must be
     ignored. The function returns @tt NULL when @tt fmt is beyond the
@@ -224,8 +235,8 @@ struct assh_key_format_desc_s
 const struct assh_key_format_desc_s *
 assh_key_format_desc(enum assh_key_format_e fmt);
 
-/** @internalmembers @This is the generic SSH key structure. Other key
-    structures inherit from this type. */
+/** @internalmembers @This is the generic @em ssh2 key
+    structure. Actual key structures inherit from this type. */
 struct assh_key_s
 {
   const char *type;
@@ -253,7 +264,9 @@ struct assh_key_s
 
     This function will only support some binary key formats specific
     to a given key algorithm. More formats are handled by helper
-    functions provided by @ref @assh/helper_key.h */
+    functions provided by @ref @assh/helper_key.h
+
+    @xsee {Key storage formats} */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_key_load(struct assh_context_s *c,
               struct assh_key_s **key,
@@ -262,15 +275,8 @@ assh_key_load(struct assh_context_s *c,
               enum assh_key_format_e format,
               const uint8_t **blob, size_t blob_len);
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_key_load_pv(struct assh_context_s *c,
-                 struct assh_key_s *key,
-                 enum assh_key_format_e format,
-                 const uint8_t **blob, size_t blob_len);
-
 #ifdef CONFIG_ASSH_KEY_CREATE
-/** @This creates a new key of specified type and bits
-    size. */
+/** @This creates a new key of specified type and bits size. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_key_create(struct assh_context_s *c,
                 struct assh_key_s **key, size_t bits,
@@ -315,12 +321,13 @@ assh_key_cmp(struct assh_context_s *c, const struct assh_key_s *key,
 }
 
 /** @This removes the first key from the singly linked list. The key is
-    also released unless @ref assh_key_refinc has been called. */
+    also released unless @ref assh_key_refinc has been called.
+    @see assh_key_flush */
 void assh_key_drop(struct assh_context_s *c,
                    struct assh_key_s **head);
 
-/** @This releases all the keys on the linked list
-    and set the list head to @tt NULL. */
+/** @This releases all the keys on the linked list by calling @ref
+    assh_key_drop and set the list head to @tt NULL. */
 ASSH_INLINE void
 assh_key_flush(struct assh_context_s *c,
                struct assh_key_s **head)
@@ -329,7 +336,9 @@ assh_key_flush(struct assh_context_s *c,
     assh_key_drop(c, head);
 }
 
-/** @This inserts a key in a list of keys. */
+/** @This inserts a key in the linked list.
+    @csee assh_key_drop
+    @csee assh_key_flush */
 ASSH_INLINE void
 assh_key_insert(struct assh_key_s **head,
                 struct assh_key_s *key)
@@ -372,14 +381,15 @@ assh_key_type_name(struct assh_key_s *key)
   return key->type ? key->type : key->algo->name;
 }
 
-/** @This returns the estimated algorithm safety. */
+/** @This returns the estimated algorithm safety.
+    @xsee {suppalgos} */
 ASSH_INLINE assh_safety_t
 assh_key_safety(struct assh_key_s *key)
 {
   return key->safety;
 }
 
-/* @see assh_safety_name @see assh_key_safety */
+/** @This combines @ref assh_safety_name and @ref assh_key_safety. */
 ASSH_INLINE const char *
 assh_key_safety_name(struct assh_key_s *key)
 {
@@ -389,8 +399,8 @@ assh_key_safety_name(struct assh_key_s *key)
 /** Dummy key algorithm */
 extern const struct assh_key_algo_s assh_key_none;
 
-/** @This find a key algorithm with matching  name in a @tt NULL
-    terminated array of pointers to algorithm descriptors. @see
+/** @This finds a key algorithm with matching name in a @tt NULL
+    terminated array of pointers to key algorithm descriptors. @see
     assh_key_algo_table */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_key_algo_by_name_static(const struct assh_key_algo_s **table,
@@ -398,4 +408,3 @@ assh_key_algo_by_name_static(const struct assh_key_algo_s **table,
                              const struct assh_key_algo_s **algo);
 
 #endif
-

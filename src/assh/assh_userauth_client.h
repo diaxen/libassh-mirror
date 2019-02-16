@@ -25,12 +25,16 @@
    @file
    @short Implementation of the client side ssh-userauth service (rfc4252)
 
-   This header file defines events which are reported to the
-   application when the client side @tt ssh-userauth service is
-   running.
+   This header file defines @xref{events} which are reported to the
+   application when the @ref assh_service_userauth_client service is
+   running. This @xref{service} module is an implementation of the
+   client side @xref{user authentication} protocol.
 
-   This standard service described in rfc4252 is implemented as a
-   pluggable service module for libassh.
+   This standard @xref{service} described in @sinvoke{4252}rfc is
+   implemented as a pluggable service @xref{module} for @em{libassh}.
+
+   @see{@assh/assh_userauth.h}
+   @xsee{uamethods}
 */
 
 #ifndef ASSH_SRV_USERAUTH_CLIENT_H_
@@ -66,21 +70,21 @@ struct assh_event_userauth_client_user_s
     depending on the retained authentication method:
 
     @list
-      @item When the @em keyboard-interactive method is selected, the @ref
+      @item When the @em keyboard-interactive method is selected, the @tt
       keyboard_sub field will be used as @em submethods fields of the
       request.
 
-      @item When the @em publickey method is selected, the @ref keys
+      @item When the @em publickey method is selected, the @tt keys
       field is used.
 
-      @item When the @em password method is selected, the @ref
+      @item When the @em password method is selected, the @tt
       password field is used.
 
-      @item When the @em hostbased method is selected, the @ref keys,
+      @item When the @em hostbased method is selected, the @tt {keys},
       @ref host_name and @ref host_username fields are used.
     @end list
 
-    The @ref keys linked list can be populated by calling either
+    The @tt keys linked list can be populated by calling either
     the @ref assh_key_load, @ref assh_load_key_file or @ref
     assh_load_key_filename functions. Multiple keys can be loaded. The
     assh library will take care of releasing the provided keys. If a
@@ -186,7 +190,8 @@ struct assh_event_userauth_client_keyboard_s
   };
 };
 
-/** @This contains all client side user authentication related events */
+/** @This contains all client side user authentication related event
+    structures. */
 union assh_event_userauth_client_u
 {
   struct assh_event_userauth_client_user_s    user;

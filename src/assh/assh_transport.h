@@ -24,6 +24,9 @@
 /**
    @file
    @short SSH transport layer protocol (rfc4253)
+
+   This header file contains declarations related to the
+   @xref{transport layer} component of the @em ssh2 protocol.
 */
 
 #ifndef ASSH_TRANSPORT_H_
@@ -152,7 +155,7 @@ struct assh_event_transport_debug_s
   ASSH_EV_CONST struct assh_cbuffer_s lang;         //< input
 };
 
-/** @internal */
+/** @This contains all transport related event structures. */
 union assh_event_transport_u
 {
   struct assh_event_transport_read_s  read;
@@ -161,18 +164,18 @@ union assh_event_transport_u
   struct assh_event_transport_debug_s debug;
 };
 
-/** @internal This function puts a packet in the output queue. The
+/** @internal @This puts a packet in the output queue. The
     packet will be released once it has been enciphered and sent. */
 void assh_transport_push(struct assh_session_s *s,
 			 struct assh_packet_s *p);
 
-/** @internal This function sends an @ref SSH_MSG_UNIMPLEMENTED packet
+/** @internal @This sends an @ref SSH_MSG_UNIMPLEMENTED packet
     in response to the @tt pin packet. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_transport_unimp(struct assh_session_s *s,
                      struct assh_packet_s *pin);
 
-/** @internal This function executes the transport output FSM code
+/** @internal @This executes the transport output FSM code
     which enciphers packets and builds the output stream. It may
     report the @ref ASSH_EVENT_READ event. It is called from the @ref
     assh_event_get function. */
@@ -180,7 +183,7 @@ ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_transport_write(struct assh_session_s *s,
                      struct assh_event_s *e);
 
-/** @internal This function executes the transport input FSM code
+/** @internal @This executes the transport input FSM code
     which extracts packets from the stream and decipher them. It may
     report the @ref ASSH_EVENT_WRITE event. It is called from the @ref
     assh_event_get function. */
@@ -188,18 +191,20 @@ ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_transport_read(struct assh_session_s *s,
                     struct assh_event_s *e);
 
-/** @internal This function dispatches an incoming packets to the
+/** @internal @This dispatches an incoming packets to the
     appropriate state machine (tranport, kex or service). It is called
     from the @ref assh_event_get function. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_transport_dispatch(struct assh_session_s *s,
 			struct assh_event_s *e);
 
-/** This function returns true if there is pending output ssh stream. */
+/** @This returns true if there is pending output ssh stream. When
+    this is the case, an @ref ASSH_EVENT_WRITE event will be
+    reported. */
 assh_bool_t
 assh_transport_has_output(struct assh_session_s *s);
 
-/** This function sends a @ref SSH_MSG_DEBUG message. */
+/** @This sends a @ref SSH_MSG_DEBUG message. */
 assh_error_t
 assh_transport_debug(struct assh_session_s *s,
 		     assh_bool_t display, const char *msg,

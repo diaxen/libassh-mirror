@@ -24,6 +24,12 @@
 /**
    @file
    @short SSH message authentication code module interface
+
+   This header file contains API descriptors for message
+   authentication @xref{algorithm} modules implemented in the library.
+
+   @xsee{macalgos}
+   @xsee{coremod}
 */
 
 #ifndef ASSH_MAC_H_
@@ -70,7 +76,8 @@ typedef ASSH_MAC_CHECK_FCN(assh_mac_check_t);
 typedef ASSH_MAC_CLEANUP_FCN(assh_mac_cleanup_t);
 
 /** @internalmembers @This is the mac algorithm descriptor
-    structure. It can be casted to the @ref assh_algo_s type. */
+    structure. It can be casted to the @ref assh_algo_s type.
+    @xsee{coremod} */
 struct assh_algo_mac_s
 {
   struct assh_algo_s algo;

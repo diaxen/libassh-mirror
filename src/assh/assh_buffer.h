@@ -24,6 +24,12 @@
 /**
    @file
    @short SSH string buffers
+
+   Because the @em ssh2 protocol deals with strings that are not null
+   terminated, the library relies on buffer handling functions
+   declared in this header file.
+
+   @see{@assh/assh_packet.h}
 */
 
 #ifndef ASSH_BUFFER_H_
@@ -114,7 +120,7 @@ assh_buffer_strdup(const struct assh_cbuffer_s *buf)
 }
 
 /** @This copies the content of the @ref assh_cbuffer_s object to the
-    string buffer and nul terminates it. It returns @tt NULL if the
+    provided string buffer and nul terminates it. It returns @tt NULL if the
     provided buffer is not large enough. */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT const char *
 assh_buffer_tostr(char *str, size_t len,
@@ -128,7 +134,7 @@ assh_buffer_tostr(char *str, size_t len,
   return str;
 }
 
-/** @This compare two buffers of byte of the same length in
+/** @This compares two arrays of bytes of the same length in
     constant time. */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT uint8_t
 assh_memcmp(const uint8_t *nula, const uint8_t *nulb, size_t len)

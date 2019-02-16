@@ -30,12 +30,12 @@
    @file
    @short SSH server application helpers
 
-   This header provides helper functions designed to ease development
-   of simple ssh server applications.
+   This header file provides @xref{helper} functions designed to ease
+   development of simple @em ssh2 server applications.
 
    Implementation of server applications may want to reuse and adapt
-   code from this module as allowed by the license exception covering
-   the module source code.
+   code from this module, as allowed by the @xref{license} exception
+   covering the source code of this module.
 */
 
 #ifndef ASSH_HELPER_SERVER_H_
@@ -62,7 +62,7 @@ assh_server_openssh_ak_lookup(struct assh_session_s *s,
     authorized_keys file.
 
     The password authentication relies on the following libc
-    functions: @ref getpwnam_r, @ref getspnam_r and @ref crypt_r.
+    functions: @tt getpwnam_r, @tt getspnam_r and @tt crypt_r.
     It requires access to the @tt /etc/shadow file.
 
     @This takes care of calling the @ref assh_event_done function in

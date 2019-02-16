@@ -25,9 +25,18 @@
    @file
    @short SSH key exchange module interface and helpers
 
+   This header file contains API descriptors for @xref{key-exchange}
+   algorithm modules implemented in the library.
+
+   It also contains declaration of @xref{key-exchange} related events.
+
+   @xsee{kexalgos}
+   @xsee{coremod}
+
    @ifnopt hide_internal
-   This headed file defines the interface to use for pluggable
-   key exchange algorithm implementations.
+
+   It also provides some helper functions to compute the exchange-hash
+   and deals with the host key signature.
 
    The key exchange process involve several functions calls performed
    in the following order:
@@ -52,8 +61,6 @@
    using the pluggable signature algorithm given in @ref
    assh_session_s::host_sign_algo.
 
-   Some helper functions are provided to compute the exchange-hash and
-   deals with the host key signature.
    @end if
 */
 
@@ -246,7 +253,7 @@ typedef ASSH_KEX_CLEANUP_FCN(assh_kex_cleanup_t);
 */
 typedef ASSH_KEX_PROCESS_FCN(assh_kex_process_t);
 
-/** @internal This object contains the various symmetric cipher
+/** This object contains the various symmetric cipher
     algorithm contexts initialized from the shared secret. This is
     used by the transport layer code to process the ssh packet stream. */
 struct assh_kex_keys_s
@@ -271,30 +278,36 @@ struct assh_kex_keys_s
 */
 struct assh_event_kex_hostkey_lookup_s
 {
-  struct assh_key_s * ASSH_EV_CONST key;  //< input
-  assh_bool_t ASSH_EV_CONST initial; //< input
-  assh_bool_t               accept;             //< output
+  struct assh_key_s * ASSH_EV_CONST key;  //< from library
+  assh_bool_t ASSH_EV_CONST initial; //< from library
+  assh_bool_t               accept;  //< to library
 };
 
 /**
    The @ref ASSH_EVENT_KEX_DONE event is returned when a kex exchange
-   has completed. For client sessions, the server host key is provided.
+   has completed.
+
+   For client sessions, the server host key is provided in the @tt
+   host_key field.
+
+   The remote software version string is exposed in the @tt ident
+   field as well as selected algorithms in the @tt algo* fields.
 
    The @ref initial field is only set for the first key exchange of
    the session.
 */
 struct assh_event_kex_done_s
 {
-  struct assh_key_s * ASSH_EV_CONST host_key;  //< input
-  struct assh_cbuffer_s ASSH_EV_CONST ident;  //< input
-  const struct assh_algo_kex_s * ASSH_EV_CONST algo_kex; //< input
-  const struct assh_kex_keys_s * ASSH_EV_CONST algos_in; //< input
-  const struct assh_kex_keys_s * ASSH_EV_CONST algos_out; //< input
-  assh_safety_t ASSH_EV_CONST safety;  //< input
-  assh_bool_t ASSH_EV_CONST initial; //< input
+  struct assh_key_s * ASSH_EV_CONST host_key;  //< from library
+  struct assh_cbuffer_s ASSH_EV_CONST ident;  //< from library
+  const struct assh_algo_kex_s * ASSH_EV_CONST algo_kex; //< from library
+  const struct assh_kex_keys_s * ASSH_EV_CONST algos_in; //< from library
+  const struct assh_kex_keys_s * ASSH_EV_CONST algos_out; //< from library
+  assh_safety_t ASSH_EV_CONST safety;  //< from library
+  assh_bool_t ASSH_EV_CONST initial; //< from library
 };
 
-/** @internal */
+/** @This contains all key-exchange related event structures. */
 union assh_event_kex_u
 {
 #ifdef CONFIG_ASSH_CLIENT
@@ -303,9 +316,9 @@ union assh_event_kex_u
   struct assh_event_kex_done_s done;
 };
 
-/** @internalmembers This defines the interface of a pluggable key
-    exchange algorithm. It can be casted to the @ref assh_algo_s
-    type. */
+/** @internalmembers @This is the key-exchange algorithm
+    descriptor. It can be casted to the @ref assh_algo_s type.
+    @xsee{coremod} */
 struct assh_algo_kex_s
 {
   struct assh_algo_s algo;
@@ -321,51 +334,37 @@ extern const struct assh_kex_keys_s assh_keys_none;
 /** Dummy key-exchange algorithm using a not so secret value. */
 extern const struct assh_algo_kex_s assh_kex_none;
 
-/** Standard @tt diffie-hellman-group1-sha1 algorithm specified in
-    rfc4253. */
+/** Standard @tt diffie-hellman-group1-sha1 algorithm. */
 extern const struct assh_algo_kex_s assh_kex_dh_group1_sha1;
 
-/** Standard @tt diffie-hellman-group14-sha1 algorithm specified in
-    rfc4253. */
+/** Standard @tt diffie-hellman-group14-sha1 algorithm. */
 extern const struct assh_algo_kex_s assh_kex_dh_group14_sha1;
 
-/** Draft @tt @tt diffie-hellman-group14-sha256 algorithm specified in
-    draft-ietf-curdle-ssh-modp-dh-sha2-05. */
+/** Draft @tt @tt diffie-hellman-group14-sha256 algorithm. */
 extern const struct assh_algo_kex_s assh_kex_dh_group14_sha256;
 
-/** Draft @tt @tt diffie-hellman-group15-sha512 algorithm specified in
-    draft-ietf-curdle-ssh-modp-dh-sha2-05. */
+/** Draft @tt @tt diffie-hellman-group15-sha512 algorithm. */
 extern const struct assh_algo_kex_s assh_kex_dh_group15_sha512;
 
-/** Draft @tt @tt diffie-hellman-group16-sha512 algorithm specified in
-    draft-ietf-curdle-ssh-modp-dh-sha2-05. */
+/** Draft @tt @tt diffie-hellman-group16-sha512 algorithm. */
 extern const struct assh_algo_kex_s assh_kex_dh_group16_sha512;
 
-/** Draft @tt @tt diffie-hellman-group17-sha512 algorithm specified in
-    draft-ietf-curdle-ssh-modp-dh-sha2-05. */
+/** Draft @tt @tt diffie-hellman-group17-sha512 algorithm. */
 extern const struct assh_algo_kex_s assh_kex_dh_group17_sha512;
 
-/** Draft @tt @tt diffie-hellman-group18-sha512 algorithm specified in
-    draft-ietf-curdle-ssh-modp-dh-sha2-05. */
+/** Draft @tt @tt diffie-hellman-group18-sha512 algorithm. */
 extern const struct assh_algo_kex_s assh_kex_dh_group18_sha512;
 
-/** The @tt curve25519-sha256 algorithm defined in @tt
-    curve25519-sha256@libssh.org.txt by the libssh project. This
-    offers 125 bit security and relies on a Montgomery elliptic curve.
-
-    See @url {http://safecurves.cr.yp.to/} */
+/** The @tt curve25519-sha256 algorithm.
+    @xsee {Montgomery curves Diffie-Hellman} */
 extern const struct assh_algo_kex_s assh_kex_curve25519_sha256;
 
-/** Same protocol as @ref assh_kex_curve25519_sha256 using the stronger
-    M383 Montgomery curve.
-
-    See @url {http://safecurves.cr.yp.to/} */
+/** The @tt m383-sha384@libassh.org algorithm.
+    @xsee {Montgomery curves Diffie-Hellman} */
 extern const struct assh_algo_kex_s assh_kex_m383_sha384;
 
-/** Same protocol as @ref assh_kex_curve25519_sha256 using the stronger
-    M511 Montgomery curve.
-
-    See @url {http://safecurves.cr.yp.to/} */
+/** The @tt m511-sha512@libassh.org algorithm.
+    @xsee {Montgomery curves Diffie-Hellman} */
 extern const struct assh_algo_kex_s assh_kex_m511_sha512;
 
 /** Standard @tt diffie-hellman-group-exchange-sha1 algorithm

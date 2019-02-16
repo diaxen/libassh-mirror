@@ -1670,7 +1670,7 @@ $ examples/client localhost ls
     @label {exloopback}
 
     This simple server application accepts all @xref{interactive
-    session} open messages from a connecting client and send back any
+    session} open messages from a connecting client and sends back any
     data received over open @xref{channels}. When connecting
     using a standard client, this has the effect of echoing any
     character typed.
@@ -2160,6 +2160,68 @@ Done.
 
     @c  @example examples/keygen.c
   @end section
+@end section
+
+@section TP {Test suite}
+
+  This section gives a brief overview of the test programs provides
+  along with @em {libassh}.
+
+  @list
+    @item The @tt test/hash.c program tests the hash
+      functions used internally by the library.
+    @item The @tt test/cipher.c program tests the cipher
+      @xref{algorithms} against static @em ssh2 binary packet contents.
+    @item The @tt test/replay.c program is able to record @em ssh2
+      sessions against other client and server implementations and
+      replay them as part of the test suite.
+    @item The @tt test/userauth.c program runs a stress test of the
+      user authentication services by performing many user
+      authentication attempts between client and server
+      @xref{sessions}. The client and server authentication requests
+      and replies are generated randomly in this test. The program
+      check consistency of behavior on both sides. Packet corruption
+      and memory failures may be injected during the test.
+    @item The @tt test/userauth_server.c program contains unit tests
+      of the server user authentication service. It checks that the
+      server behaves well on common cases and that it properly rejects
+      authentication on wrong behavior of the client that should not
+      occur.
+    @item The @tt test/connection.c runs a stress test of the
+      @xref{connection protocol} service by randomly performing many
+      @xref{channel} and @xref{request} operations between client and
+      server @xref{sessions}. The program maintains its own state of
+      the ongoing channel and requests so that it can check the
+      consistency of the behavior on both sides.
+    @item The @tt test/connection2.c program runs a similar
+      @xref{connection protocol} stress test. It does not maintains a
+      local state but is able to inject corrupted packets and memory
+      allocation failures.
+    @item The @tt test/kex.c program generates many combinations of
+      @xref{algorithms} provided by the library and runs a
+      @xref{key-exchange} process between two sessions for each
+      generated set. It is also able to injects corrupted packets and
+      memory allocation failures.
+    @item The @tt test/bignum.c program contains various unit tests
+      and stress tests of the big number engine provided as part of
+      the library.
+    @item The @tt test/signature.c program tests the signature
+      @xref{algorithms} provided with the library. It test the
+      algorithms against static data and keys.
+    @item The @tt test/signature2.c program tests the signature
+      @xref{algorithms} provided with the library. It generate
+      signature of random data and check that the verification fails
+      when either the signature or the data is modified.
+    @item The @tt test/key_io.c program tests loading and storing
+      @xref{SSH keys} of various types in all supported formats.
+    @item The @tt test/fail.c test program is expected to fail.
+    @item The @tt test/algo_list.c program displays the list of
+      algorithms supported by the current build of the library.
+    @item The @tt test/gex_primes.c program checks the list of safe
+      prime numbers used by the @tt {diffie-hellman-group-exchange-*}
+      algorithms.
+  @end list
+
 @end section
 
 @section TPe {API documentation}

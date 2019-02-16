@@ -25,12 +25,16 @@
    @file
    @short Implementation of the server side ssh-userauth service (rfc4252)
 
-   This header file defines events which are reported to the
-   application when the server side @tt ssh-userauth service is
-   running.
+   This header file defines @xref{events} which are reported to the
+   application when the @ref assh_service_userauth_server service is
+   running. This @xref{service} module is an implementation of the
+   server side @xref{user authentication} protocol.
 
-   This standard service described in rfc4252 is implemented as a
-   pluggable service module for libassh.
+   This standard @xref{service} described in @sinvoke{4252}rfc is
+   implemented as a pluggable service @xref{module} for @em {libassh}.
+
+   @see{@assh/assh_userauth.h}
+   @xsee{uamethods}
 */
 
 #ifndef ASSH_SRV_USERAUTH_SERVER_H_
@@ -207,8 +211,7 @@ enum assh_event_userauth_server_kbstatus_e
     The @ref result field must be updated in order to make the
     authentication succeed or continue with an other info request.
 
-    The allocation of the responses array @b is handled by the
-    library.
+    The allocation of the responses array is handled by the library.
 
     @see ASSH_EVENT_USERAUTH_SERVER_KBRESPONSE
     @see ASSH_EVENT_USERAUTH_SERVER_KBINFO
@@ -240,7 +243,8 @@ struct assh_event_userauth_server_success_s
   ASSH_EV_CONST assh_safety_t        sign_safety;    //< input
 };
 
-/** @This contains all server side user authentication related events */
+/** @This contains all server side user authentication related event
+    structures. */
 union assh_event_userauth_server_u
 {
   struct assh_event_userauth_server_methods_s methods;

@@ -24,6 +24,11 @@
 /**
    @file
    @short SSH packets management
+
+   This header provides functions used to build and parse the packet
+   format used the @em ssh2 protocol.
+
+   @see{@assh/assh_buffer.h}
 */
 
 #ifndef ASSH_PACKET_H_
@@ -34,7 +39,7 @@
 
 #include <string.h>
 
-/** @internal SSH protocol packet header */
+/** @internal @em ssh2 protocol packet header */
 struct assh_packet_head_s
 {
   uint8_t   pck_len[4];
@@ -43,7 +48,7 @@ struct assh_packet_head_s
   uint8_t   end[0];
 };
 
-/** @internal Specifies the ssh packet padding size policy */
+/** @internal Specifies the @em ssh2 packet padding size policy */
 enum assh_padding_policy_e
 {
   /** Minimal padding size */
@@ -54,7 +59,7 @@ enum assh_padding_policy_e
   ASSH_PADDING_MAX,
 };
 
-/** @internal SSH packet object */
+/** @internal @em ssh2 packet object */
 struct assh_packet_s
 {
   union {
@@ -110,7 +115,7 @@ struct assh_packet_s
 
 ASSH_FIRST_FIELD_ASSERT(assh_packet_s, entry);
 
-/** @internal @This specifies ranges of ssh message ids. */
+/** @internal @This specifies ranges of @em ssh2 message ids. */
 enum assh_ssh_msg_ranges_e
 {
   /** @multiple Transport layer generic messages */
@@ -126,7 +131,7 @@ enum assh_ssh_msg_ranges_e
   SSH_MSG_SERVICE_FIRST   = 50,
 };
 
-/** @This specifies the standard values for ssh message ids. */
+/** @This specifies the standard values for @em ssh2 message ids. */
 enum assh_ssh_msg_e
 {
   SSH_MSG_INVALID                   =   0,
@@ -169,7 +174,7 @@ enum assh_ssh_msg_e
   SSH_MSG_USERAUTH_INFO_REQUEST     =  60,
   SSH_MSG_USERAUTH_INFO_RESPONSE    =  61,
 
-  /** @multiple SSH connection service related messages */
+  /** @multiple @em ssh2 connection service related messages */
   SSH_MSG_GLOBAL_REQUEST            =  80,
   SSH_MSG_REQUEST_SUCCESS           =  81,
   SSH_MSG_REQUEST_FAILURE           =  82,
@@ -186,7 +191,7 @@ enum assh_ssh_msg_e
   SSH_MSG_CHANNEL_FAILURE           = 100,
 };
 
-/** @This specifies standard ssh disconnect reasons. */
+/** @This specifies standard @em ssh2 disconnect reasons. */
 enum assh_ssh_disconnect_e
 {
   SSH_DISCONNECT_HOST_NOT_ALLOWED_TO_CONNECT    =  1,
@@ -230,7 +235,7 @@ assh_packet_alloc(struct assh_context_s *c,
                   struct assh_packet_s **result);
 
 /** @This forces garbage collect of packets. This does nothing when
-    @tt CONFIG_ASSH_PACKET_POOL is not defined. */
+    @ref #CONFIG_ASSH_PACKET_POOL is not defined. */
 void assh_packet_collect(struct assh_context_s *c);
 
 #define ASSH_PACKET_HEADLEN                             \
@@ -240,18 +245,18 @@ void assh_packet_collect(struct assh_context_s *c);
 
 #define ASSH_PACKET_MAX_PADDING 255
 
-/** @This specifies the difference between the size of the
+/** @internal @This specifies the difference between the size of the
     packet payload and the size of the whole packet buffer. */
 #define ASSH_PACKET_OVERHEAD(pad_len, mac_len)                          \
   (ASSH_PACKET_HEADLEN + pad_len + mac_len)
 
-/** @This specifies the maximum difference between the size of the
-    packet payload and the size of the whole packet buffer. */
+/** @internal @This specifies the maximum difference between the size
+    of the packet payload and the size of the whole packet buffer. */
 #define ASSH_PACKET_MAX_OVERHEAD                                        \
   ASSH_PACKET_OVERHEAD(255, ASSH_MAX_MAC_SIZE)
 
-/** @This specifies the maximum difference between the size of the
-    packet payload and the size of the whole packet buffer when
+/** @internal @This specifies the maximum difference between the size
+    of the packet payload and the size of the whole packet buffer when
     minimal padding policy is used. When the padding len is <= 3, we
     will add at most ASSH_MAX_BLOCK_SIZE bytes. */
 #define ASSH_PACKET_MIN_OVERHEAD                                        \
@@ -401,7 +406,7 @@ assh_packet_check_u32(const struct assh_packet_s *p, uint32_t *u32,
   return err;
 }
 
-/** @internal @This compares a ssh string with a size header to a @tt
+/** @internal @This compares an @em ssh2 string with a size header to a @tt
     NUL terminated string. No bound checking is performed. */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_bool_t
 assh_ssh_string_compare(const uint8_t *ssh_str, const char *nul_str)
@@ -410,7 +415,7 @@ assh_ssh_string_compare(const uint8_t *ssh_str, const char *nul_str)
   return strncmp((const char*)ssh_str + 4, nul_str, l) || nul_str[l] != '\0';
 }
 
-/** @internal @This copies a ssh string to a nul terminated
+/** @internal @This copies an @em ssh2 string to a nul terminated
     string. An error is returned if the size of the buffer is not
     large enough to store the string along with its nul terminating
     byte. */
@@ -423,14 +428,17 @@ ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_strdup(struct assh_context_s *c, char **r,
             const char *str, enum assh_alloc_type_e type);
 
-/** @This scans a sequence of numbers and data fields and
-    optionnaly test and stores their pointer and length. The @tt blob
-    and @tt blob_len values are updated when the function is successfull.
+/** @This scans a blob as a sequence of ASN1 objects and @em ssh2
+    strings and numbers. It can extract pointers, lengths and
+    perform some checks on the parsed objects.
+
+    The @tt blob and @tt blob_len values are updated when the function
+    is successfull.
 
     The format string may contains the following characters:
 
     @table 2
-     @item @tt s       @item ssh string or ssh mpint object.
+     @item @tt s       @item @em ssh2 string or ssh mpint object.
      @item @tt aX      @item ASN1 object of given type in decimal.
      @item @tt lX      @item fixed size LSB byte array object of given byte size.
      @item @tt l       @item fixed size LSB byte array object of byte size passed in arguments.

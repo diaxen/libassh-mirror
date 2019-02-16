@@ -25,13 +25,19 @@
    @file
    @short SSH connection service (rfc4254 channels and requests)
 
-   This header file defines events and functions which are used when
-   the @xref{connlayer}{connection protocol} service is running.
+   This header file defines @xref{events} and functions which are used
+   when the @ref assh_service_connection service is running. This
+   @xref{service} module is an implementation of the @xref{connection
+   protocol}.
 
-   As explined in the @xref {Connection protocol API} section, this
-   module implements sections 4 and 5 of @invoke{4254}rfc.
+   Functions declared in this header must not be called when the
+   service is not running.
 
-   @see @assh/helper_interactive.h
+   Functions which support the @xref{interactive session} and
+   @xref{port forwarding} feature are provided by @ref
+   {@assh/helper_interactive.h}.
+
+   @xsee {Connection protocol API}
 */
 
 #ifndef ASSH_SRV_CONNECTION_H_
@@ -48,7 +54,8 @@
 #include "assh_buffer.h"
 #include "assh_queue.h"
 
-/** @visible @This is the @em ssh-connection service request object.
+/** @visible @This is the @em ssh-connection service @xref{request}
+    object.
 
     Requests are created either by calling the @ref assh_request
     function or when the @ref ASSH_EVENT_REQUEST event is reported.
@@ -67,18 +74,18 @@
 */
 struct assh_request_s;
 
-/** @This specifies request status */
+/** @This specifies @ref assh_request_s status. */
 enum assh_request_state_e
 {
   /** Outgoing request; not replied by remote host. */
   ASSH_REQUEST_ST_WAIT_REPLY,
   /** Incoming request; reply postponed by the library user. */
   ASSH_REQUEST_ST_REPLY_POSTPONED,
-  /** Incoming request; blocked by previous requests in queue. */
+  /** Incoming request; blocked by previous requests in the queue. */
   ASSH_REQUEST_ST_REPLY_READY,
 };
 
-/** @This specifies channel status */
+/** @This specifies @ref assh_channel_s status. */
 enum assh_channel_state_e
 {
   /** An open message has been sent to the remote host */
@@ -113,7 +120,7 @@ enum assh_channel_state_e
   ASSH_CHANNEL_ST_OPEN_RECEIVED_FORCE_CLOSE
 };
 
-/** @visible @This is the @em ssh-connection service channel object.
+/** @visible @This is the @em ssh-connection service @xref{channel} object.
 
     Channels are created either by calling the @ref assh_channel_open
     function or when the @ref ASSH_EVENT_CHANNEL_OPEN event is reported.
@@ -123,7 +130,7 @@ enum assh_channel_state_e
     @list
       @item when the @ref ASSH_EVENT_CHANNEL_OPEN_REPLY event reports a failure,
       @item when the @ref ASSH_EVENT_CHANNEL_OPEN event is rejected,
-      @item when the assh_channel_open_failed_reply function is called,
+      @item when the @ref assh_channel_open_failed_reply function is called,
       @item when the @ref ASSH_EVENT_CHANNEL_CLOSE event is reported.
       @item when the @ref ASSH_EVENT_CHANNEL_ABORT event is reported.
       @item when the @ref assh_session_cleanup function is called.
@@ -132,7 +139,7 @@ enum assh_channel_state_e
 struct assh_channel_s;
 
 /** @This specifies standard values for channel open failure reason
-    code as defined in rfc4254 section 5.1 */
+    code as defined in @invoke{4254}rfc section 5.1 . */
 enum assh_channel_open_reason_e
 {
   SSH_OPEN_SUCCESS                     = 0,
@@ -142,7 +149,7 @@ enum assh_channel_open_reason_e
   SSH_OPEN_RESOURCE_SHORTAGE           = 4,
 };
 
-/** @This specifies reply codes used by request and channel events */
+/** @This specifies reply codes used by request and channel events. */
 enum assh_connection_reply_e
 {
   /** Failure report by/to remote host. */
@@ -155,16 +162,23 @@ enum assh_connection_reply_e
   ASSH_CONNECTION_REPLY_CLOSED,
 };
 
+/** @This specifies the maximum payload size usable to transfer data
+    with @ref assh_channel_s objects. This is 12 bytes less than the
+    value of the @ref #CONFIG_ASSH_MAX_PAYLOAD macro. */
 #define ASSH_SRV_CN_MAX_PKTSIZE (CONFIG_ASSH_MAX_PAYLOAD \
              - /* extended data message header */ 3 * 4)
 
-/** This function sets the value of the channel private pointer. */
+/** This function sets the value of the channel private pointer.
+    This shares the storage with the private integer.
+    @see assh_channel_set_pvi */
 void assh_channel_set_pv(struct assh_channel_s *ch, void *pv);
 
 /** This function returns the value of the channel private pointer. */
 void * assh_channel_pv(const struct assh_channel_s *ch);
 
-/** This function sets the value of the channel private integer. */
+/** This function sets the value of the channel private integer.
+    This shares the storage with the private pointer.
+    @see assh_channel_set_pv */
 void assh_channel_set_pvi(struct assh_channel_s *ch, uintptr_t pv);
 
 /** This function returns the value of the channel private integer. */
@@ -174,25 +188,29 @@ uintptr_t assh_channel_pvi(const struct assh_channel_s *ch);
 struct assh_session_s *
 assh_channel_session(const struct assh_channel_s *ch);
 
-/** This returns the current channel status */
+/** This returns the current channel status. */
 enum assh_channel_state_e
 assh_channel_state(const struct assh_channel_s *ch);
 
-/** This returns the size of the channel local and remote windows in bytes */
+/** This returns the size of the channel local and remote windows in bytes. */
 void assh_channel_get_win_size(const struct assh_channel_s *ch,
                                uint32_t *local, uint32_t *remote);
 
-/** This returns the maximum packet size for a channel */
+/** This returns the maximum packet size for a channel. */
 void assh_channel_get_pkt_size(const struct assh_channel_s *ch,
                                uint32_t *local, uint32_t *remote);
 
-/** This function sets the value of the request private pointer. */
+/** This function sets the value of the request private pointer.
+    This shares the storage with the private integer.
+    @see assh_request_set_pvi */
 void assh_request_set_pv(struct assh_request_s *rq, void *pv);
 
 /** This function returns the value of the request private pointer. */
 void * assh_request_pv(const struct assh_request_s *rq);
 
-/** This function sets the value of the request private integer. */
+/** This function sets the value of the request private integer.
+    This shares the storage with the private pointer.
+    @see assh_request_set_pv */
 void assh_request_set_pvi(struct assh_request_s *rq, uintptr_t pv);
 
 /** This function returns the value of the request private integer. */
@@ -214,8 +232,8 @@ assh_request_state(struct assh_request_s *rq);
 /************************************************* incoming request */
 
 /**
-   This event is reported when the @tt ssh-connection service is
-   running and a @ref SSH_MSG_GLOBAL_REQUEST message or a @ref
+   This event is reported when the @ref assh_service_connection service
+   is running and an @ref SSH_MSG_GLOBAL_REQUEST message or an @ref
    SSH_MSG_CHANNEL_REQUEST message has been received. The request type
    name and associated specific request data are available in the @ref
    type and @ref rq_data fields. These buffers will not remain valid
@@ -232,29 +250,34 @@ assh_request_state(struct assh_request_s *rq);
    both cases, the @ref assh_request_s object will be release when
    calling the @ref assh_event_done function.
 
-   If it's not possible to acknowledge the request when calling the
-   @ref assh_event_done function, the @ref
-   ASSH_CONNECTION_REPLY_POSTPONED value can be used instead. In this
+   When it's not possible decide how to acknowledge the request before
+   calling the @ref assh_event_done function, the @ref
+   ASSH_CONNECTION_REPLY_POSTPONED value can be used. In this
    case, either the @ref assh_request_success_reply function or the
    @ref assh_request_failed_reply function must be called later in
    order to release the @ref assh_request_s object and send the reply
    expected by the remote host.  Care should be taken not to postpone
    too many requests in order to avoid resource-exhaustion attacks.
 
-   If some incoming requests are left unreplied when the channel is
-   closing or the connection is ending, some @ref ASSH_EVENT_REQUEST_ABORT
+   Unlike channel open messages, the protocol requires that request
+   replies are sent in order. This means that a postponed request
+   reply will prevent subsequent request reply messages on the same
+   channel from being transmitted to the remote host.
+
+   When some incoming requests are left unreplied when the channel is
+   closing or the connection is ending, @ref ASSH_EVENT_REQUEST_ABORT
    events are reported.
 
    @see ASSH_EVENT_REQUEST
 */
 struct assh_event_request_s
 {
-  struct assh_channel_s * ASSH_EV_CONST ch;         //< input
-  struct assh_request_s * ASSH_EV_CONST rq;         //< input
-  ASSH_EV_CONST struct assh_cbuffer_s   type;       //< input
-  ASSH_EV_CONST struct assh_cbuffer_s   rq_data;    //< input
-  enum assh_connection_reply_e          reply;      //< output
-  struct assh_cbuffer_s                  rsp_data;   //< output
+  struct assh_channel_s * ASSH_EV_CONST ch;         //< from library
+  struct assh_request_s * ASSH_EV_CONST rq;         //< from library
+  ASSH_EV_CONST struct assh_cbuffer_s   type;       //< from library
+  ASSH_EV_CONST struct assh_cbuffer_s   rq_data;    //< from library
+  enum assh_connection_reply_e          reply;      //< to library
+  struct assh_cbuffer_s                  rsp_data;   //< to library
 };
 
 /**
@@ -268,8 +291,8 @@ struct assh_event_request_s
 */
 struct assh_event_request_abort_s
 {
-  struct assh_channel_s * ASSH_EV_CONST ch;         //< input
-  struct assh_request_s * ASSH_EV_CONST rq;         //< input
+  struct assh_channel_s * ASSH_EV_CONST ch;         //< from library
+  struct assh_request_s * ASSH_EV_CONST rq;         //< from library
 };
 
 /**
@@ -278,22 +301,22 @@ struct assh_event_request_abort_s
    the @ref ASSH_CONNECTION_REPLY_POSTPONED value in the @tt reply
    field of the @ref ASSH_EVENT_REQUEST event.
 
-   Some response data may optionally be included in the response by
-   using the @tt rsp_data and @tt rsp_data_len parameters.
+   Response data may optionally be included in the response by using
+   the @tt rsp_data and @tt rsp_data_len parameters, as allowed by the
+   protocol.
 
    If multiple requests on the same queue (global or per channel) are
    waiting for a reply, the replies will be sent in the received order
    as required by the ssh protocol. This function can be called in any
-   order but any unreplied request may further postpone replies to
+   order but any unreplied request will further postpone replies to
    subsequent requests.
 
    If this function is called on a closing channel which has not yet
    been reported by the appropriate event, this function returns @ref
    ASSH_NO_DATA to indicate that it was not able to send the reply.
 
-   This function must not be called if either the @tt ssh-connection
-   service is not started or the last event has not been acknowledged
-   by calling the @ref assh_event_done function.
+   This function must not be called if the last event has not been
+   acknowledged by calling the @ref assh_event_done function.
 
    @see assh_request_failed_reply
 */
@@ -330,16 +353,16 @@ assh_request_failed_reply(struct assh_request_s *rq);
 */
 struct assh_event_request_reply_s
 {
-  struct assh_channel_s      * ASSH_EV_CONST ch;        //< input
-  struct assh_request_s      * ASSH_EV_CONST rq;        //< input
-  ASSH_EV_CONST enum assh_connection_reply_e reply;     //< input
-  ASSH_EV_CONST struct assh_cbuffer_s        rsp_data;  //< input
+  struct assh_channel_s      * ASSH_EV_CONST ch;        //< from library
+  struct assh_request_s      * ASSH_EV_CONST rq;        //< from library
+  ASSH_EV_CONST enum assh_connection_reply_e reply;     //< from library
+  ASSH_EV_CONST struct assh_cbuffer_s        rsp_data;  //< from library
 };
 
 
 /**
-   This function sends either a @ref SSH_MSG_GLOBAL_REQUEST message
-   or a @ref SSH_MSG_CHANNEL_REQUEST message to the remote host.
+   This function sends either an @ref SSH_MSG_GLOBAL_REQUEST message
+   or an @ref SSH_MSG_CHANNEL_REQUEST message to the remote host.
    If the @tt ch parameter is @tt NULL, a global request is sent.
 
    If the @tt rq parameter is not @tt NULL, a reply from the remote
@@ -354,9 +377,8 @@ struct assh_event_request_reply_s
    an @ref ASSH_EVENT_REQUEST_REPLY event will be reported at some
    point by the @ref assh_event_get function in any case.
 
-   This function must not be called if either the @tt ssh-connection
-   service is not started or the last event has not been acknowledged
-   by calling the @ref assh_event_done function.
+   This function must not be called if the last event has not been
+   acknowledged by calling the @ref assh_event_done function.
 */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_request(struct assh_session_s *s,
@@ -368,25 +390,25 @@ assh_request(struct assh_session_s *s,
 /************************************************* incoming channel open */
 
 /**
-   This event is reported when the @tt ssh-connection service is
-   running and a @ref SSH_MSG_CHANNEL_OPEN message is received from
+   This event is reported when the @ref assh_service_connection service is
+   running and an @ref SSH_MSG_CHANNEL_OPEN message is received from
    the remote host. The channel type name and specific data are
    available in the @ref type and @ref rq_data fields. These buffers
    will not remain valid after the call to @ref assh_event_done.
 
    The @ref reply field can be set to @ref
    ASSH_CONNECTION_REPLY_SUCCESS in order to successfully acknowledge
-   the channel open. In this case, some response data may optionally
-   be passed in the @ref rsp_data field.
+   the channel open. In this case, response data may optionally
+   be passed in the @ref rsp_data field, as allowed by the protocol.
 
    The default value of the @ref reply field is @ref
    ASSH_CONNECTION_REPLY_FAILED. If an open failure is sent, the @ref
    assh_channel_s object will be release when calling the @ref
    assh_event_done function.
 
-   If it's not possible to reply to the channel open when calling the
-   @ref assh_event_done function, the @ref
-   ASSH_CONNECTION_REPLY_POSTPONED value must be used instead. In this
+   When it's not possible to decide if the channel open is accepted
+   before calling the @ref assh_event_done function, the @ref
+   ASSH_CONNECTION_REPLY_POSTPONED value can be used. In this
    case, either the @ref assh_channel_open_success_reply or the @ref
    assh_channel_open_failed_reply function must be called later to
    send the reply expected by the remote host. Care should be taken
@@ -394,11 +416,11 @@ assh_request(struct assh_session_s *s,
    to avoid resource-exhaustion attacks.
 
    If some channel open are left postponed when the connection is
-   ending, some @ref ASSH_EVENT_CHANNEL_ABORT events are reported.
+   ending, related @ref ASSH_EVENT_CHANNEL_ABORT events are reported.
 
-   Ths @ref rpkt_size and @ref rwin_size fields contains the initial
-   aviable window size and the packet size advertised by the remote
-   host for sending to data through the channel.
+   Ths @ref rpkt_size and @ref rwin_size fields contains the initially
+   available window size and the packet size advertised by the remote
+   host for sending data through the channel.
 
    The @ref pkt_size and @ref win_size fields are used to advertise
    our receive window and packet size and can be modified. The meaning
@@ -409,16 +431,16 @@ assh_request(struct assh_session_s *s,
 */
 struct assh_event_channel_open_s
 {
-  struct assh_channel_s * ASSH_EV_CONST ch;       //< input
-  ASSH_EV_CONST struct assh_cbuffer_s   type;     //< input
-  ASSH_EV_CONST struct assh_cbuffer_s   rq_data;  //< input
-  enum assh_connection_reply_e          reply;    //< output
-  enum assh_channel_open_reason_e       reason;   //< output
-  int32_t                               win_size; //< input/output
-  int32_t                               pkt_size; //< input/output
-  ASSH_EV_CONST uint32_t                rwin_size; //< input
-  ASSH_EV_CONST uint32_t                rpkt_size; //< input
-  struct assh_cbuffer_s                 rsp_data; //< output
+  struct assh_channel_s * ASSH_EV_CONST ch;       //< from library
+  ASSH_EV_CONST struct assh_cbuffer_s   type;     //< from library
+  ASSH_EV_CONST struct assh_cbuffer_s   rq_data;  //< from library
+  enum assh_connection_reply_e          reply;    //< to library
+  enum assh_channel_open_reason_e       reason;   //< to library
+  int32_t                               win_size; //< to/from library
+  int32_t                               pkt_size; //< to/from library
+  ASSH_EV_CONST uint32_t                rwin_size; //< from library
+  ASSH_EV_CONST uint32_t                rpkt_size; //< from library
+  struct assh_cbuffer_s                 rsp_data; //< to library
 };
 
 /**
@@ -432,7 +454,7 @@ struct assh_event_channel_open_s
 */
 struct assh_event_channel_abort_s
 {
-  struct assh_channel_s * ASSH_EV_CONST ch;         //< input
+  struct assh_channel_s * ASSH_EV_CONST ch;         //< from library
 };
 
 /**
@@ -450,12 +472,12 @@ assh_channel_open_success_reply2(struct assh_channel_s *ch,
                                  size_t rsp_data_len);
 
 /**
-   This function acknowledge a channel open message which has not been
+   This function acknowledges a channel open message which has not been
    replied yet due to the use of the @ref ASSH_CONNECTION_REPLY_POSTPONED
    value in the @tt reply field of the @ref ASSH_EVENT_CHANNEL_OPEN event.
 
-   Some response data may optionally be included in the response by
-   using the @tt rsp_data and @tt rsp_data_len parameters.
+   Response data may optionally be included by using the @tt rsp_data
+   and @tt rsp_data_len parameters, as allowed by the protocol.
 
    Channel open replies can be send in any order.
 
@@ -464,9 +486,8 @@ assh_channel_open_success_reply2(struct assh_channel_s *ch,
    function returns @ref ASSH_NO_DATA to indicate that it was not able
    to send the reply.  This occurs on disconnection.
 
-   This function must not be called if either the @tt ssh-connection
-   service is not started or the last event has not been acknowledged
-   by calling the @ref assh_event_done function.
+   This function must not be called if the last event has not been
+   acknowledged by calling the @ref assh_event_done function.
 
    @see assh_channel_open_failed_reply
 */
@@ -490,9 +511,8 @@ assh_channel_open_success_reply(struct assh_channel_s *ch,
    The @ref assh_channel_s object is released if the function reports
    no error.
 
-   This function must not be called if either the @tt ssh-connection
-   service is not started or the last event has not been acknowledged
-   by calling the @ref assh_event_done function.
+   This function must not be called if the last event has not been
+   acknowledged by calling the @ref assh_event_done function.
 
    @see assh_channel_open_success_reply
 */
@@ -509,9 +529,9 @@ assh_channel_open_failed_reply(struct assh_channel_s *ch,
 
    If the open is successful, some response specific data may be
    available in the @ref rsp_data field. The @ref rwin_size and @ref
-   rpkt_size fields also contains the initial aviable window size and
-   the packet size advertised by the remote host for sending to data
-   through the channel.
+   rpkt_size fields also contain the initially available window size
+   and the packet size advertised by the remote host for sending to
+   data through the channel.
 
    If the open has failed, the associated @ref assh_channel_s object
    will be released when the @ref assh_event_done function is called.
@@ -520,12 +540,12 @@ assh_channel_open_failed_reply(struct assh_channel_s *ch,
 */
 struct assh_event_channel_open_reply_s
 {
-  struct assh_channel_s * ASSH_EV_CONST         ch;         //< input
-  ASSH_EV_CONST enum assh_connection_reply_e    reply;      //< input
-  ASSH_EV_CONST enum assh_channel_open_reason_e reason;     //< input
-  ASSH_EV_CONST struct assh_cbuffer_s           rsp_data;   //< input
-  ASSH_EV_CONST uint32_t                        rwin_size; //< input
-  ASSH_EV_CONST uint32_t                        rpkt_size; //< input
+  struct assh_channel_s * ASSH_EV_CONST         ch;         //< from library
+  ASSH_EV_CONST enum assh_connection_reply_e    reply;      //< from library
+  ASSH_EV_CONST enum assh_channel_open_reason_e reason;     //< from library
+  ASSH_EV_CONST struct assh_cbuffer_s           rsp_data;   //< from library
+  ASSH_EV_CONST uint32_t                        rwin_size; //< from library
+  ASSH_EV_CONST uint32_t                        rpkt_size; //< from library
 };
 
 /**
@@ -536,8 +556,9 @@ struct assh_event_channel_open_reply_s
    event will be reported at some point by the @ref assh_event_get
    function in any case.
 
-   The @tt data and @tt data_len parameters allow sending some channel
-   type specific data along with the channel open message.
+   The @tt data and @tt data_len parameters allow sending channel type
+   specific data along with the channel open message, as allowed by
+   the protocol.
 
    The maximum packet size and the initial size of the channel local
    window may be specified. When the @tt pkt_size parameter is
@@ -552,9 +573,8 @@ struct assh_event_channel_open_reply_s
    returns @ref ASSH_NO_DATA to indicate that it was not able to open
    the channel.
 
-   This function must not be called if either the @tt ssh-connection
-   service is not started or the last event has not been acknowledged
-   by calling the @ref assh_event_done function.
+   This function must not be called if the last event has not been
+   acknowledged by calling the @ref assh_event_done function.
 */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_channel_open(struct assh_session_s *s,
@@ -566,8 +586,8 @@ assh_channel_open(struct assh_session_s *s,
 /************************************************* incoming channel data */
 
 /**
-   This event is reported when the @tt ssh-connection service is
-   running and some incoming channel data are available.
+   This event is reported when the @ref assh_service_connection service
+   is running and some incoming channel data are available.
 
    The @tt transferred field should be set to the amount of consumed
    data. The event will be reported again if the field is not updated
@@ -592,20 +612,18 @@ assh_channel_open(struct assh_session_s *s,
 */
 struct assh_event_channel_data_s
 {
-  struct assh_channel_s * ASSH_EV_CONST   ch;         //< input
-  ASSH_EV_CONST assh_bool_t               ext;        //< input
-  ASSH_EV_CONST uint32_t                  ext_type;   //< input
-  ASSH_EV_CONST struct assh_cbuffer_s     data;       //< input
-  size_t                                  transferred; //< output
+  struct assh_channel_s * ASSH_EV_CONST   ch;         //< from library
+  ASSH_EV_CONST assh_bool_t               ext;        //< from library
+  ASSH_EV_CONST uint32_t                  ext_type;   //< from library
+  ASSH_EV_CONST struct assh_cbuffer_s     data;       //< from library
+  size_t                                  transferred; //< to library
 };
 
-/** This function returns a pointer to a channel with pending data
-    when the @ref ASSH_EVENT_CHANNEL_DATA event will be reported
-    again.
-
-    This occurs when the @ref assh_event_channel_data_s::transferred
-    field of the previous event has not been set to the maximum
-    value.
+/** This function returns a pointer to a channel with pending data.
+    This occurs when the @ref ASSH_EVENT_CHANNEL_DATA event will be
+    reported again because the @ref
+    assh_event_channel_data_s::transferred field of the previous event
+    has not been set to the maximum value.
 
     It returns @tt NULL when there is no channel with pending data. */
 struct assh_channel_s *
@@ -614,15 +632,19 @@ assh_channel_more_data(struct assh_session_s *s);
 /** This function can be used to advertise the remote host that we are
     ready to receive more data over the channel.
 
-    This function increases the local window size and sends a @ref
-    SSH_MSG_CHANNEL_WINDOW_ADJUST message to the remote host. */
+    This function increases the local window size and sends an @ref
+    SSH_MSG_CHANNEL_WINDOW_ADJUST message to the remote host.
+
+    This must be used when automatic local window adjustment is not
+    enabled for the channel, as explained in @ref assh_channel_open.
+ */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_channel_window_adjust(struct assh_channel_s *ch, size_t add);
 
 /**
-   This event is reported when the @tt ssh-connection service is
-   running and a @ref SSH_MSG_CHANNEL_WINDOW_ADJUST message has been
-   received.
+   This event is reported when the @ref assh_service_connection service
+   is running and an @ref SSH_MSG_CHANNEL_WINDOW_ADJUST message has
+   been received.
 
    This event indicates that the size of the remote window has
    increased. This means that more data can be sent over the channel.
@@ -631,9 +653,9 @@ assh_channel_window_adjust(struct assh_channel_s *ch, size_t add);
 */
 struct assh_event_channel_window_s
 {
-  struct assh_channel_s * ASSH_EV_CONST   ch;         //< input
-  ASSH_EV_CONST uint32_t                  old_size;   //< input
-  ASSH_EV_CONST uint32_t                  new_size;   //< input
+  struct assh_channel_s * ASSH_EV_CONST   ch;         //< from library
+  ASSH_EV_CONST uint32_t                  old_size;   //< from library
+  ASSH_EV_CONST uint32_t                  new_size;   //< from library
 };
 
 /************************************************* outgoing channel data */
@@ -650,10 +672,11 @@ struct assh_event_channel_window_s
 
    This function returns @ref ASSH_NO_DATA if @tt min_size is either
    larger than the maximum packet size for the channel or larger than
-   the channel remote window. In this case no packet is allocated but
-   the @tt size parameter is still updated with the current largest
-   possible size. The largest possible size is 0 either if there is no
-   window space left or if the channel is closing.
+   the current channel remote window. In this case no packet is
+   allocated but the @tt size parameter is still updated with the
+   current largest possible size. The largest possible size is 0
+   either if there is no window space left or if the channel is
+   closing.
 
    It's ok to call this function more than once without actually
    sending the packet in order to change the requested packet size.
@@ -661,13 +684,10 @@ struct assh_event_channel_window_s
    The user does not have to release the allocated data packet
    explicitly.
 
-   Unlike most functions of this module, it is @b ok to call this
+   Unlike most functions of this module, it is ok to call this
    function between calls to the @ref assh_event_get and @ref
-   assh_event_done functions. This allows forging a reply with zero
-   copy while incoming data are still available.
-
-   This function must not be called if the @tt ssh-connection service
-   is not started.
+   assh_event_done functions. This allows forging a reply while the
+   incoming data are still available.
 
    @see assh_channel_data_size
    @see assh_channel_data_alloc_ext
@@ -678,9 +698,9 @@ assh_channel_data_alloc(struct assh_channel_s *ch,
                         size_t min_size);
 
 /**
-   This function is similar to @ref assh_channel_data_alloc. It
-   prepares a @ref SSH_MSG_CHANNEL_EXTENDED_DATA message instead of a
-   @ref SSH_MSG_CHANNEL_DATA message
+   This function is similar to the @ref assh_channel_data_alloc
+   function. It prepares an @ref SSH_MSG_CHANNEL_EXTENDED_DATA message
+   instead of an @ref SSH_MSG_CHANNEL_DATA message
 
    @see assh_channel_data_alloc
 */
@@ -698,9 +718,8 @@ assh_channel_data_alloc_ext(struct assh_channel_s *ch,
    If this function is called on a closing channel, @ref ASSH_NO_DATA
    is returned to indicate that it was not able to send data.
 
-   This function must not be called if either the @tt ssh-connection
-   service is not started or the last event has not been acknowledged
-   by calling the @ref assh_event_done function.
+   This function must not be called if the last event has not been
+   acknowledged by calling the @ref assh_event_done function.
 */
 assh_error_t
 assh_channel_data_send(struct assh_channel_s *ch, size_t size);
@@ -714,9 +733,8 @@ assh_channel_data_send(struct assh_channel_s *ch, size_t size);
    This @tt size parameter is updated with the actually transmitted
    size.
 
-   This function must not be called if either the @tt ssh-connection
-   service is not started or the last event has not been acknowledged
-   by calling the @ref assh_event_done function.
+   This function must not be called if the last event has not been
+   acknowledged by calling the @ref assh_event_done function.
 
    @see assh_channel_data_ext
 */
@@ -733,8 +751,8 @@ assh_channel_data(struct assh_channel_s *ch,
 }
 
 /**
-   This function is similar to @ref assh_channel_data. It
-   sends a @ref SSH_MSG_CHANNEL_EXTENDED_DATA message instead of a
+   This function is similar to the @ref assh_channel_data function. It
+   sends an @ref SSH_MSG_CHANNEL_EXTENDED_DATA message instead of an
    @ref SSH_MSG_CHANNEL_DATA message
 
    @see assh_channel_data
@@ -752,7 +770,7 @@ assh_channel_data_ext(struct assh_channel_s *ch, uint32_t ext_type,
 }
 
 /**
-   This function returns the current maximum data size than can be
+   This function returns the current maximum data size that can be
    written to the channel.
 */
 size_t assh_channel_data_size(struct assh_channel_s *ch);
@@ -760,11 +778,10 @@ size_t assh_channel_data_size(struct assh_channel_s *ch);
 /**
    This function allocates and transmits a dummy packet ignored by the
    remote host. Once enciphered, the packet looks similar to a channel
-   data packet of specified size.
+   data packet of the specified size.
 
-   This function must not be called if either the @tt ssh-connection
-   service is not started or the last event has not been acknowledged
-   by calling the @ref assh_event_done function.
+   This function must not be called if the last event has not been
+   acknowledged by calling the @ref assh_event_done function.
 */
 assh_error_t
 assh_channel_dummy(struct assh_channel_s *ch, size_t size);
@@ -772,7 +789,7 @@ assh_channel_dummy(struct assh_channel_s *ch, size_t size);
 /************************************************* incoming channel close/eof */
 
 /**
-   This event is reported when the @tt ssh-connection service is
+   This event is reported when the  @ref assh_service_connection service is
    running and the remote host has sent the @ref
    SSH_MSG_CHANNEL_EOF message.
 
@@ -784,7 +801,7 @@ assh_channel_dummy(struct assh_channel_s *ch, size_t size);
 */
 struct assh_event_channel_eof_s
 {
-  struct assh_channel_s   * ASSH_EV_CONST ch; //< input
+  struct assh_channel_s   * ASSH_EV_CONST ch; //< from library
 };
 
 
@@ -798,13 +815,13 @@ struct assh_event_channel_eof_s
 */
 struct assh_event_channel_close_s
 {
-  struct assh_channel_s           * ASSH_EV_CONST ch; //< input
+  struct assh_channel_s           * ASSH_EV_CONST ch; //< from library
 };
 
 /************************************************* outgoing channel close/eof */
 
 /**
-   This function sends a @ref SSH_MSG_CHANNEL_EOF message and marks
+   This function sends an @ref SSH_MSG_CHANNEL_EOF message and marks
    the channel as half-closed. The @ref assh_channel_data function
    can not be called successfully on the channel once this
    function has been called.
@@ -812,15 +829,14 @@ struct assh_event_channel_close_s
    If the channel is already half-closed in the other direction, this
    function acts as the @ref assh_channel_close function.
 
-   This function must not be called if either the @tt ssh-connection
-   service is not started or the last event has not been acknowledged
-   by calling the @ref assh_event_done function.
+   This function must not be called if the last event has not been
+   acknowledged by calling the @ref assh_event_done function.
 */
 assh_error_t
 assh_channel_eof(struct assh_channel_s *ch);
 
 /**
-   This function sends a @ref SSH_MSG_CHANNEL_CLOSE message to the
+   This function sends an @ref SSH_MSG_CHANNEL_CLOSE message to the
    remote host.
 
    When this function is successful, the channel is not released until
@@ -828,16 +844,16 @@ assh_channel_eof(struct assh_channel_s *ch);
    the mean time, some request and data related events can still be
    reported for the channel.
 
-   This function must not be called if either the @tt ssh-connection
-   service is not started or the last event has not been acknowledged
-   by calling the @ref assh_event_done function.
+   This function must not be called if the last event has not been
+   acknowledged by calling the @ref assh_event_done function.
 */
 assh_error_t
 assh_channel_close(struct assh_channel_s *ch);
 
 /**************************************************/
 
-/** @This contains all @tt ssh-connection service related events */
+/** @This contains all @ref assh_service_connection service related
+    event structures. */
 union assh_event_connection_u
 {
   struct assh_event_request_s           request;
@@ -852,7 +868,8 @@ union assh_event_connection_u
   struct assh_event_channel_abort_s     channel_abort;
 };
 
-/** @This is the @tt ssh-connection service module descriptor. */
+/** @This is the @xref {connection protocol} service module
+    descriptor. @xsee{coremod} */
 extern const struct assh_service_s assh_service_connection;
 
 #endif
