@@ -110,19 +110,6 @@ assh_error_t assh_key_load(struct assh_context_s *c,
   return ASSH_OK;
 }
 
-assh_error_t
-assh_key_load_pv(struct assh_context_s *c,
-                 struct assh_key_s *key,
-                 enum assh_key_format_e format,
-                 const uint8_t **blob, size_t blob_len)
-{
-  assh_error_t err;
-
-  ASSH_RET_ON_ERR(key->algo->f_load(c, key->algo, blob, blob_len, &key, format));
-
-  return ASSH_OK;
-}
-
 #ifdef CONFIG_ASSH_KEY_CREATE
 assh_error_t
 assh_key_create(struct assh_context_s *c,
