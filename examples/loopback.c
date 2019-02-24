@@ -104,7 +104,7 @@ int main(int argc, char **argv)
 
 							/* anchor reghk */
   /* load or create host key(s) */
-  if (assh_server_openssh_load_hk(context)
+  if (assh_server_load_hk(context)
 #ifdef CONFIG_ASSH_KEY_CREATE
       && assh_key_create(context, assh_context_keys(context),
 			 255, &assh_key_ed25519, ASSH_ALGO_SIGN)
@@ -157,7 +157,7 @@ int main(int argc, char **argv)
 	    case ASSH_EVENT_USERAUTH_SERVER_USERKEY:
 	    case ASSH_EVENT_USERAUTH_SERVER_PASSWORD:
 	      /* let some helpers handle user authentication */
-	      assh_server_event_openssh_auth(session, &event);
+	      assh_server_event_auth(session, &event);
 	      break;
 
                                                         /* anchor chopenev */

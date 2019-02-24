@@ -554,7 +554,7 @@ ssh_loop(struct assh_session_s *session,
 	case ASSH_EVENT_USERAUTH_SERVER_PASSWORD:
           /* let an helper function handle user authentication from
 	     system password file and user authorized_keys file. */
-	  assh_server_event_openssh_auth(session, &event);
+	  assh_server_event_auth(session, &event);
 	  break;
 
 	case ASSH_EVENT_USERAUTH_SERVER_SUCCESS: {
@@ -804,7 +804,7 @@ int main(int argc, char **argv)
     ERROR("Unable to create an assh context.\n");
 
   /* load or create host key(s) */
-  if (assh_server_openssh_load_hk(context)
+  if (assh_server_load_hk(context)
 #ifdef CONFIG_ASSH_KEY_CREATE
       && assh_key_create(context, assh_context_keys(context),
 			 255, &assh_key_ed25519, ASSH_ALGO_SIGN)

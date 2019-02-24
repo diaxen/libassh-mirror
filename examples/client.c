@@ -173,7 +173,7 @@ ssh_loop(struct assh_session_s *session,
         case ASSH_EVENT_KEX_HOSTKEY_LOOKUP:
           /* let an helper function lookup host key in openssh
              standard files and query user */
-          assh_client_event_openssh_hk_lookup(session, stderr, stdin, hostname, &event);
+          assh_client_event_hk_lookup(session, stderr, stdin, hostname, &event);
           break;
 
         case ASSH_EVENT_KEX_DONE: {
@@ -195,7 +195,7 @@ ssh_loop(struct assh_session_s *session,
             assh_print_kex_details(session, stderr, &event);
 
           /* let an helper function register new host key as needed */
-          assh_client_event_openssh_hk_add(session, hostname, &event);
+          assh_client_event_hk_add(session, hostname, &event);
           break;
         }
 
@@ -205,8 +205,8 @@ ssh_loop(struct assh_session_s *session,
         case ASSH_EVENT_USERAUTH_CLIENT_PWCHANGE:
         case ASSH_EVENT_USERAUTH_CLIENT_KEYBOARD:
           /* let an helper function handle user authentication events */
-          assh_client_event_openssh_auth(session, stderr, stdin, user, hostname,
-             &auth_methods, assh_client_openssh_user_key_default, &event);
+          assh_client_event_auth(session, stderr, stdin, user, hostname,
+             &auth_methods, assh_client_user_key_default, &event);
           break;
 
         case ASSH_EVENT_SERVICE_START:

@@ -48,7 +48,7 @@
 #include <stdarg.h>
 
 assh_error_t
-assh_client_openssh_get_known_hosts(struct assh_context_s *c, struct assh_key_s **keys,
+assh_client_get_known_hosts(struct assh_context_s *c, struct assh_key_s **keys,
 				    const char *filename, const char *host)
 {
   assh_error_t err;
@@ -136,7 +136,7 @@ assh_client_openssh_get_known_hosts(struct assh_context_s *c, struct assh_key_s 
 }
 
 assh_error_t
-assh_client_openssh_add_known_hosts(struct assh_context_s *c, const char *filename,
+assh_client_add_known_hosts(struct assh_context_s *c, const char *filename,
 				    const char *host, const struct assh_key_s *key)
 {
   assh_error_t err;
@@ -154,7 +154,7 @@ assh_client_openssh_add_known_hosts(struct assh_context_s *c, const char *filena
 }
 
 static const char *
-assh_client_openssh_userpath(char *buf, size_t buf_size, const char *filename)
+assh_client_userpath(char *buf, size_t buf_size, const char *filename)
 {
   const char *home = getenv("HOME");
   if (home != NULL && snprintf(buf, buf_size, "%s/.ssh/%s", home,
@@ -164,22 +164,22 @@ assh_client_openssh_userpath(char *buf, size_t buf_size, const char *filename)
 }
 
 void
-assh_client_event_openssh_hk_lookup(struct assh_session_s *s, FILE *out, FILE *in,
+assh_client_event_hk_lookup(struct assh_session_s *s, FILE *out, FILE *in,
 				    const char *host,
 				    struct assh_event_s *event)
 {
   assert(event->id == ASSH_EVENT_KEX_HOSTKEY_LOOKUP);
 
   char path[128];
-  const char *home = assh_client_openssh_userpath(path,
+  const char *home = assh_client_userpath(path,
 			      sizeof(path), "known_hosts");
 
-  assh_client_event_openssh_hk_lookup_va(s, out, in, host, event,
+  assh_client_event_hk_lookup_va(s, out, in, host, event,
 		 CONFIG_ASSH_OPENSSH_PREFIX "ssh_known_hosts", home, NULL);
 }
 
 void
-assh_client_event_openssh_hk_add(struct assh_session_s *s,
+assh_client_event_hk_add(struct assh_session_s *s,
 				 const char *host,
 				 struct assh_event_s *event)
 {
@@ -191,10 +191,10 @@ assh_client_event_openssh_hk_add(struct assh_session_s *s,
   if (ev->initial && hk && !hk->stored)
     {
       char path[128];
-      const char *home = assh_client_openssh_userpath(path,
+      const char *home = assh_client_userpath(path,
 				  sizeof(path), "known_hosts");
 
-      if (!assh_client_openssh_add_known_hosts(s->ctx,
+      if (!assh_client_add_known_hosts(s->ctx,
 			       home, host, ev->host_key))
 	hk->stored = 1;
     }
@@ -203,7 +203,7 @@ assh_client_event_openssh_hk_add(struct assh_session_s *s,
 }
 
 void
-assh_client_event_openssh_hk_lookup_va(struct assh_session_s *s, FILE *out, FILE *in,
+assh_client_event_hk_lookup_va(struct assh_session_s *s, FILE *out, FILE *in,
 				       const char *host,
 				       struct assh_event_s *event, ...)
 {
@@ -231,7 +231,7 @@ assh_client_event_openssh_hk_lookup_va(struct assh_session_s *s, FILE *out, FILE
       if (!f)
 	break;
 
-      assh_client_openssh_get_known_hosts(c, &keys, f, host);
+      assh_client_get_known_hosts(c, &keys, f, host);
     }
 
   va_end(ap);
@@ -398,7 +398,7 @@ assh_client_load_key_passphrase(struct assh_context_s *c, FILE *out, FILE *in,
     }
 }
 
-const struct assh_client_openssh_user_key_s assh_client_openssh_user_key_default[] =
+const struct assh_client_user_key_s assh_client_user_key_default[] =
 {
   { "id_ed25519", &assh_key_ed25519,
     ASSH_ALGO_SIGN, ASSH_KEY_FMT_PV_OPENSSH_V1 },
@@ -412,10 +412,10 @@ const struct assh_client_openssh_user_key_s assh_client_openssh_user_key_default
 };
 
 void
-assh_client_event_openssh_auth(struct assh_session_s *s, FILE *out, FILE *in,
+assh_client_event_auth(struct assh_session_s *s, FILE *out, FILE *in,
 			       const char *user, const char *host,
 			       enum assh_userauth_methods_e *methods,
-			       const struct assh_client_openssh_user_key_s *key_files,
+			       const struct assh_client_user_key_s *key_files,
 			       struct assh_event_s *event)
 {
   struct assh_context_s *c = s->ctx;
@@ -461,7 +461,7 @@ assh_client_event_openssh_auth(struct assh_session_s *s, FILE *out, FILE *in,
 	      /* load all available user keys */
 	      for (; key_files->filename; key_files++)
 		{
-		  path = assh_client_openssh_userpath(path_buf, sizeof(path_buf),
+		  path = assh_client_userpath(path_buf, sizeof(path_buf),
 						      key_files->filename);
 
 		  if (path)

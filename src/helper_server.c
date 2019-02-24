@@ -55,7 +55,7 @@
 #endif
 
 assh_error_t
-assh_server_openssh_load_hk(struct assh_context_s *c)
+assh_server_load_hk(struct assh_context_s *c)
 {
   uint_fast8_t count = 0;
   assh_error_t err;
@@ -89,7 +89,7 @@ assh_server_openssh_load_hk(struct assh_context_s *c)
 }
 
 assh_error_t
-assh_server_openssh_ak_lookup(struct assh_session_s *s,
+assh_server_ak_lookup(struct assh_session_s *s,
 			      const char *filename,
 			      const struct assh_key_s *key)
 {
@@ -180,7 +180,7 @@ assh_server_event_user_id(struct assh_session_s *s,
 }
 
 assh_error_t
-assh_server_event_openssh_auth(struct assh_session_s *s,
+assh_server_event_auth(struct assh_session_s *s,
 			       struct assh_event_s *event)
 {
   assh_error_t err;
@@ -209,7 +209,7 @@ assh_server_event_openssh_auth(struct assh_session_s *s,
       size_t l = snprintf(fname, sizeof(fname), "%s/.ssh/authorized_keys", pwd.pw_dir);
       ASSH_JMP_IF_TRUE(l >= sizeof(fname), ASSH_ERR_INPUT_OVERFLOW, err_sc);
 
-      ASSH_JMP_ON_ERR(assh_server_openssh_ak_lookup(s, fname, ev->pub_key), err_sc);
+      ASSH_JMP_ON_ERR(assh_server_ak_lookup(s, fname, ev->pub_key), err_sc);
 
       ev->found = 1;
       break;

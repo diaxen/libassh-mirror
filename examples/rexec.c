@@ -170,7 +170,7 @@ int main(int argc, char **argv)
         case ASSH_EVENT_KEX_HOSTKEY_LOOKUP:
           /* let an helper function lookup host key in openssh
              standard files and query the user */
-          assh_client_event_openssh_hk_lookup(session, stderr, stdin, hostname, &event);
+          assh_client_event_hk_lookup(session, stderr, stdin, hostname, &event);
           break;
 
                                                         /* anchor evua */
@@ -180,8 +180,8 @@ int main(int argc, char **argv)
         case ASSH_EVENT_USERAUTH_CLIENT_PWCHANGE:
         case ASSH_EVENT_USERAUTH_CLIENT_KEYBOARD:
           /* let an helper function handle user authentication events */
-          assh_client_event_openssh_auth(session, stderr, stdin, user, hostname,
-             &auth_methods, assh_client_openssh_user_key_default, &event);
+          assh_client_event_auth(session, stderr, stdin, user, hostname,
+             &auth_methods, assh_client_user_key_default, &event);
           break;
 
                                                         /* anchor evcn */

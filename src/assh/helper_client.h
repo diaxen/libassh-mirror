@@ -58,14 +58,14 @@
     number) is attached to each loaded key.
 */
 assh_error_t
-assh_client_openssh_get_known_hosts(struct assh_context_s *c,
+assh_client_get_known_hosts(struct assh_context_s *c,
                                     struct assh_key_s **keys,
                                     const char *filename,
                                     const char *host);
 
 /** @This adds a public key at the end of the ssh_knwon_host file. */
 assh_error_t
-assh_client_openssh_add_known_hosts(struct assh_context_s *c,
+assh_client_add_known_hosts(struct assh_context_s *c,
                                     const char *filename,
                                     const char *host,
                                     const struct assh_key_s *key);
@@ -82,37 +82,37 @@ assh_client_openssh_add_known_hosts(struct assh_context_s *c,
     any case.
 */
 void
-assh_client_event_openssh_hk_lookup_va(struct assh_session_s *s, FILE *out, FILE *in,
+assh_client_event_hk_lookup_va(struct assh_session_s *s, FILE *out, FILE *in,
                                        const char *host,
                                        struct assh_event_s *event, ...);
 
-/** @This calls the @ref assh_client_event_openssh_hk_lookup_va
+/** @This calls the @ref assh_client_event_hk_lookup_va
     function with system and user known hosts files.
 
     @This takes care of calling the @ref assh_event_done function in
     any case.
 */
 void
-assh_client_event_openssh_hk_lookup(struct assh_session_s *s, FILE *out, FILE *in,
+assh_client_event_hk_lookup(struct assh_session_s *s, FILE *out, FILE *in,
                                     const char *host,
                                     struct assh_event_s *event);
 
 /** This handles the @ref ASSH_EVENT_KEX_DONE event by adding the host
     key to the openssh known hosts file if needed. This works along
-    with the @ref assh_client_event_openssh_hk_lookup function.
+    with the @ref assh_client_event_hk_lookup function.
 
     @This takes care of calling the @ref assh_event_done function in
     any case.
 */
 void
-assh_client_event_openssh_hk_add(struct assh_session_s *s,
+assh_client_event_hk_add(struct assh_session_s *s,
                                  const char *host,
                                  struct assh_event_s *event);
 
 /** @This is used to specify the list of user key files for the @ref
-    assh_client_event_openssh_auth function.
-    @see assh_client_openssh_user_key_default */
-struct assh_client_openssh_user_key_s
+    assh_client_event_auth function.
+    @see assh_client_user_key_default */
+struct assh_client_user_key_s
 {
   /** key filename to lookup in the .ssh user directory */
   const char *filename;
@@ -122,9 +122,9 @@ struct assh_client_openssh_user_key_s
 };
 
 /** @This contains a default list of user key file for use with
-    the @ref assh_client_event_openssh_auth function. */
-extern const struct assh_client_openssh_user_key_s
-  assh_client_openssh_user_key_default[];
+    the @ref assh_client_event_auth function. */
+extern const struct assh_client_user_key_s
+  assh_client_user_key_default[];
 
 /** @This implements a default user authentication events handler
     which interacts with the user on the UNIX terminal and fetches
@@ -144,17 +144,17 @@ extern const struct assh_client_openssh_user_key_s
 
     The @tt key_files parameter specifies the list of user key files
     which will be loaded. The user keys are loaded from the
-    user @tt .ssh directory. The @ref assh_client_openssh_user_key_default
+    user @tt .ssh directory. The @ref assh_client_user_key_default
     array can be passed as @tt key_files.
 
     @This takes care of calling the @ref assh_event_done function in
     any case.
 */
 void
-assh_client_event_openssh_auth(struct assh_session_s *s, FILE *out, FILE *in,
+assh_client_event_auth(struct assh_session_s *s, FILE *out, FILE *in,
 			       const char *user, const char *host,
 			       enum assh_userauth_methods_e *methods,
-			       const struct assh_client_openssh_user_key_s *key_files,
+			       const struct assh_client_user_key_s *key_files,
 			       struct assh_event_s *event);
 
 /** @This specifies the current state of an interactive session.
