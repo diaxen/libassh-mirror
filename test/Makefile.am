@@ -35,6 +35,11 @@ cipher_SOURCES = cipher.c
 cipher_LDADD = $(top_builddir)/src/libassh.la
 cipher_CFLAGS = -I$(top_srcdir)/src
 
+noinst_PROGRAMS += prng
+prng_SOURCES = prng.c
+prng_LDADD = $(top_builddir)/src/libassh.la
+prng_CFLAGS = -I$(top_srcdir)/src
+
 ############################## protocol tests
 
 noinst_PROGRAMS += replay
