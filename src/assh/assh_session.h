@@ -142,7 +142,7 @@ struct assh_session_s
   struct assh_kex_keys_s *new_keys_in;
 
   /** last error reported to @ref assh_session_error. This will be
-      reported as an @ref ASSH_EVENT_ERROR event. */
+      reported as an @ref ASSH_EVENT_SESSION_ERROR event. */
   assh_error_t last_err;
 
   /** Current date as reported by the last IO request. */
@@ -220,6 +220,22 @@ struct assh_session_s
 #ifndef NDEBUG
   assh_bool_t event_done:1;
 #endif
+};
+
+/** The @ref ASSH_EVENT_SESSION_ERROR event is reported when an error
+    occurs. Because not all errors are fatal, the event may be
+    reported multiple times during a single session.
+
+    @see #ASSH_ERR_ERROR @see #ASSH_ERR_SEVERITY */
+struct assh_event_session_error_s
+{
+  assh_error_t code;
+};
+
+/** @This contains all session related event structures. */
+union assh_event_session_u
+{
+  struct assh_event_session_error_s error;
 };
 
 /** @This sets the user private pointer of the session.

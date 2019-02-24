@@ -159,10 +159,10 @@ int main(int argc, char **argv)
 	  break;
 
                                                         /* anchor everr */
-	case ASSH_EVENT_ERROR:
+	case ASSH_EVENT_SESSION_ERROR:
 	  /* report any error to the terminal */
 	  fprintf(stderr, "SSH error: %s\n",
-		  assh_error_str(event.error.code));
+		  assh_error_str(event.session.error.code));
 	  assh_event_done(session, &event, ASSH_OK);
 	  break;
 

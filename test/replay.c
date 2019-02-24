@@ -541,10 +541,10 @@ static void test()
 
 	  switch (event.id)
 	    {
-	    case ASSH_EVENT_ERROR:
+	    case ASSH_EVENT_SESSION_ERROR:
 	      if (verbose > 0)
 		fprintf(stderr, "[%s] Error event: %s\n", side,
-			assh_error_str(event.error.code));
+			assh_error_str(event.session.error.code));
 	      break;
 
 	    case ASSH_EVENT_DISCONNECT:

@@ -534,11 +534,11 @@ ssh_loop(struct assh_session_s *session,
           p[0].revents &= ~POLLOUT;
           break;
                                                         /* anchor everror */
-	case ASSH_EVENT_ERROR:
+	case ASSH_EVENT_SESSION_ERROR:
           /* Any error reported to the assh_event_done function will
              end up here. */
 	  fprintf(stderr, "[%u] SSH error: %s\n", getpid(),
-		  assh_error_str(event.error.code));
+		  assh_error_str(event.session.error.code));
 	  assh_event_done(session, &event, ASSH_OK);
 	  break;
                                                         /* anchor evauth */

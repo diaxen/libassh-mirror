@@ -642,9 +642,9 @@ void test(int (*fend)(int, int), int cnt, int evrate,
 	      break;
 	    }
 
-	    case ASSH_EVENT_ERROR: {
+	    case ASSH_EVENT_SESSION_ERROR: {
 	      everr = ASSH_OK;
-	      err = event.error.code;
+	      err = event.session.error.code;
 	      if (ASSH_ERR_SEVERITY(err))
 		started[i] = 0;
 	      if (session[i^1].tr_st >= ASSH_TR_DISCONNECT &&

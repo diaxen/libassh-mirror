@@ -87,9 +87,9 @@ assh_bool_t assh_event_get(struct assh_session_s *s,
   assh_session_error(s, err);
 
  err_event:
-  e->id = ASSH_EVENT_ERROR;
+  e->id = ASSH_EVENT_SESSION_ERROR;
   e->f_done = assh_event_error_done;
-  e->error.code = s->last_err;
+  e->session.error.code = s->last_err;
 
  got_event:
 #ifndef NDEBUG

@@ -1294,7 +1294,7 @@ static void test()
 	    stall = 0;
 	  break;
 
-        case ASSH_EVENT_ERROR:
+        case ASSH_EVENT_SESSION_ERROR:
 	  switch (test_state)
 	    {
 #if defined(CONFIG_ASSH_SERVER_AUTH_PUBLICKEY)
@@ -2150,7 +2150,7 @@ static void test()
 	    stall = 0;
 	  break;
 
-        case ASSH_EVENT_ERROR:
+        case ASSH_EVENT_SESSION_ERROR:
           TEST_FAIL("client error event\n");
 
 	default:

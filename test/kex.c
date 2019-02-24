@@ -502,10 +502,11 @@ void test(const struct assh_algo_kex_s *kex,
 
 	  switch (event.id)
 	    {
-	    case ASSH_EVENT_ERROR:
+	    case ASSH_EVENT_SESSION_ERROR:
 	      if (packet_fuzz || alloc_fuzz)
 		goto done;
-	      TEST_FAIL("seed %u, error %u %lx\n", i, seed, event.error.code);
+	      TEST_FAIL("seed %u, error %u %lx\n", i, seed,
+			event.session.error.code);
 	      break;
 
 	    case ASSH_EVENT_KEX_HOSTKEY_LOOKUP:

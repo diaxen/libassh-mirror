@@ -486,8 +486,8 @@ void test(int (*fend)(int, int), int n, int evrate)
 
 	  switch (event.id)
 	    {
-	    case ASSH_EVENT_ERROR: {
-	      err = event.error.code;
+	    case ASSH_EVENT_SESSION_ERROR: {
+	      err = event.session.error.code;
 	      if (!evrate)
 		TEST_FAIL("(ctx %u seed %u) unexpected error event 0x%lx\n", i, seed, err);
 	      if (ASSH_ERR_ERROR(err) == ASSH_ERR_PROTOCOL)

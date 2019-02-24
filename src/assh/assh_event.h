@@ -53,8 +53,8 @@ enum assh_event_id_e
   /** @see assh_event_transport_debug_s */
   ASSH_EVENT_DEBUG                       = 4,
 
-  /** @see assh_event_error_s */
-  ASSH_EVENT_ERROR                       = 5,
+  /** @see assh_event_session_error_s */
+  ASSH_EVENT_SESSION_ERROR               = 5,
 
   /** @see assh_event_kex_hostkey_lookup_s */
   ASSH_EVENT_KEX_HOSTKEY_LOOKUP          = 6,
@@ -120,16 +120,6 @@ enum assh_event_id_e
   ASSH_EVENT_COUNT,
 };
 
-/** The @ref ASSH_EVENT_ERROR event is reported when an error
-    occurs. Because not all errors are fatal, the event may be
-    reported multiple times during a single session.
-
-    @see #ASSH_ERR_ERROR @see #ASSH_ERR_SEVERITY */
-struct assh_event_error_s
-{
-  assh_error_t code;
-};
-
 /** @internal @see assh_event_done_t */
 #define ASSH_EVENT_DONE_FCN(n)                                          \
   ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_session_s *s,    \
@@ -160,7 +150,9 @@ struct assh_event_s
 
   union {
 
-    struct assh_event_error_s error;
+#ifdef ASSH_SESSION_H_
+    union assh_event_session_u session;
+#endif
 
 #ifdef ASSH_TRANSPORT_H_
     union assh_event_transport_u transport;
@@ -241,7 +233,7 @@ assh_event_get(struct assh_session_s *s,
 
     When an error is reported, the content of the event object is
     considered undefined by the library. The error will later be
-    reported by an @ref ASSH_EVENT_ERROR event unless shadowed by an
+    reported by an @ref ASSH_EVENT_SESSION_ERROR event unless shadowed by an
     other error of higher severity.
 
     @xsee{fsms}

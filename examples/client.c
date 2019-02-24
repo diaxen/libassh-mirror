@@ -156,9 +156,10 @@ ssh_loop(struct assh_session_s *session,
           break;
 
                                                         /* anchor events */
-        case ASSH_EVENT_ERROR:
+        case ASSH_EVENT_SESSION_ERROR:
           /* print errors */
-          fprintf(stderr, "SSH error: %s\n", assh_error_str(event.error.code));
+          fprintf(stderr, "SSH error: %s\n",
+                  assh_error_str(event.session.error.code));
           assh_event_done(session, &event, ASSH_OK);
           break;
 

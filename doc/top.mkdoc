@@ -2018,7 +2018,7 @@ $ examples/client localhost ls
       @xref{exclient}{client example}:
       @example examples/server.c:evloop
       Handling of the @ref ASSH_EVENT_READ, @ref ASSH_EVENT_WRITE and
-      @ref ASSH_EVENT_ERROR events has already been covered and is not
+      @ref ASSH_EVENT_SESSION_ERROR events has already been covered and is not
       detailed again.
 
       The @xref{user authentication} relies on helper functions. When

@@ -190,7 +190,7 @@ static int test()
 	    stall = 0;
 	  break;
 
-	case ASSH_EVENT_ERROR:
+	case ASSH_EVENT_SESSION_ERROR:
 	  auth_server_err_count++;
 	  if (packet_fuzz || alloc_fuzz)
 	    goto done;
@@ -387,7 +387,7 @@ static int test()
 	    stall = 0;
 	  break;
 
-	case ASSH_EVENT_ERROR:
+	case ASSH_EVENT_SESSION_ERROR:
 	  auth_client_err_count++;
 	  if (packet_fuzz || alloc_fuzz)
 	    goto done;
