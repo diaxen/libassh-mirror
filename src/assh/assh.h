@@ -168,10 +168,6 @@ enum assh_error_severity_e
   /** The error prevent further communication with the remote host but
       a disconnect packet may still be send before closing the connection. */
   ASSH_ERRSV_DISCONNECT            = 0x2000,
-  /** The error is due to an implementation related issue. It's not
-      possible to continue, cleanup functions may be called. This
-      should never happen. */
-  ASSH_ERRSV_FATAL                 = 0x4000,
 };
 
 /** @This specifies the possible errors returned by the @em libassh

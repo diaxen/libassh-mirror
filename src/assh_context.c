@@ -123,7 +123,7 @@ assh_context_init(struct assh_context_s *c,
     }
 
   ASSH_RET_IF_TRUE(alloc == NULL,
-                   ASSH_ERR_MISSING_ALGO | ASSH_ERRSV_FATAL);
+                   ASSH_ERR_MISSING_ALGO);
 
   c->f_alloc = alloc;
   c->alloc_pv = alloc_pv;
@@ -190,7 +190,7 @@ assh_context_create(struct assh_context_s **ctx,
       alloc_pv = NULL;
     }
 
-  ASSH_RET_IF_TRUE(alloc == NULL, ASSH_ERR_MISSING_ALGO | ASSH_ERRSV_FATAL);
+  ASSH_RET_IF_TRUE(alloc == NULL, ASSH_ERR_MISSING_ALGO);
 
   *ctx = NULL;
   ASSH_RET_ON_ERR(alloc(alloc_pv, (void**)ctx, sizeof(**ctx),

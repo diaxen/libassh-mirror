@@ -251,12 +251,6 @@ void assh_session_error(struct assh_session_s *s, assh_error_t inerr)
 
   s->last_err = inerr;
 
-  if (inerr & ASSH_ERRSV_FATAL)
-    {
-      ASSH_SET_STATE(s, tr_st, ASSH_TR_CLOSED);
-      return;
-    }
-
   if (!(inerr & ASSH_ERRSV_DISCONNECT) || s->tr_st == ASSH_TR_DISCONNECT)
     return;
 
