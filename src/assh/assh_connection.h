@@ -165,7 +165,7 @@ enum assh_connection_reply_e
 /** @This specifies the maximum payload size usable to transfer data
     with @ref assh_channel_s objects. This is 12 bytes less than the
     value of the @ref #CONFIG_ASSH_MAX_PAYLOAD macro. */
-#define ASSH_SRV_CN_MAX_PKTSIZE (CONFIG_ASSH_MAX_PAYLOAD \
+#define ASSH_CHANNEL_MAX_PKTSIZE (CONFIG_ASSH_MAX_PAYLOAD \
              - /* extended data message header */ 3 * 4)
 
 /** This function sets the value of the channel private pointer.
