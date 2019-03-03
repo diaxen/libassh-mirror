@@ -1618,7 +1618,7 @@ assh_channel_more_data(struct assh_session_s *s)
 
 /************************************************* outgoing channel data */
 
-size_t assh_channel_data_size(struct assh_channel_s *ch)
+size_t assh_channel_window_size(struct assh_channel_s *ch)
 {
   switch (ch->state)
     {

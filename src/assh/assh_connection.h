@@ -689,7 +689,7 @@ struct assh_event_channel_window_s
    assh_event_done functions. This allows forging a reply while the
    incoming data are still available.
 
-   @see assh_channel_data_size
+   @see assh_channel_window_size
    @see assh_channel_data_alloc_ext
 */
 ASSH_WARN_UNUSED_RESULT assh_error_t
@@ -770,10 +770,10 @@ assh_channel_data_ext(struct assh_channel_s *ch, uint32_t ext_type,
 }
 
 /**
-   This function returns the current maximum data size that can be
-   written to the channel.
+   This function returns the amount of data size that can be written
+   to the channel.
 */
-size_t assh_channel_data_size(struct assh_channel_s *ch);
+size_t assh_channel_window_size(struct assh_channel_s *ch);
 
 /**
    This function allocates and transmits a dummy packet ignored by the
