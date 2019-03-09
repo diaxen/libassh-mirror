@@ -30,7 +30,7 @@
    @xref{channels} open messages related to the @xref{interactive
    sessions} and @xref{port forwarding} features of @em {ssh2}.
 
-   @xsee {Connection protocol API}
+   @xsee {connapi}
    @see @assh/assh_connection.h
 */
 
@@ -725,7 +725,7 @@ struct assh_inter_forwarded_tcpip_s
 {
   struct assh_cbuffer_s            conn_addr;
   uint32_t                         conn_port;
-  struct assh_cbuffer_s            orig_add;
+  struct assh_cbuffer_s            orig_addr;
   uint32_t                         orig_port;
 };
 
@@ -736,7 +736,7 @@ void
 assh_inter_init_forwarded_tcpip(struct assh_inter_forwarded_tcpip_s *i,
                                 const char * conn_addr,
                                 uint32_t conn_port,
-                                const char * orig_add,
+                                const char * orig_addr,
                                 uint32_t orig_port);
 
 /** @This returns the size of the buffer required to encode a
@@ -773,7 +773,7 @@ struct assh_inter_direct_tcpip_s
 {
   struct assh_cbuffer_s            conn_addr;
   uint32_t                         conn_port;
-  struct assh_cbuffer_s            orig_add;
+  struct assh_cbuffer_s            orig_addr;
   uint32_t                         orig_port;
 };
 
@@ -786,7 +786,7 @@ void
 assh_inter_init_direct_tcpip(struct assh_inter_direct_tcpip_s *i,
                              const char * conn_addr,
                              uint32_t conn_port,
-                             const char * orig_add,
+                             const char * orig_addr,
                              uint32_t orig_port);
 
 /** @This returns the size of the buffer required to encode a

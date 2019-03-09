@@ -199,9 +199,9 @@ struct assh_event_s
        <= sizeof(((struct assh_event_s*)0)->params)) - 1];
 
 /** This function runs the various state machines which implement the
-    @em ssh2 protocol including the currently running @xref{service}
+    @em ssh2 protocol, including the currently running @xref{service}
     and @xref{kex-exchange}. It then reports the next available
-    @xref{event}.
+    @xref{event} to the caller.
 
     The @ref assh_event_done function must be called after each
     successful call to this function, before requesting the next event.
@@ -209,15 +209,15 @@ struct assh_event_s
     This function can be called again unless @tt 0 is returned
     eventually. This occurs when the session terminates.
 
-    When the function returns true, the passed object event is
+    When the function returns @tt 1, the passed object event is
     initialized and can be examined by the application.
 
     In order for the library to handle protocol timeouts properly, the
-    current time in seconds must be passed to this function. The @ref
-    assh_session_deadline function can then be used to get the next
-    deadline.
+    current time in seconds has to be passed to this function. When
+    this is the case, the @ref assh_session_deadline function can be
+    used to get the next @em ssh2 protocol deadline.
 
-    @xsee{fsms}
+    @xsee{fsms} @xsee{evts}
 */
 ASSH_WARN_UNUSED_RESULT assh_bool_t
 assh_event_get(struct assh_session_s *s,
@@ -227,8 +227,8 @@ assh_event_get(struct assh_session_s *s,
 /** @This acknowledges the last @xref{event} returned by the @ref
     assh_event_get function.
 
-    If an error occurred during event processing, it should be
-    reported to this function, especially if the error must
+    If an error occurred during event processing by the caller, it
+    should be reported to this function, especially if the error must
     terminate the session.
 
     When an error is reported, the content of the event object is
@@ -236,7 +236,7 @@ assh_event_get(struct assh_session_s *s,
     reported by an @ref ASSH_EVENT_SESSION_ERROR event unless shadowed by an
     other error of higher severity.
 
-    @xsee{fsms}
+    @xsee{fsms} @xsee{evts}
 */
 void
 assh_event_done(struct assh_session_s *s,

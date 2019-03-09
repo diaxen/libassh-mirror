@@ -212,6 +212,7 @@ int main(int argc, char **argv)
             ev->transferred = r;
 
           assh_event_done(session, &event, err);
+          break;
 	}
 
                                                         /* anchor evdflt */

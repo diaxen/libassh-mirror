@@ -176,6 +176,7 @@ struct assh_algo_s
 
    @see assh_algo_register_default
    @see assh_algo_register
+   @xcsee {algoreg}
 */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_register_va(struct assh_context_s *c, assh_safety_t safety,
@@ -186,11 +187,11 @@ assh_algo_register_va(struct assh_context_s *c, assh_safety_t safety,
    the given library context. The last entry must be @tt NULL.
 
    The array is copied and the algorithms are sorted depending on
-   their safety factor and speed factor. The @tt safety parameter
-   indicates how algorithms safety must be favored over speed. Valid
-   range for this parameter is [0, 99]. Algorithms with a safety
-   factor or speed factor less than @tt min_safety and @tt min_speed
-   are discarded.
+   their safety factor and speed factor. The @tt safety weight
+   parameter indicates how algorithms safety must be favored over
+   speed. Valid range for this parameter is [0, 99]. Algorithms with a
+   safety factor or speed factor less than @tt min_safety and @tt
+   min_speed are discarded.
 
    When multiple implementations of the same algorithm are registered,
    the variant which appears first in the list after sorting is kept
@@ -199,6 +200,7 @@ assh_algo_register_va(struct assh_context_s *c, assh_safety_t safety,
    filtered by the value of @tt min_safety.
 
    @see assh_algo_register_default
+   @xcsee {algoreg}
 */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_register(struct assh_context_s *c, assh_safety_t safety,
@@ -223,6 +225,8 @@ assh_algo_register(struct assh_context_s *c, assh_safety_t safety,
    sessions are associated to the context.  The @ref
    assh_session_algo_filter function can still be used to setup a per
    session algorithm filter.
+
+   @xcsee {algoreg}
 */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_register_static(struct assh_context_s *c,
@@ -241,7 +245,10 @@ assh_algo_registered(struct assh_context_s *c, uint_fast16_t i);
 
 /** @This registers the default set of available @xref{algorithms}
     depending on the library configuration. It relies on the @ref
-    assh_algo_register function. */
+    assh_algo_register function.
+
+    @xcsee {algoreg}
+*/
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_algo_register_default(struct assh_context_s *c,
                            assh_safety_t safety,
