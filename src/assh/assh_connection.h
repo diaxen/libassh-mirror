@@ -34,8 +34,9 @@
    service is not running.
 
    Functions which support the @xref{interactive session} and
-   @xref{port forwarding} feature are provided by @ref
-   {@assh/helper_interactive.h}.
+   @xref{port forwarding} features are declared in the @ref
+   {@assh/helper_interactive.h} and @ref {@assh/helper_portfwd.h}
+   header files.
 
    @xsee {connapi}
 */

@@ -31,7 +31,7 @@ libassh_la_SOURCES = assh_context.c assh_session.c assh_packet.c	\
 	sign_dsa.c sign_rsa.c sign_eddsa.c sign_ecdsa.c sign_none.c	\
 	compress_none.c							\
 	helper_key.c helper_io.c helper_base64.c helper_bcrypt.c	\
-	prng_xswap_builtin.c helper_interactive.c
+	prng_xswap_builtin.c helper_interactive.c helper_portfwd.c
 
 if COND_libc_alloc
 libassh_la_SOURCES +=	alloc_libc.c

@@ -27,7 +27,8 @@ pkginclude_HEADERS = assh.h assh_algo.h assh_alloc.h assh_bignum.h \
 	assh_userauth.h assh_userauth_client.h assh_userauth_server.h \
 	helper_io.h helper_key.h helper_base64.h helper_bcrypt.h \
 	key_dsa.h key_eddsa.h key_ecdsa.h key_rsa.h safe_primes.h \
-	helper_interactive.h helper_client.h helper_server.h
+	helper_interactive.h helper_portfwd.h \
+	helper_client.h helper_server.h
 
 assh_config.h: $(top_builddir)/config.h
 	grep 'NDEBUG\|CONFIG_ASSH' $(top_builddir)/config.h > $@ || true

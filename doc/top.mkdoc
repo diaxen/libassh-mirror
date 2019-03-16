@@ -51,6 +51,7 @@ assh/helper_client.h
 assh/helper_server.h
 assh/helper_base64.h
 assh/helper_interactive.h
+assh/helper_portfwd.h
 assh/key_dsa.h
 assh/key_eddsa.h
 assh/key_ecdsa.h
@@ -643,7 +644,8 @@ assh/assh_event.h
           machine for @xref {interactive Sessions} is provided as
           @xref{helper functions} as shown in the @xref{exremote} and
           @xref{exserver} examples. The related declarations can be
-          found in @ref{@assh/helper_interactive.h}.
+          found in @ref{@assh/helper_interactive.h} and
+          @ref{@assh/helper_portfwd.h}.
       @end list
     @end section
 
