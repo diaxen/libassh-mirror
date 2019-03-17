@@ -416,6 +416,8 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_get_methods_done)
     ASSH_RET_ON_ERR(assh_userauth_server_send_failure(s, 0)
                  | ASSH_ERRSV_DISCONNECT);
 
+  assh_userauth_server_flush_state(s);
+
   ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_WAIT_RQ);
 
   return ASSH_OK;
@@ -454,7 +456,7 @@ assh_userauth_server_get_methods_failed(struct assh_session_s *s,
   struct assh_event_userauth_server_methods_s *ev =
     &e->userauth_server.methods;
 
-  ev->failed = 1;
+  ev->failed = pv->method->mask;
 
   ev->banner.size = 0;
   ev->bnlang.size = 0;
@@ -474,7 +476,6 @@ assh_userauth_server_failure(struct assh_session_s *s,
   struct assh_userauth_context_s *pv = s->srv_pv;
 
   assert(pv->pck == NULL);
-  assh_userauth_server_flush_state(s);
 
   ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_FAILURE);
 

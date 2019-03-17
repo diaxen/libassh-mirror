@@ -52,8 +52,9 @@
     service is running and some authentication methods must be
     selected.
 
-    The @ref failed field indicates if this is the first time this
-    event is reported or if a failed authentication just occurred.
+    The @ref failed field indicates the authentication method that
+    just failed. It is zero when the event is reported for the first
+    time.
 
     Some implemented methods are initially selected as default.
     The number of authentication retries left can be checked and
@@ -68,7 +69,7 @@
     @see ASSH_EVENT_USERAUTH_SERVER_METHODS */
 struct assh_event_userauth_server_methods_s
 {
-  ASSH_EV_CONST assh_bool_t    failed;  //< input
+  ASSH_EV_CONST enum assh_userauth_methods_e failed;  //< input
   enum assh_userauth_methods_e methods; //< output
   uint_fast8_t                 retries; //< output
   struct assh_cbuffer_s        banner;  //< output

@@ -543,6 +543,11 @@ ssh_loop(struct assh_session_s *session,
 	  break;
                                                         /* anchor evauth */
 	case ASSH_EVENT_USERAUTH_SERVER_METHODS:
+	  /* wait 3 seconds after a failed password attempt */
+	  if (event.userauth_server.methods.failed &
+	      ASSH_USERAUTH_METHOD_PASSWORD)
+	    sleep(3);
+
 	  /* report the user authentication methods we accept. */
 	  event.userauth_server.methods.methods =
 	    ASSH_USERAUTH_METHOD_PUBKEY |

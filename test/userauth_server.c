@@ -1395,12 +1395,12 @@ static void test()
 		ASSH_USERAUTH_METHOD_PUBKEY;
 	      break;
 	    case TEST08_ST_WAIT_FAIL:
-	      if (!event.userauth_server.methods.failed)
+	      if (event.userauth_server.methods.failed != ASSH_USERAUTH_METHOD_PUBKEY)
 		TEST_FAIL("");
 	      test_state_set(TEST08_ST_SERVER_FAILED);
 	      break;
 	    case TEST08_ST_WAIT_FAIL2:
-	      if (!event.userauth_server.methods.failed)
+	      if (event.userauth_server.methods.failed != ASSH_USERAUTH_METHOD_PUBKEY)
 		TEST_FAIL("");
 	      test_state_set(TEST08_ST_SERVER_FAILED2);
 	      break;
@@ -1414,7 +1414,7 @@ static void test()
 		ASSH_USERAUTH_METHOD_PASSWORD;
 	      break;
 	    case TEST09_ST_WAIT_FAIL:
-	      if (!event.userauth_server.methods.failed)
+	      if (event.userauth_server.methods.failed != ASSH_USERAUTH_METHOD_PASSWORD)
 		TEST_FAIL("");
 	      test_state_set(TEST09_ST_SERVER_FAILED);
 	      break;
@@ -1425,7 +1425,7 @@ static void test()
 		ASSH_USERAUTH_METHOD_PASSWORD;
 	      break;
 	    case TEST10_ST_WAIT_FAIL:
-	      if (!event.userauth_server.methods.failed)
+	      if (event.userauth_server.methods.failed != ASSH_USERAUTH_METHOD_PASSWORD)
 		TEST_FAIL("");
 	      test_state_set(TEST10_ST_SERVER_FAILED);
 	      break;
@@ -1448,7 +1448,7 @@ static void test()
 		ASSH_USERAUTH_METHOD_PASSWORD;
 	      break;
 	    case TEST13_ST_WAIT_FAIL:
-	      if (!event.userauth_server.methods.failed)
+	      if (event.userauth_server.methods.failed != ASSH_USERAUTH_METHOD_PASSWORD)
 		TEST_FAIL("");
 	      test_state_set(TEST13_ST_SERVER_FAILED);
 	      break;
@@ -1459,7 +1459,7 @@ static void test()
 		ASSH_USERAUTH_METHOD_PASSWORD;
 	      break;
 	    case TEST14_ST_WAIT_FAIL:
-	      if (!event.userauth_server.methods.failed)
+	      if (event.userauth_server.methods.failed != ASSH_USERAUTH_METHOD_PASSWORD)
 		TEST_FAIL("");
 	      test_state_set(TEST14_ST_SERVER_FAILED);
 	      break;
@@ -1476,7 +1476,7 @@ static void test()
 		ASSH_USERAUTH_METHOD_PASSWORD;
 	      break;
 	    case TEST16_ST_WAIT_FAIL:
-	      if (!event.userauth_server.methods.failed)
+	      if (event.userauth_server.methods.failed != ASSH_USERAUTH_METHOD_PASSWORD)
 		TEST_FAIL("");
 	      test_state_set(TEST16_ST_SERVER_FAILED);
 	      break;
@@ -1487,7 +1487,7 @@ static void test()
 		ASSH_USERAUTH_METHOD_PASSWORD;
 	      break;
 	    case TEST17_ST_WAIT_FAIL:
-	      if (!event.userauth_server.methods.failed)
+	      if (event.userauth_server.methods.failed != ASSH_USERAUTH_METHOD_PASSWORD)
 		TEST_FAIL("");
 	      test_state_set(TEST17_ST_SERVER_FAILED);
 	      break;
@@ -1508,7 +1508,7 @@ static void test()
 	      break;
 
             case TEST19_ST_SEND_RESPONSE:
-	      if (!event.userauth_server.methods.failed)
+	      if (event.userauth_server.methods.failed != ASSH_USERAUTH_METHOD_KEYBOARD)
 		TEST_FAIL("");
 	      test_state_set(TEST19_ST_SERVER_FAILED);
 	      break;
@@ -1527,7 +1527,7 @@ static void test()
 	      break;
 
             case TEST21_ST_SEND_RESPONSE2:
-	      if (!event.userauth_server.methods.failed)
+	      if (event.userauth_server.methods.failed != ASSH_USERAUTH_METHOD_KEYBOARD)
 		TEST_FAIL("");
 	      test_state_set(TEST21_ST_SERVER_FAILED);
 	      break;
@@ -1540,7 +1540,7 @@ static void test()
 	      break;
 
             case TEST22_ST_WAIT_RESPONSE:
-	      if (!event.userauth_server.methods.failed)
+	      if (event.userauth_server.methods.failed != ASSH_USERAUTH_METHOD_KEYBOARD)
 		TEST_FAIL("");
 	      test_state_set(TEST22_ST_SERVER_FAILED);
 	      break;
@@ -1569,7 +1569,7 @@ static void test()
 	      break;
 
 	    case TEST25_ST_KEY_NOT_FOUND:
-	      if (!event.userauth_server.methods.failed)
+	      if (event.userauth_server.methods.failed != ASSH_USERAUTH_METHOD_HOSTBASED)
 		TEST_FAIL("");
 	      test_state_set(TEST25_ST_SERVER_FAILED);
 	      break;
@@ -1591,7 +1591,7 @@ static void test()
 		ASSH_USERAUTH_METHOD_PUBKEY;
 	      break;
 	    case TEST27_ST_WAIT_FAIL:
-	      if (!event.userauth_server.methods.failed)
+	      if (event.userauth_server.methods.failed != ASSH_USERAUTH_METHOD_PASSWORD)
 		TEST_FAIL("");
 	      test_state_set(TEST27_ST_SERVER_FAILED);
 	      break;
@@ -2077,14 +2077,10 @@ static void test()
 #if defined(CONFIG_ASSH_SERVER_AUTH_KEYBOARD)
 	      /*************************************************** TEST18 */
             case TEST18_ST_SEND_RESPONSE:
-	      if (!event.userauth_server.methods.failed)
-		TEST_FAIL("");
 	      test_state_set(TEST18_ST_SERVER_SUCCESS);
 	      break;
 	      /*************************************************** TEST20 */
             case TEST20_ST_SEND_RESPONSE2:
-	      if (!event.userauth_server.methods.failed)
-		TEST_FAIL("");
 	      test_state_set(TEST20_ST_SERVER_SUCCESS);
 	      break;
 #endif
