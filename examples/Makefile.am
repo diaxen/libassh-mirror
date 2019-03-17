@@ -35,6 +35,11 @@ rexec_SOURCES = rexec.c
 rexec_LDADD = $(top_builddir)/src/libassh.la
 rexec_CFLAGS = -I$(top_srcdir)/src
 noinst_PROGRAMS += rexec
+
+fwdexec_SOURCES = fwdexec.c
+fwdexec_LDADD = $(top_builddir)/src/libassh.la
+fwdexec_CFLAGS = -I$(top_srcdir)/src
+noinst_PROGRAMS += fwdexec
 endif
 
 if COND_server

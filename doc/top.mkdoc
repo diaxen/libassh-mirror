@@ -1966,6 +1966,192 @@ $ examples/client localhost ls
 
   @end section
 
+  @section TP {Forwarded command execution}
+    @label {exfwdexec}
+
+    This example application implements a pair of @em ssh2
+    clients. The first client requests a TCP port forwarding on a
+    server and uses the forwarded port to let the second client
+    connect to a second server. The second client executes a remote
+    command like in the @xref{exremote} example.
+
+    The two client @xref{sessions} instantiated in our application are
+    referred as the @em fwd session and the @em rexec
+    session. Similarly, the first server host which is used as a proxy
+    is called @em fwd_host and the second server on which the remote
+    command is executed is called @em {rexec_host}.
+
+    From the remote servers point of view, running our application is
+    similar to invocation of the following @em {OpenSSH} commands
+    on the @em localhost terminal:
+
+    @code R
+localhost$ ssh -L 2222:rexec_host:22 -N fwd_host &
+localhost$ ssh -p 2222 localhost command
+    @end code
+
+    This approach relies on a direct connection between @em localhost
+    and @em rexec_host in order to request execution of the command
+    and fetch its output. This means that @em fwd_host is only used as
+    a TCP proxy for the @em rexec connection and never see the
+    content of the @em rexec session in clear text.
+
+    The same goal can be achieved by running the following commands on
+    different hosts:
+
+    @code R
+localhost$ ssh bounce_host
+bounce_host$ ssh rexec_host command
+    @end code
+
+    This second approach is more common but less secure as it does not
+    rely on port forwarding. In this case, the second client runs on
+    @em bounce_host. This lets @em bounce_host see what happens as it
+    processes user data in clear text, including any password typed to
+    connect to @em {rexec_host}. In the same way, using @xref {user
+    keys} from @em bounce_host with this approach requires use of @xref
+    {ssh agent forwarding}.
+
+    Instead, our example application implements the first approach as
+    a simple tool which can be invoked like this:
+
+    @code R
+localhost$ example/fwdexec forward_host host command
+    @end code
+
+    In this example, we rely on the ability of @em libassh to let the
+    application handle the network stream as buffers. This allows to
+    implement forwarding of the @em rexec session by the @em fwd
+    session without piping the network stream of the first through the
+    operating system. That's why we do not rely on system calls for
+    this task.
+
+    This means that application directly generate and process the
+    network stream of the nested @em ssh2 sessions. From the operating
+    system point of view running our client application, there is a
+    single TCP socket used to connect to @em {fwd_host}, as in the
+    other client examples.
+
+    @section {The main loop}
+      The first thing to do in the @tt main function is initialization
+      of the two @xref{sessions}. A single @xref{interactive session}
+      state machine is used because it's only needed by the @em rexec
+      session.
+      @example examples/fwdexec.c:init P
+
+      Our main loop just has to run the event loops of the two
+      sessions. The @em fwd session disconnects when the @em rexec
+      session terminates.
+      @example examples/fwdexec.c:mainloop
+
+      The @tt main function ends with sessions and context
+      cleanup. Note that the @em rexec session may still have events
+      to report that we decide to ignore here.
+      @example examples/fwdexec.c:maincleanup
+    @end section
+
+    @section {The forwarder event loop}
+      We will now focus on the implementation of the event loop of the
+      @em fwd session.
+
+      The @xref{port forwarding} mechanism in @em ssh2 is provided by
+      the @xref{connection protocol} and uses a @xref {channel} in
+      order to transport the stream of the forwarded TCP
+      connection. This means that our @em fwd session will need to
+      open such a channel in order to let the application exchange
+      data with @em {rexec_host}.
+
+      There are many programming constructs that could be used to move
+      data between the channel of the @em fwd session and the IO
+      events of the @em rexec session. In this application, we choose
+      to copy the data directly between @em libassh buffers in one
+      direction but we use a software fifo in the other direction.
+
+      Here is the API of our simple fifo. The @tt fifo_read and @tt
+      fifo_write functions return the actual amount of data copied.
+      @example examples/fwdexec.c:fifo
+
+      Exchanging data requires sharing the channel and fifo objects
+      between sessions. These are declared here:
+      @example examples/fwdexec.c:fwdvars2
+
+      Then comes the @tt ssh_loop_fwd function with the usual
+      @xref{event loop} code construct:
+      @example examples/fwdexec.c:fwdloop
+
+      @xref{User authentication} and @xref{key-exchange} related
+      events are handled using @xref{helper} functions as detailed in
+      the previous examples and are not shown here.
+
+      Because this session talks to @em fwd_host through a local TCP
+      socket, we just have to rely on the usual helper function in
+      order to handle the network IO events.
+      @example examples/fwdexec.c:fwdevio
+
+      We setup the TCP port forwarding as soon as the @xref{connection
+      protocol} starts. The @ref assh_inter_open_direct_tcpip function
+      serializes our @tt fwd_rq parameters and calls the @ref
+      assh_channel_open function. This makes the @tt fwd_channel
+      variable points to the opening channel object.
+      @example examples/fwdexec.c:fwdevsrvstart
+
+      We then need to wait for the @xref{channel} open reply from @em
+      fwd_host in order to know if the port forwarding is accepted.
+      @example examples/fwdexec.c:fwdevchopen
+
+      At this point, @em fwd_host has initiated a TCP connection to
+      @em rexec_host on the behalf of our application. It will start
+      to forward any data transmitted by @em rexec_host to our @em fwd
+      session. The library will report this as incoming channel
+      data. We just have to copy as many data as we can in our
+      software fifo then yield to the event loop of the @em
+      rexec_session.
+      @example examples/fwdexec.c:fwdevchdata
+
+      We are almost done with the code of the @em fwd session event
+      loop. We still have to handle the channel close event which will
+      be reported if the connection to @em rexec_host becomes broken.
+      @example examples/fwdexec.c:fwdevchclose
+
+      The code of event loop ends as usual, with a default event
+      handler. The @tt ssh_loop_fwd function returns @tt 0 when no
+      more events will be reported. The disconnection request code is
+      factored at the end of the function.
+      @example examples/fwdexec.c:fwdevdefault
+    @end section
+
+    @section {The remote execution event loop}
+      We can now focus on the event loop of the @em rexec session
+      located in the @tt ssh_loop_rexec function.
+      @example examples/fwdexec.c:rexecloop
+
+      Reading data from the fifo in order to feed the session with the
+      ssh stream from @em rexec_host is the easier part. We just take
+      care of yielding to the @em fwd session event loop when the fifo
+      is empty.
+      @example examples/fwdexec.c:rexecevread
+
+      Because we do not use a fifo in the other direction, there are
+      more work to do in order to send the @em rexec network stream
+      through the port forwarding channel. We first have to make sure
+      that the channel exists and has reached the @ref
+      ASSH_CHANNEL_ST_OPEN state. When this is the case, an outgoing
+      packet is allocated and filled with some of the network stream.
+      We also yield to the @em fwd session event loop if we were not
+      able to send all the data yet.
+      @example examples/fwdexec.c:rexecevwrite
+
+      Other event of the @em rexec session are handled in the exact same
+      way as in the @xref{exremote} application and are not detailed
+      here.
+
+      As in the event loop of the @em fwd session, the function returns
+      @tt 0 when there are no more event to report.
+      @example examples/fwdexec.c:rexecevdefault
+    @end section
+
+  @end section
+
   @section TP {UNIX server}
     @label {exserver}
 
