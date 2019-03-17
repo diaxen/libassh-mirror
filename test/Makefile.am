@@ -35,6 +35,12 @@ cipher_SOURCES = cipher.c
 cipher_LDADD = $(top_builddir)/src/libassh.la
 cipher_CFLAGS = -I$(top_srcdir)/src
 
+noinst_PROGRAMS += mac
+TESTS += mac
+mac_SOURCES = mac.c
+mac_LDADD = $(top_builddir)/src/libassh.la
+mac_CFLAGS = -I$(top_srcdir)/src
+
 noinst_PROGRAMS += prng
 prng_SOURCES = prng.c
 prng_LDADD = $(top_builddir)/src/libassh.la
