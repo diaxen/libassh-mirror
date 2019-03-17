@@ -114,6 +114,12 @@ TESTS += signature
 signature_SOURCES = signature.c
 signature_LDADD = $(top_builddir)/src/libassh.la
 signature_CFLAGS = -I$(top_srcdir)/src
+
+noinst_PROGRAMS += signature2
+TESTS += signature2
+signature2_SOURCES = signature2.c
+signature2_LDADD = $(top_builddir)/src/libassh.la
+signature2_CFLAGS = -I$(top_srcdir)/src
 endif
 endif
 
@@ -133,6 +139,7 @@ XFAIL_TESTS = fail
 EXTRA_DIST = \
 fifo.h \
 keys.h \
+sign.h \
 test.h \
 leaks_check.h \
 prng_weak.h \
