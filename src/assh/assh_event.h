@@ -199,9 +199,9 @@ struct assh_event_s
        <= sizeof(((struct assh_event_s*)0)->params)) - 1];
 
 /** This function runs the various state machines which implement the
-    @em ssh2 protocol, including the currently running @xref{service}
-    and @xref{kex-exchange}. It then reports the next available
-    @xref{event} to the caller.
+    @em ssh2 protocol, including the currently running @hl service
+    and @hl{key-exchange}. It then reports the next available
+    @hl event to the caller.
 
     The @ref assh_event_done function must be called after each
     successful call to this function, before requesting the next event.
@@ -224,7 +224,7 @@ assh_event_get(struct assh_session_s *s,
                struct assh_event_s *e,
                assh_time_t time);
 
-/** @This acknowledges the last @xref{event} returned by the @ref
+/** @This acknowledges the last @hl event returned by the @ref
     assh_event_get function.
 
     If an error occurred during event processing by the caller, it

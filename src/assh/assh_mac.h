@@ -26,7 +26,7 @@
    @short SSH message authentication code module interface
 
    This header file contains API descriptors for message
-   authentication @xref{algorithm} modules implemented in the library.
+   authentication @hl algorithm modules implemented in the library.
 
    @xsee{macalgos}
    @xsee{coremod}

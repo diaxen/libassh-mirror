@@ -26,7 +26,7 @@
    @short SSH compression module interface
 
    This header file contains API descriptors for compression
-   @xref{algorithm} modules implemented in the library.
+   @hl algorithm modules implemented in the library.
 
    @xsee{compalgos}
    @xsee{coremod}

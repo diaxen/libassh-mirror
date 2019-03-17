@@ -26,7 +26,7 @@
    @short SSH keys base structure and related functions
 
    This header file contains descriptors for key management modules
-   implemented in the library as well as @xref{SSH keys} management
+   implemented in the library as well as @hl{SSH keys} management
    related declarations.
 
    @xsee{keysalgos}
@@ -172,7 +172,7 @@ typedef ASSH_KEY_CLEANUP_FCN(assh_key_cleanup_t);
     ssh2 key module interface.
 
     A key @em algorithm is able to handle a single type of key as
-    described in @xref{keysalgos}. @xsee{coremod} */
+    described in @hl keysalgos. @xsee{coremod} */
 struct assh_key_algo_s
 {
   const char *name;

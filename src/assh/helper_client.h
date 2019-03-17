@@ -30,11 +30,11 @@
    @file
    @short SSH client application helpers
 
-   This header file provides @xref{helper} functions designed to ease
+   This header file provides @hl{helper functions} designed to ease
    development of simple @em ssh2 client applications.
 
    Implementation of client applications may want to reuse and adapt
-   code from this module, as allowed by the @xref{license} exception
+   code from this module, as allowed by the @hl license exception
    covering the source code of this module.
 */
 

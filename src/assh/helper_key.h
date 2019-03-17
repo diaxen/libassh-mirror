@@ -25,8 +25,8 @@
    @file
    @short SSH keys file IO
 
-   This header file provides @xref{helper} functions designed to load
-   and store @xref {SSH keys} on disk.
+   This header file provides @hl{helper functions} designed to load
+   and store @hl{SSH keys} on disk.
 
    @xsee{keysalgos}
    @see{@assh/assh_key.h}

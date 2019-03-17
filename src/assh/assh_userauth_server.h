@@ -25,13 +25,13 @@
    @file
    @short Implementation of the server side ssh-userauth service (rfc4252)
 
-   This header file defines @xref{events} which are reported to the
+   This header file defines @hl events which are reported to the
    application when the @ref assh_service_userauth_server service is
-   running. This @xref{service} module is an implementation of the
-   server side @xref{user authentication} protocol.
+   running. This @hl service module is an implementation of the
+   server side @hl{user authentication} protocol.
 
-   This standard @xref{service} described in @sinvoke{4252}rfc is
-   implemented as a pluggable service @xref{module} for @em {libassh}.
+   This standard @hl service described in @sinvoke{4252}rfc is
+   implemented as a pluggable service @hl module for @em {libassh}.
 
    @see{@assh/assh_userauth.h}
    @xsee{uamethods}

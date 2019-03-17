@@ -26,8 +26,8 @@
    @short SSH service module interface
 
    This header file provides declarations related to the
-   @xref{service} module interface. Functions are provided to register
-   @xref{services} on a library @ref assh_context_s object.
+   @hl service module interface. Functions are provided to register
+   @hl services on a library @ref assh_context_s object.
 
    @xsee {coremod}
    @xsee {srvlayer}

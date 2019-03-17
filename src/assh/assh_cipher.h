@@ -26,7 +26,7 @@
    @short SSH cipher module interface
 
    This header file contains API descriptors for cipher
-   @xref{algorithm} modules implemented in the library.
+   @hl algorithm modules implemented in the library.
 
    @xsee{cipheralgos}
    @xsee{coremod}

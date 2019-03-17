@@ -26,7 +26,7 @@
    @short Main context structure and related functions
 
    The library uses a context structure to store stuff common to
-   multiple @xref{sessions}. This header file provides declaration of
+   multiple @hl sessions. This header file provides declaration of
    the @ref assh_context_s structure and related functions.
 */
 
@@ -63,7 +63,7 @@ struct assh_packet_pool_s
 
     It stores the following resources:
     @list
-    @item the set of registered @xref{algorithms},
+    @item the set of registered @hl algorithms,
     @item the memory allocator context,
     @item the random generator context,
     @item the user configurable protocol timeouts,

@@ -136,7 +136,7 @@ enum assh_ssh_msg_e
 {
   SSH_MSG_INVALID                   =   0,
 
-  /** @multiple @xref{Transport layer} related message */
+  /** @multiple @hl{Transport layer} related message */
   SSH_MSG_DISCONNECT                =   1,
   SSH_MSG_IGNORE                    =   2,
   SSH_MSG_UNIMPLEMENTED             =   3,
@@ -144,11 +144,11 @@ enum assh_ssh_msg_e
   SSH_MSG_SERVICE_REQUEST           =   5,
   SSH_MSG_SERVICE_ACCEPT            =   6,
 
-  /** @multiple Generic @xref{key-exchange} message */
+  /** @multiple Generic @hl{key-exchange} message */
   SSH_MSG_KEXINIT                   =  20,
   SSH_MSG_NEWKEYS                   =  21,
 
-  /** @multiple Method specific @xref{key-exchange} message */
+  /** @multiple Method specific @hl{key-exchange} message */
   SSH_MSG_KEX_DH_REQUEST            =  30,
   SSH_MSG_KEX_DH_REPLY              =  31,
   SSH_MSG_KEX_ECDH_INIT             =  30,
@@ -164,7 +164,7 @@ enum assh_ssh_msg_e
   SSH_MSG_KEXRSA_SECRET             =  31,
   SSH_MSG_KEXRSA_DONE               =  32,
 
-  /** @multiple @xref{user authentication} related message */
+  /** @multiple @hl{User authentication} related message */
   SSH_MSG_USERAUTH_REQUEST          =  50,
   SSH_MSG_USERAUTH_FAILURE          =  51,
   SSH_MSG_USERAUTH_SUCCESS          =  52,
@@ -174,7 +174,7 @@ enum assh_ssh_msg_e
   SSH_MSG_USERAUTH_INFO_REQUEST     =  60,
   SSH_MSG_USERAUTH_INFO_RESPONSE    =  61,
 
-  /** @multiple @xref{connection protocol} related message */
+  /** @multiple @hl{Connection protocol} related message */
   SSH_MSG_GLOBAL_REQUEST            =  80,
   SSH_MSG_REQUEST_SUCCESS           =  81,
   SSH_MSG_REQUEST_FAILURE           =  82,

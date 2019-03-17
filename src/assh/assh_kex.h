@@ -25,10 +25,10 @@
    @file
    @short SSH key exchange module interface and helpers
 
-   This header file contains API descriptors for @xref{key-exchange}
+   This header file contains API descriptors for @hl{key-exchange}
    algorithm modules implemented in the library.
 
-   It also contains declaration of @xref{key-exchange} related events.
+   It also contains declaration of @hl{key-exchange} related events.
 
    @xsee{kexalgos}
    @xsee{coremod}

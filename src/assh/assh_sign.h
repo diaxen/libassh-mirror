@@ -26,7 +26,7 @@
    @short SSH signature module interface
 
    This header file contains API descriptors for signature
-   @xref{algorithm} modules implemented in the library.
+   @hl algorithm modules implemented in the library.
 
    @xsee{authalgos}
    @xsee{coremod}

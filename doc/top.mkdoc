@@ -80,9 +80,9 @@ assh/assh_event.h
   feature of the protocol so that it can be used to implement full
   featured ssh client and server applications as well.
 
-  It comes with a test suite, some @xref{example} applications and the
-  @sinvoke{RTFM}{fine manual}wp you are reading. A contributor manual
-  with details of the internal API is also available.
+  It comes with a @hl{test suite}, some @hl example applications
+  and the @sinvoke{RTFM}{fine manual}wp you are reading. A contributor
+  manual with details of the internal API is also available.
 
   @section T {Event based ssh}
     The API has been designed to support both, @sinvoke{Asynchronous
@@ -91,7 +91,7 @@ assh/assh_event.h
 
     The core library does not provides blocking functions nor does it
     rely on a callback based API. Instead, the library reports
-    @xref{events} which do not require immediate processing by the
+    @hl events which do not require immediate processing by the
     application. This design is agnostic with regard to the
     @sinvoke{{Programming model}{programming model}wp. It allows easy
     integration in applications, including those based on
@@ -102,7 +102,7 @@ assh/assh_event.h
     the @em ssh2 protocol. This does not only mean that the library
     calls are non-blocking, it is also able to handle out of order
     operations allowed by the protocol. This includes handling and
-    replying to multiple @xref {channel} related messages out of order.
+    replying to multiple @hl channel open messages out of order.
 
     The lack of an @em ssh2 library written in C with this design
     has been the main reason of starting the project.
@@ -110,16 +110,16 @@ assh/assh_event.h
 
   @section T {Modular ssh}
     The @em ssh2 protocol is specified in a modular way so that
-    implementers can freely add new crypto @xref {algorithms}, new
-    @xref{services} and new @xref{user authentication} methods without
+    implementers can freely add new crypto @hl algorithms, new
+    @hl services and new @hl{user authentication} methods without
     breaking compatibility with other implementations.
 
     The @em libassh implementation of @em ssh2 is modular, as allowed
     by the specification. It supports working with @em ssh2
     @xref{coremod}{software components} that are not provided with the
     library. This includes dynamically registering additional @em
-    ssh2 @xref {algorithms} as well as running custom @em ssh2
-    @xref{services}. Moreover it allows using an external memory
+    ssh2 @hl algorithms as well as running custom @em ssh2
+    @hl services. Moreover it allows using an external memory
     allocator and working with an external random number generator.
   @end section
 
@@ -161,7 +161,7 @@ assh/assh_event.h
     The library core only contains algorithmic stuff, mostly protocol
     state machines. It has no dependencies other than the standard C
     library and perform no operating system calls. The library returns
-    specific @xref{events} in order to let the application transfer
+    specific @hl events in order to let the application transfer
     the @em ssh2 network stream over any reliable data pipe, usually a
     TCP connection.
 
@@ -169,15 +169,15 @@ assh/assh_event.h
     provided that a support for standard C is available. This
     @xref{softarch} {architecture} requires the library user to
     develop some glue code for the target platform. This code is
-    provided in the form of @xref{helper functions} for convenient use
+    provided in the form of @hl{helper functions} for convenient use
     on @em POSIX platforms. Optional support for file formats used by
     @em OpenSSH is provided as well.
 
     Because the library comes with a set of standard @em ssh2
-    @xref{algorithm} implementations, it can be used
+    @hl algorithm implementations, it can be used
     standalone. Alternate modules relying on external libraries like
     @em Libgcrypt, @em OpenSSL and and @em Zlib are available in order
-    to further extend the set of @xref {suppalgos}.
+    to further extend the set of @hl{supported algorithms and methods}.
 
     The clear @xref{source tree}{source organization} and file naming
     helps identify the core components and modules when porting the
@@ -187,28 +187,28 @@ assh/assh_event.h
   @section T {Security}
     The library implements several security related features.
 
-    It comes with implementations of many @em ssh2 @xref {algorithms},
-    support for common @xref {user authentication} methods and
-    @xref{key formats}. Passphrase encrypted @xref{SSH keys} can be
+    It comes with implementations of many @em ssh2 @hl algorithms,
+    support for common @hl{user authentication} methods and
+    @hl{key formats}. Passphrase encrypted @hl{SSH keys} can be
     loaded and saved. The library is also able to generate new
-    @xref{user keys} and @xref{host keys}.
+    @hl{user keys} and @hl{host keys}.
 
-    Because using fast and secure @em ssh2 @xref {algorithms} among
+    Because using fast and secure @em ssh2 @hl algorithms among
     those supported by the remote peer is the most desirable thing for
     the user, the library is able to compute a simple score which can
     be used to advertise the overall level of security of a
-    @xref{session}. This is based on @xref {algorithms} negotiated
-    during the @xref{key-exchange} as well as involved @xref{host
-    keys}. It is also possible to select and sort @xref {algorithms}
+    @hl session. This is based on @hl algorithms negotiated
+    during the @hl key-exchange as well as involved @hl{host
+    keys}. It is also possible to select and sort @hl algorithms
     based on their speed and safety before running a
-    @xref{session}. This helps the user keep control without having to
-    know strengths and weakness of the various crypto @xref
-    {algorithms}.
+    @hl session. This helps the user keep control without requiring
+    him to know strengths and weakness of the various crypto
+    @hl algorithms.
 
     @sinvoke{Multi-factor authentication}{Multi-factor user
     authentication}wp and password change requests are both
     supported. In order to enable use of hardware authentication
-    tokens, the @xref{user authentication} code is able to work with
+    tokens, the @hl{user authentication} code is able to work with
     both, internally and externally generated signatures.
 
     Providing those feature is not sufficient to make the
@@ -223,11 +223,11 @@ assh/assh_event.h
 
   @section T {Performances}
     The library uses a @sinvoke{Zero-copy}{zero copy}wp approach to
-    pass data between the network stream, the @xref{channels} and the
+    pass data between the network stream, the @hl channels and the
     application. This is achieved by giving the application a direct
     access to buffers stored in the @em libassh packet
     objects. Moreover, the application is allowed to take full control
-    of the @xref {channel} flow control mechanism specified in
+    of the @hl channel flow control mechanism specified in
     @sinvoke{4254}rfc.
 
     An optional packet pool allocator is provided in order to recycle
@@ -236,21 +236,21 @@ assh/assh_event.h
     A large set of compile time @xref{Build configuration}{configuration
     macros} is available which allows optimization of the library
     footprint on embedded targets. The modular design allows retaining
-    only a small set of @em ssh2 @xref {algorithms} and makes it
+    only a small set of @em ssh2 @hl algorithms and makes it
     easy to add support for hardware cryptographic accelerators.
 
     The library only needs to allocate a few kilobytes in order to run
-    a client or server @xref{session}.
+    a client or server @hl session.
   @end section
 
-  @section T {Test suite}
-    The library comes with unit tests and stress tests for its various
-    software components. It helps ensure that the implementation
+  @section T {Testing}
+    The library comes with @hl{test programs} which implement unit
+    tests and stress tests. It helps ensure that the implementation
     follows the standard and behaves well on corner cases.
 
     Stress tests are implemented by making the server and client sides
-    talk to each other, performing many @xref{key-exchange},
-    @xref{user authentication} and @xref {channel} operations per
+    talk to each other, performing many @hl key-exchange,
+    @hl{user authentication} and @hl channel operations per
     second. Because the library is not bound to a particular network
     stack, the two instances under test are able to efficiently
     exchange the @em ssh2 network stream using memory buffers in the
@@ -262,7 +262,7 @@ assh/assh_event.h
     leaks.
 
     In order to keep @em libaash compatible with other implementations
-    of @em ssh2, a @xref{session} replaying tool is also provided. It
+    of @em ssh2, a @hl session replaying tool is also provided. It
     allows including regression tests against other implementations as
     part of the test suite. Because it records and replays sessions at
     the packet level, other implementations do not need to be
@@ -277,7 +277,7 @@ assh/assh_event.h
     @item If your are not familiar with the @em ssh2 protocol
       internals, read the @xref{Protocol architecture} section,
     @item Then read the @xref{Event based API} section,
-    @item Have a look to the @xref {example} applications,
+    @item Have a look to the @hl example applications,
     @item Start hacking,
     @item Read the whole manual before asking questions.
   @end list
@@ -309,11 +309,11 @@ assh/assh_event.h
     not need to amend the original specification because @em ssh2 was
     originally designed with extensibility in mind.
 
-    Many features of the protocol like @xref{algorithms} and
-    @xref{services} are identified and negotiated using textual
+    Many features of the protocol like @hl algorithms and
+    @hl services are identified and negotiated using textual
     names. This allows alternatives to be developed without breaking
     compatibility with the base protocol and its original set of
-    features. @xref{Private extensions} are allowed and should use
+    features. @hl{Private extensions} are allowed and should use
     names containing the @em{@} character.
 
     According to @sinvoke{4251}rfc, there are three major components
@@ -337,11 +337,11 @@ assh/assh_event.h
 
       The transport layer needs a reliable data pipe in order to
       exchange packets between the client and server instances. A TCP
-      @xref{connection} is commonly used.
+      @hl connection is commonly used.
 
       The first step of the protocol consists in exchanging
-      @xref{version strings}. Once both sides have transmitted their
-      @xref{version strings} in a human readable format, they switch
+      @hl{version strings}. Once both sides have transmitted their
+      @hl{version strings} in a human readable format, they switch
       to the @em ssh2 binary packet format.
 
       Binary packets are variable sized arrays of bytes. A packet has
@@ -357,10 +357,10 @@ assh/assh_event.h
 
       @list
         @item Transport related messages, starting at id 1,
-        @item @xref{Key-exchange} related messages, starting at id 30,
-        @item @em {User Authentication Protocol} messages, starting at
+        @item @hl key-exchange related messages, starting at id 30,
+        @item @hl{User Authentication} Protocol messages, starting at
           id 50 and
-        @item @em {Connection Protocol} messages, starting at id 80.
+        @item @hl{Connection Protocol} messages, starting at id 80.
       @end list
 
       Some of the message identifiers used by parts of the protocol
@@ -375,17 +375,17 @@ assh/assh_event.h
       sized fields which use a 32 bits length header.
 
       The @em{Transport Layer Protocol} is designed so that packets
-      are processed by the selected @xref {algorithms}. However the
+      are processed by the selected @hl algorithms. However the
       binary packets are neither enciphered nor compressed before the
-      end of the first @xref{key-exchange} process which performs
-      @xref {algorithms} selection.
+      end of the first @hl key-exchange process which performs
+      @hl algorithms selection.
 
       According to the original specification, the outgoing packets
       are encrypted after appending the authentication token computed
-      by the retained MAC @xref {algorithm}. This is called the @em
+      by the retained MAC @hl algorithm. This is called the @em
       {Mac-Then-Encrypt} order and allows encrypting the whole packet.
 
-      When a more recent message authentication @xref{algorithm} is
+      When a more recent message authentication @hl algorithm is
       selected which uses the @em {Encrypt-Then-Mac} order, the size
       field has to remain in clear text so that the message
       authentication token can be located at the end of the
@@ -395,8 +395,8 @@ assh/assh_event.h
       boundaries. This task is left to the @em ssh2 transport layer.
 
       When an authenticated cipher is used, no separate message
-      authentication @xref{algorithm} is used. Depending on the design
-      of the authenticated cipher @xref {algorithm}, the size field
+      authentication @hl algorithm is used. Depending on the design
+      of the authenticated cipher @hl algorithm, the size field
       may not be enciphered. Note that hiding the actual size of the
       packets needs additional measures to be taken when transmitting
       the packets stream over the network.
@@ -406,13 +406,12 @@ assh/assh_event.h
     @end section
 
     @section T {Key-exchange process and methods}
-      @label {key-exchange}
       @label {kex}
 
       The initial key-exchange process is started right after
-      exchanging @xref{version strings} and terminates after a few
+      exchanging @hl{version strings} and terminates after a few
       packet exchanges. During most of the lifetime of a
-      @xref{session}, no key-exchange process is running.
+      @hl session, no key-exchange process is running.
 
       Additional key-exchange processes can be initiated by either
       side at any time. This is generally requested after some amount
@@ -421,27 +420,27 @@ assh/assh_event.h
 
       The key-exchange process has several purposes:
       @list
-        @item It negotiates the multiple @xref {algorithms} that will
+        @item It negotiates the multiple @hl algorithms that will
           be used to secure the connection and compress the
           packets. The protocol supports using a different set of
-          @xref {algorithms} for each directions, even if this is
+          @hl algorithms for each directions, even if this is
           rarely used in practice.
 
-          Note that the signature @xref{algorithm} optionally involved
-          in the @xref{user authentication} is @b not negotiated
+          Note that the signature @hl algorithm optionally involved
+          in the @hl{user authentication} is @b not negotiated
           during the key-exchange process.
 
         @item It creates a @sinvoke{Shared secret}{shared secret}wp
-          and derives the symmetric @xref{session keys} which will be
+          and derives the symmetric @hl{session keys} which will be
           used to encrypt and authenticate the packets using the
-          selected @xref {algorithms}.
+          selected @hl algorithms.
 
         @item It authenticates the server host using the selected
           signature algorithms. The client application is involved in
-          the process because it has to decide if the @xref{host key}
+          the process because it has to decide if the @hl{host key}
           of the server is known and trusted. This is generally
           achieved by keeping track of known keys in a database and
-          asking the user to check and compare the @xref{fingerprint}
+          asking the user to check and compare the @hl fingerprint
           of yet unknown keys.
       @end list
 
@@ -451,17 +450,17 @@ assh/assh_event.h
 
       The key-exchange process starts when the two peers each transmit
       an @ref SSH_MSG_KEXINIT packet. This packet contains lists of
-      supported @xref {algorithm} names, allowing both sides to select
+      supported @hl algorithm names, allowing both sides to select
       a matching set by applying the specified selection rules. For
       each type of algorithm, the first algorithm in a client list
       which appears somewhere in the associated server list is
-      retained. Among the various types of @xref {algorithms}
+      retained. Among the various types of @hl algorithms
       selected, a key-exchange method is retained and executed
       immediately.
 
       This key-exchange method employs its own specific crypto in
       order to create the shared secret. It may however rely on an
-      other @xref {algorithm} in order to authenticate the server. To
+      other @hl algorithm in order to authenticate the server. To
       achieve this, it needs to use specific packet exchanges until
       the end of the process. Because new key-exchange methods can be
       developed, this part of the protocol is not specified in a fixed
@@ -471,9 +470,9 @@ assh/assh_event.h
     @section T {SSH services}
       @label {srvlayer}
 
-      The @xref{transport layer} protocol provides a generic mechanism
+      The @hl{transport layer} protocol provides a generic mechanism
       which let the client request execution of an @em ssh2
-      @xref{service}. Services are identified by textual names so that
+      @hl service. Services are identified by textual names so that
       new one can be developed. No service is running initially and a
       single service can run at a given time. The same service is run
       on both sides.
@@ -484,32 +483,33 @@ assh/assh_event.h
       @list
         @item The @em{User Authentication Protocol} provides several
           methods for authentication of the client user. It is
-          specified in @sinvoke{4252}rfc. Again, @xref{user
+          specified in @sinvoke{4252}rfc. Again, @hl{user
           authentication} methods are identified by textual names
           inside the service. This adds an additional level of
           extensibility and make some packet exchanges specific to the
-          selected authentication method. The most common @xref{user
+          selected authentication method. The most common @hl{user
           authentication} methods are password based authentication
-          and @xref{public key authentication}, but more methods are
+          and @hl{public key authentication}, but more methods are
           specified. @label {authlayer}
 
         @item The @em{Connection Protocol} is designed to transfer
-          data over multiplexed @em channels as detailed below. This is
-          what the client and server applications generally use to
-          communicate over @em {ssh2}. It is specified in @sinvoke{4254}rfc.
+          data over multiplexed @hl channels as detailed
+          below. This is what the client and server applications
+          generally use to communicate over @em {ssh2}. It is
+          specified in @sinvoke{4254}rfc.
 
-        @item Although the @xref{transport layer} is designed to
+        @item Although the @hl{transport layer} is designed to
           support any other kind of service, no other services are
           specified. As a result, most implementations have the two
           standard services hardwired in the same software component
-          as the @xref{transport layer}.
+          as the @hl{transport layer}.
 
           Supporting registration of new services allows to take
           advantage of the @em ssh2 protocol architecture for new
           usages.  This also enables running alternate implementations
           of the standard services described above. This is used in
-          the @em libassh test suite in order to implement odd
-          behavior while testing the real @xref{user authentication}
+          the @em libassh @hl{test suite} in order to implement odd
+          behavior while testing the real @hl{user authentication}
           service running on the other side.
       @end list
 
@@ -527,126 +527,134 @@ assh/assh_event.h
       @label {connlayer}
 
       The @em {ssh2 Connection Protocol} is used by applications to
-      establish communications @em {channels}. Once this service is
-      started, the server and the client are both allowed to open @em
-      {channels} and send @em {requests}. Those are the two primitives
+      establish communications @hl channels. Once this service is
+      started, the server and the client are both allowed to open @hl
+      {channels} and send @hl requests. Those are the two primitives
       offered by the connection protocol:
 
       @list
-        @item Once opened successfully, a @em {channel} allows the two
+        @item Once opened successfully, a @hl channel allows the two
           applications to transmit a stream of data over @em {ssh2}. A
-          @em {channel} has a textual type name which identifies its
-          usage. @em {Channel} open messages are transmitted by either
+          @hl channel has a textual type name which identifies its
+          usage. @hl Channel open messages are transmitted by either
           side and can be accepted or rejected based on the type
-          name. Opening a new @em {channel} is an asynchronous process
+          name. Opening a new @hl channel is an asynchronous process
           and multiple open messages can be sent without waiting for
           replies. The replies can be sent in any order, so that
-          connecting to a remote resource using a @em {channel} may
-          take some time without blocking other @em {channels}.
+          connecting to a remote resource using a @hl channel may
+          take some time without blocking other @hl channels.
 
           The protocol supports a windowed flow control mechanism
-          which enables limiting the data throughput per @em
+          which enables limiting the data throughput per @hl
           {channel}. This can be used to prevent exceeding the
           capacity of the underlying transport data pipe which would
-          make all @em {channels} unresponsive. @label {connchan}
+          make all @hl channels unresponsive. @label {connchan}
 
-        @item A @em {request} is an application
+        @item A @hl request is an application
           generated message identified by a textual type name which
           may have a specific data payload attached. The sender of the
-          @em {request} may or may not ask for a reply. When the
-          remote application acknowledges the @em {request}
-          successfully, it may also attach a payload. @em {Requests}
+          @hl request may or may not ask for a reply. When the
+          remote application acknowledges the @hl request
+          successfully, it may also attach a payload. @hl Requests
           can not live longer than a single round trip and must be
-          replied in order. A @em {request} may be either global or
-          related to an open @em {channel}. @label {connreq}
+          replied in order. A @hl request may be either global or
+          related to an open @hl channel. @label {connreq}
       @end list
 
-      Some standard types of @xref {channel} and @xref {request} are
+      Some standard types of @hl channel and @hl request are
       specified for use on top of the @em ssh2 protocol:
       @list
-        @item A set is specified for supporting @xref{interactive
+        @item A set is specified for supporting @hl{interactive
           sessions}. This is designed to run shell instances and other
-          programs on the remote server. Multiple @xref {interactive
-          sessions} can run over a single @em ssh2 @xref{session}.
+          programs on the remote server. Multiple @hl{interactive
+          sessions} can run over a single @em ssh2 @hl session.
 
-          Examples of standard @xref {request} types are the @tt shell
+          Examples of standard @hl request types are the @tt shell
           and @tt exec ones which request execution of a process on
-          the server. Those must be related to an open @xref {channel}
+          the server. Those must be related to an open @hl channel
           of the @tt {session} type and are used to transport the
           standard IO streams of the remotely executing process.
 
         @item An other set is specified for supporting the TCP/IP
-          @xref {port forwarding} feature. It allows the client to
+          @hl{port forwarding} feature. It allows the client to
           connect to a remote TCP port from the server and can also be
           used to instruct the server to listen on a TCP port and
           forward any incoming connections back to the client.
       @end list
 
-      The application is allowed to implement private @em
-      {channel} types and private @em {request} types as well.
+      The application is allowed to implement private @hl
+      {channel} types and private @hl request types as well.
 
     @end section
 
     @section T {Mapping to libassh components}
       Here is how the @em ssh2 protocol architecture outlined above is
       mapped to software components in the library:
-      @list
-        @item The @xref{transport layer} is implemented in the library
-          core and relies on @xref {algorithm} @xref{coremod}{modules}
-          for cryptographic processing of the packets and data
-          compression. It extracts @ref assh_packet_s {packet objects}
-          from the incoming @em ssh2 stream and also generates the
-          outgoing @em ssh2 stream from packet objects present in the
-          transmit queue. This layer handles some of the incoming
-          messages and dispatches other messages either to the running
-          @xref{key-exchange} method or to the running service. Transport
-          related declarations can be found in
-          @ref{@assh/assh_transport.h}.
 
-        @item The @xref{key-exchange} methods and the services both have
-          their own module interface. Among all @xref{coremod}{module
-          interfaces} defined, only these two are designed to handle
-          packet exchanges and may report @xref{events} to the
-          application. Related declarations can be found in
-          @ref{@assh/assh_kex.h} and @ref{@assh/assh_service.h}.
+      @section {Transport layer implementation}
+        The @hl{transport layer} is implemented in the library core
+        and relies on @hl algorithm @hl modules for
+        cryptographic processing of the packets and data
+        compression. It extracts @ref assh_packet_s {packet objects}
+        from the incoming @em ssh2 stream and also generates the
+        outgoing @em ssh2 stream from packet objects present in the
+        transmit queue. This layer handles some of the incoming
+        messages and dispatches other messages either to the running
+        @hl key-exchange method or to the running
+        service. Transport related declarations can be found in
+        @ref{@assh/assh_transport.h}.
+      @end section
 
-        @item The @em {User Authentication Protocol} use the @ref
-          assh_service_s {service} module interface. There are
-          actually two separate modules which implement the server and
-          client sides of the service. Related declarations can be
-          found in @ref{@assh/assh_userauth_client.h} and
-          @ref{@assh/assh_userauth_server.h}.
+      @section {Key-exchange implementation}
+        The @hl key-exchange methods and the services both have
+        their own module interface. Among all @xref{coremod}{module
+        interfaces} defined, only these two are designed to handle
+        packet exchanges and may report @hl events to the
+        application. Related declarations can be found in
+        @ref{@assh/assh_kex.h} and @ref{@assh/assh_service.h}.
+      @end section
 
-        @item The @em {Connection Protocol} also use the service
-          module interface. Because this protocol is symmetric, there
-          is a single module which implements both, the client and
-          server sides.  @label {connapi}
+      @section {User authentication implementation}
+        The @em {User Authentication Protocol} use the @ref
+        assh_service_s {service} module interface. There are
+        actually two separate modules which implement the server and
+        client sides of the service. Related declarations can be
+        found in @ref{@assh/assh_userauth_client.h} and
+        @ref{@assh/assh_userauth_server.h}.
+      @end section
 
-          The module implements the generic @xref{request} and @xref
-          {channel} mechanisms specified in sections 4 and 5 of
-          @sinvoke{4254}rfc and nothing more. The module reports
-          events which allow the application to handle incoming @xref
-          {request} and @xref {channel} related messages. It also
-          provides functions to send @xref {requests} and manage @xref
-          {channels} but it does not care about the types of @xref
-          {request} and @xref {channel} used. It makes no difference
-          if those have a standard type or are @xref{private
-          extensions}. The related declarations and details of the
-          module API can be found in @ref{@assh/assh_connection.h}.
+      @section {Connection protocol implementation}
+        The @em {Connection Protocol} also use the service module
+        interface. Because this protocol is symmetric, there is a
+        single module which implements both, the client and server
+        sides.  @label {connapi}
 
-        @item Section 6 and 7 of the same specification describe some
-          standard @xref {channel} and @xref {request} types which
-          support @xref {interactive sessions} and @xref {port
-          forwarding} respectively. Because implementation of these
-          features is tightly coupled with both, the operating system
-          and usage, handling of these features is left to the
-          application. Some parsing functions and a basic client state
-          machine for @xref {interactive Sessions} is provided as
-          @xref{helper functions} as shown in the @xref{exremote} and
-          @xref{exserver} examples. The related declarations can be
-          found in @ref{@assh/helper_interactive.h} and
-          @ref{@assh/helper_portfwd.h}.
-      @end list
+        The module implements the generic @hl request and @hl
+        {channel} mechanisms specified in sections 4 and 5 of
+        @sinvoke{4254}rfc and nothing more. The module reports events
+        which allow the application to handle incoming @hl request
+        and @hl channel related messages. It also provides
+        functions to send @hl requests and manage @hl channels
+        but it does not care about the types of @hl request and
+        @hl channel used. It makes no difference if those have a
+        standard type or are @hl{private extensions}. The related
+        declarations and details of the module API can be found in
+        @ref{@assh/assh_connection.h}.
+
+        Section 6 and 7 of the same specification describe some
+        standard @hl channel and @hl request types which
+        support @hl{interactive sessions} and @hl{port
+        forwarding} respectively. Because implementation of these
+        features is tightly coupled with both, the operating system
+        and usage, handling of these features is left to the
+        application. Some parsing functions and a basic client state
+        machine for @hl{interactive Sessions} is provided as
+        @hl{helper functions} as shown in the @xref{exremote} and
+        @xref{exserver} examples. The related declarations can be
+        found in @ref{@assh/helper_interactive.h} and
+        @ref{@assh/helper_portfwd.h}.
+      @end section
+
     @end section
 
   @end section
@@ -658,21 +666,22 @@ assh/assh_event.h
 
     @section TP {Core and modules}
       @label{coremod}
+      @label{modules}
       @label{module}
 
       Extensibility advertised in the @em ssh2 standard is transposed
       in @em libassh by allowing dynamic registration
-      of external @em ssh2 @xref{algorithms} and @xref {services}.
+      of external @em ssh2 @hl algorithms and @hl services.
 
-      The core of the library implements the @xref {transport layer},
-      dispatches packets and @xref {events}, handles registration of
-      @xref {algorithm} @xref {coremod} {modules} and performs
+      The core of the library implements the @hl{transport layer},
+      dispatches packets and @hl events, handles registration of
+      @hl algorithm @hl modules and performs
       management of @ref {assh_context_s} and @ref {assh_session_s}
       objects.
 
       Interface descriptor structures are used in order to declare
       modules. The following descriptors are used for @em ssh2
-      @xref {algorithms} negotiated during the @xref{key-exchange} process:
+      @hl algorithms negotiated during the @hl key-exchange process:
       @list
         @item The @ref assh_algo_kex_s interface descriptor is used to
           declare @xref{kexalgos}{key-exchange algorithms}.
@@ -693,14 +702,14 @@ assh/assh_event.h
       Additional pluggable interface descriptors are used by the library:
       @list
         @item The @ref assh_service_s interface descriptor is used to
-          declare implementations of @em ssh2 @xref {services}.
+          declare implementations of @em ssh2 @hl services.
         @item The @ref assh_prng_s interface descriptor is used to
           declare random generators used by the core and modules.
         @item The @ref assh_allocator_t function pointer type is used by
           the core and modules in order to allocate and free memory.
         @item The @ref assh_key_algo_s interface descriptor used to
           declare module able to create and manage storage of
-          @xref{SSH keys}.
+          @hl{SSH keys}.
         @ifnopt hide_internal
           @item The @ref assh_hash_algo_s interface descriptor is used
             to declare hash functions to use for internal use by the
@@ -712,16 +721,16 @@ assh/assh_event.h
 
     @section TP {Event based API}
       @label {evts}
-      @label {event} {event}
-      @label {events} {events}
-      @label {event loop} {event loop}
+      @label {event}
+      @label {events}
+      @label {event loop}
 
       The programming interface is event based. Event objects are used
       to pass data between the library and the application. The
       application have to perform pairs of calls to the @ref
       assh_event_get and @ref assh_event_done functions in order to
-      run a @xref{session}. These functions actually run the protocol
-      @xref{fsms}{state machines}. The code below shows a simple
+      run a @hl session. These functions actually run the protocol
+      @hl{state machines}. The code below shows a simple
       construct which can be used for that purpose.
 
       @code
@@ -779,7 +788,7 @@ switch (ev.id)
       used at the protocol level. Handling most of them involve some
       work in order to behave as a usual client or server
       application. In order to handle those events, the application may
-      either relies on the provided @xref{helper functions} or
+      either relies on the provided @hl{helper functions} or
       implement the whole thing. In the code below, helper functions are used:
 
       @code
@@ -811,21 +820,21 @@ switch (ev.id)
       event reported by the library is acknowledged by the application
       at any later time.
 
-      Most @xref {examples} applications provided with the
+      Most @hl example applications provided with the
       library do implement handling of @em libassh events.
 
     @end section
 
     @section TP {Helper functions}
-      @xref{evts}{Events} are used to notify and involve the
+      @hl Events are used to notify and involve the
       application in most packet exchanges that occur with the remote
       peer. Events reported to the application can be generated by the
-      @xref{transport layer}, the running @xref{key-exchange}
-      module and the running @xref{service} module.
+      @hl{transport layer}, the running @hl key-exchange
+      module and the running @hl service module.
 
-      This involves the application in tasks like @xref{host key}
-      lookup, user credentials checking, @xref{requests} handling and
-      @xref{channels} management. This allows a fine-grained control
+      This involves the application in tasks like @hl{host key}
+      lookup, user credentials checking, @hl requests handling and
+      @hl channels management. This allows a fine-grained control
       of the @em ssh2 features while letting the library handle the
       protocol and crypto stuff.
 
@@ -833,8 +842,8 @@ switch (ev.id)
       done by the application. That's why the library comes with
       helper functions designed to handles events in a way which yield
       common behavior. For instance, this includes performing
-      @xref{host key} lookup in standard file locations and handling
-      @xref{user authentication} using the operating system calls. Of
+      @hl{host key} lookup in standard file locations and handling
+      @hl{user authentication} using the operating system calls. Of
       course, the application writer is free not to use the helper
       functions when they are not suitable. The code of the @xref
       {exremote} example and @xref {exloopback} example are short
@@ -842,7 +851,7 @@ switch (ev.id)
 
       Other helper functions which are not designed to handle events
       are also provided. These provide various features like
-      @xref {ssh keys} file operations and @em ssh2 blob parsing.
+      @hl{SSH keys} file operations and @em ssh2 blob parsing.
     @end section
 
     @section TP {Timeout management}
@@ -871,14 +880,14 @@ switch (ev.id)
     library.
 
     @section T {Transport layer FSMs}
-      The @xref{transport layer} is implemented using four
+      The @hl{transport layer} is implemented using four
       finite state machines:
       @list
         @item The main @xref{fsmtr}{transport FSM} tracks the state of
           the @ref assh_session_s object. It manages the different
           phases of the protocol, starting with exchange of
-          @xref{version strings}. It also dispatches packets to the
-          running @xref{key-exchange} module and to the service
+          @hl{version strings}. It also dispatches packets to the
+          running @hl key-exchange module and to the service
           FSM. It handles disconnection as well.
         @item The @xref{fsmin}{input FSM} retrieves the remote ssh
           stream from the application then extracts, decipher,
@@ -887,11 +896,11 @@ switch (ev.id)
           packets and report the output ssh stream to the application
           for sending to the remote host.
         @item The @xref{fsmsrv}{service FSM} manages selection and
-          execution of the @em ssh2 @xref{services} which run on top
-          of the @xref{transport layer}. On a client @xref{session},
+          execution of the @em ssh2 @hl services which run on top
+          of the @hl{transport layer}. On a client @hl session,
           the @em{service FSM} send service requests to the server,
           then initializes and run the next service. On a server
-          @xref{session}, the @em{service FSM} wait for client
+          @hl session, the @em{service FSM} wait for client
           requests, then initializes and run the requested service.
       @end list
 
@@ -904,10 +913,10 @@ switch (ev.id)
         @item It report any pending error event.
         @item It checks for protocol timeouts.
         @item It dispatches an incoming packet to the running
-          @xref{key-exchange} module if any. When none is running, it
+          @hl key-exchange module if any. When none is running, it
           dispatches to the @em {service FSM} instead.
-        @item It lets the running @xref{key-exchange} or
-          @xref{service} report an event to the application.
+        @item It lets the running @hl key-exchange or
+          @hl service report an event to the application.
         @item If no event has been reported, the @em{output FSM} is
           executed, unless disconnected from the remote peer. This may
           report an @ref ASSH_EVENT_WRITE event to the application.
@@ -923,7 +932,7 @@ switch (ev.id)
     @end section
 
     @section T {User auth FSMs}
-      Client and server @xref{user authentication} components are
+      Client and server @hl{user authentication} components are
       implemented as two different service modules. They each have
       their own FSM.
 
@@ -937,13 +946,13 @@ switch (ev.id)
     @end section
 
     @section T {Connection layer FSMs}
-      The module which implements the @xref{connection protocol} is
+      The module which implements the @hl{connection protocol} is
       identical for server and client sides. It relies on two
-      different types of FSMs which are instantiated for each @xref
-      {channel} and @xref {request} objects.
+      different types of FSMs which are instantiated for each @hl
+      {channel} and @hl request objects.
 
-      The @xref {fsmchan}{channel FSM} manages the @xref {channel}
-      protocol state and lifetime. It ensures that any @xref {channel}
+      The @xref {fsmchan}{channel FSM} manages the @hl channel
+      protocol state and lifetime. It ensures that any @hl channel
       object known to the application will be properly reported as
       released at some point even in case of disconnection.
 
@@ -952,8 +961,8 @@ switch (ev.id)
     @end section
 
     @section T {Key exchange FSMs}
-      The various @xref{key-exchange} modules all use their own FSM in
-      order to execute the @xref{key-exchange} process. Because those
+      The various @hl key-exchange modules all use their own FSM in
+      order to execute the @hl key-exchange process. Because those
       FSMs are very simple and linear, no state diagrams are provided.
     @end section
 
@@ -971,32 +980,32 @@ switch (ev.id)
         @xref{coremod}{core and modules}.
       @item @tt{src/assh/} : The library public headers. See the
         @xref{headers list} section for details.
-      @item @tt{tests/} : The test suite.
+      @item @tt{tests/} : The @hl{test suite}.
       @item @tt{doc/} : This manual.
       @item @tt{examples/} : Some @xref{examples}{example applications}.
       @item @tt{extra/} : development tools used to generate some tables and code.
     @end list
 
-    The library core and @xref{service} modules only
-    contains the @xref{state machines} and protocol related stuff:
+    The library core and @hl service modules only
+    contains the @hl{state machines} and protocol related stuff:
     @list
       @item @tt{src/assh_*.c} : The library core functions. This
         includes code related to management of @ref assh_context_s
         {contexts}, @ref assh_session_s {sessions}, @ref assh_event_s
-        {events}, as well as support code for @xref{key-exchange}, @ref
+        {events}, as well as support code for @hl key-exchange, @ref
         assh_service_s {services}, @ref assh_packet_s {packets}, @ref
         assh_key_s {keys} and @ref assh_algo_s {algorithms}.
-      @item @tt{src/assh_transport.c} : The @xref{transport layer}
+      @item @tt{src/assh_transport.c} : The @hl{transport layer}
         implementation.
       @item @tt{src/assh_userauth_client*.c} : The client side
-        @xref{user authentication} service module.
+        @hl{user authentication} service module.
       @item @tt{src/assh_userauth_server*.c} : The server side
-        @xref{user authentication} service module.
+        @hl{user authentication} service module.
       @item @tt{src/assh_connection.c} : The
-        @xref{connection protocol} service module.
+        @hl{connection protocol} service module.
     @end list
 
-    Then come the @xref {algorithms} exposed during the negotiation
+    Then come the @hl algorithms exposed during the negotiation
     phase of the ssh protocol. Some of these pluggable modules are
     standalone and others are linked to an external libraries:
     @list
@@ -1010,13 +1019,13 @@ switch (ev.id)
     Some additional pluggable utility components are used by the library
     @xref{coremod}{core and modules}:
     @list
-      @item @tt{src/key*.c} : @xref{SSH keys} management modules.
+      @item @tt{src/key*.c} : @hl{SSH keys} management modules.
       @item @tt{src/prng*.c} : Random number generation modules.
       @item @tt{src/hash*.c} : Hash functions modules.
-      @item @tt{src/bignum*.c} : A big number engine.
+      @item @tt{src/bignum*.c} : A constant time big number engine.
     @end list
 
-    Some @xref{helper functions} are provided for
+    Some @hl{helper functions} are provided for
     convenience. Unlike other parts of the library, these files
     contains system calls and platform specific stuff. It is not used
     by the other parts of the library and are only provided for use by
@@ -1026,17 +1035,17 @@ switch (ev.id)
         for common ssh client behavior.
       @item @tt{src/helper_server.c} : This provides event handlers
         for common ssh server behavior.
-      @item @tt{src/helper_key.c} : This provides @xref{SSH key} file
+      @item @tt{src/helper_key.c} : This provides @hl{SSH key} file
         loading and saving functions.
       @item @tt{src/helper_base64.c} : This implements a base64
-        encoder and decoder for use by @xref{SSH key} helpers.
+        encoder and decoder for use by @hl{SSH key} helpers.
       @item @tt{src/helper_bcrypt.c} : This provides the encryption
         algorithm used for passphrase protected keys in @em OpenSSH
         formats.
       @item @tt{src/helper_io.c} : This provides IO events handler
         relying on POSIX file descriptors.
       @item @tt{src/helper_interactive.c} : This implements
-        @xref{interactive session} related functions.
+        @hl{interactive session} related functions.
     @end list
     See associated header files for details of the helpers API.
   @end section
@@ -1070,9 +1079,9 @@ switch (ev.id)
   The @em ssh2 protocol is designed for extensibility as described in
   the @xref {Protocol architecture} section.
 
-  When the @xref{key-exchange} process starts, the peers agree on the
-  @em ssh2 @xref {algorithms} that will be used to secure the
-  connection. There are five types of @xref {algorithms} which need to
+  When the @hl key-exchange process starts, the peers agree on the
+  @em ssh2 @hl algorithms that will be used to secure the
+  connection. There are five types of @hl algorithms which need to
   be agreed upon: @xref{kexalgos}{key-exchange algorithms},
   @xref{authalgos}{host authentication algorithms},
   @xref{cipheralgos}{cipher algorithms}, @xref{macalgos}{message
@@ -1088,8 +1097,8 @@ switch (ev.id)
   @xref{authalgos}{signature algorithms}.
 
   There are also multiples features of the protocol that are named and
-  negotiated independently of the @xref{key-exchange} process. This is
-  the case of @xref{services} and @xref{user authentication} methods,
+  negotiated independently of the @hl key-exchange process. This is
+  the case of @hl services and @hl{user authentication} methods,
   for instance.
 
   The following subsections list supported algorithms, authentication
@@ -1097,8 +1106,8 @@ switch (ev.id)
 
   @section TP {Algorithms registration}
     @label{algoreg}
-    The library comes with @xref{coremod}{modules} which implement
-    various @xref {algorithms} for the @em ssh2 protocol. Some provided
+    The library comes with @hl modules which implement
+    various @hl algorithms for the @em ssh2 protocol. Some provided
     modules use builtin crypto implementation and other rely on external
     libraries like @em Libgcrypt and @em OpenSSL. Additional modules can
     be added in order to support alternate implementations as well as
@@ -1116,38 +1125,38 @@ switch (ev.id)
       @item They are used along with application provided weight
         values to compute a score for retained algorithms. The score
         is then used to advertise lists of algorithms sorted according
-        application safety requirements during the @xref{key-exchange}
+        application safety requirements during the @hl key-exchange
         process.
       @item They are used to compute an overall score of the safety of
         the session which depend on algorithms negotiated with the
-        remote host during the last @xref{key-exchange} process.
+        remote host during the last @hl key-exchange process.
     @end list
 
     The library offers multiple ways to shape the set of
-    @xref{algorithms} involved in a @em libassh @xref{session}:
+    @hl algorithms involved in a @em libassh @hl session:
     @list
       @item The first selection is performed when registering the
-        @xref{algorithms} on the @ref assh_context_s {context
+        @hl algorithms on the @ref assh_context_s {context
         object}. Depending on the library function used for that
-        purpose, a specific list of @xref {algorithms} is provided by
+        purpose, a specific list of @hl algorithms is provided by
         the application, or the library filters among the supported
-        @xref {algorithm} based on the safety requirement provided by
+        @hl algorithm based on the safety requirement provided by
         the application.
-      @item When multiple variants of the same @xref {algorithm} are
+      @item When multiple variants of the same @hl algorithm are
         available, the one with the lowest safety which matches the
         requirement is retained. The application is free to use a low
         safety factor in order to favor acceptance of weak keys and weak
         parameters in order to maximize compatibility. It may also use a
         higher safety factor which may prevent connecting with older
-        unsafe implementations and reject weak @xref{user keys} and
-        @xref{host keys}.
+        unsafe implementations and reject weak @hl{user keys} and
+        @hl{host keys}.
       @item An additional filter callback function can be attached to
-        @xref{sessions} in order to further filter among registered
-        @xref {algorithms} during the @xref{key-exchange}
-        process. Because some @xref {algorithms} are available under
+        @hl sessions in order to further filter among registered
+        @hl algorithms during the @hl key-exchange
+        process. Because some @hl algorithms are available under
         different names, this callback allows filtering based on
         specification status as well as popularity. It can also be used
-        to enable some @xref {algorithm} in a single direction.
+        to enable some @hl algorithm in a single direction.
     @end list
 
     @em Related functions are declared in @ref{@assh/assh_algo.h} and
@@ -1162,18 +1171,18 @@ switch (ev.id)
   @section TP {Key-exchange algorithms}
     @label{kexalgos}
 
-    Modules of this implement more than a simple algorithm. A key
+    Modules of this type implement more than a simple algorithm. A key
     exchange module needs to provide both, the crypto used to
     establish a shared secret and the associated part of the @em ssh2
     protocol extension. See the @xref{kex} section for more details.
 
-    This section briefly lists key-exchange @xref {algorithms} that are
+    This section briefly lists key-exchange @hl algorithms that are
     supported by modules provided with the library.
 
     Key-exchange related declarations can be found in @ref{@assh/assh_kex.h}.
 
     @section {Prime field Diffie-Hellman}
-      The following @xref {algorithms} rely on diffie-hellman over prime
+      The following @hl algorithms rely on diffie-hellman over prime
       field, as specified in @sinvoke{4253}rfc:
       @list
         @item @tt {diffie-hellman-group1-sha1} (1024 bits prime),
@@ -1181,7 +1190,7 @@ switch (ev.id)
         @item @tt {diffie-hellman-group14-sha256} (2048 bits prime).
       @end list
 
-      There are additional such @xref {algorithms} with larger primes,
+      There are additional such @hl algorithms with larger primes,
       specified in @xref {draftmodp}:
       @list
         @item @tt {diffie-hellman-group15-sha512} (3072 bits prime).
@@ -1192,7 +1201,7 @@ switch (ev.id)
     @end section
 
     @section {Prime field Diffie-Hellman with group exchange}
-      The following @xref {algorithms} rely on diffie-hellman over prime
+      The following @hl algorithms rely on diffie-hellman over prime
       field as specified in @sinvoke{4419}rfc. The groups used are not
       fixed but provided by the server:
       @list
@@ -1213,7 +1222,7 @@ switch (ev.id)
     @end section
 
     @section {Montgomery curves Diffie-Hellman}
-      These are diffie-hellman @xref {algorithms} based on montgomery elliptic
+      These are diffie-hellman @hl algorithms based on montgomery elliptic
       curves as proposed in @xref {curve25519}. The protocol part for
       @em ssh2 is specified in @xref {curve25519libssh}.
 
@@ -1228,7 +1237,7 @@ switch (ev.id)
     @end section
 
     @section {Weierstrass curves Diffie-Hellman}
-      These are diffie-hellman @xref {algorithms} based on weierstrass
+      These are diffie-hellman @hl algorithms based on weierstrass
       elliptic curves as proposed in @sinvoke{5656}rfc. The three NIST
       curves required by the rfc are implemented.
 
@@ -1245,15 +1254,15 @@ switch (ev.id)
     @label{authalgos}
 
     Modules of this type implement signature algorithms which are used
-    during the @xref{key-exchange} process.
+    during the @hl key-exchange process.
 
-    Those modules can also be involved in the @xref{user
+    Those modules can also be involved in the @hl{user
     authentication} process even though the algorithm selected during
     the key-exchange is only used to authenticate the server host.
 
     Signature generation and checking primitives are
     implemented. Companions modules with ability to create, load and
-    save keys using various @xref {key formats} are provided along.
+    save keys using various @hl{key formats} are provided along.
 
     Signature related declarations can be found in @ref{@assh/assh_sign.h}.
 
@@ -1264,7 +1273,7 @@ switch (ev.id)
       The original @sinvoke{4253}rfc only specifies use of 1024 bits
       DSA keys for @em {ssh2}. The last version of the DSA standard
       @xref{fips1864} specifies larger key sizes, implemented here as
-      extensions. The additional @xref {algorithms} accept any key size
+      extensions. The additional @hl algorithms accept any key size
       greater than their base key size and reject shorter keys.
 
       @list
@@ -1276,12 +1285,12 @@ switch (ev.id)
     @end section
 
     @section {RSA signature}
-      These are implementations of the RSA signature @xref {algorithm} as
+      These are implementations of the RSA signature @hl algorithm as
       specified in @xref{fips1864}.
 
-      The original RSA signature @xref {algorithm} specified in
+      The original RSA signature @hl algorithm specified in
       @sinvoke{4253}rfc relies on @em{md5} and @em{sha1}
-      hashes. Additional @xref {algorithms} using the @em{sha2-256} and
+      hashes. Additional @hl algorithms using the @em{sha2-256} and
       the @em{sha2-512} hashes are implemented as proposed in
       @xref{draftsignsha2}.
 
@@ -1294,7 +1303,7 @@ switch (ev.id)
       The @tt {ssh-rsa} algorithm was originally designed to accept
       different signature formats, but some formats are no more
       accepted by recent implementations due to security concerns.
-      This may yield compatibility issues because the @xref{algorithm}
+      This may yield compatibility issues because the @hl algorithm
       name has not changed. That's why @em libassh provides variants
       of this algorithms. Depending on the variant retained on
       algorithm registration, lower key sizes and weak hash algorithms
@@ -1312,7 +1321,7 @@ switch (ev.id)
     @end section
 
     @section {EdDSA signature}
-      These are signature @xref {algorithms} based on Edward elliptic
+      These are signature @hl algorithms based on Edward elliptic
       curve as proposed in @xref{hshssign}.
 
       Two additional sets of curve parameters with larger key sizes
@@ -1348,27 +1357,27 @@ switch (ev.id)
   @section TP {Cipher algorithms}
     @label {cipheralgos}
 
-    Modules of this type are used by the @xref{transport
+    Modules of this type are used by the @hl{transport
     layer} in order to encipher and decipher the @em ssh2 packets
     transmitted over the network.
 
-    Cipher @xref {algorithms} are specified in @sinvoke{4253}rfc and
+    Cipher @hl algorithms are specified in @sinvoke{4253}rfc and
     their @em{CTR} variants are specified in @sinvoke{4344}rfc. Both
     are implemented.
 
     Authenticated ciphers are supported too. When one is selected, the
     use of a separate @xref{macalgos}{message authentication
     algorithm} is unnecessary. In this case, the binary packet format
-    described in @sinvoke{5647}rfc is used but the @xref {algorithms}
+    described in @sinvoke{5647}rfc is used but the @hl algorithms
     selection mechanism described for @tt AEAD_AES_128_GCM is broken
     by design and not implemented. What actually happens is that the
     MAC algorithm selection is ignored when an authenticated cipher is
     selected, as specified for the @tt {aes128-gcm@openssh.com}
-    private @xref {algorithm}.
+    private @hl algorithm.
 
     Cipher related declarations can be found in @ref{@assh/assh_cipher.h}.
 
-    The following cipher @xref {algorithms} have built-in support:
+    The following cipher @hl algorithms have built-in support:
     @list
       @item @tt {chacha20-poly1305@openssh.com},
       @item @tt {aes128-cbc},  @tt {aes192-cbc},    @tt {aes256-cbc},
@@ -1396,11 +1405,11 @@ switch (ev.id)
   @section TP {Message authentication algorithms}
     @label {macalgos}
 
-    Modules of this type are used by the @xref{transport
+    Modules of this type are used by the @hl{transport
     layer} in order to authenticate the @em ssh2 packets transmitted
     over the network.
 
-    Standard @em ssh2 MAC @xref {algorithms} based on @em{md5}, @em{sha1}
+    Standard @em ssh2 MAC @hl algorithms based on @em{md5}, @em{sha1}
     and @em{sha2} are provided as specified in @sinvoke{4253}rfc and
     @sinvoke{6668}rfc. Extensions proposed by @em OpenSSH which use @em
     {Encrypt-then-Mac} instead of @em {Mac-then-Encrypt} are provided
@@ -1408,7 +1417,7 @@ switch (ev.id)
 
     MAC related declarations can be found in @ref{@assh/assh_mac.h}.
 
-    The following MAC @xref {algorithms} have built-in support:
+    The following MAC @hl algorithms have built-in support:
     @list
       @item @tt {hmac-md5}, @tt {hmac-md5-96},
       @item @tt {hmac-sha1}, @tt {hmac-sha1-96},
@@ -1428,7 +1437,7 @@ switch (ev.id)
   @section TP {Compression algorithms}
     @label {compalgos}
 
-    Modules of this type are used by the @xref{transport
+    Modules of this type are used by the @hl{transport
     layer} in order to compress and decompress the @em ssh2 packets
     transmitted over the network.
 
@@ -1446,31 +1455,35 @@ switch (ev.id)
   @section TP {User authentication methods}
     @label{uamethods}
 
-    The @xref{user authentication} protocol is implemented as separate
-    client and server service modules. The following standard
-    authentication methods are supported by the provided modules:
+    The @hl{user authentication} protocol is implemented as separate
+    client and server service @hl modules. The following standard
+    authentication methods are supported by the modules provided with
+    @em {libassh}:
 
     @list
       @item @tt none : always grant access.
-      @item @tt password : transmit user password, checked on server side.
-        The server may request change of password.
-      @item @tt hostbased : grant access based on client machine
-        @xref{host key}.
-      @item @tt publickey : grant access based on @xref{user key}.
-      @item @tt keyboard-interactive : prompt and transmit multiple
-        text fields requested by the server.
+      @item @tt password : The password based user authentication
+        method. The user password is transmitted to the server for
+        checking, as specified in @sinvoke{4252}rfc.
+      @item @tt hostbased : The @hl {host based user authentication}
+        method, specified in @sinvoke{4252}rfc.
+      @item @tt publickey : The @hl {public key user authentication}
+        method, specified in @sinvoke{4252}rfc.
+      @item @tt keyboard-interactive : The @hl {keyboard interactive
+        user authentication} method, specified in
+        @sinvoke{4256}rfc.
     @end list
 
     Multi-factor authentication is supported on both sides. This means
     that the server application may require multiple methods to
     succeed in order to grant access. On the client side, multiple
-    @xref{user authentication} events are reported until the server
+    @hl{user authentication} events are reported until the server
     reports a success.
   @end section
 
   @section TP {Key types and formats}
     @label {keysalgos}
-    @label {key formats} {key formats}
+    @label {key formats}
 
     The @em ssh2 protocol uses long term cryptographic key pairs in
     order to authenticate the hosts and users. A key pair is composed
@@ -1486,8 +1499,8 @@ switch (ev.id)
       following types of keys have builtin support:
 
       @list
-        @item @em{RSA} keys used for @xref{host authentication} and
-          @xref{user authentication} as well as by the @em{RSA}
+        @item @em{RSA} keys used for @hl{host authentication} and
+          @hl{user authentication} as well as by the @em{RSA}
           @xref{kexalgos}{key-exchange algorithm},
         @item @em{DSA} keys used for host and user authentication only,
         @item @em{EDDSA} keys used for host and user authentication and
@@ -1536,13 +1549,13 @@ switch (ev.id)
         metadata along with the raw key material.
 
         Support for these formats in @em libassh is provided as
-        @xref{helper functions}. Helpers are able to load and store
+        @hl{helper functions}. Helpers are able to load and store
         keys in memory buffers as well as on the file
         system. Passphrase encryption of private keys is implemented
         when supported by the format.
 
         The following additional container formats are supported using
-        @xref{helper functions} declared in @ref{@assh/helper_key.h}:
+        @hl{helper functions} declared in @ref{@assh/helper_key.h}:
 
         @list
           @item The base64 format for public keys as described in
@@ -1560,8 +1573,9 @@ switch (ev.id)
 
 @end section
 
-@section TP {Examples}
-  @label {example} {example}
+@section TP {Example applications}
+  @label {example}
+  @label {examples}
 
   The section contains commented example applications based on
   @em libassh. There are client and server application examples as
@@ -1589,7 +1603,7 @@ $ examples/client localhost ls
     The first thing to do in the program @tt main function is
     initialization of the external libraries. @em libassh does
     not actually need this, but some other libraries like @em  Libgcrypt
-    and @em OpenSSL used by @xref{coremod}{modules} may require
+    and @em OpenSSL used by @hl modules may require
     calling a global initialization function. If you do not want to bother
     about which third party libraries are involved in your build of
     @em {libassh}, just call the @ref assh_deps_init function:
@@ -1606,35 +1620,35 @@ $ examples/client localhost ls
     An @ref assh_session_s object is needed in order to store the
     state of the @em ssh2 protocol. This requires an @ref
     assh_context_s object used to store resources which may be shared
-    by multiple @xref{sessions}.  That's why initializing a new
+    by multiple @hl sessions.  That's why initializing a new
     library context is the first thing to do. Then
-    @xref{coremod}{modules} need to be registered on the new context:
+    @hl modules need to be registered on the new context:
     @example examples/rexec.c:initc
 
     Our @ref assh_session_s object can then be initialized and
     attached to the context:
     @example examples/rexec.c:inits
 
-    Our application will need to handle @xref{user authentication}
+    Our application will need to handle @hl{user authentication}
     related events originating from the server and reported by the
-    library. That's why we have to keep track of @xref{user
+    library. That's why we have to keep track of @hl{user
     authentication} methods we want to use and that have not been
     tried yet:
     @example examples/rexec.c:inita
 
-    In this simple application, we heavily rely on @xref{helper
+    In this simple application, we heavily rely on @hl{helper
     functions} provided by the library. This is the case for
-    management of the @xref{interactive session} part of the
-    @xref{connection protocol} which runs on the higher layer of @em
+    management of the @hl{interactive session} part of the
+    @hl{connection protocol} which runs on the higher layer of @em
     {ssh2}. This component is used to request execution of a process
     on the remote server. It is not related to the @ref assh_session_s
     type presented above which is used to manage the whole connection.
 
-    Even if more advanced applications will want to implement @xref
+    Even if more advanced applications will want to implement @hl
     {interactive sessions} directly, the library provides a small
-    helper state machine which performs basic handling of client @xref
-    {interactive sessions}. This is used below to handle @xref
-    {request} and @xref {channel} related events in order to request
+    helper state machine which performs basic handling of client @hl
+    {interactive sessions}. This is used below to handle @hl
+    {request} and @hl channel related events in order to request
     execution the user command. At this point, we just need to
     initializes a state object for this helper:
     @example examples/rexec.c:initi
@@ -1662,10 +1676,10 @@ $ examples/client localhost ls
     resources properly.
 
     Then come events that are only reported during specific phases of
-    the protocol. Those are related to the @xref{key-exchange}
-    process and to the currently running @xref{service}.
+    the protocol. Those are related to the @hl key-exchange
+    process and to the currently running @hl service.
 
-    When the server sends its @xref{host key} during @xref{key-exchange},
+    When the server sends its @hl{host key} during @hl key-exchange,
     our client needs to check if it is a known key or if the user
     accept the new key. An helper function handles this by looking in
     the @tt {~/.ssh/known_hosts} file. This helper also queries the user
@@ -1676,19 +1690,19 @@ $ examples/client localhost ls
     in order to adapt the usage or support a specific target platform API.
 
     Once again an helper function is used to handle the
-    @xref{user authentication} events. It takes care of
+    @hl{user authentication} events. It takes care of
     querying the system user database and reads user public key
     files:
     @example examples/rexec.c:evua
 
-    Then comes handling of the @xref{interactive sessions} as
-    specified as part of the @xref{connection protocol}. It allows
+    Then comes handling of the @hl{interactive sessions} as
+    specified as part of the @hl{connection protocol}. It allows
     starting a process on a remote host. For that purpose, we rely on
     the helper state machine discussed previously. The @em ssh2
-    protocol is able to multiplex many application @xref{channels}
-    over a @xref{session}.  However, our simple tool only wants to
+    protocol is able to multiplex many application @hl channels
+    over a @hl session.  However, our simple tool only wants to
     start a single command, that's why we choose to properly shutdown
-    the @em ssh2 @xref{session} when our single @xref{interactive
+    the @em ssh2 @hl session when our single @hl{interactive
     session} ends:
     @example examples/rexec.c:evcn
 
@@ -1698,8 +1712,8 @@ $ examples/client localhost ls
     assh_event_get function will stop reporting more events at some
     point, breaking our main loop as appropriate.
 
-    Then comes handling of data transferred over the @xref{interactive
-    session} @xref{channel}. When the remote command writes
+    Then comes handling of data transferred over the @hl{interactive
+    session} @hl channel. When the remote command writes
     data to its standard output, the remote server forwards it to our
     client over the only existing @ref{assh_channel_s} object we
     have. We may then write the data to the standard output on the
@@ -1718,14 +1732,14 @@ $ examples/client localhost ls
   @section TP {Simple loopback server}
     @label {exloopback}
 
-    This simple server application accepts all @xref{interactive
+    This simple server application accepts all @hl{interactive
     session} open messages from a connecting client and sends back any
-    data received over open @xref{channels}. When connecting
+    data received over open @hl channels. When connecting
     using a standard client, this has the effect of echoing any
     character typed.
 
     Unlike code of the @xref{exremote}{previous example} which handles
-    @xref{connection protocol} related events using helper functions,
+    @hl{connection protocol} related events using helper functions,
     those events are handled directly by the application here. This
     example also shows how to take control of the underlying channel
     flow control mechanism provided by the @em ssh2 protocol.
@@ -1736,18 +1750,18 @@ $ examples/client localhost ls
     context is initialized as shown previously:
     @example examples/loopback.c:initc P
 
-    A server context needs to have some @xref{host keys}
-    registered. We try to load @xref{host keys} from standard
+    A server context needs to have some @hl{host keys}
+    registered. We try to load @hl{host keys} from standard
     locations using an helper function. This may however require @tt
     root access. That's why we fallback to creating an ephemeral
-    @xref{host key} by calling the @ref assh_key_create function:
+    @hl{host key} by calling the @ref assh_key_create function:
     @example examples/loopback.c:reghk
 
     We can then start waiting for a client connection and initialize an
     @ref assh_session_s object when this occurs:
     @example examples/loopback.c:loop
 
-    Then comes the @xref{event} loop:
+    Then comes the @hl event loop:
     @example examples/loopback.c:loopev
 
     Some events are handled using helper functions, as detailed in the
@@ -1757,7 +1771,7 @@ $ examples/client localhost ls
     When the client sends an @ref SSH_MSG_CHANNEL_OPEN message to our
     server, this ends up reporting the @ref ASSH_EVENT_CHANNEL_OPEN
     event to the application. In our case, we want to allow the client
-    to open @xref{channels} of the @tt session type. Other types of
+    to open @hl channels of the @tt session type. Other types of
     channel will be rejected by our server:
     @example examples/loopback.c:chopenev
 
@@ -1827,7 +1841,7 @@ $ examples/client localhost ls
     acknowledge other events:
     @example examples/loopback.c:evdflt
 
-    When the connection closes, we cleanup the @xref{session} and we
+    When the connection closes, we cleanup the @hl session and we
     are ready to listen for an other connecting client:
     @example examples/loopback.c:sclean
 
@@ -1884,7 +1898,7 @@ $ examples/client localhost ls
           channel by calling the @ref assh_channel_data_send function.
       @end list
 
-      Because the @xref{interactive session} is not started immediately, only
+      Because the @hl{interactive session} is not started immediately, only
       the network stream needs to be transferred initially. Moreover, we
       do not always have data to write to the file descriptors. That's
       why the @tt POLLIN and @tt POLLOUT flags are set conditionally on
@@ -1900,14 +1914,14 @@ $ examples/client localhost ls
       @example examples/client.c:poll
 
       The application relies on an helper state machine in order to
-      manage the @xref{interactive session}. Because we only want to
-      run a single @xref{session}, we have to initiate a disconnection
+      manage the @hl{interactive session}. Because we only want to
+      run a single @hl session, we have to initiate a disconnection
       from the remote server when the single session terminates:
       @example examples/client.c:disco
 
       We can then start dealing with data transfer from the local
       standard input to the remote process input, provided that some
-      data are available and the @xref{interactive session} has
+      data are available and the @hl{interactive session} has
       started. The data is written to the open @em ssh2 channel as
       explained in the previous example:
       @example examples/client.c:stdin
@@ -1927,18 +1941,18 @@ $ examples/client localhost ls
       @example examples/client.c:sshloopcall|cleanup
 
       The @tt ssh_loop function returns 0 if there are no more events
-      to report, which means the end of the @em ssh2 @xref{session}
+      to report, which means the end of the @em ssh2 @hl session
       and makes the main loop terminate.
     @end section
 
     @section {The assh event loop}
       The @tt ssh_loop function contains the @em libassh
-      @xref{event} loop as stated previously:
+      @hl event loop as stated previously:
       @example examples/client.c:sshloop
 
       Only data transfer related events are shown here, as handling of
       other events mostly rely on helpers functions that deal with
-      @xref{user authentication} and @xref{interactive session}
+      @hl{user authentication} and @hl{interactive session}
       management. This is detailed in the @xref{exremote}{remote
       command execution} example.
 
@@ -1975,7 +1989,7 @@ $ examples/client localhost ls
     connect to a second server. The second client executes a remote
     command like in the @xref{exremote} example.
 
-    The two client @xref{sessions} instantiated in our application are
+    The two client @hl sessions instantiated in our application are
     referred as the @em fwd session and the @em rexec
     session. Similarly, the first server host which is used as a proxy
     is called @em fwd_host and the second server on which the remote
@@ -2008,8 +2022,8 @@ bounce_host$ ssh rexec_host command
     rely on port forwarding. In this case, the second client runs on
     @em bounce_host. This lets @em bounce_host see what happens as it
     processes user data in clear text, including any password typed to
-    connect to @em {rexec_host}. In the same way, using @xref {user
-    keys} from @em bounce_host with this approach requires use of @xref
+    connect to @em {rexec_host}. In the same way, using @hl{user
+    keys} from @em bounce_host with this approach requires use of @hl
     {ssh agent forwarding}.
 
     Instead, our example application implements the first approach as
@@ -2034,7 +2048,7 @@ localhost$ example/fwdexec forward_host host command
 
     @section {The main loop}
       The first thing to do in the @tt main function is initialization
-      of the two @xref{sessions}. A single @xref{interactive session}
+      of the two @hl sessions. A single @hl{interactive session}
       state machine is used because it's only needed by the @em rexec
       session.
       @example examples/fwdexec.c:init P
@@ -2054,8 +2068,8 @@ localhost$ example/fwdexec forward_host host command
       We will now focus on the implementation of the event loop of the
       @em fwd session.
 
-      The @xref{port forwarding} mechanism in @em ssh2 is provided by
-      the @xref{connection protocol} and uses a @xref {channel} in
+      The @hl{port forwarding} mechanism in @em ssh2 is provided by
+      the @hl{connection protocol} and uses a @hl channel in
       order to transport the stream of the forwarded TCP
       connection. This means that our @em fwd session will need to
       open such a channel in order to let the application exchange
@@ -2076,11 +2090,11 @@ localhost$ example/fwdexec forward_host host command
       @example examples/fwdexec.c:fwdvars2
 
       Then comes the @tt ssh_loop_fwd function with the usual
-      @xref{event loop} code construct:
+      @hl{event loop} code construct:
       @example examples/fwdexec.c:fwdloop
 
-      @xref{User authentication} and @xref{key-exchange} related
-      events are handled using @xref{helper} functions as detailed in
+      @hl{User authentication} and @hl key-exchange related
+      events are handled using @hl{helper functions} as detailed in
       the previous examples and are not shown here.
 
       Because this session talks to @em fwd_host through a local TCP
@@ -2088,14 +2102,14 @@ localhost$ example/fwdexec forward_host host command
       order to handle the network IO events.
       @example examples/fwdexec.c:fwdevio
 
-      We setup the TCP port forwarding as soon as the @xref{connection
-      protocol} starts. The @ref assh_inter_open_direct_tcpip function
+      We setup the TCP port forwarding as soon as the @hl{connection
+      protocol} starts. The @ref assh_portfwd_open_direct_tcpip function
       serializes our @tt fwd_rq parameters and calls the @ref
       assh_channel_open function. This makes the @tt fwd_channel
       variable points to the opening channel object.
       @example examples/fwdexec.c:fwdevsrvstart
 
-      We then need to wait for the @xref{channel} open reply from @em
+      We then need to wait for the @hl channel open reply from @em
       fwd_host in order to know if the port forwarding is accepted.
       @example examples/fwdexec.c:fwdevchopen
 
@@ -2155,26 +2169,26 @@ localhost$ example/fwdexec forward_host host command
   @section TP {UNIX server}
     @label {exserver}
 
-    This example application is a toy server able to handle @xref
+    This example application is a toy server able to handle @hl
     {connection sharing}. It allows the client user to login and
-    execute commands remotely. Multiple @xref{interactive sessions} on
+    execute commands remotely. Multiple @hl{interactive sessions} on
     the server side run separate processes started by a single
     client. The server code executes in the parent process and relies
     on @em libassh in order to manage the connection with the client
     and the children IO streams.
 
     We first introduce a few functions designed to execute a child
-    process and setup related IO redirections. This is the @xref{interactive
+    process and setup related IO redirections. This is the @hl{interactive
     session} management code, provided by the application. Then we
     detail code of the event loops used to run the ssh server
-    @xref{session}. Those loops are similar to what is implemented in the
+    @hl session. Those loops are similar to what is implemented in the
     @xref{exclient}{client example} application, but multiple channels
     and IO streams are involved here.
 
     @section {Interactive session code}
-      The states of @xref{interactive sessions} are stored in instances of
+      The states of @hl{interactive sessions} are stored in instances of
       the @tt its_s structure we declare below. Our server application
-      has to create those objects when execution of a new @xref{interactive
+      has to create those objects when execution of a new @hl{interactive
       session} is requested by the client.
 
       This structure contains a state field along with a reference to
@@ -2183,7 +2197,7 @@ localhost$ example/fwdexec forward_host host command
       @example examples/server.c:state P
 
       Our small finite state machine tracks the status of an
-      @xref{interactive session} and is updated by the functions presented in
+      @hl{interactive session} and is updated by the functions presented in
       this section. Here are the existing states:
       @example examples/server.c:fsm
 
@@ -2201,7 +2215,7 @@ localhost$ example/fwdexec forward_host host command
 
       The @tt its_open function allocates a new @tt its_s object, set
       its state to @tt {ITS_PIPE} and store a reference to the
-      channel associated to the @xref{interactive session}:
+      channel associated to the @hl{interactive session}:
       @example examples/server.c:itsapiopen
 
       The @tt its_pty function changes the state from @tt
@@ -2214,7 +2228,7 @@ localhost$ example/fwdexec forward_host host command
 
       The @tt its_exec function @tt fork the current process, @tt exec
       the requested child command and setup redirections of its
-      IOs. This also makes the state of our @xref{interactive session} object
+      IOs. This also makes the state of our @hl{interactive session} object
       change to @tt {ITS_OPEN}.
       @example examples/server.c:itsapiexec
 
@@ -2228,7 +2242,7 @@ localhost$ example/fwdexec forward_host host command
 
       The @tt its_child2channel function is then used to handle @tt
       POLLIN events reported by @tt poll. It processes child input and
-      pushes data to the @xref{interactive session} associated channel. This
+      pushes data to the @hl{interactive session} associated channel. This
       function is also responsible for closing and half closing the
       channel when an IO error is reported by @tt poll. In this case,
       the state is changed to @tt {ITS_HALF_NO_SEND} or @tt {ITS_CLOSED}.
@@ -2243,7 +2257,7 @@ localhost$ example/fwdexec forward_host host command
       Finally, the @tt its_eof and @tt its_close functions are called
       when the library report that the remote client has closed its
       data streams. The @tt its_eof function changes the state of the
-      @xref{interactive session} object to @tt {ITS_HALF_NO_RECV} or @tt
+      @hl{interactive session} object to @tt {ITS_HALF_NO_RECV} or @tt
       {ITS_CLOSED} depending on the previous state. The @tt its_close
       function simply releases the @tt its_s instance.
       @example examples/server.c:itsapiclose
@@ -2257,18 +2271,18 @@ localhost$ example/fwdexec forward_host host command
       @ref ASSH_EVENT_SESSION_ERROR events has already been covered and is not
       detailed again.
 
-      The @xref{user authentication} relies on helper functions. When
+      The @hl{user authentication} relies on helper functions. When
       the authentication is successful, the user ID of the current
       process is changed. This is handled by the following simple
       code:
       @example examples/server.c:evauth
 
-      Then comes the @xref{channels} and @xref{requests} related
-      events. This is where our @xref{interactive session} objects are
+      Then comes the @hl channels and @hl requests related
+      events. This is where our @hl{interactive session} objects are
       created and managed thanks to the functions defined above.
 
       Our server has to accept channel open messages from the client
-      when starting an @xref{interactive session} is requested. This is the
+      when starting an @hl{interactive session} is requested. This is the
       case when the channel type reported by the @ref
       ASSH_EVENT_CHANNEL_OPEN event is @tt {"session"}. The library then
       keeps the channel object alive until the @ref
@@ -2334,13 +2348,13 @@ localhost$ example/fwdexec forward_host host command
     @section {The IO event loop}
       The function below is executed in a new process when a client
       connects to the server. It creates a new @em libassh
-      @xref{session} and starts the IO polling loop:
+      @hl session and starts the IO polling loop:
       @example examples/server.c:connected
 
       The @tt poll system call is used to monitor the network
-      connection to the client as well as IOs of @xref{interactive session}
+      connection to the client as well as IOs of @hl{interactive session}
       child processes. Our @tt its_poll_setup function will
-      fill the @tt pollfd array with @xref{interactive session} related
+      fill the @tt pollfd array with @hl{interactive session} related
       entries.
       @example examples/server.c:pollloop
 
@@ -2368,13 +2382,13 @@ localhost$ example/fwdexec forward_host host command
     @label {exkeygen}
 
     This examples application parses the command line arguments and
-    performs @xref {user keys} and @xref{host keys} related
+    performs @hl{user keys} and @hl{host keys} related
     operations. It relies on the @ref assh_key_create, @ref
     assh_load_key_file, @ref assh_key_validate and @ref
     assh_save_key_file functions provided by the library.
 
     Here is how it can be invoked in order to generate a new
-    @xref{user key}:
+    @hl{user key}:
 
     @code R
 $ examples/keygen create -t ssh-rsa -o ~/.ssh/id_rsa
@@ -2400,69 +2414,92 @@ Done.
   @end section
 @end section
 
-@section TP {Test suite}
+@section TP {Test programs}
+  @label {test suite}
 
   This section gives a brief overview of the test programs provides
-  along with @em {libassh}.
+  with @em {libassh}.
 
   @list
-    @item The @tt test/hash.c program tests the hash
-      functions used internally by the library.
-    @item The @tt test/cipher.c program tests the cipher
-      @xref{algorithms} against static @em ssh2 binary packet contents.
+    @item The @tt test/algo_list.c program displays the list of
+      algorithms supported by the current build of the library.
+
     @item The @tt test/replay.c program is able to record @em ssh2
       sessions against other client and server implementations and
       replay them as part of the test suite.
+
+    @item The @tt test/connection.c runs a stress test of the
+      @hl{connection protocol} service by randomly performing many
+      @hl channel and @hl request operations between client and
+      server @hl sessions. The program maintains its own state of
+      the alive channels and requests so that it can check the
+      consistency of the behavior on both sides.
+
+    @item The @tt test/connection2.c program runs a similar
+      @hl{connection protocol} stress test. It does not maintains a
+      local state but is able to inject corrupted packets and memory
+      allocation failures.
+
     @item The @tt test/userauth.c program runs a stress test of the
       user authentication services by performing many user
       authentication attempts between client and server
-      @xref{sessions}. The client and server authentication requests
-      and replies are generated randomly in this test. The program
-      check consistency of behavior on both sides. Packet corruption
-      and memory failures may be injected during the test.
-    @item The @tt test/userauth_server.c program contains unit tests
+      @hl sessions. The authentication requests and replies are
+      generated randomly in this test. The program checks consistency
+      of behavior on both sides. Corrupted packets and memory
+      allocation failures can be injected during the test.
+
+    @item The @tt test/userauth_server.c program provides unit tests
       of the server user authentication service. It checks that the
       server behaves well on common cases and that it properly rejects
-      authentication on wrong behavior of the client that should not
-      occur.
-    @item The @tt test/connection.c runs a stress test of the
-      @xref{connection protocol} service by randomly performing many
-      @xref{channel} and @xref{request} operations between client and
-      server @xref{sessions}. The program maintains its own state of
-      the ongoing channel and requests so that it can check the
-      consistency of the behavior on both sides.
-    @item The @tt test/connection2.c program runs a similar
-      @xref{connection protocol} stress test. It does not maintains a
-      local state but is able to inject corrupted packets and memory
-      allocation failures.
+      authentication on wrong behavior of the client that do not
+      occur normally.
+
+    @item The @tt test/cipher.c program tests the cipher
+      @hl algorithms against known @em ssh2 binary packet contents.
+
+    @item The @tt test/mac.c program tests the message authentication
+      @hl algorithms.
+
     @item The @tt test/kex.c program generates many combinations of
-      @xref{algorithms} provided by the library and runs a
-      @xref{key-exchange} process between two sessions for each
+      @hl algorithms provided by the library and runs a
+      @hl key-exchange process between two sessions for each
       generated set. It is also able to injects corrupted packets and
       memory allocation failures.
-    @item The @tt test/bignum.c program contains various unit tests
-      and stress tests of the big number engine provided as part of
-      the library.
+
     @item The @tt test/signature.c program tests the signature
-      @xref{algorithms} provided with the library. It test the
-      algorithms against static data and keys.
+      @hl algorithms provided with the library against known inputs
+      and outputs.
+
     @item The @tt test/signature2.c program tests the signature
-      @xref{algorithms} provided with the library. It generate
-      signature of random data and check that the verification fails
+      @hl algorithms provided with the library by generating
+      signature of random data. It checks that the verification fails
       when either the signature or the data is modified.
+
     @item The @tt test/key_io.c program tests loading and storing
-      @xref{SSH keys} of various types in all supported formats.
-    @item The @tt test/fail.c test program is expected to fail.
-    @item The @tt test/algo_list.c program displays the list of
-      algorithms supported by the current build of the library.
+      @hl{SSH keys} of various types in all supported formats.
+
     @item The @tt test/gex_primes.c program checks the list of safe
       prime numbers used by the @tt {diffie-hellman-group-exchange-*}
-      algorithms.
+      class of @hl algorithms. A fast and distributed safe prime
+      generator tool is provided in @tt {extra/}.
+
+    @item The @tt test/bignum.c program contains various unit tests
+      and stress tests of the built-in big number engine.
+
+    @item The @tt test/hash.c program tests the hash
+      functions used internally by the library.
+
+    @item The @tt test/fail.c test program is expected to fail.
   @end list
 
 @end section
 
 @section TPe {API documentation}
+
+  The section contains the documentation extracted from the header
+  files of library API. Only the public part of the API is exposed.
+
+  The internal part of the API is exposed in the contributor manual.
 
   @section THe {Headers list}
     @insert {header} compound_table
@@ -2482,36 +2519,36 @@ Done.
   meaning when used in the context of the @em ssh2 protocol.
 
   @section {Algorithm}
-    @label{algorithms} {algorithms}
+    @label{algorithms}
 
     @em {ssh2 algorithms} are named and interchangeable software
     components used to secure the connection. They are negotiated
-    during the @xref{key-exchange} process. @xsee{suppalgos} @see
+    during the @hl key-exchange process. @xsee{suppalgos} @see
     assh_algo_s
     @see{@assh/assh_algo.h}
   @end section
 
   @section {Channel}
-    @label{channels} {channels}
+    @label{channels}
 
     A @em{channel} allows the application to transmit a stream
     of data over @em {ssh2}. The channel mechanism is specified as
-    part of the @xref{connection protocol}.
+    part of the @hl{connection protocol}.
     @xsee {connlayer} @see assh_channel_s
   @end section
 
   @section {Connection}
-    This term refers to the link used by the @xref{transport layer},
+    This term refers to the link used by the @hl{transport layer},
     established between a client and a server which lasts for the time
-    of a @xref{session}. The term @em {transport layer connection} is
+    of a @hl session. The term @em {transport layer connection} is
     used in the specification. This must not be confused with the term
-    @xref{connection protocol}.  @xsee{trlayer}
+    @hl{connection protocol}.  @xsee{trlayer}
   @end section
 
   @section {Connection protocol}
     The @em {connection protocol} is a component of the @em ssh2
-    protocol specified as a @xref{service}. It is the higher layer of
-    the protocol. It provides the @xref{channel} and @xref{request}
+    protocol specified as a @hl service. It is the higher layer of
+    the protocol. It provides the @hl channel and @hl request
     mechanisms used by the application.
     @xsee {connlayer}
     @see{@assh/assh_connection.h}
@@ -2519,60 +2556,67 @@ Done.
 
   @section {Connection sharing}
     Some @em ssh2 implementations are able to run multiple
-    @xref{interactive sessions} over a single @em ssh2 @xref{session},
+    @hl{interactive sessions} over a single @em ssh2 @hl session,
     as allowed by the specification.
   @end section
 
   @section {Fingerprint}
-    The @em{fingerprint} of an @xref{SSH key} is a human readable hash
+    The @em{fingerprint} of an @hl{SSH key} is a human readable hash
     value which is used to let the user to visually check whether two
-    @xref{Host keys} are the same.
+    @hl{Host keys} are the same.
   @end section
 
   @section {Global request}
-    A @em{global request} is a @xref{request} which is not associated
-    to a @xref{channel}. @xsee {connlayer}
+    A @em{global request} is a @hl request which is not associated
+    to a @hl channel. @xsee {connlayer}
   @end section
 
   @section {Host authentication}
     The @em {Host authentication} mechanism allows the client to make
-    sure it is establishing a @xref{session} with the expected
-    server. It takes place during the @xref{key-exchange} process and
-    involves the server @xref{Host key}. @xsee{authalgos}
+    sure it is establishing a @hl session with the expected
+    server. It takes place during the @hl key-exchange process and
+    involves the server @hl{Host key}. @xsee{authalgos}
   @end section
 
   @section {Host based user authentication}
     The @em {host based user authentication} method is one of the user
-    authentication mechanism optionally provided by the @xref{user
+    authentication mechanism optionally provided by the @hl{user
     authentication} service. It allows the client application to
-    authenticate its user on the server based on the @xref{host key}
+    authenticate its user on the server based on the @hl{host key}
     of the host which is running the client. @xsee{srvlayer}
   @end section
 
   @section {Host key}
-    @label {Host keys} {Host keys}
+    @label {Host keys}
 
-    A host key is an @xref{SSH key} kept by a server host. It is
-    mainly used to perform @xref{host authentication} during the
-    @xref{key-exchange} process and may also be involved in the
-    @xref{Host based user authentication} method.
+    A host key is an @hl{SSH key} kept by a server host. It is
+    mainly used to perform @hl{host authentication} during the
+    @hl key-exchange process and may also be involved in the
+    @hl{Host based user authentication} method.
   @end section
 
   @section {Interactive session}
-    @label {interactive sessions} {interactive sessions}
+    @label {interactive sessions}
 
     The term @em{Interactive session} relates to a feature of the
-    @xref{connection protocol} designed to let a client run a process
+    @hl{connection protocol} designed to let a client run a process
     remotely, on top of @em {ssh2}. Not to be confused with a
-    @xref{session}. @xsee {connlayer}
+    @hl session. @xsee {connlayer}
   @end section
 
   @section {Key-exchange}
     The @em {key-exchange} is a part of the @em ssh2 protocol designed
     to establish the server @xref{host authentication}{host
-    authenticity} and generate the @xref{session keys}.
+    authenticity} and generate the @hl{session keys}.
     @xsee{kex} @xsee{kexalgos}
     @see{@assh/assh_kex.h}
+  @end section
+
+  @section {Keyboard interactive user authentication}
+    The @em {keyboard interactive user authentication} method is
+    specified in @sinvoke{4256}rfc as an extension to the original set
+    of supported methods. It allows the server to request the client
+    user to fill multiple text fields with custom prompt texts.
   @end section
 
   @section {Message}
@@ -2584,13 +2628,13 @@ Done.
 
   @section {Port forwarding}
     The term @em{Port forwarding} relates to a feature of the
-    @xref{connection protocol} designed to make the server act as a
+    @hl{connection protocol} designed to make the server act as a
     proxy which issues and accepts some TCP connections on the behalf
     of the client. @xsee {connlayer}
   @end section
 
   @section {Private extension}
-    @label {private extensions} {private extensions}
+    @label {private extensions}
 
     @em ssh2 support for @em {private extensions} allows
     implementations to provide some specific or advanced features not
@@ -2599,87 +2643,88 @@ Done.
   @end section
 
   @section {Public key user authentication}
-    @label {public key authentication} {public key authentication}
+    @label {public key authentication}
     The @em {public key user authentication} method is one of the user
-    authentication mechanism provided by the @xref{user
+    authentication mechanism provided by the @hl{user
     authentication} service. When selected, it allows the client
     application to authenticate its user on the remote server based on
-    the ownership of an @xref{user key}. The client user owns the
+    the ownership of an @hl{user key}. The client user owns the
     private key which has to match the public key known to the
     server. @xsee{srvlayer}
     @xsee{authalgos}
   @end section
 
   @section {Request}
-    @label{requests} {requests}
+    @label{requests}
 
     @em{ssh2 requests} are used by applications to transmit control
     messages to the remote host. There are specified as part of the
-    @xref{connection protocol}. @xsee {connlayer}
+    @hl{connection protocol}. @xsee {connlayer}
     @see assh_request_s
   @end section
 
   @section {Service}
-    @label {services} {services}
+    @label {services}
 
     A service is a type of software component which runs on top of the
-    @xref{transport layer}.
+    @hl{transport layer}.
     @xsee{trlayer}
     @see assh_service_s
   @end section
 
   @section {Session}
-    @label {sessions} {sessions}
+    @label {sessions}
+
     A @em{session} is initiated by a client when it connects to a
-    server.  It gets established when the @xref{key-exchange} process
-    produces an unique session identifier as well as the @xref{session
-    keys}. Not to be confused with @xref{interactive session}.
+    server.  It gets established when the @hl key-exchange process
+    produces an unique session identifier as well as the @hl{session
+    keys}. Not to be confused with @hl{interactive session}.
     @see assh_session_s
   @end section
 
   @section {SSH agent}
     An @em {SSH agent} is an optional piece of software which manages
-    use of @xref{User keys}. It allows the user to enter the key
+    use of @hl{User keys}. It allows the user to enter the key
     passphrase only once, then keeps the private keys ready for use
     as long as it is running.
   @end section
 
   @section {SSH agent forwarding}
-    @em {SSH agent forwarding} enables use of @xref{User keys}
+    @em {SSH agent forwarding} enables use of @hl{user keys}
     belonging to a client by a remote server.
 
     This allows the user to keep its keys on a single workstation
-    while still being able to perform @xref{public key user
+    while still being able to perform @hl{public key user
     authentication} when initiating other ssh connections from a
     remote servers.
 
     It works by @xref{port forwarding}{forwarding} connections to the
-    @xref {SSH agent} service. Note that this also allows anyone who
-    has gained administrator privileges on the server to use the
-    keys. It may therefore to impersonate the user on any other host
-    as long as the agent is reachable.
+    @hl{SSH agent} service. Note that this also allows anyone who has
+    gained administrator privileges on the server to use the keys. The
+    attacker may therefore impersonate the user on any other host as
+    long as the agent is reachable.
   @end section
 
   @section {SSH key}
-    @label {SSH keys} {SSH keys}
+    @label {SSH keys}
 
     @em{SSH keys} are a long term cryptographic keys mainly used by
-    signature @xref{algorithms}. An @em{SSH key} can be used as an
-    @xref{User key} or as a @xref{Host key}. Because it relies on
+    signature @hl algorithms. An @em{SSH key} can be used as an
+    @hl{user key} or as a @hl{host key}. Because it relies on
     public key cryptography, it has a public part and a private part.
     @xsee{keysalgos} @see assh_key_s @see{@assh/assh_key.h}
   @end section
 
   @section {Transport layer}
     The @em{transport layer} is a component of the ssh protocol
-    designed to enable secure communication over the @xref{connection}
-    during the whole @xref{session}. @xsee{trlayer}
+    designed to enable secure communication over the @hl connection
+    during the whole @hl session. @xsee{trlayer}
     @see{@assh/assh_transport.h}
   @end section
 
   @section {User authentication}
     The @em {user authentication} component is specified as a
-    @xref{service} of the @em ssh2 protocol. It allows the client
+    @hl service of the @em ssh2 protocol. It allows the client
     application to authenticate its user on the remote server system.
     The service implements various user authentication
     methods. @xsee{srvlayer} @xsee{uamethods}
@@ -2688,21 +2733,21 @@ Done.
   @end section
 
   @section {User key}
-    @label {User keys} {User keys}
-    An user key is an @xref{SSH key} used to authenticate the user on
-    the remote server. It is only used when the @xref{public key user
+    @label {User keys}
+    An user key is an @hl{SSH key} used to authenticate the user on
+    the remote server. It is only used when the @hl{public key user
     authentication} method is selected.
   @end section
 
   @section {Session keys}
     @em{Session keys} are ephemeral keys used by symmetric
-    cryptography @xref{algorithms} to perform encryption and
+    cryptography @hl algorithms to perform encryption and
     authentication of the @em ssh2 binary packets exchanged over the
-    insecure @xref{connection}. @xsee{kex}
+    insecure @hl connection. @xsee{kex}
   @end section
 
   @section {Version string}
-    @label {version strings} {version strings}
+    @label {version strings}
 
     The @em {version strings} transmitted on connection allows to
     identify the remote @em ssh2 software vendor and revision.
@@ -2714,7 +2759,7 @@ Done.
 @section TP {Copyright and license}
 
   @section T {Software License}
-    @label {license} {license}
+    @label {license}
 
     The @em libassh source code is covered by the @b{GNU Lesser General
     Public License, Version 2.1}.

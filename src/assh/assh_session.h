@@ -27,7 +27,7 @@
 
    This header file provides declaration of the @ref assh_session_s
    structure and related functions, used to create and manage @em ssh2
-   @xref{sessions}.
+   @hl sessions.
 */
 
 #ifndef ASSH_SESSION_H_
@@ -62,14 +62,14 @@ typedef ASSH_KEX_FILTER_FCN(assh_kex_filter_t);
 # error CONFIG_ASSH_IDENT_SIZE out of range
 #endif
 
-/** @internalmembers @This is the @em ssh2 @xref {session} state
+/** @internalmembers @This is the @em ssh2 @hl session state
     structure.
 
-    A @xref{session} instance is associated to an @ref assh_context_s
+    A @hl session instance is associated to an @ref assh_context_s
     object which holds resources shared between multiple sessions.
 
-    It is @b not related to @xref {interactive sessions} which are
-    part of the @xref{connlayer}{connection protocol}. */
+    It is @b not related to @hl{interactive sessions} which are
+    part of the @hl{connection protocol}. */
 struct assh_session_s
 {
   /** User private pointer */
@@ -300,14 +300,14 @@ assh_session_disconnect(struct assh_session_s *s,
                         const char *desc);
 
 /** @This returns the current session safety factor which depends on
-    algorithms and keys involved in the last @xref{kex}{key-exchange
-    process}. The safety factor may change during the session
+    algorithms and keys involved in the last @hl{key-exchange}
+    process. The safety factor may change during the session
     lifetime.  @see assh_algo_register_va */
 assh_safety_t assh_session_safety(struct assh_session_s *s);
 
 /** @This setups a per session algorithm filter. The @tt filter
     parameter may be @tt NULL to disable filtering. It will fail if a
-    key exchange in ongoing. @xsee{Supported algorithms} */
+    key exchange in ongoing. @xsee{suppalgos} */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_session_algo_filter(struct assh_session_s *s,
                          assh_kex_filter_t *filter);

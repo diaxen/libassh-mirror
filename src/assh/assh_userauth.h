@@ -26,7 +26,7 @@
    @short Common declarations for the ssh-userauth service (rfc4252)
 
    This header file contains declarations common the the client and
-   server @xref{user authentication} services.
+   server @hl{user authentication} services.
 
    @see{@assh/assh_userauth_client.h}
    @see{@assh/assh_userauth_server.h}

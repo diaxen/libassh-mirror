@@ -25,16 +25,16 @@
    @file
    @short SSH connection service (rfc4254 channels and requests)
 
-   This header file defines @xref{events} and functions which are used
+   This header file defines @hl events and functions which are used
    when the @ref assh_service_connection service is running. This
-   @xref{service} module is an implementation of the @xref{connection
+   @hl service module is an implementation of the @hl{connection
    protocol}.
 
    Functions declared in this header must not be called when the
    service is not running.
 
-   Functions which support the @xref{interactive session} and
-   @xref{port forwarding} features are declared in the @ref
+   Functions which support the @hl{interactive session} and
+   @hl{port forwarding} features are declared in the @ref
    {@assh/helper_interactive.h} and @ref {@assh/helper_portfwd.h}
    header files.
 
@@ -55,7 +55,7 @@
 #include "assh_buffer.h"
 #include "assh_queue.h"
 
-/** @visible @This is the @em ssh-connection service @xref{request}
+/** @visible @This is the @em ssh-connection service @hl request
     object.
 
     Requests are created either by calling the @ref assh_request
@@ -121,7 +121,7 @@ enum assh_channel_state_e
   ASSH_CHANNEL_ST_OPEN_RECEIVED_FORCE_CLOSE
 };
 
-/** @visible @This is the @em ssh-connection service @xref{channel} object.
+/** @visible @This is the @em ssh-connection service @hl channel object.
 
     Channels are created either by calling the @ref assh_channel_open
     function or when the @ref ASSH_EVENT_CHANNEL_OPEN event is reported.
@@ -869,7 +869,7 @@ union assh_event_connection_u
   struct assh_event_channel_abort_s     channel_abort;
 };
 
-/** @This is the @xref {connection protocol} service module
+/** @This is the @hl{connection protocol} service module
     descriptor. @xsee{coremod} */
 extern const struct assh_service_s assh_service_connection;
 

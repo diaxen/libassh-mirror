@@ -25,9 +25,9 @@
    @file
    @short SSH port forwarding helpers (rfc4254 port forwarding)
 
-   This headers file provides some @xref{helper} functions able load
-   and store data embedded in standard @xref{requests} and
-   @xref{channels} open messages related to the @xref{port forwarding}
+   This headers file provides some @hl{helper functions} able load
+   and store data embedded in standard @hl requests and
+   @hl channels open messages related to the @hl{port forwarding}
    features of @em {ssh2}.
 
    @xsee {connapi}

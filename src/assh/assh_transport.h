@@ -26,7 +26,7 @@
    @short SSH transport layer protocol (rfc4253)
 
    This header file contains declarations related to the
-   @xref{transport layer} component of the @em ssh2 protocol.
+   @hl{transport layer} component of the @em ssh2 protocol.
 */
 
 #ifndef ASSH_TRANSPORT_H_

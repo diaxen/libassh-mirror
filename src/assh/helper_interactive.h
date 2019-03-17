@@ -25,9 +25,9 @@
    @file
    @short SSH interactive session helpers (rfc4254 interactive sessions)
 
-   This headers file provides some @xref{helper} functions able load
-   and store data embedded in standard @xref{requests} and
-   @xref{channels} open messages related to the @xref{interactive
+   This headers file provides some @hl{helper functions} able load
+   and store data embedded in standard @hl requests and
+   @hl channels open messages related to the @hl{interactive
    sessions} features of @em {ssh2}.
 
    @xsee {connapi}

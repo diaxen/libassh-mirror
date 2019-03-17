@@ -138,7 +138,7 @@ typedef int_fast16_t assh_error_t;
 typedef uint8_t assh_safety_t;
 
 /** @This returns the name associated to an
-    @xref{algorithm} safety factor value. */
+    @hl algorithm safety factor value. */
 ASSH_INLINE const char *
 assh_safety_name(assh_safety_t safety)
 {
