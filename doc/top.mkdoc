@@ -2040,7 +2040,7 @@ localhost$ example/fwdexec forward_host host command
     operating system. That's why we do not rely on system calls for
     this task.
 
-    This means that application directly generate and process the
+    This means that application directly generates and processes the
     network stream of the nested @em ssh2 sessions. From the operating
     system point of view running our client application, there is a
     single TCP socket used to connect to @em {fwd_host}, as in the
@@ -2117,8 +2117,8 @@ localhost$ example/fwdexec forward_host host command
       @em rexec_host on the behalf of our application. It will start
       to forward any data transmitted by @em rexec_host to our @em fwd
       session. The library will report this as incoming channel
-      data. We just have to copy as many data as we can in our
-      software fifo then yield to the event loop of the @em
+      data. When this occurs, we just have to copy as many data as we
+      can in our software fifo, then yield to the event loop of the @em
       rexec_session.
       @example examples/fwdexec.c:fwdevchdata
 
@@ -2152,10 +2152,10 @@ localhost$ example/fwdexec forward_host host command
       ASSH_CHANNEL_ST_OPEN state. When this is the case, an outgoing
       packet is allocated and filled with some of the network stream.
       We also yield to the @em fwd session event loop if we were not
-      able to send all the data yet.
+      able to send some data yet.
       @example examples/fwdexec.c:rexecevwrite
 
-      Other event of the @em rexec session are handled in the exact same
+      Other events of the @em rexec session are handled in the exact same
       way as in the @xref{exremote} application and are not detailed
       here.
 
@@ -2226,8 +2226,8 @@ localhost$ example/fwdexec forward_host host command
       @sinvoke{Anonymous pipe} {file descriptor pipes}wp.
       @example examples/server.c:itsapipty
 
-      The @tt its_exec function @tt fork the current process, @tt exec
-      the requested child command and setup redirections of its
+      The @tt its_exec function @tt{fork}s the current process, @tt{exec}s
+      the requested child command and setups redirections of its
       IOs. This also makes the state of our @hl{interactive session} object
       change to @tt {ITS_OPEN}.
       @example examples/server.c:itsapiexec
@@ -2241,7 +2241,7 @@ localhost$ example/fwdexec forward_host host command
       @example examples/server.c:itsapipoll
 
       The @tt its_child2channel function is then used to handle @tt
-      POLLIN events reported by @tt poll. It processes child input and
+      POLLIN events reported by @tt poll. It processes child inputs and
       pushes data to the @hl{interactive session} associated channel. This
       function is also responsible for closing and half closing the
       channel when an IO error is reported by @tt poll. In this case,
@@ -2271,10 +2271,15 @@ localhost$ example/fwdexec forward_host host command
       @ref ASSH_EVENT_SESSION_ERROR events has already been covered and is not
       detailed again.
 
+      The library queries the server application about user
+      authentication methods which must be made available to the
+      remote client. This occurs before the first authentication
+      attempt as well as before retries.
+      @example examples/server.c:evauthmet
+
       The @hl{user authentication} relies on helper functions. When
       the authentication is successful, the user ID of the current
-      process is changed. This is handled by the following simple
-      code:
+      process is changed. This is handled by this simple code:
       @example examples/server.c:evauth
 
       Then comes the @hl channels and @hl requests related

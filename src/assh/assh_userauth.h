@@ -37,17 +37,22 @@
 
 #include "assh_session.h"
 
-/** @This specifies authentication methods.
-    @xsee{uamethods} */
+/** @This specifies user authentication methods as flag values that
+    can be ored together. @xsee{uamethods} */
 enum assh_userauth_methods_e
 {
   ASSH_USERAUTH_METHOD_NONE       = 0x01,
+  /** @hl {Public key user authentication} */
   ASSH_USERAUTH_METHOD_PUBKEY     = 0x02,
+  /** Password user authentication */
   ASSH_USERAUTH_METHOD_PASSWORD   = 0x04,
+  /** @hl {Host based user authentication} */
   ASSH_USERAUTH_METHOD_HOSTBASED  = 0x08,
+  /** @hl {Keyboard interactive user authentication} */
   ASSH_USERAUTH_METHOD_KEYBOARD   = 0x10,
 
-  /** mask of all methods with support enabled in configuration */
+  /** mask of all server methods with support enabled in build
+      configuration @xsee {bldconfig} */
   ASSH_USERAUTH_METHOD_SERVER_IMPLEMENTED = 0
 #ifdef CONFIG_ASSH_SERVER_AUTH_NONE
     | ASSH_USERAUTH_METHOD_NONE
@@ -66,7 +71,8 @@ enum assh_userauth_methods_e
 #endif
   ,
 
-  /** mask of all methods with support enabled in configuration */
+  /** mask of all client methods with support enabled in build
+      configuration @xsee {bldconfig} */
   ASSH_USERAUTH_METHOD_CLIENT_IMPLEMENTED =
       ASSH_USERAUTH_METHOD_NONE
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY

@@ -179,7 +179,8 @@ ssh_loop_fwd(void)
               assh_buffer_strset(&fwd_rq.orig_addr, "127.0.0.1");
               fwd_rq.orig_port = 22;
 
-              if (assh_portfwd_open_direct_tcpip(fwd_session, &fwd_channel, &fwd_rq))
+              if (assh_portfwd_open_direct_tcpip(fwd_session,
+                                                 &fwd_channel, &fwd_rq))
                 goto disconnect;
             }
           break;
@@ -203,7 +204,8 @@ ssh_loop_fwd(void)
         }
                                                         /* anchor fwdevchdata */
 	case ASSH_EVENT_CHANNEL_DATA: {
-          struct assh_event_channel_data_s *ev = &fwd_event.connection.channel_data;
+          struct assh_event_channel_data_s *ev =
+            &fwd_event.connection.channel_data;
 
           /* write incoming forwarded ssh stream to our software fifo */
           ev->transferred =
@@ -243,7 +245,8 @@ ssh_loop_rexec(void)
 	{
                                                         /* anchor rexecevread */
 	case ASSH_EVENT_READ: {
-          struct assh_event_transport_read_s *ev = &rexec_event.transport.read;
+          struct assh_event_transport_read_s *ev =
+            &rexec_event.transport.read;
 
           /* read ssh stream from our software fifo */
           size_t s = fifo_read(&fwd_to_rexec, ev->buf.data, ev->buf.size);
@@ -257,7 +260,8 @@ ssh_loop_rexec(void)
         }
                                                         /* anchor rexecevwrite */
 	case ASSH_EVENT_WRITE: {
-          struct assh_event_transport_write_s *ev = &rexec_event.transport.write;
+          struct assh_event_transport_write_s *ev =
+            &rexec_event.transport.write;
           uint8_t *d;
           size_t s = ev->buf.size;
 
@@ -316,7 +320,8 @@ ssh_loop_rexec(void)
 
                                                         /* anchor rexecevchdata */
 	case ASSH_EVENT_CHANNEL_DATA: {
-          struct assh_event_channel_data_s *ev = &rexec_event.connection.channel_data;
+          struct assh_event_channel_data_s *ev =
+            &rexec_event.connection.channel_data;
           assh_error_t err = ASSH_OK;
 
 	  /* write remote command output sent over the channel to the

@@ -487,7 +487,7 @@ its_close(struct its_s *its,
 }
 
 /* Ssh event handling, This returns 0 when terminated. This returns 1
-   when not sure if an IO operation can be performed without blocking. */
+   when not sure that an IO operation can be performed without blocking. */
                                                         /* anchor evloop */
 static assh_bool_t
 ssh_loop(struct assh_session_s *session,
@@ -541,7 +541,7 @@ ssh_loop(struct assh_session_s *session,
 		  assh_error_str(event.session.error.code));
 	  assh_event_done(session, &event, ASSH_OK);
 	  break;
-                                                        /* anchor evauth */
+                                                        /* anchor evauthmet */
 	case ASSH_EVENT_USERAUTH_SERVER_METHODS:
 	  /* wait 3 seconds after a failed password attempt */
 	  if (event.userauth_server.methods.failed &
@@ -555,6 +555,7 @@ ssh_loop(struct assh_session_s *session,
 	  assh_event_done(session, &event, ASSH_OK);
 	  break;
 
+                                                        /* anchor evauth */
 	case ASSH_EVENT_USERAUTH_SERVER_USERKEY:
 	case ASSH_EVENT_USERAUTH_SERVER_PASSWORD:
           /* let an helper function handle user authentication from
