@@ -1,0 +1,29 @@
+
+@bib{analy01} Williams S.C. (2011) Analysis of the SSH Key Exchange Protocol. In: Chen L. (eds) Cryptography and Coding. IMACC 2011. Lecture Notes in Computer Science, vol 7089. Springer, Berlin, Heidelberg
+@bib{model01} P. Fiterau-Brostean, Toon Lenaerts, E. Poll, J. de Ruiter, F.W. Vaandrager, and P. Verleg. Model Learning and Model Checking of SSH Implementations. In Proceedings 24th ACM SIGSOFT International SPIN Symposium on Model Checking of Software, 13-14 July 2017, Santa Barbara, CA, USA, pages 142-151. ACM, NY, 2017.
+@bib{infer01} Vaandrager, F.W. Inferring SSH state machines using protocol state fuzzing.
+@bib{model02} Tijssen, M.: Automatic modeling of ssh implementations with state machine learning algorithms. Bachelor's thesis, Radboud University Nijmegen (June 2014).
+@bib{trspec01} Erik Poll and Aleksy Schubert, Rigorous specifications of the SSH transport layer.
+@bib{curve25519libssh} Aris Adamantiadis, description of the @em{curve25519-sha256@libssh.org.txt} algorithm
+@bib{curve25519} Curve25519: new Diffie-Hellman speed records
+@bib{ietfladdsc} IETF draft-ladd-safecurves-04
+@bib{safecurves} @url {http://safecurves.cr.yp.to} {SafeCurves}: choosing safe curves for elliptic-curve cryptography
+@bib{rfc2440} @url {https://tools.ietf.org/html/rfc2440}{rfc2440} : OpenPGP Message Format
+@bib{rfc4250} @url {https://tools.ietf.org/html/rfc4250}{rfc4250} : The Secure Shell (SSH) Protocol Assigned Numbers
+@bib{rfc4251} @url {https://tools.ietf.org/html/rfc4251}{rfc4251} : The Secure Shell (SSH) Protocol Architecture
+@bib{rfc4252} @url {https://tools.ietf.org/html/rfc4252}{rfc4252} : The Secure Shell (SSH) Authentication Protocol
+@bib{rfc4253} @url {https://tools.ietf.org/html/rfc4253}{rfc4253} : The Secure Shell (SSH) Transport Layer Protocol
+@bib{rfc4254} @url {https://tools.ietf.org/html/rfc4254}{rfc4254} : The Secure Shell (SSH) Connection Protocol
+@bib{rfc4255} @url {https://tools.ietf.org/html/rfc4255}{rfc4255} : Using DNS to Securely Publish Secure Shell (SSH) Key Fingerprints
+@bib{rfc4256} @url {https://tools.ietf.org/html/rfc4256}{rfc4256} : Generic Message Exchange Authentication for the Secure Shell Protocol (SSH)
+@bib{rfc4344} @url {https://tools.ietf.org/html/rfc4344}{rfc4344} : The Secure Shell (SSH) Transport Layer Encryption Modes
+@bib{rfc4419} @url {https://tools.ietf.org/html/rfc4419}{rfc4419} : Diffie-Hellman Group Exchange for the Secure Shell (SSH) Transport Layer Protocol
+@bib{rfc4432} @url {https://tools.ietf.org/html/rfc4432}{rfc4432} : RSA Key Exchange for the Secure Shell (SSH) Transport Layer Protocol
+@bib{rfc4716} @url {https://tools.ietf.org/html/rfc4716}{rfc4716} : The Secure Shell (SSH) Public Key File Format
+@bib{rfc5647} @url {https://tools.ietf.org/html/rfc5647}{rfc5647} : AES Galois Counter Mode for the Secure Shell Transport Layer Protocol
+@bib{rfc5656} @url {https://tools.ietf.org/html/rfc5656}{rfc5656} : Elliptic Curve Algorithm Integration in the Secure Shell Transport Layer
+@bib{rfc6668} @url {https://tools.ietf.org/html/rfc6668}{rfc6668} : SHA-2 Data Integrity Verification for the Secure Shell (SSH) Transport Layer Protocol
+@bib{draftmodp} draft-ietf-curdle-ssh-modp-dh-sha2-05
+@bib{fips1864} @em {FIPS 186.4}
+@bib{draftsignsha2} @em{IETF draft-rsa-dsa-sha2-256-03}
+@bib{hshssign} @em {High-speed high-security signatures}

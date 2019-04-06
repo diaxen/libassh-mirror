@@ -1,0 +1,239 @@
+The section briefly explains some terms that have a specific
+meaning when used in the context of the @em ssh2 protocol.
+
+@section {Algorithm}
+  @label{algorithms}
+
+  @em {ssh2 algorithms} are named and interchangeable software
+  components used to secure the connection. They are negotiated
+  during the @hl key-exchange process. @xsee{suppalgos} @see
+  assh_algo_s
+  @see{@assh/assh_algo.h}
+@end section
+
+@section {Channel}
+  @label{channels}
+
+  A @em{channel} allows the application to transmit a stream
+  of data over @em {ssh2}. The channel mechanism is specified as
+  part of the @hl{connection protocol}.
+  @xsee {connlayer} @see assh_channel_s
+@end section
+
+@section {Connection}
+  This term refers to the link used by the @hl{transport layer},
+  established between a client and a server which lasts for the time
+  of a @hl session. The term @em {transport layer connection} is
+  used in the specification. This must not be confused with the term
+  @hl{connection protocol}.  @xsee{trlayer}
+@end section
+
+@section {Connection protocol}
+  The @em {connection protocol} is a component of the @em ssh2
+  protocol specified as a @hl service. It is the higher layer of
+  the protocol. It provides the @hl channel and @hl request
+  mechanisms used by the application.
+  @xsee {connlayer}
+  @see{@assh/assh_connection.h}
+@end section
+
+@section {Connection sharing}
+  Some @em ssh2 implementations are able to run multiple
+  @hl{interactive sessions} over a single @em ssh2 @hl session,
+  as allowed by the specification.
+@end section
+
+@section {Fingerprint}
+  The @em{fingerprint} of an @hl{SSH key} is a human readable hash
+  value which is used to let the user to visually check whether two
+  @hl{host keys} are the same.
+@end section
+
+@section {Global request}
+  A @em{global request} is a @hl request which is not associated
+  to a @hl channel. @xsee {connlayer}
+@end section
+
+@section {Host authentication}
+  The @em {Host authentication} mechanism allows the client to make
+  sure it is establishing a @hl session with the expected
+  server. It takes place during the @hl key-exchange process and
+  involves the server @hl{host key}. @xsee{authalgos}
+@end section
+
+@section {Host based user authentication}
+  The @em {host based user authentication} method is one of the user
+  authentication mechanism optionally provided by the @hl{user
+  authentication} service. It allows the client application to
+  authenticate its user on the server based on the @hl{host key}
+  of the host which is running the client. @xsee{srvlayer}
+@end section
+
+@section {Host key}
+  @label {Host keys}
+
+  A host key is an @hl{SSH key} kept by a server host. It is
+  mainly used to perform @hl{host authentication} during the
+  @hl key-exchange process and may also be involved in the
+  @hl{Host based user authentication} method.
+@end section
+
+@section {Interactive session}
+  @label {interactive sessions}
+
+  The term @em{Interactive session} relates to a feature of the
+  @hl{connection protocol} designed to let a client run a process
+  remotely, on top of @em {ssh2}. Not to be confused with a
+  @hl session. @xsee {connlayer}
+@end section
+
+@section {Key-exchange}
+  The @em {key-exchange} is a part of the @em ssh2 protocol designed
+  to establish the server @xref{host authentication}{host
+  authenticity} and generate the @hl{session keys}.
+  @xsee{kex} @xsee{kexalgos}
+  @see{@assh/assh_kex.h}
+@end section
+
+@section {Keyboard interactive user authentication}
+  The @em {keyboard interactive user authentication} method is
+  specified in @sinvoke{4256}rfc as an extension to the original set
+  of supported methods. It allows the server to request the client
+  user to fill multiple text fields with custom prompt texts in order
+  to authenticate.
+@end section
+
+@section {Message}
+  Every @em ssh2 binary packets carries a single @em {message} which
+  has a specific role in the protocol. @xsee{trlayer}
+  @see assh_ssh_msg_e
+  @see{@assh/assh_packet.h}
+@end section
+
+@section {Port forwarding}
+  The term @em{Port forwarding} relates to a feature of the
+  @hl{connection protocol} designed to make the server act as a
+  proxy which issues and accepts some TCP connections on the behalf
+  of the client. @xsee {connlayer}
+@end section
+
+@section {Private extension}
+  @label {private extensions}
+
+  The @em ssh2 specification allows @em {private extensions} to the
+  protocol. This enables implementations to provide some specific or
+  advanced features not described in the standard, provided that they
+  are properly named and negotiated. @xsee {Protocol architecture}
+@end section
+
+@section {Public key user authentication}
+  @label {public key authentication}
+  The @em {public key user authentication} method is one of the user
+  authentication mechanism provided by the @hl{user
+  authentication} service. When selected, it allows the client
+  application to authenticate its user on the remote server based on
+  the ownership of an @hl{user key}. The client user owns the
+  private key which has to match the public key known to the
+  server. @xsee{srvlayer}
+  @xsee{authalgos}
+@end section
+
+@section {Request}
+  @label{requests}
+
+  @em{ssh2 requests} are used by applications to transmit control
+  messages to the remote host. These are specified as part of the
+  @hl{connection protocol}. @xsee {connlayer}
+  @see assh_request_s
+@end section
+
+@section {Service}
+  @label {services}
+
+  A service is a type of software component which runs on top of the
+  @hl{transport layer}.
+  @xsee{trlayer}
+  @see assh_service_s
+@end section
+
+@section {Session}
+  @label {sessions}
+
+  A @em{session} is initiated by a client when it connects to a
+  server.  It gets established when the @hl key-exchange process
+  produces an unique session identifier as well as the @hl{session
+  keys}. Not to be confused with @hl{interactive session}.
+  @see assh_session_s
+@end section
+
+@section {SSH agent}
+  An @em {SSH agent} is an optional piece of software which manages
+  use of @hl{user keys}. It allows the user to enter the key
+  passphrase only once, then keeps the private keys ready for use
+  as long as it is running.
+@end section
+
+@section {SSH agent forwarding}
+  @em {SSH agent forwarding} enables use of @hl{user keys}
+  belonging to a client by a remote server.
+
+  This allows the user to keep its keys on a single workstation
+  while still being able to perform @hl{public key user
+  authentication} when initiating other ssh connections from a
+  remote server.
+
+  It works by @xref{port forwarding}{forwarding} connections to the
+  @hl{SSH agent} service. Note that this also allows anyone who has
+  gained administrator privileges on the server to use the keys. The
+  attacker may therefore impersonate the user on any other host as
+  long as the agent is reachable.
+@end section
+
+@section {SSH key}
+  @label {SSH keys}
+
+  @em{SSH keys} are a long term cryptographic keys mainly used by
+  signature @hl algorithms. An @em{SSH key} can be used as an
+  @hl{user key} or as a @hl{host key}. Because it relies on
+  public key cryptography, it has a public part and a private part.
+  @xsee{keysalgos} @see assh_key_s @see{@assh/assh_key.h}
+@end section
+
+@section {Transport layer}
+  The @em{transport layer} is a component of the ssh protocol
+  designed to enable secure communication over the @hl connection
+  during the whole @hl session. @xsee{trlayer}
+  @see{@assh/assh_transport.h}
+@end section
+
+@section {User authentication}
+  The @em {user authentication} component is specified as a
+  @hl service of the @em ssh2 protocol. It allows the client
+  application to authenticate its user on the remote server system.
+  The service implements various user authentication
+  methods. @xsee{srvlayer} @xsee{uamethods}
+  @see{@assh/assh_userauth_server.h}
+  @see{@assh/assh_userauth_client.h}
+@end section
+
+@section {User key}
+  @label {User keys}
+  An user key is an @hl{SSH key} used to authenticate the user on
+  the remote server. It is only used when the @hl{public key user
+  authentication} method is selected.
+@end section
+
+@section {Session keys}
+  @em{Session keys} are ephemeral keys used by symmetric
+  cryptography @hl algorithms to perform encryption and
+  authentication of the @em ssh2 binary packets exchanged over the
+  insecure @hl connection. @xsee{kex}
+@end section
+
+@section {Version string}
+  @label {version strings}
+
+  The @em {version strings} transmitted on connection allows to
+  identify the remote @em ssh2 software vendor and revision.
+  @xsee{trlayer}
+@end section

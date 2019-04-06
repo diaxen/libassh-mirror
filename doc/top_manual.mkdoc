@@ -1,0 +1,171 @@
+@c
+@c Default top.mkdoc file for C projects copied by mkdoc
+@c
+
+@include template.mkdoc
+
+@c Create a modules.mkdoc file, add modules delcarations and uncomment
+@c these line to use modules.
+
+@c @include modules.mkdoc
+
+@macro rfc number
+  @xref {rfc@number@}{rfc@number@}
+@end macro
+
+@macro wp article text
+  @url {https://en.wikipedia.org/wiki/@article@}{ @text@ }
+@end macro
+
+@parse {
+doc/config.h
+assh/assh.h
+assh/assh_platform.h
+assh/assh_algo.h
+assh/assh_alloc.h
+assh/assh_bignum.h
+assh/assh_cipher.h
+assh/assh_compress.h
+assh/assh_connection.h
+assh/assh_context.h
+assh/assh_hash.h
+assh/assh_kex.h
+assh/assh_key.h
+assh/assh_mac.h
+assh/assh_map.h
+assh/assh_packet.h
+assh/assh_buffer.h
+assh/assh_prng.h
+assh/assh_queue.h
+assh/assh_service.h
+assh/assh_session.h
+assh/assh_sign.h
+assh/assh_transport.h
+assh/assh_userauth_client.h
+assh/assh_userauth_server.h
+assh/assh_userauth.h
+assh/helper_io.h
+assh/helper_key.h
+assh/helper_bcrypt.h
+assh/helper_client.h
+assh/helper_server.h
+assh/helper_base64.h
+assh/helper_interactive.h
+assh/helper_portfwd.h
+assh/key_dsa.h
+assh/key_eddsa.h
+assh/key_ecdsa.h
+assh/key_rsa.h
+assh/assh_event.h
+}
+
+@insert title
+
+@ifnopt html_side_toc
+  @section PH {Table of contents}
+    @insert toc
+  @end section
+@end if
+
+@section TP {Sales pitch}
+  @include sales_pitch.mkdoc
+@end section
+
+@section TP {Quickstart}
+  @list
+    @item Get the code, configure, build, install ... as usual,
+    @item If your are not familiar with the @em ssh2 protocol
+      internals, read the @xref{Protocol architecture} section,
+    @item Then read the @xref{Event based API} section,
+    @item Have a look to the @hl example applications,
+    @item Start hacking,
+    @item Read the whole manual before asking questions.
+  @end list
+@end section
+
+@section TP {Design and architecture}
+  @label{softarch}
+
+  The architecture of the @em ssh2 protocol and the software
+  architecture of @em libassh are tightly coupled. The following
+  subsections describe both and present some software design choices.
+
+  @section TP {Protocol architecture}
+    @include protocol_arch.mkdoc
+  @end section
+
+  @section TP {Software interfaces}
+    @include software_interfaces.mkdoc
+  @end section
+
+  @section TP {State machines}
+    @label{fsms}
+    @include state_machines.mkdoc
+  @end section
+
+  @section TP {Source tree}
+    @include source_tree.mkdoc
+  @end section
+
+  @section TP {Build configuration}
+    @label {bldconfig}
+    @include build_config.mkdoc
+  @end section
+@end section
+
+
+@section TP {Supported algorithms and methods}
+  @label{suppalgos}
+  @include algos_methods.mkdoc
+@end section
+
+@section TP {Example applications}
+  @label {example}
+  @label {examples}
+  @include examples.mkdoc
+@end section
+
+@section TP {Test programs}
+  @label {test suite}
+  @include tests.mkdoc
+@end section
+
+@section TPe {API documentation}
+
+  The section contains the documentation extracted from the header
+  files of library API. Only the public part of the API is exposed.
+
+  The internal part of the API is exposed in the contributor manual.
+
+  @section THe {Headers list}
+    @insert {header} compound_table
+  @end section
+
+  @insert {header} all_compound_sections
+
+  @section PTHe {All declarations}
+    @insert global_scope_doc
+  @end section
+
+@end section
+
+@section TP {SSH Lexicon}
+  @include lexicon.mkdoc
+@end section
+
+@section TP {Copyright and license}
+  @include copyright.mkdoc
+@end section
+
+@section TPe {Bibliography}
+  @include bib.mkdoc
+@end section
+
+@section TP {Appendix}
+  @include appendix_state.mkdoc
+@end section
+
+@section TP {GNU Free Documentation License}
+  @include fdl-1.3.mkdoc
+@end section
+

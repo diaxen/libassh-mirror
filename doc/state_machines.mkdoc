@@ -1,0 +1,92 @@
+
+This section gives an overview of the library internal working. It
+describes the @sinvoke{Finite-state machine}{finite state
+machines}wp (FSM) used to implement the @em ssh2 protocol in the
+library.
+
+@section T {Transport layer FSMs}
+  The @hl{transport layer} is implemented using four
+  finite state machines:
+  @list
+    @item The main @xref{fsmtr}{transport FSM} tracks the state of
+      the @ref assh_session_s object. It manages the different
+      phases of the protocol, starting with exchange of
+      @hl{version strings}. It also dispatches packets to the
+      running @hl key-exchange module and to the service
+      FSM. It handles disconnection as well.
+    @item The @xref{fsmin}{input FSM} retrieves the remote ssh
+      stream from the application then extracts, decipher,
+      authenticate and decompress packets.
+    @item The @xref{fsmout}{output FSM} enciphers outgoing
+      packets and report the output ssh stream to the application
+      for sending to the remote host.
+    @item The @xref{fsmsrv}{service FSM} manages selection and
+      execution of the @em ssh2 @hl services which run on top
+      of the @hl{transport layer}. On a client @hl session,
+      the @em{service FSM} send service requests to the server,
+      then initializes and run the next service. On a server
+      @hl session, the @em{service FSM} wait for client
+      requests, then initializes and run the requested service.
+  @end list
+
+  The state of these FSMs are updated when the @ref assh_event_get
+  and @ref assh_event_done functions are called by the application.
+
+  The library behaves as follows when the @ref assh_event_get
+  function is called:
+  @list
+    @item It report any pending error event.
+    @item It checks for protocol timeouts.
+    @item It dispatches an incoming packet to the running
+      @hl key-exchange module if any. When none is running, it
+      dispatches to the @em {service FSM} instead.
+    @item It lets the running @hl key-exchange or
+      @hl service report an event to the application.
+    @item If no event has been reported, the @em{output FSM} is
+      executed, unless disconnected from the remote peer. This may
+      report an @ref ASSH_EVENT_WRITE event to the application.
+    @item If no event has been reported by the @em{output FSM},
+      the @em{input FSM} is executed, unless disconnecting. This
+      reports an @ref ASSH_EVENT_READ event to the application.
+  @end list
+
+  The behavior of the @ref assh_event_done function depends on the
+  reported event. It calls a function provided by the @em libassh
+  software component which reported the event.
+
+@end section
+
+@section T {User auth FSMs}
+  Client and server @hl{user authentication} components are
+  implemented as two different service modules. They each have
+  their own FSM.
+
+  The @xref{fsmcauth}{client user
+  authentication FSM} handles authentications requests from the
+  application and forward them to the remote server.
+
+  The @xref{fsmsauth}{server user
+  authentication FSM} replies to authentications requests from the
+  remote client under supervision of the application.
+@end section
+
+@section T {Connection layer FSMs}
+  The module which implements the @hl{connection protocol} is
+  identical for server and client sides. It relies on two
+  different types of FSMs which are instantiated for each @hl
+  {channel} and @hl request objects.
+
+  The @xref {fsmchan}{channel FSM} manages the @hl channel
+  protocol state and lifetime. It ensures that any @hl channel
+  object known to the application will be properly reported as
+  released at some point even in case of disconnection.
+
+  The @xref {fsmrq}{request FSM} is used to reorder request
+  replies so that the application can handle them out of order.
+@end section
+
+@section T {Key exchange FSMs}
+  The various @hl key-exchange modules all use their own FSM in
+  order to execute the @hl key-exchange process. Because those
+  FSMs are very simple and linear, no state diagrams are provided.
+@end section

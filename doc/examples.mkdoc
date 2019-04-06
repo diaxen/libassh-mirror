@@ -1,0 +1,841 @@
+
+The section contains commented example applications based on
+@em libassh. There are client and server application examples as
+well as a key management tool application.
+
+The two first examples show very basic use of the library whereas
+the next examples make a more advanced use of the API.
+
+Each subsection cover a different example application available in
+the @tt {example/} directory of the package:
+
+@insert localtoc
+
+@section TP {Remote command execution}
+  @label {exremote}
+
+  The simple client application presented in this section is
+  designed to connect to an @em ssh2 server and request execution of
+  a command. It can be invoked like this:
+
+  @code R
+$ examples/client localhost ls
+  @end code
+
+  The first thing to do in the program @tt main function is
+  initialization of the external libraries. @em libassh does
+  not actually need this, but some other libraries like @em  Libgcrypt
+  and @em OpenSSL used by @hl modules may require
+  calling a global initialization function. If you do not want to bother
+  about which third party libraries are involved in your build of
+  @em {libassh}, just call the @ref assh_deps_init function:
+  @example examples/rexec.c:main P
+  If you know that your build of @em libassh on your specific
+  platform do not need this, you can skip this step.
+
+  Our application then parses command line arguments and setups a
+  TCP socket to the remote server. This part of the example code is
+  not shown here. All it does is proper initialization of the @tt
+  sock file descriptor and of the @tt command string variables from
+  command line arguments.
+
+  An @ref assh_session_s object is needed in order to store the
+  state of the @em ssh2 protocol. This requires an @ref
+  assh_context_s object used to store resources which may be shared
+  by multiple @hl sessions.  That's why initializing a new
+  library context is the first thing to do. Then
+  @hl modules need to be registered on the new context:
+  @example examples/rexec.c:initc
+
+  Our @ref assh_session_s object can then be initialized and
+  attached to the context:
+  @example examples/rexec.c:inits
+
+  Our application will need to handle @hl{user authentication}
+  related events originating from the server and reported by the
+  library. That's why we have to keep track of @hl{user
+  authentication} methods we want to use and that have not been
+  tried yet:
+  @example examples/rexec.c:inita
+
+  In this simple application, we heavily rely on @hl{helper
+  functions} provided by the library. This is the case for
+  management of the @hl{interactive session} part of the
+  @hl{connection protocol} which runs on the higher layer of @em
+  {ssh2}. This component is used to request execution of a process
+  on the remote server. It is not related to the @ref assh_session_s
+  type presented above which is used to manage the whole connection.
+
+  Even if more advanced applications will want to implement @hl
+  {interactive sessions} directly, the library provides a small
+  helper state machine which performs basic handling of client @hl
+  {interactive sessions}. This is used below to handle @hl
+  {request} and @hl channel related events in order to request
+  execution the user command. At this point, we just need to
+  initializes a state object for this helper:
+  @example examples/rexec.c:initi
+
+  Then comes the event loop, as described in the @xref {evts} section:
+  @example examples/rexec.c:loop
+
+  The IO events are reported by the library in order to let the
+  application transfer the @em ssh2 stream over the network. In this
+  examples, this is left to an helper function designed to read and
+  write the stream using the application provided socket file
+  descriptor:
+  @example examples/rexec.c:evio
+
+  Error notifications are also reported as events by the library.
+  This event is handled without relying on an helper
+  function. That's why the application has to take care of
+  acknowledging the event by calling the @ref assh_event_done
+  function:
+  @example examples/rexec.c:everr
+
+  Note that this event is only for notification and must not be used
+  to exit the processing loop. The library may still report more
+  events, allowing the application to clean open channels and other
+  resources properly.
+
+  Then come events that are only reported during specific phases of
+  the protocol. Those are related to the @hl key-exchange
+  process and to the currently running @hl service.
+
+  When the server sends its @hl{host key} during @hl key-exchange,
+  our client needs to check if it is a known key or if the user
+  accept the new key. An helper function handles this by looking in
+  the @tt {~/.ssh/known_hosts} file. This helper also queries the user
+  on the terminal if needed.
+
+  @example examples/rexec.c:evhk
+  The application could have handled this in a custom way
+  in order to adapt the usage or support a specific target platform API.
+
+  Once again an helper function is used to handle the
+  @hl{user authentication} events. It takes care of
+  querying the system user database and reads user public key
+  files:
+  @example examples/rexec.c:evua
+
+  Then comes handling of the @hl{interactive sessions} as
+  specified as part of the @hl{connection protocol}. It allows
+  starting a process on a remote host. For that purpose, we rely on
+  the helper state machine discussed previously. The @em ssh2
+  protocol is able to multiplex many application @hl channels
+  over a @hl session.  However, our simple tool only wants to
+  start a single command, that's why we choose to properly shutdown
+  the @em ssh2 @hl session when our single @hl{interactive
+  session} ends:
+  @example examples/rexec.c:evcn
+
+  Because the library still needs to exchange packets in order to
+  properly terminate the connection, we still have to run the loop
+  after calling the @ref assh_session_disconnect function. The @ref
+  assh_event_get function will stop reporting more events at some
+  point, breaking our main loop as appropriate.
+
+  Then comes handling of data transferred over the @hl{interactive
+  session} @hl channel. When the remote command writes
+  data to its standard output, the remote server forwards it to our
+  client over the only existing @ref{assh_channel_s} object we
+  have. We may then write the data to the standard output on the
+  local side:
+  @example examples/rexec.c:evdata
+
+  We do not want to handle any other type of event that the library
+  may report, but we still have to acknowledge them:
+  @example examples/rexec.c:evdflt
+
+  When we eventually exit from the loop, the @ref assh_session_s and
+  @ref assh_context_s objects can be released:
+  @example examples/rexec.c:cleanup
+@end section
+
+@section TP {Simple loopback server}
+  @label {exloopback}
+
+  This simple server application accepts all @hl{interactive
+  session} open messages from a connecting client and sends back any
+  data received over open @hl channels. When connecting
+  using a standard client, this has the effect of echoing any
+  character typed.
+
+  Unlike code of the @xref{exremote}{previous example} which handles
+  @hl{connection protocol} related events using helper functions,
+  those events are handled directly by the application here. This
+  example also shows how to take control of the underlying channel
+  flow control mechanism provided by the @em ssh2 protocol.
+
+  In this server application, we use a single @ref assh_context_s
+  object and different @ref assh_session_s objects for connecting
+  clients. A single client can connect at the same time.  The
+  context is initialized as shown previously:
+  @example examples/loopback.c:initc P
+
+  A server context needs to have some @hl{host keys}
+  registered. We try to load @hl{host keys} from standard
+  locations using an helper function. This may however require @tt
+  root access. That's why we fallback to creating an ephemeral
+  @hl{host key} by calling the @ref assh_key_create function:
+  @example examples/loopback.c:reghk
+
+  We can then start waiting for a client connection and initialize an
+  @ref assh_session_s object when this occurs:
+  @example examples/loopback.c:loop
+
+  Then comes the @hl event loop:
+  @example examples/loopback.c:loopev
+
+  Some events are handled using helper functions, as detailed in the
+  @xref{exremote}{previous example}:
+  @example examples/loopback.c:helperev
+
+  When the client sends an @ref SSH_MSG_CHANNEL_OPEN message to our
+  server, this ends up reporting the @ref ASSH_EVENT_CHANNEL_OPEN
+  event to the application. In our case, we want to allow the client
+  to open @hl channels of the @tt session type. Other types of
+  channel will be rejected by our server:
+  @example examples/loopback.c:chopenev
+
+  The @em ssh2 connection protocol provides a flow control mechanism
+  for channels. This allows limiting the amount of data that the
+  remote host is allowed to send through a channel. This amount is
+  the window size. When the remote host has consumed a part of the
+  window by sending data, the local side has to grant more window
+  space again. This mechanism is implemented separately in both
+  directions.
+
+  Instead of letting the library manage the window size for us, we
+  chose here to take control of the window size in the
+  application. This is a wise choice in the case of a loopback
+  server because we have to make sure that we will be able to send
+  back any received data immediately. We do not want to be limited
+  by the window size with some data that we would have to store
+  until we are granted more window space. We need to have the window
+  sizes synchronized between the two directions. That's why we grant
+  the same initial window size and packet size as granted by the
+  remote host in the opposite direction:
+  @example examples/loopback.c:chopenwin
+
+  When a channel open is acknowledged, the @ref assh_channel_s
+  object pointed by @tt {ev->ch} lives until a close event is
+  reported. In our simple example, we have no private context to
+  attach and we do not need to keep track of it as further events
+  will provide the pointer to the @ref assh_channel_s instance again.
+
+  Setting the initial window size is not enough, we have to keep the
+  window sizes of both directions in sync as data is exchanged over
+  a channel. Because we disabled automatic window adjustment, we
+  need to handle the @ref ASSH_EVENT_CHANNEL_WINDOW event and call
+  the @ref assh_channel_window_adjust function. We want to increase
+  our window size by the same amount that the remote side granted to
+  us. This occurs when the event is reported:
+  @example examples/loopback.c:evwin
+
+  Note that we have to acknowledge the event before increasing the
+  window size because most functions of the library can not be called
+  between the pair of calls to @ref assh_event_get and @ref
+  assh_event_done.
+
+  A connecting client will request execution of a shell process on
+  the server. Even if we only want to implement a loopback server,
+  we need to fake acceptance of this request or the client may
+  disconnect. This requires replying to channel related requests of
+  the @tt shell type successfully:
+  @example examples/loopback.c:rqev
+
+  Then comes handling of the data transferred over the
+  channels. When incoming data is reported by the library, we need
+  to allocate a buffer in order to send the same amount of data back
+  to the client. However, the current window size of the channel may
+  not allow sending all the data, that's why the @ref
+  assh_channel_data_alloc function is able adjust the size. In our
+  case though, the function is guaranteed to let us allocate the
+  requested size because of the control we have over the window size.
+  @example examples/loopback.c:evdataalloc
+
+  We must then update the event with the amount of incoming data we
+  were able to consume. Again, we have to acknowledge the event before
+  sending the data back.
+  @example examples/loopback.c:evdatasend
+
+  We are almost done with our loopback server. We still need to
+  acknowledge other events:
+  @example examples/loopback.c:evdflt
+
+  When the connection closes, we cleanup the @hl session and we
+  are ready to listen for an other connecting client:
+  @example examples/loopback.c:sclean
+
+@end section
+
+@section TP {Command line client}
+  @label {exclient}
+
+  This example application is a classical ssh command line client
+  for POSIX platforms.
+
+  Our client has to handle multiple data streams to communicate with
+  the remote host and drive the terminal. In order not to get
+  blocked by an IO operation on one of the file descriptors, we need
+  to use the @tt{poll} system call. This example shows how the API
+  of @em libassh can be used to deal with this programming model,
+  polling in both directions, so that neither @tt read nor @tt write
+  calls are blocking.
+
+  The details of the library initialization as well as other topics
+  covered in the previous examples are not repeated here.
+
+  The application is composed of two loops: the main loop which
+  polls on the various file descriptors and the nested @em libassh
+  event loop which handles the library events.
+
+  @section {The main loop}
+    We have four file descriptors based data endpoints to deal with:
+    @list
+      @item The incoming ssh network stream read from the @tt sock
+        socket file descriptor,
+      @item The outgoing ssh network stream transmitted over the same
+        file descriptor,
+      @item The terminal input read from standard input file
+        descriptor 0,
+      @item The terminal output written to the standard output file
+        descriptor 1.
+    @end list
+
+    Before entering the main loop, we do declare an object of the
+    @tt pollfd type in order to monitor the file descriptors:
+    @example examples/client.c:pollstruct P
+
+    We need to transfer data between those file descriptors and the
+    following interfaces provided by the library:
+    @list
+      @item The library network input pulled by the @ref
+        ASSH_EVENT_READ events,
+      @item The library network output pushed by the @ref
+        ASSH_EVENT_WRITE events,
+      @item The remote process output reported by the @ref
+        ASSH_EVENT_CHANNEL_DATA events,
+      @item The remote process input which can be sent over the
+        channel by calling the @ref assh_channel_data_send function.
+    @end list
+
+    Because the @hl{interactive session} is not started immediately, only
+    the network stream needs to be transferred initially. Moreover, we
+    do not always have data to write to the file descriptors. That's
+    why the @tt POLLIN and @tt POLLOUT flags are set conditionally on
+    each iteration of the main loop.  The @ref assh_channel_more_data
+    and @ref assh_transport_has_output functions are used to test if
+    the library has some output data to report:
+    @example examples/client.c:mainloop
+
+    We are almost ready to call the @tt poll function. Because this
+    system call is also able to return after a delay, it is useful to
+    retrieve the next @em ssh2 protocol timeout delay from the
+    library:
+    @example examples/client.c:poll
+
+    The application relies on an helper state machine in order to
+    manage the @hl{interactive session}. Because we only want to
+    run a single @hl session, we have to initiate a disconnection
+    from the remote server when the single session terminates:
+    @example examples/client.c:disco
+
+    We can then start dealing with data transfer from the local
+    standard input to the remote process input, provided that some
+    data are available and the @hl{interactive session} has
+    started. The data is written to the open @em ssh2 channel as
+    explained in the previous example:
+    @example examples/client.c:stdin
+
+    If we are not able to read more data from the standard input, an
+    end of file is reported to the remote host. If we are not able
+    to write, a channel close is requested, which will makes the
+    library report the @ref ASSH_EVENT_CHANNEL_CLOSE event.
+    @example examples/client.c:close
+
+    As stated previously, the other data transfers are performed
+    when the library reports events. We then need to handle @em
+    libassh events at this point.  We use an other loop to process
+    those events. This nested loop handle as many events as possible
+    without blocking.  This loop is in implemented in the separate
+    @tt ssh_loop function:
+    @example examples/client.c:sshloopcall|cleanup
+
+    The @tt ssh_loop function returns 0 if there are no more events
+    to report, which means the end of the @em ssh2 @hl session
+    and makes the main loop terminate.
+  @end section
+
+  @section {The assh event loop}
+    The @tt ssh_loop function contains the @em libassh
+    @hl event loop as stated previously:
+    @example examples/client.c:sshloop
+
+    Only data transfer related events are shown here, as handling of
+    other events mostly rely on helpers functions that deal with
+    @hl{user authentication} and @hl{interactive session}
+    management. This is detailed in the @xref{exremote}{remote
+    command execution} example.
+
+    Because the @ref ASSH_EVENT_READ event needs data to be
+    available from the socket file descriptor, the loop is
+    interrupted if the @tt poll system call did not allow us to @tt
+    read yet. We yield to the IO polling loop in this case.
+    @example examples/client.c:eventread
+
+    The event processing loop is interrupted just before trying any IO
+    operation which may block.  The @tt POLLIN flag is cleared so that
+    a single @tt read is allowed between calls to the @tt poll function.
+
+    The same mechanism is used for @tt write calls:
+    @example examples/client.c:eventwrite
+
+    Transferring data from the channel to the terminal requires more
+    work because no helper function is used, but the approach is still
+    the same:
+    @example examples/client.c:eventdata
+
+    The event handling loop ends as usual:
+    @example examples/client.c:eventother
+  @end section
+
+@end section
+
+@section TP {Forwarded command execution}
+  @label {exfwdexec}
+
+  This example application implements a pair of @em ssh2
+  clients. The first client requests a TCP port forwarding on a
+  server and uses the forwarded port to let the second client
+  connect to a second server. The second client executes a remote
+  command like in the @xref{exremote} example.
+
+  The two client @hl sessions instantiated in our application are
+  referred as the @em fwd session and the @em rexec
+  session. Similarly, the first server host which is used as a proxy
+  is called @em fwd_host and the second server on which the remote
+  command is executed is called @em {rexec_host}.
+
+  From the remote servers point of view, running our application is
+  similar to invocation of the following @em {OpenSSH} commands
+  on the @em localhost terminal:
+
+  @code R
+localhost$ ssh -L 2222:rexec_host:22 -N fwd_host &
+localhost$ ssh -p 2222 localhost command
+  @end code
+
+  This approach relies on a direct connection between @em localhost
+  and @em rexec_host in order to request execution of the command
+  and fetch its output. This means that @em fwd_host is only used as
+  a TCP proxy for the @em rexec connection and never see the
+  content of the @em rexec session in clear text.
+
+  The same goal can be achieved by running the following commands on
+  different hosts:
+
+  @code R
+localhost$ ssh bounce_host
+bounce_host$ ssh rexec_host command
+  @end code
+
+  This second approach is more common but less secure as it does not
+  rely on port forwarding. In this case, the second client runs on
+  @em bounce_host. This lets @em bounce_host see what happens as it
+  processes user data in clear text, including any password typed to
+  connect to @em {rexec_host}. In the same way, using @hl{user
+  keys} from @em bounce_host with this approach requires use of @hl
+  {ssh agent forwarding}.
+
+  Instead, our example application implements the first approach as
+  a simple tool which can be invoked like this:
+
+  @code R
+localhost$ example/fwdexec forward_host host command
+  @end code
+
+  In this example, we rely on the ability of @em libassh to let the
+  application handle the network stream as buffers. This allows to
+  implement forwarding of the @em rexec session by the @em fwd
+  session without piping the network stream of the first through the
+  operating system. That's why we do not rely on system calls for
+  this task.
+
+  This means that application directly generates and processes the
+  network stream of the nested @em ssh2 sessions. From the operating
+  system point of view running our client application, there is a
+  single TCP socket used to connect to @em {fwd_host}, as in the
+  other client examples.
+
+  @section {The main loop}
+    The first thing to do in the @tt main function is initialization
+    of the two @hl sessions. A single @hl{interactive session}
+    state machine is used because it's only needed by the @em rexec
+    session.
+    @example examples/fwdexec.c:init P
+
+    Our main loop just has to run the event loops of the two
+    sessions. The @em fwd session disconnects when the @em rexec
+    session terminates.
+    @example examples/fwdexec.c:mainloop
+
+    The @tt main function ends with sessions and context
+    cleanup. Note that the @em rexec session may still have events
+    to report that we decide to ignore here.
+    @example examples/fwdexec.c:maincleanup
+  @end section
+
+  @section {The forwarder event loop}
+    We will now focus on the implementation of the event loop of the
+    @em fwd session.
+
+    The @hl{port forwarding} mechanism in @em ssh2 is provided by
+    the @hl{connection protocol} and uses a @hl channel in
+    order to transport the stream of the forwarded TCP
+    connection. This means that our @em fwd session will need to
+    open such a channel in order to let the application exchange
+    data with @em {rexec_host}.
+
+    There are many programming constructs that could be used to move
+    data between the channel of the @em fwd session and the IO
+    events of the @em rexec session. In this application, we choose
+    to copy the data directly between @em libassh buffers in one
+    direction but we use a software fifo in the other direction.
+
+    Here is the API of our simple fifo. The @tt fifo_read and @tt
+    fifo_write functions return the actual amount of data copied.
+    @example examples/fwdexec.c:fifo
+
+    Exchanging data requires sharing the channel and fifo objects
+    between sessions. These are declared here:
+    @example examples/fwdexec.c:fwdvars2
+
+    Then comes the @tt ssh_loop_fwd function with the usual
+    @hl{event loop} code construct:
+    @example examples/fwdexec.c:fwdloop
+
+    @hl{User authentication} and @hl key-exchange related
+    events are handled using @hl{helper functions} as detailed in
+    the previous examples and are not shown here.
+
+    Because this session talks to @em fwd_host through a local TCP
+    socket, we just have to rely on the usual helper function in
+    order to handle the network IO events.
+    @example examples/fwdexec.c:fwdevio
+
+    We setup the TCP port forwarding as soon as the @hl{connection
+    protocol} starts. The @ref assh_portfwd_open_direct_tcpip function
+    serializes our @tt fwd_rq parameters and calls the @ref
+    assh_channel_open function. This makes the @tt fwd_channel
+    variable points to the opening channel object.
+    @example examples/fwdexec.c:fwdevsrvstart
+
+    We then need to wait for the @hl channel open reply from @em
+    fwd_host in order to know if the port forwarding is accepted.
+    @example examples/fwdexec.c:fwdevchopen
+
+    At this point, @em fwd_host has initiated a TCP connection to
+    @em rexec_host on the behalf of our application. It will start
+    to forward any data transmitted by @em rexec_host to our @em fwd
+    session. The library will report this as incoming channel
+    data. When this occurs, we just have to copy as many data as we
+    can in our software fifo, then yield to the event loop of the @em
+    rexec_session.
+    @example examples/fwdexec.c:fwdevchdata
+
+    We are almost done with the code of the @em fwd session event
+    loop. We still have to handle the channel close event which will
+    be reported if the connection to @em rexec_host becomes broken.
+    @example examples/fwdexec.c:fwdevchclose
+
+    The code of event loop ends as usual, with a default event
+    handler. The @tt ssh_loop_fwd function returns @tt 0 when no
+    more events will be reported. The disconnection request code is
+    factored at the end of the function.
+    @example examples/fwdexec.c:fwdevdefault
+  @end section
+
+  @section {The remote execution event loop}
+    We can now focus on the event loop of the @em rexec session
+    located in the @tt ssh_loop_rexec function.
+    @example examples/fwdexec.c:rexecloop
+
+    Reading data from the fifo in order to feed the session with the
+    ssh stream from @em rexec_host is the easier part. We just take
+    care of yielding to the @em fwd session event loop when the fifo
+    is empty.
+    @example examples/fwdexec.c:rexecevread
+
+    Because we do not use a fifo in the other direction, there are
+    more work to do in order to send the @em rexec network stream
+    through the port forwarding channel. We first have to make sure
+    that the channel exists and has reached the @ref
+    ASSH_CHANNEL_ST_OPEN state. When this is the case, an outgoing
+    packet is allocated and filled with some of the network stream.
+    We also yield to the @em fwd session event loop if we were not
+    able to send some data yet.
+    @example examples/fwdexec.c:rexecevwrite
+
+    Other events of the @em rexec session are handled in the exact same
+    way as in the @xref{exremote} application and are not detailed
+    here.
+
+    As in the event loop of the @em fwd session, the function returns
+    @tt 0 when there are no more event to report.
+    @example examples/fwdexec.c:rexecevdefault
+  @end section
+
+@end section
+
+@section TP {UNIX server}
+  @label {exserver}
+
+  This example application is a toy server able to handle @hl
+  {connection sharing}. It allows the client user to login and
+  execute commands remotely. Multiple @hl{interactive sessions} on
+  the server side run separate processes started by a single
+  client. The server code executes in the parent process and relies
+  on @em libassh in order to manage the connection with the client
+  and the children IO streams.
+
+  We first introduce a few functions designed to execute a child
+  process and setup related IO redirections. This is the @hl{interactive
+  session} management code, provided by the application. Then we
+  detail code of the event loops used to run the ssh server
+  @hl session. Those loops are similar to what is implemented in the
+  @xref{exclient}{client example} application, but multiple channels
+  and IO streams are involved here.
+
+  @section {Interactive session code}
+    The states of @hl{interactive sessions} are stored in instances of
+    the @tt its_s structure we declare below. Our server application
+    has to create those objects when execution of a new @hl{interactive
+    session} is requested by the client.
+
+    This structure contains a state field along with a reference to
+    the associated @em libassh channel, as well as some child process
+    handles:
+    @example examples/server.c:state P
+
+    Our small finite state machine tracks the status of an
+    @hl{interactive session} and is updated by the functions presented in
+    this section. Here are the existing states:
+    @example examples/server.c:fsm
+
+    Because the main loop needs to @tt poll on file descriptors
+    associated with all child processes, we have to keep track of
+    existing @tt its_s objects in a table:
+    @example examples/server.c:itstable
+
+    The application functions described below do manage the @tt
+    its_s instances. This consists in calling @em POSIX functions in
+    order to create the child process and redirect its IOs. The
+    content of these functions is not detailed here because an
+    explanation of their behavior is enough to understand the @em
+    libassh related part of the application that follows.
+
+    The @tt its_open function allocates a new @tt its_s object, set
+    its state to @tt {ITS_PIPE} and store a reference to the
+    channel associated to the @hl{interactive session}:
+    @example examples/server.c:itsapiopen
+
+    The @tt its_pty function changes the state from @tt
+    {ITS_PIPE} to @tt {ITS_PTY}. This is an optional step
+    before calling the @tt its_exec function which allows using a
+    @sinvoke{Pseudoterminal} {pseudo terminal}wp device to redirect
+    the child process IOs instead of relying on some
+    @sinvoke{Anonymous pipe} {file descriptor pipes}wp.
+    @example examples/server.c:itsapipty
+
+    The @tt its_exec function @tt{fork}s the current process, @tt{exec}s
+    the requested child command and setups redirections of its
+    IOs. This also makes the state of our @hl{interactive session} object
+    change to @tt {ITS_OPEN}.
+    @example examples/server.c:itsapiexec
+
+    The following three functions are used to mange the flow of data
+    between the @em ssh2 channels and the child processes.
+
+    The @tt its_poll_setup function is used to append some @tt
+    pollfd entries for monitoring child IO file descriptors prior
+    to invoking @tt poll in the main loop:
+    @example examples/server.c:itsapipoll
+
+    The @tt its_child2channel function is then used to handle @tt
+    POLLIN events reported by @tt poll. It processes child inputs and
+    pushes data to the @hl{interactive session} associated channel. This
+    function is also responsible for closing and half closing the
+    channel when an IO error is reported by @tt poll. In this case,
+    the state is changed to @tt {ITS_HALF_NO_SEND} or @tt {ITS_CLOSED}.
+    @example examples/server.c:itsapidata
+
+    Data flow in the other direction is handled when @em libassh
+    reports incoming channel data from the remote host. This is
+    handled by the @tt its_channel2child function which writes the
+    incoming data to the standard input of the child process.
+    @example examples/server.c:itsapidata2
+
+    Finally, the @tt its_eof and @tt its_close functions are called
+    when the library report that the remote client has closed its
+    data streams. The @tt its_eof function changes the state of the
+    @hl{interactive session} object to @tt {ITS_HALF_NO_RECV} or @tt
+    {ITS_CLOSED} depending on the previous state. The @tt its_close
+    function simply releases the @tt its_s instance.
+    @example examples/server.c:itsapiclose
+  @end section
+
+  @section {The assh event loop}
+    The event loop has the same layout as in the
+    @xref{exclient}{client example}:
+    @example examples/server.c:evloop
+    Handling of the @ref ASSH_EVENT_READ, @ref ASSH_EVENT_WRITE and
+    @ref ASSH_EVENT_SESSION_ERROR events has already been covered and is not
+    detailed again.
+
+    The library queries the server application about user
+    authentication methods which must be made available to the
+    remote client. This occurs before the first authentication
+    attempt as well as before retries.
+    @example examples/server.c:evauthmet
+
+    The @hl{user authentication} relies on helper functions. When
+    the authentication is successful, the user ID of the current
+    process is changed. This is handled by this simple code:
+    @example examples/server.c:evauth
+
+    Then comes the @hl channels and @hl requests related
+    events. This is where our @hl{interactive session} objects are
+    created and managed thanks to the functions defined above.
+
+    Our server has to accept channel open messages from the client
+    when starting an @hl{interactive session} is requested. This is the
+    case when the channel type reported by the @ref
+    ASSH_EVENT_CHANNEL_OPEN event is @tt {"session"}. The library then
+    keeps the channel object alive until the @ref
+    ASSH_EVENT_CHANNEL_CLOSE event is reported.
+    @example examples/server.c:evchopen
+
+    Because requests are used to let the client select the command
+    it wants to run on the server, we have to handle the @ref
+    ASSH_EVENT_REQUEST event as well. Any such request can only be
+    related to one of the channel we just accepted to open. That's
+    why we are able retrieve the pointer to our associated @tt its_s
+    object we have attached previously. Global requests are rejected.
+    @example examples/server.c:evrq
+
+    The @tt {"pty-req"} request may optionally be used by the
+    client. This requires us to call our @tt its_pty function
+    discussed previously. The @ref assh_inter_decode_pty_req helper
+    function is used here to validate and decode the data attached
+    to the request but its content is not used in this simple
+    server.
+    @example examples/server.c:evrqpty
+
+    When the client eventually requests execution of a @tt {"shell"}
+    process, the @tt its_exec function is called:
+    @example examples/server.c:evrqshell
+    Note that we do not query the operating system about the actual
+    shell binary to execute in this toy server.
+
+    If instead the client requests execution of an arbitrary
+    command, a similar action is performed. In this case we need to
+    parse the data attached to the request in order to get the
+    command string before calling the @tt its_exec function:
+    @example examples/server.c:evrqexec
+
+    Finally, this event needs to be acknowledged, as usual:
+    @example examples/server.c:evrqdone
+
+    The client may request half-closing the channel if it has no
+    more data to transmit. When this occurs, the @ref
+    ASSH_EVENT_CHANNEL_EOF event is reported and we rely on our @tt
+    its_eof function to handle it:
+    @example examples/server.c:eveof
+
+    In any case, @em libassh will report the @ref
+    ASSH_EVENT_CHANNEL_CLOSE event at some point. This may be due to
+    the client properly closing a single channel or due
+    to a lost connection. This behavior of @em libassh ensures that
+    we will always be able to properly release resources we have
+    attached to channels.
+    @example examples/server.c:evclose
+
+    Incoming channel data is handled by our @tt its_channel2child
+    function described previously. If we are not sure it is possible
+    to write to the child without blocking according to the @tt
+    pollfd array, the function returns @tt 1. This breaks
+    the @em libassh event loop and yield to the IO event loop:
+    @example examples/server.c:evdata
+
+    Any other event is simply acknowledged as usual:
+    @example examples/server.c:evother
+  @end section
+
+  @section {The IO event loop}
+    The function below is executed in a new process when a client
+    connects to the server. It creates a new @em libassh
+    @hl session and starts the IO polling loop:
+    @example examples/server.c:connected
+
+    The @tt poll system call is used to monitor the network
+    connection to the client as well as IOs of @hl{interactive session}
+    child processes. Our @tt its_poll_setup function will
+    fill the @tt pollfd array with @hl{interactive session} related
+    entries.
+    @example examples/server.c:pollloop
+
+    As shown previously, the @tt poll function is also used to let
+    the library check ssh protocol timeouts:
+    @example examples/server.c:poll
+
+    Our @tt its_child2channel function may now do its job of
+    transferring data from the child processes to the remote client:
+    @example examples/server.c:chi2cha
+
+    The libassh event loop is then executed and may decide to wait
+    for more IO events or terminate the connection:
+    @example examples/server.c:loopcall
+  @end section
+
+  @section {The main loop}
+    Our server main loop implements a simple forking server. Note
+    that the maximum number to connections is not properly limited here.
+    @example examples/server.c:mainloop
+  @end section
+@end section
+
+@section TP {SSH key management tool}
+  @label {exkeygen}
+
+  This examples application parses the command line arguments and
+  performs @hl{user keys} and @hl{host keys} related
+  operations. It relies on the @ref assh_key_create, @ref
+  assh_load_key_file, @ref assh_key_validate and @ref
+  assh_save_key_file functions provided by the library.
+
+  Here is how it can be invoked in order to generate a new
+  @hl{user key}:
+
+  @code R
+$ examples/keygen create -t ssh-rsa -o ~/.ssh/id_rsa
+Generating key...
+Saving key in pem_pv format...
+Output key passphrase:
+Done.
+  @end code
+
+  The previous command only generates and stores the private key. The
+  associated public key can be extracted with an other invocation:
+
+  @code R
+$ examples/keygen convert -f openssh_pub -i ~/.ssh/id_rsa -o ~/.ssh/id_rsa.pub
+Loading key...
+Input key passphrase:
+Key type: ssh-rsa (private)
+Saving key in openssh_pub format...
+Done.
+  @end code
+
+  @c  @example examples/keygen.c
+@end section

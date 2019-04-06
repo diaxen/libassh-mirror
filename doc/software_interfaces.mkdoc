@@ -1,0 +1,207 @@
+The following subsections describe the modular architecture of the
+library and the design of its programming interface.
+
+@section TP {Core and modules}
+  @label{coremod}
+  @label{modules}
+  @label{module}
+
+  Extensibility advertised in the @em ssh2 standard is transposed
+  in @em libassh by allowing dynamic registration
+  of external @em ssh2 @hl algorithms and @hl services.
+
+  The core of the library implements the @hl{transport layer},
+  dispatches packets and @hl events, handles registration of
+  @hl algorithm @hl modules and performs
+  management of @ref {assh_context_s} and @ref {assh_session_s}
+  objects.
+
+  Interface descriptor structures are used in order to declare
+  modules. The following descriptors are used for @em ssh2
+  @hl algorithms negotiated during the @hl key-exchange process:
+  @list
+    @item The @ref assh_algo_kex_s interface descriptor is used to
+      declare @xref{kexalgos}{key-exchange algorithms}.
+    @item The @ref assh_algo_sign_s interface descriptor is used
+      to declare @xref{authalgos}{signature algorithms} which are
+      involved in server @xref{host authentication} and user
+      @xref{public key authentication}.
+    @item The @ref assh_algo_cipher_s interface descriptor is used
+      to declare @xref{cipheralgos}{cipher algorithms}.
+    @item The @ref assh_algo_mac_s interface descriptor is used to
+      declare @xref{macalgos}{message authentication}.
+    @item The @ref assh_algo_compress_s interface descriptor is used
+      to declare data @xref{compalgos}{compression methods}.
+  @end list
+  Those descriptor structures inherit from the @ref assh_algo_s
+  structure.
+
+  Additional pluggable interface descriptors are used by the library:
+  @list
+    @item The @ref assh_service_s interface descriptor is used to
+      declare implementations of @em ssh2 @hl services.
+    @item The @ref assh_prng_s interface descriptor is used to
+      declare random generators used by the core and modules.
+    @item The @ref assh_allocator_t function pointer type is used by
+      the core and modules in order to allocate and free memory.
+    @item The @ref assh_key_algo_s interface descriptor used to
+      declare module able to create and manage storage of
+      @hl{SSH keys}.
+    @ifnopt hide_internal
+      @item The @ref assh_hash_algo_s interface descriptor is used
+        to declare hash functions to use for internal use by the
+        core and modules.
+    @end if
+  @end list
+
+@end section
+
+@section TP {Event based API}
+  @label {evts}
+  @label {event}
+  @label {events}
+  @label {event loop}
+
+  The programming interface is event based. Event objects are used
+  to pass data between the library and the application. The
+  application have to perform pairs of calls to the @ref
+  assh_event_get and @ref assh_event_done functions in order to
+  run a @hl session. These functions actually run the protocol
+  @hl{state machines}. The code below shows a simple
+  construct which can be used for that purpose.
+
+  @code
+struct assh_event_s ev;
+
+while (assh_event_get(session, &ev, time(0)))
+  {
+    assh_error_t err = ASSH_OK;
+
+    switch (ev.id)
+      {
+        ...
+      }
+
+    assh_event_done(&session, &ev, err);
+  }
+      @end code
+
+  A processing @ref{assh_error_e}{error code} can be reported
+  to the library when acknowledging an event.
+
+  The event structure contains @tt const fields and writable
+  fields. Constant fields are meant to pass values from the library
+  to the application and writable fields are meant to pass values
+  back to the library. All event writable fields are initialized
+  with default values so that any event not handled by the
+  application can be acknowledged directly.
+
+  The code code below handles the @ref ASSH_EVENT_READ event by
+  retrieving the ssh stream from a network socket using the @tt read
+  system call.
+
+  @code
+switch (ev.id)
+  {
+  case ASSH_EVENT_READ: {
+    ssize_t r = read(socket, ev.transport.read.buf.data,
+                             ev.transport.read.buf.size);
+    if (r > 0)
+      ev.transport.read.transferred = r;
+    else
+      err = ASSH_ERR_IO;
+    break;
+  }
+
+    ...
+
+  default:
+    break;
+  }
+  @end code
+
+  Because the event API is designed to let the application access
+  most features of the ssh protocol, event objects reflect concepts
+  used at the protocol level. Handling most of them involve some
+  work in order to behave as a usual client or server
+  application. In order to handle those events, the application may
+  either relies on the provided @hl{helper functions} or
+  implement the whole thing. In the code below, helper functions are used:
+
+  @code
+switch (ev.id)
+  {
+  case ASSH_EVENT_READ:
+  case ASSH_EVENT_WRITE:
+    assh_fd_event(&session, &ev, socket);
+    continue;
+
+  case ASSH_EVENT_KEX_HOSTKEY_LOOKUP:
+    assh_client_event_hk_lookup(&session, ..., &ev);
+    continue;
+
+  ...
+
+  default:
+    assh_event_done(&session, &ev, err);
+  }
+  @end code
+
+  That is how events reported by the library can be handled in a
+  loop. Depending on the software design and programming model of
+  the application, other programming constructs may be used. For
+  instance, the application may well start an asynchronous
+  operation in response to an event, then call the @ref
+  assh_event_done function from one of its callback when the
+  operation completes. Any model will work provided that an
+  event reported by the library is acknowledged by the application
+  at any later time.
+
+  Most @hl example applications provided with the
+  library do implement handling of @em libassh events.
+
+@end section
+
+@section TP {Helper functions}
+  @hl Events are used to notify and involve the
+  application in most packet exchanges that occur with the remote
+  peer. Events reported to the application can be generated by the
+  @hl{transport layer}, the running @hl key-exchange
+  module and the running @hl service module.
+
+  This involves the application in tasks like @hl{host key}
+  lookup, user credentials checking, @hl requests handling and
+  @hl channels management. This allows a fine-grained control
+  of the @em ssh2 features while letting the library handle the
+  protocol and crypto stuff.
+
+  This however means that there is a part of the job left to be
+  done by the application. That's why the library comes with
+  helper functions designed to handles events in a way which yield
+  common behavior. For instance, this includes performing
+  @hl{host key} lookup in standard file locations and handling
+  @hl{user authentication} using the operating system calls. Of
+  course, the application writer is free not to use the helper
+  functions when they are not suitable. The code of the @xref
+  {exremote} example and @xref {exloopback} example are short
+  because helpers are used extensively.
+
+  Other helper functions which are not designed to handle events
+  are also provided. These provide various features like
+  @hl{SSH keys} file operations and @em ssh2 blob parsing.
+@end section
+
+@section TP {Timeout management}
+  The library is able to compute protocol deadlines, provided that
+  the application pass the current time to the @ref assh_event_get
+  function.
+
+  The @ref assh_session_deadline and @ref assh_session_delay
+  functions can be used in order to get the next protocol
+  deadline. This allows the application to stop waiting on IOs
+  after the right amount of time in order to let the library
+  handle the timeout.
+
+  The @ref assh_context_timeouts and @ref assh_context_keepalive
+  functions can be used to change the protocol delays.
+@end section

@@ -1,0 +1,365 @@
+
+This section gives a brief overview of the @em ssh2 protocol
+architecture and internal working. You may skip to the next
+section if you are familiar with the @em ssh2 protocol
+specifications.
+
+This overview is useful when working with @em {libassh}. It is
+assumed that the reader knows the features offered by the @em ssh2
+protocol and is familiar with design of network protocols. The
+@xref{SSH Lexicon} section gives the meaning of some SSH related
+terms.
+
+The specification of the @em ssh2 protocol is available as a set
+of @em rfc documents, starting with @sinvoke{4250}rfc. Many other
+documents specify extensions to the protocol. Most extensions do
+not need to amend the original specification because @em ssh2 was
+originally designed with extensibility in mind.
+
+Many features of the protocol like @hl algorithms and
+@hl services are identified and negotiated using textual
+names. This allows alternatives to be developed without breaking
+compatibility with the base protocol and its original set of
+features. @hl{Private extensions} are allowed and should use
+names containing the @em{@} character.
+
+According to @sinvoke{4251}rfc, there are three major components
+in the @em ssh2 protocol architecture:
+@list
+  @item the @em {Tranport Layer Protocol},
+  @item the @em {User Authentication Protocol} and
+  @item the @em {Connection Protocol}.
+@end list
+
+These components are described in the following subsections.
+
+@section TP {Transport layer and packets}
+  @label {trlayer}
+
+  The transport layer is able to build, compress, encipher,
+  decipher, authenticate and parse @em ssh2 binary packets. It
+  dispatches and collect packets to and from the other software
+  components. Unlike other components, the transport layer is
+  always running. It is specified in @sinvoke{4253}rfc.
+
+  The transport layer needs a reliable data pipe in order to
+  exchange packets between the client and server instances. A TCP
+  @hl connection is commonly used.
+
+  The first step of the protocol consists in exchanging
+  @hl{version strings}. Once both sides have transmitted their
+  @hl{version strings} in a human readable format, they switch
+  to the @em ssh2 binary packet format.
+
+  Binary packets are variable sized arrays of bytes. A packet has
+  a size header and a numerical message identifier which
+  determines its role in the protocol. The interpretation of the
+  packet content depends on the message id. Dispatching packets to
+  the other layers does not require nesting multiple packet
+  headers. There is a single header and the message identifier is
+  used to dispatch packets to the right software component.
+
+  By looking at the @ref assh_ssh_msg_e enum, it is easy to see
+  that there are four categories of messages:
+
+  @list
+    @item Transport related messages, starting at id 1,
+    @item @hl key-exchange related messages, starting at id 30,
+    @item @hl{User Authentication} Protocol messages, starting at
+      id 50 and
+    @item @hl{Connection Protocol} messages, starting at id 80.
+  @end list
+
+  Some of the message identifiers used by parts of the protocol
+  have multiple meaning. This is because some parts of the
+  protocol are specified and implemented as extensions. The
+  interpretation of those messages content do depend on the
+  selected and currently running extension.
+
+  The format of the packet content depends on the message
+  identifier. Most of the time, the content is composed of some 8
+  bits and 32 bits fixed size fields as well as some variable
+  sized fields which use a 32 bits length header.
+
+  The @em{Transport Layer Protocol} is designed so that packets
+  are processed by the selected @hl algorithms. However the
+  binary packets are neither enciphered nor compressed before the
+  end of the first @hl key-exchange process which performs
+  @hl algorithms selection.
+
+  According to the original specification, the outgoing packets
+  are encrypted after appending the authentication token computed
+  by the retained MAC @hl algorithm. This is called the @em
+  {Mac-Then-Encrypt} order and allows encrypting the whole packet.
+
+  When a more recent message authentication @hl algorithm is
+  selected which uses the @em {Encrypt-Then-Mac} order, the size
+  field has to remain in clear text so that the message
+  authentication token can be located at the end of the
+  undeciphered packet. This is needed because the underlying
+  network pipe is stream oriented rather than datagram oriented,
+  which means it is not required to preserve packets
+  boundaries. This task is left to the @em ssh2 transport layer.
+
+  When an authenticated cipher is used, no separate message
+  authentication @hl algorithm is used. Depending on the design
+  of the authenticated cipher @hl algorithm, the size field
+  may not be enciphered. Note that hiding the actual size of the
+  packets needs additional measures to be taken when transmitting
+  the packets stream over the network.
+
+  Obviously, the compression step if performed before encryption
+  when enabled.
+@end section
+
+@section TP {Key-exchange process and methods}
+  @label {kex}
+
+  The initial key-exchange process is started right after
+  exchanging @hl{version strings} and terminates after a few
+  packet exchanges. During most of the lifetime of a
+  @hl session, no key-exchange process is running.
+
+  Additional key-exchange processes can be initiated by either
+  side at any time. This is generally requested after some amount
+  of transferred data or after a delay. Processing of other
+  messages is postponed during a key-exchange.
+
+  The key-exchange process has several purposes:
+  @list
+    @item It negotiates the multiple @hl algorithms that will
+      be used to secure the connection and compress the
+      packets. The protocol supports using a different set of
+      @hl algorithms for each directions, even if this is
+      rarely used in practice.
+
+      Note that the signature @hl algorithm optionally involved
+      in the @hl{user authentication} is @b not negotiated
+      during the key-exchange process.
+
+    @item It creates a @sinvoke{Shared secret}{shared secret}wp
+      and derives the symmetric @hl{session keys} which will be
+      used to encrypt and authenticate the packets using the
+      selected @hl algorithms.
+
+    @item It authenticates the server host using the selected
+      signature algorithms. The client application is involved in
+      the process because it has to decide if the @hl{host key}
+      of the server is known and trusted. This is generally
+      achieved by keeping track of known keys in a database and
+      asking the user to check and compare the @hl fingerprint
+      of yet unknown keys.
+  @end list
+
+  Because public key cryptography is involved, the process may be
+  computationally intensive. Depending on the selected method, it
+  can be costly, especially on embedded platforms.
+
+  The key-exchange process starts when the two peers each transmit
+  an @ref SSH_MSG_KEXINIT packet. This packet contains lists of
+  supported @hl algorithm names, allowing both sides to select
+  a matching set by applying the specified selection rules. For
+  each type of algorithm, the first algorithm in a client list
+  which appears somewhere in the associated server list is
+  retained. Among the various types of @hl algorithms
+  selected, a key-exchange method is retained and executed
+  immediately.
+
+  This key-exchange method employs its own specific crypto in
+  order to create the shared secret. It may however rely on an
+  other @hl algorithm in order to authenticate the server. To
+  achieve this, it needs to use specific packet exchanges until
+  the end of the process. Because new key-exchange methods can be
+  developed, this part of the protocol is not specified in a fixed
+  way.
+@end section
+
+@section TP {SSH services}
+  @label {srvlayer}
+
+  The @hl{transport layer} protocol provides a generic mechanism
+  which let the client request execution of an @em ssh2
+  @hl service. Services are identified by textual names so that
+  new one can be developed. No service is running initially and a
+  single service can run at a given time. The same service is run
+  on both sides.
+
+  The two other major components of @em ssh2 are specified as
+  services:
+
+  @list
+    @item The @em{User Authentication Protocol} provides several
+      methods for authentication of the client user. It is
+      specified in @sinvoke{4252}rfc. Again, @hl{user
+      authentication} methods are identified by textual names
+      inside the service. This adds an additional level of
+      extensibility and make some packet exchanges specific to the
+      selected authentication method. The most common @hl{user
+      authentication} methods are password based authentication
+      and @hl{public key authentication}, but more methods are
+      specified. @label {authlayer}
+
+    @item The @em{Connection Protocol} is designed to transfer
+      data over multiplexed @hl channels as detailed
+      below. This is what the client and server applications
+      generally use to communicate over @em {ssh2}. It is
+      specified in @sinvoke{4254}rfc.
+
+    @item Although the @hl{transport layer} is designed to
+      support any other kind of service, no other services are
+      specified. As a result, most implementations have the two
+      standard services hardwired in the same software component
+      as the @hl{transport layer}.
+
+      Supporting registration of new services allows to take
+      advantage of the @em ssh2 protocol architecture for new
+      usages.  This also enables running alternate implementations
+      of the standard services described above. This is used in
+      the @em libassh @hl{test suite} in order to implement odd
+      behavior while testing the real @hl{user authentication}
+      service running on the other side.
+  @end list
+
+  The specification states that a service, typically the
+  @em{Connection Protocol}, is run @b{on top} of the @em {User
+  Authentication protocol} (@sinvoke{4252}rfc section 5.1). What
+  actually happens is that the @em{Connection Protocol} service is
+  run @b after the @em {User Authentication Protocol} service,
+  provided that the client has requested execution of these two
+  services and did so in that order. The server is free to deny
+  execution of a service.
+@end section
+
+@section TP {The connection protocol}
+  @label {connlayer}
+
+  The @em {ssh2 Connection Protocol} is used by applications to
+  establish communications @hl channels. Once this service is
+  started, the server and the client are both allowed to open @hl
+  {channels} and send @hl requests. Those are the two primitives
+  offered by the connection protocol:
+
+  @list
+    @item Once opened successfully, a @hl channel allows the two
+      applications to transmit a stream of data over @em {ssh2}. A
+      @hl channel has a textual type name which identifies its
+      usage. @hl Channel open messages are transmitted by either
+      side and can be accepted or rejected based on the type
+      name. Opening a new @hl channel is an asynchronous process
+      and multiple open messages can be sent without waiting for
+      replies. The replies can be sent in any order, so that
+      connecting to a remote resource using a @hl channel may
+      take some time without blocking other @hl channels.
+
+      The protocol supports a windowed flow control mechanism
+      which enables limiting the data throughput per @hl
+      {channel}. This can be used to prevent exceeding the
+      capacity of the underlying transport data pipe which would
+      make all @hl channels unresponsive. @label {connchan}
+
+    @item A @hl request is an application
+      generated message identified by a textual type name which
+      may have a specific data payload attached. The sender of the
+      @hl request may or may not ask for a reply. When the
+      remote application acknowledges the @hl request
+      successfully, it may also attach a payload. @hl Requests
+      can not live longer than a single round trip and must be
+      replied in order. A @hl request may be either global or
+      related to an open @hl channel. @label {connreq}
+  @end list
+
+  Some standard types of @hl channel and @hl request are
+  specified for use on top of the @em ssh2 protocol:
+  @list
+    @item A set is specified for supporting @hl{interactive
+      sessions}. This is designed to run shell instances and other
+      programs on the remote server. Multiple @hl{interactive
+      sessions} can run over a single @em ssh2 @hl session.
+
+      Examples of standard @hl request types are the @tt shell
+      and @tt exec ones which request execution of a process on
+      the server. Those must be related to an open @hl channel
+      of the @tt {session} type and are used to transport the
+      standard IO streams of the remotely executing process.
+
+    @item An other set is specified for supporting the TCP/IP
+      @hl{port forwarding} feature. It allows the client to
+      connect to a remote TCP port from the server and can also be
+      used to instruct the server to listen on a TCP port and
+      forward any incoming connections back to the client.
+  @end list
+
+  The application is allowed to implement private @hl
+  {channel} types and private @hl request types as well.
+
+@end section
+
+@section TP {Mapping to libassh components}
+  Here is how the @em ssh2 protocol architecture outlined above is
+  mapped to software components in the library:
+
+  @section {Transport layer implementation}
+    The @hl{transport layer} is implemented in the library core
+    and relies on @hl algorithm @hl modules for
+    cryptographic processing of the packets and data
+    compression. It extracts @ref assh_packet_s {packet objects}
+    from the incoming @em ssh2 stream and also generates the
+    outgoing @em ssh2 stream from packet objects present in the
+    transmit queue. This layer handles some of the incoming
+    messages and dispatches other messages either to the running
+    @hl key-exchange method or to the running
+    service. Transport related declarations can be found in
+    @ref{@assh/assh_transport.h}.
+  @end section
+
+  @section {Key-exchange implementation}
+    The @hl key-exchange methods and the services both have
+    their own module interface. Among all @xref{coremod}{module
+    interfaces} defined, only these two are designed to handle
+    packet exchanges and may report @hl events to the
+    application. Related declarations can be found in
+    @ref{@assh/assh_kex.h} and @ref{@assh/assh_service.h}.
+  @end section
+
+  @section {User authentication implementation}
+    The @em {User Authentication Protocol} use the @ref
+    assh_service_s {service} module interface. There are
+    actually two separate modules which implement the server and
+    client sides of the service. Related declarations can be
+    found in @ref{@assh/assh_userauth_client.h} and
+    @ref{@assh/assh_userauth_server.h}.
+  @end section
+
+  @section {Connection protocol implementation}
+    The @em {Connection Protocol} also use the service module
+    interface. Because this protocol is symmetric, there is a
+    single module which implements both, the client and server
+    sides.  @label {connapi}
+
+    The module implements the generic @hl request and @hl
+    {channel} mechanisms specified in sections 4 and 5 of
+    @sinvoke{4254}rfc and nothing more. The module reports events
+    which allow the application to handle incoming @hl request
+    and @hl channel related messages. It also provides
+    functions to send @hl requests and manage @hl channels
+    but it does not care about the types of @hl request and
+    @hl channel used. It makes no difference if those have a
+    standard type or are @hl{private extensions}. The related
+    declarations and details of the module API can be found in
+    @ref{@assh/assh_connection.h}.
+
+    Section 6 and 7 of the same specification describe some
+    standard @hl channel and @hl request types which
+    support @hl{interactive sessions} and @hl{port
+    forwarding} respectively. Because implementation of these
+    features is tightly coupled with both, the operating system
+    and usage, handling of these features is left to the
+    application. Some parsing functions and a basic client state
+    machine for @hl{interactive Sessions} is provided as
+    @hl{helper functions} as shown in the @xref{exremote} and
+    @xref{exserver} examples. The related declarations can be
+    found in @ref{@assh/helper_interactive.h} and
+    @ref{@assh/helper_portfwd.h}.
+  @end section
+
+@end section

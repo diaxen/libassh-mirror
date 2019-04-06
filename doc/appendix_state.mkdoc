@@ -1,0 +1,39 @@
+@section {Transport state diagram}
+  @label {fsmtr}
+  @image transport.png
+@end section
+
+@section {Input state diagram}
+  @label {fsmin}
+  @image transport_in.png
+@end section
+
+@section {Output state diagram}
+  @label {fsmout}
+  @image transport_out.png
+@end section
+
+@section {Service state diagram}
+  @label {fsmsrv}
+  @image service.png
+@end section
+
+@section {Client user authentication state diagram}
+  @label {fsmcauth}
+  @image userauth_client.png
+@end section
+
+@section {Server user authentication state diagram}
+  @label {fsmsauth}
+  @image userauth_server.png
+@end section
+
+@section {Channel state diagram}
+  @label {fsmchan}
+  @image connection_channel.png
+@end section
+
+@section {Request state diagram}
+  @label {fsmrq}
+  @image connection_request.png
+@end section

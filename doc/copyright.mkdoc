@@ -1,0 +1,57 @@
+@section T {Software License}
+  @label {license}
+
+  The @em libassh source code is covered by the @b{GNU Lesser General
+  Public License, Version 2.1}.
+
+  This license allows using the library from a non-free application
+  but requires publishing modifications made to the code of library
+  itself. Contact the author for more details.
+
+  As a special exception, source code of example applications found
+  in the @tt {example/} directory and source code of the @tt
+  helper_client and @tt helper_server files may be freely copied
+  without causing the resulting work to be covered by the LGPL.
+@end section
+
+@section T {Copyright owner}
+  As of version 1.0 of @em libassh, @em{Alexandre Becoulet} is the
+  copyright owner of the whole source code of @em libassh.
+@end section
+
+@section T {Derivative work}
+  As of version 1.0 of @em libassh, @em{Alexandre Becoulet} is the
+  original author of the whole source code of the library core and
+  the original author of most modules. Modules and helpers
+  containing derivative work are listed here:
+
+  @list
+    @item In the @tt {chacha20-poly1305@openssh.com} cipher module,
+      the implementation of the @em Poly1305 algorithm is based on a
+      @b{public domain} implementation by @em{Andrew Moon}.
+    @item In the @tt{hash_sha2_builtin.c} file, the builtin SHA2
+      module is based on a @b{public domain} implementation by
+      @em {Christophe Devine}.
+    @item In the @tt{hash_sha1_builtin.c} file, the builtin SHA1
+      module is based on a @b{public domain} implementation by
+      @em {Steve Reid}.
+    @item In the @tt{hash_md5_builtin.c} file, the builtin MD5
+      module is based on a @b{public domain} implementation by
+      @em {Colin Plumb}.
+    @item In the @tt{helper_bcrypt.c} file, the @em bcrypt algorithm
+      implementation is based on @em OpenSSH source code by @em {Ted
+      Unangst}, released under a @b{BSD license}. It enables support for
+      passphrase encrypted public key files used by @em OpenSSH.
+  @end list
+
+@end section
+
+@section T {Copying this document}
+  Copyright (C) 2013-2018 @em{Alexandre Becoulet}. Permission is
+  granted to copy, distribute and/or modify this document under the
+  terms of the @b{GNU Free Documentation License, Version 1.3} or
+  any later version published by the Free Software Foundation; with
+  no Invariant Sections, no Front-Cover Texts, and no Back-Cover
+  Texts. A copy of the license is included in the section entitled
+  @xref{GNU Free Documentation License}.
+@end section

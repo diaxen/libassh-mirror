@@ -1,0 +1,200 @@
+
+@em libassh is a free software library written in C which implements
+the @invoke{Secure Shell}{Secure Shell}wp protocol version 2. The
+client and server sides are implemented with the same set of
+features.
+
+Its design supports portability, reliability and small footprint.
+This makes @em libassh a good choice to implement embedded ssh
+clients and servers.  It strives to let the application access every
+feature of the protocol so that it can be used to implement full
+featured ssh client and server applications as well.
+
+It comes with a @hl{test suite}, some @hl example applications
+and the @sinvoke{RTFM}{fine manual}wp you are reading. A contributor
+manual with details of the internal API is also available.
+
+@section T {Event based ssh}
+  The API has been designed to support both, @sinvoke{Asynchronous
+  I/O} {asynchronous}wp and synchronous types of programming
+  interfaces of the application and operating system.
+
+  The core library does not provides blocking functions nor does it
+  rely on a callback based API. Instead, the library reports
+  @hl events which do not require immediate processing by the
+  application. This design is agnostic with regard to the
+  @sinvoke{{Programming model}{programming model}wp. It allows easy
+  integration in applications, including those based on
+  @sinvoke{Event loop} {event loops}wp provided by existing
+  libraries and toolkits.
+
+  Moreover, this design fully supports the asynchronous nature of
+  the @em ssh2 protocol. This does not only mean that the library
+  calls are non-blocking, it is also able to handle out of order
+  operations allowed by the protocol. This includes handling and
+  replying to multiple @hl channel open messages out of order.
+
+  The lack of an @em ssh2 library written in C with this design
+  has been the main reason of starting the project.
+@end section
+
+@section T {Modular ssh}
+  The @em ssh2 protocol is specified in a modular way so that
+  implementers can freely add new crypto @hl algorithms, new
+  @hl services and new @hl{user authentication} methods without
+  breaking compatibility with other implementations.
+
+  The @em libassh implementation of @em ssh2 is modular, as allowed
+  by the specification. It supports working with @em ssh2
+  @xref{coremod}{software components} that are not provided with the
+  library. This includes dynamically registering additional @em
+  ssh2 @hl algorithms as well as running custom @em ssh2
+  @hl services. Moreover it allows using an external memory
+  allocator and working with an external random number generator.
+@end section
+
+@section T {Clean design}
+  The modular design makes the code more readable by not including
+  crypto algorithms specific code in the core protocol
+  implementation. This approach enforces uses of well defined and
+  documented APIs between the software components, which eases the
+  code review process and allows writing unit tests.
+
+  Although it's well known that basing protocol implementations on
+  @sinvoke{Finite-state machine}{finite state machines}wp helps
+  excluding unforeseen protocol states and improves identification
+  of all possible edge conditions, the @em ssh2 specification does
+  not provide a state based description of the protocol
+  @xref{trspec01}.  As a consequence, many implementations of @em
+  ssh2 do not rely on finite state machines. Protocol state fuzzing
+  techniques are needed in order to extract state diagrams and
+  perform a partial analysis of their corner case behavior @xref
+  {model01} @xref {infer01} @xref {model02}.
+
+  The @em libassh implementation is based on multiple state
+  machines.  Using separate state machines for the various parts of
+  the protocol helps avoiding unexpected interactions between the
+  layers @xref {infer01}. The state machines implemented in @em
+  libassh are documented in the provided @xref {fsms} {state diagrams}.
+
+  No global variables are used and multiple library @ref
+  assh_context_s {contexts} and @ref assh_session_s {sessions} can
+  be created. This makes the library safe to use in multi-threaded
+  applications.
+@end section
+
+@section T {Portable ssh}
+  @em libassh has been designed to run on a variety of platforms
+  ranging from UNIX servers to embedded devices with bare metal
+  implementations.
+
+  The library core only contains algorithmic stuff, mostly protocol
+  state machines. It has no dependencies other than the standard C
+  library and perform no operating system calls. The library returns
+  specific @hl events in order to let the application transfer
+  the @em ssh2 network stream over any reliable data pipe, usually a
+  TCP connection.
+
+  This makes this @em ssh2 implementation portable on any platform
+  provided that a support for standard C is available. This
+  @xref{softarch} {architecture} requires the library user to
+  develop some glue code for the target platform. This code is
+  provided in the form of @hl{helper functions} for convenient use
+  on @em POSIX platforms. Optional support for file formats used by
+  @em OpenSSH is provided as well.
+
+  Because the library comes with a set of standard @em ssh2
+  @hl algorithm implementations, it can be used
+  standalone. Alternate modules relying on external libraries like
+  @em Libgcrypt, @em OpenSSL and and @em Zlib are available in order
+  to further extend the set of @hl{supported algorithms and methods}.
+
+  The clear @xref{source tree}{source organization} and file naming
+  helps identify the core components and modules when porting the
+  library to a new platform.
+@end section
+
+@section T {Security}
+  The library implements several security related features.
+
+  It comes with implementations of many @em ssh2 @hl algorithms,
+  support for common @hl{user authentication} methods and
+  @hl{key formats}. Passphrase encrypted @hl{SSH keys} can be
+  loaded and saved. The library is also able to generate new
+  @hl{user keys} and @hl{host keys}.
+
+  Because using fast and secure @em ssh2 @hl algorithms among
+  those supported by the remote peer is the most desirable thing for
+  the user, the library is able to compute a simple score which can
+  be used to advertise the overall level of security of a
+  @hl session. This is based on @hl algorithms negotiated
+  during the @hl key-exchange as well as involved @hl{host
+  keys}. It is also possible to select and sort @hl algorithms
+  based on their speed and safety before running a
+  @hl session. This helps the user keep control without requiring
+  him to know strengths and weakness of the various crypto
+  @hl algorithms.
+
+  @sinvoke{Multi-factor authentication}{Multi-factor user
+  authentication}wp and password change requests are both
+  supported. In order to enable use of hardware authentication
+  tokens, the @hl{user authentication} code is able to work with
+  both, internally and externally generated signatures.
+
+  Providing those feature is not sufficient to make the
+  implementation reliably secure, that's why special care has been
+  taken to avoid leaking secret material.  In order to mitigate
+  @sinvoke{Side-channel attack}{side channel attacks}wp, all
+  implementations of public key cryptography relies on a big number
+  engine with strict constant time operations.  Moreover, the
+  library can be configured to store sensitive data and temporary
+  buffers in secure memory.
+@end section
+
+@section T {Performances}
+  The library uses a @sinvoke{Zero-copy}{zero copy}wp approach to
+  pass data between the network stream, the @hl channels and the
+  application. This is achieved by giving the application a direct
+  access to buffers stored in the @em libassh packet
+  objects. Moreover, the application is allowed to take full control
+  of the @hl channel flow control mechanism specified in
+  @sinvoke{4254}rfc.
+
+  An optional packet pool allocator is provided in order to recycle
+  packets and reduce pressure on the memory allocator.
+
+  A large set of compile time @xref{Build configuration}{configuration
+  macros} is available which allows optimization of the library
+  footprint on embedded targets. The modular design allows retaining
+  only a small set of @em ssh2 @hl algorithms and makes it
+  easy to add support for hardware cryptographic accelerators.
+
+  The library only needs to allocate a few kilobytes in order to run
+  a client or server @hl session.
+@end section
+
+@section T {Testing}
+  The library comes with @hl{test programs} which implement unit
+  tests and stress tests. It helps ensure that the implementation
+  follows the standard and behaves well on corner cases.
+
+  Stress tests are implemented by making the server and client sides
+  talk to each other, performing many @hl key-exchange,
+  @hl{user authentication} and @hl channel operations per
+  second. Because the library is not bound to a particular network
+  stack, the two instances under test are able to efficiently
+  exchange the @em ssh2 network stream using memory buffers in the
+  same test program.
+
+  Fuzzing is used in order to reach more corner cases. Randomly
+  corrupted packets and random memory allocation failures are
+  injected while the library is tested for compliance and memory
+  leaks.
+
+  In order to keep @em libaash compatible with other implementations
+  of @em ssh2, a @hl session replaying tool is also provided. It
+  allows including regression tests against other implementations as
+  part of the test suite. Because it records and replays sessions at
+  the packet level, other implementations do not need to be
+  available when running the tests.
+@end section

@@ -14,11 +14,40 @@
 # License along with this program.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-EXTRA_DIST = Makefile.am assh_config.h fdl-1.3.mkdoc internals.conf	\
-	manual.conf template.mkdoc top.mkdoc manual/html/* internals/html/*
-
 %.pdf: %.dot
 	dot -Tpdf -Kdot -Emargin=1 -Granksep=1 $< > $@
 
 %.png: %.dot
 	dot -Tpng -Kdot -Emargin=1 -Granksep=1 $< > $@
+
+DOTS =  connection_channel.dot 	\
+	connection_request.dot 	\
+	service.dot 		\
+	transport.dot 		\
+	transport_in.dot 	\
+	transport_out.dot 	\
+	userauth_client.dot 	\
+	userauth_server.dot
+
+MKDOC_SRC = fdl-1.3.mkdoc template.mkdoc top_manual.mkdoc		\
+	top_internals.mkdoc algos_methods.mkdoc appendix_state.mkdoc	\
+	bib.mkdoc build_config.mkdoc copyright.mkdoc examples.mkdoc	\
+	lexicon.mkdoc protocol_arch.mkdoc sales_pitch.mkdoc		\
+	software_interfaces.mkdoc source_tree.mkdoc			\
+	state_machines.mkdoc tests.mkdoc
+
+manual: manual/html/index.html
+
+manual/html/index.html: $(DOTS:.dot=.png) $(MKDOC_SRC) manual.conf
+	( cd $(top_srcdir) ; mkdoc -I doc/ -I src/  		\
+		--conf-file manual.conf --top-file top_manual.mkdoc )
+
+internals: internals/html/index.html
+
+internals/html/index.html: $(DOTS:.dot=.png) $(MKDOC_SRC) internals.conf
+	( cd $(top_srcdir) ; mkdoc -I doc/ -I src/ 		\
+		--conf-file internals.conf --top-file top_internals.mkdoc )
+
+EXTRA_DIST = Makefile.am assh_config.h internals.conf		\
+	manual.conf  $(MKDOC_SRC) $(DOTS:.dot=.png) $(DOTS)	\
+	manual/html/* internals/html/*

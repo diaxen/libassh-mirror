@@ -1,0 +1,79 @@
+
+This section gives an overview of the source code organization. It
+is of interest for those writing new modules and playing with the
+library internal.
+
+The source tree is organized as follow:
+@list
+  @item @tt{src/} : The source code of the library
+    @xref{coremod}{core and modules}.
+  @item @tt{src/assh/} : The library public headers. See the
+    @xref{headers list} section for details.
+  @item @tt{tests/} : The @hl{test suite}.
+  @item @tt{doc/} : This manual.
+  @item @tt{examples/} : Some @xref{examples}{example applications}.
+  @item @tt{extra/} : development tools used to generate some tables and code.
+@end list
+
+The library core and @hl service modules only
+contains the @hl{state machines} and protocol related stuff:
+@list
+  @item @tt{src/assh_*.c} : The library core functions. This
+    includes code related to management of @ref assh_context_s
+    {contexts}, @ref assh_session_s {sessions}, @ref assh_event_s
+    {events}, as well as support code for @hl key-exchange, @ref
+    assh_service_s {services}, @ref assh_packet_s {packets}, @ref
+    assh_key_s {keys} and @ref assh_algo_s {algorithms}.
+  @item @tt{src/assh_transport.c} : The @hl{transport layer}
+    implementation.
+  @item @tt{src/assh_userauth_client*.c} : The client side
+    @hl{user authentication} service module.
+  @item @tt{src/assh_userauth_server*.c} : The server side
+    @hl{user authentication} service module.
+  @item @tt{src/assh_connection.c} : The
+    @hl{connection protocol} service module.
+@end list
+
+Then come the @hl algorithms exposed during the negotiation
+phase of the ssh protocol. Some of these pluggable modules are
+standalone and others are linked to an external libraries:
+@list
+  @item @tt{src/kex*.c} : The ssh @xref{kexalgos}{key-exchange algorithm modules}.
+  @item @tt{src/sign*.c} : The ssh @xref{authalgos}{signature algorithm modules}.
+  @item @tt{src/cipher*.c} : The ssh @xref{cipheralgos}{cipher algorithm modules}.
+  @item @tt{src/mac*.c} : The ssh @xref{macalgos}{MAC algorithm modules}.
+  @item @tt{src/compress*.c} : The @xref{compalgos}{ssh compression algorithm modules}.
+@end list
+
+Some additional pluggable utility components are used by the library
+@xref{coremod}{core and modules}:
+@list
+  @item @tt{src/key*.c} : @hl{SSH keys} management modules.
+  @item @tt{src/prng*.c} : Random number generation modules.
+  @item @tt{src/hash*.c} : Hash functions modules.
+  @item @tt{src/bignum*.c} : A constant time big number engine.
+@end list
+
+Some @hl{helper functions} are provided for
+convenience. Unlike other parts of the library, these files
+contains system calls and platform specific stuff. It is not used
+by the other parts of the library and are only provided for use by
+the application. It doesn't rely on the private APIs of the library:
+@list
+  @item @tt{src/helper_client.c} : This provides event handlers
+    for common ssh client behavior.
+  @item @tt{src/helper_server.c} : This provides event handlers
+    for common ssh server behavior.
+  @item @tt{src/helper_key.c} : This provides @hl{SSH key} file
+    loading and saving functions.
+  @item @tt{src/helper_base64.c} : This implements a base64
+    encoder and decoder for use by @hl{SSH key} helpers.
+  @item @tt{src/helper_bcrypt.c} : This provides the encryption
+    algorithm used for passphrase protected keys in @em OpenSSH
+    formats.
+  @item @tt{src/helper_io.c} : This provides IO events handler
+    relying on POSIX file descriptors.
+  @item @tt{src/helper_interactive.c} : This implements
+    @hl{interactive session} related functions.
+@end list
+See associated header files for details of the helpers API.
