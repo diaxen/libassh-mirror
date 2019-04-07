@@ -10,9 +10,9 @@ clients and servers.  It strives to let the application access every
 feature of the protocol so that it can be used to implement full
 featured ssh client and server applications as well.
 
-It comes with a @hl{test suite}, some @hl example applications
-and the @sinvoke{RTFM}{fine manual}wp you are reading. A contributor
-manual with details of the internal API is also available.
+It comes with a @hl{test suite}, some @hl example applications and the
+@sinvoke{RTFM}{fine manual}wp you are reading. An other manual is
+available with details of the internal API.
 
 @section T {Event based ssh}
   The API has been designed to support both, @sinvoke{Asynchronous

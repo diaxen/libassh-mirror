@@ -30,7 +30,7 @@
    @hl channels open messages related to the @hl{interactive
    sessions} features of @em {ssh2}.
 
-   @xsee {connapi}
+   @xsee {connmap}
    @see @assh/assh_connection.h
 */
 

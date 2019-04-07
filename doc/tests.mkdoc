@@ -1,4 +1,4 @@
-This section gives a brief overview of the test programs provides
+This section gives a brief overview of the test programs provided
 with @em {libassh}.
 
 @list
@@ -10,11 +10,11 @@ with @em {libassh}.
     replay them as part of the test suite.
 
   @item The @tt test/connection.c runs a stress test of the
-    @hl{connection protocol} service by randomly performing many
-    @hl channel and @hl request operations between client and
+    @hl{connection protocol} service by randomly performing many @hl
+    channel and @hl request operations between a pair of client and
     server @hl sessions. The program maintains its own state of
-    the alive channels and requests so that it can check the
-    consistency of the behavior on both sides.
+    alive channels and requests so that it can check the consistency
+    of the behavior on both sides.
 
   @item The @tt test/connection2.c program runs a similar
     @hl{connection protocol} stress test. It does not maintains a
@@ -23,7 +23,7 @@ with @em {libassh}.
 
   @item The @tt test/userauth.c program runs a stress test of the
     user authentication services by performing many user
-    authentication attempts between client and server
+    authentication attempts between a pair of client and server
     @hl sessions. The authentication requests and replies are
     generated randomly in this test. The program checks consistency
     of behavior on both sides. Corrupted packets and memory

@@ -30,7 +30,7 @@
    @hl channels open messages related to the @hl{port forwarding}
    features of @em {ssh2}.
 
-   @xsee {connapi}
+   @xsee {connmap}
    @see @assh/assh_connection.h
 */
 

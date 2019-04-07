@@ -17,7 +17,7 @@ meaning when used in the context of the @em ssh2 protocol.
   A @em{channel} allows the application to transmit a stream
   of data over @em {ssh2}. The channel mechanism is specified as
   part of the @hl{connection protocol}.
-  @xsee {connlayer} @see assh_channel_s
+  @xsee {connlayer} @see assh_channel_s @xsee{connapi}
 @end section
 
 @section {Connection}
@@ -51,7 +51,7 @@ meaning when used in the context of the @em ssh2 protocol.
 
 @section {Global request}
   A @em{global request} is a @hl request which is not associated
-  to a @hl channel. @xsee {connlayer}
+  to a @hl channel. @xsee {connlayer} @xsee{connapi}
 @end section
 
 @section {Host authentication}
@@ -104,6 +104,7 @@ meaning when used in the context of the @em ssh2 protocol.
 @end section
 
 @section {Message}
+  @label{messages}
   Every @em ssh2 binary packets carries a single @em {message} which
   has a specific role in the protocol. @xsee{trlayer}
   @see assh_ssh_msg_e
@@ -144,7 +145,7 @@ meaning when used in the context of the @em ssh2 protocol.
   @em{ssh2 requests} are used by applications to transmit control
   messages to the remote host. These are specified as part of the
   @hl{connection protocol}. @xsee {connlayer}
-  @see assh_request_s
+  @see assh_request_s @xsee{connapi}
 @end section
 
 @section {Service}

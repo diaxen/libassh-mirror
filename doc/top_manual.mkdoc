@@ -135,7 +135,7 @@ assh/assh_event.h
   The section contains the documentation extracted from the header
   files of library API. Only the public part of the API is exposed.
 
-  The internal part of the API is exposed in the contributor manual.
+  The internal part of the API is exposed in an other manual.
 
   @section THe {Headers list}
     @insert {header} compound_table

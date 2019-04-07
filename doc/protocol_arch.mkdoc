@@ -55,7 +55,7 @@ These components are described in the following subsections.
   a size header and a numerical message identifier which
   determines its role in the protocol. The interpretation of the
   packet content depends on the message id. Dispatching packets to
-  the other layers does not require nesting multiple packet
+  the higher layers does not require nesting multiple packet
   headers. There is a single header and the message identifier is
   used to dispatch packets to the right software component.
 
@@ -334,19 +334,18 @@ These components are described in the following subsections.
     The @em {Connection Protocol} also use the service module
     interface. Because this protocol is symmetric, there is a
     single module which implements both, the client and server
-    sides.  @label {connapi}
+    sides.  @label {connmap}
 
-    The module implements the generic @hl request and @hl
-    {channel} mechanisms specified in sections 4 and 5 of
-    @sinvoke{4254}rfc and nothing more. The module reports events
-    which allow the application to handle incoming @hl request
-    and @hl channel related messages. It also provides
-    functions to send @hl requests and manage @hl channels
-    but it does not care about the types of @hl request and
-    @hl channel used. It makes no difference if those have a
-    standard type or are @hl{private extensions}. The related
-    declarations and details of the module API can be found in
-    @ref{@assh/assh_connection.h}.
+    The module implements the generic @hl request and @hl {channel}
+    mechanisms specified in sections 4 and 5 of @sinvoke{4254}rfc and
+    nothing more. The module reports events which allow the
+    application to handle incoming @hl request and @hl channel related
+    messages. It also provides functions to send @hl requests and
+    manage @hl channels but it does not care about the types of @hl
+    request and @hl channel used. It makes no difference if those have
+    a standard type or are @hl{private extensions}. The related API is
+    described in the @xref {connapi} section and the related
+    declarations can be found in @ref{@assh/assh_connection.h}.
 
     Section 6 and 7 of the same specification describe some
     standard @hl channel and @hl request types which

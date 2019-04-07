@@ -38,7 +38,7 @@
    {@assh/helper_interactive.h} and @ref {@assh/helper_portfwd.h}
    header files.
 
-   @xsee {connapi}
+   @xsee {connmap} @xsee{connapi}
 */
 
 #ifndef ASSH_SRV_CONNECTION_H_
@@ -86,7 +86,8 @@ enum assh_request_state_e
   ASSH_REQUEST_ST_REPLY_READY,
 };
 
-/** @This specifies @ref assh_channel_s status. */
+/** @This specifies @ref assh_channel_s status.
+    @xsee{connapi} */
 enum assh_channel_state_e
 {
   /** An open message has been sent to the remote host */
@@ -127,16 +128,7 @@ enum assh_channel_state_e
     function or when the @ref ASSH_EVENT_CHANNEL_OPEN event is reported.
     The library user does not have to destroy channel objects explicitly.
 
-    Channels are detroyed at various times:
-    @list
-      @item when the @ref ASSH_EVENT_CHANNEL_OPEN_REPLY event reports a failure,
-      @item when the @ref ASSH_EVENT_CHANNEL_OPEN event is rejected,
-      @item when the @ref assh_channel_open_failed_reply function is called,
-      @item when the @ref ASSH_EVENT_CHANNEL_CLOSE event is reported.
-      @item when the @ref ASSH_EVENT_CHANNEL_ABORT event is reported.
-      @item when the @ref assh_session_cleanup function is called.
-    @end list
-*/
+    @xsee{connapi} */
 struct assh_channel_s;
 
 /** @This specifies standard values for channel open failure reason
@@ -429,6 +421,7 @@ assh_request(struct assh_session_s *s,
    initially set to @tt {-1}.
 
    @see ASSH_EVENT_CHANNEL_OPEN
+   @xsee{connapi}
 */
 struct assh_event_channel_open_s
 {
@@ -452,6 +445,7 @@ struct assh_event_channel_open_s
    @ref assh_event_done function.
 
    @see ASSH_EVENT_CHANNEL_ABORT
+   @xsee{connapi}
 */
 struct assh_event_channel_abort_s
 {
@@ -465,6 +459,7 @@ struct assh_event_channel_abort_s
    event has been reported.
 
    @see assh_channel_open_success_reply
+   @xsee{connapi}
 */
 assh_error_t
 assh_channel_open_success_reply2(struct assh_channel_s *ch,
@@ -491,6 +486,7 @@ assh_channel_open_success_reply2(struct assh_channel_s *ch,
    acknowledged by calling the @ref assh_event_done function.
 
    @see assh_channel_open_failed_reply
+   @xsee{connapi}
 */
 assh_error_t
 assh_channel_open_success_reply(struct assh_channel_s *ch,
@@ -516,6 +512,7 @@ assh_channel_open_success_reply(struct assh_channel_s *ch,
    acknowledged by calling the @ref assh_event_done function.
 
    @see assh_channel_open_success_reply
+   @xsee{connapi}
 */
 assh_error_t
 assh_channel_open_failed_reply(struct assh_channel_s *ch,
@@ -538,6 +535,7 @@ assh_channel_open_failed_reply(struct assh_channel_s *ch,
    will be released when the @ref assh_event_done function is called.
 
    @see ASSH_EVENT_CHANNEL_OPEN_REPLY
+   @xsee{connapi}
 */
 struct assh_event_channel_open_reply_s
 {
@@ -576,6 +574,8 @@ struct assh_event_channel_open_reply_s
 
    @This must not be called if the last event has not been
    acknowledged by calling the @ref assh_event_done function.
+
+   @xsee{connapi}
 */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_channel_open(struct assh_session_s *s,
@@ -799,6 +799,7 @@ assh_channel_dummy(struct assh_channel_s *ch, size_t size);
    message is sent and the channel state changes to @ref ASSH_CHANNEL_ST_CLOSING.
 
    @see ASSH_EVENT_CHANNEL_EOF
+   @xsee{connapi}
 */
 struct assh_event_channel_eof_s
 {
@@ -813,6 +814,7 @@ struct assh_event_channel_eof_s
    events.
 
    @see ASSH_EVENT_CHANNEL_CLOSE
+   @xsee{connapi}
 */
 struct assh_event_channel_close_s
 {
@@ -832,6 +834,8 @@ struct assh_event_channel_close_s
 
    @This must not be called if the last event has not been
    acknowledged by calling the @ref assh_event_done function.
+
+   @xsee{connapi}
 */
 assh_error_t
 assh_channel_eof(struct assh_channel_s *ch);
@@ -847,6 +851,8 @@ assh_channel_eof(struct assh_channel_s *ch);
 
    @This must not be called if the last event has not been
    acknowledged by calling the @ref assh_event_done function.
+
+   @xsee{connapi}
 */
 assh_error_t
 assh_channel_close(struct assh_channel_s *ch);

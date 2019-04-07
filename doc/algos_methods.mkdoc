@@ -384,16 +384,16 @@ methods and key formats.
   @em {libassh}:
 
   @list
-    @item @tt none : always grant access.
-    @item @tt password : The password based user authentication
-      method. The user password is transmitted to the server for
-      checking, as specified in @sinvoke{4252}rfc.
-    @item @tt hostbased : The @hl {host based user authentication}
-      method, specified in @sinvoke{4252}rfc.
-    @item @tt publickey : The @hl {public key user authentication}
-      method, specified in @sinvoke{4252}rfc.
-    @item @tt keyboard-interactive : The @hl {keyboard interactive
-      user authentication} method, specified in
+    @item @tt none : This method always grant access.
+    @item @tt password : This is the password based user
+      authentication method. The user password is transmitted to the
+      server for checking, as specified in @sinvoke{4252}rfc.
+    @item @tt hostbased : This is the @hl {host based user
+      authentication} method, specified in @sinvoke{4252}rfc.
+    @item @tt publickey : This is the @hl {public key user
+      authentication} method, specified in @sinvoke{4252}rfc.
+    @item @tt keyboard-interactive : This is the @hl {keyboard
+      interactive user authentication} method, specified in
       @sinvoke{4256}rfc.
   @end list
 

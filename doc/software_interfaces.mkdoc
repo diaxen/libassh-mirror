@@ -147,10 +147,10 @@ switch (ev.id)
   }
   @end code
 
-  That is how events reported by the library can be handled in a
+  This is how events reported by the library can be handled in a
   loop. Depending on the software design and programming model of
   the application, other programming constructs may be used. For
-  instance, the application may well start an asynchronous
+  instance, the application may start an asynchronous
   operation in response to an event, then call the @ref
   assh_event_done function from one of its callback when the
   operation completes. Any model will work provided that an
@@ -189,6 +189,127 @@ switch (ev.id)
   Other helper functions which are not designed to handle events
   are also provided. These provide various features like
   @hl{SSH keys} file operations and @em ssh2 blob parsing.
+@end section
+
+@section TP {Channels and requests API}
+  @label{connapi}
+
+  The @em ssh2 protocol allows @hl channels to be in various states.
+  Major channel states in @em assh are: @em {opening}, @em {open},
+  @em{half-closed} in either direction, @em {closing} and @em
+  {released}.
+
+  The @hl{connection protocol} also provides the @hl request
+  primitive. @hl {Requests} may be either global or attached to a
+  channel.
+
+  A @hl channel open can be initiated by either side. Once the open
+  @hl message has been acknowledged by the remote host, the @hl
+  channel is a symmetrical data pipe. This means that either side is
+  allowed to send data and close the @hl channel. Replies to @hl
+  channel open @hl messages are allowed to be sent out of order.
+
+  The @em assh @hl channel and @hl request API relies on @hl events
+  and functions provided by the @hl{connection protocol} module for
+  use by the application. It can be used once the @hl service has
+  started.
+
+  Instances of the @ref assh_channel_s and @ref assh_request_s types
+  are always created and released by the library. All related types
+  and functions are declared in @ref{@assh/assh_connection.h}.
+
+  @section {Local channel open}
+    The application may try to open a @hl channel by calling the @ref
+    assh_channel_open function. An @ref assh_channel_s object is then
+    allocated but the channel is not open until the messages has been
+    acknowledged by the remote host.
+
+    The @ref ASSH_EVENT_CHANNEL_OPEN_REPLY event is reported to the
+    application at some point which indicates the channel open
+    status. When the @hl event reports that opening is denied, the
+    @ref assh_channel_s object is released by the library. This @hl
+    event is always reported, even when the reply from the remote host
+    has not been received due to a disconnecting session.
+  @end section
+
+  @section {Remote channel open}
+    When the remote host wants to open a channel, the @ref
+    ASSH_EVENT_CHANNEL_OPEN event is reported. The application has to
+    accept or deny channel open so that the library can send the
+    proper reply.
+
+    The channel becomes open if the application acknowledges the @hl
+    event with the @ref ASSH_CONNECTION_REPLY_SUCCESS status. The
+    channel object is released if the @ref
+    ASSH_CONNECTION_REPLY_FAILED value is used instead.
+
+    When the application is not able to decide immediately if the
+    channel can be open, it may acknowledges the @hl event with the
+    @ref ASSH_CONNECTION_REPLY_POSTPONED value. This allows replying
+    to channel open messages out of order.
+
+    In this case, the application has to call either the @ref
+    assh_channel_open_success_reply function or the @ref
+    assh_channel_open_failed_reply function at some point in order to
+    actually open or release the channel. In the mean time, the @ref
+    ASSH_EVENT_CHANNEL_ABORT event may be reported to indicate that
+    the channel is eventually released due to a closing session.
+  @end section
+
+  @section {Streaming data}
+    Data may be transmitted over an open channel by using the @ref
+    assh_channel_data_alloc and @ref assh_channel_data_send functions.
+
+    Any data transmitted by the remote host will be reported by the
+    @ref ASSH_EVENT_CHANNEL_DATA event.
+
+    When channel flow control is not delegated to the library, the
+    @ref assh_channel_window_adjust function and the @ref
+    ASSH_EVENT_CHANNEL_WINDOW event must be used by the application.
+  @end section
+
+  @section {Using requests}
+    The application may send @hl requests to the remote host by
+    calling the @ref assh_request function. It may optionally require
+    a reply to the request. Doing so leads to the @ref
+    ASSH_EVENT_REQUEST_REPLY event being reported, even if the
+    associated @hl channel is closing or the session disconnects.
+
+    Incoming requests are reported by the library using the @ref
+    ASSH_EVENT_REQUEST event. As for channel open, @em assh allows
+    postponing request replies even if this is not actually handled by
+    the protocol. This mean that the library has to reorder the
+    replies and a postponed request prevent subsequent request replies
+    from being transmitted. The @ref ASSH_EVENT_REQUEST_ABORT event is
+    reported when a postponed request reply is released because the
+    session disconnects.
+  @end section
+
+  @section {Channel EOF}
+    The @em ssh2 protocol allows channels to be closed in a single
+    direction. Once the @ref assh_channel_eof function has been
+    called, it is not possible to send more data over the channel.
+
+    When the remote host send an @em{end of file} message, the @ref
+    ASSH_EVENT_CHANNEL_EOF event is reported to indicate that no more
+    data will be received but it still possible to send data over the
+    channel.
+
+    Half closing the channel in both directions results in the @ref
+    ASSH_EVENT_CHANNEL_CLOSE event to be reported.
+  @end section
+
+  @section {Channel closing}
+    Once the channel is open, the @ref ASSH_EVENT_CHANNEL_CLOSE event
+    may be reported at any time. The channel is released by the
+    library when this @hl event is acknowledged.
+
+    This @hl event is always reported at some point for open
+    channels. This may occurs for multiple reasons, including the
+    application calling the @ref assh_channel_close function or due to
+    a disconnecting session.
+  @end section
+
 @end section
 
 @section TP {Timeout management}

@@ -110,8 +110,10 @@ typedef ASSH_SERVICE_CLEANUP_FCN(assh_service_cleanup_t);
     change to ASSH_TR_CLOSED and the function will not be called any more. */
 typedef ASSH_SERVICE_PROCESS_FCN(assh_service_process_t);
 
-/** @internalmembers @This describes the implementation of an ssh
-    service.  @xsee{coremod} */
+/** @internalmembers @This is the @hl service module descriptor.
+    It can be registered on a @ref assh_context_s instance for use
+    by all associated @hl sessions.
+    @xsee{coremod} @see assh_service_register */
 struct assh_service_s
 {
   const char *name;
@@ -131,7 +133,7 @@ struct assh_event_service_start_s
   const struct assh_service_s * ASSH_EV_CONST srv;
 };
 
-/** @This contains all service related event structures. */
+/** @This contains all @hl service related event structures. */
 union assh_event_service_u
 {
   struct assh_event_service_start_s start;
@@ -146,16 +148,15 @@ assh_service_register(struct assh_context_s *c,
 /** @This registers one or more @ref assh_service_s for use
     by the given context.
 
-    When registering services onto a client context, the registration
-    order determines the order used to request execution of the
-    services.
-    @see assh_service_register */
+    When registering @hl service modules onto a client context, the
+    registration order determines the order used to request execution
+    of the @hl services.  @see assh_service_register */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_service_register_va(struct assh_context_s *c, ...);
 
 /** @This registers the standard @tt ssh-userauth and @tt
-    ssh-connection services. The appropriate client or server services
-    are used depending on the context type. */
+    ssh-connection services. The appropriate client or server @hl
+    services are used depending on the context type. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_service_register_default(struct assh_context_s *c);
 
@@ -171,20 +172,20 @@ assh_service_by_name(struct assh_context_s *c,
                      size_t name_len, const char *name,
                      const struct assh_service_s **srv_);
 
-/** @internal @This returns the next service which must be started for
-    the current client session. Designed for use by service
+/** @internal @This returns the next @hl service which must be started
+    for the current client session. Designed for use by @hl service
     implementations. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_service_next(struct assh_session_s *s,
                   const struct assh_service_s **srv);
 
-/** @internal @This stops the currently running service.
+/** @internal @This stops the currently running @hl service.
     Designed for use by client service implementations. This will make
     assh send a @ref SSH_MSG_SERVICE_REQUEST message to the server in
     order to start the next service. */
 void assh_service_stop(struct assh_session_s *s);
 
-/** @internal @This stops the currently running service and
+/** @internal @This stops the currently running @hl service and
     schedules execution of the specified service. Designed for use by
     service implementations. */
 void assh_service_start(struct assh_session_s *s,
