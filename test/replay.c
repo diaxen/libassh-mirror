@@ -25,16 +25,16 @@
   This test replay some ssh sessions and check the generated ssh
   streams against files. Unlike some of other tests where the library
   is tested against itself, this test is able to check for
-  compatibility with the standards and other implementations. It uses
-  a dummy random generator with constant output which allows keeping
-  the stream invariant.
+  compatibility with other implementations. It uses a dummy random
+  generator with constant output which allows keeping the stream
+  invariant between runs.
 
   This test may break even with valid stream if the library behavior
   is changed. When this happen, the CONFIG_ASSH_DEBUG macro must be
   enabled in order to be able to examine the stream differences. The
   library must then be validated against other implementations with
   the same set of algorithms as used in the failing tests before
-  accepting the any new stream.
+  accepting the new test stream.
 
   The stream file is composed of chunks with this format:
 
@@ -189,7 +189,7 @@ static int usage()
 	  "    -t N         set the re-kex threshold in bytes.\n"
 	  "    -b T:algo    select an algorithm for both server and client side.\n"
 	  "                 T specifis the algorithm type:\n"
-	  "                   k:kex, s:sign, c:cipher, m:mac, C:compress\n\n"
+	  "                   k:kex, s:sign, c:cipher, m:mac, C:compress\n"
 
 	  "  Client only options:\n"
 	  "    -H host      specify the remote server address.\n"
@@ -197,25 +197,32 @@ static int usage()
 	  "    -u name      specify a login name for user authentication.\n"
 	  "    -P pass,pass specify a list of passwords to try.\n"
 	  "    -k file      load an userauth user key file.\n"
-	  "    -y r,r,r,... specify the keyboard authentication replies\n"
-	  "    -K file      load an userauth host file key\n"
-	  "    -S host      specify the userauth host name\n\n"
+	  "    -k algo:bits create an userauth user key.\n"
+	  "    -y r,r,r,... specify the keyboard authentication replies.\n"
+	  "    -K file      load an userauth host file key.\n"
+	  "    -K algo:bits create an userauth host key.\n"
+	  "    -S host      specify the userauth host name.\n"
+	  "    -i N         make client disconnects after N iterations.\n\n"
 
 	  "  Server only options:\n"
 	  "    -A T:algo    select an algorithm for the server side only.\n"
 	  "    -j file      load a host key file for the server side.\n"
+	  "    -j algo:bits create a host key for the server side.\n"
 	  "    -J file      load a kex key file for the server side.\n"
+	  "    -J algo:bits create a kex key for the server side.\n"
 	  "    -j algo:bits create a host key for the server side.\n"
 	  "    -J algo:bits create a kex key for the server side.\n"
-	  "    -O 0|1       host key accept decision\n"
-	  "    -l 01010...  reverse list of userauth pubkey decisions\n"
-	  "    -o 01010...  reverse list of userauth hostbased decisions\n"
-	  "    -w 01010...  reverse list of userauth passwd decisions (2:change)\n"
-	  "    -Y a,b;c,d   list of keyboard userauth prompts\n"
-	  "    -B 01010...  reverse list of keyboard userauth decisions\n"
-	  "    -n 01010...  reverse list of userauth none decisions\n"
-	  "    -M mask      override server userauth methods in use\n"
-	  "    -F N         specifies the number of multi factor auths\n"
+	  "    -w 0102...   reverse list of userauth password decisions\n"
+	  "                 (0:fail, 1:success, 2:pw change request).\n"
+	  "    -O 0|1       host key accept decision.\n"
+	  "    -l 01010...  reverse list of userauth pubkey decisions.\n"
+	  "    -o 01010...  reverse list of userauth hostbased decisions.\n"
+	  "    -Y a,b;c,d   list of keyboard userauth prompts.\n"
+	  "    -B 01010...  reverse list of keyboard userauth decisions.\n"
+	  "    -n 01010...  reverse list of userauth none decisions.\n"
+	  "    -M mask      override server userauth methods in use.\n"
+	  "    -F N         specify the number of multi factor auths.\n"
+	  "    -I N         make server disconnects after N iterations.\n"
 	  );
 
   exit(1);
@@ -250,7 +257,7 @@ static uint16_t keyboard_accepts = 0; /* 2 bit per try */
 static char *keyboard_infos = NULL;
 static uint_fast8_t multi_auth = 0;
 
-static uint32_t iter[2] = { 0, 0 };
+static uint32_t iter[2];
 static uint32_t max_iter[2] = { 0, 0 };
 
 static void term_handler(int sig)
@@ -374,6 +381,7 @@ static void test()
       struct assh_context_s *c = &context[i];
 
       fifo_init(&fifo[i]);
+      iter[i] = 0;
 
       switch (action)
 	{
@@ -427,7 +435,7 @@ static void test()
 	  assh_error_t everr = ASSH_OK;
 	  const char *side = i ? "client" : "server";
 
-	  ASSH_DEBUG("---- %s ----\n", side);
+	  ASSH_DEBUG("---- %s %u ----\n", side, iter[i]);
 
 	  switch (action)
 	    {
@@ -539,6 +547,9 @@ static void test()
 	      continue;
 	    }
 
+	  if (verbose > 2)
+	    fprintf(stderr, "[%s] event %u\n", side, event.id);
+
 	  switch (event.id)
 	    {
 	    case ASSH_EVENT_SESSION_ERROR:
@@ -582,9 +593,12 @@ static void test()
 	    case ASSH_EVENT_SERVICE_START:
 	      if (verbose > 0)
 		fprintf(stderr, "[%s] Service start: %s\n", side, event.service.start.srv->name);
-	      if (event.service.start.srv == &assh_service_connection)
-		while (assh_channel_open(&session[i], "test", 4, NULL, 0, -1, -1, &ch[i]))
-		  ;
+	      if (event.service.start.srv == &assh_service_connection &&
+		  /* client */ i == 1)
+		{
+		  if (assh_channel_open(&session[i], "session", 7, NULL, 0, -1, -1, &ch[i]))
+		    TEST_FAIL("unable to open session channel\n");
+		}
 	      break;
 
 	    case ASSH_EVENT_USERAUTH_CLIENT_USER:
@@ -796,8 +810,12 @@ static void test()
 	      break;
 
 	    case ASSH_EVENT_CHANNEL_OPEN_REPLY:
-	      if (event.connection.channel_open_reply.reply == ASSH_CONNECTION_REPLY_SUCCESS)
-		started |= 1 << i;
+	      if (event.connection.channel_open_reply.reply ==
+		  ASSH_CONNECTION_REPLY_SUCCESS)
+		{
+		  assert(i == 1);
+		  started |= 1 << i;
+		}
 	      break;
 
 	    case ASSH_EVENT_CHANNEL_DATA:
@@ -818,6 +836,10 @@ static void test()
 		{
 		  te->transferred = fifo_read(&fifo[i], te->buf.data, te->buf.size);
 		}
+
+	      if (te->transferred == te->buf.size)
+		iter[i]++;
+
 	      break;
 	    }
 
@@ -867,12 +889,6 @@ static void test()
 		    }
 		}
 
-	      if (!((running >> !i) & 1))
-		{
-		  everr = ASSH_ERR_IO;
-		  break;
-		}
-
 	      switch (action)
 		{
 		case RECORD_CLIENT_SERVER:
@@ -905,7 +921,7 @@ static void test()
 
 	  assh_event_done(&session[i], &event, everr);
 
-	  if (++iter[i] == max_iter[i])
+	  if (max_iter[i] && iter[i] == max_iter[i])
 	    {
 	      if (verbose > 0)
 		fprintf(stderr, "[%s] max iterations reached, disconnecting\n", side);
@@ -1365,8 +1381,6 @@ static void replay_file(const char *fname)
 
   if (alloc_size != 0)
     TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
-
-  fprintf(stderr, "Done.\n");
 }
 
 static void replay_directory(int argc, char **argv)
@@ -1409,6 +1423,8 @@ static void replay_directory(int argc, char **argv)
 
   if (!done)
     TEST_FAIL("no .ssh stream file found in the directory `%s'\n", dname);
+
+  fprintf(stderr, "Done.\n");
 }
 
 static void replay(int argc, char **argv)
@@ -1434,6 +1450,8 @@ static void replay(int argc, char **argv)
     }
 
   replay_file(fname);
+
+  fprintf(stderr, "Done.\n");
 }
 
 static void record(int argc, char **argv)
