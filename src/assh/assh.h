@@ -497,12 +497,16 @@ void assh_hexdump(const char *name, const void *data, size_t len);
     expected. @xsee{coremod} */
 typedef ASSH_ALLOCATOR(assh_allocator_t);
 
+/** @internal @hidecontent This checks expression at compile time. */
+#define ASSH_STATIC_ASSERT(expr, msgid)               \
+  typedef int msgid [-(int)!(expr)] ASSH_UNUSED;
+
 /** @internal @hidecontent This checks at compile time that a field is
     at offset 0 in a structure. */
 #define ASSH_FIRST_FIELD_ASSERT(struct_name, field)                   \
   /** @hidden */                                                      \
-  typedef int field##_must_be_the_first_field_in_struct_##struct_name \
-  [-(int)offsetof(struct struct_name, field)] ASSH_UNUSED;
+  ASSH_STATIC_ASSERT(offsetof(struct struct_name, field) == 0,        \
+                     field##_must_be_the_first_field_in_struct_##struct_name)
 
 /** @internal */
 ASSH_INLINE const char ** assh_charptr_cast(char **p)
