@@ -223,7 +223,8 @@ ssh_loop(struct assh_session_s *session,
               tcsetattr(0, 0, &t);
             }
 
-        case ASSH_EVENT_CHANNEL_OPEN_REPLY:
+        case ASSH_EVENT_CHANNEL_CONFIRMATION:
+        case ASSH_EVENT_CHANNEL_FAILURE:
         case ASSH_EVENT_REQUEST_REPLY:
         case ASSH_EVENT_CHANNEL_CLOSE:
           /* let an helper function start and manage an interactive

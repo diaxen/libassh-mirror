@@ -186,22 +186,15 @@ ssh_loop_fwd(void)
           break;
         }
                                                         /* anchor fwdevchopen */
-        case ASSH_EVENT_CHANNEL_OPEN_REPLY: {
-          struct assh_event_channel_open_reply_s *ev =
-            &fwd_event.connection.channel_open_reply;
-
-          /* report the TCP forwarding status */
-          if (ev->reply != ASSH_CONNECTION_REPLY_SUCCESS)
-            {
-              fprintf(stderr, "SSH port forwarding denied\n");
-              goto disconnect;
-            }
-
+        case ASSH_EVENT_CHANNEL_CONFIRMATION:
           fprintf(stderr, "SSH port forwarding ok\n");
-
 	  assh_event_done(fwd_session, &fwd_event, ASSH_OK);
           break;
-        }
+
+        case ASSH_EVENT_CHANNEL_FAILURE:
+          fprintf(stderr, "SSH port forwarding denied\n");
+	  assh_event_done(fwd_session, &fwd_event, ASSH_OK);
+          goto disconnect;
                                                         /* anchor fwdevchdata */
 	case ASSH_EVENT_CHANNEL_DATA: {
           struct assh_event_channel_data_s *ev =
@@ -308,7 +301,8 @@ ssh_loop_rexec(void)
 
                                                         /* anchor rexecevinter */
         case ASSH_EVENT_SERVICE_START:
-        case ASSH_EVENT_CHANNEL_OPEN_REPLY:
+        case ASSH_EVENT_CHANNEL_CONFIRMATION:
+        case ASSH_EVENT_CHANNEL_FAILURE:
         case ASSH_EVENT_REQUEST_REPLY:
         case ASSH_EVENT_CHANNEL_CLOSE:
           /* rely on helper as in the rexec example */

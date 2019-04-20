@@ -103,18 +103,20 @@ enum assh_event_id_e
   ASSH_EVENT_REQUEST_REPLY               = 32,
   /** @see assh_event_channel_open_s */
   ASSH_EVENT_CHANNEL_OPEN                = 33,
-  /** @see assh_event_channel_open_reply_s */
-  ASSH_EVENT_CHANNEL_OPEN_REPLY          = 34,
+  /** @see assh_event_channel_confirmation_s */
+  ASSH_EVENT_CHANNEL_CONFIRMATION        = 34,
+  /** @see assh_event_channel_failure_s */
+  ASSH_EVENT_CHANNEL_FAILURE             = 35,
   /** @see assh_event_channel_data_s */
-  ASSH_EVENT_CHANNEL_DATA                = 35,
+  ASSH_EVENT_CHANNEL_DATA                = 36,
   /** @see assh_event_channel_window_s */
-  ASSH_EVENT_CHANNEL_WINDOW              = 36,
+  ASSH_EVENT_CHANNEL_WINDOW              = 37,
   /** @see assh_event_channel_eof_s */
-  ASSH_EVENT_CHANNEL_EOF                 = 37,
+  ASSH_EVENT_CHANNEL_EOF                 = 38,
   /** @see assh_event_channel_close_s */
-  ASSH_EVENT_CHANNEL_CLOSE               = 38,
+  ASSH_EVENT_CHANNEL_CLOSE               = 39,
   /** @see assh_event_channel_abort_s */
-  ASSH_EVENT_CHANNEL_ABORT               = 39,
+  ASSH_EVENT_CHANNEL_ABORT               = 40,
 
   /** @internal */
   ASSH_EVENT_COUNT,

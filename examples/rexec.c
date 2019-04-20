@@ -186,7 +186,8 @@ int main(int argc, char **argv)
 
                                                         /* anchor evcn */
         case ASSH_EVENT_SERVICE_START:
-        case ASSH_EVENT_CHANNEL_OPEN_REPLY:
+        case ASSH_EVENT_CHANNEL_CONFIRMATION:
+        case ASSH_EVENT_CHANNEL_FAILURE:
         case ASSH_EVENT_REQUEST_REPLY:
         case ASSH_EVENT_CHANNEL_CLOSE:
           /* let an helper function start and manage an interactive

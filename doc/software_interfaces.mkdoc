@@ -224,11 +224,11 @@ switch (ev.id)
     allocated but the channel is not open until the messages has been
     acknowledged by the remote host.
 
-    The @ref ASSH_EVENT_CHANNEL_OPEN_REPLY event is reported to the
-    application at some point which indicates the channel open
-    status. When the @hl event reports that opening is denied, the
-    @ref assh_channel_s object is released by the library. This @hl
-    event is always reported, even when the reply from the remote host
+    Either an @ref ASSH_EVENT_CHANNEL_CONFIRMATION event or an @ref
+    ASSH_EVENT_CHANNEL_FAILURE event is reported to the application at
+    some point. When the that opening is denied, the @ref
+    assh_channel_s object is released by the library. One of those @hl
+    events is always reported, even when the reply from the remote host
     has not been received due to a disconnecting session.
   @end section
 

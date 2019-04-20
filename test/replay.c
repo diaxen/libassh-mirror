@@ -809,13 +809,9 @@ static void test()
 	      started &= ~(1 << i);
 	      break;
 
-	    case ASSH_EVENT_CHANNEL_OPEN_REPLY:
-	      if (event.connection.channel_open_reply.reply ==
-		  ASSH_CONNECTION_REPLY_SUCCESS)
-		{
-		  assert(i == 1);
-		  started |= 1 << i;
-		}
+	    case ASSH_EVENT_CHANNEL_CONFIRMATION:
+	      assert(i == 1);
+	      started |= 1 << i;
 	      break;
 
 	    case ASSH_EVENT_CHANNEL_DATA:

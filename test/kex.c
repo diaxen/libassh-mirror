@@ -502,6 +502,7 @@ void test(const struct assh_algo_kex_s *kex,
 
 	  switch (event.id)
 	    {
+	    case ASSH_EVENT_CHANNEL_FAILURE:
 	    case ASSH_EVENT_SESSION_ERROR:
 	      if (packet_fuzz || alloc_fuzz)
 		goto done;
@@ -538,7 +539,7 @@ void test(const struct assh_algo_kex_s *kex,
 	      event.connection.channel_open.reply = ASSH_CONNECTION_REPLY_SUCCESS;
 	      break;
 
-	    case ASSH_EVENT_CHANNEL_OPEN_REPLY:
+	    case ASSH_EVENT_CHANNEL_CONFIRMATION:
 	      started |= 1 << i;
 	      break;
 

@@ -1232,7 +1232,9 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_open_reply_done)
   ASSH_SET_STATE(pv, state, ASSH_CONNECTION_ST_IDLE);
 #endif
 
-  struct assh_channel_s *ch = e->connection.channel_open_reply.ch;
+  struct assh_channel_s *ch = e->connection.channel_confirmation.ch;
+  ASSH_FIRST_FIELD_ASSERT(assh_event_channel_failure_s, ch);
+  ASSH_FIRST_FIELD_ASSERT(assh_event_channel_confirmation_s, ch);
 
   switch (ch->state)
     {
@@ -1280,14 +1282,7 @@ assh_connection_got_channel_open_reply(struct assh_session_s *s,
       ASSH_RETURN(ASSH_ERR_PROTOCOL);
     }
 
-  struct assh_event_channel_open_reply_s *ev =
-    &e->connection.channel_open_reply;
-
-  e->id = ASSH_EVENT_CHANNEL_OPEN_REPLY;
   e->f_done = assh_event_channel_open_reply_done;
-
-  ev->ch = ch;
-  struct assh_cbuffer_s *rsp_data = &ev->rsp_data;
 
   if (success)
     {
@@ -1297,10 +1292,26 @@ assh_connection_got_channel_open_reply(struct assh_session_s *s,
 
       ASSH_RET_IF_TRUE(ch->rpkt_size < 1, ASSH_ERR_PROTOCOL);
 
-      ev->reply = ASSH_CONNECTION_REPLY_SUCCESS;
+      struct assh_event_channel_confirmation_s *ev =
+        &e->connection.channel_confirmation;
 
+      ev->ch = ch;
+      e->id = ASSH_EVENT_CHANNEL_CONFIRMATION;
+
+      struct assh_cbuffer_s *rsp_data = &ev->rsp_data;
       rsp_data->size = p->data + p->data_size - data;
-      rsp_data->data = rsp_data->size > 0 ? (uint8_t*)data : NULL;
+
+      if (rsp_data->size > 0)
+        {
+          rsp_data->data = (uint8_t*)data;
+          /* keep packet for response data */
+          pv->pck = assh_packet_refinc(p);
+        }
+      else
+        {
+          rsp_data->data = NULL;
+        }
+
       ev->rwin_size = ch->rwin_left;
       ev->rpkt_size = ch->rpkt_size;
 
@@ -1311,16 +1322,13 @@ assh_connection_got_channel_open_reply(struct assh_session_s *s,
       uint32_t reason = 0;
       ASSH_RET_ON_ERR(assh_packet_check_u32(p, &reason, data, &data));
 
-      ev->reply = ASSH_CONNECTION_REPLY_FAILED;
+      struct assh_event_channel_failure_s *ev =
+        &e->connection.channel_failure;
+
+      ev->ch = ch;
+      e->id = ASSH_EVENT_CHANNEL_FAILURE;
       ev->reason = (enum assh_channel_open_reason_e)reason;
-
-      rsp_data->data = NULL;
-      rsp_data->size = 0;
     }
-
-  /* keep packet for response data */
-  if (rsp_data->size > 0)
-    pv->pck = assh_packet_refinc(p);
 
 #ifndef NDEBUG
   ASSH_SET_STATE(pv, state, ASSH_CONNECTION_ST_EVENT_CHANNEL_OPEN_REPLY);
@@ -2216,17 +2224,17 @@ static void assh_channel_pop_closing(struct assh_session_s *s,
     case ASSH_CHANNEL_ST_OPEN_SENT_FORCE_CLOSE: {
       assert(assh_queue_isempty(&ch->request_lqueue));
 
-      struct assh_event_channel_open_reply_s *ev =
-        &e->connection.channel_open_reply;
+      struct assh_event_channel_failure_s *ev =
+        &e->connection.channel_failure;
 
-      ASSH_FIRST_FIELD_ASSERT(assh_event_channel_open_reply_s, ch);
+      ASSH_FIRST_FIELD_ASSERT(assh_event_channel_failure_s, ch);
       ASSH_FIRST_FIELD_ASSERT(assh_event_channel_close_s, ch);
       ev->ch = ch;
+      ev->reason = SSH_OPEN_SESSION_DISCONNECTED;
 
       /* report channel open failed */
-      e->id = ASSH_EVENT_CHANNEL_OPEN_REPLY;
+      e->id = ASSH_EVENT_CHANNEL_FAILURE;
       e->f_done = assh_event_channel_close_done;
-      ev->reply = ASSH_CONNECTION_REPLY_FAILED;
 
       break;
 

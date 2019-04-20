@@ -556,25 +556,33 @@ void test(int (*fend)(int, int), int cnt, int evrate,
 	      break;
 	    }
 
-	    case ASSH_EVENT_CHANNEL_OPEN_REPLY: {      /***** open reply event *****/
-	      struct assh_event_channel_open_reply_s *e = &event.connection.channel_open_reply;
-	      ASSH_DEBUG("ASSH_EVENT_CHANNEL_OPEN_REPLY %p\n", e->ch);
+	    case ASSH_EVENT_CHANNEL_CONFIRMATION: {      /***** open reply event *****/
+	      struct assh_event_channel_confirmation_s *e
+		= &event.connection.channel_confirmation;
+	      ASSH_DEBUG("ASSH_EVENT_CHANNEL_CONFIRMATION %p\n", e->ch);
 
-	      if (e->reply == ASSH_CONNECTION_REPLY_FAILED)
-		{
-		  unsigned n;
-		  for (n = 0; n < CH_MAP_SIZE; n++)
-		    if (ch_map[i][n] == e->ch)
-		      ch_map[i][n] = NULL;
-		  ch_event_open_reply_failed_count++;
-		}
-	      else
-		{
-		  if (assh_channel_pvi(e->ch) != CH_WAIT)
-		    TEST_FAIL("(ctx %u seed %u) channel_open reply\n", i, seed);
-		  assh_channel_set_pvi(e->ch, CH_OPEN);
-		  ch_event_open_reply_success_count++;
-		}
+	      if (assh_channel_pvi(e->ch) != CH_WAIT)
+		TEST_FAIL("(ctx %u seed %u) channel_open reply success\n", i, seed);
+
+	      assh_channel_set_pvi(e->ch, CH_OPEN);
+	      ch_event_open_reply_success_count++;
+
+	      break;
+	    }
+
+	    case ASSH_EVENT_CHANNEL_FAILURE: {      /***** open reply event *****/
+	      struct assh_event_channel_failure_s *e
+		= &event.connection.channel_failure;
+	      ASSH_DEBUG("ASSH_EVENT_CHANNEL_FAILURE %p\n", e->ch);
+
+	      if (assh_channel_pvi(e->ch) != CH_WAIT)
+		TEST_FAIL("(ctx %u seed %u) channel_open reply\n", i, seed);
+
+	      unsigned n;
+	      for (n = 0; n < CH_MAP_SIZE; n++)
+		if (ch_map[i][n] == e->ch)
+		  ch_map[i][n] = NULL;
+	      ch_event_open_reply_failed_count++;
 
 	      break;
 	    }
@@ -599,6 +607,11 @@ void test(int (*fend)(int, int), int cnt, int evrate,
 	    case ASSH_EVENT_CHANNEL_CLOSE: {      /***** close event *****/
 	      struct assh_event_channel_close_s *e = &event.connection.channel_close;
 	      ASSH_DEBUG("ASSH_EVENT_CHANNEL_CLOSE %p\n", e->ch);
+
+	      if (assh_channel_pvi(e->ch) != CH_OPEN &&
+		  assh_channel_pvi(e->ch) != CH_EOF &&
+		  assh_channel_pvi(e->ch) != CH_CLOSE)
+		TEST_FAIL("(ctx %u seed %u) channel_close\n", i, seed);
 
 	      ch_event_close_count++;
 

@@ -661,20 +661,16 @@ assh_client_event_inter_session(struct assh_session_s *s,
       return;
     }
 
-    case ASSH_EVENT_CHANNEL_OPEN_REPLY: {
-      struct assh_event_channel_open_reply_s *ev =
-	&event->connection.channel_open_reply;
+    case ASSH_EVENT_CHANNEL_CONFIRMATION: {
+      struct assh_event_channel_confirmation_s *ev =
+	&event->connection.channel_confirmation;
 
       if (ev->ch != ctx->channel)
 	return;
 
       assert(ctx->state == ASSH_CLIENT_INTER_ST_SESSION);
 
-      enum assh_connection_reply_e r = ev->reply;
       assh_event_done(s, event, ASSH_OK);
-
-      if (r != ASSH_CONNECTION_REPLY_SUCCESS)
-	goto err;
 
       if (ctx->term == NULL)
 	goto exec;
@@ -688,6 +684,20 @@ assh_client_event_inter_session(struct assh_session_s *s,
 	goto err;
 
       return;
+    }
+
+    case ASSH_EVENT_CHANNEL_FAILURE: {
+      struct assh_event_channel_failure_s *ev =
+	&event->connection.channel_failure;
+
+      if (ev->ch != ctx->channel)
+	return;
+
+      assert(ctx->state == ASSH_CLIENT_INTER_ST_SESSION);
+
+      assh_event_done(s, event, ASSH_OK);
+
+      goto err;
     }
 
     case ASSH_EVENT_CHANNEL_CLOSE: {

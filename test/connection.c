@@ -823,57 +823,55 @@ void test(int (*fend)(int, int), int n, int evrate)
 	      break;
 	    }
 
-	    case ASSH_EVENT_CHANNEL_OPEN_REPLY: {      /***** open reply event *****/
-	      struct assh_event_channel_open_reply_s *e = &event.connection.channel_open_reply;
-	      ASSH_DEBUG("ASSH_EVENT_CHANNEL_OPEN_REPLY %p\n", e->ch);
+	    case ASSH_EVENT_CHANNEL_CONFIRMATION: {      /***** open reply event *****/
+	      struct assh_event_channel_confirmation_s *e
+		= &event.connection.channel_confirmation;
+	      ASSH_DEBUG("ASSH_EVENT_CHANNEL_CONFIRMATION %p\n", e->ch);
 	      struct ch_map_entry_s *che = assh_channel_pv(e->ch);
 
-	      switch (e->reply)
+	      if (che->status == CH_FAIL)
+		TEST_FAIL("(ctx %u seed %u) channel_open_reply.reply == FAIL\n", i, seed);
+
+	      che->status = CH_OPEN;
+	      ch_report(che);
+
+	      if (started[i^1])
 		{
-		case ASSH_CONNECTION_REPLY_SUCCESS:
-		  if (che->status == CH_FAIL)
-		    TEST_FAIL("(ctx %u seed %u) channel_open_reply.reply == FAIL %u\n", i, seed, e->reply);
+		  if (che->data_len != e->rsp_data.size)
+		    TEST_FAIL("(ctx %u seed %u) channel_open_reply.data_len: ch:%u ev:%zu\n",
+			      i, seed, che->data_len, e->rsp_data.size);
 
-		  che->status = CH_OPEN;
-		  ch_report(che);
-
-		  if (started[i^1])
+		  if (e->rsp_data.size && memcmp(che->data, e->rsp_data.data, e->rsp_data.size))
 		    {
-		      if (che->data_len != e->rsp_data.size)
-			TEST_FAIL("(ctx %u seed %u) channel_open_reply.data_len: ch:%u ev:%zu\n",
-				  i, seed, che->data_len, e->rsp_data.size);
-
-		      if (e->rsp_data.size && memcmp(che->data, e->rsp_data.data, e->rsp_data.size))
-			{
 #ifdef CONFIG_ASSH_DEBUG
-			  assh_hexdump("ch", che->data, che->data_len);
-			  assh_hexdump("ev", e->rsp_data.data, e->rsp_data.size);
+		      assh_hexdump("ch", che->data, che->data_len);
+		      assh_hexdump("ev", e->rsp_data.data, e->rsp_data.size);
 #endif
-			  TEST_FAIL("(ctx %u seed %u) channel_open_reply.data\n", i, seed);
-			}
+		      TEST_FAIL("(ctx %u seed %u) channel_open_reply.data\n", i, seed);
 		    }
-		  break;
-
-		case ASSH_CONNECTION_REPLY_FAILED:
-
-		  if (che->status != CH_FAIL)
-		    {
-		      if (started[i])
-			TEST_FAIL("(ctx %u seed %u) ASSH_EVENT_CHANNEL_OPEN_REPLY while started\n", i, seed);
-		      che->ch[i] = NULL;
-		    }
-		  else
-		    {
-		      che->ch[0] = che->ch[1] = NULL;
-		      che->status = CH_CLOSED;
-		    }
-		  ch_refs--;
-		  ch_report(che);
-		  break;
-		default:
-		  if (started[i^1])
-		    TEST_FAIL("(ctx %u seed %u) channel_open_reply status %u\n", i, seed, che->status);
 		}
+	      break;
+	    }
+
+	    case ASSH_EVENT_CHANNEL_FAILURE: {      /***** open reply event *****/
+	      struct assh_event_channel_failure_s *e
+		= &event.connection.channel_failure;
+	      ASSH_DEBUG("ASSH_EVENT_CHANNEL_FAILURE %p\n", e->ch);
+	      struct ch_map_entry_s *che = assh_channel_pv(e->ch);
+
+	      if (che->status != CH_FAIL)
+		{
+		  if (started[i])
+		    TEST_FAIL("(ctx %u seed %u) ASSH_EVENT_CHANNEL_OPEN_REPLY while started\n", i, seed);
+		  che->ch[i] = NULL;
+		}
+	      else
+		{
+		  che->ch[0] = che->ch[1] = NULL;
+		  che->status = CH_CLOSED;
+		}
+	      ch_refs--;
+	      ch_report(che);
 
 	      break;
 	    }

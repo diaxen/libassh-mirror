@@ -114,7 +114,7 @@ enum assh_channel_state_e
   /** The connection is ending, an @ref ASSH_EVENT_CHANNEL_CLOSE event
       will be reported for this channel. */
   ASSH_CHANNEL_ST_FORCE_CLOSE,
-  /** The connection is ending, an @ref ASSH_EVENT_CHANNEL_OPEN_REPLY
+  /** The connection is ending, an @ref ASSH_EVENT_CHANNEL_FAILURE
       event will be reported for this channel. */
   ASSH_CHANNEL_ST_OPEN_SENT_FORCE_CLOSE,
   /** The connection is ending, an @ref ASSH_EVENT_CHANNEL_ABORT
@@ -135,6 +135,7 @@ struct assh_channel_s;
     code as defined in @invoke{4254}rfc section 5.1 . */
 enum assh_channel_open_reason_e
 {
+  SSH_OPEN_SESSION_DISCONNECTED        = -1,
   SSH_OPEN_SUCCESS                     = 0,
   SSH_OPEN_ADMINISTRATIVELY_PROHIBITED = 1,
   SSH_OPEN_CONNECT_FAILED              = 2,
@@ -521,39 +522,54 @@ assh_channel_open_failed_reply(struct assh_channel_s *ch,
 /************************************************* outgoing channel open */
 
 /**
-   This event is reported for every successful call to the @ref
-   assh_channel_open function. The @ref reply field indicates if
-   the channel open has been confirmed by the remote side.
+   This event is reported after a successful call to the @ref
+   assh_channel_open function when the channel open is accepted
+   by the remote host.
 
-   If the open is successful, some response specific data may be
-   available in the @ref rsp_data field. The @ref rwin_size and @ref
-   rpkt_size fields also contain the initially available window size
-   and the packet size advertised by the remote host for sending to
-   data through the channel.
+   Some response specific data may be available in the @ref rsp_data
+   field. The @ref rwin_size and @ref rpkt_size fields also contain
+   the initially available window size and the packet size advertised
+   by the remote host for sending to data through the channel.
 
-   If the open has failed, the associated @ref assh_channel_s object
-   will be released when the @ref assh_event_done function is called.
+   If the open has failed, the @ref ASSH_EVENT_CHANNEL_FAILURE
+   event is reported instead.
 
-   @see ASSH_EVENT_CHANNEL_OPEN_REPLY
+   @see ASSH_EVENT_CHANNEL_CONFIRMATION
    @xsee{connapi}
 */
-struct assh_event_channel_open_reply_s
+struct assh_event_channel_confirmation_s
 {
   struct assh_channel_s * ASSH_EV_CONST         ch;         //< from library
-  ASSH_EV_CONST enum assh_connection_reply_e    reply;      //< from library
-  ASSH_EV_CONST enum assh_channel_open_reason_e reason;     //< from library
   ASSH_EV_CONST struct assh_cbuffer_s           rsp_data;   //< from library
   ASSH_EV_CONST uint32_t                        rwin_size; //< from library
   ASSH_EV_CONST uint32_t                        rpkt_size; //< from library
 };
 
 /**
+   This event is reported after a successful call to the @ref
+   assh_channel_open function when the channel open is rejected
+   by the remote host.
+
+   The associated @ref assh_channel_s object is released when the
+   @ref assh_event_done function is called.
+
+   @see ASSH_EVENT_CHANNEL_FAILURE
+   @xsee{connapi}
+*/
+struct assh_event_channel_failure_s
+{
+  struct assh_channel_s * ASSH_EV_CONST         ch;         //< from library
+  ASSH_EV_CONST enum assh_channel_open_reason_e reason;     //< from library
+};
+
+/**
    @This allocates an @ref assh_channel_s object and send a
    @ref SSH_MSG_CHANNEL_OPEN message to the remote host.
 
-   When this function is successful, an @ref ASSH_EVENT_CHANNEL_OPEN_REPLY
-   event will be reported at some point by the @ref assh_event_get
-   function in any case.
+   When this function is successful, either an @ref
+   ASSH_EVENT_CHANNEL_CONFIRMATION event or an @ref
+   ASSH_EVENT_CHANNEL_FAILURE event will be reported at some point by
+   the @ref assh_event_get function.
 
    The @tt data and @tt data_len parameters allow sending channel type
    specific data along with the channel open message, as allowed by
@@ -867,7 +883,8 @@ union assh_event_connection_u
   struct assh_event_request_abort_s     request_abort;
   struct assh_event_request_reply_s     request_reply;
   struct assh_event_channel_open_s      channel_open;
-  struct assh_event_channel_open_reply_s channel_open_reply;
+  struct assh_event_channel_confirmation_s channel_confirmation;
+  struct assh_event_channel_failure_s   channel_failure;
   struct assh_event_channel_data_s      channel_data;
   struct assh_event_channel_window_s    channel_window;
   struct assh_event_channel_eof_s       channel_eof;
