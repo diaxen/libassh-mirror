@@ -209,9 +209,10 @@ assh_client_init_inter_session(struct assh_client_inter_session_s *state,
     @This is designed to handle the following events:
     @list
       @item @ref ASSH_EVENT_SERVICE_START
-      @item @ref ASSH_EVENT_REQUEST_REPLY
       @item @ref ASSH_EVENT_CHANNEL_CONFIRMATION
       @item @ref ASSH_EVENT_CHANNEL_FAILURE
+      @item @ref ASSH_EVENT_REQUEST_SUCCESS
+      @item @ref ASSH_EVENT_REQUEST_FAILURE
     @end list
 
     @This takes care of calling the @ref assh_event_done function.

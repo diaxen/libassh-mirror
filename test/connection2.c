@@ -488,30 +488,37 @@ void test(int (*fend)(int, int), int cnt, int evrate,
 	      break;
 	    }
 
-	    case ASSH_EVENT_REQUEST_REPLY: {      /***** request reply *****/
-	      struct assh_event_request_reply_s *e = &event.connection.request_reply;
-	      ASSH_DEBUG("ASSH_EVENT_REQUEST_REPLY %p\n", e->rq);
+	    case ASSH_EVENT_REQUEST_SUCCESS: {      /***** request reply *****/
+	      struct assh_event_request_success_s *e
+		= &event.connection.request_success;
+	      ASSH_DEBUG("ASSH_EVENT_REQUEST_SUCCESS %p\n", e->rq);
 
 	      unsigned n;
 	      for (n = 0; n < RQ_POSTPONED_SIZE; n++)
 		assert(rq_postponed[i][n] != e->rq);
 
-	      switch (e->reply)
-		{
-		case ASSH_CONNECTION_REPLY_SUCCESS:
-		  rq_event_success_count++;
-		  break;
+	      rq_event_success_count++;
+	      break;
+	    }
 
-		case ASSH_CONNECTION_REPLY_FAILED:
+	    case ASSH_EVENT_REQUEST_FAILURE: {      /***** request reply *****/
+	      struct assh_event_request_failure_s *e
+		= &event.connection.request_failure;
+	      ASSH_DEBUG("ASSH_EVENT_REQUEST_FAILURE %p\n", e->rq);
+
+	      unsigned n;
+	      for (n = 0; n < RQ_POSTPONED_SIZE; n++)
+		assert(rq_postponed[i][n] != e->rq);
+
+	      switch (e->reason)
+		{
+		case ASSH_REQUEST_FAILED:
 		  rq_event_failed_count++;
 		  break;
 
-		case ASSH_CONNECTION_REPLY_CLOSED:
+		case ASSH_REQUEST_SESSION_DISCONNECTED:
 		  rq_event_closed_count++;
 		  break;
-
-		default:
-		  TEST_FAIL("(ctx %u seed %u) request_reply.reply\n", n, seed);
 		}
 
 	      break;

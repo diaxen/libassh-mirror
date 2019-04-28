@@ -684,8 +684,16 @@ static ASSH_EVENT_DONE_FCN(assh_event_request_reply_done)
   ASSH_SET_STATE(pv, state, ASSH_CONNECTION_ST_IDLE);
 #endif
 
-  const struct assh_event_request_reply_s *ev =
-    &e->connection.request_reply;
+  const struct assh_event_request_success_s *ev =
+    &e->connection.request_success;
+
+  ASSH_STATIC_ASSERT(offsetof(struct assh_event_request_success_s, rq) ==
+                     offsetof(struct assh_event_request_failure_s, rq),
+                     bad_offset_of_rq_field_in_struct);
+
+  ASSH_STATIC_ASSERT(offsetof(struct assh_event_request_success_s, ch) ==
+                     offsetof(struct assh_event_request_failure_s, ch),
+                     bad_offset_of_ch_field_in_struct);
 
   /* pop and release request */
   struct assh_channel_s *ch = ev->ch;
@@ -716,19 +724,15 @@ static assh_bool_t assh_request_reply_flush(struct assh_session_s *s,
 
   struct assh_request_s *rq = (void*)assh_queue_back(q);
 
-  struct assh_event_request_reply_s *ev =
-    &e->connection.request_reply;
+  struct assh_event_request_failure_s *ev =
+    &e->connection.request_failure;
 
-  e->id = ASSH_EVENT_REQUEST_REPLY;
+  e->id = ASSH_EVENT_REQUEST_FAILURE;
   e->f_done = assh_event_request_reply_done;
 
   ev->ch = ch;
   ev->rq = rq;
-  ev->reply = ASSH_CONNECTION_REPLY_CLOSED;
-
-  struct assh_cbuffer_s *rsp_data = &ev->rsp_data;
-  rsp_data->size = 0;
-  rsp_data->data = NULL;
+  ev->reason = ASSH_REQUEST_SESSION_DISCONNECTED;
 
 #ifndef NDEBUG
   ASSH_SET_STATE(pv, state, ASSH_CONNECTION_ST_EVENT_REQUEST_REPLY);
@@ -867,25 +871,43 @@ assh_connection_got_request_reply(struct assh_session_s *s,
   ASSH_RET_IF_TRUE(rq->state != ASSH_REQUEST_ST_WAIT_REPLY,
 	       ASSH_ERR_PROTOCOL);
 
-  struct assh_event_request_reply_s *ev =
-    &e->connection.request_reply;
-
   /* setup event */
-  e->id = ASSH_EVENT_REQUEST_REPLY;
   e->f_done = assh_event_request_reply_done;
 
-  ev->ch = ch;
-  ev->rq = rq;
-  ev->reply = success ? ASSH_CONNECTION_REPLY_SUCCESS
-                      : ASSH_CONNECTION_REPLY_FAILED;
+  if (success)
+    {
+      struct assh_event_request_success_s *ev =
+        &e->connection.request_success;
 
-  struct assh_cbuffer_s *rsp_data = &ev->rsp_data;
-  rsp_data->size = global && success ? p->data + p->data_size - data : 0;
-  rsp_data->data = rsp_data->size > 0 ? (uint8_t*) data : NULL;
+      e->id = ASSH_EVENT_REQUEST_SUCCESS;
+      ev->ch = ch;
+      ev->rq = rq;
 
-  /* keep packet for response data */
-  if (rsp_data->size > 0)
-    pv->pck = assh_packet_refinc(p);
+      struct assh_cbuffer_s *rsp_data = &ev->rsp_data;
+      size_t rsp_data_size = global ? p->data + p->data_size - data : 0;
+      rsp_data->size = rsp_data_size;
+
+      if (rsp_data_size)
+        {
+          /* keep packet for response data */
+          rsp_data->data = (uint8_t*)data;
+          pv->pck = assh_packet_refinc(p);
+        }
+      else
+        {
+          rsp_data->data = NULL;
+        }
+    }
+  else
+    {
+      struct assh_event_request_failure_s *ev =
+        &e->connection.request_failure;
+
+      e->id = ASSH_EVENT_REQUEST_FAILURE;
+      ev->ch = ch;
+      ev->rq = rq;
+      ev->reason = ASSH_REQUEST_FAILED;
+    }
 
 #ifndef NDEBUG
   ASSH_SET_STATE(pv, state, ASSH_CONNECTION_ST_EVENT_REQUEST_REPLY);

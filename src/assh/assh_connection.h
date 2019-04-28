@@ -64,14 +64,7 @@
     The library user does not have to destroy request objects
     explicitly.
 
-    Requests are detroyed at various times:
-    @list
-      @item when the @ref ASSH_EVENT_REQUEST_REPLY event is reported,
-      @item when the @ref assh_request_success_reply function is called,
-      @item when the @ref assh_request_failed_reply function is called,
-      @item when the @ref ASSH_EVENT_REQUEST_ABORT event is reported,
-      @item when the @ref assh_session_cleanup function is called.
-    @end list
+    @xsee{connapi}
 */
 struct assh_request_s;
 
@@ -143,6 +136,13 @@ enum assh_channel_open_reason_e
   SSH_OPEN_RESOURCE_SHORTAGE           = 4,
 };
 
+/** @This specifies request reply failure reasons. */
+enum assh_request_reason_e
+{
+  ASSH_REQUEST_SESSION_DISCONNECTED,
+  ASSH_REQUEST_FAILED,
+};
+
 /** @This specifies reply codes used by request and channel events. */
 enum assh_connection_reply_e
 {
@@ -150,7 +150,7 @@ enum assh_connection_reply_e
   ASSH_CONNECTION_REPLY_FAILED,
   /** Success report by/to remote host. */
   ASSH_CONNECTION_REPLY_SUCCESS,
-  /** Reply will be send later */
+  /** Reply will be sent later */
   ASSH_CONNECTION_REPLY_POSTPONED,
   /** The remote host has closed the channel/connection */
   ASSH_CONNECTION_REPLY_CLOSED,
@@ -329,28 +329,44 @@ assh_request_failed_reply(struct assh_request_s *rq);
 /************************************************* outgoing request */
 
 /**
-   This event is reported for every successful call to the @ref
-   assh_request function with the @tt want_reply parameter set.
+   This event is reported after a successful call to the @ref
+   assh_request function when the @tt want_reply parameter was set and
+   the remote host replied with a success message.
 
-   The @ref reply field indicates if the request has been successfully
-   acknowledged by the remote host. In this case, some response
-   specific data may be available in the @ref rsp_data field. This
-   field may also indicate that the request has failed or that the
-   connection or channel associated with the request has been closed.
+   Some response specific data may be available in the @ref rsp_data
+   field.
 
    The @ref ch field is @tt NULL for global requests.
 
    The request object is released when the @ref assh_event_done
    function is called.
 
-   @see ASSH_EVENT_REQUEST_REPLY
+   @see ASSH_EVENT_REQUEST_SUCCESS
 */
-struct assh_event_request_reply_s
+struct assh_event_request_success_s
 {
   struct assh_channel_s      * ASSH_EV_CONST ch;        //< from library
   struct assh_request_s      * ASSH_EV_CONST rq;        //< from library
-  ASSH_EV_CONST enum assh_connection_reply_e reply;     //< from library
   ASSH_EV_CONST struct assh_cbuffer_s        rsp_data;  //< from library
+};
+
+/**
+   This event is reported after a successful call to the @ref
+   assh_request function when the @tt want_reply parameter was set and
+   the remote host replied with a failure message.
+
+   The @ref ch field is @tt NULL for global requests.
+
+   The request object is released when the @ref assh_event_done
+   function is called.
+
+   @see ASSH_EVENT_REQUEST_FAILURE
+*/
+struct assh_event_request_failure_s
+{
+  struct assh_channel_s      * ASSH_EV_CONST ch;        //< from library
+  struct assh_request_s      * ASSH_EV_CONST rq;        //< from library
+  ASSH_EV_CONST enum assh_request_reason_e reason;      //< from library
 };
 
 
@@ -368,8 +384,9 @@ struct assh_event_request_reply_s
    able to send the request.
 
    When this function is successful and the request expects a reply,
-   an @ref ASSH_EVENT_REQUEST_REPLY event will be reported at some
-   point by the @ref assh_event_get function in any case.
+   either an @ref ASSH_EVENT_REQUEST_SUCCESS event or an @ref
+   ASSH_EVENT_REQUEST_FAILURE event will be reported at some point by
+   the @ref assh_event_get function.
 
    @This must not be called if the last event has not been
    acknowledged by calling the @ref assh_event_done function.
@@ -881,7 +898,8 @@ union assh_event_connection_u
 {
   struct assh_event_request_s           request;
   struct assh_event_request_abort_s     request_abort;
-  struct assh_event_request_reply_s     request_reply;
+  struct assh_event_request_success_s   request_success;
+  struct assh_event_request_failure_s   request_failure;
   struct assh_event_channel_open_s      channel_open;
   struct assh_event_channel_confirmation_s channel_confirmation;
   struct assh_event_channel_failure_s   channel_failure;

@@ -158,6 +158,18 @@ unsigned long ch_event_eof_count = 0;
 unsigned long ev_err_count = 0;
 unsigned long rekex_count = 0;
 
+static void pop_request(struct rq_fifo_s *lrqf)
+{
+  struct rq_fifo_entry_s *rqe;
+  /* pop request as well as subsequent
+     requests with no reply  */
+  do {
+    lrqf->first++;
+    lrqf->count--;
+    rqe = &lrqf->entry[(lrqf->first % RQ_FIFO_SIZE)];
+  } while (lrqf->count > 0 && (rqe->status == RQ_NOREPLY));
+}
+
 void test(int (*fend)(int, int), int n, int evrate)
 {
   assh_error_t err;
@@ -638,8 +650,64 @@ void test(int (*fend)(int, int), int n, int evrate)
 	      break;
 	    }
 
-	    case ASSH_EVENT_REQUEST_REPLY: {      /***** request reply *****/
-	      struct assh_event_request_reply_s *e = &event.connection.request_reply;
+	    case ASSH_EVENT_REQUEST_SUCCESS: {
+	      struct assh_event_request_success_s *e
+		= &event.connection.request_success;
+	      struct rq_fifo_s *lrqf = &global_rq_fifo[i];
+	      struct ch_map_entry_s *che = NULL;
+
+	      rq_refs_out--;
+	      if (e->ch != NULL)
+		{
+		  che = assh_channel_pv(e->ch);
+		  lrqf = &che->rq_fifo[i];
+		}
+	      struct rq_fifo_entry_s *rqe;
+
+	      rqe = &lrqf->entry[lrqf->first % RQ_FIFO_SIZE];
+	      ASSH_DEBUG("ASSH_EVENT_REQUEST_SUCCESS %p:%p %u\n", e->rq, rqe);
+
+	      TEST_ASSERT(e->rq == rqe->srq);
+
+	      if (lrqf->count <= 0)
+		TEST_FAIL("(ctx %u seed %u) request count %u %p, (> 0 expected) %u\n",
+			     i, seed, lrqf->count, &lrqf->count, rqe->status);
+
+	      if (!started[i] && !evrate)
+		TEST_FAIL("(ctx %u seed %u) ASSH_CONNECTION_REPLY_SUCCESS while not started\n", i, seed);
+
+	      if (started[i^1])
+		{
+		  if (rqe->status != RQ_SUCCESS)
+		    TEST_FAIL("(ctx %u seed %u) request status %u, (2 expected)\n",
+			      i, seed, rqe->status);
+
+		  if (rqe->data_len != e->rsp_data.size)
+		    TEST_FAIL("(ctx %u seed %u) request_reply.rsp_data.size: rq:%u ev:%zu\n",
+			      i, seed, rqe->data_len, e->rsp_data.size);
+
+		  if (e->rsp_data.size && memcmp(rqe->rsp_data, e->rsp_data.data, e->rsp_data.size))
+		    {
+#ifdef CONFIG_ASSH_DEBUG
+		      assh_hexdump("rq", rqe->rsp_data, rqe->data_len);
+		      assh_hexdump("ev", e->rsp_data.data, e->rsp_data.size);
+#endif
+		      TEST_FAIL("(ctx %u seed %u) request_reply.rsp_data.data\n", i, seed);
+		    }
+		}
+	      rq_event_success_count++;
+
+	      rqe->status = RQ_RELEASED;
+
+	      ASSH_DEBUG("ASSH_EVENT_REQUEST_SUCESS %p status %u\n", e->rq, rqe->status);
+
+	      pop_request(lrqf);
+	      break;
+	    }
+
+	    case ASSH_EVENT_REQUEST_FAILURE: {      /***** request reply *****/
+	      struct assh_event_request_failure_s *e
+		= &event.connection.request_failure;
 	      struct rq_fifo_s *lrqf = &global_rq_fifo[i];
 	      struct ch_map_entry_s *che = NULL;
 
@@ -655,13 +723,13 @@ void test(int (*fend)(int, int), int n, int evrate)
 		{
 		  rqe = &lrqf->entry[lrqf->first % RQ_FIFO_SIZE];
 		  // rqe = assh_request_pv(e->rq);
-		  if (e->reply != ASSH_CONNECTION_REPLY_CLOSED || rqe->srq != NULL)
+		  if (e->reason == ASSH_REQUEST_FAILED || rqe->srq != NULL)
 		    break;
 		  lrqf->first++;
 		  lrqf->count--;
 		}
 
-	      ASSH_DEBUG("ASSH_EVENT_REQUEST_REPLY %p:%p %u\n", e->rq, rqe, e->reply);
+	      ASSH_DEBUG("ASSH_EVENT_REQUEST_FAILURE %p:%p %u\n", e->rq, rqe);
 
 	      TEST_ASSERT(e->rq == rqe->srq);
 
@@ -669,35 +737,9 @@ void test(int (*fend)(int, int), int n, int evrate)
 		TEST_FAIL("(ctx %u seed %u) request count %u %p, (> 0 expected) %u\n",
 			     i, seed, lrqf->count, &lrqf->count, rqe->status);
 
-	      switch (e->reply)
+	      switch (e->reason)
 		{
-		case ASSH_CONNECTION_REPLY_SUCCESS:
-		  if (!started[i] && !evrate)
-		    TEST_FAIL("(ctx %u seed %u) ASSH_CONNECTION_REPLY_SUCCESS while not started\n", i, seed);
-
-		  if (started[i^1])
-		    {
-		      if (rqe->status != RQ_SUCCESS)
-			TEST_FAIL("(ctx %u seed %u) request status %u, (2 expected)\n",
-				  i, seed, rqe->status);
-
-		      if (rqe->data_len != e->rsp_data.size)
-			TEST_FAIL("(ctx %u seed %u) request_reply.rsp_data.size: rq:%u ev:%zu\n",
-				  i, seed, rqe->data_len, e->rsp_data.size);
-
-		      if (e->rsp_data.size && memcmp(rqe->rsp_data, e->rsp_data.data, e->rsp_data.size))
-			{
-#ifdef CONFIG_ASSH_DEBUG
-			  assh_hexdump("rq", rqe->rsp_data, rqe->data_len);
-			  assh_hexdump("ev", e->rsp_data.data, e->rsp_data.size);
-#endif
-			  TEST_FAIL("(ctx %u seed %u) request_reply.rsp_data.data\n", i, seed);
-			}
-		    }
-		  rq_event_success_count++;
-		  break;
-
-		case ASSH_CONNECTION_REPLY_FAILED:
+		case ASSH_REQUEST_FAILED:
 		  if (!started[i] && !evrate)
 		    TEST_FAIL("(ctx %u seed %u) ASSH_CONNECTION_REPLY_FAILED while not started\n", i, seed);
 
@@ -710,7 +752,7 @@ void test(int (*fend)(int, int), int n, int evrate)
 		  rq_event_failed_count++;
 		  break;
 
-		case ASSH_CONNECTION_REPLY_CLOSED:
+		case ASSH_REQUEST_SESSION_DISCONNECTED:
 		  rq_event_closed_count++;
 		  break;
 
@@ -720,16 +762,9 @@ void test(int (*fend)(int, int), int n, int evrate)
 
 	      rqe->status = RQ_RELEASED;
 
-	      ASSH_DEBUG("ASSH_EVENT_REQUEST_REPLY %p status %u\n", e->rq, rqe->status);
+	      ASSH_DEBUG("ASSH_EVENT_REQUEST_FAILURE %p status %u\n", e->rq, rqe->status);
 
-	      /* pop request as well as subsequent
-		 requests with no reply  */
-	      do {
-		lrqf->first++;
-		lrqf->count--;
-		rqe = &lrqf->entry[(lrqf->first % RQ_FIFO_SIZE)];
-	      } while (lrqf->count > 0 && (rqe->status == RQ_NOREPLY));
-
+	      pop_request(lrqf);
 	      break;
 	    }
 

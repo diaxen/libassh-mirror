@@ -712,21 +712,28 @@ assh_client_event_inter_session(struct assh_session_s *s,
       return;
     }
 
-    case ASSH_EVENT_REQUEST_REPLY: {
-      struct assh_event_request_reply_s *ev =
-	&event->connection.request_reply;
+    case ASSH_EVENT_REQUEST_FAILURE: {
+      struct assh_event_request_failure_s *ev =
+	&event->connection.request_failure;
 
       if (ev->ch != ctx->channel ||
 	  ev->rq != ctx->request)
 	return;
 
-      enum assh_connection_reply_e r = ev->reply;
       assh_event_done(s, event, ASSH_OK);
 
-      if (r != ASSH_CONNECTION_REPLY_SUCCESS)
-	{
-	  goto err;
-	}
+      goto err;
+    }
+
+    case ASSH_EVENT_REQUEST_SUCCESS: {
+      struct assh_event_request_success_s *ev =
+	&event->connection.request_success;
+
+      if (ev->ch != ctx->channel ||
+	  ev->rq != ctx->request)
+	return;
+
+      assh_event_done(s, event, ASSH_OK);
 
       switch (ctx->state)
 	{

@@ -188,7 +188,8 @@ int main(int argc, char **argv)
         case ASSH_EVENT_SERVICE_START:
         case ASSH_EVENT_CHANNEL_CONFIRMATION:
         case ASSH_EVENT_CHANNEL_FAILURE:
-        case ASSH_EVENT_REQUEST_REPLY:
+        case ASSH_EVENT_REQUEST_SUCCESS:
+        case ASSH_EVENT_REQUEST_FAILURE:
         case ASSH_EVENT_CHANNEL_CLOSE:
           /* let an helper function start and manage an interactive
              session. */

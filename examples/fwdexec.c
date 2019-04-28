@@ -303,7 +303,8 @@ ssh_loop_rexec(void)
         case ASSH_EVENT_SERVICE_START:
         case ASSH_EVENT_CHANNEL_CONFIRMATION:
         case ASSH_EVENT_CHANNEL_FAILURE:
-        case ASSH_EVENT_REQUEST_REPLY:
+        case ASSH_EVENT_REQUEST_SUCCESS:
+        case ASSH_EVENT_REQUEST_FAILURE:
         case ASSH_EVENT_CHANNEL_CLOSE:
           /* rely on helper as in the rexec example */
           assh_client_event_inter_session(rexec_session, &rexec_event, &rexec_inter);

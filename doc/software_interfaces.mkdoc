@@ -271,8 +271,9 @@ switch (ev.id)
   @section {Using requests}
     The application may send @hl requests to the remote host by
     calling the @ref assh_request function. It may optionally require
-    a reply to the request. Doing so leads to the @ref
-    ASSH_EVENT_REQUEST_REPLY event being reported, even if the
+    a reply to the request. Doing so make the library reports either
+    an @ref ASSH_EVENT_REQUEST_SUCCESS event or an @ref
+    ASSH_EVENT_REQUEST_FAILURE event. This always occurs, even if the
     associated @hl channel is closing or the session disconnects.
 
     Incoming requests are reported by the library using the @ref
