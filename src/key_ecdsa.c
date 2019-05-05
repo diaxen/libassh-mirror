@@ -377,142 +377,124 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_ecdsa_validate)
 }
 #endif
 
+static ASSH_BLOB_SCAN_FCN(assh_key_ecdsa_scan_name)
+{
+  assh_error_t err;
+  struct assh_key_ecdsa_s *k = pv;
+  const struct assh_key_ecdsa_id_s *id;
+
+  id = assh_key_ecdsa_lookup_name((const char *)content, len);
+  ASSH_RET_IF_TRUE(id == NULL, ASSH_ERR_NOTSUP);
+
+  size_t bits = id->curve->bits;
+
+  k->id = id;
+  k->key.type = id->name;
+  k->key.safety = id->curve->safety;
+
+  assh_bignum_init(c, &k->xn, bits);
+  assh_bignum_init(c, &k->yn, bits);
+  assh_bignum_init(c, &k->sn, bits);
+
+  return ASSH_OK;
+}
+
+static ASSH_BLOB_SCAN_FCN(assh_key_ecdsa_scan_oid)
+{
+  assh_error_t err;
+  struct assh_key_ecdsa_s *k = pv;
+  const struct assh_key_ecdsa_id_s *id;
+
+  id = assh_key_ecdsa_lookup_oid(content, len);
+  ASSH_RET_IF_TRUE(id == NULL, ASSH_ERR_NOTSUP);
+
+  size_t bits = id->curve->bits;
+
+  k->id = id;
+  k->key.type = id->name;
+  k->key.safety = id->curve->safety;
+
+  assh_bignum_init(c, &k->xn, bits);
+  assh_bignum_init(c, &k->yn, bits);
+  assh_bignum_init(c, &k->sn, bits);
+
+  return ASSH_OK;
+}
+
 static ASSH_KEY_LOAD_FCN(assh_key_ecdsa_load)
 {
   assh_error_t err;
-  const struct assh_key_ecdsa_id_s *id = NULL;
-  const uint8_t *x_str, *y_str, *s_str = NULL;
+
   const uint8_t *blob = *blob_;
   struct assh_key_ecdsa_s *k = (void*)*key;
 
-  /* parse the key blob */
-  switch (format)
-    {
-    case ASSH_KEY_FMT_PUB_RFC4253:
-    case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY: {
-      ASSH_RET_IF_TRUE(k != NULL, ASSH_ERR_BAD_ARG);
-
-      /* lookup key type */
-      size_t id_len;
-      const char *id_str;
-      ASSH_RET_ON_ERR(assh_scan_blob("sRL", &blob, &blob_len,
-                                      &id_str, &id_len));
-
-      id = assh_key_ecdsa_lookup_name(id_str, id_len);
-      ASSH_RET_IF_TRUE(id == NULL, ASSH_ERR_NOTSUP);
-
-      size_t n = ASSH_ALIGN8(id->curve->bits) / 8;
-      size_t kp_len = 1 + 2 * n;
-
-      ASSH_RET_ON_ERR(assh_scan_blob(/* curve name */ "sQ"
-                                     /* pub blob */ "sT("
-                                       /* encoding */ "l1 E;1;\x04"
-                                       /* X */ "lR"
-                                       /* Y */ "lR"
-                                     ")", &blob, &blob_len,
-                                      id->curve->name, kp_len,
-                                      n, &x_str, n, &y_str));
-
-      if (format == ASSH_KEY_FMT_PV_OPENSSH_V1_KEY)
-        ASSH_RET_ON_ERR(assh_scan_blob("sP", &blob, &blob_len, &s_str));
-
-      break;
-    }
-
-    case ASSH_KEY_FMT_PV_PEM_ASN1: {
-      ASSH_RET_IF_TRUE(k != NULL, ASSH_ERR_BAD_ARG);
-
-      const uint8_t *id_str, *pub_str;
-      size_t id_len, pub_len;
-
-      ASSH_RET_ON_ERR(assh_scan_blob("a48(" /* version */ "a2 H1 E;1;\x01"
-                                            /* pv key */ "a4P"
-                                            /* curve name */ "a160(a6RL)"
-                                            /* pub key */ "a161(a3RL E1;1;\x04))",
-                                     &blob, &blob_len,
-                                     &s_str, &id_str, &id_len, &pub_str, &pub_len));
-
-      id = assh_key_ecdsa_lookup_oid(id_str, id_len);
-      ASSH_RET_IF_TRUE(id == NULL, ASSH_ERR_NOTSUP);
-      size_t n = ASSH_ALIGN8(id->curve->bits) / 8;
-
-      ASSH_RET_IF_TRUE(pub_len != 2 + 2 * n, ASSH_ERR_BAD_DATA);
-
-      x_str = pub_str + 2;
-      y_str = x_str + n;
-
-      break;
-    }
-
-    default:
-      ASSH_RETURN(ASSH_ERR_NOTSUP);
-    }
-
-  /* allocate key structure */
   if (k == NULL)
     {
       ASSH_RET_ON_ERR(assh_alloc(c, sizeof(struct assh_key_ecdsa_s),
                                  ASSH_ALLOC_INTERNAL, (void**)&k));
 
       k->key.private = 0;
-      k->key.type = id->name;
       k->key.algo = algo;
-      k->key.safety = id->curve->safety;
-      k->id = id;
 
-      size_t bits = id->curve->bits;
-      assh_bignum_init(c, &k->xn, bits);
-      assh_bignum_init(c, &k->yn, bits);
-      assh_bignum_init(c, &k->sn, bits);
+      assh_bignum_init(c, &k->xn, 0);
+      assh_bignum_init(c, &k->yn, 0);
+      assh_bignum_init(c, &k->sn, 0);
     }
 
+  /* parse the key blob */
   switch (format)
     {
-    case ASSH_KEY_FMT_PV_PEM_ASN1:
-      k->key.private = 1;
-      /* Some buggy implementations skip leading zero bytes in the
-         fixed size ASN1 octet string, so we load it as an ASN1 number instead. */
-      ASSH_JMP_ON_ERR(assh_bignum_convert(c, ASSH_BIGNUM_ASN1, ASSH_BIGNUM_NATIVE,
-                                       s_str, &k->sn, NULL, 1), err_key);
-      goto pub;
+    case ASSH_KEY_FMT_PUB_RFC4253: {
+
+      ASSH_JMP_ON_ERR(assh_blob_scan(c,
+      /* name    encoding    x y  */
+         "sF s s(b1_e;1;\x04 g g) $",
+         &blob, &blob_len,
+         &assh_key_ecdsa_scan_name, k,
+         &k->xn, &k->yn), err_);
+
+      break;
+    }
 
     case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY:
       k->key.private = 1;
-      ASSH_JMP_ON_ERR(assh_bignum_convert(c, ASSH_BIGNUM_MPINT, ASSH_BIGNUM_NATIVE,
-                                       s_str, &k->sn, NULL, 1), err_key);
 
-    case ASSH_KEY_FMT_PUB_RFC4253:
-    pub:
-      ASSH_JMP_ON_ERR(assh_bignum_convert(c, ASSH_BIGNUM_MSB_RAW, ASSH_BIGNUM_NATIVE,
-                                       x_str, &k->xn, NULL, 0), err_key);
-      ASSH_JMP_ON_ERR(assh_bignum_convert(c, ASSH_BIGNUM_MSB_RAW, ASSH_BIGNUM_NATIVE,
-                                       y_str, &k->yn, NULL, 0), err_key);
+      ASSH_JMP_ON_ERR(assh_blob_scan(c,
+      /* name    encoding    x y  s  */
+         "sF s s(b1_e;1;\x04 g g) sG! $",
+         &blob, &blob_len,
+         &assh_key_ecdsa_scan_name, k,
+         &k->xn, &k->yn, &k->sn), err_);
+
       break;
 
+    case ASSH_KEY_FMT_PV_PEM_ASN1: {
+      k->key.private = 1;
+
+      /* Some buggy implementations do not include the leading zero
+         bytes in the fixed size ASN1 private key octet string, so we
+         load it as an ASN1 number instead of a fixed size byte array. */
+
+      ASSH_JMP_ON_ERR(assh_blob_scan(c,
+        "(a48( a2_e;1;\x01 a4 a160(a6F)))" /* 1st pass, get key id & size */
+        "(a48( a2 a4G! a160 a161(a3(b2_e1;1;\x04 g g))) $)", /* 2nd pass, get bignums */
+        &blob, &blob_len,
+        &assh_key_ecdsa_scan_oid, k,
+        &k->sn, &k->xn, &k->yn), err_);
+
+      break;
+    }
+
     default:
-      ASSH_UNREACHABLE();
+      ASSH_JMP_ON_ERR(ASSH_ERR_NOTSUP, err_);
     }
 
   *key = &k->key;
   *blob_ = blob;
   return ASSH_OK;
 
- err_key:
-
-  switch (format)
-    {
-    case ASSH_KEY_FMT_PV_PEM_ASN1:
-    case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY:
-      assh_bignum_release(c, &k->sn);
-    case ASSH_KEY_FMT_PUB_RFC4253:
-      assh_bignum_release(c, &k->xn);
-      assh_bignum_release(c, &k->yn);
-      assh_free(c, k);
-      break;
-    default:
-      ASSH_UNREACHABLE();
-    }
-
+ err_:
+  assh_key_ecdsa_cleanup(c, &k->key);
   return err;
 }
 

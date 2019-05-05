@@ -255,6 +255,13 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_eddsa_validate)
 }
 #endif
 
+static ASSH_KEY_CLEANUP_FCN(assh_key_eddsa_cleanup)
+{
+  struct assh_key_eddsa_s *k = (void*)key;
+
+  assh_free(c, k);
+}
+
 static assh_error_t
 assh_key_eddsa_load(struct assh_context_s *c,
                     const struct assh_key_algo_s *algo,
@@ -272,73 +279,56 @@ assh_key_eddsa_load(struct assh_context_s *c,
 
   size_t n = ASSH_ALIGN8(curve->bits) / 8;
 
-  const uint8_t *pv_str;
-  const uint8_t *pub_str;
-
-  /* parse the key blob */
-  switch (format)
-    {
-    case ASSH_KEY_FMT_PUB_RFC4253:
-      ASSH_RET_IF_TRUE(k != NULL, ASSH_ERR_BAD_ARG);
-
-      ASSH_RET_ON_ERR(assh_scan_blob(/* curve name */ "sQ"
-                                     /* pub key */ "sTR",
-                                     &blob, &blob_len,
-                                     algo->name, n, &pub_str));
-      break;
-
-    case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY:
-      ASSH_RET_IF_TRUE(k != NULL, ASSH_ERR_BAD_ARG);
-
-      ASSH_RET_ON_ERR(assh_scan_blob(/* curve name */ "sQ"
-                                     /* pub key */ "sT"
-                                     /* pv+pub key */ "sT("
-                                       /* pv key */  "lR"
-                                       /* pub key */ "lR"
-                                     ")", &blob, &blob_len,
-                                     algo->name, n, 2 * n,
-                                     n, &pv_str, n, &pub_str));
-      break;
-
-    default:
-      ASSH_RETURN(ASSH_ERR_NOTSUP);
-    }
-
   if (k == NULL)
     {
       ASSH_RET_ON_ERR(assh_alloc(c, sizeof(struct assh_key_eddsa_s) + 2 * n,
                                  ASSH_ALLOC_SECUR, (void**)&k));
 
-      k->key.private = 0;
       k->key.algo = algo;
       k->key.type = algo->name;
       k->key.safety = curve->safety;
+      k->key.private = 0;
       k->curve = curve;
       k->hash = hash;
     }
 
+  uint8_t *pub_key = k->data;
+  uint8_t *pv_key = k->data + n;
+
+  /* parse the key blob */
   switch (format)
     {
-    case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY:
-      memcpy(k->data + n, pv_str, n);
-      k->key.private = 1;
     case ASSH_KEY_FMT_PUB_RFC4253:
-      memcpy(k->data, pub_str, n);
+
+      ASSH_JMP_ON_ERR(assh_blob_scan(c,
+                                /*  name pub */
+                                     "sz stD $",
+                                     &blob, &blob_len,
+                                     algo->name, n, pub_key), err_);
       break;
+
+    case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY:
+      k->key.private = 1;
+
+      ASSH_JMP_ON_ERR(assh_blob_scan(c,
+                                 /* name pub  (pv pub) */
+                                     "sz st st(bD bD $)",
+                                     &blob, &blob_len,
+                                     algo->name, n, 2 * n,
+                                     n, pv_key, n, pub_key), err_);
+      break;
+
     default:
-      ASSH_UNREACHABLE();
+      ASSH_JMP_ON_ERR(ASSH_ERR_NOTSUP, err_);
     }
 
   *key = &k->key;
   *blob_ = blob;
   return ASSH_OK;
-}
 
-static ASSH_KEY_CLEANUP_FCN(assh_key_eddsa_cleanup)
-{
-  struct assh_key_eddsa_s *k = (void*)key;
-
-  assh_free(c, k);
+ err_:
+  assh_key_eddsa_cleanup(c, &k->key);
+  return err;
 }
 
 const struct assh_edward_curve_s assh_ed25519_curve = 
