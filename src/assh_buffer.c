@@ -392,3 +392,304 @@ assh_blob_scan(struct assh_context_s *c, const char *format,
   ASSH_RETURN(err);
 }
 
+assh_error_t
+assh_blob_write_va(const char *format, uint8_t *blob, size_t *blob_len, va_list ap)
+{
+  uint8_t *b = blob;
+  uint8_t *e = blob + *blob_len;
+  uint8_t *n;
+  assh_error_t err;
+
+  struct {
+    uint8_t *head;
+  } stack[ASSH_BLOB_STACK_SIZE], *st = stack;
+
+  uint8_t int_buf[8];
+
+  while (1)
+    {
+      char odata = *format++;
+      size_t len;
+      const void *data;
+
+      /* content specifiers */
+      switch (odata)
+	{
+	case 'G': {
+	  const struct assh_bignum_s *bn = va_arg(ap, void*);
+
+	  enum assh_bignum_fmt_e bn_fmt;
+	  char ofmt = *format++;
+
+	  switch (ofmt)
+	    {
+	    case 's':
+	      bn_fmt = ASSH_BIGNUM_MPINT;
+	      break;
+	    case 'a': {
+	      /* id = */ strtoul(format, (char**)&format, 0);
+	      bn_fmt = ASSH_BIGNUM_ASN1;
+	      break;
+	    }
+	    case 'b':
+	      bn_fmt = ASSH_BIGNUM_MSB_RAW;
+	      break;
+	    case 'r':
+	      ASSH_RET_IF_TRUE(*format++ != 'b', ASSH_ERR_BAD_ARG);
+	      bn_fmt = ASSH_BIGNUM_LSB_RAW;
+	      break;
+	    default:
+	      ASSH_RETURN(ASSH_ERR_BAD_ARG);
+	    }
+
+	  len = assh_bignum_size_of_num(bn_fmt, bn);
+	  n = b + len;
+
+	  if (blob)
+	    {
+	      ASSH_RET_IF_TRUE(n > e, ASSH_ERR_OUTPUT_OVERFLOW);
+	      assh_bignum_to_buffer(bn, b, &b, bn_fmt);
+	    }
+	  else
+	    {
+	      b = n;
+	    }
+
+	  continue;
+	}
+
+	case 'Z': {
+	  const char *s = va_arg(ap, void*);
+	  data = s;
+	  len = strlen(s);
+	  break;
+	}
+
+	case 'B': {
+	  struct assh_cbuffer_s *bf = va_arg(ap, void*);
+	  data = bf->data;
+	  len = bf->size;
+	  break;
+	}
+
+	case 'D': {
+	  data = va_arg(ap, void*);
+	  len = va_arg(ap, size_t);
+	  break;
+	}
+
+	case 'E': {
+	  len = strtoul(format, (char**)&format, 0);
+	  ASSH_RET_IF_TRUE(*format++ != ';',
+			   ASSH_ERR_BAD_DATA);
+	  data = format;
+	  format += len;
+	  break;
+	}
+
+	case 'I': {
+	  uint32_t x = va_arg(ap, unsigned int);
+	  len = 4;
+	  data = int_buf;
+	  if (*format == 'r')
+	    {
+	      assh_store_u32le(int_buf, x);
+	      format++;
+	    }
+	  else
+	    {
+	      assh_store_u32(int_buf, x);
+	    }
+	  break;
+	}
+
+	case 'L': {
+	  uint64_t x = va_arg(ap, unsigned long long);
+	  len = 8;
+	  data = int_buf;
+	  if (*format == 'r')
+	    {
+	      assh_store_u64le(int_buf, x);
+	      format++;
+	    }
+	  else
+	    {
+	      assh_store_u64(int_buf, x);
+	    }
+	  break;
+	}
+
+	case '(': {
+	  st->head = b;
+	  st++;
+	  assert(st - stack <= ASSH_BLOB_STACK_SIZE);
+	  continue;
+	}
+
+	case ')': {
+	  assert(st > stack);
+	  st--;
+
+	  uint8_t *a = st->head;
+	  size_t s = b - a;
+
+	  char ofmt = *format++;
+
+	  switch (ofmt)
+	    {
+	    case 's':
+	      b += 4;
+	      if (blob)
+		{
+		  ASSH_RET_IF_TRUE(b > e, ASSH_ERR_OUTPUT_OVERFLOW);
+		  memmove(a + 4, a, s);
+		  assh_store_u32(a, s);
+		}
+	      continue;
+
+	    case 'a': {
+	      uint_fast8_t id = strtoul(format, (char**)&format, 0);
+	      size_t hl = assh_asn1_headlen(s);
+	      b += hl;
+	      if (blob)
+		{
+		  ASSH_RET_IF_TRUE(b > e, ASSH_ERR_OUTPUT_OVERFLOW);
+		  memmove(a + hl, a, s);
+		  assh_append_asn1(&a, id, s);
+		}
+	      continue;
+	    }
+
+	    case 'b':
+	      continue;
+
+	    default:
+	      ASSH_RETURN(ASSH_ERR_BAD_ARG);
+	    }
+	  break;
+	}
+
+	case ' ':
+        case '_':
+	  continue;
+
+	case '\0':
+	  assert(st == stack);
+	  *blob_len = b - blob;
+	  return ASSH_OK;
+
+	default:
+	  ASSH_RETURN(ASSH_ERR_BAD_ARG);
+	}
+
+      size_t rpad = 0, lpad = 0;
+      uint8_t vpad = 0;
+
+      /* modifiers */
+      while (1)
+	{
+	  switch (*format)
+	    {
+	    case '[':
+	      lpad = strtoul(++format, (char**)&format, 0);
+	      if (lpad <= len)
+		{
+		  data += len - lpad;
+		  len = lpad;
+		  lpad = 0;
+		}
+	      else
+		{
+		  lpad -= len;
+		}
+	      continue;
+
+	    case ']':
+	      rpad = strtoul(++format, (char**)&format, 0);
+	      if (rpad <= len)
+		{
+		  len = rpad;
+		  rpad = 0;
+		}
+	      else
+		{
+		  rpad -= len;
+		}
+	      continue;
+
+	    case 'p':
+	      vpad = strtoul(++format, (char**)&format, 0);
+	      continue;
+
+	    case ' ':
+	    case '_':
+	      format++;
+	      continue;
+
+	    default:
+	      break;
+	    }
+	  break;
+	}
+
+      size_t wlen = lpad + len + rpad;
+      n = b + wlen;
+
+      /* format specifiers */
+      char ofmt = *format++;
+      switch (ofmt)
+	{
+	case 'a': {
+	  uint_fast8_t id = strtoul(format, (char**)&format, 0);
+	  size_t hl = assh_asn1_headlen(wlen);
+	  n += hl;
+	  if (blob)
+	    {
+	      ASSH_RET_IF_TRUE(n > e, ASSH_ERR_OUTPUT_OVERFLOW);
+	      assh_append_asn1(&b, id, wlen);
+	    }
+	  break;
+	}
+
+	case 's':
+	  n += 4;
+	  if (blob)
+	    {
+	      ASSH_RET_IF_TRUE(n > e, ASSH_ERR_OUTPUT_OVERFLOW);
+	      assh_store_u32(b, wlen);
+	      b += 4;
+	    }
+	  break;
+
+	case 'b':
+	  if (blob)
+	    ASSH_RET_IF_TRUE(n > e, ASSH_ERR_OUTPUT_OVERFLOW);
+	  break;
+
+	default:
+	  ASSH_RETURN(ASSH_ERR_BAD_ARG);
+	}
+
+      if (blob)
+	{
+	  memset(b, vpad, lpad);
+	  memcpy(b + lpad, data, len);
+	  memset(b + lpad + len, vpad, rpad);
+	}
+
+      b = n;
+    }
+}
+
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_blob_write(const char *format, uint8_t *blob, size_t *blob_len, ...)
+{
+  assh_error_t err;
+  va_list ap;
+
+  va_start(ap, blob_len);
+  err = assh_blob_write_va(format, blob, blob_len, ap);
+  va_end(ap);
+
+  ASSH_RETURN(err);
+}

@@ -248,4 +248,79 @@ ASSH_WARN_UNUSED_RESULT assh_error_t
 assh_blob_scan_va(struct assh_context_s *c, const char *format,
                     const uint8_t **blob, size_t *blob_len, va_list ap);
 
+/** @This writes a blob as a sequence of @em ssh2
+    strings, ASN1 objects, arrays and numbers.
+
+    When the @tt blob parameter is @tt NULL, the required size is
+    stored in @tt blob_len.
+    @ifnopt hide_internal
+    When an @ref assh_bignum_s is involved,
+    the reported size estimate may be larger than needed.
+    @end if
+
+    In the other case, the @tt blob_len parameter must initially
+    indicate the size of the available buffer space. It is updated
+    with the actual size of the data written when the function is
+    successful.
+
+    The format string can contain the following characters which
+    specify how to collect fields content:
+
+    @table 2
+     @item Character   @item Associated behavior
+
+     @item @tt Z       @item Get data from a null terminated string passed as argument.
+     @item @tt B       @item Get data from a pointer to an @ref assh_cbuffer_s passed as argument.
+     @item @tt D       @item Get data from a pair of pointer and size arguments.
+     @item @tt{E}L@tt{;}S    @item Data is string S of size L.
+     @item @tt I       @item Data is an @tt {int} passed as argument,
+                             serialized as a 32 bits MSB first integer.
+     @item @tt Ir      @item Same as @tt{I} but store LSB first.
+     @item @tt L       @item Data is a @tt {long long int} passed as argument,
+                             serialized as a 64 bits MSB first integer.
+     @item @tt Lr      @item Same as @tt{L} but store LSB first.
+    @ifnopt hide_internal
+     @item @tt G       @item Get data from a pointer to an @ref assh_bignum_s object passed as argument.
+     @item @tt Gr      @item Same as @tt{G} but store LSB first. Can only be used with @tt{b}.
+    @end if
+     @item @tt (       @item Use nested content as field data.
+     @item @tt )       @item End of nested content,
+
+     @item @em SPACE and @tt _  @item Ignored
+    @end table
+
+    It may optionally be followed by optional modifiers:
+
+    @table 2
+     @item Character   @item Associated behavior
+     @item @tt {p}X    @item Set padding byte value (default 0).
+     @item @tt {[}X    @item Truncate or left pad to size X.
+     @item @tt {]}X    @item Truncate or right pad to size X.
+    @end table
+
+    Then comes the output format specifiers:
+
+    @table 2
+     @item Character   @item Associated behavior
+     @item @tt s       @item Output an @em ssh2 string.
+     @item @tt aX      @item Output an ASN1 object of given type in decimal.
+     @item @tt b       @item Output a bytes array with no header.
+    @end table
+
+    Example usage:
+    @code
+// store an ssh string with the specified nul terminated content
+err = assh_blob_write("Zs", blob, &len, "content");
+
+// store a 6 bytes ssh string which contains two integers in network byte order
+err = assh_blob_write("( Ib I[2b )s", blob, &len, 0x12345678, 0xabcd);
+    @end code
+*/
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_blob_write(const char *format, uint8_t *blob, size_t *blob_len, ...);
+
+/** @see assh_blob_write */
+ASSH_WARN_UNUSED_RESULT assh_error_t
+assh_blob_write_va(const char *format, uint8_t *blob, size_t *blob_len, va_list ap);
+
 #endif
