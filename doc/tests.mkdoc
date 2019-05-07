@@ -70,5 +70,8 @@ with @em {libassh}.
   @item The @tt test/hash.c program tests the hash
     functions used internally by the library.
 
+  @item The @tt test/buffer.c program tests the buffer and blob
+    parsing related code.
+
   @item The @tt test/fail.c test program is expected to fail.
 @end list
