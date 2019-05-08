@@ -31,67 +31,6 @@
 
 #include <string.h>
 
-static ASSH_KEY_OUTPUT_FCN(assh_key_eddsa_output)
-{
-  struct assh_key_eddsa_s *k = (void*)key;
-  assh_error_t err;
-
-  size_t n = ASSH_ALIGN8(k->curve->bits) / 8;
-  size_t tlen = strlen(k->key.algo->name);
-
-  const uint8_t *kp = k->data;
-  const uint8_t *ks = k->data + n;
-
-  assert(key->algo == &assh_key_ed25519 ||
-         key->algo == &assh_key_eddsa_e382 ||
-         key->algo == &assh_key_eddsa_e521);
-
-  switch (format)
-    {
-    case ASSH_KEY_FMT_PUB_RFC4253: {
-      size_t len = 4 + tlen + 4 + n;
-
-      if (blob != NULL)
-        {
-          assh_store_u32(blob, tlen);  
-          memcpy(blob + 4, k->key.algo->name, tlen);
-          assh_store_u32(blob + 4 + tlen, n);
-          memcpy(blob + 4 + tlen + 4, kp, n);
-        }
-
-      *blob_len = len;
-
-      return ASSH_OK;
-    }
-
-    case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY: {
-      ASSH_RET_IF_TRUE(!k->key.private, ASSH_ERR_MISSING_KEY);
-
-      size_t len = 4 + tlen + 4 + n + 4 + 2 * n;
-
-      if (blob != NULL)
-        {
-          assh_store_u32(blob, tlen);  
-          memcpy(blob + 4, k->key.algo->name, tlen);
-          uint8_t *p = blob + 4 + tlen;
-          assh_store_u32(p, n);
-          memcpy(p + 4, kp, n);
-          uint8_t *s = p + 4 + n;
-          assh_store_u32(s, 2 * n);
-          memcpy(s + 4, ks, n);
-          memcpy(s + 4 + n, kp, n);
-        }
-
-      *blob_len = len;
-
-      return ASSH_OK;
-    }
-
-    default:
-      ASSH_RETURN(ASSH_ERR_NOTSUP);
-    }
-}
-
 static ASSH_KEY_CMP_FCN(assh_key_eddsa_cmp)
 {
   assert(key->algo == &assh_key_ed25519 ||
@@ -260,6 +199,39 @@ static ASSH_KEY_CLEANUP_FCN(assh_key_eddsa_cleanup)
   struct assh_key_eddsa_s *k = (void*)key;
 
   assh_free(c, k);
+}
+
+static ASSH_KEY_OUTPUT_FCN(assh_key_eddsa_output)
+{
+  struct assh_key_eddsa_s *k = (void*)key;
+  assh_error_t err;
+
+  size_t n = ASSH_ALIGN8(k->curve->bits) / 8;
+  size_t tlen = strlen(k->key.algo->name);
+
+  const uint8_t *kp = k->data;
+  const uint8_t *ks = k->data + n;
+  const char *algo_name = k->key.algo->name;
+
+  assert(key->algo == &assh_key_ed25519 ||
+         key->algo == &assh_key_eddsa_e382 ||
+         key->algo == &assh_key_eddsa_e521);
+
+  switch (format)
+    {
+    case ASSH_KEY_FMT_PUB_RFC4253:
+      ASSH_RETURN(assh_blob_write("Zs Ds", blob, blob_len,
+                                  algo_name, kp, n));
+
+    case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY:
+      ASSH_RET_IF_TRUE(!k->key.private, ASSH_ERR_MISSING_KEY);
+
+      ASSH_RETURN(assh_blob_write("Zs Ds (Db Db)s", blob, blob_len,
+                                  algo_name, kp, n, ks, n, kp, n));
+
+    default:
+      ASSH_RETURN(ASSH_ERR_NOTSUP);
+    }
 }
 
 static assh_error_t

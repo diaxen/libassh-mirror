@@ -34,93 +34,6 @@
   ASSH_MIN(ASSH_SAFETY_PRIMEFIELD(l),                   \
            99 * (n) / 512)
 
-static ASSH_KEY_OUTPUT_FCN(assh_key_dsa_output)
-{
-  struct assh_key_dsa_s *k = (void*)key;
-  assh_error_t err;
-
-  assert(key->algo == &assh_key_dsa);
-
-  struct assh_bignum_s *bn_[6] = { &k->pn, &k->qn, &k->gn, &k->yn, NULL, NULL };
-
-  switch (format)
-    {
-    case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY:
-      ASSH_RET_IF_TRUE(!k->key.private, ASSH_ERR_MISSING_KEY);
-      bn_[4] = &k->xn;
-    case ASSH_KEY_FMT_PUB_RFC4253: {
-      /* add algo identifier */
-      size_t l = ASSH_DSA_ID_LEN;
-      if (blob != NULL)
-        {
-          memcpy(blob, ASSH_DSA_ID, ASSH_DSA_ID_LEN);
-          blob += ASSH_DSA_ID_LEN;
-        }
-
-      /* add key integers */
-      struct assh_bignum_s **bn = bn_;
-      if (blob == NULL)
-        {
-          for (bn = bn_; *bn != NULL; bn++)
-            l += assh_bignum_size_of_num(ASSH_BIGNUM_MPINT, *bn);
-        }
-      else
-        {
-          uint8_t *b = blob;
-          for (bn = bn_; *bn != NULL; bn++)
-              ASSH_RET_ON_ERR(assh_bignum_convert(c, ASSH_BIGNUM_NATIVE,
-                             ASSH_BIGNUM_MPINT, *bn, b, &b, 0));
-          l += b - blob;
-        }
-      *blob_len = l;
-      return ASSH_OK;
-    }
-
-    case ASSH_KEY_FMT_PV_PEM_ASN1: {
-      ASSH_RET_IF_TRUE(!k->key.private, ASSH_ERR_MISSING_KEY);
-      bn_[4] = &k->xn;
-      uint8_t *b = blob + 4;
-      uint8_t *s = b;
-      size_t l = /* seq */ 4 + /* version */ 3;
-
-      /* version */
-      if (blob != NULL)
-        {
-          *b++ = 0x02;
-          *b++ = 0x01;
-          *b++ = 0x00;
-        }
-
-      struct assh_bignum_s **bn = bn_;
-      if (blob == NULL)
-        {
-          for (bn = bn_; *bn != NULL; bn++)
-            l += assh_bignum_size_of_num(ASSH_BIGNUM_ASN1, *bn);
-        }
-      else
-        {
-          /* add key integers */
-          for (bn = bn_; *bn != NULL; bn++)
-              ASSH_RET_ON_ERR(assh_bignum_convert(c, ASSH_BIGNUM_NATIVE,
-                             ASSH_BIGNUM_ASN1, *bn, b, &b, 0));
-          l = b - s;
-          /* sequence header */
-          b = blob;
-          assh_append_asn1(&b, 0x30, l);
-          if (b < s)
-            memmove(b, s, l);
-          l += b - blob;
-        }
-      *blob_len = l;
-
-      return ASSH_OK;
-    }
-
-    default:
-      ASSH_RETURN(ASSH_ERR_NOTSUP);
-    }
-}
-
 static ASSH_KEY_CMP_FCN(assh_key_dsa_cmp)
 {
   assert(key->algo == &assh_key_dsa);
@@ -400,6 +313,36 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
     }
 }
 #endif
+
+static ASSH_KEY_OUTPUT_FCN(assh_key_dsa_output)
+{
+  struct assh_key_dsa_s *k = (void*)key;
+  assh_error_t err;
+
+  assert(key->algo == &assh_key_dsa);
+
+  switch (format)
+    {
+    case ASSH_KEY_FMT_PUB_RFC4253:
+      ASSH_RETURN(assh_blob_write("E7;ssh-dss s Gs Gs Gs Gs", blob, blob_len,
+                                  &k->pn, &k->qn, &k->gn, &k->yn));
+
+    case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY:
+      ASSH_RET_IF_TRUE(!k->key.private, ASSH_ERR_MISSING_KEY);
+
+      ASSH_RETURN(assh_blob_write("E7;ssh-dss s Gs Gs Gs Gs Gs", blob, blob_len,
+                                  &k->pn, &k->qn, &k->gn, &k->yn, &k->xn));
+
+    case ASSH_KEY_FMT_PV_PEM_ASN1:
+      ASSH_RET_IF_TRUE(!k->key.private, ASSH_ERR_MISSING_KEY);
+
+      ASSH_RETURN(assh_blob_write("(E1;\x00_a2 Ga2 Ga2 Ga2 Ga2 Ga2)a48", blob, blob_len,
+                                  &k->pn, &k->qn, &k->gn, &k->yn, &k->xn));
+
+    default:
+      ASSH_RETURN(ASSH_ERR_NOTSUP);
+    }
+}
 
 static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
 {

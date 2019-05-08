@@ -120,6 +120,7 @@ static assh_error_t test_algo(struct assh_context_s *c, size_t count)
 
       /* store key blob to memory */
       fprintf(stderr, "O");
+      blob_len2 = blob_len1;
       TEST_ASSERT(!assh_key_output(c, key1, blob1, &blob_len2, t->format));
 
       /* check estimated size against actual size */

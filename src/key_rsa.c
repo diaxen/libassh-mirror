@@ -29,122 +29,6 @@
 
 #include <string.h>
 
-static ASSH_KEY_OUTPUT_FCN(assh_key_rsa_output)
-{
-  struct assh_key_rsa_s *k = (void*)key;
-  assh_error_t err;
-
-  assert(key->algo == &assh_key_rsa);
-
-  struct assh_bignum_s *bn_[9];
-  bn_[2] = NULL;
-
-  switch (format)
-    {
-    case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY:
-      ASSH_RET_IF_TRUE(!k->key.private, ASSH_ERR_MISSING_KEY);
-      bn_[0] = &k->nn;
-      bn_[1] = &k->en;
-      bn_[2] = &k->dn;
-      bn_[3] = &k->in;
-      bn_[4] = &k->pn;
-      bn_[5] = &k->qn;
-      bn_[6] = NULL;
-      goto mpint_key;
-
-    case ASSH_KEY_FMT_PUB_RFC4253:
-      bn_[0] = &k->en;
-      bn_[1] = &k->nn;
-    mpint_key: {
-      /* add algo identifier */
-      size_t l = ASSH_RSA_ID_LEN;
-      if (blob != NULL)
-        {
-          memcpy(blob, ASSH_RSA_ID, ASSH_RSA_ID_LEN);
-          blob += ASSH_RSA_ID_LEN;
-        }
-
-      /* add key integers */
-      struct assh_bignum_s **bn = bn_;
-      if (blob == NULL)
-        {
-          for (bn = bn_; *bn != NULL; bn++)
-            l += assh_bignum_size_of_num(ASSH_BIGNUM_MPINT, *bn);
-        }
-      else
-        {
-          uint8_t *b = blob;
-          for (bn = bn_; *bn != NULL; bn++)
-              ASSH_RET_ON_ERR(assh_bignum_convert(c, ASSH_BIGNUM_NATIVE,
-                             ASSH_BIGNUM_MPINT, *bn, b, &b, 0));
-          l += b - blob;
-        }
-      *blob_len = l;
-      return ASSH_OK;
-    }
-
-    case ASSH_KEY_FMT_PV_PEM_ASN1: {
-      ASSH_RET_IF_TRUE(!k->key.private, ASSH_ERR_MISSING_KEY);
-      bn_[2] = &k->dn;
-      bn_[3] = &k->pn;
-      bn_[4] = &k->qn;
-      bn_[5] = &k->dpn;
-      bn_[6] = &k->dqn;
-      bn_[7] = &k->in;
-      bn_[8] = NULL;
-    }
-
-    case ASSH_KEY_FMT_PUB_PEM_ASN1: {
-      bn_[0] = &k->nn;
-      bn_[1] = &k->en;
-      uint8_t *b = blob + 4;
-      uint8_t *s = b;
-      size_t l = /* seq */ 4;
-
-      if (format == ASSH_KEY_FMT_PV_PEM_ASN1)
-        {
-          /* version */
-          if (blob != NULL)
-            {
-              *b++ = 0x02;
-              *b++ = 0x01;
-              *b++ = 0x00;
-            }
-          l += 3;
-        }
-
-      struct assh_bignum_s **bn = bn_;
-      if (blob == NULL)
-        {
-          for (bn = bn_; *bn != NULL; bn++)
-            l += assh_bignum_size_of_num(ASSH_BIGNUM_ASN1, *bn);
-        }
-      else
-        {
-          /* add key integers */
-          for (bn = bn_; *bn != NULL; bn++)
-              ASSH_RET_ON_ERR(assh_bignum_convert(c, ASSH_BIGNUM_NATIVE,
-                             ASSH_BIGNUM_ASN1, *bn, b, &b, 0));
-          l = b - s;
-          /* sequence header */
-          b = blob;
-          assh_append_asn1(&b, 0x30, l);
-          if (b < s)
-            memmove(b, s, l);
-          l += b - blob;
-        }
-      *blob_len = l;
-
-      return ASSH_OK;
-    }
-
-    default:
-      ASSH_RETURN(ASSH_ERR_NOTSUP);
-    }
-
-  ASSH_UNREACHABLE();
-}
-
 static ASSH_KEY_CMP_FCN(assh_key_rsa_cmp)
 {
   assert(key->algo == &assh_key_rsa);
@@ -419,6 +303,44 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_rsa_validate)
     }
 }
 #endif
+
+static ASSH_KEY_OUTPUT_FCN(assh_key_rsa_output)
+{
+  struct assh_key_rsa_s *k = (void*)key;
+  assh_error_t err;
+
+  assert(key->algo == &assh_key_rsa);
+
+  switch (format)
+    {
+    case ASSH_KEY_FMT_PUB_RFC4253:
+      ASSH_RETURN(assh_blob_write("E7;ssh-rsa s Gs Gs", blob, blob_len,
+                                  &k->en, &k->nn));
+
+    case ASSH_KEY_FMT_PUB_PEM_ASN1:
+      ASSH_RETURN(assh_blob_write("(Ga2 Ga2)a48", blob, blob_len,
+                                  &k->nn, &k->en));
+
+    case ASSH_KEY_FMT_PV_PEM_ASN1:
+      ASSH_RET_IF_TRUE(!k->key.private, ASSH_ERR_MISSING_KEY);
+
+      ASSH_RETURN(assh_blob_write("(E1;\x00_a2 Ga2 Ga2 Ga2 Ga2 Ga2 Ga2 Ga2 Ga2)a48",
+                                  blob, blob_len,
+                                  &k->nn, &k->en, &k->dn, &k->pn, &k->qn,
+                                  &k->dpn, &k->dqn, &k->in));
+
+    case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY:
+      ASSH_RET_IF_TRUE(!k->key.private, ASSH_ERR_MISSING_KEY);
+
+      ASSH_RETURN(assh_blob_write("E7;ssh-rsa s Gs Gs Gs Gs Gs Gs", blob, blob_len,
+                                  &k->nn, &k->en, &k->dn, &k->in, &k->pn, &k->qn));
+
+    default:
+      ASSH_RETURN(ASSH_ERR_NOTSUP);
+    }
+
+  ASSH_UNREACHABLE();
+}
 
 static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
 {

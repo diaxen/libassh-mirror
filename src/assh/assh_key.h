@@ -291,12 +291,13 @@ assh_key_comment(struct assh_context_s *c,
                  const char *comment);
 
 /** @This writes the key in blob representation to
-    the @tt blob buffer. The @tt blob_len parameter is updated with
-    the actual size of the key blob.
+    the @tt blob buffer.
 
     If the @tt blob parameter is @tt NULL, the function updates the
     @tt blob_len parmeter with a size value which is equal or slightly
-    greater to what is needed to actually store the blob.
+    greater to what is needed to actually store the blob. In the other
+    case, the size of the available buffer must be passed and the
+    function updates it with the actual number of bytes written.
 
     This function will only support some binary key formats specific
     to a given key algorithm. More formats are handled by helper

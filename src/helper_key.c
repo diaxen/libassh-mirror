@@ -786,6 +786,7 @@ assh_save_openssh_v1_blob(struct assh_context_s *c,
   else
     {
       uint8_t *b = blob;
+
       memcpy(b, OPENSSH_V1_AUTH_MAGIC, sizeof(OPENSSH_V1_AUTH_MAGIC));
       b += sizeof(OPENSSH_V1_AUTH_MAGIC);
 
@@ -819,6 +820,7 @@ assh_save_openssh_v1_blob(struct assh_context_s *c,
       assh_store_u32(b, 1);	/* number of keys */
       b += 4;
 
+      pub_len = 1 << 20;
       ASSH_RET_ON_ERR(assh_key_output(c, head, b + 4, &pub_len, ASSH_KEY_FMT_PUB_RFC4253));
       assh_store_u32(b, pub_len);
       b += 4 + pub_len;
@@ -832,6 +834,7 @@ assh_save_openssh_v1_blob(struct assh_context_s *c,
       /* Each private key should be nested in a string according to
 	 the openssh PROTOCOL.key spec. This is not the case in the
 	 openssh implementation. */
+      pv_len = 1 << 20;
       ASSH_RET_ON_ERR(assh_key_output(c, head, b, &pv_len, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY));
       b += pv_len;
 
