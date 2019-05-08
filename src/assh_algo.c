@@ -45,7 +45,7 @@ static int_fast16_t assh_algo_order(const struct assh_algo_s *a,
   return ASSH_ALGO_SCORE(b, safety) - ASSH_ALGO_SCORE(a, safety);
 }
 
-#ifdef CONFIG_ASSH_QSORTR
+#ifdef CONFIG_ASSH_GNU_QSORTR
 static int assh_algo_qsort_cmp(const void *a, const void *b, void *arg)
 {
   struct assh_algo_s * const *a_ = a;
@@ -99,7 +99,7 @@ static void assh_algo_sort(struct assh_context_s *c,
   assh_algo_filter_variants(c, min_safety, min_speed);
 
   /* sort algorithms by class and safety/speed factor */
-#ifdef CONFIG_ASSH_QSORTR
+#ifdef CONFIG_ASSH_GNU_QSORTR
   qsort_r(c->algos, c->algo_cnt, sizeof(void*), assh_algo_qsort_cmp, &safety);
 #else
   int_fast16_t i;

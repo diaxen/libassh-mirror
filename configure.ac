@@ -39,8 +39,14 @@ AC_C_INLINE
 AC_CHECK_SIZEOF(long)
 AC_CHECK_TYPE(long long, [bnlong_size=8], [bnlong_size=$ac_cv_sizeof_long])
 AC_CHECK_TYPE(__int128,  [bnlong_size=x])
-AC_CHECK_LIB(c, qsort_r, AC_DEFINE(CONFIG_ASSH_QSORTR, 1, [Use qsort_r from C lbirary when defined.]))
 AC_CHECK_LIB(c, malloc_usable_size, AC_DEFINE(CONFIG_ASSH_MALLOC_USABLE_SIZE, 1, [Use malloc_usable_size from C lbirary when defined.]))
+
+AC_COMPILE_IFELSE([
+  #include <stdlib.h>
+  void qsort_r(void *base, size_t nmemb, size_t size,
+  	     int (*compar)(const void *, const void *, void *),
+  	     void *arg);
+], AC_DEFINE(CONFIG_ASSH_GNU_QSORTR, 1, [Use GNU qsort_r]) )
 
 AC_CHECK_LIB(c, posix_openpt,
   AC_DEFINE(CONFIG_ASSH_POSIX_OPENPT, 1, [Use posix_openpt when defined.])

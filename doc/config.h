@@ -178,7 +178,7 @@
 
 /** When defined, @this enables code which relies on the @tt qsort_r
     function from the C library. */
-#define CONFIG_ASSH_QSORTR
+#define CONFIG_ASSH_GNU_QSORTR
 
 /** When defined, @this enables code which relies on the @tt
     malloc_usable_size function from the C library. */
