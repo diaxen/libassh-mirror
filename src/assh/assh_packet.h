@@ -36,6 +36,7 @@
 
 #include "assh.h"
 #include "assh_queue.h"
+#include "assh_buffer.h"
 
 #include <string.h>
 
@@ -339,42 +340,6 @@ assh_packet_add_mpint(struct assh_context_s *ctx,
                       struct assh_packet_s *p,
                       const struct assh_bignum_s *bn);
 
-/** @internal @This checks that an array is well inside a
-    buffer. If no error is returned, the @tt next parameter is set to
-    point to the first byte following the array in the buffer. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_check_array(const uint8_t *buffer, size_t buffer_len,
-                 const uint8_t *array, size_t array_len, const uint8_t **next);
-
-/** @internal @This checks that a string is well inside a
-    buffer. If no error is returned, the @tt next parameter is set to
-    point to the first byte following the string in the buffer. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_check_string(const uint8_t *buffer, size_t buffer_len,
-                  const uint8_t *str, const uint8_t **next);
-
-/** @internal @This checks that an asn1 DER value is well inside a
-    buffer. If no error is returned, the @tt value parameter is set to
-    point to the first byte of the value and the @tt next parameter is
-    set to point to the first byte in the buffer following the
-    value. Any of these two parameters may be @tt NULL. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_check_asn1(const uint8_t *buffer, size_t buffer_len, const uint8_t *str,
-                const uint8_t **value, const uint8_t **next, uint8_t id);
-
-/** @internal @This append ASN1 identifier and length bytes to a
-    buffer. This will write at most 6 bytes to the buffer. */
-void assh_append_asn1(uint8_t **dst, uint8_t id, size_t len);
-
-/** @internal @This computes the size an ASN1 header from the
-    specified ASN1 content length. */
-ASSH_INLINE size_t
-assh_asn1_headlen(size_t len)
-{
-  return 2 + (len >= 0x80) + (len >= 0x100)
-           + (len >= 0x10000) + (len >= 0x1000000);
-}
-
 /** @internal @This checks that a string is well inside packet
     bounds. @see assh_check_string */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
@@ -405,28 +370,6 @@ assh_packet_check_u32(const struct assh_packet_s *p, uint32_t *u32,
     *u32 = assh_load_u32(data);
   return err;
 }
-
-/** @internal @This compares an @em ssh2 string with a size header to a @tt
-    NUL terminated string. No bound checking is performed. */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_bool_t
-assh_ssh_string_compare(const uint8_t *ssh_str, const char *nul_str)
-{
-  size_t l = assh_load_u32(ssh_str);
-  return strncmp((const char*)ssh_str + 4, nul_str, l) || nul_str[l] != '\0';
-}
-
-/** @internal @This copies an @em ssh2 string to a nul terminated
-    string. An error is returned if the size of the buffer is not
-    large enough to store the string along with its nul terminating
-    byte. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_ssh_string_copy(const uint8_t *ssh_str, char *nul_str, size_t max_len);
-
-/** @internal @This behaves like the standard @tt strdup function but
-    relies on the context registered memory allocator. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_strdup(struct assh_context_s *c, char **r,
-            const char *str, enum assh_alloc_type_e type);
 
 #endif
 
