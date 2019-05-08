@@ -125,9 +125,9 @@ assh_bignum_copy(struct assh_bignum_s *dst,
 }
 
 /* @This stores the value of a big number into a buffer. The
-   destination format can be: ASSH_BIGNUM_MPINT, ASSH_BIGNUM_STRING,
-   ASSH_BIGNUM_LSB_RAW, ASSH_BIGNUM_MSB_RAW. The buffer must be large
-   enough to hold the value. */
+   destination format can be: ASSH_BIGNUM_MPINT, ASSH_BIGNUM_ASN1,
+   ASSH_BIGNUM_STRING, ASSH_BIGNUM_LSB_RAW, ASSH_BIGNUM_MSB_RAW. The
+   buffer must be large enough to hold the value. */
 void
 assh_bignum_to_buffer(const struct assh_bignum_s *bn,
                       uint8_t *in, uint8_t **end,
