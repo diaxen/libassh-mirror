@@ -22,29 +22,46 @@
 */
 
 #include <assh/assh_prng.h>
+#include <assh/assh_alloc.h>
 
+#include <errno.h>
 #include <unistd.h>
 #include <poll.h>
 #include <sys/fcntl.h>
 
+struct assh_prng_pv_s
+{
+  int rfd;
+  int ufd;
+};
+
 static ASSH_PRNG_INIT_FCN(assh_prng_dev_random_init)
 {
-  c->prng_pvl = -1;
+  assh_error_t err;
+
+  ASSH_RET_ON_ERR(assh_alloc(c, sizeof(struct assh_prng_pv_s),
+                          ASSH_ALLOC_INTERNAL, &c->prng_pv));
+  struct assh_prng_pv_s *pv = c->prng_pv;
+  pv->rfd = pv->ufd = -1;
+
   return ASSH_OK;
 }
 
 static ASSH_PRNG_GET_FCN(assh_prng_dev_random_get)
 {
+  struct assh_prng_pv_s *pv = c->prng_pv;
   assh_error_t err;
-  int fd = c->prng_pvl;
 
-  if (fd < 0)
+  if (pv->ufd < 0 && pv->rfd < 0)
     {
-      fd = open("/dev/random", O_RDONLY);
-      ASSH_RET_IF_TRUE(fd < 0, ASSH_ERR_IO);
+      pv->rfd = open("/dev/random", O_RDONLY);
+      ASSH_RET_IF_TRUE(pv->rfd < 0, ASSH_ERR_IO);
+    }
 
+  if (pv->ufd < 0)
+    {
       struct pollfd fds = {
-	.fd = fd,
+	.fd = pv->rfd,
 	.events = POLLIN,
       };
 
@@ -54,39 +71,49 @@ static ASSH_PRNG_GET_FCN(assh_prng_dev_random_get)
 	{
 	  /* get random from /dev/urandom instead from now if the
 	     entropy pool is not empty. */
-	  int fd2 = open("/dev/urandom", O_RDONLY);
-	  if (fd2 >= 0)
+	  pv->ufd = open("/dev/urandom", O_RDONLY);
+	  if (pv->ufd >= 0)
 	    {
-	      close(fd);
-	      fd = fd2;
+	      close(pv->rfd);
+	      pv->rfd = -1;
 	    }
-
-	  /* keep random source for next call */
-	  c->prng_pvl = fd;
 	}
     }
 
+  int fd = pv->ufd >= 0 ? pv->ufd : pv->rfd;
   size_t l = rdata_len;
+
   while (l)
     {
       int r = read(fd, rdata, l);
-      ASSH_JMP_IF_TRUE(r <= 0, ASSH_ERR_IO, end);
+
+      if (r < 0)
+	{
+	  if (errno == EAGAIN)
+	    continue;
+
+	  close(fd);
+	  pv->ufd = pv->rfd = -1;
+	  ASSH_RETURN(ASSH_ERR_IO);
+	}
+
       l -= r;
       rdata += r;
     }
 
-  err = ASSH_OK;
- end:
-  if (c->prng_pvl != fd)
-    close(fd);
-
-  return err;
+  return ASSH_OK;
 }
 
 static ASSH_PRNG_CLEANUP_FCN(assh_prng_dev_random_cleanup)
 {
-  if (c->prng_pvl >= 0)
-    close(c->prng_pvl);
+  struct assh_prng_pv_s *pv = c->prng_pv;
+
+  if (pv->rfd >= 0)
+    close(pv->rfd);
+  if (pv->ufd >= 0)
+    close(pv->ufd);
+
+  assh_free(c, pv);
 }
 
 const struct assh_prng_s assh_prng_dev_random =
