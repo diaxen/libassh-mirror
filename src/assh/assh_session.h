@@ -336,5 +336,13 @@ assh_session_delay(struct assh_session_s *s, assh_time_t time)
   return time < d ? d - time : 0;
 }
 
+/** @This returns true when the @ref assh_event_get function will not
+    report more events. */
+ASSH_INLINE assh_bool_t
+assh_session_closed(struct assh_session_s *s)
+{
+  return s->tr_st == ASSH_TR_CLOSED;
+}
+
 #endif
 

@@ -414,7 +414,7 @@ int main(int argc, char **argv)
   while (1)
     {
       /* run the event loop of the forwarding session */
-      if (!ssh_loop_fwd())
+      if (!ssh_loop_fwd() && assh_session_closed(rexec_session))
         break;
 
       /* run the event loop of the rexec session */

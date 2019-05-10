@@ -221,7 +221,7 @@ struct assh_event_s
     this is the case, the @ref assh_session_deadline function can be
     used to get the next @em ssh2 protocol deadline.
 
-    @xsee{fsms} @xsee{evts}
+    @xsee{fsms} @xsee{evts} @see assh_session_closed
 */
 ASSH_WARN_UNUSED_RESULT assh_bool_t
 assh_event_get(struct assh_session_s *s,
