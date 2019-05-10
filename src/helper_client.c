@@ -404,10 +404,16 @@ const struct assh_client_user_key_s assh_client_user_key_default[] =
     ASSH_ALGO_SIGN, ASSH_KEY_FMT_PV_OPENSSH_V1 },
   { "id_rsa",     &assh_key_rsa,
     ASSH_ALGO_SIGN, ASSH_KEY_FMT_PV_PEM },
+  { "id_rsa",     &assh_key_rsa,
+    ASSH_ALGO_SIGN, ASSH_KEY_FMT_PV_OPENSSH_V1 },
   { "id_ecdsa",   &assh_key_ecdsa_nistp,
     ASSH_ALGO_SIGN, ASSH_KEY_FMT_PV_PEM },
+  { "id_ecdsa",   &assh_key_ecdsa_nistp,
+    ASSH_ALGO_SIGN, ASSH_KEY_FMT_PV_OPENSSH_V1 },
   { "id_dsa",     &assh_key_dsa,
     ASSH_ALGO_SIGN, ASSH_KEY_FMT_PV_PEM },
+  { "id_dsa",     &assh_key_dsa,
+    ASSH_ALGO_SIGN, ASSH_KEY_FMT_PV_OPENSSH_V1 },
   { NULL }
 };
 
