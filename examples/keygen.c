@@ -44,6 +44,22 @@ enum assh_keygen_action_e
 
 #define ERROR(...) do { fprintf(stderr, "error: " __VA_ARGS__); exit(1); } while (0)
 
+static void list_formats(assh_bool_t internal)
+{
+  const struct assh_key_format_desc_s *f;
+  unsigned i;
+
+  fprintf(stderr, "Supported key formats:\n");
+  for (i = 0; i <= ASSH_KEY_FMT_LAST; i++)
+    {
+      f = assh_key_format_desc(i);
+#ifndef CONFIG_ASSH_DEBUG
+      if (f->name && (internal || !f->internal))
+#endif
+        fprintf(stderr, "  %-20s (%s)\n", f->name, f->desc);
+    }
+}
+
 static enum assh_key_format_e get_format(const char *fmt)
 {
   const struct assh_key_format_desc_s *f;
@@ -57,15 +73,7 @@ static enum assh_key_format_e get_format(const char *fmt)
           return i;
       }
 
-  fprintf(stderr, "Supported key formats:\n");
-  for (i = 0; i <= ASSH_KEY_FMT_LAST; i++)
-    {
-      f = assh_key_format_desc(i);
-#ifndef CONFIG_ASSH_DEBUG
-      if (f->name && !f->internal)
-#endif
-        fprintf(stderr, "  %-15s : %s\n", f->name, f->desc);
-    }
+  list_formats(0);
 
   if (fmt)
     exit(1);
@@ -83,6 +91,16 @@ static FILE * get_file(const char *file, int mode)
   return fdopen(fd, mode & O_WRONLY ? "wb" : "rb");
 }
 
+static void list_types()
+{
+  const struct assh_key_algo_s **types = assh_key_algo_table;
+  unsigned i;
+
+  fprintf(stderr, "Supported key types:\n");
+  for (i = 0; types[i] != NULL; i++)
+    fprintf(stderr, "  %s\n", types[i]->name);
+}
+
 static const struct assh_key_algo_s * get_type(const char *type)
 {
   const struct assh_key_algo_s **types = assh_key_algo_table;
@@ -91,9 +109,9 @@ static const struct assh_key_algo_s * get_type(const char *type)
     for (i = 0; types[i] != NULL; i++)
       if (!strcmp(types[i]->name, type))
         return types[i];
-  fprintf(stderr, "Supported key types:\n");
-  for (i = 0; types[i] != NULL; i++)
-    fprintf(stderr, "  %s\n", types[i]->name);
+
+  list_types();
+
   if (type)
     exit(1);
   return NULL;
@@ -126,8 +144,10 @@ static void usage(const char *program, assh_bool_t opts)
           "    -g format  specify the input key format\n"
           "    -f format  specify the output key format\n\n"
           "    -p pass    specify key encryption passphrase\n"
-          "    -P         don't use passphrase for the output\n\n"
-          "    -c comment specify key comment string\n"
+          "    -P         don't use passphrase for the output\n"
+          "    -c comment specify key comment string\n\n"
+          "    -l         list supported key types and formats\n"
+          "    -L         list internal/raw key formats\n"
           "    -h         show help\n");
 
   exit(1);
@@ -152,7 +172,7 @@ int main(int argc, char *argv[])
 
   /* parse command list arguments */
 
-  while ((opt = getopt(argc, argv, "hb:f:g:o:i:t:r:p:Pc:")) != -1)
+  while ((opt = getopt(argc, argv, "hb:f:g:o:i:t:r:p:Pc:lL")) != -1)
     {
       switch (opt)
         {
@@ -187,6 +207,14 @@ int main(int argc, char *argv[])
         case 'c':
           comment = optarg;
           break;
+	case 'l':
+	  list_types();
+	  putc('\n', stderr);
+	  list_formats(0);
+	  return 0;
+	case 'L':
+	  list_formats(1);
+	  return 0;
         default:
           usage(argv[0], 0);
         case 'h':
