@@ -108,13 +108,15 @@ ASSH_FIRST_FIELD_ASSERT(assh_algo_cipher_s, algo);
 extern const struct assh_algo_cipher_s assh_cipher_none;
 
 # ifdef CONFIG_ASSH_CIPHER_ARCFOUR
-/** @multiple @This is a cipher algorithm implementation descriptor for the Arc4 implementation. */
+/** @multiple @This is a cipher algorithm implementation descriptor
+    for the Arc4 implementation. @xsee {cipheralgos} */
 extern const struct assh_algo_cipher_s assh_cipher_arc4;
 extern const struct assh_algo_cipher_s assh_cipher_arc4_128;
 extern const struct assh_algo_cipher_s assh_cipher_arc4_256;
 # endif
 
-/** @multiple @This is a cipher algorithm descriptor for the AES implementation. */
+/** @multiple @This is a cipher algorithm descriptor for the AES
+    implementation. @xsee {cipheralgos} */
 # ifdef CONFIG_ASSH_CIPHER_AES128_CBC
 extern const struct assh_algo_cipher_s assh_cipher_aes128_cbc;
 # endif
@@ -140,7 +142,8 @@ extern const struct assh_algo_cipher_s assh_cipher_aes128_gcm;
 extern const struct assh_algo_cipher_s assh_cipher_aes256_gcm;
 # endif
 
-/** @multiple @This is a cipher algorithm descriptor for the Triple DES implementation. */
+/** @multiple @This is a cipher algorithm descriptor for the Triple
+    DES implementation. @xsee {cipheralgos} */
 # ifdef CONFIG_ASSH_CIPHER_TDES_CBC
 extern const struct assh_algo_cipher_s assh_cipher_tdes_cbc;
 # endif
@@ -148,7 +151,8 @@ extern const struct assh_algo_cipher_s assh_cipher_tdes_cbc;
 extern const struct assh_algo_cipher_s assh_cipher_tdes_ctr;
 # endif
 
-/** @multiple @This is a cipher algorithm descriptor for the CAST128 implementation. */
+/** @multiple @This is a cipher algorithm descriptor for the CAST128
+    implementation. @xsee {cipheralgos} */
 # ifdef CONFIG_ASSH_CIPHER_CAST128_CBC
 extern const struct assh_algo_cipher_s assh_cipher_cast128_cbc;
 # endif
@@ -156,7 +160,8 @@ extern const struct assh_algo_cipher_s assh_cipher_cast128_cbc;
 extern const struct assh_algo_cipher_s assh_cipher_cast128_ctr;
 # endif
 
-/** @multiple @This is a cipher algorithm descriptor for the IDEA implementation. */
+/** @multiple @This is a cipher algorithm descriptor for the IDEA
+    implementation. @xsee {cipheralgos} */
 # ifdef CONFIG_ASSH_CIPHER_IDEA_CBC
 extern const struct assh_algo_cipher_s assh_cipher_idea_cbc;
 # endif
@@ -164,7 +169,8 @@ extern const struct assh_algo_cipher_s assh_cipher_idea_cbc;
 extern const struct assh_algo_cipher_s assh_cipher_idea_ctr;
 # endif
 
-/** @multiple @This is a cipher algorithm descriptor for the Blowfish implementation. */
+/** @multiple @This is a cipher algorithm descriptor for the Blowfish
+    implementation. @xsee {cipheralgos} */
 # ifdef CONFIG_ASSH_CIPHER_BLOWFISH_CBC
 extern const struct assh_algo_cipher_s assh_cipher_blowfish_cbc;
 # endif
@@ -172,7 +178,8 @@ extern const struct assh_algo_cipher_s assh_cipher_blowfish_cbc;
 extern const struct assh_algo_cipher_s assh_cipher_blowfish_ctr;
 # endif
 
-/** @multiple @This is a cipher algorithm descriptor for the Twofish implementation. */
+/** @multiple @This is a cipher algorithm descriptor for the Twofish
+    implementation. @xsee {cipheralgos} */
 # ifdef CONFIG_ASSH_CIPHER_TWOFISH128_CBC
 extern const struct assh_algo_cipher_s assh_cipher_twofish128_cbc;
 # endif
@@ -198,7 +205,8 @@ extern const struct assh_algo_cipher_s assh_cipher_twofish128_gcm;
 extern const struct assh_algo_cipher_s assh_cipher_twofish256_gcm;
 # endif
 
-/** @multiple @This is a cipher algorithm descriptor for the Serpent implementation. */
+/** @multiple @This is a cipher algorithm descriptor for the Serpent
+    implementation. @xsee {cipheralgos} */
 # ifdef CONFIG_ASSH_CIPHER_SERPENT128_CBC
 extern const struct assh_algo_cipher_s assh_cipher_serpent128_cbc;
 # endif
@@ -224,7 +232,8 @@ extern const struct assh_algo_cipher_s assh_cipher_serpent128_gcm;
 extern const struct assh_algo_cipher_s assh_cipher_serpent256_gcm;
 # endif
 
-/** @multiple @This is a cipher algorithm descriptor for the Camellia implementation. */
+/** @multiple @This is a cipher algorithm descriptor for the Camellia
+    implementation. @xsee {cipheralgos} */
 # ifdef CONFIG_ASSH_CIPHER_CAMELLIA128_CBC
 extern const struct assh_algo_cipher_s assh_cipher_camellia128_cbc;
 # endif
@@ -246,7 +255,8 @@ extern const struct assh_algo_cipher_s assh_cipher_camellia256_ctr;
 
 # ifdef CONFIG_ASSH_CIPHER_CHACHAPOLY
 /** @multiple @This is a cipher algorithm descriptor for the openssh
-    Chacha20-Poly1305 authenticated cipher implementation. */
+    Chacha20-Poly1305 authenticated cipher implementation.
+    @xsee {cipheralgos} */
 extern const struct assh_algo_cipher_s assh_cipher_chachapoly;
 # endif
 

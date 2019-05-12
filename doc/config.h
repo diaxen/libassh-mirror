@@ -86,7 +86,8 @@
 #define CONFIG_ASSH_CIPHER_CAMELLIA192_CTR
 #define CONFIG_ASSH_CIPHER_CAMELLIA256_CTR
 
-/** @multiple When defined, @this allows use of the Chacha20-Poly1305 cipher. */
+/** @multiple When defined, @this allows use of the Chacha20-Poly1305
+    authenticated cipher. */
 #define CONFIG_ASSH_CIPHER_CHACHAPOLY
 
 /** When defined, @this enables support for the client side of the SSH
@@ -94,19 +95,19 @@
 #define CONFIG_ASSH_CLIENT
 
 /** When defined, @this enables support for the @em{host based} user
-    authentication method on server side. */
+    authentication method on client side. */
 #define CONFIG_ASSH_CLIENT_AUTH_HOSTBASED
 
 /** When defined, @this enables support for the @em{keyboard
-    interactive} user authentication method on server side. */
+    interactive} user authentication method on client side. */
 #define CONFIG_ASSH_CLIENT_AUTH_KEYBOARD
 
 /** When defined, @this enables support for the @em{password} user
-    authentication method on server side. */
+    authentication method on client side. */
 #define CONFIG_ASSH_CLIENT_AUTH_PASSWORD
 
 /** When defined, @this enables support for the @em{public key} user
-    authentication method on server side. */
+    authentication method on client side. */
 #define CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY
 
 /** When defined, @this enables sending a public key lookup packet
@@ -114,13 +115,13 @@
     authentication. The specification allows either behaviors. */
 #define CONFIG_ASSH_CLIENT_AUTH_USE_PKOK
 
-/** When defined, @this enables code which relies on the @tt crypt_r function. */
+/** When defined, @this enables code that relies on the @tt crypt_r function. */
 #define CONFIG_ASSH_CRYPT_R
 
-/** When defined, @this enables code which relies on the @tt getpwnam_r function. */
+/** When defined, @this enables code that relies on the @tt getpwnam_r function. */
 #define CONFIG_ASSH_GETPWNAM_R
 
-/** When defined, @this enables code which relies on the @tt getspnam_r function. */
+/** When defined, @this enables code that relies on the @tt getspnam_r function. */
 #define CONFIG_ASSH_GETSPNAM_R
 
 /** When defined, @this enables the MD5 message digest. */
@@ -152,7 +153,9 @@
 #define CONFIG_ASSH_KEY_VALIDATE
 
 /** When defined, @this enables support for the C library allocator
-    which does not provides secure memory on many platforms. */
+    which is not able to provides secure memory on many
+    platforms. This can be useful on embedded platforms where there is
+    no virtual memory implemented. */
 #define CONFIG_ASSH_LIBC_REALLOC
 
 /** @This specifies the maximum size of the ssh packet
@@ -216,7 +219,7 @@
 /** When defined, @this enables use of @em Libgcrypt. */
 #define CONFIG_ASSH_USE_GCRYPT
 
-/** When defined, @this enables use of @em Libgcrypt secur memory
+/** When defined, @this enables use of the @em Libgcrypt secur memory
     allocator.  This requires @ref #CONFIG_ASSH_USE_GCRYPT. */
 #define CONFIG_ASSH_USE_GCRYPT_ALLOC
 
@@ -228,7 +231,7 @@
     implementations.  This requires @ref #CONFIG_ASSH_USE_GCRYPT. */
 #define CONFIG_ASSH_USE_GCRYPT_HASH
 
-/** When defined, @this enables use of @em Libgcrypt random number
+/** When defined, @this enables use of the @em Libgcrypt random number
     generator.  This requires @ref #CONFIG_ASSH_USE_GCRYPT. */
 #define CONFIG_ASSH_USE_GCRYPT_PRNG
 
@@ -258,16 +261,19 @@
 /** When defined, @this allows use of the @em zlib library. */
 #define CONFIG_ASSH_USE_ZLIB
 
-/** @This specifies the allocator storage type used for the zlib context. */
+/** @This specifies the allocator storage type used for the zlib
+    context. The default is to use the @ref ASSH_ALLOC_INTERNAL
+    policy that does not allocate secur memory. */
 #define CONFIG_ASSH_ZLIB_ALLOC ASSH_ALLOC_INTERNAL
 
-/** When defined, @this enables Relying on @em valgrind headers files for better
-    memory checking. */
+/** When defined, @this enables relying on @em valgrind headers files
+    for better memory errors reporting. */
 #define CONFIG_ASSH_VALGRIND
 
 /** When defined, @this makes the library print debug information on
     error and enables use of other debug configuration macros. This
-    must not be enabled on production code. */
+    must @b not be enabled on production code in order to avoid leaking
+    secret material. */
 #define CONFIG_ASSH_DEBUG
 
 /** When defined, @this makes the library verbose about reported events.

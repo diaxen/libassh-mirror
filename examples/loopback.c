@@ -29,6 +29,9 @@
 /*
   This implements a tiny ssh server which accept session channels and
   echo data sent on such channels.
+
+  A detailed description of the code is provided in the libassh manual.
+
 */
 
 #include "config.h"
@@ -110,7 +113,7 @@ int main(int argc, char **argv)
 			 255, &assh_key_ed25519, ASSH_ALGO_SIGN)
 #endif
       )
-    ERROR("Unable to load or create host key.\n");
+    ERROR("Unable to load or create a host key.\n");
 
                                                         /* anchor loop */
   while (1)

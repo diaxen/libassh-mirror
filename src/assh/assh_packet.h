@@ -116,7 +116,8 @@ struct assh_packet_s
 
 ASSH_FIRST_FIELD_ASSERT(assh_packet_s, entry);
 
-/** @internal @This specifies ranges of @em ssh2 message ids. */
+/** @internal @showvalue
+    @This specifies ranges of @em ssh2 message ids. */
 enum assh_ssh_msg_ranges_e
 {
   /** @multiple Transport layer generic messages */
@@ -132,7 +133,8 @@ enum assh_ssh_msg_ranges_e
   SSH_MSG_SERVICE_FIRST   = 50,
 };
 
-/** @This specifies the standard values for @em ssh2 message ids. */
+/** @showvalue
+    @This specifies the standard values for @em ssh2 message ids. */
 enum assh_ssh_msg_e
 {
   SSH_MSG_INVALID                   =   0,

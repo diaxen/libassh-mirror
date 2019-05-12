@@ -15,8 +15,8 @@ The source tree is organized as follow:
   @item @tt{extra/} : development tools used to generate some tables and code.
 @end list
 
-The library core and @hl service modules only
-contains the @hl{state machines} and protocol related stuff:
+The library core and @hl service modules
+contain the @hl{state machines} and protocol related stuff:
 @list
   @item @tt{src/assh_*.c} : The library core functions. This
     includes code related to management of @ref assh_context_s
@@ -34,9 +34,9 @@ contains the @hl{state machines} and protocol related stuff:
     @hl{connection protocol} service module.
 @end list
 
-Then come the @hl algorithms exposed during the negotiation
-phase of the ssh protocol. Some of these pluggable modules are
-standalone and others are linked to an external libraries:
+Then come the @hl algorithms negotiated during the @hl key-exchange
+process. Some of these pluggable modules are standalone and others are
+linked to an external libraries:
 @list
   @item @tt{src/kex*.c} : The ssh @xref{kexalgos}{key-exchange algorithm modules}.
   @item @tt{src/sign*.c} : The ssh @xref{authalgos}{signature algorithm modules}.
@@ -74,6 +74,8 @@ the application. It doesn't rely on the private APIs of the library:
   @item @tt{src/helper_io.c} : This provides IO events handler
     relying on POSIX file descriptors.
   @item @tt{src/helper_interactive.c} : This implements
-    @hl{interactive session} related functions.
+    @hl{interactive session} related features.
+  @item @tt{src/helper_portfwd.c} : This implements @hl {port
+    forwarding} related features.
 @end list
 See associated header files for details of the helpers API.

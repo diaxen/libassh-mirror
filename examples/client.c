@@ -35,6 +35,9 @@
    - Disable some user athentication methods depending on kex safety.
    - Handle interactive session with shell or command.
    - Handle pseudo TTY allocation and pipes.
+
+   A detailed description of the code is provided in the libassh manual.
+
 */
 
 #include "config.h"
@@ -150,7 +153,7 @@ ssh_loop(struct assh_session_s *session,
               return 1;
             }
 
-          /* let an helper function write ssh stream to socket */
+          /* let an helper function write ssh stream to the socket */
           assh_fd_event(session, &event, p[POLL_SOCKET].fd);
           p[POLL_SOCKET].revents &= ~POLLOUT;
           break;

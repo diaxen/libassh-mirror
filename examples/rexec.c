@@ -29,6 +29,9 @@
 /*
   This implements a simple ssh client which executes a remote command.
   It relies on many helper functions provided by helper_client.c.
+
+  A detailed description of the code is provided in the libassh manual.
+
 */
 
 #include <assh/assh_session.h>

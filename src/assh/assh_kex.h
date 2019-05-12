@@ -328,31 +328,39 @@ struct assh_algo_kex_s
   assh_bool_t implicit_auth;
 };
 
-/** @internal None cipher algortihm contexts used at startup */
+/** @internal Set of @em none algortihm contexts used at startup */
 extern const struct assh_kex_keys_s assh_keys_none;
 
-/** Dummy key-exchange algorithm using a not so secret value. */
+/** Dummy key-exchange algorithm using a not so secret value.
+    @xsee {kexalgos} */
 extern const struct assh_algo_kex_s assh_kex_none;
 
-/** Standard @tt diffie-hellman-group1-sha1 algorithm. */
+/** Standard @tt diffie-hellman-group1-sha1 algorithm.
+    @xsee {kexalgos} */
 extern const struct assh_algo_kex_s assh_kex_dh_group1_sha1;
 
-/** Standard @tt diffie-hellman-group14-sha1 algorithm. */
+/** Standard @tt diffie-hellman-group14-sha1 algorithm.
+    @xsee {Prime field Diffie-Hellman} */
 extern const struct assh_algo_kex_s assh_kex_dh_group14_sha1;
 
-/** Draft @tt @tt diffie-hellman-group14-sha256 algorithm. */
+/** Draft @tt @tt diffie-hellman-group14-sha256 algorithm.
+    @xsee {Prime field Diffie-Hellman} */
 extern const struct assh_algo_kex_s assh_kex_dh_group14_sha256;
 
-/** Draft @tt @tt diffie-hellman-group15-sha512 algorithm. */
+/** Draft @tt @tt diffie-hellman-group15-sha512 algorithm.
+    @xsee {Prime field Diffie-Hellman} */
 extern const struct assh_algo_kex_s assh_kex_dh_group15_sha512;
 
-/** Draft @tt @tt diffie-hellman-group16-sha512 algorithm. */
+/** Draft @tt @tt diffie-hellman-group16-sha512 algorithm.
+    @xsee {Prime field Diffie-Hellman} */
 extern const struct assh_algo_kex_s assh_kex_dh_group16_sha512;
 
-/** Draft @tt @tt diffie-hellman-group17-sha512 algorithm. */
+/** Draft @tt @tt diffie-hellman-group17-sha512 algorithm.
+    @xsee {Prime field Diffie-Hellman} */
 extern const struct assh_algo_kex_s assh_kex_dh_group17_sha512;
 
-/** Draft @tt @tt diffie-hellman-group18-sha512 algorithm. */
+/** Draft @tt @tt diffie-hellman-group18-sha512 algorithm.
+    @xsee {Prime field Diffie-Hellman} */
 extern const struct assh_algo_kex_s assh_kex_dh_group18_sha512;
 
 /** The @tt curve25519-sha256 algorithm.
@@ -376,28 +384,31 @@ extern const struct assh_algo_kex_s assh_kex_dh_gex_sha1;
 /** Standard @tt diffie-hellman-group-exchange-sha256 algorithm
     specified in rfc4419, favors group size of n^2/12 bits and allows
     groups size of n^2/16 bits where n is the size of the symmetric
-    cipher key. */
+    cipher key. @xsee {Prime field Diffie-Hellman with group exchange}*/
 extern const struct assh_algo_kex_s assh_kex_dh_gex_sha256_12;
 
 /** Standard @tt diffie-hellman-group-exchange-sha256 algorithm
     specified in rfc4419, favors group size of n^2/8 bits and allows
     groups size of n^2/12 bits where n is the size of the symmetric
-    cipher key. */
+    cipher key. @xsee {Prime field Diffie-Hellman with group exchange} */
 extern const struct assh_algo_kex_s assh_kex_dh_gex_sha256_8;
 
 /** Standard @tt diffie-hellman-group-exchange-sha256 algorithm
     specified in rfc4419, favors group size of n^2/4 bits and allows
     groups size of n^2/8 bits where n is the size of the symmetric
-    cipher key. */
+    cipher key. @xsee {Prime field Diffie-Hellman with group exchange} */
 extern const struct assh_algo_kex_s assh_kex_dh_gex_sha256_4;
 
-/** Standard @tt rsa1024-sha1 algorithm specified in rfc4432. */
+/** Standard @tt rsa1024-sha1 algorithm specified in rfc4432.
+    @xsee {RSA encrypted secret} */
 extern const struct assh_algo_kex_s assh_kex_rsa1024_sha1;
 
-/** Standard @tt rsa2048-sha256 algorithm specified in rfc4432. */
+/** Standard @tt rsa2048-sha256 algorithm specified in rfc4432.
+    @xsee {RSA encrypted secret} */
 extern const struct assh_algo_kex_s assh_kex_rsa2048_sha256;
 
-/** Standard @tt nist curves dh algorithm specified in rfc5656. */
+/** Standard @tt nist curves dh algorithm specified in rfc5656.
+    @xsee {Weierstrass curves Diffie-Hellman} */
 extern const struct assh_algo_kex_s assh_kex_sha2_nistp256;
 extern const struct assh_algo_kex_s assh_kex_sha2_nistp384;
 extern const struct assh_algo_kex_s assh_kex_sha2_nistp521;

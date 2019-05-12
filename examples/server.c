@@ -36,6 +36,9 @@
    - Mux interactive sessions on a single connection.
    - Handle sessions with shell or command.
    - Handle pseudo TTY allocation and pipes.
+
+   A detailed description of the code is provided in the libassh manual.
+
 */
 
 #include "config.h"
@@ -564,7 +567,7 @@ ssh_loop(struct assh_session_s *session,
 	  break;
 
 	case ASSH_EVENT_USERAUTH_SERVER_SUCCESS: {
-	  /* change user id when user authentication is over */
+	  /* change the process user id when user authentication is over */
 	  uid_t uid;
 	  gid_t gid;
 	  if (assh_server_event_user_id(session, &uid, &gid, &event))
@@ -597,11 +600,12 @@ ssh_loop(struct assh_session_s *session,
 	}
                                                         /* anchor evrq */
 	case ASSH_EVENT_REQUEST: {
-	  struct assh_event_request_s *ev = &event.connection.request;
+	  struct assh_event_request_s *ev =
+	    &event.connection.request;
 	  assh_error_t err = ASSH_OK;
 
 	  /* handle some standard requests associated to our session,
-	     relying on some request decoding functions. */
+	     relying on request decoding helper functions. */
 	  if (ev->ch != NULL)
 	    {
 	      struct its_s *its = assh_channel_pv(ev->ch);
@@ -635,6 +639,7 @@ ssh_loop(struct assh_session_s *session,
 
 		  if (ASSH_ERR_ERROR(err) == ASSH_OK)
 		    {
+		      /* we need a null terminated string */
 		      char *cmd = assh_buffer_strdup(&rqi.command);
 		      if (cmd && !its_exec(its, cmd))
 			ev->reply = ASSH_CONNECTION_REPLY_SUCCESS;
@@ -649,7 +654,8 @@ ssh_loop(struct assh_session_s *session,
 	}
                                                         /* anchor eveof */
 	case ASSH_EVENT_CHANNEL_EOF: {
-	  struct assh_event_channel_eof_s *ev = &event.connection.channel_eof;
+	  struct assh_event_channel_eof_s *ev =
+	    &event.connection.channel_eof;
 	  struct its_s *its = assh_channel_pv(ev->ch);
 
 	  /* handle session EOF */
@@ -660,7 +666,8 @@ ssh_loop(struct assh_session_s *session,
 	}
                                                         /* anchor evclose */
 	case ASSH_EVENT_CHANNEL_CLOSE: {
-	  struct assh_event_channel_close_s *ev = &event.connection.channel_close;
+	  struct assh_event_channel_close_s *ev =
+	    &event.connection.channel_close;
 	  struct its_s *its = assh_channel_pv(ev->ch);
 
 	  /* handle session close */
@@ -670,7 +677,8 @@ ssh_loop(struct assh_session_s *session,
 	}
                                                         /* anchor evdata */
 	case ASSH_EVENT_CHANNEL_DATA: {
-          struct assh_event_channel_data_s *ev = &event.connection.channel_data;
+          struct assh_event_channel_data_s *ev =
+	    &event.connection.channel_data;
 	  struct its_s *its = assh_channel_pv(ev->ch);
 	  assh_error_t err;
 
@@ -710,27 +718,26 @@ server_connected(struct assh_context_s *context,
   struct pollfd p[MAX_POLL_ENTRIES];
 
   do {
-    int poll_i = 0;
-
     /* always poll on the ssh socket */
-    p[poll_i].fd = conn;
-    p[poll_i].events = assh_transport_has_output(session)
-      ? POLLIN | POLLOUT : POLLIN;
-    poll_i++;
+    p[0].fd = conn;
+    p[0].events = POLLIN;
+    if (assh_transport_has_output(session))
+      p[0].events |= POLLOUT;
 
-    /* also register file descriptors of child processes */
-    for (int i = 0; i < its_table_count; i++)
+    /* also register file descriptors related to child processes */
+    unsigned poll_i = 1;
+    for (unsigned i = 0; i < its_table_count; i++)
       its_poll_setup(its_table[i], session, p, &poll_i);
                                                         /* anchor poll */
     /* get the appropriate ssh protocol timeout */
-    int timeout = assh_session_delay(session, time(NULL)) * 1000;
+    assh_time_t timeout = assh_session_delay(session, time(NULL)) * 1000;
 
     if (poll(p, poll_i, timeout) <= 0)
       continue;
 
                                                         /* anchor chi2cha */
     /* read from childs and transmit over ssh */
-    for (int i = 0; i < its_table_count; i++)
+    for (unsigned i = 0; i < its_table_count; i++)
       its_child2channel(its_table[i], p);
 
                                                         /* anchor loopcall */

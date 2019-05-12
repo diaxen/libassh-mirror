@@ -31,6 +31,9 @@
   port forwarding on the first server and use the forwarding to
   connect the second client on a second server. The second client
   executes a remote command like in the rexec example.
+
+  A detailed description of the code is provided in the libassh manual.
+
 */
 
 #include <assh/assh_session.h>
@@ -137,20 +140,20 @@ ssh_loop_fwd(void)
 	  /* use helpers to read/write the ssh stream from/to our
 	     socket file descriptor */
 	  assh_fd_event(fwd_session, &fwd_event, fwd_sock);
-	  break;
+	  continue;
 
                                                         /* anchor fwdevother */
 	case ASSH_EVENT_SESSION_ERROR:
 	  fprintf(stderr, "SSH forwarder error: %s\n",
 		  assh_error_str(fwd_event.session.error.code));
 	  assh_event_done(fwd_session, &fwd_event, ASSH_OK);
-	  break;
+	  continue;
 
         case ASSH_EVENT_KEX_HOSTKEY_LOOKUP:
           /* rely on helper as in the rexec example */
           assh_client_event_hk_lookup(fwd_session, stderr, stdin,
                                       fwd_hostname, &fwd_event);
-          break;
+          continue;
 
         case ASSH_EVENT_USERAUTH_CLIENT_BANNER:
         case ASSH_EVENT_USERAUTH_CLIENT_USER:
@@ -160,7 +163,7 @@ ssh_loop_fwd(void)
           /* rely on helper as in the rexec example */
           assh_client_event_auth(fwd_session, stderr, stdin, username, fwd_hostname,
              &fwd_auth_methods, assh_client_user_key_default, &fwd_event);
-          break;
+          continue;
 
                                                         /* anchor fwdevsrvstart */
         case ASSH_EVENT_SERVICE_START: {
@@ -183,13 +186,13 @@ ssh_loop_fwd(void)
                                                  &fwd_channel, &fwd_rq))
                 goto disconnect;
             }
-          break;
+          continue;
         }
                                                         /* anchor fwdevchopen */
         case ASSH_EVENT_CHANNEL_CONFIRMATION:
           fprintf(stderr, "SSH port forwarding ok\n");
 	  assh_event_done(fwd_session, &fwd_event, ASSH_OK);
-          break;
+          continue;
 
         case ASSH_EVENT_CHANNEL_FAILURE:
           fprintf(stderr, "SSH port forwarding denied\n");
@@ -249,14 +252,15 @@ ssh_loop_rexec(void)
 
           if (s == 0)
             return 1;           /* yield to forwarder event loop */
-          break;
+          continue;
         }
                                                         /* anchor rexecevwrite */
 	case ASSH_EVENT_WRITE: {
           struct assh_event_transport_write_s *ev =
             &rexec_event.transport.write;
-          uint8_t *d;
+
           size_t s = ev->buf.size;
+          uint8_t *d;
 
           if (fwd_channel != NULL &&
               assh_channel_state(fwd_channel) >= ASSH_CHANNEL_ST_OPEN &&
@@ -273,7 +277,7 @@ ssh_loop_rexec(void)
 
           if (ev->transferred == 0)
             return 1;           /* yield to forwarder event loop */
-          break;
+          continue;
         }
                                                         /* anchor rexecevother */
 	case ASSH_EVENT_SESSION_ERROR:
@@ -281,13 +285,13 @@ ssh_loop_rexec(void)
 	  fprintf(stderr, "SSH rexec error: %s\n",
 		  assh_error_str(rexec_event.session.error.code));
 	  assh_event_done(rexec_session, &rexec_event, ASSH_OK);
-	  break;
+	  continue;
 
         case ASSH_EVENT_KEX_HOSTKEY_LOOKUP:
           /* rely on helper as in the rexec example */
           assh_client_event_hk_lookup(rexec_session, stderr, stdin,
                                       rexec_hostname, &rexec_event);
-          break;
+          continue;
 
         case ASSH_EVENT_USERAUTH_CLIENT_BANNER:
         case ASSH_EVENT_USERAUTH_CLIENT_USER:
@@ -297,7 +301,7 @@ ssh_loop_rexec(void)
           /* rely on helper as in the rexec example */
           assh_client_event_auth(rexec_session, stderr, stdin, username, rexec_hostname,
              &rexec_auth_methods, assh_client_user_key_default, &rexec_event);
-          break;
+          continue;
 
                                                         /* anchor rexecevinter */
         case ASSH_EVENT_SERVICE_START:
@@ -311,7 +315,7 @@ ssh_loop_rexec(void)
 
 	  if (rexec_inter.state == ASSH_CLIENT_INTER_ST_CLOSED)
 	    assh_session_disconnect(rexec_session, SSH_DISCONNECT_BY_APPLICATION, NULL);
-          break;
+          continue;
 
                                                         /* anchor rexecevchdata */
 	case ASSH_EVENT_CHANNEL_DATA: {
@@ -328,7 +332,7 @@ ssh_loop_rexec(void)
             ev->transferred = r;
 
           assh_event_done(rexec_session, &rexec_event, err);
-          break;
+          continue;
 	}
                                                         /* anchor rexecevdefault */
 	default:

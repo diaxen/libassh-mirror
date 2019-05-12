@@ -30,7 +30,7 @@ meaning when used in the context of the @em ssh2 protocol.
 
 @section {Connection protocol}
   The @em {connection protocol} is a component of the @em ssh2
-  protocol specified as a @hl service. It is the higher layer of
+  protocol specified as a @hl service. It is the highest layer of
   the protocol. It provides the @hl channel and @hl request
   mechanisms used by the application.
   @xsee {connlayer}
@@ -45,12 +45,12 @@ meaning when used in the context of the @em ssh2 protocol.
 
 @section {Fingerprint}
   The @em{fingerprint} of an @hl{SSH key} is a human readable hash
-  value which is used to let the user to visually check whether two
+  value that is used to let the user to visually check whether two
   @hl{host keys} are the same.
 @end section
 
 @section {Global request}
-  A @em{global request} is a @hl request which is not associated
+  A @em{global request} is a @hl request that is not associated
   to a @hl channel. @xsee {connlayer} @xsee{connapi}
 @end section
 
@@ -66,7 +66,7 @@ meaning when used in the context of the @em ssh2 protocol.
   authentication mechanism optionally provided by the @hl{user
   authentication} service. It allows the client application to
   authenticate its user on the server based on the @hl{host key}
-  of the host which is running the client. @xsee{srvlayer}
+  of the host that is running the client. @xsee{srvlayer}
 @end section
 
 @section {Host key}
@@ -105,7 +105,7 @@ meaning when used in the context of the @em ssh2 protocol.
 
 @section {Message}
   @label{messages}
-  Every @em ssh2 binary packets carries a single @em {message} which
+  Every @em ssh2 binary packets carries a single @em {message} that
   has a specific role in the protocol. @xsee{trlayer}
   @see assh_ssh_msg_e
   @see{@assh/assh_packet.h}
@@ -114,7 +114,7 @@ meaning when used in the context of the @em ssh2 protocol.
 @section {Port forwarding}
   The term @em{Port forwarding} relates to a feature of the
   @hl{connection protocol} designed to make the server act as a
-  proxy which issues and accepts some TCP connections on the behalf
+  proxy that issues and accepts some TCP connections on the behalf
   of the client. @xsee {connlayer}
 @end section
 
@@ -134,8 +134,8 @@ meaning when used in the context of the @em ssh2 protocol.
   authentication} service. When selected, it allows the client
   application to authenticate its user on the remote server based on
   the ownership of an @hl{user key}. The client user owns the
-  private key which has to match the public key known to the
-  server. @xsee{srvlayer}
+  private key. That private key is checked to match the public key
+  known to the server. @xsee{srvlayer}
   @xsee{authalgos}
 @end section
 
@@ -151,7 +151,7 @@ meaning when used in the context of the @em ssh2 protocol.
 @section {Service}
   @label {services}
 
-  A service is a type of software component which runs on top of the
+  A service is a type of software component that runs on top of the
   @hl{transport layer}.
   @xsee{trlayer}
   @see assh_service_s
@@ -168,7 +168,7 @@ meaning when used in the context of the @em ssh2 protocol.
 @end section
 
 @section {SSH agent}
-  An @em {SSH agent} is an optional piece of software which manages
+  An @em {SSH agent} is an optional piece of software that manages
   use of @hl{user keys}. It allows the user to enter the key
   passphrase only once, then keeps the private keys ready for use
   as long as it is running.

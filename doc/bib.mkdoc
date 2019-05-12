@@ -23,6 +23,8 @@
 @bib{rfc5647} @url {https://tools.ietf.org/html/rfc5647}{rfc5647} : AES Galois Counter Mode for the Secure Shell Transport Layer Protocol
 @bib{rfc5656} @url {https://tools.ietf.org/html/rfc5656}{rfc5656} : Elliptic Curve Algorithm Integration in the Secure Shell Transport Layer
 @bib{rfc6668} @url {https://tools.ietf.org/html/rfc6668}{rfc6668} : SHA-2 Data Integrity Verification for the Secure Shell (SSH) Transport Layer Protocol
+@bib{rfc3526} @url {https://tools.ietf.org/html/rfc3526}{rfc3526} : More Modular Exponential (MODP) Diffie-Hellman groups for Internet Key Exchange (IKE)
+@bib{rfc3766} @url {https://tools.ietf.org/html/rfc3766}{rfc3766} : Determining Strengths For Public Keys Used For Exchanging Symmetric Key
 @bib{draftmodp} draft-ietf-curdle-ssh-modp-dh-sha2-05
 @bib{fips1864} @em {FIPS 186.4}
 @bib{draftsignsha2} @em{IETF draft-rsa-dsa-sha2-256-03}

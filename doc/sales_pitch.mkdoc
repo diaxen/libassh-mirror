@@ -1,5 +1,5 @@
 
-@em libassh is a free software library written in C which implements
+@em libassh is a free software library written in C that implements
 the @invoke{Secure Shell}{Secure Shell}wp protocol version 2. The
 client and server sides are implemented with the same set of
 features.
@@ -23,7 +23,7 @@ available with details of the internal API.
   rely on a callback based API. Instead, the library reports
   @hl events which do not require immediate processing by the
   application. This design is agnostic with regard to the
-  @sinvoke{{Programming model}{programming model}wp. It allows easy
+  @sinvoke{Programming model}{programming model}wp. It allows easy
   integration in applications, including those based on
   @sinvoke{Event loop} {event loops}wp provided by existing
   libraries and toolkits.
@@ -106,8 +106,8 @@ available with details of the internal API.
   Because the library comes with a set of standard @em ssh2
   @hl algorithm implementations, it can be used
   standalone. Alternate modules relying on external libraries like
-  @em Libgcrypt, @em OpenSSL and and @em Zlib are available in order
-  to further extend the set of @hl{supported algorithms and methods}.
+  @em Libgcrypt, @em OpenSSL and @em Zlib are available in order
+  to further extend the set of supported @hl{algorithms and methods}.
 
   The clear @xref{source tree}{source organization} and file naming
   helps identify the core components and modules when porting the
@@ -125,10 +125,10 @@ available with details of the internal API.
 
   Because using fast and secure @em ssh2 @hl algorithms among
   those supported by the remote peer is the most desirable thing for
-  the user, the library is able to compute a simple score which can
+  the user, the library is able to compute a simple score that can
   be used to advertise the overall level of security of a
   @hl session. This is based on @hl algorithms negotiated
-  during the @hl key-exchange as well as involved @hl{host
+  during the @hl key-exchange process as well as involved @hl{host
   keys}. It is also possible to select and sort @hl algorithms
   based on their speed and safety before running a
   @hl session. This helps the user keep control without requiring
@@ -155,7 +155,7 @@ available with details of the internal API.
   The library uses a @sinvoke{Zero-copy}{zero copy}wp approach to
   pass data between the network stream, the @hl channels and the
   application. This is achieved by giving the application a direct
-  access to buffers stored in the @em libassh packet
+  access to buffers stored in the library packet
   objects. Moreover, the application is allowed to take full control
   of the @hl channel flow control mechanism specified in
   @sinvoke{4254}rfc.
@@ -178,7 +178,7 @@ available with details of the internal API.
   tests and stress tests. It helps ensure that the implementation
   follows the standard and behaves well on corner cases.
 
-  Stress tests are implemented by making the server and client sides
+  Stress tests are implemented by making a server and a client instance
   talk to each other, performing many @hl key-exchange,
   @hl{user authentication} and @hl channel operations per
   second. Because the library is not bound to a particular network

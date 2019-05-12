@@ -4,20 +4,21 @@ the @xref {Protocol architecture} section.
 
 When the @hl key-exchange process starts, the peers agree on the
 @em ssh2 @hl algorithms that will be used to secure the
-connection. There are five types of @hl algorithms which need to
+connection. There are five types of @hl algorithms that need to
 be agreed upon: @xref{kexalgos}{key-exchange algorithms},
 @xref{authalgos}{host authentication algorithms},
 @xref{cipheralgos}{cipher algorithms}, @xref{macalgos}{message
 authentication algorithms} and @xref{compalgos}{compression
 algorithms}.
 
-A subset of the provided modules allows running the @em ssh2
-protocol without relying on any external library. Currently, most
-provided modules which implement asymmetric cryptography use
-built-in implementation. They rely on the internal big number engine
-which provides constant time operations. This includes
-@xref{kexalgos}{key-exchange algorithms} and
-@xref{authalgos}{signature algorithms}.
+The library comes with @hl modules that implement various @hl
+algorithms for the @em ssh2 protocol. Some provided modules use
+builtin crypto implementation and other rely on external libraries
+like @em Libgcrypt and @em OpenSSL. A subset of the modules provided
+as part of @em assh allows running the @em ssh2 protocol without
+relying on any external library. Additional modules can be added in
+order to support alternate implementations as well as new algorithms
+and hardware acceleration.
 
 There are also multiples features of the protocol that are named and
 negotiated independently of the @hl key-exchange process. This is
@@ -29,30 +30,24 @@ methods and key formats.
 
 @section TP {Algorithms registration}
   @label{algoreg}
-  The library comes with @hl modules which implement
-  various @hl algorithms for the @em ssh2 protocol. Some provided
-  modules use builtin crypto implementation and other rely on external
-  libraries like @em Libgcrypt and @em OpenSSL. Additional modules can
-  be added in order to support alternate implementations as well as
-  new algorithms and hardware acceleration.
 
-  The application has to register some algorithm descriptors on the
-  @ref assh_context_s object.
+  When initiating the library context, the application has to register
+  some algorithm descriptors on the @ref assh_context_s object.
 
   Algorithm descriptors include speed factor and a safety factor
-  values which give a rough estimate of the performances and
+  values that give a rough estimate of the performances and
   cryptographic safety of each algorithm. These values have multiple
   purposes:
   @list
-    @item They are used to filter algorithms on registration.
-    @item They are used along with application provided weight
-      values to compute a score for retained algorithms. The score
-      is then used to advertise lists of algorithms sorted according
-      application safety requirements during the @hl key-exchange
-      process.
+    @item They can be used to filter algorithms on registration.
+    @item They are used along with application provided weight values
+      to compute a score for retained algorithms. This allows the
+      application to favor speed or safety. The score is then used to
+      advertise lists of algorithms during the @hl key-exchange
+      process, sorted according application requirements.
     @item They are used to compute an overall score of the safety of
-      the session which depend on algorithms negotiated with the
-      remote host during the last @hl key-exchange process.
+      the session. This score depends on keys and algorithms negotiated
+      with the remote host during the last @hl key-exchange process.
   @end list
 
   The library offers multiple ways to shape the set of
@@ -66,46 +61,46 @@ methods and key formats.
       @hl algorithm based on the safety requirement provided by
       the application.
     @item When multiple variants of the same @hl algorithm are
-      available, the one with the lowest safety which matches the
+      available, the one with the lowest safety that matches the
       requirement is retained. The application is free to use a low
       safety factor in order to favor acceptance of weak keys and weak
       parameters in order to maximize compatibility. It may also use a
-      higher safety factor which may prevent connecting with older
+      higher safety factor, which will prevent connecting with older
       unsafe implementations and reject weak @hl{user keys} and
       @hl{host keys}.
     @item An additional filter callback function can be attached to
-      @hl sessions in order to further filter among registered
-      @hl algorithms during the @hl key-exchange
-      process. Because some @hl algorithms are available under
-      different names, this callback allows filtering based on
-      specification status as well as popularity. It can also be used
-      to enable some @hl algorithm in a single direction.
+      @hl sessions in order to further filter among registered @hl
+      algorithms during the @hl key-exchange process. Because some @hl
+      algorithms are available under different names, this callback
+      allows filtering based on the specification status and
+      popularity of a name. It can also be used to enable some of the
+      @hl algorithms in a single direction.
   @end list
-
-  @em Related functions are declared in @ref{@assh/assh_algo.h} and
-  @ref{@assh/assh_session.h}.
 
   The @tt {test/algo_list} application can be used to display a list
   of algorithms supported by your specific build of @em
   {libassh}. It is also able to display a sorted list when a safety
   weight value is passed.
+
+  @hl Algorithms registration related functions are declared in
+  the @ref{@assh/assh_algo.h} and @ref{@assh/assh_session.h} headers.
 @end section
 
 @section TP {Key-exchange algorithms}
   @label{kexalgos}
 
-  Modules of this type implement more than a simple algorithm. A key
-  exchange module needs to provide both, the crypto used to
+  Modules of this type implement more than a simple algorithm. A
+  @hl key-exchange module needs to provide both, the crypto used to
   establish a shared secret and the associated part of the @em ssh2
-  protocol extension. See the @xref{kex} section for more details.
+  protocol.
 
   This section briefly lists key-exchange @hl algorithms that are
-  supported by modules provided with the library.
+  supported by modules provided along with the library.
 
   Key-exchange related declarations can be found in @ref{@assh/assh_kex.h}.
 
   @section {Prime field Diffie-Hellman}
-    The following @hl algorithms rely on diffie-hellman over prime
+    The following @hl algorithms rely on diffie-hellman over a prime
     field, as specified in @sinvoke{4253}rfc:
     @list
       @item @tt {diffie-hellman-group1-sha1} (1024 bits prime),
@@ -124,17 +119,27 @@ methods and key formats.
   @end section
 
   @section {Prime field Diffie-Hellman with group exchange}
-    The following @hl algorithms rely on diffie-hellman over prime
+    The following @hl algorithms rely on diffie-hellman over a prime
     field as specified in @sinvoke{4419}rfc. The groups used are not
     fixed but provided by the server:
     @list
       @item @tt {diffie-hellman-group-exchange-sha1},
       @item @tt {diffie-hellman-group-exchange-sha256}.
     @end list
+
+    Because matching security of the selected cipher @hl algorithm
+    with the DH group size is not straightforward, different choices
+    are available, based on estimates provided in @sinvoke{3526}rfc
+    and @sinvoke{3766}rfc. The size of the group offered by the server
+    depends on the retained @xref{algoreg}{variant} of the DH @hl
+    algorithm as well as the size of the symmetric key needed by the
+    cipher @hl algorithm. Given @em {n}, the bits size of the
+    symmetric key, group size may range from @em {n*n/16} to @em
+    {n*n/4}.
   @end section
 
   @section {RSA encrypted secret}
-    These key exchange methods rely on RSA encrypted secret as
+    These @hl key-exchange methods rely on RSA encrypted secret as
     specified in @sinvoke{4432}rfc:
     @list
       @item @tt {rsa1024-sha1},
@@ -176,7 +181,7 @@ methods and key formats.
 @section TP {Authentication algorithms}
   @label{authalgos}
 
-  Modules of this type implement signature algorithms which are used
+  Modules of this type implement signature algorithms that are used
   during the @hl key-exchange process.
 
   Those modules can also be involved in the @hl{user
@@ -249,7 +254,7 @@ methods and key formats.
 
     Two additional sets of curve parameters with larger key sizes
     are proposed as extensions, as described in
-    @xref{ietfladdsc}. Unlike @em{Ed25519} which relies on the
+    @xref{ietfladdsc}. Unlike @em{Ed25519} that relies on the
     @em{sha2-512} hash, the @em{sha3} hash is used for the
     extensions, as suggested in @xref{hshssign}. Variable output
     length variants of the @em {sha3} hash are needed here because
@@ -309,7 +314,7 @@ methods and key formats.
   @end list
 
   When the @em Libgcrypt library is used, these additional cipher
-  algorithms are available:
+  @hl algorithms are available:
   @list
     @item @tt {serpent128-cbc},    @tt {serpent192-cbc},    @tt {serpent256-cbc},
     @item @tt {serpent128-ctr},    @tt {serpent192-ctr},    @tt {serpent256-ctr},
@@ -321,6 +326,19 @@ methods and key formats.
     @item @tt {aes128-gcm@openssh.com}, @tt {aes256-gcm@openssh.com},
     @item @tt {serpent128-gcm@libassh.org}, @tt {serpent256-gcm@libassh.org},
     @item @tt {twofish128-gcm@libassh.org}, @tt {twofish256-gcm@libassh.org},
+    @item @tt {camellia128-cbc}, @tt {camellia192-cbc}, @tt {camellia256-cbc},
+    @item @tt {camellia128-ctr}, @tt {camellia192-ctr}, @tt {camellia256-ctr},
+  @end list
+
+  When the @em OpenSSL library is used instead, these additional cipher
+  @hl algorithms are available:
+  @list
+    @item @tt {3des-cbc},
+    @item @tt {cast128-cbc},
+    @item @tt {blowfish-cbc},
+    @item @tt {aes128-gcm@openssh.com}, @tt {aes256-gcm@openssh.com},
+    @item @tt {camellia128-cbc}, @tt {camellia192-cbc}, @tt {camellia256-cbc},
+    @item @tt {camellia128-ctr}, @tt {camellia192-ctr}, @tt {camellia256-ctr},
   @end list
 
 @end section
@@ -334,9 +352,9 @@ methods and key formats.
 
   Standard @em ssh2 MAC @hl algorithms based on @em{md5}, @em{sha1}
   and @em{sha2} are provided as specified in @sinvoke{4253}rfc and
-  @sinvoke{6668}rfc. Extensions proposed by @em OpenSSH which use @em
-  {Encrypt-then-Mac} instead of @em {Mac-then-Encrypt} are provided
-  as well.
+  @sinvoke{6668}rfc. The @em {Encrypt-then-Mac} extensions proposed by
+  @em OpenSSH are implemented as alternatives to the standard @em
+  {Mac-then-Encrypt} based @hl algorithms.
 
   MAC related declarations can be found in @ref{@assh/assh_mac.h}.
 
@@ -350,8 +368,8 @@ methods and key formats.
     @item @tt {hmac-sha2-256-etm@openssh.com}, @tt {hmac-sha2-512-etm@openssh.com}.
   @end list
 
-  When the @em Libgcrypt library is used, these additional MAC
-  algorithms are available:
+  When either the @em Libgcrypt library or the @em OpenSSL library is
+  used, these additional MAC algorithms are available:
   @list
     @item @tt {hmac-ripemd160}, @tt {hmac-ripemd160-etm@openssh.com}
   @end list
@@ -384,7 +402,8 @@ methods and key formats.
   @em {libassh}:
 
   @list
-    @item @tt none : This method always grant access.
+    @item @tt none : When allowed by the server application, this
+      method always grants access without authentication of the user.
     @item @tt password : This is the password based user
       authentication method. The user password is transmitted to the
       server for checking, as specified in @sinvoke{4252}rfc.
@@ -397,11 +416,14 @@ methods and key formats.
       @sinvoke{4256}rfc.
   @end list
 
-  Multi-factor authentication is supported on both sides. This means
-  that the server application may require multiple methods to
-  succeed in order to grant access. On the client side, multiple
-  @hl{user authentication} events are reported until the server
-  reports a success.
+  The various methods can be disabled in @hl{build configuration} and
+  at run time.
+
+  Multi-factor authentication is supported on client and server
+  sides. This means that the server application may require multiple
+  methods to succeed in order to grant access. On the client side,
+  multiple @hl{user authentication} events are reported until the
+  server reports a success.
 @end section
 
 @section TP {Key types and formats}
@@ -411,24 +433,26 @@ methods and key formats.
   The @em ssh2 protocol uses long term cryptographic key pairs in
   order to authenticate the hosts and users. A key pair is composed
   of a public part and a private part. Keys need to be transmitted
-  over the network and stored on the file system. This implies that
-  some key storage formats are specified.
+  over the network and stored on the file system. This means that
+  some key storage formats need to be specified.
 
   @section {Key types}
-    There are various cryptographic algorithms which require
+    There are various cryptographic algorithms that require
     different types of keys to be stored. Every supported type of
-    key in @em libassh has its own support module which is able to
+    key in @em libassh has its own support module that is able to
     create keys pairs and store them in various formats. The
-    following types of keys have builtin support:
+    following types of keys are supported by the provided modules:
 
     @list
-      @item @em{RSA} keys used for @hl{host authentication} and
-        @hl{user authentication} as well as by the @em{RSA}
-        @xref{kexalgos}{key-exchange algorithm},
-      @item @em{DSA} keys used for host and user authentication only,
-      @item @em{EDDSA} keys used for host and user authentication and
-      @item @em{ECDSA} keys used for host and user authentication as well.
+      @item @em{RSA} keys,
+      @item @em{DSA} keys,
+      @item @em{EDDSA} keys and
+      @item @em{ECDSA} keys.
     @end list
+
+    All types of key can be used for host authentication and user
+    authentication. Additionally, @em{RSA} keys are also used by
+    @em{RSA} based @hl{key-exchange} algorithms.
   @end section
 
   @section {Key storage formats}
@@ -438,11 +462,11 @@ methods and key formats.
     {ssh2}.
 
     Existing formats are designed to store either the public part of
-    a key or the whole key. Some are designed as containers which
-    embed at least one key blob encoded using a raw format.
+    a key or the whole key. Some are designed as containers that
+    embed one or multiple key blobs encoded using a raw format.
 
     The library comes with a @xref{exkeygen}{key management} example
-    application which is able to create new keys and convert between
+    application. It is able to create new keys and convert between
     supported formats.
 
     @section {Raw formats}
@@ -450,7 +474,7 @@ methods and key formats.
       libassh key support modules directly. Not all raw formats are
       capable of storing any type of key. In order to support a
       given type of key, the format has to be designed to handle
-      the specific set of values and blobs which compose the
+      the specific set of values and blobs that compose the
       key. The following raw formats can be loaded and stored in
       memory by the key support modules:
 
@@ -477,7 +501,7 @@ methods and key formats.
       system. Passphrase encryption of private keys is implemented
       when supported by the format.
 
-      The following additional container formats are supported using
+      The following container formats are supported using
       @hl{helper functions} declared in @ref{@assh/helper_key.h}:
 
       @list

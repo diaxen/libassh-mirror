@@ -6,9 +6,10 @@ and tweak some values.
 When compiled with the provided @tt configure script, some of these
 features can be changed by using appropriate command line options.
 
-When porting the library to a custom platform, these macros need to
-be defined properly. This can be achieved by providing an @tt
-assh_config.h file and defining the @tt HAVE_CONFIG_H macro.
+When porting the library to a custom platform that do not use the
+provided build system, these macros need to be defined properly. This
+can be achieved by providing an @tt assh_config.h file and defining
+the @tt HAVE_CONFIG_H macro.
 
 The available macros are described in @ref{@doc/config.h}{this
 sample header file}.

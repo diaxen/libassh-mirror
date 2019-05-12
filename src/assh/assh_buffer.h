@@ -203,10 +203,10 @@ typedef ASSH_BLOB_SCAN_FCN(assh_blob_scan_fcn_t);
      @item @tt T       @item Store the size of the content of the field in a @tt{size_t}.
      @item @tt D       @item Copy the content of the field to a pointer passed as argument.
      @item @tt Z       @item Same as @tt D then append a null byte.
-     @item @tt I       @item interpret the content as an MSB number and store an @tt {int}.
-     @item @tt Ir      @item interpret the content as an LSB number and store an @tt {int}.
-     @item @tt L       @item interpret the content as an MSB number and store a @tt {long long int}.
-     @item @tt Lr      @item interpret the content as an LSB number and store a @tt {long long int}.
+     @item @tt I       @item Interpret the content as an MSB number and store an @tt {int}.
+     @item @tt Ir      @item Interpret the content as an LSB number and store an @tt {int}.
+     @item @tt L       @item Interpret the content as an MSB number and store a @tt {long long int}.
+     @item @tt Lr      @item Interpret the content as an LSB number and store a @tt {long long int}.
      @item @tt F       @item Call an @ref assh_blob_scan_fcn_t function. The function pointer along with
                              its private pointer must be passed as arguments.
     @ifnopt hide_internal
@@ -235,7 +235,7 @@ typedef ASSH_BLOB_SCAN_FCN(assh_blob_scan_fcn_t);
 // then advances the blob pointer and decreases blob_len accordingly.
 err = assh_blob_scan("s t< Z $", &blob, &blob_len, out_size, out);
 
-// read two integers embedded in a single ssh string
+// read two integers embedded in a 6 bytes ssh string
 err = assh_blob_scan("s( b4I b2I o )", &blob, &blob_len, &x, &y);
     @end code
 */

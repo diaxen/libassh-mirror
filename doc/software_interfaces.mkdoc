@@ -21,17 +21,17 @@ library and the design of its programming interface.
   @hl algorithms negotiated during the @hl key-exchange process:
   @list
     @item The @ref assh_algo_kex_s interface descriptor is used to
-      declare @xref{kexalgos}{key-exchange algorithms}.
+      declare the @xref{kexalgos}{key-exchange algorithms}.
     @item The @ref assh_algo_sign_s interface descriptor is used
-      to declare @xref{authalgos}{signature algorithms} which are
-      involved in server @xref{host authentication} and user
-      @xref{public key authentication}.
+      to declare the @xref{authalgos}{signature algorithms} that are
+      involved in server @hl{host authentication} and user
+      @hl{public key authentication}.
     @item The @ref assh_algo_cipher_s interface descriptor is used
-      to declare @xref{cipheralgos}{cipher algorithms}.
+      to declare the @xref{cipheralgos}{cipher algorithms}.
     @item The @ref assh_algo_mac_s interface descriptor is used to
-      declare @xref{macalgos}{message authentication}.
+      declare the @xref{macalgos}{message authentication algorithms}.
     @item The @ref assh_algo_compress_s interface descriptor is used
-      to declare data @xref{compalgos}{compression methods}.
+      to declare the data @xref{compalgos}{compression methods}.
   @end list
   Those descriptor structures inherit from the @ref assh_algo_s
   structure.
@@ -62,13 +62,13 @@ library and the design of its programming interface.
   @label {events}
   @label {event loop}
 
-  The programming interface is event based. Event objects are used
-  to pass data between the library and the application. The
+  The library main programming interface is event based. Event objects
+  are used to pass data between the library and the application. The
   application have to perform pairs of calls to the @ref
-  assh_event_get and @ref assh_event_done functions in order to
-  run a @hl session. These functions actually run the protocol
-  @hl{state machines}. The code below shows a simple
-  construct which can be used for that purpose.
+  assh_event_get and @ref assh_event_done functions in order to run a
+  @hl session. These functions actually run the protocol @hl{state
+  machines}. The code below shows a simple construct that can be used
+  for that purpose.
 
   @code
 struct assh_event_s ev;
@@ -96,7 +96,7 @@ while (assh_event_get(session, &ev, time(0)))
   with default values so that any event not handled by the
   application can be acknowledged directly.
 
-  The code code below handles the @ref ASSH_EVENT_READ event by
+  The code below handles the @ref ASSH_EVENT_READ event by
   retrieving the ssh stream from a network socket using the @tt read
   system call.
 
@@ -121,7 +121,7 @@ switch (ev.id)
   @end code
 
   Because the event API is designed to let the application access
-  most features of the ssh protocol, event objects reflect concepts
+  most features of the ssh protocol, specified events reflect concepts
   used at the protocol level. Handling most of them involve some
   work in order to behave as a usual client or server
   application. In order to handle those events, the application may
@@ -175,9 +175,9 @@ switch (ev.id)
   of the @em ssh2 features while letting the library handle the
   protocol and crypto stuff.
 
-  This however means that there is a part of the job left to be
+  This however implies that there is a part of the job left to be
   done by the application. That's why the library comes with
-  helper functions designed to handles events in a way which yield
+  helper functions designed to handles events in a way that yield
   common behavior. For instance, this includes performing
   @hl{host key} lookup in standard file locations and handling
   @hl{user authentication} using the operating system calls. Of
@@ -186,9 +186,20 @@ switch (ev.id)
   {exremote} example and @xref {exloopback} example are short
   because helpers are used extensively.
 
-  Other helper functions which are not designed to handle events
+  Other helper functions that are not designed to handle events
   are also provided. These provide various features like
   @hl{SSH keys} file operations and @em ssh2 blob parsing.
+
+  Those header files provide declarations of helpers functions:
+  @list
+    @item @ref{@assh/helper_io.h}
+    @item @ref{@assh/helper_key.h}
+    @item @ref{@assh/helper_client.h}
+    @item @ref{@assh/helper_server.h}
+    @item @ref{@assh/helper_interactive.h}
+    @item @ref{@assh/helper_portfwd.h}
+  @end list
+
 @end section
 
 @section TP {Channels and requests API}
@@ -211,8 +222,8 @@ switch (ev.id)
 
   The @em assh @hl channel and @hl request API relies on @hl events
   and functions provided by the @hl{connection protocol} module for
-  use by the application. It can be used once the @hl service has
-  started.
+  use by the application. These API functions can be called when
+  the related @hl service is running.
 
   Instances of the @ref assh_channel_s and @ref assh_request_s types
   are always created and released by the library. All related types
@@ -221,30 +232,30 @@ switch (ev.id)
   @section {Local channel open}
     The application may try to open a @hl channel by calling the @ref
     assh_channel_open function. An @ref assh_channel_s object is then
-    allocated but the channel is not open until the messages has been
-    acknowledged by the remote host.
+    allocated but the channel is not open until the open message has
+    been acknowledged by the remote host.
 
     Either an @ref ASSH_EVENT_CHANNEL_CONFIRMATION event or an @ref
     ASSH_EVENT_CHANNEL_FAILURE event is reported to the application at
-    some point. When the that opening is denied, the @ref
-    assh_channel_s object is released by the library. One of those @hl
-    events is always reported, even when the reply from the remote host
-    has not been received due to a disconnecting session.
+    some point. When opening is denied, the @ref assh_channel_s object
+    is released by the library. One of those @hl events is always
+    reported, even when the reply from the remote host has not been
+    received due to a disconnecting session.
   @end section
 
   @section {Remote channel open}
     When the remote host wants to open a channel, the @ref
     ASSH_EVENT_CHANNEL_OPEN event is reported. The application has to
-    accept or deny channel open so that the library can send the
-    proper reply.
+    accept or deny the channel open so that the library can send the
+    appropriate reply.
 
     The channel becomes open if the application acknowledges the @hl
     event with the @ref ASSH_CONNECTION_REPLY_SUCCESS status. The
-    channel object is released if the @ref
+    @ref assh_channel_s object is released if the @ref
     ASSH_CONNECTION_REPLY_FAILED value is used instead.
 
     When the application is not able to decide immediately if the
-    channel can be open, it may acknowledges the @hl event with the
+    channel has to be opened, it must acknowledges the @hl event with the
     @ref ASSH_CONNECTION_REPLY_POSTPONED value. This allows replying
     to channel open messages out of order.
 
@@ -253,7 +264,8 @@ switch (ev.id)
     assh_channel_open_failed_reply function at some point in order to
     actually open or release the channel. In the mean time, the @ref
     ASSH_EVENT_CHANNEL_ABORT event may be reported to indicate that
-    the channel is eventually released due to a closing session.
+    the @ref assh_channel_s object will be released before channel
+    open due to a closing session.
   @end section
 
   @section {Streaming data}
@@ -264,17 +276,19 @@ switch (ev.id)
     @ref ASSH_EVENT_CHANNEL_DATA event.
 
     When channel flow control is not delegated to the library, the
-    @ref assh_channel_window_adjust function and the @ref
-    ASSH_EVENT_CHANNEL_WINDOW event must be used by the application.
+    application must take care of calling the @ref
+    assh_channel_window_adjust function and has to handle the @ref
+    ASSH_EVENT_CHANNEL_WINDOW event.
   @end section
 
   @section {Using requests}
     The application may send @hl requests to the remote host by
     calling the @ref assh_request function. It may optionally require
-    a reply to the request. Doing so make the library reports either
-    an @ref ASSH_EVENT_REQUEST_SUCCESS event or an @ref
-    ASSH_EVENT_REQUEST_FAILURE event. This always occurs, even if the
-    associated @hl channel is closing or the session disconnects.
+    that the remote host replies to the request. Doing so makes the
+    library reports either an @ref ASSH_EVENT_REQUEST_SUCCESS event or
+    an @ref ASSH_EVENT_REQUEST_FAILURE event. This always occurs, even
+    if the associated @hl channel is closing or the session
+    disconnects.
 
     Incoming requests are reported by the library using the @ref
     ASSH_EVENT_REQUEST event. As for channel open, @em assh allows
@@ -282,8 +296,8 @@ switch (ev.id)
     the protocol. This mean that the library has to reorder the
     replies and a postponed request prevent subsequent request replies
     from being transmitted. The @ref ASSH_EVENT_REQUEST_ABORT event is
-    reported when a postponed request reply is released because the
-    session disconnects.
+    reported when the @ref assh_request_s object associated to a
+    postponed reply will be released due to a disconnecting session.
   @end section
 
   @section {Channel EOF}
@@ -297,10 +311,10 @@ switch (ev.id)
     channel.
 
     Half closing the channel in both directions results in the @ref
-    ASSH_EVENT_CHANNEL_CLOSE event to be reported.
+    ASSH_EVENT_CHANNEL_CLOSE event being reported.
   @end section
 
-  @section {Channel closing}
+  @section {Channel closing and disconnection}
     Once the channel is open, the @ref ASSH_EVENT_CHANNEL_CLOSE event
     may be reported at any time. The channel is released by the
     library when this @hl event is acknowledged.
@@ -309,6 +323,15 @@ switch (ev.id)
     channels. This may occurs for multiple reasons, including the
     application calling the @ref assh_channel_close function or due to
     a disconnecting session.
+
+    Likewise, the @ref ASSH_EVENT_CHANNEL_FAILURE, @ref
+    ASSH_EVENT_CHANNEL_ABORT, @ref ASSH_EVENT_REQUEST_FAILURE and @ref
+    ASSH_EVENT_REQUEST_ABORT events will be properly reported when the
+    session is closing, even if the link with the remote host is
+    broken and no related replies is actually received from the remote
+    host. This allows the application to implement fewer code paths
+    for release of private resources it has associated to channels and
+    requests.
   @end section
 
 @end section

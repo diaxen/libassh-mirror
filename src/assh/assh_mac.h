@@ -95,7 +95,8 @@ struct assh_algo_mac_s
   uint8_t mac_size;
 };
 
-/** @multiple @This is a mac algorithm implementation descriptor. */
+/** @multiple @This is a mac algorithm implementation descriptor.
+    @xsee {macalgos} */
 extern const struct assh_algo_mac_s assh_hmac_none;
 extern const struct assh_algo_mac_s assh_hmac_md5;
 extern const struct assh_algo_mac_s assh_hmac_md5_96;
