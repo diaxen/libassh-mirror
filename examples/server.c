@@ -635,10 +635,10 @@ ssh_loop(struct assh_session_s *session,
 
 		  if (ASSH_ERR_ERROR(err) == ASSH_OK)
 		    {
-		      const char *cmd = assh_buffer_strdup(&rqi.command);
-		      if (!its_exec(its, cmd))
+		      char *cmd = assh_buffer_strdup(&rqi.command);
+		      if (cmd && !its_exec(its, cmd))
 			ev->reply = ASSH_CONNECTION_REPLY_SUCCESS;
-		      free((char*)cmd);
+		      free(cmd);
 		    }
 		}
                                                         /* anchor evrqdone */
