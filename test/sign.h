@@ -56,6 +56,12 @@ struct sign_algo_s algos[] = {
     "\xcb\xe9\x9b\x32\x75\xed\x72\xb4\xb4\xb1\xb9\xe1\xa3\x99\xb2\x09"
     "\xef\xed\x1a\x91" },
 
+  /* rsa key with bit_len(p) < bit_len(q) */
+  { &assh_sign_rsa_sha256, rsa1027_key_pQ, 0, 1027, 1027, sizeof(rsa1027_key_pQ) },
+
+  /* rsa key with bit_len(p) > bit_len(q) */
+  { &assh_sign_rsa_sha256, rsa1027_key_Pq, 0, 1027, 1027, sizeof(rsa1027_key_Pq) },
+
   { &assh_sign_ed25519,         ed25519_key, 1, 255, 255, sizeof(ed25519_key),
     4 + 11 + 4 + 2 * 32, (const uint8_t *)
     "\x00\x00\x00\x0b\x73\x73\x68\x2d\x65\x64\x32\x35\x35\x31\x39\x00"

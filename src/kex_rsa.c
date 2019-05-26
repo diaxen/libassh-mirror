@@ -442,27 +442,30 @@ static assh_error_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
   {
     EM_data,                    /* data buffers */
     Q, P, DP, DQ, I, N,         /* big number inputs */
-    M2, EM, T0, T1, T2,         /* big number temporaries */
-    MT
+    M2, EM, T3, T0, T1, T2,         /* big number temporaries */
+    MT, PQ_size
   };
 
   static const assh_bignum_op_t bytecode[] = {
     ASSH_BOP_SIZER(     M2,     EM,     N		),
     ASSH_BOP_SIZER(     T0,     MT,     P		),
+    ASSH_BOP_SIZEM(     T3,     PQ_size, 0, 1		),
 
     ASSH_BOP_MOVE(      EM,     EM_data			),
 
     /* m2 = em^dq % q */
-    ASSH_BOP_MOD(       T0,     EM,     Q               ),
-    ASSH_BOP_MTINIT(    MT,     Q                       ),
+    ASSH_BOP_MOVE(      T2,     Q			),
+    ASSH_BOP_MOD(       T0,     EM,     T2               ),
+    ASSH_BOP_MTINIT(    MT,     T2                       ),
     ASSH_BOP_MTTO(      T0,     T0,     T0,     MT      ),
     ASSH_BOP_EXPM(      T0,     T0,     DQ,	MT	),
     ASSH_BOP_MTFROM(    T0,     T0,     T0,     MT      ),
     ASSH_BOP_MOVE(      M2,     T0			),
 
     /* m1 = em^dp % p */
-    ASSH_BOP_MOD(       T1,     EM,     P               ),
-    ASSH_BOP_MTINIT(    MT,     P                       ),
+    ASSH_BOP_MOVE(      T2,     P			),
+    ASSH_BOP_MOD(       T1,     EM,     T2              ),
+    ASSH_BOP_MTINIT(    MT,     T2                      ),
     ASSH_BOP_MTTO(      T1,     T1,     T1,     MT      ),
     ASSH_BOP_EXPM(      T1,     T1,     DP,	MT	),
 
@@ -474,17 +477,20 @@ static assh_error_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
     ASSH_BOP_MTFROM(    T1,     T1,     T0,     MT      ),
 
     /* m = m2 + h * q */
-    ASSH_BOP_MUL(       EM,     T1,     Q               ),
-    ASSH_BOP_ADD(       M2,     M2,     EM              ),
+    ASSH_BOP_MUL(       T3,     T1,     Q               ),
+    ASSH_BOP_ADD(       M2,     M2,     T3              ),
 
     ASSH_BOP_MOVE(      EM_data, M2			),
     ASSH_BOP_END(),
   };
 
-  ASSH_RET_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "DNNNNNNTTTTTm",
+  intptr_t pqsize = ASSH_MAX(assh_bignum_bits(&t_key->pn),
+			     assh_bignum_bits(&t_key->qn));
+
+  ASSH_RET_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "DNNNNNNTTTTTTms",
                    /* Data */ em,
                    /* Num  */ &t_key->qn, &t_key->pn, &t_key->dpn, &t_key->dqn,
-                                    &t_key->in, &t_key->nn));
+			      &t_key->in, &t_key->nn, pqsize));
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
   ASSH_DEBUG_HEXDUMP("em", em, elen);

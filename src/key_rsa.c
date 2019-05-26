@@ -206,12 +206,12 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_rsa_validate)
   enum bytecode_args_e
   {
     N, D, E, P, Q, DP, DQ, I,
-    T0, T1, T2
+    T0, T1, T2, PQ_size
   };
 
   static const assh_bignum_op_t bytecode[] = {
     ASSH_BOP_SIZE(      T0,     N                       ),
-    ASSH_BOP_SIZER(     T1,     T2,     P               ),
+    ASSH_BOP_SIZER(     T1,     T2,     PQ_size         ),
 
     /* check range of N */
     ASSH_BOP_TEST(      N,      1,      N,      0       ),
@@ -281,9 +281,13 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_rsa_validate)
     ASSH_BOP_END(),
   };
 
-  err = assh_bignum_bytecode(c, key->private << 1, bytecode, "NNNNNNNNTTT",
+  intptr_t pqsize = ASSH_MAX(assh_bignum_bits(&k->pn),
+			     assh_bignum_bits(&k->qn));
+
+  err = assh_bignum_bytecode(c, key->private << 1, bytecode, "NNNNNNNNTTTs",
                              &k->nn, &k->dn, &k->en, &k->pn,
-                             &k->qn, &k->dpn, &k->dqn, &k->in);
+                             &k->qn, &k->dpn, &k->dqn, &k->in,
+			     pqsize);
 
   switch (ASSH_ERR_ERROR(err))
     {
@@ -431,17 +435,17 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
       ASSH_JMP_IF_TRUE(assh_bignum_bits(&k->dn) < 768 ||
                        assh_bignum_bits(&k->dn) > 8192, ASSH_ERR_NOTSUP, err_);
 
-      ASSH_JMP_IF_TRUE(assh_bignum_bits(&k->nn) != assh_bignum_bits(&k->pn) * 2 ||
-                       assh_bignum_bits(&k->nn) != assh_bignum_bits(&k->qn) * 2,
+      ASSH_JMP_IF_TRUE(assh_bignum_bits(&k->nn) !=
+		       assh_bignum_bits(&k->pn) + assh_bignum_bits(&k->qn),
                        ASSH_ERR_NOTSUP, err_);
 
       enum bytecode_args_e
       {
-        D, P, Q, DP, DQ, T0, T1
+        D, P, Q, DP, DQ, T0, T1, PQ_size
       };
 
       static const assh_bignum_op_t bytecode[] = {
-        ASSH_BOP_SIZER(  T0,    T1,     P               ),
+        ASSH_BOP_SIZER(  T0,    T1,     PQ_size         ),
 
         /* check that msb of P and Q are set */
         ASSH_BOP_TEST(   P,      1,      P,      0      ),
@@ -465,8 +469,12 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
         ASSH_BOP_END(),
       };
 
-      ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "NNNNNTT",
-                     &k->dn, &k->pn, &k->qn, &k->dpn, &k->dqn), err_);
+      intptr_t pqsize = ASSH_MAX(assh_bignum_bits(&k->pn),
+				 assh_bignum_bits(&k->qn));
+
+      ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "NNNNNTTs",
+				  &k->dn, &k->pn, &k->qn, &k->dpn, &k->dqn,
+				  pqsize), err_);
     }
 
   *key = &k->key;
