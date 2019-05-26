@@ -448,8 +448,7 @@ assh_userauth_client_failure(struct assh_session_s *s,
       for (uint_fast8_t i = 0;
            (m = assh_userauth_client_methods[i]); i++)
         {
-          if (!m->name[nlen] &&
-              !strncmp((const char*)methods, m->name, nlen))
+          if (!assh_string_strcmp((const char*)methods, nlen, m->name))
             {
               pv->method = m;
 

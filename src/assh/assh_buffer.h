@@ -74,17 +74,18 @@ assh_cbuffer(const struct assh_buffer_s *b)
   return (void*)b;
 }
 
+/** @This compares the content of a fixes size string with a nul
+    terminated string. This is @b not performed in constant time. */
+ASSH_WARN_UNUSED_RESULT uint_fast8_t
+assh_string_strcmp(const char *str, size_t str_len, const char *nul_str);
+
 /** @This compares the content of an @ref assh_buffer_s object with a
     nul terminated string. This is @b not performed in constant
     time. */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT uint_fast8_t
 assh_buffer_strcmp(const struct assh_cbuffer_s *buf, const char *nul_str)
 {
-  uint_fast16_t i;
-  for (i = 0; i < buf->len; i++)
-    if (!nul_str[i] || buf->str[i] != nul_str[i])
-      return 1;
-  return nul_str[i];
+  return assh_string_strcmp(buf->str, buf->len, nul_str);
 }
 
 /** @This initializes an @ref assh_buffer_s
@@ -361,11 +362,11 @@ assh_asn1_headlen(size_t len)
 
 /** @internal @This compares an @em ssh2 string with a size header to a @tt
     NUL terminated string. No bound checking is performed. */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_bool_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT uint_fast8_t
 assh_ssh_string_compare(const uint8_t *ssh_str, const char *nul_str)
 {
   size_t l = assh_load_u32(ssh_str);
-  return strncmp((const char*)ssh_str + 4, nul_str, l) || nul_str[l] != '\0';
+  return assh_string_strcmp((const char*)ssh_str + 4, l, nul_str);
 }
 
 /** @internal @This copies an @em ssh2 string to a nul terminated

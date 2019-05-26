@@ -65,8 +65,7 @@ assh_key_algo_guess(struct assh_context_s *c,
           if (ops == NULL || algo->class_ != role)
             continue;
 
-          if (!strncmp(ops->name, name, name_len) &&
-              !ops->name[name_len])
+          if (!assh_string_strcmp(name, name_len, ops->name))
             return ops;
         }
 
@@ -184,14 +183,12 @@ assh_key_algo_by_name_static(const struct assh_key_algo_s **table,
   const struct assh_key_algo_s *a;
 
   while ((a = *table++) != NULL)
-    {
-      if (!strncmp(name, a->name, name_len) &&
-          a->name[name_len] == '\0')
-        {
-          *algo = a;
-          return ASSH_OK;
-        }
-    }
+    if (!assh_string_strcmp(name, name_len, a->name))
+      {
+	*algo = a;
+	return ASSH_OK;
+      }
+
   return ASSH_NOT_FOUND;
 }
 

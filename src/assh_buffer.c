@@ -802,3 +802,12 @@ assh_error_t assh_strdup(struct assh_context_s *c, char **r,
   return ASSH_OK;
 }
 
+uint_fast8_t
+assh_string_strcmp(const char *str, size_t str_len, const char *nul_str)
+{
+  size_t i;
+  for (i = 0; i < str_len; i++)
+    if (!nul_str[i] || str[i] != nul_str[i])
+      return 1;
+  return nul_str[i];
+}

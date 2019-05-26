@@ -504,11 +504,8 @@ assh_algo_name_match(const struct assh_algo_s *a,
     {
       const struct assh_algo_name_s *n;
       for (n = a->names; n->spec; n++)
-        {
-          if (!strncmp(name, n->name, name_len) &&
-              n->name[name_len] == '\0')
-            return n;
-        }
+	if (!assh_string_strcmp(name, name_len, n->name))
+	  return n;
     }
   return NULL;
 }

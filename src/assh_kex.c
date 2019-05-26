@@ -315,8 +315,7 @@ assh_kex_client_algos(struct assh_session_s *s, const uint8_t *lists[9],
                     n++;
 
                   /* check algorithm name match */
-                  if (!strncmp(start, na->name, n - start)
-                      && na->name[n - start] == '\0')
+                  if (!assh_string_strcmp(start, n - start, na->name))
                     {
                       if (i < 2)
                         {

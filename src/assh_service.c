@@ -105,8 +105,7 @@ assh_error_t assh_service_by_name(struct assh_context_s *c,
     {
       const struct assh_service_s *srv = c->srvs[i];
 
-      if (!strncmp(srv->name, name, name_len) &&
-          srv->name[name_len] == '\0')
+      if (!assh_string_strcmp(name, name_len, srv->name))
         {
           *srv_ = srv;
           return ASSH_OK;
