@@ -47,24 +47,30 @@ assh_error_t test_const()
       fprintf(stderr, "g");
       ASSH_RET_ON_ERR(assh_sign_generate(context, a, key, 3, d, NULL, &sign_len));
 
-      if (sign_len != algos[i].sign_len)
-	{
-	  fprintf(stderr, "expected len %zu\n", algos[i].sign_len);
-	  fprintf(stderr, "wrong %zu\n", sign_len);
-	  abort();
-	}
+      if (algos[i].sign) {
+	fprintf(stderr, "c");
+
+	if (sign_len != algos[i].sign_len)
+	  {
+	    fprintf(stderr, "expected len %zu\n", algos[i].sign_len);
+	    fprintf(stderr, "wrong %zu\n", sign_len);
+	    abort();
+	  }
+      }
 
       uint8_t sign[sign_len];
       ASSH_RET_ON_ERR(assh_sign_generate(context, a, key, 3, d, sign, &sign_len));
 
-      if (memcmp(algos[i].sign, sign, sign_len))
-	{
+      if (algos[i].sign) {
+	if (memcmp(algos[i].sign, sign, sign_len))
+	  {
 #ifdef CONFIG_ASSH_DEBUG
-	  assh_hexdump("expected", algos[i].sign, sign_len);
-	  assh_hexdump("wrong", sign, sign_len);
+	    assh_hexdump("expected", algos[i].sign, sign_len);
+	    assh_hexdump("wrong", sign, sign_len);
 #endif
-	  abort();
-	}
+	    abort();
+	  }
+      }
 
       fprintf(stderr, "v");
       assh_safety_t sign_safety;
