@@ -457,6 +457,9 @@ assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p
   assh_kex_keys_cleanup(s, s->new_keys_out);
   s->new_keys_out = kout;
 
+  assert(kin->cipher->block_size >= ASSH_MIN_BLOCK_SIZE);
+  assert(kout->cipher->block_size >= ASSH_MIN_BLOCK_SIZE);
+
   /* initialize key exchange algorithm */
   ASSH_JMP_ON_ERR(kex->f_init(s, key_size), err);
 
