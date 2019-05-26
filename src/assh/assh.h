@@ -268,6 +268,9 @@ const char * assh_error_str(assh_error_t err);
 /** @internal Maximum size of mac algorithms keys in bytes. */
 #define ASSH_MAX_IKEY_SIZE 64
 
+/** @internal Minimal cipher block size in bytes. Spec says 8 */
+#define ASSH_MIN_BLOCK_SIZE 8
+
 /** @internal Maximum cipher block size in bytes. must be >= 16. */
 #define ASSH_MAX_BLOCK_SIZE 16
 
