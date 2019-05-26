@@ -123,7 +123,7 @@ get_passphrase(const char *prompt, struct assh_context_s *context)
   fprintf(stderr, prompt);
 
   const char *p;
-  if (assh_fd_get_password(context, &p, 80, 0, 0))
+  if (asshh_fd_get_password(context, &p, 80, 0, 0))
     ERROR("Unable to read passphrase expected\n");
 
   putc('\n', stderr);
@@ -301,7 +301,7 @@ int main(int argc, char *argv[])
 
       while (1)                 /* retry passphrase prompt */
         {
-          switch (ASSH_ERR_ERROR(assh_load_key_file(context, &key, type,
+          switch (ASSH_ERR_ERROR(asshh_load_key_file(context, &key, type,
                                    ASSH_ALGO_ANY, ifile, ifmt, p, 0)))
             {
             case ASSH_OK:
@@ -405,7 +405,7 @@ int main(int argc, char *argv[])
             ERROR("Unable to set key comment.\n");
         }
 
-      if (assh_save_key_file(context, key, ofile, ofmt, passphrase))
+      if (asshh_save_key_file(context, key, ofile, ofmt, passphrase))
         ERROR("Unable to save key.\n");
     }
 
@@ -413,7 +413,7 @@ int main(int argc, char *argv[])
 
   if (action_mask & ASSH_KEYGEN_FP)
     {
-      enum assh_fingerprint_fmt_e fpf = 0;
+      enum asshh_fingerprint_fmt_e fpf = 0;
 
       while (1)
         {
@@ -421,7 +421,7 @@ int main(int argc, char *argv[])
           char fp[128];
           size_t fps = sizeof(fp);
 
-          assh_error_t err = assh_key_fingerprint(context, key,
+          assh_error_t err = asshh_key_fingerprint(context, key,
                                          fpf, fp, &fps, &fpf_name);
           if (err == ASSH_NO_DATA)
             break;

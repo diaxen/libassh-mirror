@@ -23,7 +23,7 @@
 
 #include <assh/helper_base64.h>
 
-void assh_base64_init(struct assh_base64_ctx_s *ctx, uint8_t *out,
+void asshh_base64_init(struct asshh_base64_ctx_s *ctx, uint8_t *out,
 		      size_t out_len)
 {
   ctx->out_start = ctx->out = out;
@@ -53,7 +53,7 @@ static const int8_t b642bin[128] =
   };
 
 assh_error_t
-assh_base64_encode_update(struct assh_base64_ctx_s *ctx,
+asshh_base64_encode_update(struct asshh_base64_ctx_s *ctx,
 			  const uint8_t *bin, size_t bin_len)
 {
   assh_error_t err;
@@ -85,7 +85,7 @@ assh_base64_encode_update(struct assh_base64_ctx_s *ctx,
 }
 
 assh_error_t
-assh_base64_decode_update(struct assh_base64_ctx_s *ctx,
+asshh_base64_decode_update(struct asshh_base64_ctx_s *ctx,
 			  const uint8_t *b64, size_t b64_len)
 {
   assh_error_t err;
@@ -120,7 +120,7 @@ assh_base64_decode_update(struct assh_base64_ctx_s *ctx,
 }
 
 assh_error_t
-assh_base64_decode_final(struct assh_base64_ctx_s *ctx)
+asshh_base64_decode_final(struct asshh_base64_ctx_s *ctx)
 {
   assh_error_t err;
 
@@ -142,7 +142,7 @@ assh_base64_decode_final(struct assh_base64_ctx_s *ctx)
 }
 
 assh_error_t
-assh_base64_encode_final(struct assh_base64_ctx_s *ctx)
+asshh_base64_encode_final(struct asshh_base64_ctx_s *ctx)
 {
   assh_error_t err;
   uint8_t *out = ctx->out;

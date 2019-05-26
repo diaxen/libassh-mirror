@@ -534,7 +534,7 @@ localhost$ example/fwdexec forward_host rexec_host command
     @example examples/fwdexec.c:fwdevio
 
     We setup the TCP port forwarding as soon as the @hl{connection
-    protocol} starts. The @ref assh_portfwd_open_direct_tcpip function
+    protocol} starts. The @ref asshh_portfwd_open_direct_tcpip function
     serializes our @tt fwd_rq parameters and calls the @ref
     assh_channel_open function. This makes the @tt fwd_channel
     variable points to the opening channel object.
@@ -743,7 +743,7 @@ localhost$ example/fwdexec forward_host rexec_host command
 
     The @tt {"pty-req"} request may optionally be used by the
     client. This requires us to call our @tt its_pty function
-    discussed previously. The @ref assh_inter_decode_pty_req helper
+    discussed previously. The @ref asshh_inter_decode_pty_req helper
     function is used here to validate and decode the data attached
     to the request but its content is not used in this simple
     server.
@@ -829,8 +829,8 @@ localhost$ example/fwdexec forward_host rexec_host command
 
   This examples application performs @hl{user keys} and @hl{host keys}
   related operations. It relies on the @ref assh_key_create, @ref
-  assh_load_key_file, @ref assh_key_validate and @ref
-  assh_save_key_file functions provided by the library.
+  asshh_load_key_file, @ref assh_key_validate and @ref
+  asshh_save_key_file functions provided by the library.
 
   Here is how it can be invoked in order to generate a new
   @hl{user key}:

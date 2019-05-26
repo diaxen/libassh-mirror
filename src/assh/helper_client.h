@@ -51,21 +51,21 @@
     recognized by one of the registered algorithms. The input file
     must be in openssh ssh_knwon_host file format.
 
-    The keys are loaded by the @ref assh_load_key_file function and
+    The keys are loaded by the @ref asshh_load_key_file function and
     must be released by calling @ref assh_key_flush.
 
     A comment string containing the location (file name and line
     number) is attached to each loaded key.
 */
 assh_error_t
-assh_client_get_known_hosts(struct assh_context_s *c,
+asshh_client_get_known_hosts(struct assh_context_s *c,
                                     struct assh_key_s **keys,
                                     const char *filename,
                                     const char *host);
 
 /** @This adds a public key at the end of the ssh_knwon_host file. */
 assh_error_t
-assh_client_add_known_hosts(struct assh_context_s *c,
+asshh_client_add_known_hosts(struct assh_context_s *c,
                                     const char *filename,
                                     const char *host,
                                     const struct assh_key_s *key);
@@ -82,37 +82,37 @@ assh_client_add_known_hosts(struct assh_context_s *c,
     any case.
 */
 void
-assh_client_event_hk_lookup_va(struct assh_session_s *s, FILE *out, FILE *in,
+asshh_client_event_hk_lookup_va(struct assh_session_s *s, FILE *out, FILE *in,
                                        const char *host,
                                        struct assh_event_s *event, ...);
 
-/** @This calls the @ref assh_client_event_hk_lookup_va
+/** @This calls the @ref asshh_client_event_hk_lookup_va
     function with system and user known hosts files.
 
     @This takes care of calling the @ref assh_event_done function in
     any case.
 */
 void
-assh_client_event_hk_lookup(struct assh_session_s *s, FILE *out, FILE *in,
+asshh_client_event_hk_lookup(struct assh_session_s *s, FILE *out, FILE *in,
                                     const char *host,
                                     struct assh_event_s *event);
 
 /** This handles the @ref ASSH_EVENT_KEX_DONE event by adding the host
     key to the openssh known hosts file if needed. This works along
-    with the @ref assh_client_event_hk_lookup function.
+    with the @ref asshh_client_event_hk_lookup function.
 
     @This takes care of calling the @ref assh_event_done function in
     any case.
 */
 void
-assh_client_event_hk_add(struct assh_session_s *s,
+asshh_client_event_hk_add(struct assh_session_s *s,
                                  const char *host,
                                  struct assh_event_s *event);
 
 /** @This is used to specify the list of user key files for the @ref
-    assh_client_event_auth function.
-    @see assh_client_user_key_default */
-struct assh_client_user_key_s
+    asshh_client_event_auth function.
+    @see asshh_client_user_key_default */
+struct asshh_client_user_key_s
 {
   /** key filename to lookup in the .ssh user directory */
   const char *filename;
@@ -122,9 +122,9 @@ struct assh_client_user_key_s
 };
 
 /** @This contains a default list of user key file for use with
-    the @ref assh_client_event_auth function. */
-extern const struct assh_client_user_key_s
-  assh_client_user_key_default[];
+    the @ref asshh_client_event_auth function. */
+extern const struct asshh_client_user_key_s
+  asshh_client_user_key_default[];
 
 /** @This implements a default user authentication events handler
     which interacts with the user on the UNIX terminal and fetches
@@ -144,22 +144,22 @@ extern const struct assh_client_user_key_s
 
     The @tt key_files parameter specifies the list of user key files
     which will be loaded. The user keys are loaded from the
-    user @tt .ssh directory. The @ref assh_client_user_key_default
+    user @tt .ssh directory. The @ref asshh_client_user_key_default
     array can be passed as @tt key_files.
 
     @This takes care of calling the @ref assh_event_done function in
     any case.
 */
 void
-assh_client_event_auth(struct assh_session_s *s, FILE *out, FILE *in,
+asshh_client_event_auth(struct assh_session_s *s, FILE *out, FILE *in,
 			       const char *user, const char *host,
 			       enum assh_userauth_methods_e *methods,
-			       const struct assh_client_user_key_s *key_files,
+			       const struct asshh_client_user_key_s *key_files,
 			       struct assh_event_s *event);
 
 /** @This specifies the current state of an interactive session.
-    @see assh_client_inter_session_s */
-enum assh_client_inter_session_state_e
+    @see asshh_client_inter_session_s */
+enum asshh_client_inter_session_state_e
 {
   ASSH_CLIENT_INTER_ST_INIT,
   ASSH_CLIENT_INTER_ST_SESSION,
@@ -171,15 +171,15 @@ enum assh_client_inter_session_state_e
 };
 
 /** @This stores the state of the simple interactive session helper
-    between calls to the @ref assh_client_event_inter_session
+    between calls to the @ref asshh_client_event_inter_session
     function.
 
     @This must be initialized by calling the @ref
-    assh_client_init_inter_session function.
+    asshh_client_init_inter_session function.
 */
-struct assh_client_inter_session_s
+struct asshh_client_inter_session_s
 {
-  enum assh_client_inter_session_state_e state;
+  enum asshh_client_inter_session_state_e state;
   const char *command;
   const char *term;
   struct assh_channel_s *channel;
@@ -188,7 +188,7 @@ struct assh_client_inter_session_s
 
 /** @This initializes an interactive session object for execution of
     the specified command. This must be used along with the @ref
-    assh_client_event_inter_session event handler function.
+    asshh_client_event_inter_session event handler function.
 
     This is a simple helper designed to start a command on a remote
     server. The associated event handler takes care of sending the
@@ -200,7 +200,7 @@ struct assh_client_inter_session_s
     allocation is requested.
 */
 void
-assh_client_init_inter_session(struct assh_client_inter_session_s *state,
+asshh_client_init_inter_session(struct asshh_client_inter_session_s *state,
                                const char *command, const char *term);
 
 /** @This implements an events handler which starts an interactive
@@ -218,9 +218,9 @@ assh_client_init_inter_session(struct assh_client_inter_session_s *state,
     @This takes care of calling the @ref assh_event_done function.
 */
 void
-assh_client_event_inter_session(struct assh_session_s *s,
+asshh_client_event_inter_session(struct assh_session_s *s,
                                 struct assh_event_s *event,
-                                struct assh_client_inter_session_s *state);
+                                struct asshh_client_inter_session_s *state);
 
 #endif
 

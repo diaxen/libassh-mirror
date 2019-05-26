@@ -519,7 +519,7 @@ ssh_loop(struct assh_session_s *session,
             }
 
           /* let an helper function read ssh stream from socket */
-          assh_fd_event(session, &event, p[0].fd);
+          asshh_fd_event(session, &event, p[0].fd);
           p[0].revents &= ~POLLIN;
           break;
 
@@ -533,7 +533,7 @@ ssh_loop(struct assh_session_s *session,
             }
 
           /* let an helper function write ssh stream to the socket */
-          assh_fd_event(session, &event, p[0].fd);
+          asshh_fd_event(session, &event, p[0].fd);
           p[0].revents &= ~POLLOUT;
           break;
                                                         /* anchor everror */
@@ -563,14 +563,14 @@ ssh_loop(struct assh_session_s *session,
 	case ASSH_EVENT_USERAUTH_SERVER_PASSWORD:
           /* let an helper function handle user authentication from
 	     system password file and user authorized_keys file. */
-	  assh_server_event_auth(session, &event);
+	  asshh_server_event_auth(session, &event);
 	  break;
 
 	case ASSH_EVENT_USERAUTH_SERVER_SUCCESS: {
 	  /* change the process user id when user authentication is over */
 	  uid_t uid;
 	  gid_t gid;
-	  if (assh_server_event_user_id(session, &uid, &gid, &event))
+	  if (asshh_server_event_user_id(session, &uid, &gid, &event))
 	    abort();
 #ifdef CONFIG_ASSH_POSIX_SETGROUPS
 	  setgroups(0, NULL);
@@ -614,8 +614,8 @@ ssh_loop(struct assh_session_s *session,
 	      if (!assh_buffer_strcmp(&ev->type, "pty-req"))
 		{
 #ifdef CONFIG_ASSH_POSIX_OPENPT
-		  struct assh_inter_pty_req_s rqi;
-		  err = assh_inter_decode_pty_req(&rqi, ev->rq_data.data,
+		  struct asshh_inter_pty_req_s rqi;
+		  err = asshh_inter_decode_pty_req(&rqi, ev->rq_data.data,
 						  ev->rq_data.size);
 
 		  if (ASSH_ERR_ERROR(err) == ASSH_OK && !its_pty(its))
@@ -633,8 +633,8 @@ ssh_loop(struct assh_session_s *session,
 	      /* command exec from the remote client */
 	      else if (!assh_buffer_strcmp(&ev->type, "exec"))
 		{
-		  struct assh_inter_exec_s rqi;
-		  err = assh_inter_decode_exec(&rqi, ev->rq_data.data,
+		  struct asshh_inter_exec_s rqi;
+		  err = asshh_inter_decode_exec(&rqi, ev->rq_data.data,
 					       ev->rq_data.size);
 
 		  if (ASSH_ERR_ERROR(err) == ASSH_OK)
@@ -817,7 +817,7 @@ int main(int argc, char **argv)
     ERROR("Unable to create an assh context.\n");
 
   /* load or create host key(s) */
-  if (assh_server_load_hk(context)
+  if (asshh_server_load_hk(context)
 #ifdef CONFIG_ASSH_KEY_CREATE
       && assh_key_create(context, assh_context_keys(context),
 			 255, &assh_key_ed25519, ASSH_ALGO_SIGN)

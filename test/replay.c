@@ -587,7 +587,7 @@ static void test()
 	      if (verbose > 0)
 		fprintf(stderr, "[%s] Kex done.\n", side);
 	      if (verbose > 1)
-		assh_print_kex_details(&session[i], stderr, &event);
+		asshh_print_kex_details(&session[i], stderr, &event);
 	      break;
 
 	    case ASSH_EVENT_SERVICE_START:
@@ -1610,7 +1610,7 @@ static void record(int argc, char **argv)
 	      }
 	    else
 	      {
-		if (assh_load_key_filename(c, keys, NULL, role,
+		if (asshh_load_key_filename(c, keys, NULL, role,
 					   optarg, ASSH_KEY_FMT_NONE, NULL, 0))
 		  TEST_FAIL("unable to load key: `%s'\n", optarg);
 	      }

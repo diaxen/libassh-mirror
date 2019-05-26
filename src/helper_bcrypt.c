@@ -402,7 +402,7 @@ struct bcrypt_scratch_s
   uint8_t ciphertext[BCRYPT_HASHSIZE];
   uint32_t cdata[BCRYPT_BLOCKS];
 
-  /* used in assh_bcrypt_pbkdf */
+  /* used in asshh_bcrypt_pbkdf */
   uint8_t sha2pass[64];
   uint8_t sha2salt[64];
   uint8_t out[BCRYPT_HASHSIZE];
@@ -456,7 +456,7 @@ bcrypt_hash_sha512(struct assh_context_s *c,
 }
 
 assh_error_t
-assh_bcrypt_pbkdf(struct assh_context_s *c,
+asshh_bcrypt_pbkdf(struct assh_context_s *c,
 		  const char *pass, size_t passlen,
 		  const uint8_t *salt, size_t saltlen,
 		  uint8_t *key, size_t keylen, size_t rounds)

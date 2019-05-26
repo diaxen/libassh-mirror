@@ -104,7 +104,7 @@ fifo_write(struct fifo_s *f, const uint8_t *data, size_t size)
                                                         /* anchor rexecvars */
 static const char            *rexec_hostname;
 static struct assh_session_s *rexec_session;
-static struct assh_client_inter_session_s rexec_inter;
+static struct asshh_client_inter_session_s rexec_inter;
 
 /* specify user authentication methods to use */
 static enum assh_userauth_methods_e rexec_auth_methods =
@@ -139,7 +139,7 @@ ssh_loop_fwd(void)
 	case ASSH_EVENT_WRITE:
 	  /* use helpers to read/write the ssh stream from/to our
 	     socket file descriptor */
-	  assh_fd_event(fwd_session, &fwd_event, fwd_sock);
+	  asshh_fd_event(fwd_session, &fwd_event, fwd_sock);
 	  continue;
 
                                                         /* anchor fwdevother */
@@ -151,7 +151,7 @@ ssh_loop_fwd(void)
 
         case ASSH_EVENT_KEX_HOSTKEY_LOOKUP:
           /* rely on helper as in the rexec example */
-          assh_client_event_hk_lookup(fwd_session, stderr, stdin,
+          asshh_client_event_hk_lookup(fwd_session, stderr, stdin,
                                       fwd_hostname, &fwd_event);
           continue;
 
@@ -161,8 +161,8 @@ ssh_loop_fwd(void)
         case ASSH_EVENT_USERAUTH_CLIENT_PWCHANGE:
         case ASSH_EVENT_USERAUTH_CLIENT_KEYBOARD:
           /* rely on helper as in the rexec example */
-          assh_client_event_auth(fwd_session, stderr, stdin, username, fwd_hostname,
-             &fwd_auth_methods, assh_client_user_key_default, &fwd_event);
+          asshh_client_event_auth(fwd_session, stderr, stdin, username, fwd_hostname,
+             &fwd_auth_methods, asshh_client_user_key_default, &fwd_event);
           continue;
 
                                                         /* anchor fwdevsrvstart */
@@ -175,14 +175,14 @@ ssh_loop_fwd(void)
              service has started. */
           if (srv == &assh_service_connection)
             {
-              struct assh_portfwd_direct_tcpip_s fwd_rq;
+              struct asshh_portfwd_direct_tcpip_s fwd_rq;
 
               assh_buffer_strset(&fwd_rq.conn_addr, rexec_hostname);
               fwd_rq.conn_port = 22;
               assh_buffer_strset(&fwd_rq.orig_addr, "127.0.0.1");
               fwd_rq.orig_port = 22;
 
-              if (assh_portfwd_open_direct_tcpip(fwd_session,
+              if (asshh_portfwd_open_direct_tcpip(fwd_session,
                                                  &fwd_channel, &fwd_rq))
                 goto disconnect;
             }
@@ -289,7 +289,7 @@ ssh_loop_rexec(void)
 
         case ASSH_EVENT_KEX_HOSTKEY_LOOKUP:
           /* rely on helper as in the rexec example */
-          assh_client_event_hk_lookup(rexec_session, stderr, stdin,
+          asshh_client_event_hk_lookup(rexec_session, stderr, stdin,
                                       rexec_hostname, &rexec_event);
           continue;
 
@@ -299,8 +299,8 @@ ssh_loop_rexec(void)
         case ASSH_EVENT_USERAUTH_CLIENT_PWCHANGE:
         case ASSH_EVENT_USERAUTH_CLIENT_KEYBOARD:
           /* rely on helper as in the rexec example */
-          assh_client_event_auth(rexec_session, stderr, stdin, username, rexec_hostname,
-             &rexec_auth_methods, assh_client_user_key_default, &rexec_event);
+          asshh_client_event_auth(rexec_session, stderr, stdin, username, rexec_hostname,
+             &rexec_auth_methods, asshh_client_user_key_default, &rexec_event);
           continue;
 
                                                         /* anchor rexecevinter */
@@ -311,7 +311,7 @@ ssh_loop_rexec(void)
         case ASSH_EVENT_REQUEST_FAILURE:
         case ASSH_EVENT_CHANNEL_CLOSE:
           /* rely on helper as in the rexec example */
-          assh_client_event_inter_session(rexec_session, &rexec_event, &rexec_inter);
+          asshh_client_event_inter_session(rexec_session, &rexec_event, &rexec_inter);
 
 	  if (rexec_inter.state == ASSH_CLIENT_INTER_ST_CLOSED)
 	    assh_session_disconnect(rexec_session, SSH_DISCONNECT_BY_APPLICATION, NULL);
@@ -412,7 +412,7 @@ int main(int argc, char **argv)
 
   /* initializes an interactive session state machine object for the
      rexec session */
-  assh_client_init_inter_session(&rexec_inter, command, NULL);
+  asshh_client_init_inter_session(&rexec_inter, command, NULL);
 
                                                         /* anchor mainloop */
   while (1)

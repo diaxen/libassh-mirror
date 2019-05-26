@@ -107,7 +107,7 @@ int main(int argc, char **argv)
 
 							/* anchor reghk */
   /* load or create host key(s) */
-  if (assh_server_load_hk(context)
+  if (asshh_server_load_hk(context)
 #ifdef CONFIG_ASSH_KEY_CREATE
       && assh_key_create(context, assh_context_keys(context),
 			 255, &assh_key_ed25519, ASSH_ALGO_SIGN)
@@ -147,7 +147,7 @@ int main(int argc, char **argv)
 	    case ASSH_EVENT_WRITE:
 	      /* use helpers to read/write the ssh stream from/to our
 		 socket file descriptor */
-	      assh_fd_event(session, &event, conn);
+	      asshh_fd_event(session, &event, conn);
 	      break;
 
 	    case ASSH_EVENT_SESSION_ERROR:
@@ -160,7 +160,7 @@ int main(int argc, char **argv)
 	    case ASSH_EVENT_USERAUTH_SERVER_USERKEY:
 	    case ASSH_EVENT_USERAUTH_SERVER_PASSWORD:
 	      /* let some helpers handle user authentication */
-	      assh_server_event_auth(session, &event);
+	      asshh_server_event_auth(session, &event);
 	      break;
 
                                                         /* anchor chopenev */

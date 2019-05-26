@@ -41,7 +41,7 @@
 #include <termios.h>
 
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_fd_get_password(struct assh_context_s *c, const char **pass,
+asshh_fd_get_password(struct assh_context_s *c, const char **pass,
 		     size_t max_len, int fd, assh_bool_t echo)
 {
   struct termios t;
@@ -93,7 +93,7 @@ assh_fd_get_password(struct assh_context_s *c, const char **pass,
 }
 
 size_t
-assh_fd_event(struct assh_session_s *s,
+asshh_fd_event(struct assh_session_s *s,
               struct assh_event_s *e, int fd)
 {
   assh_error_t err = ASSH_OK;
@@ -149,7 +149,7 @@ assh_fd_event(struct assh_session_s *s,
 }
 
 void
-assh_print_string(FILE *out, const struct assh_cbuffer_s *str)
+asshh_print_string(FILE *out, const struct assh_cbuffer_s *str)
 {
   size_t i;
 
@@ -164,7 +164,7 @@ assh_print_string(FILE *out, const struct assh_cbuffer_s *str)
 }
 
 void
-assh_print_kex_details(struct assh_session_s *s, FILE *out,
+asshh_print_kex_details(struct assh_session_s *s, FILE *out,
 			      const struct assh_event_s *event)
 {
   const struct assh_event_kex_done_s *ev = &event->kex.done;
@@ -175,7 +175,7 @@ assh_print_kex_details(struct assh_session_s *s, FILE *out,
   fprintf(out,
 	  "Key exchange details:\n"
 	  "  remote software   : ");
-  assh_print_string(out, &ev->ident);
+  asshh_print_string(out, &ev->ident);
 
   fprintf(out, "\n"
 	  "  key exchange      : %-38s safety %u%% (%s)\n",

@@ -45,7 +45,7 @@
     @This takes care of calling the @ref assh_event_done function.
 */
 size_t
-assh_fd_event(struct assh_session_s *s,
+asshh_fd_event(struct assh_session_s *s,
 	      struct assh_event_s *e, int fd);
 
 /** @This read characters on the file descriptor until a new line is
@@ -53,17 +53,17 @@ assh_fd_event(struct assh_session_s *s,
     specified length are read but ignored. This function fails if the
     file descriptor is not a tty. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_fd_get_password(struct assh_context_s *c, const char **pass,
+asshh_fd_get_password(struct assh_context_s *c, const char **pass,
 		     size_t max_len, int fd, assh_bool_t echo);
 
 /** @This writes a string to the passed stream, filtering out terminal
     control characters. */
 void
-assh_print_string(FILE *out, const struct assh_cbuffer_s *str);
+asshh_print_string(FILE *out, const struct assh_cbuffer_s *str);
 
 /** @This prints a list of algorithms selected by the kex exchange. */
 void
-assh_print_kex_details(struct assh_session_s *s, FILE *out,
+asshh_print_kex_details(struct assh_session_s *s, FILE *out,
 		       const struct assh_event_s *event);
 
 #endif

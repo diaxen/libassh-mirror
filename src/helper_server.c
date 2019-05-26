@@ -55,32 +55,32 @@
 #endif
 
 assh_error_t
-assh_server_load_hk(struct assh_context_s *c)
+asshh_server_load_hk(struct assh_context_s *c)
 {
   uint_fast8_t count = 0;
   assh_error_t err;
 
-  count += !assh_load_hostkey_filename(c, &assh_key_dsa, ASSH_ALGO_SIGN,
+  count += !asshh_load_hostkey_filename(c, &assh_key_dsa, ASSH_ALGO_SIGN,
 				   CONFIG_ASSH_OPENSSH_PREFIX "ssh_host_dsa_key",
 				   ASSH_KEY_FMT_PV_PEM_ASN1, 0);
 
-  count += !assh_load_hostkey_filename(c, &assh_key_rsa, ASSH_ALGO_SIGN,
+  count += !asshh_load_hostkey_filename(c, &assh_key_rsa, ASSH_ALGO_SIGN,
 				   CONFIG_ASSH_OPENSSH_PREFIX "ssh_host_rsa_key",
 				   ASSH_KEY_FMT_PV_PEM, 0);
 
-  count += !assh_load_hostkey_filename(c, &assh_key_ed25519, ASSH_ALGO_SIGN,
+  count += !asshh_load_hostkey_filename(c, &assh_key_ed25519, ASSH_ALGO_SIGN,
 				   CONFIG_ASSH_OPENSSH_PREFIX "ssh_host_ed25519_key",
 				   ASSH_KEY_FMT_PV_OPENSSH_V1, 0);
 
-  count += !assh_load_hostkey_filename(c, &assh_key_eddsa_e382, ASSH_ALGO_SIGN,
+  count += !asshh_load_hostkey_filename(c, &assh_key_eddsa_e382, ASSH_ALGO_SIGN,
 				   CONFIG_ASSH_OPENSSH_PREFIX "ssh_host_e382_key",
 				   ASSH_KEY_FMT_PV_OPENSSH_V1, 0);
 
-  count += !assh_load_hostkey_filename(c, &assh_key_eddsa_e521, ASSH_ALGO_SIGN,
+  count += !asshh_load_hostkey_filename(c, &assh_key_eddsa_e521, ASSH_ALGO_SIGN,
 				   CONFIG_ASSH_OPENSSH_PREFIX "ssh_host_e521_key",
 				   ASSH_KEY_FMT_PV_OPENSSH_V1, 0);
 
-  count += !assh_load_hostkey_filename(c, &assh_key_ecdsa_nistp, ASSH_ALGO_SIGN,
+  count += !asshh_load_hostkey_filename(c, &assh_key_ecdsa_nistp, ASSH_ALGO_SIGN,
 				   CONFIG_ASSH_OPENSSH_PREFIX "ssh_host_ecdsa_key",
 				   ASSH_KEY_FMT_PV_PEM, 0);
 
@@ -89,7 +89,7 @@ assh_server_load_hk(struct assh_context_s *c)
 }
 
 assh_error_t
-assh_server_ak_lookup(struct assh_session_s *s,
+asshh_server_ak_lookup(struct assh_session_s *s,
 			      const char *filename,
 			      const struct assh_key_s *key)
 {
@@ -121,7 +121,7 @@ assh_server_ak_lookup(struct assh_session_s *s,
 	      break;
 	    }
 
-	  if (!assh_load_key_file(s->ctx, &k, NULL, ASSH_ALGO_SIGN, f,
+	  if (!asshh_load_key_file(s->ctx, &k, NULL, ASSH_ALGO_SIGN, f,
 				  ASSH_KEY_FMT_PUB_OPENSSH, NULL, 0))
 	    {
               assh_bool_t found = assh_key_cmp(s->ctx, k, key, 1);
@@ -147,7 +147,7 @@ assh_server_ak_lookup(struct assh_session_s *s,
 }
 
 assh_error_t
-assh_server_event_user_id(struct assh_session_s *s,
+asshh_server_event_user_id(struct assh_session_s *s,
 			  uid_t *uid, gid_t *gid,
 			  struct assh_event_s *event)
 {
@@ -180,7 +180,7 @@ assh_server_event_user_id(struct assh_session_s *s,
 }
 
 assh_error_t
-assh_server_event_auth(struct assh_session_s *s,
+asshh_server_event_auth(struct assh_session_s *s,
 			       struct assh_event_s *event)
 {
   assh_error_t err;
@@ -209,7 +209,7 @@ assh_server_event_auth(struct assh_session_s *s,
       size_t l = snprintf(fname, sizeof(fname), "%s/.ssh/authorized_keys", pwd.pw_dir);
       ASSH_JMP_IF_TRUE(l >= sizeof(fname), ASSH_ERR_INPUT_OVERFLOW, err_sc);
 
-      ASSH_JMP_ON_ERR(assh_server_ak_lookup(s, fname, ev->pub_key), err_sc);
+      ASSH_JMP_ON_ERR(asshh_server_ak_lookup(s, fname, ev->pub_key), err_sc);
 
       ev->found = 1;
       break;

@@ -133,14 +133,14 @@ assh_load_rfc4716_rfc1421(struct assh_context_s *c, FILE *file,
                           const struct assh_key_algo_s **algo,
                           const char *passphrase, char **comment)
 {
-  struct assh_base64_ctx_s ctx;
+  struct asshh_base64_ctx_s ctx;
   assh_error_t err = ASSH_OK;
   char in[80], *l;
   uint_fast8_t state = 0;
   const struct assh_algo_cipher_s *cipher = NULL;
   uint8_t iv[16];
 
-  assh_base64_init(&ctx, kdata, *klen);
+  asshh_base64_init(&ctx, kdata, *klen);
 
   while ((l = fgets(in, sizeof(in), file)))
     {
@@ -236,14 +236,14 @@ assh_load_rfc4716_rfc1421(struct assh_context_s *c, FILE *file,
           goto done;
 	}
 
-      ASSH_JMP_ON_ERR(assh_base64_decode_update(&ctx, (const uint8_t*)l, len), err_);
+      ASSH_JMP_ON_ERR(asshh_base64_decode_update(&ctx, (const uint8_t*)l, len), err_);
     }
 
   ASSH_JMP_ON_ERR(ASSH_ERR_BAD_DATA, err_);
 
  done:
-  ASSH_RET_ON_ERR(assh_base64_decode_final(&ctx));
-  *klen = assh_base64_outsize(&ctx);
+  ASSH_RET_ON_ERR(asshh_base64_decode_final(&ctx));
+  *klen = asshh_base64_outsize(&ctx);
 
   /* decipher key blob */
   if (cipher != NULL)
@@ -295,7 +295,7 @@ assh_load_pub_openssh(struct assh_context_s *c, FILE *file,
                       const struct assh_key_algo_s **algo,
                       char **comment)
 {
-  struct assh_base64_ctx_s ctx;
+  struct asshh_base64_ctx_s ctx;
   assh_error_t err;
   int_fast16_t in;
   uint_fast8_t alen = 0, clen = 0;
@@ -303,7 +303,7 @@ assh_load_pub_openssh(struct assh_context_s *c, FILE *file,
   char cmt[80];
   char algo_name[40];
 
-  assh_base64_init(&ctx, kdata, *klen);
+  asshh_base64_init(&ctx, kdata, *klen);
 
   while (1)
     {
@@ -344,7 +344,7 @@ assh_load_pub_openssh(struct assh_context_s *c, FILE *file,
               break;
 	    }
 	  uint8_t in8 = in;
-	  ASSH_RET_ON_ERR(assh_base64_decode_update(&ctx, &in8, 1));
+	  ASSH_RET_ON_ERR(asshh_base64_decode_update(&ctx, &in8, 1));
 	  break;
 	case 3:                 /* skip white space */
 	  if (isblank(in))
@@ -359,8 +359,8 @@ assh_load_pub_openssh(struct assh_context_s *c, FILE *file,
 
   ASSH_RET_IF_TRUE(state < 2, ASSH_ERR_BAD_DATA);
 
-  ASSH_RET_ON_ERR(assh_base64_decode_final(&ctx));
-  *klen = assh_base64_outsize(&ctx);
+  ASSH_RET_ON_ERR(asshh_base64_decode_final(&ctx));
+  *klen = asshh_base64_outsize(&ctx);
 
   if (comment != NULL && clen)
     {
@@ -468,7 +468,7 @@ assh_load_openssh_v1_blob(struct assh_context_s *c,
       uint8_t *key = sc + cipher->ctx_size;
       uint8_t *iv = key + cipher->key_size;
 
-      ASSH_JMP_ON_ERR(assh_bcrypt_pbkdf(c, passphrase, strlen(passphrase),
+      ASSH_JMP_ON_ERR(asshh_bcrypt_pbkdf(c, passphrase, strlen(passphrase),
                                      salt_str + 4, assh_load_u32(salt_str),
                                      key, cipher->key_size + cipher->iv_size,
                                      assh_load_u32(rounds_u32)), err_sc);
@@ -566,7 +566,7 @@ assh_load_key_file_guess(struct assh_context_s *c,
 
       ASSH_RET_IF_TRUE(fseek(file, pos, SEEK_SET), ASSH_ERR_IO);
 
-      err = assh_load_key_file(c, head, algo, role, file,
+      err = asshh_load_key_file(c, head, algo, role, file,
                                i, passphrase, size_hint);
 
       switch (ASSH_ERR_ERROR(err))
@@ -583,7 +583,7 @@ assh_load_key_file_guess(struct assh_context_s *c,
   ASSH_RETURN(ASSH_ERR_MISSING_ALGO);
 }
 
-assh_error_t assh_load_key_file(struct assh_context_s *c,
+assh_error_t asshh_load_key_file(struct assh_context_s *c,
 				struct assh_key_s **head,
 				const struct assh_key_algo_s *algo,
 				enum assh_algo_class_e role,
@@ -685,7 +685,7 @@ assh_error_t assh_load_key_file(struct assh_context_s *c,
   return err;
 }
 
-assh_error_t assh_load_key_filename(struct assh_context_s *c,
+assh_error_t asshh_load_key_filename(struct assh_context_s *c,
 				    struct assh_key_s **head,
 				    const struct assh_key_algo_s *algo,
 				    enum assh_algo_class_e role,
@@ -698,7 +698,7 @@ assh_error_t assh_load_key_filename(struct assh_context_s *c,
   FILE *file = fopen(filename, "rb");
   ASSH_RET_IF_TRUE(file == NULL, ASSH_ERR_IO);
 
-  ASSH_JMP_ON_ERR(assh_load_key_file(c, head, algo, role, file,
+  ASSH_JMP_ON_ERR(asshh_load_key_file(c, head, algo, role, file,
                                   format, passphrase, size_hint), err_);
 
  err_:
@@ -706,7 +706,7 @@ assh_error_t assh_load_key_filename(struct assh_context_s *c,
   return err;
 }
 
-assh_error_t assh_load_hostkey_file(struct assh_context_s *c,
+assh_error_t asshh_load_hostkey_file(struct assh_context_s *c,
 				    const struct assh_key_algo_s *algo,
 				    enum assh_algo_class_e role,
 				    FILE *file,
@@ -714,13 +714,13 @@ assh_error_t assh_load_hostkey_file(struct assh_context_s *c,
 {
 #ifdef CONFIG_ASSH_SERVER
   if (c->type == ASSH_SERVER)
-    return assh_load_key_file(c, &c->keys, algo, role,
+    return asshh_load_key_file(c, &c->keys, algo, role,
                               file, format, NULL, size_hint);
 #endif
   return ASSH_ERR_NOTSUP;
 }
 
-assh_error_t assh_load_hostkey_filename(struct assh_context_s *c,
+assh_error_t asshh_load_hostkey_filename(struct assh_context_s *c,
 					const struct assh_key_algo_s *algo,
 					enum assh_algo_class_e role,
 					const char *filename,
@@ -728,7 +728,7 @@ assh_error_t assh_load_hostkey_filename(struct assh_context_s *c,
 {
 #ifdef CONFIG_ASSH_SERVER
   if (c->type == ASSH_SERVER)
-    return assh_load_key_filename(c, &c->keys, algo, role,
+    return asshh_load_key_filename(c, &c->keys, algo, role,
                                   filename, format, NULL, size_hint);
 #endif
   return ASSH_ERR_NOTSUP;
@@ -867,7 +867,7 @@ assh_save_openssh_v1_blob(struct assh_context_s *c,
           uint8_t *key = sc + cipher->ctx_size;
           uint8_t *iv = key + cipher->key_size;
 
-          ASSH_JMP_ON_ERR(assh_bcrypt_pbkdf(c, passphrase, strlen(passphrase),
+          ASSH_JMP_ON_ERR(asshh_bcrypt_pbkdf(c, passphrase, strlen(passphrase),
                                          salt, salt_size, key,
                                          cipher->key_size + cipher->iv_size,
                                          rounds), err_sc);
@@ -897,17 +897,17 @@ assh_save_pub_openssh(struct assh_context_s *c,
 		      const uint8_t *blob, size_t blob_len)
 {
   assh_error_t err;
-  struct assh_base64_ctx_s b64;
-  size_t maxlen = assh_base64_encoded_size(blob_len);
+  struct asshh_base64_ctx_s b64;
+  size_t maxlen = asshh_base64_encoded_size(blob_len);
   uint8_t tmp[maxlen];
 
-  assh_base64_init(&b64, tmp, maxlen);
-  ASSH_RET_ON_ERR(assh_base64_encode_update(&b64, blob, blob_len));
-  ASSH_RET_ON_ERR(assh_base64_encode_final(&b64));
+  asshh_base64_init(&b64, tmp, maxlen);
+  ASSH_RET_ON_ERR(asshh_base64_encode_update(&b64, blob, blob_len));
+  ASSH_RET_ON_ERR(asshh_base64_encode_final(&b64));
 
   fputs(head->type, file);
   fputc(' ', file);
-  fwrite(tmp, assh_base64_outsize(&b64), 1, file);
+  fwrite(tmp, asshh_base64_outsize(&b64), 1, file);
   fputc(' ', file);
   if (head->comment != NULL)
     fputs(head->comment, file);
@@ -923,15 +923,15 @@ assh_save_rfc4716(struct assh_context_s *c,
 		  size_t blob_len)
 {
   assh_error_t err;
-  struct assh_base64_ctx_s b64;
-  size_t maxlen = assh_base64_encoded_size(blob_len);
+  struct asshh_base64_ctx_s b64;
+  size_t maxlen = asshh_base64_encoded_size(blob_len);
   uint8_t tmp[maxlen];
 
-  assh_base64_init(&b64, tmp, maxlen);
-  ASSH_RET_ON_ERR(assh_base64_encode_update(&b64, blob, blob_len));
-  ASSH_RET_ON_ERR(assh_base64_encode_final(&b64));
+  asshh_base64_init(&b64, tmp, maxlen);
+  ASSH_RET_ON_ERR(asshh_base64_encode_update(&b64, blob, blob_len));
+  ASSH_RET_ON_ERR(asshh_base64_encode_final(&b64));
 
-  size_t l = assh_base64_outsize(&b64);
+  size_t l = asshh_base64_outsize(&b64);
   char *s = (char*)tmp;
 
   fprintf(file, "---- BEGIN SSH2 PUBLIC KEY ----\n");
@@ -1008,15 +1008,15 @@ assh_save_rfc1421(struct assh_context_s *c,
     }
 
   /* base64 encode */
-  struct assh_base64_ctx_s b64;
-  size_t maxlen = assh_base64_encoded_size(blob_len);
+  struct asshh_base64_ctx_s b64;
+  size_t maxlen = asshh_base64_encoded_size(blob_len);
   uint8_t *tmp = alloca(maxlen);
 
-  assh_base64_init(&b64, tmp, maxlen);
-  ASSH_RET_ON_ERR(assh_base64_encode_update(&b64, blob, blob_len));
-  ASSH_RET_ON_ERR(assh_base64_encode_final(&b64));
+  asshh_base64_init(&b64, tmp, maxlen);
+  ASSH_RET_ON_ERR(asshh_base64_encode_update(&b64, blob, blob_len));
+  ASSH_RET_ON_ERR(asshh_base64_encode_final(&b64));
 
-  size_t l = assh_base64_outsize(&b64);
+  size_t l = asshh_base64_outsize(&b64);
   char *s = (char*)tmp;
 
   /* text output */
@@ -1035,7 +1035,7 @@ assh_save_rfc1421(struct assh_context_s *c,
   return err;
 }
 
-assh_error_t assh_save_key_file(struct assh_context_s *c,
+assh_error_t asshh_save_key_file(struct assh_context_s *c,
 				const struct assh_key_s *head,
 				FILE *file, enum assh_key_format_e format,
 				const char *passphrase)
@@ -1131,7 +1131,7 @@ assh_error_t assh_save_key_file(struct assh_context_s *c,
   return err;
 }
 
-assh_error_t assh_save_key_filename(struct assh_context_s *c,
+assh_error_t asshh_save_key_filename(struct assh_context_s *c,
 				    const struct assh_key_s *head,
 				    const char *filename,
 				    enum assh_key_format_e format,
@@ -1142,7 +1142,7 @@ assh_error_t assh_save_key_filename(struct assh_context_s *c,
   FILE *file = fopen(filename, "wb");
   ASSH_RET_IF_TRUE(file == NULL, ASSH_ERR_IO);
 
-  ASSH_JMP_ON_ERR(assh_save_key_file(c, head, file, format, passphrase), err_);
+  ASSH_JMP_ON_ERR(asshh_save_key_file(c, head, file, format, passphrase), err_);
 
  err_:
   fclose(file);
@@ -1150,9 +1150,9 @@ assh_error_t assh_save_key_filename(struct assh_context_s *c,
 }
 
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_key_fingerprint(struct assh_context_s *c,
+asshh_key_fingerprint(struct assh_context_s *c,
 		     const struct assh_key_s *key,
-		     enum assh_fingerprint_fmt_e fmt,
+		     enum asshh_fingerprint_fmt_e fmt,
 		     char *buf, size_t *buf_size,
                      const char **fmt_name)
 {
@@ -1243,10 +1243,10 @@ assh_key_fingerprint(struct assh_context_s *c,
       break;
     }
     case ASSH_FP_BASE64_SHA256: {
-      struct assh_base64_ctx_s bctx;
-      assh_base64_init(&bctx, (uint8_t*)buf, 44);
-      ASSH_JMP_ON_ERR(assh_base64_encode_update(&bctx, hash, 32), err_sc);
-      ASSH_JMP_ON_ERR(assh_base64_encode_final(&bctx), err_sc);
+      struct asshh_base64_ctx_s bctx;
+      asshh_base64_init(&bctx, (uint8_t*)buf, 44);
+      ASSH_JMP_ON_ERR(asshh_base64_encode_update(&bctx, hash, 32), err_sc);
+      ASSH_JMP_ON_ERR(asshh_base64_encode_final(&bctx), err_sc);
       buf[43] = 0;              /* drop '=' */
       break;
     }

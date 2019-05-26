@@ -113,7 +113,7 @@ enum poll_e
                                                         /* anchor sshloop */
 static assh_bool_t
 ssh_loop(struct assh_session_s *session,
-         struct assh_client_inter_session_s *inter,
+         struct asshh_client_inter_session_s *inter,
          struct pollfd *p)
 {
   time_t t = time(NULL);
@@ -139,7 +139,7 @@ ssh_loop(struct assh_session_s *session,
             }
 
           /* let an helper function read ssh stream from socket */
-          assh_fd_event(session, &event, p[POLL_SOCKET].fd);
+          asshh_fd_event(session, &event, p[POLL_SOCKET].fd);
           p[POLL_SOCKET].revents &= ~POLLIN;
           break;
 
@@ -154,7 +154,7 @@ ssh_loop(struct assh_session_s *session,
             }
 
           /* let an helper function write ssh stream to the socket */
-          assh_fd_event(session, &event, p[POLL_SOCKET].fd);
+          asshh_fd_event(session, &event, p[POLL_SOCKET].fd);
           p[POLL_SOCKET].revents &= ~POLLOUT;
           break;
 
@@ -169,7 +169,7 @@ ssh_loop(struct assh_session_s *session,
         case ASSH_EVENT_DISCONNECT:
           /* print disconnect message */
           fputs("SSH disconnect: ", stderr);
-          assh_print_string(stderr, &event.transport.disconnect.desc);
+          asshh_print_string(stderr, &event.transport.disconnect.desc);
           fputc('\n', stderr);
           assh_event_done(session, &event, ASSH_OK);
           break;
@@ -177,7 +177,7 @@ ssh_loop(struct assh_session_s *session,
         case ASSH_EVENT_KEX_HOSTKEY_LOOKUP:
           /* let an helper function lookup host key in openssh
              standard files and query user */
-          assh_client_event_hk_lookup(session, stderr, stdin, hostname, &event);
+          asshh_client_event_hk_lookup(session, stderr, stdin, hostname, &event);
           break;
 
         case ASSH_EVENT_KEX_DONE: {
@@ -196,10 +196,10 @@ ssh_loop(struct assh_session_s *session,
             }
 
           if (verbose || warn)  /* be verbose about negotiated algorithms */
-            assh_print_kex_details(session, stderr, &event);
+            asshh_print_kex_details(session, stderr, &event);
 
           /* let an helper function register new host key as needed */
-          assh_client_event_hk_add(session, hostname, &event);
+          asshh_client_event_hk_add(session, hostname, &event);
           break;
         }
 
@@ -209,8 +209,8 @@ ssh_loop(struct assh_session_s *session,
         case ASSH_EVENT_USERAUTH_CLIENT_PWCHANGE:
         case ASSH_EVENT_USERAUTH_CLIENT_KEYBOARD:
           /* let an helper function handle user authentication events */
-          assh_client_event_auth(session, stderr, stdin, user, hostname,
-             &auth_methods, assh_client_user_key_default, &event);
+          asshh_client_event_auth(session, stderr, stdin, user, hostname,
+             &auth_methods, asshh_client_user_key_default, &event);
           break;
 
         case ASSH_EVENT_SERVICE_START:
@@ -233,7 +233,7 @@ ssh_loop(struct assh_session_s *session,
         case ASSH_EVENT_CHANNEL_CLOSE:
           /* let an helper function start and manage an interactive
              session. */
-          assh_client_event_inter_session(session, &event, inter);
+          asshh_client_event_inter_session(session, &event, inter);
           break;
 
                                                         /* anchor eventdata */
@@ -433,8 +433,8 @@ int main(int argc, char **argv)
     ERROR("Unable to create an assh session.\n");
 
   /* initializes an interactive session state machine object */
-  struct assh_client_inter_session_s inter;
-  assh_client_init_inter_session(&inter, cmd,
+  struct asshh_client_inter_session_s inter;
+  asshh_client_init_inter_session(&inter, cmd,
              isatty(0) ? getenv("TERM") : NULL);
 
   /* save terminal attributes */

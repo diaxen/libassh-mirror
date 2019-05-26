@@ -133,11 +133,11 @@ switch (ev.id)
   {
   case ASSH_EVENT_READ:
   case ASSH_EVENT_WRITE:
-    assh_fd_event(&session, &ev, socket);
+    asshh_fd_event(&session, &ev, socket);
     continue;
 
   case ASSH_EVENT_KEX_HOSTKEY_LOOKUP:
-    assh_client_event_hk_lookup(&session, ..., &ev);
+    asshh_client_event_hk_lookup(&session, ..., &ev);
     continue;
 
   ...

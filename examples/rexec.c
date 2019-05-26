@@ -141,8 +141,8 @@ int main(int argc, char **argv)
 
                                                         /* anchor initi */
   /* initializes an interactive session state machine object */
-  struct assh_client_inter_session_s inter;
-  assh_client_init_inter_session(&inter, command, NULL);
+  struct asshh_client_inter_session_s inter;
+  asshh_client_init_inter_session(&inter, command, NULL);
 
                                                         /* anchor loop */
 
@@ -158,7 +158,7 @@ int main(int argc, char **argv)
 	case ASSH_EVENT_WRITE:
 	  /* use helpers to read/write the ssh stream from/to our
 	     socket file descriptor */
-	  assh_fd_event(session, &event, sock);
+	  asshh_fd_event(session, &event, sock);
 	  break;
 
                                                         /* anchor everr */
@@ -173,7 +173,7 @@ int main(int argc, char **argv)
         case ASSH_EVENT_KEX_HOSTKEY_LOOKUP:
           /* let an helper function lookup host key in openssh
              standard files and query the user */
-          assh_client_event_hk_lookup(session, stderr, stdin, hostname, &event);
+          asshh_client_event_hk_lookup(session, stderr, stdin, hostname, &event);
           break;
 
                                                         /* anchor evua */
@@ -183,8 +183,8 @@ int main(int argc, char **argv)
         case ASSH_EVENT_USERAUTH_CLIENT_PWCHANGE:
         case ASSH_EVENT_USERAUTH_CLIENT_KEYBOARD:
           /* let an helper function handle user authentication events */
-          assh_client_event_auth(session, stderr, stdin, user, hostname,
-             &auth_methods, assh_client_user_key_default, &event);
+          asshh_client_event_auth(session, stderr, stdin, user, hostname,
+             &auth_methods, asshh_client_user_key_default, &event);
           break;
 
                                                         /* anchor evcn */
@@ -196,7 +196,7 @@ int main(int argc, char **argv)
         case ASSH_EVENT_CHANNEL_CLOSE:
           /* let an helper function start and manage an interactive
              session. */
-          assh_client_event_inter_session(session, &event, &inter);
+          asshh_client_event_inter_session(session, &event, &inter);
 
 	  /* terminate the connection when we are done with this session */
 	  if (inter.state == ASSH_CLIENT_INTER_ST_CLOSED)

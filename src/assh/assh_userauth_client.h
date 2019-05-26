@@ -85,8 +85,8 @@ struct assh_event_userauth_client_user_s
     @end list
 
     The @tt keys linked list can be populated by calling either
-    the @ref assh_key_load, @ref assh_load_key_file or @ref
-    assh_load_key_filename functions. Multiple keys can be loaded. The
+    the @ref assh_key_load, @ref asshh_load_key_file or @ref
+    asshh_load_key_filename functions. Multiple keys can be loaded. The
     assh library will take care of releasing the provided keys. If a
     public key is provided, the @ref ASSH_EVENT_USERAUTH_CLIENT_SIGN
     event will be reported. The library will take care of generating

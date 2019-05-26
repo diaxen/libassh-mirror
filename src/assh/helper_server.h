@@ -46,11 +46,11 @@
 /** @This loads some host keys from standard locations.  The function
     is successful when at least one key has been loaded. */
 assh_error_t
-assh_server_load_hk(struct assh_context_s *c);
+asshh_server_load_hk(struct assh_context_s *c);
 
 /** @This looks for a specific key in a pool of authorized user keys. */
 assh_error_t
-assh_server_ak_lookup(struct assh_session_s *s,
+asshh_server_ak_lookup(struct assh_session_s *s,
 			      const char *filename,
 			      const struct assh_key_s *key);
 
@@ -58,7 +58,7 @@ assh_server_ak_lookup(struct assh_session_s *s,
     ASSH_EVENT_USERAUTH_SERVER_PASSWORD events.
 
     The public key authentication is handled by calling the @ref
-    assh_server_ak_lookup function on the user @tt
+    asshh_server_ak_lookup function on the user @tt
     authorized_keys file.
 
     The password authentication relies on the following libc
@@ -69,7 +69,7 @@ assh_server_ak_lookup(struct assh_session_s *s,
     any case.
 */
 assh_error_t
-assh_server_event_auth(struct assh_session_s *s,
+asshh_server_event_auth(struct assh_session_s *s,
 			       struct assh_event_s *event);
 
 /** This retrieves the user id and group id from a @ref
@@ -79,7 +79,7 @@ assh_server_event_auth(struct assh_session_s *s,
     any case.
 */
 assh_error_t
-assh_server_event_user_id(struct assh_session_s *s,
+asshh_server_event_user_id(struct assh_session_s *s,
 			  uid_t *uid, gid_t *gid,
 			  struct assh_event_s *event);
 

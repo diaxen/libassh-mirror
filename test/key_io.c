@@ -268,11 +268,11 @@ static assh_error_t test_helper(struct assh_context_s *c, size_t count)
 
       /* save key to file */
       fprintf(stderr, "s");
-      TEST_ASSERT(!assh_save_key_filename(c, key1, "test.key", t->format, t->pass));
+      TEST_ASSERT(!asshh_save_key_filename(c, key1, "test.key", t->format, t->pass));
 
       /* reload key from file */
       fprintf(stderr, "l");
-      TEST_ASSERT(!assh_load_key_filename(c, &key2, t->algo,
+      TEST_ASSERT(!asshh_load_key_filename(c, &key2, t->algo,
 			  ASSH_ALGO_SIGN, "test.key", t->format, t->pass, 0));
 
       /* compare loaded key to original */

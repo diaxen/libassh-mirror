@@ -60,7 +60,7 @@
     used when 0 is passed.
  */
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_load_key_file(struct assh_context_s *c,
+asshh_load_key_file(struct assh_context_s *c,
 		   struct assh_key_s **head,
 		   const struct assh_key_algo_s *algo,
 		   enum assh_algo_class_e role,
@@ -69,9 +69,9 @@ assh_load_key_file(struct assh_context_s *c,
 
 /** @This loads a key from a file name and inserts the key
     in a linked list. This function relies on @ref
-    assh_load_key_file. */
+    asshh_load_key_file. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_load_key_filename(struct assh_context_s *c,
+asshh_load_key_filename(struct assh_context_s *c,
 		       struct assh_key_s **head,
 		       const struct assh_key_algo_s *algo,
 		       enum assh_algo_class_e role,
@@ -80,40 +80,40 @@ assh_load_key_filename(struct assh_context_s *c,
 		       const char *passphrase, size_t size_hint);
 
 /** @This loads a key from a file handler and register the key on the
-    library context. @see assh_load_key_file */
+    library context. @see asshh_load_key_file */
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_load_hostkey_file(struct assh_context_s *c,
+asshh_load_hostkey_file(struct assh_context_s *c,
 		       const struct assh_key_algo_s *algo,
 		       enum assh_algo_class_e role,
 		       FILE *file,
 		       enum assh_key_format_e format, size_t size_hint);
 
 /** @This loads a key from a file name and register the key on the
-    library context. @see assh_load_key_filename */
+    library context. @see asshh_load_key_filename */
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_load_hostkey_filename(struct assh_context_s *c,
+asshh_load_hostkey_filename(struct assh_context_s *c,
 			   const struct assh_key_algo_s *algo,
 			   enum assh_algo_class_e role,
 			   const char *filename,
 			   enum assh_key_format_e format, size_t size_hint);
 
-/** @This saves one or more keys to a file. @see assh_load_key_filename */
+/** @This saves one or more keys to a file. @see asshh_load_key_filename */
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_save_key_file(struct assh_context_s *c,
+asshh_save_key_file(struct assh_context_s *c,
 		   const struct assh_key_s *head,
 		   FILE *file, enum assh_key_format_e format,
 		   const char *passphrase);
 
-/** @This saves one or more keys to a file. @see assh_save_key_file */
+/** @This saves one or more keys to a file. @see asshh_save_key_file */
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_save_key_filename(struct assh_context_s *c,
+asshh_save_key_filename(struct assh_context_s *c,
 		       const struct assh_key_s *head,
 		       const char *filename,
 		       enum assh_key_format_e format,
 		       const char *passphrase);
 
 /** @This specifies formats of ssh key fingerprint. */
-enum assh_fingerprint_fmt_e
+enum asshh_fingerprint_fmt_e
 {
   ASSH_FP_RFC4716_MD5,
   ASSH_FP_RFC4255_SHA1,
@@ -129,9 +129,9 @@ enum assh_fingerprint_fmt_e
     The function returns @ref ASSH_NO_DATA when the format is not
     known. All supported format ids are contiguous, starting at 0. */
 ASSH_WARN_UNUSED_RESULT assh_error_t
-assh_key_fingerprint(struct assh_context_s *c,
+asshh_key_fingerprint(struct assh_context_s *c,
 		     const struct assh_key_s *key,
-		     enum assh_fingerprint_fmt_e fmt,
+		     enum asshh_fingerprint_fmt_e fmt,
 		     char *buf, size_t *buf_size,
                      const char **fmt_name);
 
