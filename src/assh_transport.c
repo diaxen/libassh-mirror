@@ -171,7 +171,15 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 
       /* allocate actual packet and copy header */
       size_t mac_len = k->mac->mac_size + k->cipher->auth_size;
-      size_t buffer_size = /* pck_len field */ 4 + len + mac_len;
+      size_t buffer_size = /* pck_len field */ 4 + len;
+
+      ASSH_RET_IF_TRUE(buffer_size < k->cipher->block_size,
+      		       ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
+
+      buffer_size += mac_len;
+
+      ASSH_RET_IF_TRUE(buffer_size < s->stream_in_size,
+		   ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
 
       struct assh_packet_s *p;
       ASSH_RET_ON_ERR(assh_packet_alloc_raw(s->ctx, buffer_size, &p)
@@ -297,8 +305,9 @@ assh_error_t assh_transport_read(struct assh_session_s *s,
     case ASSH_TR_IN_IDENT:
       *data = s->ident_str + s->stream_in_size;
       ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_IDENT_DONE);
-      /* any indent residue must fit in stream_in_stub */
-      *size = ASSH_MIN(sizeof(s->stream_in_stub),
+      /* any indent residue must fit in stream_in_stub and
+	 must not span more than one binary packet. */
+      *size = ASSH_MIN(ASSH_MIN_BLOCK_SIZE,
 		       sizeof(s->ident_str) - s->stream_in_size);
       break;
 
