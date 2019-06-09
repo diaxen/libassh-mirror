@@ -209,9 +209,8 @@ static int usage()
 	  "    -j file      load a host key file for the server side.\n"
 	  "    -j algo:bits create a host key for the server side.\n"
 	  "    -J file      load a kex key file for the server side.\n"
-	  "    -J algo:bits create a kex key for the server side.\n"
-	  "    -j algo:bits create a host key for the server side.\n"
-	  "    -J algo:bits create a kex key for the server side.\n"
+	  "    -j algo:bits create a kex key for the server side.\n"
+	  "    -J algo:bits create a host key for the server side.\n"
 	  "    -w 0102...   reverse list of userauth password decisions\n"
 	  "                 (0:fail, 1:success, 2:pw change request).\n"
 	  "    -O 0|1       host key accept decision.\n"
@@ -1587,7 +1586,7 @@ static void record(int argc, char **argv)
 #endif
 	  {
 	  key_ctx:;
-	    enum assh_algo_class_e role = (opt | 32) == 'j' ? ASSH_ALGO_KEX : ASSH_ALGO_SIGN;
+	    enum assh_algo_class_e role = opt == 'j' ? ASSH_ALGO_KEX : ASSH_ALGO_SIGN;
 	    char *col = strchr(optarg, ':');
 
 	    if (col)
