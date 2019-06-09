@@ -2341,6 +2341,8 @@ int main()
 		    ASSH_KEY_FMT_PUB_RFC4253, &b, key_blob_len))
     TEST_FAIL("");
 
+  free(key_blob);
+
   /*************************************************** TEST00 */
   test_state_set(TEST00_ST_INIT);
   test();
