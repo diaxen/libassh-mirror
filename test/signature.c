@@ -137,7 +137,9 @@ assh_error_t test_load(unsigned int max_size)
 			      key_blob[0], &kb, sizeof(key_blob) - 1);
 
 	  if (!bad)
-	    TEST_ASSERT(err == ASSH_OK);
+	    {
+	      TEST_ASSERT(err == ASSH_OK);
+	    }
 	  else if (err == ASSH_OK)
 	    {
 	      fprintf(stderr, "C");
@@ -146,9 +148,10 @@ assh_error_t test_load(unsigned int max_size)
 	      ASSH_RET_ON_ERR(assh_key_validate(context, key, &r));
 
 	      TEST_ASSERT(bad || r > 0);
-
-	      assh_key_drop(context, &key);
 	    }
+
+	  if (err == ASSH_OK)
+	    assh_key_drop(context, &key);
 	}
     }
 
