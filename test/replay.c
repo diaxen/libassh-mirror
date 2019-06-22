@@ -183,9 +183,9 @@ static int usage()
  	  "Options usable with record:\n\n"
 	  "    -f file      specify the output .ssh stream file.\n"
 	  "    -s           accept connect from a remote client\n"
-	  "                 instead of running a client session.\n"
+	  "                 instead of running an assh client session.\n"
 	  "    -c           connect to a remote server\n"
-	  "                 instead of running a server session.\n"
+	  "                 instead of running an assh server session.\n"
 	  "    -p port      specify the tcp port.\n"
 	  "    -t N         set the re-kex threshold in bytes.\n"
 	  "    -b T:algo    select an algorithm for both server and client side.\n"
@@ -1446,6 +1446,9 @@ static void replay_directory(int argc, char **argv)
 	  break;
 	case 'h':
 	  usage();
+
+	default:
+	  TEST_FAIL("option not available `%c'\n", opt);
 	}
     }
 
@@ -1499,6 +1502,9 @@ static void replay(int argc, char **argv)
 	  break;
 	case 'h':
 	  usage();
+
+	default:
+	  TEST_FAIL("option not available `%c'\n", opt);
 	}
     }
 
