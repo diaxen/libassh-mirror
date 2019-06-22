@@ -169,7 +169,8 @@ static int usage()
 	  "Options:\n\n"
 
 	  "    -h         show help\n"
-	  "    -v         increase verbosity\n\n"
+	  "    -v         increase verbosity\n"
+	  "    -R         save raw ssh streams for use in fuzzer corpus\n\n"
 
 	  "Options usable with replay:\n\n"
 
@@ -236,6 +237,10 @@ static FILE *f_in[2];
 static int sock;
 static int verbose = 0;
 static uint32_t kex_th = 0;
+
+static int save_raw = 0;
+static FILE *f_raw_cli_out = NULL;
+static FILE *f_raw_srv_out = NULL;
 
 /* client */
 static char *username = "test";
@@ -328,6 +333,45 @@ static const struct assh_prng_s assh_prng_dummy =
 };
 
 /*************************************************** FILE helpers */
+
+static void open_raw_files(const char *fname)
+{
+  size_t len = strlen(fname);
+  char *fcli = alloca(len + 5);
+  char *fsrv = alloca(len + 5);
+  memcpy(fcli, fname, len);
+  memcpy(fsrv, fname, len);
+  strcpy(fcli + len, ".cli");
+  strcpy(fsrv + len, ".srv");
+  f_raw_cli_out = fopen(fcli, "wb");
+  f_raw_srv_out = fopen(fsrv, "wb");
+  if (!f_raw_cli_out)
+    TEST_FAIL("Unable to write: `%s' : %s\n", fcli, strerror(errno));
+  if (!f_raw_srv_out)
+    TEST_FAIL("Unable to write: `%s' : %s\n", fsrv, strerror(errno));
+}
+
+static void close_raw_files()
+{
+  fclose(f_raw_cli_out);
+  fclose(f_raw_srv_out);
+}
+
+static void raw_write(int i, const uint8_t *data, size_t size)
+{
+  if (i)
+    {
+      if (f_raw_cli_out &&
+	  fwrite(data, size, 1, f_raw_cli_out) != 1)
+	TEST_FAIL("client raw stream write\n");
+    }
+  else
+    {
+      if (f_raw_srv_out &&
+	  fwrite(data, size, 1, f_raw_srv_out) != 1)
+	TEST_FAIL("server raw stream write\n");
+    }
+}
 
 static uint16_t fget_u16(FILE *f)
 {
@@ -461,6 +505,7 @@ static void test()
 				: "remote server -> client"
 				, buf, r);
 		      fifo_write(&fifo[i ^ 1], buf, r);
+		      raw_write(i ^ 1, buf, r);
 
 		      fputc(i | 2, f_out);
 		      fput_u16(r, f_out);
@@ -512,6 +557,7 @@ static void test()
 		if (fread(st, 1, s, f_in[i]) != s)
 		  TEST_FAIL("unexpected end of stream\n");
 		fifo_write(&fifo[i ^ 1], st, s);
+		raw_write(i ^ 1, st, s);
 		if (verbose > 2)
 		  assh_hexdump(i ? "replay client -> server"
 			  : "replay server -> client", st, s);
@@ -906,6 +952,8 @@ static void test()
 		  te->transferred = te->buf.size;
 		  break;
 		}
+
+	      raw_write(i ^ 1, te->buf.data, te->transferred);
 
 	      break;
 	    }
@@ -1383,7 +1431,7 @@ static void replay_directory(int argc, char **argv)
   const char *dname = ".";
   int opt;
 
-  while ((opt = getopt(argc, argv, "vhd:")) != -1)
+  while ((opt = getopt(argc, argv, "vhd:R")) != -1)
     {
       switch (opt)
 	{
@@ -1392,6 +1440,9 @@ static void replay_directory(int argc, char **argv)
 	  break;
 	case 'v':
 	  verbose++;
+	  break;
+	case 'R':
+	  save_raw++;
 	  break;
 	case 'h':
 	  usage();
@@ -1412,7 +1463,11 @@ static void replay_directory(int argc, char **argv)
 	  char path[512];
 	  snprintf(path, sizeof(path), "%s/%s", dname, ent->d_name);
 	  path[sizeof(path) - 1] = 0;
+	  if (save_raw)
+	    open_raw_files(path);
 	  replay_file(path);
+	  if (save_raw)
+	    close_raw_files();
 	  done = 1;
 	}
 
@@ -1429,7 +1484,7 @@ static void replay(int argc, char **argv)
   action = REPLAY_CLIENT_SERVER;
 
   int opt;
-  while ((opt = getopt(argc, argv, "f:vh")) != -1)
+  while ((opt = getopt(argc, argv, "f:vhR")) != -1)
     {
       switch (opt)
 	{
@@ -1439,12 +1494,21 @@ static void replay(int argc, char **argv)
 	case 'v':
 	  verbose++;
 	  break;
+	case 'R':
+	  save_raw++;
+	  break;
 	case 'h':
 	  usage();
 	}
     }
 
+  if (save_raw)
+    open_raw_files(fname);
+
   replay_file(fname);
+
+  if (save_raw)
+    close_raw_files();
 
   fprintf(stderr, "Done.\n");
 }
@@ -1487,7 +1551,7 @@ static void record(int argc, char **argv)
   struct assh_context_s *c;
   struct assh_key_s **keys;
 
-  while ((opt = getopt(argc, argv, "i:I:p:H:t:csf:a:A:b:j:J:j:i:u:P:k:y:O:l:o:w:B:Y:M:n:F:K:S:vh")) != -1)
+  while ((opt = getopt(argc, argv, "i:I:p:H:t:csf:a:A:b:j:J:j:i:u:P:k:y:O:l:o:w:B:Y:M:n:F:K:S:vhR")) != -1)
     {
       switch (opt)
 	{
@@ -1663,6 +1727,9 @@ static void record(int argc, char **argv)
 	case 'v':
 	  verbose++;
 	  break;
+	case 'R':
+	  save_raw++;
+	  break;
 	case 'h':
 	  usage();
 
@@ -1678,6 +1745,9 @@ static void record(int argc, char **argv)
   f_out = fopen(fname, "wb");
   if (!f_out)
     TEST_FAIL("unable to open output stream file\n");
+
+  if (save_raw)
+    open_raw_files(fname);
 
   fputc(action & 3, f_out);
 
@@ -1774,6 +1844,9 @@ static void record(int argc, char **argv)
     context_store(&context[1], 1);
 
   test();
+
+  if (save_raw)
+    close_raw_files();
 
   assh_context_cleanup(&context[0]);
 
