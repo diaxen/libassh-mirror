@@ -22,6 +22,14 @@ AM_INIT_AUTOMAKE(libassh, 0.1)
 AC_CONFIG_HEADERS(config.h)
 AC_CONFIG_MACRO_DIR([m4])
 
+AC_ARG_ENABLE(libfuzzer, AC_HELP_STRING(--enable-libfuzzer, [Enable LLVM libFuzzer build]),
+		       enable_libfuzzer=$enableval, enable_libfuzzer=no)
+
+if test x$enable_libfuzzer = xyes ; then
+    CFLAGS="-fsanitize=fuzzer-no-link,address -O2 -g"
+    CC=clang
+fi
+
 AC_PROG_CC
 
 AM_PROG_LIBTOOL 
@@ -390,6 +398,8 @@ AM_CONDITIONAL(COND_none_userauth, [test x$enable_none_userauth = xyes])
 
 AM_CONDITIONAL(COND_key_validate, [test x$enable_key_validate = xyes])
 AM_CONDITIONAL(COND_key_create, [test x$enable_key_create = xyes])
+
+AM_CONDITIONAL(COND_libfuzzer, [test x$enable_libfuzzer = xyes])
 
 if test x$enable_server = xyes ; then
    AC_DEFINE([CONFIG_ASSH_SERVER], [], [Enable support for the server side of the SSH protocol when defined.])

@@ -141,6 +141,15 @@ algo_list_SOURCES = algo_list.c
 algo_list_LDADD = $(top_builddir)/src/libassh.la
 algo_list_CFLAGS = -I$(top_srcdir)/src
 
+if COND_key_create
+if COND_libfuzzer
+noinst_PROGRAMS += libfuzzer
+libfuzzer_SOURCES = libfuzzer.c
+libfuzzer_LDADD = $(top_builddir)/src/libassh.la
+libfuzzer_CFLAGS = -I$(top_srcdir)/src -fsanitize=fuzzer,address
+endif
+endif
+
 noinst_PROGRAMS += fail
 fail_SOURCES = fail.c
 fail_LDADD = $(top_builddir)/src/libassh.la
