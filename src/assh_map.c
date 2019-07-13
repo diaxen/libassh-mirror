@@ -26,6 +26,8 @@
 
 #define ASSH_MAP_W sizeof(item->id) * 8
 
+/* simple Digital Search Tree implementation */
+
 struct assh_map_entry_s *
 assh_map_insert(struct assh_map_entry_s **root,
                 struct assh_map_entry_s *item)

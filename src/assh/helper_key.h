@@ -25,7 +25,7 @@
    @file
    @short SSH keys file IO
 
-   This header file provides @hl{helper functions} designed to load
+   This header file provides @hl helper functions designed to load
    and store @hl{SSH keys} on disk.
 
    @xsee{keysalgos}

@@ -496,13 +496,13 @@ methods and key formats.
       metadata along with the raw key material.
 
       Support for these formats in @em libassh is provided as
-      @hl{helper functions}. Helpers are able to load and store
+      @hl helper functions. Helpers are able to load and store
       keys in memory buffers as well as on the file
       system. Passphrase encryption of private keys is implemented
       when supported by the format.
 
       The following container formats are supported using
-      @hl{helper functions} declared in @ref{@assh/helper_key.h}:
+      @hl helper functions declared in @ref{@assh/helper_key.h}:
 
       @list
         @item The base64 format for public keys as described in

@@ -25,7 +25,7 @@
    @file
    @short SSH interactive session helpers (rfc4254 interactive sessions)
 
-   This headers file provides some @hl{helper functions} able load
+   This headers file provides some @hl helper functions able load
    and store data embedded in standard @hl requests and
    @hl channels open messages related to the @hl{interactive
    sessions} features of @em {ssh2}.

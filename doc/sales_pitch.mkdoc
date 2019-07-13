@@ -58,7 +58,7 @@ available with details of the internal API.
   crypto algorithms specific code in the core protocol
   implementation. This approach enforces uses of well defined and
   documented APIs between the software components, which eases the
-  code review process and allows writing unit tests.
+  code review process and allows writing @xref{test suite}{unit tests}.
 
   Although it's well known that basing protocol implementations on
   @sinvoke{Finite-state machine}{finite state machines}wp helps
@@ -99,7 +99,7 @@ available with details of the internal API.
   provided that a support for standard C is available. This
   @xref{softarch} {architecture} requires the library user to
   develop some glue code for the target platform. This code is
-  provided in the form of @hl{helper functions} for convenient use
+  provided in the form of @hl helper functions for convenient use
   on @em POSIX platforms. Optional support for file formats used by
   @em OpenSSH is provided as well.
 

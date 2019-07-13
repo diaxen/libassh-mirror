@@ -22,7 +22,7 @@
 @section T {Derivative work}
   As of version 1.0 of @em libassh, @em{Alexandre Becoulet} is the
   original author of the whole source code of the library core and
-  the original author of most modules. Modules and helpers
+  the original author of most modules. Modules and @hl helpers
   containing derivative work are listed here:
 
   @list

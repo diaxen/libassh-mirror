@@ -30,7 +30,7 @@
    @file
    @short SSH client application helpers
 
-   This header file provides @hl{helper functions} designed to ease
+   This header file provides @hl helper functions designed to ease
    development of simple @em ssh2 client applications.
 
    Implementation of client applications may want to reuse and adapt
@@ -170,7 +170,7 @@ enum asshh_client_inter_session_state_e
   ASSH_CLIENT_INTER_ST_CLOSED,
 };
 
-/** @This stores the state of the simple interactive session helper
+/** @This stores the state of the simple interactive session @hl helper
     between calls to the @ref asshh_client_event_inter_session
     function.
 
@@ -190,7 +190,7 @@ struct asshh_client_inter_session_s
     the specified command. This must be used along with the @ref
     asshh_client_event_inter_session event handler function.
 
-    This is a simple helper designed to start a command on a remote
+    This is a simple @hl helper designed to start a command on a remote
     server. The associated event handler takes care of sending the
     appropriate requests to the remote host when the @tt
     {ssh-connection} service is started.

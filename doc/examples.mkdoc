@@ -67,17 +67,17 @@ $ examples/client localhost ls
   related to the @ref assh_session_s type presented above.
 
   Even if more advanced applications will want to implement @hl
-  {interactive sessions} directly, the library provides a small helper
+  {interactive sessions} directly, the library provides a small @hl helper
   state machine that performs basic handling of client @hl
   {interactive sessions}. This is used below to handle @hl request and
   @hl channel related events that allow remote execution of the user
-  command. The code of the helper is not an internal part of the
-  library. Feel free to study and paste the code of this helper state
+  command. The code of the @hl helper is not an internal part of the
+  library. Feel free to study and paste the code of this @hl helper state
   machine directly in your application, as a starting point for more
   complex constructs.
 
   At this point, we just need to initializes a state object for this
-  helper:
+  @hl helper:
   @example examples/rexec.c:initi
 
   Then comes the event loop, as described in the @xref {evts} section:
@@ -85,13 +85,13 @@ $ examples/client localhost ls
 
   The I/O events are reported by the library in order to let the
   application transfer the @em ssh2 stream over the network. In this
-  examples, this is left to an helper function designed to read and
+  examples, this is left to an @hl helper function designed to read and
   write the @em ssh2 network stream using the application provided
   socket file descriptor:
   @example examples/rexec.c:evio
 
   Error notifications are also reported as events by the library.
-  This event is handled here without relying on an helper
+  This event is handled here without relying on an @hl helper
   function. That's why the application has to take care of
   acknowledging the event by making a direct call to the
   @ref assh_event_done function:
@@ -108,15 +108,15 @@ $ examples/client localhost ls
 
   When the server sends its @hl{host key} during the @hl key-exchange process,
   our client needs to check if it is a known key or if the user
-  accept the new key. An helper function handles this by looking in
-  the @tt {~/.ssh/known_hosts} file. This helper also queries the user
+  accept the new key. An @hl helper function handles this by looking in
+  the @tt {~/.ssh/known_hosts} file. This @hl helper also queries the user
   on the terminal if needed.
 
   @example examples/rexec.c:evhk
   The application could have handled this in a custom way
   in order to adapt the usage or support a specific target platform API.
 
-  Once again an helper function is used to handle the
+  Once again an @hl helper function is used to handle the
   @hl{user authentication} events. It takes care of
   querying the system user database and reads user public key
   files:
@@ -163,7 +163,7 @@ $ examples/client localhost ls
   character typed.
 
   Unlike code of the @xref{exremote}{previous example} that handles
-  @hl{connection protocol} related events using helper functions,
+  @hl{connection protocol} related events using @hl helper functions,
   those events are handled directly by the application here. This
   example also shows how to take control of the underlying channel
   flow control mechanism provided by the @em ssh2 protocol.
@@ -176,7 +176,7 @@ $ examples/client localhost ls
 
   A server context needs to have some @hl{host keys}
   registered. We try to load @hl{host keys} from standard
-  locations using an helper function. This may however require @tt
+  locations using an @hl helper function. This may however require @tt
   root privileges. That's why we fallback to creating an ephemeral
   @hl{host key} by calling the @ref assh_key_create function:
   @example examples/loopback.c:reghk
@@ -188,7 +188,7 @@ $ examples/client localhost ls
   Then comes the @hl event loop:
   @example examples/loopback.c:loopev
 
-  Some events are handled using helper functions, as detailed in the
+  Some events are handled using @hl helper functions, as detailed in the
   @xref{exremote}{previous example}:
   @example examples/loopback.c:helperev
 
@@ -338,7 +338,7 @@ $ examples/client localhost ls
     @example examples/client.c:poll
 
     As in the @xref{exremote}{remote command execution} example, the
-    application relies on an helper state machine in order to manage
+    application relies on an @hl helper state machine in order to manage
     the @hl{interactive session}. Because we only want to run a single
     @hl session, we have to initiate a disconnection from the remote
     server when the single session terminates:
@@ -375,7 +375,7 @@ $ examples/client localhost ls
     @example examples/client.c:sshloop
 
     Only data transfer related events are shown here, as handling of
-    other events mostly rely on helpers functions that deal with
+    other events mostly rely on @hl helpers functions that deal with
     @hl{user authentication} and @hl{interactive session}
     management. This is detailed in the @xref{exremote}{remote
     command execution} example.
@@ -394,7 +394,7 @@ $ examples/client localhost ls
     @example examples/client.c:eventwrite
 
     Transferring data from the channel to the terminal requires more
-    work because no helper function is used, but the approach is still
+    work because no @hl helper function is used, but the approach is still
     the same:
     @example examples/client.c:eventdata
 
@@ -403,7 +403,7 @@ $ examples/client localhost ls
 
     This non-blocking event loop is sufficient to implement our @tt
     poll based command line @em ssh2 client. Note that we rely on
-    helper functions that query the user on the terminal about the
+    @hl helper functions that query the user on the terminal about the
     validity of the host key. In order to obtain a truly non-blocking
     event loop, handling of the related events should be
     re-implemented as well, depending on the application user
@@ -525,11 +525,11 @@ localhost$ example/fwdexec forward_host rexec_host command
     @example examples/fwdexec.c:fwdloop
 
     @hl{User authentication} and @hl key-exchange related
-    events are handled using @hl{helper functions} as detailed in
+    events are handled using @hl helper functions as detailed in
     the previous examples and are not shown here.
 
     Because this session talks to @em fwd_host through a TCP
-    socket, we just have to rely on the usual helper function in
+    socket, we just have to rely on the usual @hl helper function in
     order to handle the network I/O events.
     @example examples/fwdexec.c:fwdevio
 
@@ -717,7 +717,7 @@ localhost$ example/fwdexec forward_host rexec_host command
     attempt as well as before retries.
     @example examples/server.c:evauthmet
 
-    The @hl{user authentication} relies on helper functions. When
+    The @hl{user authentication} relies on @hl helper functions. When
     the authentication is successful, the user ID of the current
     process is changed. This is handled by this simple code:
     @example examples/server.c:evauth
@@ -743,7 +743,7 @@ localhost$ example/fwdexec forward_host rexec_host command
 
     The @tt {"pty-req"} request may optionally be used by the
     client. This requires us to call our @tt its_pty function
-    discussed previously. The @ref asshh_inter_decode_pty_req helper
+    discussed previously. The @ref asshh_inter_decode_pty_req @hl helper
     function is used here to validate and decode the data attached
     to the request but its content is not used in this simple
     server.

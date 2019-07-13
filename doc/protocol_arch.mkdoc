@@ -358,7 +358,7 @@ These components are described in the following subsections.
     and usage, handling of these features is left to the
     application. Some parsing functions and a basic client state
     machine for @hl{interactive sessions} is provided as
-    @hl{helper functions} as shown in most @hl{examples}.
+    @hl helper functions as shown in most @hl{examples}.
     The related declarations can be found in
     @ref{@assh/helper_interactive.h} and
     @ref{@assh/helper_portfwd.h}.

@@ -30,7 +30,7 @@
    @file
    @short SSH server application helpers
 
-   This header file provides @hl{helper functions} designed to ease
+   This header file provides @hl helper functions designed to ease
    development of simple @em ssh2 server applications.
 
    Implementation of server applications may want to reuse and adapt

@@ -54,7 +54,7 @@ Some additional pluggable utility components are used by the library
   @item @tt{src/bignum*.c} : A constant time big number engine.
 @end list
 
-Some @hl{helper functions} are provided for
+Some @hl helper functions are provided for
 convenience. Unlike other parts of the library, these files
 contains system calls and platform specific stuff. It is not used
 by the other parts of the library and are only provided for use by
@@ -67,7 +67,7 @@ the application. It doesn't rely on the private APIs of the library:
   @item @tt{src/helper_key.c} : This provides @hl{SSH key} file
     loading and saving functions.
   @item @tt{src/helper_base64.c} : This implements a base64
-    encoder and decoder for use by @hl{SSH key} helpers.
+    encoder and decoder for use by @hl{SSH key} @hl helpers.
   @item @tt{src/helper_bcrypt.c} : This provides the encryption
     algorithm used for passphrase protected keys in @em OpenSSH
     formats.
@@ -78,4 +78,4 @@ the application. It doesn't rely on the private APIs of the library:
   @item @tt{src/helper_portfwd.c} : This implements @hl {port
     forwarding} related features.
 @end list
-See associated header files for details of the helpers API.
+See associated header files for details of the @hl helpers API.
