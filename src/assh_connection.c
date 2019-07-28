@@ -1416,6 +1416,10 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_data_done)
   assert(pv->in_data_left >= transferred);
   pv->in_data_left -= transferred;
 
+#ifndef NDEBUG
+  ASSH_SET_STATE(pv, state, ASSH_CONNECTION_ST_IDLE);
+#endif
+
   if (!pv->in_data_left)
     {
       assh_packet_release(pv->pck);
@@ -1425,10 +1429,6 @@ static ASSH_EVENT_DONE_FCN(assh_event_channel_data_done)
         ASSH_RET_ON_ERR(assh_channel_window_adjust(ch, ch->lpkt_size - ch->lwin_left)
 		     | ASSH_ERRSV_DISCONNECT);
     }
-
-#ifndef NDEBUG
-  ASSH_SET_STATE(pv, state, ASSH_CONNECTION_ST_IDLE);
-#endif
 
   return ASSH_OK;
 }
