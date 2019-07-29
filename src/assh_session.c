@@ -318,6 +318,7 @@ assh_session_disconnect(struct assh_session_s *s,
 
   switch (s->tr_st)
     {
+    case ASSH_TR_INIT:
     case ASSH_TR_IDENT:
       ASSH_SET_STATE(s, tr_st, ASSH_TR_CLOSED);
       return ASSH_OK;
