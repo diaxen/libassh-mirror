@@ -297,6 +297,9 @@ assh_error_t assh_service_loop(struct assh_session_s *s,
 
 #ifdef CONFIG_ASSH_CLIENT
       case ASSH_SRV_REQUESTED:
+        if (s->tr_st >= ASSH_TR_DISCONNECT)
+          return ASSH_OK;
+
         if (p != NULL)
           {
             /* we previously sent a service request packet, expecting the
