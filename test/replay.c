@@ -92,7 +92,6 @@
 #include <assh/assh_cipher.h>
 #include <assh/assh_sign.h>
 #include <assh/assh_mac.h>
-#include <assh/assh_prng.h>
 #include <assh/assh_compress.h>
 #include <assh/assh_transport.h>
 #include <assh/assh_connection.h>
@@ -114,6 +113,7 @@
 #include "fifo.h"
 #include "test.h"
 #include "keys.h"
+#include "prng_dummy.h"
 
 #include <stdio.h>
 #include <getopt.h>
@@ -284,53 +284,6 @@ static void term_handler(int sig)
 
   stop = 1;
 }
-
-/*************************************************** prng stuff */
-
-static const struct assh_buffer_s context_prng_seed = {
-  .str = "abcdefgh",
-  .len = 8
-};
-
-static ASSH_PRNG_INIT_FCN(assh_prng_dummy_init)
-{
-  uint64_t *s = malloc(8);
-
-  if (!s)
-    return ASSH_ERR_MEM;
-
-  c->prng_pv = s;
-
-  if (seed->size < 8)
-    return ASSH_ERR_BAD_ARG;
-  *s = assh_load_u64le(seed->data);
-  *s |= !*s;
-
-  return ASSH_OK;
-}
-
-static ASSH_PRNG_GET_FCN(assh_prng_dummy_get)
-{
-  uint64_t *s = c->prng_pv;
-
-  size_t i;
-  for (i = 0; i < rdata_len; i++)
-    rdata[i] = assh_prng_rand_seed(s);
-
-  return ASSH_OK;
-}
-
-static ASSH_PRNG_CLEANUP_FCN(assh_prng_dummy_cleanup)
-{
-  free(c->prng_pv);
-}
-
-static const struct assh_prng_s assh_prng_dummy =
-{
-  .f_init = assh_prng_dummy_init,
-  .f_get = assh_prng_dummy_get,
-  .f_cleanup = assh_prng_dummy_cleanup,
-};
 
 /*************************************************** FILE helpers */
 
