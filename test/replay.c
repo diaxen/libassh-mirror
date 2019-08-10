@@ -976,7 +976,7 @@ static assh_error_t
 algo_lookup(enum assh_algo_class_e cl, const char *name,
 	    const struct assh_algo_s **algo)
 {
-  if (!strcmp(name, "none"))
+  if (!strcmp(name, "none") || !strcmp(name, "none@libassh.org"))
     {
       switch (cl)
 	{
