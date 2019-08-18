@@ -266,7 +266,6 @@ static int test()
 	}
 
 	case ASSH_EVENT_USERAUTH_SERVER_KBRESPONSE: {
-	  event.userauth_server.kbresponse.result = assh_prng_rand() % 3;
 	  switch (assh_prng_rand() % 8)
 	    {
 	    case 0:
@@ -362,7 +361,7 @@ static int test()
 	  break;
 
 	default:
-	  printf("server: don't know how to handle event %u\n", event.id);
+	  ASSH_DEBUG("server: don't know how to handle event %u\n", event.id);
 	  break;
 	}
 
