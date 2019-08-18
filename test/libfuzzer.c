@@ -34,6 +34,7 @@
 #include <assh/assh_context.h>
 #include <assh/assh_service.h>
 #include <assh/assh_userauth_server.h>
+#include <assh/assh_userauth_client.h>
 #include <assh/assh_connection.h>
 #include <assh/assh_kex.h>
 #include <assh/assh_cipher.h>
@@ -45,12 +46,16 @@
 #include <assh/assh_algo.h>
 #include <assh/assh_packet.h>
 #include <assh/key_eddsa.h>
+#include <assh/key_rsa.h>
+#include <assh/key_dsa.h>
+#include <assh/key_ecdsa.h>
 
 #include <assh/helper_key.h>
 #include <assh/helper_server.h>
 #include <assh/helper_io.h>
 
 #include "prng_dummy.h"
+#include "keys.h"
 
 #define ERROR(...) do { fprintf(stderr, __VA_ARGS__); exit(1); } while (0)
 
@@ -67,17 +72,24 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
   prng_seed = 1;
 
   static const struct assh_algo_s *algos[] = {
-    &assh_kex_none.algo, &assh_sign_none.algo,
-    &assh_cipher_none.algo, &assh_hmac_none.algo, &assh_compress_none.algo,
+    &assh_kex_none.algo,
+    &assh_kex_curve25519_sha256.algo,
+    &assh_kex_sha2_nistp256.algo,
+    &assh_kex_dh_group1_sha1.algo,
+    &assh_kex_dh_gex_sha1.algo,
+    &assh_sign_none.algo,
+    &assh_cipher_none.algo,
+    &assh_hmac_none.algo,
+    &assh_compress_none.algo,
     NULL
   };
 
-  if (!Size)
+  if (Size < 3)
     return 0;
 
   const uint8_t *flags = Data;
-  Data += 1;
-  Size -= 1;
+  Data += 3;
+  Size -= 3;
 
   struct assh_context_s context;
 
@@ -87,9 +99,14 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
       assh_algo_register_static(&context, algos) != ASSH_OK)
     ERROR("Unable to create an assh context.\n");
 
-  if (assh_key_create(&context, assh_context_keys(&context),
+  struct assh_key_s *key_none;
+
+  if (assh_key_create(&context, &key_none,
 		      255, &assh_key_none, ASSH_ALGO_SIGN))
     ERROR("Unable to create host key.\n");
+
+  assh_key_refinc(key_none);
+  assh_key_insert(assh_context_keys(&context), key_none);
 
   struct assh_session_s session;
 
@@ -129,11 +146,169 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 	  break;
 	}
 
+	case ASSH_EVENT_KEX_HOSTKEY_LOOKUP:
+	  event.kex.hostkey_lookup.accept = !(flags[0] & 2);
+	  assh_event_done(&session, &event, ASSH_OK);
+	  break;
+
+	  /*******************************************************/
+
+        case ASSH_EVENT_USERAUTH_CLIENT_METHODS:
+	  while (!event.userauth_client.methods.select)
+	    {
+	      switch ((flags[0] & 0x70) >> 4)
+		{
+		case 0:
+		  if (!(event.userauth_client.methods.methods &
+			ASSH_USERAUTH_METHOD_NONE))
+		    break;
+		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_NONE;
+		  break;
+
+		case 1:
+		case 2:
+		  if (!(event.userauth_client.methods.methods &
+			ASSH_USERAUTH_METHOD_PASSWORD))
+		    break;
+		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_PASSWORD;
+		  assh_buffer_strset(&event.userauth_client.methods.password, "test");
+		  break;
+
+		case 3:
+		  if (!(event.userauth_client.methods.methods &
+			ASSH_USERAUTH_METHOD_KEYBOARD))
+		    break;
+		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_KEYBOARD;
+		  assh_buffer_strset(&event.userauth_client.methods.keyboard_sub, "method");
+		  break;
+
+		case 4:
+		case 5:
+		  if (!(event.userauth_client.methods.methods
+			& ASSH_USERAUTH_METHOD_PUBKEY))
+		    break;
+		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_PUBKEY;
+
+		  assh_key_refinc(key_none);
+		  assh_key_insert(&event.userauth_client.methods.keys, key_none);
+		  break;
+
+		case 6:
+		case 7:
+		  if (!(event.userauth_client.methods.methods
+			& ASSH_USERAUTH_METHOD_HOSTBASED))
+		    break;
+		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_HOSTBASED;
+
+		  assh_buffer_strset(&event.userauth_client.methods.host_name, "localhost");
+		  assh_buffer_strset(&event.userauth_client.methods.host_username, "test");
+
+		  assh_key_refinc(key_none);
+		  assh_key_insert(&event.userauth_client.methods.keys, key_none);
+		  break;
+		}
+	    }
+	  assh_event_done(&session, &event, ASSH_OK);
+          break;
+
+	case ASSH_EVENT_USERAUTH_CLIENT_SIGN: {
+	  struct assh_event_userauth_client_sign_s *e =
+	    &event.userauth_client.sign;
+
+	  if (assh_sign_generate(&context, e->algo, key_none,
+				 1, &e->auth_data, e->sign.data, &e->sign.len))
+	    abort();
+
+	  assh_event_done(&session, &event, ASSH_OK);
+	  break;
+	}
+
+	case ASSH_EVENT_USERAUTH_CLIENT_PWCHANGE:
+	  assh_buffer_strset(&event.userauth_client.pwchange.old_password, "oldpass");
+	  assh_buffer_strset(&event.userauth_client.pwchange.new_password, "newpass");
+	  assh_event_done(&session, &event, ASSH_OK);
+	  break;
+
+        case ASSH_EVENT_USERAUTH_CLIENT_KEYBOARD:
+          for (unsigned i = 0; i < event.userauth_client.keyboard.count; i++)
+	    assh_buffer_strset(&event.userauth_client.keyboard.responses[i], "resp");
+	  assh_event_done(&session, &event, ASSH_OK);
+	  break;
+
+	  /*******************************************************/
+
+	case ASSH_EVENT_USERAUTH_SERVER_METHODS:
+	  event.userauth_server.methods.methods =
+	    flags[1] & ASSH_USERAUTH_METHOD_SERVER_IMPLEMENTED;
+	  assh_event_done(&session, &event, ASSH_OK);
+	  break;
+
+	case ASSH_EVENT_USERAUTH_SERVER_USERKEY:
+	  event.userauth_server.userkey.found = !(flags[0] & 4);
+	  assh_event_done(&session, &event, ASSH_OK);
+	  break;
+
+	case ASSH_EVENT_USERAUTH_SERVER_KBINFO: {
+	  assh_buffer_strset(&event.userauth_server.kbinfo.name, "nametest");
+	  assh_buffer_strset(&event.userauth_server.kbinfo.instruction, "insttest");
+	  static const struct assh_cbuffer_s p[] = {
+	    { .str = "AAAA", .len = 4 },
+	    { .str = "BBBB", .len = 4 },
+	  };
+	  event.userauth_server.kbinfo.count = flags[0] & 8 ? 1 : 2;
+	  event.userauth_server.kbinfo.prompts = p;
+	  assh_event_done(&session, &event, ASSH_OK);
+	  break;
+	}
+
+	case ASSH_EVENT_USERAUTH_SERVER_KBRESPONSE:
+	  switch ((flags[0] & 0x30) >> 4)
+	    {
+	    case 0:
+	      break;
+	    case 1:
+	      event.userauth_server.kbresponse.result = ASSH_SERVER_KBSTATUS_FAILURE;
+	      break;
+	    case 2:
+	      event.userauth_server.kbresponse.result = ASSH_SERVER_KBSTATUS_SUCCESS;
+	      break;
+	    case 3:
+	      event.userauth_server.kbresponse.result = ASSH_SERVER_KBSTATUS_CONTINUE;
+	      break;
+	    }
+	  assh_event_done(&session, &event, ASSH_OK);
+	  break;
+
+	case ASSH_EVENT_USERAUTH_SERVER_PASSWORD:
+	  switch ((flags[0] & 0xc0) >> 6)
+	    {
+	    case 0:
+	      break;
+	    case 1:
+	      event.userauth_server.password.result = ASSH_SERVER_PWSTATUS_FAILURE;
+	      break;
+	    case 2:
+	      event.userauth_server.password.result = ASSH_SERVER_PWSTATUS_SUCCESS;
+	      break;
+	    case 3:
+	      event.userauth_server.password.result = ASSH_SERVER_PWSTATUS_CHANGE;
+	      break;
+	    }
+	  assh_event_done(&session, &event, ASSH_OK);
+	  break;
+
+	case ASSH_EVENT_USERAUTH_SERVER_HOSTBASED:
+	  event.userauth_server.hostbased.found = !(flags[2] & 1);
+	  assh_event_done(&session, &event, ASSH_OK);
+	  break;
+
+	  /*******************************************************/
+
 	case ASSH_EVENT_CHANNEL_OPEN: {
 	  struct assh_event_channel_open_s *ev =
 	    &event.connection.channel_open;
 
-	  if (assh_prng_rand() & 1)
+	  if (flags[0] & 4)
 	    ev->reply = ASSH_CONNECTION_REPLY_SUCCESS;
 
 	  assh_event_done(&session, &event, ASSH_OK);
@@ -141,7 +316,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 	}
 
 	case ASSH_EVENT_REQUEST: {
-	  struct assh_event_request_s *ev = &event.connection.request;
+	  struct assh_event_request_s *ev =
+	    &event.connection.request;
 
 	  if (assh_prng_rand() & 1)
 	    ev->reply = ASSH_CONNECTION_REPLY_SUCCESS;
@@ -151,7 +327,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 	}
 
 	case ASSH_EVENT_CHANNEL_DATA: {
-	  struct assh_event_channel_data_s *ev = &event.connection.channel_data;
+	  struct assh_event_channel_data_s *ev =
+	    &event.connection.channel_data;
 
 	  ev->transferred = ev->data.size;
 	  assh_event_done(&session, &event, ASSH_OK);
@@ -163,6 +340,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 	  break;
 	}
     }
+
+  assh_key_drop(&context, &key_none);
 
   assh_session_cleanup(&session);
   assh_context_cleanup(&context);
