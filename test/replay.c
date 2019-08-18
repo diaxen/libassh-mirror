@@ -243,12 +243,12 @@ static FILE *f_raw_cli_out = NULL;
 static FILE *f_raw_srv_out = NULL;
 
 /* client */
-static char *username = "test";
+static char *username = NULL;
 static char *password = NULL;
 static char *keyboard_replies = NULL;
 static struct assh_key_s *userauth_keys = NULL;
 static struct assh_key_s *hostbased_keys = NULL;
-static const char *hostbased_host = NULL;
+static char *hostbased_host = NULL;
 static assh_bool_t hostkey_accept = 1;
 
 /* server */
@@ -422,6 +422,10 @@ static void test()
 #warning kex count
   kex_count[0] = kex_count[1] = 2;
   struct assh_channel_s *ch[2];
+
+  char *password_p = password;
+  char *kbrps_p = keyboard_replies;
+  char *kbinfo_p = keyboard_infos;
 
   while (running)
     {
@@ -607,12 +611,12 @@ static void test()
 		fprintf(stderr, "[client] Userauth methods: ");
 
 	      if ((event.userauth_client.methods.methods &
-		   ASSH_USERAUTH_METHOD_PASSWORD) && password && *password)
+		   ASSH_USERAUTH_METHOD_PASSWORD) && password_p && *password_p)
 		{
-		  char *p = password;
-		  password = strchr(password, ',');
-		  if (password)
-		    *password++ = '\0';
+		  char *p = password_p;
+		  password_p = strchr(password_p, ',');
+		  if (password_p)
+		    *password_p++ = '\0';
 		  assh_buffer_strset(&event.userauth_client.methods.password, p);
 
 		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_PASSWORD;
@@ -633,7 +637,7 @@ static void test()
 
 	      else if ((event.userauth_client.methods.methods &
 			ASSH_USERAUTH_METHOD_KEYBOARD) &&
-		       keyboard_replies && *keyboard_replies)
+		       kbrps_p && *kbrps_p)
 		{
 		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_KEYBOARD;
 		  assh_buffer_strset(&event.userauth_client.methods.keyboard_sub, "pam");
@@ -678,12 +682,12 @@ static void test()
 		fprintf(stderr, "[client] Userauth keyboard: ");
 	      for (i = 0; i < event.userauth_client.keyboard.count; i++)
 		{
-		  char *p = keyboard_replies;
+		  char *p = kbrps_p;
 		  if (*p)
 		    {
-		      keyboard_replies = strchr(keyboard_replies, ',');
-		      if (keyboard_replies)
-			*keyboard_replies++ = '\0';
+		      kbrps_p = strchr(kbrps_p, ',');
+		      if (kbrps_p)
+			*kbrps_p++ = '\0';
 		    }
 		  assh_buffer_strset(&event.userauth_client.keyboard.responses[i], p);
 		  if (verbose > 0)
@@ -746,18 +750,18 @@ static void test()
 	      if (verbose > 0)
 		fprintf(stderr, "[server] Userauth kbinfo: ");
 
-	      while (*keyboard_infos && i < 8)
+	      while (*kbinfo_p && i < 8)
 		{
-		  char *n = keyboard_infos + strcspn(keyboard_infos, ";,");
-		  bufs[i].str = keyboard_infos;
-		  bufs[i].len = n - keyboard_infos;
+		  char *n = kbinfo_p + strcspn(kbinfo_p, ";,");
+		  bufs[i].str = kbinfo_p;
+		  bufs[i].len = n - kbinfo_p;
 		  if (verbose > 0)
-		    fprintf(stderr, "`%.*s' ", (int)(n - keyboard_infos), keyboard_infos);
+		    fprintf(stderr, "`%.*s' ", (int)(n - kbinfo_p), kbinfo_p);
 		  i++;
-		  keyboard_infos = n;
+		  kbinfo_p = n;
 		  if (*n)
 		    {
-		      keyboard_infos++;
+		      kbinfo_p++;
 		      if (*n == ';')
 			break;
 		    }
@@ -1005,6 +1009,24 @@ algo_lookup(enum assh_algo_class_e cl, const char *name,
     }
 }
 
+void context_cleanup_strings(void)
+{
+  free(username);
+  username = strdup("test");
+
+  free(password);
+  password = NULL;
+
+  free(keyboard_replies);
+  keyboard_replies = NULL;
+
+  free(keyboard_infos);
+  keyboard_infos = NULL;
+
+  free(hostbased_host);
+  hostbased_host = NULL;
+}
+
 char * context_load_str(FILE *in)
 {
   size_t l = fget_u16(in);
@@ -1123,6 +1145,7 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 	case CHUNK_USERNAME:		/* username */
 	  if (i == 0)
 	    goto skip_s;
+	  free(username);
 	  username = context_load_str(in);
 	  if (verbose > 0)
 	    fprintf(stderr, "[client] Loading userauth login: `%s'.\n", username);
@@ -1131,6 +1154,7 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 	case CHUNK_PASSWORDS:		/* password */
 	  if (i == 0)
 	    goto skip_s;
+	  free(password);
 	  password = context_load_str(in);
 	  if (verbose > 0)
 	    fprintf(stderr, "[client] Loading password list: `%s'.\n", password);
@@ -1139,6 +1163,7 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 	case CHUNK_KEYBOARD_REPLIES:		/* keyboard interactive */
 	  if (i == 0)
 	    goto skip_s;
+	  free(keyboard_replies);
 	  keyboard_replies = context_load_str(in);
 	  if (verbose > 0)
 	    fprintf(stderr, "[client] Loading keyboard replies: `%s'.\n", keyboard_replies);
@@ -1147,6 +1172,7 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 	case CHUNK_KEYBOARD_INFOS:		/* keyboard interactive */
 	  if (i == 1)
 	    goto skip_s;
+	  free(keyboard_infos);
 	  keyboard_infos = context_load_str(in);
 	  if (verbose > 0)
 	    fprintf(stderr, "[server] Loading keyboard prompts: `%s'.\n", keyboard_infos);
@@ -1155,6 +1181,7 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 	case CHUNK_HOSTBASED_HOST:
 	  if (i == 0)
 	    goto skip_s;
+	  free(hostbased_host);
 	  hostbased_host = context_load_str(in);
 	  if (verbose > 0)
 	    fprintf(stderr, "[server] Loading hostbased host: `%s'.\n", hostbased_host);
@@ -1180,6 +1207,7 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 	    goto skip_s;
 	  const char *cmd = context_load_str(in);
 	  fprintf(stderr, "[%s] options: %s\n", side, cmd);
+	  free((void*)cmd);
 	  break;
 	}
 
@@ -1421,11 +1449,14 @@ static void replay_directory(int argc, char **argv)
 	  path[sizeof(path) - 1] = 0;
 	  if (save_raw)
 	    open_raw_files(path);
+	  context_cleanup_strings();
 	  replay_file(path);
 	  if (save_raw)
 	    close_raw_files();
 	  done = 1;
 	}
+
+  closedir(d);
 
   if (!done)
     TEST_FAIL("no .ssh stream file found in the directory `%s'\n", dname);
@@ -1438,6 +1469,8 @@ static void replay(int argc, char **argv)
   const char *fname = "stream.ssh";
 
   action = REPLAY_CLIENT_SERVER;
+
+  context_cleanup_strings();
 
   int opt;
   while ((opt = getopt(argc, argv, "f:vhR")) != -1)
@@ -1477,6 +1510,8 @@ static void record(int argc, char **argv)
   const char *hostname = "localhost";
   const char *port = NULL;
   const char *fname = "stream.ssh";
+
+  context_cleanup_strings();
 
 #if defined(CONFIG_ASSH_SERVER)
   if (assh_context_init(&context[0], ASSH_SERVER,
@@ -1640,19 +1675,20 @@ static void record(int argc, char **argv)
 	  }
 
 	case 'u':
-	  username = optarg;
+	  free(username);
+	  username = strdup(optarg);
 	  break;
 	case 'P':
-	  password = optarg;
+	  password = strdup(optarg);
 	  break;
 	case 'y':
-	  keyboard_replies = optarg;
+	  keyboard_replies = strdup(optarg);
 	  break;
 	case 'Y':
-	  keyboard_infos = optarg;
+	  keyboard_infos = strdup(optarg);
 	  break;
 	case 'S':
-	  hostbased_host = optarg;
+	  hostbased_host = strdup(optarg);
 	  break;
 	case 'O':
 	  hostkey_accept = atoi(optarg);
@@ -1838,7 +1874,13 @@ int main(int argc, char **argv)
   else if (!strcmp(argv[1], "replay_all"))
     replay_directory(argc - 1, argv + 1);
   else
-    return usage();
+    usage();
+
+  free(username);
+  free(password);
+  free(keyboard_replies);
+  free(keyboard_infos);
+  free(hostbased_host);
 
   return 0;
 }
