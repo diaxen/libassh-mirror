@@ -40,15 +40,7 @@ static unsigned long alloc_fuzz_fails = 0;
 
 static ASSH_ALLOCATOR(assh_leaks_allocator)
 {
-  if (size == 0)
-    {
-      size_t *bsize = (void*)((uint8_t*)*ptr - ALLOC_ALIGN);
-      alloc_size -= *bsize;
-      memset((void*)bsize, 0x5a, *bsize);
-      free((void*)bsize);
-      return ASSH_OK;
-    }
-  else if (*ptr == NULL)
+  if (*ptr == NULL)
     {
       if (alloc_fuzz && assh_prng_rand() % alloc_fuzz == 0)
 	{
@@ -68,6 +60,14 @@ static ASSH_ALLOCATOR(assh_leaks_allocator)
 	  return ASSH_OK;
 	}
       return ASSH_ERR_MEM;
+    }
+  else if (size == 0)
+    {
+      size_t *bsize = (void*)((uint8_t*)*ptr - ALLOC_ALIGN);
+      alloc_size -= *bsize;
+      memset((void*)bsize, 0x5a, *bsize);
+      free((void*)bsize);
+      return ASSH_OK;
     }
   else
     {

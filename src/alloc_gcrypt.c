@@ -33,16 +33,14 @@ ASSH_ALLOCATOR(assh_gcrypt_allocator)
 {
   assh_error_t err;
 
-  if (size == 0)
+  if (*ptr == NULL)
     {
-      gcry_free(*ptr);
-      return ASSH_OK;
-    }
-  else if (*ptr == NULL)
-    {
+      if (size == 0)
+	return ASSH_OK;
+
       switch (type)
 	{
-        case ASSH_ALLOC_NONE:
+        default:
           ASSH_UNREACHABLE();
 	case ASSH_ALLOC_INTERNAL:
 	case ASSH_ALLOC_PACKET:
@@ -54,6 +52,11 @@ ASSH_ALLOCATOR(assh_gcrypt_allocator)
 	  break;
 	}
       ASSH_RET_IF_TRUE(*ptr == NULL, ASSH_ERR_MEM);
+      return ASSH_OK;
+    }
+  else if (size == 0)
+    {
+      gcry_free(*ptr);
       return ASSH_OK;
     }
   else
