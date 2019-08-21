@@ -719,7 +719,7 @@ void test(int (*fend)(int, int), int cnt, int evrate,
 	      break;
 
 	    default:
-	      TEST_FAIL("(ctx %u seed %u) Don't know how to handle event %u\n", i, seed, event.id);
+	      ASSH_DEBUG("(ctx %u seed %u) Don't know how to handle event %u\n", i, seed, event.id);
 	    }
 
 	  assh_event_done(&session[i], &event, everr);
