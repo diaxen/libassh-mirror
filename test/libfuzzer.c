@@ -302,6 +302,12 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 	  assh_event_done(&session, &event, ASSH_OK);
 	  break;
 
+	case ASSH_EVENT_USERAUTH_SERVER_SUCCESS:
+	  if (flags[2] & 2)
+	    event.userauth_server.success.methods = ASSH_USERAUTH_METHOD_SERVER_IMPLEMENTED;
+	  assh_event_done(&session, &event, ASSH_OK);
+	  break;
+
 	  /*******************************************************/
 
 	case ASSH_EVENT_CHANNEL_OPEN: {
