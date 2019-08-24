@@ -1429,7 +1429,7 @@ static void replay_directory(int argc, char **argv)
 	  usage();
 
 	default:
-	  TEST_FAIL("option not available `%c'\n", opt);
+	  exit(1);
 	}
     }
 
@@ -1490,7 +1490,7 @@ static void replay(int argc, char **argv)
 	  usage();
 
 	default:
-	  TEST_FAIL("option not available `%c'\n", opt);
+	  exit(1);
 	}
     }
 
@@ -1729,7 +1729,7 @@ static void record(int argc, char **argv)
 	  usage();
 
 	default:
-	  TEST_FAIL("option not available `%c'\n", opt);
+	  exit(1);
 	}
     }
 

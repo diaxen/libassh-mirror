@@ -48,6 +48,7 @@
 #include "leaks_check.h"
 #include "test.h"
 
+#include <getopt.h>
 #include <errno.h>
 
 #define RQ_FIFO_SIZE 32
@@ -1041,46 +1042,104 @@ static int end_early_cleanup(int j, int n)
 	  assh_prng_rand() % 1000);
 }
 
+static void usage()
+{
+  fprintf(stderr, "usage: connection [options]\n");
+
+  fprintf(stderr,
+	  "Options:\n\n"
+
+	  "    -h         show help\n"
+	  "    -r         pass end when there is no more request/channel\n"
+	  "    -e         paas end at random time\n"
+	  "    -w         pass end when there is an error\n"
+	  "    -c count   set number of test passes (default 100)\n"
+	  "    -s seed    set initial seed (default: time(0))\n"
+	  );
+}
+
 int main(int argc, char **argv)
 {
   if (assh_deps_init())
     return -1;
 
-  unsigned int count = argc > 1 ? atoi(argv[1]) : 100;
-  unsigned int action = argc > 2 ? atoi(argv[2]) : 31;
-  unsigned int k;
+  enum action_e {
+    ACTION_NO_MORE_RQ = 1,
+    ACTION_EARLY_END = 2,
+    ACTION_WAIT_ERROR = 4
+  };
 
-  seed = argc > 3 ? atoi(argv[3]) : time(0);
+  enum action_e action = 0;
+  unsigned int count = 100;
+  unsigned int seed = time(0);
+  int opt;
 
-  for (k = 0; k < count; )
+  while ((opt = getopt(argc, argv, "rewhs:c:")) != -1)
+    {
+      switch (opt)
+	{
+	case 'r':
+	  action |= ACTION_NO_MORE_RQ;
+	  break;
+	case 'e':
+	  action |= ACTION_EARLY_END;
+	  break;
+	case 'w':
+	  action |= ACTION_WAIT_ERROR;
+	  break;
+	case 's':
+	  seed = atoi(optarg);
+	  break;
+	case 'c':
+	  count = atoi(optarg);
+	  break;
+	case 'h':
+	  usage();
+	default:
+	  return 1;
+	}
+    }
+
+  if (!action)
+    action = ACTION_NO_MORE_RQ | ACTION_EARLY_END | ACTION_WAIT_ERROR;
+
+  unsigned int k, l;
+
+  for (l = k = 0; k < count; k++)
     {
       assh_prng_seed(seed);
 
-      if (action & 1)
+      if (action & ACTION_NO_MORE_RQ)
 	{
 	  putc('r', stderr);
+	  l++;
 	  test(&end_no_more_requests, 10000, 0);
 	}
 
-      if (action & 2)
+      if (action & ACTION_EARLY_END)
 	{
 	  putc('e', stderr);
+	  l++;
 	  test(&end_early_cleanup, 10000, 0);
 	}
 
-      if (action & 4)
+      if (action & ACTION_WAIT_ERROR)
 	{
-	  putc('v', stderr);
+	  putc('w', stderr);
+	  l++;
 	  test(&end_wait_error, 10000, assh_prng_rand() % 256 + 16);
 	}
 
       seed++;
 
-      if (++k % 16 == 0)
-	fprintf(stderr, " seed=%u\n", seed);
+      if (l > 40)
+	{
+	  fprintf(stderr, " seed=%u\n", seed + k);
+	  l = 0;
+	}
     }
 
-  if (k % 16)
+  if (l)
     fputc('\n', stderr);
 
   fprintf(stderr, "Summary:\n"

@@ -48,6 +48,7 @@
 #include "cipher_fuzz.h"
 
 #include <stdio.h>
+#include <getopt.h>
 
 struct fifo_s fifo[2];
 struct assh_context_s context[2];
@@ -628,84 +629,175 @@ void test_loop(unsigned int seed,
     }
 }
 
+static void usage()
+{
+  fprintf(stderr, "usage: kex [options]\n");
+
+  fprintf(stderr,
+	  "Options:\n\n"
+
+	  "    -h         show help\n"
+	  "    -t         run non-fuzzing tests\n"
+	  "    -a         run memory allocator fuzzing tests\n"
+	  "    -p         run packet corruption fuzzing tests\n"
+	  "    -f         run more fuzzing tests\n"
+	  "    -S         test more algorithm variants (slow)\n"
+	  "    -c count   set number of test passes (default 100)\n"
+	  "    -s seed    set initial seed (default: time(0))\n"
+	  );
+}
+
 int main(int argc, char **argv)
 {
   if (assh_deps_init())
     return -1;
 
-  unsigned int count = argc > 1 ? atoi(argv[1]) : 1;
-  unsigned int action = argc > 2 ? atoi(argv[2]) : 1;
-  unsigned int s = argc > 3 ? atoi(argv[3]) : time(0);
+  enum action_e {
+    ACTION_NOFUZZING = 1,
+    ACTION_PACKET_FUZZ = 2,
+    ACTION_ALLOC_FUZZ = 4,
+    ACTION_ALL_FUZZ = 8
+  };
+
+  enum action_e action = 0;
+  unsigned int count = 0;
+  unsigned int seed = time(0);
+  assh_bool_t slow = 0;
+  int opt;
+
+  while ((opt = getopt(argc, argv, "tpafhSs:c:")) != -1)
+    {
+      switch (opt)
+	{
+	case 't':
+	  action |= ACTION_NOFUZZING;
+	  break;
+	case 'p':
+	  action |= ACTION_PACKET_FUZZ;
+	  if (!count)
+	    count = 50;
+	  break;
+	case 'a':
+	  action |= ACTION_ALLOC_FUZZ;
+	  if (!count)
+	    count = 50;
+	  break;
+	case 'f':
+	  action |= ACTION_ALL_FUZZ;
+	  if (!count)
+	    count = 50;
+	  break;
+	case 's':
+	  seed = atoi(optarg);
+	  break;
+	case 'S':
+	  slow = 1;
+	  break;
+	case 'c':
+	  count = atoi(optarg);
+	  break;
+	case 'h':
+	  usage();
+	default:
+	  return 1;
+	}
+    }
+
+  if (!action)
+    action = ACTION_NOFUZZING;
+  if (!count)
+    count++;
 
   unsigned int k;
 
   for (k = 0; k < count; k++)
     {
-      unsigned seed = s + k;
+      unsigned s = seed + k;
 
       /* run some sessions, use various algorithms */
-      if (action & 1)
+      if (action & ACTION_NOFUZZING)
 	{
 	  alloc_fuzz = 0;
 	  packet_fuzz = 0;
 
 	  /* test cipher and mac */
-	  test_loop(seed, kex_list_short, sign_list_short, cipher_list_long, mac_list_long, comp_list_short, 2);
+	  test_loop(s, kex_list_short, sign_list_short, cipher_list_long, mac_list_long, comp_list_short, 2);
 	  /* test compression */
-	  test_loop(seed, kex_list_short, sign_list_short, cipher_list_short, mac_list_short, comp_list_long, 2);
+	  test_loop(s, kex_list_short, sign_list_short, cipher_list_short, mac_list_short, comp_list_long, 2);
 	  /* test sign */
-	  test_loop(seed, kex_list_all, sign_list_long, cipher_list_short, mac_list_short, comp_list_short, 2);
+	  test_loop(s, kex_list_all, sign_list_long, cipher_list_short, mac_list_short, comp_list_short, 2);
 	  /* test kex */
-	  if (action & 8)
-	    test_loop(seed, kex_list_slow, sign_list_short, cipher_list_short, mac_list_short, comp_list_short, 2);
+	  if (slow)
+	    test_loop(s, kex_list_slow, sign_list_short, cipher_list_short, mac_list_short, comp_list_short, 2);
 	  else
-	    test_loop(seed, kex_list_long, sign_list_short, cipher_list_short, mac_list_short, comp_list_short, 2);
+	    test_loop(s, kex_list_long, sign_list_short, cipher_list_short, mac_list_short, comp_list_short, 2);
 	}
 
       /* run some more sessions with some packet error */
-      if (action & 2)
+      if (action & ACTION_PACKET_FUZZ)
 	{
 	  alloc_fuzz = 0;
 	  packet_fuzz = 10 + assh_prng_rand() % 1024;
 
 	  /* fuzz compression parsing */
-	  test_loop(seed, kex_list_short, sign_list_short, cipher_list_fuzz, mac_list_fuzz, comp_list_long, 4);
+	  test_loop(s, kex_list_short, sign_list_short, cipher_list_fuzz, mac_list_fuzz, comp_list_long, 4);
 	  /* fuzz signature parsing */
-	  test_loop(seed, kex_list_short, sign_list_long, cipher_list_fuzz, mac_list_fuzz, comp_list_short, 4);
+	  test_loop(s, kex_list_short, sign_list_long, cipher_list_fuzz, mac_list_fuzz, comp_list_short, 4);
 	  /* fuzz kex parsing */
-	  if (action & 8)
-	    test_loop(seed, kex_list_slow, sign_list_short, cipher_list_fuzz, mac_list_fuzz, comp_list_short, 4);
+	  if (slow)
+	    test_loop(s, kex_list_slow, sign_list_short, cipher_list_fuzz, mac_list_fuzz, comp_list_short, 4);
 	  else
-	    test_loop(seed, kex_list_long, sign_list_short, cipher_list_fuzz, mac_list_fuzz, comp_list_short, 4);
+	    test_loop(s, kex_list_long, sign_list_short, cipher_list_fuzz, mac_list_fuzz, comp_list_short, 4);
 	}
 
       /* run some more sessions with some allocation fails */
-      if (action & 4)
+      if (action & ACTION_ALLOC_FUZZ)
 	{
-	  alloc_fuzz = 4 + assh_prng_rand() % 32;
+	  alloc_fuzz = 4 + assh_prng_rand() % 128;
 	  packet_fuzz = 0;
 
 	  /* fuzz cipher and mac allocation */
-	  test_loop(seed, kex_list_short, sign_list_short, cipher_list_long, mac_list_long, comp_list_short, 4);
+	  test_loop(s, kex_list_short, sign_list_short, cipher_list_long, mac_list_long, comp_list_short, 4);
 	  /* fuzz compression allocation */
-	  test_loop(seed, kex_list_short, sign_list_short, cipher_list_short, mac_list_short, comp_list_long, 4);
+	  test_loop(s, kex_list_short, sign_list_short, cipher_list_short, mac_list_short, comp_list_long, 4);
 	  /* fuzz kex and sign allocation */
-	  test_loop(seed, kex_list_all, sign_list_all, cipher_list_short, mac_list_short, comp_list_short, 4);
+	  test_loop(s, kex_list_all, sign_list_all, cipher_list_short, mac_list_short, comp_list_short, 4);
+	}
+
+      if (action & ACTION_ALL_FUZZ)
+	{
+	  alloc_fuzz = 64 + assh_prng_rand() % 64;
+	  packet_fuzz = 512 + assh_prng_rand() % 512;
+
+	  /* fuzz compression parsing */
+	  test_loop(s, kex_list_short, sign_list_short, cipher_list_fuzz, mac_list_fuzz, comp_list_long, 4);
+	  /* fuzz signature parsing */
+	  test_loop(s, kex_list_short, sign_list_long, cipher_list_fuzz, mac_list_fuzz, comp_list_short, 4);
+	  /* fuzz kex parsing */
+	  if (slow)
+	    test_loop(s, kex_list_slow, sign_list_short, cipher_list_fuzz, mac_list_fuzz, comp_list_short, 4);
+	  else
+	    test_loop(s, kex_list_long, sign_list_short, cipher_list_fuzz, mac_list_fuzz, comp_list_short, 4);
 	}
     }
 
-  fprintf(stderr, "Summary:\n"
+  fprintf(stderr, "\nSummary:\n"
 	      "  %8lu client kex done\n"
 	      "  %8lu server kex done\n"
 	      "  %8lu client host key lookup\n"
 	      "  %8lu re-kex\n"
-	      "  %8lu fuzz packet bit errors\n"
-	      "  %8lu fuzz memory allocation fails\n"
 	      ,
 	      kex_client_done_count,
 	      kex_server_done_count,
 	      kex_hostkey_lookup_count,
-	      kex_rekex_count,
+	      kex_rekex_count
+	  );
+
+  if (action & (ACTION_PACKET_FUZZ | ACTION_ALLOC_FUZZ | ACTION_ALL_FUZZ))
+    fprintf(stderr, "\nFuzzing:\n"
+	      "  %8lu fuzz packet bit errors\n"
+	      "  %8lu fuzz memory allocation fails\n"
+	      ,
 	      packet_fuzz_bits,
 	      alloc_fuzz_fails
 	  );

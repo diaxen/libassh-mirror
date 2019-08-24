@@ -48,6 +48,7 @@
 #include "test.h"
 #include "cipher_fuzz.h"
 
+#include <getopt.h>
 #include <errno.h>
 
 #define RQ_FIFO_SIZE 32
@@ -777,51 +778,118 @@ static int end_early_cleanup(int j, int n)
   return assh_prng_rand() % 10000;
 }
 
+static void usage()
+{
+  fprintf(stderr, "usage: connection2 [options]\n");
+
+  fprintf(stderr,
+	  "Options:\n\n"
+
+	  "    -h         show help\n"
+	  "    -e         test pass with early end\n"
+	  "    -d         test pass with disconnect\n"
+	  "    -f         test pass with packet fuzzing\n"
+	  "    -a         test pass with allocator fuzzing\n"
+	  "    -v         test pass with event errors and fuzzing\n"
+	  "    -c count   set number of test passes (default 100)\n"
+	  "    -s seed    set initial seed (default: time(0))\n"
+	  );
+}
+
 int main(int argc, char **argv)
 {
   if (assh_deps_init())
     return -1;
 
-  unsigned int count = argc > 1 ? atoi(argv[1]) : 200;
-  unsigned int action = argc > 2 ? atoi(argv[2]) : 31;
-  unsigned int k;
+  enum action_e {
+    ACTION_EARLY_END = 1,
+    ACTION_DISCONNECT = 2,
+    ACTION_PACKET_FUZZ = 4,
+    ACTION_ALLOC_FUZZ = 8,
+    ACTION_ALL_FUZZ = 16,
+  };
 
-  seed = argc > 3 ? atoi(argv[3]) : time(0);
+  enum action_e action = 0;
+  unsigned int count = 100;
+  unsigned int seed = time(0);
+  int opt;
 
-  for (k = 0; k < count; )
+  while ((opt = getopt(argc, argv, "edfavhs:c:")) != -1)
+    {
+      switch (opt)
+	{
+	case 'e':
+	  action |= ACTION_EARLY_END;
+	  break;
+	case 'd':
+	  action |= ACTION_DISCONNECT;
+	  break;
+	case 'f':
+	  action |= ACTION_PACKET_FUZZ;
+	  break;
+	case 'a':
+	  action |= ACTION_ALLOC_FUZZ;
+	  break;
+	case 'v':
+	  action |= ACTION_ALL_FUZZ;
+	  break;
+	case 's':
+	  seed = atoi(optarg);
+	  break;
+	case 'c':
+	  count = atoi(optarg);
+	  break;
+	case 'h':
+	  usage();
+	default:
+	  return 1;
+	}
+    }
+
+  if (!action)
+    action = ACTION_EARLY_END | ACTION_DISCONNECT;
+
+  unsigned k, l;
+
+  for (l = k = 0; k < count; k++)
     {
       assh_prng_seed(seed);
       packet_fuzz = 0;
 
-      if (action & 1)
+      if (action & ACTION_EARLY_END)
 	{
 	  putc('e', stderr);
+	  l++;
 	  test(&end_early_cleanup, 10000, 0, 0, 0);
 	}
 
-      if (action & 2)
+      if (action & ACTION_DISCONNECT)
 	{
 	  putc('d', stderr);
+	  l++;
 	  test(&end_disconnect, 1000000, 0, 0, 1);
 	}
 
-      if (action & 4)
+      if (action & ACTION_PACKET_FUZZ)
 	{
 	  packet_fuzz = 10 + assh_prng_rand() % 1024;
 	  putc('f', stderr);
+	  l++;
 	  test(&end_wait_error, 10000, 0, 0, 0);
 	}
 
-      if (action & 8)
+      if (action & ACTION_ALLOC_FUZZ)
 	{
 	  packet_fuzz = 0;
 	  putc('a', stderr);
+	  l++;
 	  test(&end_wait_error, 10000, 0, 4 + assh_prng_rand() % 32, 0);
 	}
 
-      if (action & 16)
+      if (action & ACTION_ALL_FUZZ)
 	{
 	  putc('v', stderr);
+	  l++;
 	  packet_fuzz = 10 + assh_prng_rand() % 1024;
 	  test(&end_disconnect, 10000,
 	       assh_prng_rand() % 256 + 16,
@@ -830,14 +898,17 @@ int main(int argc, char **argv)
 
       seed++;
 
-      if (++k % 12 == 0)
-	fprintf(stderr, " seed=%u\n", seed);
+      if (l > 40)
+	{
+	  fprintf(stderr, " seed=%u\n", seed);
+	  l = 0;
+	}
     }
 
-  if (k % 12)
+  if (l)
     fputc('\n', stderr);
 
-  fprintf(stderr, "Summary:\n"
+  fprintf(stderr, "\nSummary:\n"
 	  "  %8lu request calls\n"
 	  "  %8lu request replies (success)\n"
 	  "  %8lu request replies (failed)\n"
@@ -863,10 +934,7 @@ int main(int argc, char **argv)
 	  "  %8lu channel data receive\n"
 	  "  %8lu channel window\n"
 	  "  %8lu rekex\n"
-	  "  %8lu event error\n"
 	  "  %8lu disconnect\n"
-	  "  %8lu fuzz packet bit errors\n"
-	  "  %8lu fuzz memory allocation fails\n"
 	  ,
 	  rq_send_count, rq_reply_success, rq_reply_failed,
 	  rq_event_count, rq_event_success_count,
@@ -876,9 +944,18 @@ int main(int argc, char **argv)
 	  ch_open_success_reply_call_count, ch_open_failed_reply_call_count,
 	  ch_close_count, ch_event_close_count, ch_event_abort_count,
 	  ch_eof_count, ch_event_eof_count,
-	  ch_data_send, ch_data_recv, ch_data_window, rekex_count, ev_err_count,
-	  disconnect_count, packet_fuzz_bits, alloc_fuzz_fails
+	  ch_data_send, ch_data_recv, ch_data_window, rekex_count,
+	  disconnect_count
 	  );
+
+  if (action & (ACTION_PACKET_FUZZ | ACTION_ALLOC_FUZZ | ACTION_ALL_FUZZ))
+    fprintf(stderr, "\nFuzzing:\n"
+	    "  %8lu fuzz packet bit errors\n"
+	    "  %8lu fuzz memory allocation fails\n"
+	    "  %8lu event error\n"
+	    ,
+	    packet_fuzz_bits, alloc_fuzz_fails, ev_err_count
+	    );
 
   return 0;
 }

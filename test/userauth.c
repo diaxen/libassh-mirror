@@ -40,6 +40,8 @@
 #include <assh/key_eddsa.h>
 #include <assh/key_ecdsa.h>
 
+#include <getopt.h>
+
 #include "fifo.h"
 #include "prng_weak.h"
 #include "leaks_check.h"
@@ -578,14 +580,71 @@ static int test()
   return 0;
 }
 
+static void usage()
+{
+  fprintf(stderr, "usage: userauth [options]\n");
+
+  fprintf(stderr,
+	  "Options:\n\n"
+
+	  "    -h         show help\n"
+	  "    -t         run non-fuzzing tests\n"
+	  "    -a         run memory allocator fuzzing tests\n"
+	  "    -p         run packet corruption fuzzing tests\n"
+	  "    -f         run more fuzzing tests\n"
+	  "    -c count   set number of test passes (default 100)\n"
+	  "    -s seed    set initial seed (default: time(0))\n"
+	  );
+}
+
 int main(int argc, char **argv)
 {
   if (assh_deps_init())
     return -1;
 
-  unsigned int count = argc > 1 ? atoi(argv[1]) : 100;
-  unsigned int action = argc > 2 ? atoi(argv[2]) : 7;
-  unsigned int seed = argc > 3 ? atoi(argv[3]) : time(0);
+  enum action_e {
+    ACTION_NOFUZZING = 1,
+    ACTION_PACKET_FUZZ = 2,
+    ACTION_ALLOC_FUZZ = 4,
+    ACTION_ALL_FUZZ = 8
+  };
+
+  enum action_e action = 0;
+  unsigned int count = 100;
+  unsigned int seed = time(0);
+  int opt;
+
+  while ((opt = getopt(argc, argv, "tpafhs:c:")) != -1)
+    {
+      switch (opt)
+	{
+	case 't':
+	  action |= ACTION_NOFUZZING;
+	  break;
+	case 'p':
+	  action |= ACTION_PACKET_FUZZ;
+	  break;
+	case 'a':
+	  action |= ACTION_ALLOC_FUZZ;
+	  break;
+	case 'f':
+	  action |= ACTION_ALL_FUZZ;
+	  break;
+	case 's':
+	  seed = atoi(optarg);
+	  break;
+	case 'c':
+	  count = atoi(optarg);
+	  break;
+	case 'h':
+	  usage();
+	default:
+	  return 1;
+	}
+    }
+
+  if (!action)
+    action = ACTION_NOFUZZING;
 
   static const struct assh_algo_s *algos[] = {
     &assh_kex_none.algo, &assh_sign_none.algo,
@@ -653,46 +712,61 @@ int main(int argc, char **argv)
   if (alloc_size == 0)
     TEST_FAIL("leak checking not working\n");
 
-  unsigned int k;
+  unsigned int k, l;
 
   /* run some ssh sessions */
-  for (k = 0; k < count; )
+  for (l = k = 0; k < count; k++)
     {
       assh_prng_seed(seed + k);
 
       /* run a session */
-      if (action & 1)
+      if (action & ACTION_NOFUZZING)
 	{
 	  alloc_fuzz = 0;
 	  packet_fuzz = 0;
-	  putc('r', stderr);
+	  putc('t', stderr);
+	  l++;
 	  if (test())
 	    return 1;
 	}
 
       /* run a session with some packet error */
-      if (action & 2)
+      if (action & ACTION_PACKET_FUZZ)
 	{
 	  alloc_fuzz = 0;
 	  packet_fuzz = 10 + assh_prng_rand() % 1024;
-	  putc('f', stderr);
+	  putc('p', stderr);
+	  l++;
 	  test();
 	}
 
       /* run a session with some allocation fails */
-      if (action & 4)
+      if (action & ACTION_ALLOC_FUZZ)
 	{
 	  alloc_fuzz = 4 + assh_prng_rand() % 32;
 	  packet_fuzz = 0;
 	  putc('a', stderr);
+	  l++;
 	  test();
 	}
 
-      if (++k % 32 == 0)
-	fprintf(stderr, " seed=%u\n", seed + k);
+      if (action & ACTION_ALL_FUZZ)
+	{
+	  alloc_fuzz = 4 + assh_prng_rand() % 32;
+	  packet_fuzz = 10 + assh_prng_rand() % 1024;
+	  putc('A', stderr);
+	  l++;
+	  test();
+	}
+
+      if (l > 40)
+	{
+	  fprintf(stderr, " seed=%u\n", seed + k);
+	  l = 0;
+	}
     }
 
-  if (k % 32)
+  if (l)
     fputc('\n', stderr);
 
   /* release user keys */
@@ -711,9 +785,8 @@ int main(int argc, char **argv)
   if (alloc_size != 0)
     TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
 
-  fprintf(stderr, "Summary:\n"
+  fprintf(stderr, "\nSummary:\n"
 	  "  %8lu authentication completion count\n"
-	  "  %8lu protocol stall count\n"
 	  "  %8lu server public key found count\n"
 	  "  %8lu server public key wrong count\n"
 	  "  %8lu server password ok count\n"
@@ -728,7 +801,6 @@ int main(int argc, char **argv)
 	  "  %8lu server failure count\n"
 	  "  %8lu server partial success count\n"
 	  "  %8lu server success count\n"
-	  "  %8lu server fuzz error count\n"
 	  "  %8lu client none count\n"
 	  "  %8lu client pubkey count\n"
 	  "  %8lu client hostbased count\n"
@@ -741,12 +813,8 @@ int main(int argc, char **argv)
 	  "  %8lu client keyboard response count\n"
 	  "  %8lu client partial success count\n"
 	  "  %8lu client success count\n"
-	  "  %8lu client fuzz error count\n"
-	  "  %8lu fuzz packet bit errors\n"
-	  "  %8lu fuzz memory allocation fails\n"
 	  ,
 	  auth_done_count,
-	  auth_stall_count,
 	  auth_server_pubkey_found_count,
 	  auth_server_pubkey_wrong_count,
 	  auth_server_password_ok_count,
@@ -761,7 +829,6 @@ int main(int argc, char **argv)
 	  auth_server_failure_count,
 	  auth_server_partial_success_count,
 	  auth_server_success_count,
-	  auth_server_err_count,
 	  auth_client_none_count,
 	  auth_client_pubkey_count,
 	  auth_client_hostbased_count,
@@ -773,11 +840,24 @@ int main(int argc, char **argv)
 	  auth_client_keyboard_count,
 	  auth_client_keyboard_resp_count,
 	  auth_client_partial_success_count,
-	  auth_client_success_count,
-	  auth_client_err_count,
-	  packet_fuzz_bits,
-	  alloc_fuzz_fails
+	  auth_client_success_count
 	  );
+
+  if (action & (ACTION_PACKET_FUZZ | ACTION_ALLOC_FUZZ | ACTION_ALL_FUZZ))
+    fprintf(stderr,
+	    "\nFuzzing:\n"
+	    "  %8lu memory allocation fails\n"
+	    "  %8lu packet bit errors\n"
+	    "  %8lu protocol stall count\n"
+	    "  %8lu server session error count\n"
+	    "  %8lu client session error count\n"
+	    ,
+	    alloc_fuzz_fails,
+	    packet_fuzz_bits,
+	    auth_stall_count,
+	    auth_server_err_count,
+	    auth_client_err_count
+	    );
 
   return 0;
 }
