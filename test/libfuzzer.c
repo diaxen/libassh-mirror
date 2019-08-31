@@ -153,10 +153,11 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 
 	  /*******************************************************/
 
-        case ASSH_EVENT_USERAUTH_CLIENT_METHODS:
+        case ASSH_EVENT_USERAUTH_CLIENT_METHODS: {
+	  int f = (flags[0] & 0x70) >> 4;
 	  while (!event.userauth_client.methods.select)
 	    {
-	      switch ((flags[0] & 0x70) >> 4)
+	      switch (f & 7)
 		{
 		case 0:
 		  if (!(event.userauth_client.methods.methods &
@@ -207,9 +208,11 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 		  assh_key_insert(&event.userauth_client.methods.keys, key_none);
 		  break;
 		}
+	      f++;
 	    }
 	  assh_event_done(&session, &event, ASSH_OK);
           break;
+	}
 
 	case ASSH_EVENT_USERAUTH_CLIENT_SIGN: {
 	  struct assh_event_userauth_client_sign_s *e =
