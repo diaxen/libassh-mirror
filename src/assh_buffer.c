@@ -252,17 +252,18 @@ assh_blob_scan_va(struct assh_context_s *c, const char *format,
 	do_int:;
 	  int64_t x = 0;
           size_t l = st->next - r;
+	  const uint8_t *n;
 	  ASSH_RET_IF_TRUE(l > lg * 4 + 4,
 			   ASSH_ERR_INPUT_OVERFLOW);
 	  if (*format == 'r')
 	    {
 	      format++;
-	      for (const uint8_t *n = st->next - 1; n >= r; n--)
+	      for (n = st->next - 1; n >= r; n--)
 		x = (x << 8) | *n;
 	    }
 	  else
 	    {
-	      for (const uint8_t *n = r; n < st->next; n++)
+	      for (n = r; n < st->next; n++)
 		x = (x << 8) | *n;
 	    }
 	  if (lg)

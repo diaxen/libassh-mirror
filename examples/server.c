@@ -725,8 +725,8 @@ server_connected(struct assh_context_s *context,
       p[0].events |= POLLOUT;
 
     /* also register file descriptors related to child processes */
-    unsigned poll_i = 1;
-    for (unsigned i = 0; i < its_table_count; i++)
+    unsigned i, poll_i = 1;
+    for (i = 0; i < its_table_count; i++)
       its_poll_setup(its_table[i], session, p, &poll_i);
                                                         /* anchor poll */
     /* get the appropriate ssh protocol timeout */
@@ -737,7 +737,7 @@ server_connected(struct assh_context_s *context,
 
                                                         /* anchor chi2cha */
     /* read from childs and transmit over ssh */
-    for (unsigned i = 0; i < its_table_count; i++)
+    for (i = 0; i < its_table_count; i++)
       its_child2channel(its_table[i], p);
 
                                                         /* anchor loopcall */

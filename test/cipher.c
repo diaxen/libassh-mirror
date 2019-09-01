@@ -515,8 +515,9 @@ main(int argc, char **argv)
 
       uint32_t seq = t->seq;
       const size_t count = 3;
+      uint_fast8_t  i;
 
-      for (uint_fast8_t i = 0; i < count; i++, seq++)
+      for (i = 0; i < count; i++, seq++)
 	{
 	  assh_bool_t check_output = (i < t->out_count);
 	  assh_bool_t tamper = algo->auth_size && (i == count - 1);
@@ -564,8 +565,10 @@ main(int argc, char **argv)
 
 	  if (!tamper)
 	    {
+	      size_t j;
+
 	      fprintf(stderr, "q");
-	      for (size_t j = 0; j < size - algo->auth_size; j++)
+	      for (j = 0; j < size - algo->auth_size; j++)
 		if (buf[j] != 42)
 		  {
 		    assh_hexdump("output", buf, size);

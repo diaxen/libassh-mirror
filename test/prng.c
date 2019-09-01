@@ -45,7 +45,9 @@ main(int argc, char **argv)
 			NULL, &assh_prng_xswap, &seed))
     TEST_FAIL("context init");
 
-  for (uint_fast8_t i = 0; i < 10; i++)
+  uint_fast8_t i;
+
+  for (i = 0; i < 10; i++)
     {
       size_t len = 1 + rand() % 64;
       uint8_t buf[len];

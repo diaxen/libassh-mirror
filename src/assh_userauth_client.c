@@ -354,8 +354,8 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_get_methods_done)
 
   const struct assh_userauth_client_method_s *m;
 
-  for (uint_fast8_t i = 0;
-       (m = assh_userauth_client_methods[i]); i++)
+  uint_fast8_t i;
+  for (i = 0; (m = assh_userauth_client_methods[i]); i++)
     {
       if (select & m->mask)
         {
@@ -443,10 +443,10 @@ assh_userauth_client_failure(struct assh_session_s *s,
       size_t nlen = n - methods;
 
       const struct assh_userauth_client_method_s *m;
+      uint_fast8_t i;
 
       /* find in supported methods */
-      for (uint_fast8_t i = 0;
-           (m = assh_userauth_client_methods[i]); i++)
+      for (i = 0; (m = assh_userauth_client_methods[i]); i++)
         {
           if (!assh_string_strcmp((const char*)methods, nlen, m->name))
             {

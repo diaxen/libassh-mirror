@@ -1538,7 +1538,8 @@ static void record(int argc, char **argv)
   char cmdline[512];
   int cmdi = 0;
 
-  for (uint_fast16_t i = 0; i < argc; i++)
+  uint_fast16_t i;
+  for (i = 0; i < argc; i++)
     cmdi += snprintf(cmdline + cmdi, sizeof(cmdline) - cmdi, "%s ", argv[i]);
 
   int opt;

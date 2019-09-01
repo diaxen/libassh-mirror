@@ -305,7 +305,9 @@ main(int argc, char **argv)
 	  /* use randomly generated input */
 	  in = malloc(in_size);
 	  uint64_t seed = t->seq;
-	  for (unsigned i = 0; i < in_size; i++)
+	  unsigned i;
+
+	  for (i = 0; i < in_size; i++)
 	    in[i] = assh_prng_rand_seed(&seed);
 	}
 
