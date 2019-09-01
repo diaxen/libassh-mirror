@@ -36,7 +36,7 @@ static ASSH_PRNG_GET_FCN(assh_prng_openssl_get)
 {
   assh_error_t err;
 
-  switch (quality)
+  switch (ASSH_PRNG_QUALITY(quality))
     {
     case ASSH_PRNG_QUALITY_WEAK:
     case ASSH_PRNG_QUALITY_PUBLIC:

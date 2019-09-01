@@ -40,7 +40,7 @@ static ASSH_PRNG_INIT_FCN(assh_prng_gcrypt_init)
 
 static ASSH_PRNG_GET_FCN(assh_prng_gcrypt_get)
 {
-  switch (quality)
+  switch (ASSH_PRNG_QUALITY(quality))
     {
     case ASSH_PRNG_QUALITY_WEAK:
     case ASSH_PRNG_QUALITY_PUBLIC:

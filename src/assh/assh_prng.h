@@ -54,6 +54,14 @@ enum assh_prng_quality_e
   ASSH_PRNG_QUALITY_LONGTERM_KEY,
 };
 
+/** @internal @This extracts the @ref assh_prng_quality_e value from
+    the argument passed to the @ref assh_prng_get_t function. */
+#define ASSH_PRNG_QUALITY(n) (enum assh_prng_quality_e)((n) & 15)
+
+/** @internal @This is passed to the @ref assh_prng_get_t function
+    when the random data is used as a big number. */
+#define ASSH_PRNG_BIGNUM_FLAG 16
+
 /** @internal @see assh_prng_init_t */
 #define ASSH_PRNG_INIT_FCN(n) \
   ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_context_s *c, \
@@ -68,9 +76,10 @@ typedef ASSH_PRNG_INIT_FCN(assh_prng_init_t);
 #define ASSH_PRNG_GET_FCN(n) \
   ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_context_s *c,    \
                                            uint8_t *rdata, size_t rdata_len, \
-					   enum assh_prng_quality_e quality)
+					   uint_fast8_t quality)
 /** @internal @This defines the function type for the random generation
-    operation of the prng module interface. @see assh_prng_get */
+    operation of the prng module interface.
+    @see assh_prng_get @see #ASSH_PRNG_QUALITY */
 typedef ASSH_PRNG_GET_FCN(assh_prng_get_t);
 
 /** @internal @see assh_prng_cleanup_t */

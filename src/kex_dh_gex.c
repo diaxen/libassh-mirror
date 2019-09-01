@@ -477,8 +477,9 @@ static assh_error_t assh_kex_dh_gex_server_wait_size(struct assh_session_s *s,
   ASSH_RET_IF_TRUE(max < min, ASSH_ERR_WEAK_ALGORITHM);
 
   /* randomize group size */
-  uint16_t r;
-  ASSH_RET_ON_ERR(assh_prng_get(s->ctx, (void*)&r, 2, ASSH_PRNG_QUALITY_NONCE));
+  uint8_t r_[2];
+  ASSH_RET_ON_ERR(assh_prng_get(s->ctx, r_, 2, ASSH_PRNG_QUALITY_NONCE));
+  uint16_t r = r_[0] | (r_[1] << 8);
   r = r % (max - min + 1);
   r -= r % 8;
 

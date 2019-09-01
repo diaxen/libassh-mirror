@@ -334,24 +334,15 @@ assh_bignum_rand(struct assh_context_s *c,
   if (l == 0)
     return ASSH_OK;
 
-  ASSH_RET_ON_ERR(assh_prng_get(c, (uint8_t*)n,
-                 l * sizeof(assh_bnword_t), quality));
+  do {
+      ASSH_RET_ON_ERR(assh_prng_get(c, (uint8_t*)n,
+                 l * sizeof(assh_bnword_t), quality | ASSH_PRNG_BIGNUM_FLAG));
 
-  while (1)
-    {
       if (bn->bits % ASSH_BIGNUM_W)
         n[l - 1] &= ASSH_BN_WORDMAX >> (ASSH_BIGNUM_W - bn->bits % ASSH_BIGNUM_W);
 
-      if ((min == NULL || (assh_bignum_cmp(bn, min) & ASSH_BIGNUM_CMP_GT)) &&
-          (max == NULL || (assh_bignum_cmp(bn, max) & ASSH_BIGNUM_CMP_LT)))
-        break;
-
-      for (i = l; --i != 0; )
-        n[i] = n[i - 1];
-
-      ASSH_RET_ON_ERR(assh_prng_get(c, (uint8_t*)n,
-                     sizeof(assh_bnword_t), quality));
-    }
+  } while (!(min == NULL || (assh_bignum_cmp(bn, min) & ASSH_BIGNUM_CMP_GT)) ||
+	   !(max == NULL || (assh_bignum_cmp(bn, max) & ASSH_BIGNUM_CMP_LT)));
 
   return ASSH_OK;
 }
