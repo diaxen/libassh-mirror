@@ -880,6 +880,7 @@ static void test()
 		      if (s != te->buf.size || memcmp(st, te->buf.data, s))
 			{
 			  assh_hexdump("expected", st, s);
+			  assh_hexdump("unexpected", te->buf.data, s);
 			  TEST_FAIL("stream chunk with unexpected content\n");
 			}
 		      break;
