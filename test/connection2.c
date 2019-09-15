@@ -130,11 +130,11 @@ void test(int (*fend)(int, int), int cnt, int evrate,
   alloc_fuzz = 0;
   if (assh_context_init(&context[0], ASSH_SERVER,
 			assh_leaks_allocator, NULL,
-			&assh_prng_weak, NULL) ||
+			&assh_prng_dummy, NULL) ||
       assh_algo_register_static(&context[0], algos) ||
       assh_context_init(&context[1], ASSH_CLIENT,
 			assh_leaks_allocator, NULL,
-			&assh_prng_weak, NULL) ||
+			&assh_prng_dummy, NULL) ||
       assh_algo_register_static(&context[1], algos))
     TEST_FAIL("init");
 

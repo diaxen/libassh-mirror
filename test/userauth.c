@@ -656,7 +656,7 @@ int main(int argc, char **argv)
   uint_fast8_t i;
   /* init server context */
   if (assh_context_init(&context[0], ASSH_SERVER,
-			assh_leaks_allocator, NULL, &assh_prng_weak, NULL) ||
+			assh_leaks_allocator, NULL, &assh_prng_dummy, NULL) ||
       assh_service_register_va(&context[0], &assh_service_userauth_server,
 			       &assh_service_connection, NULL) ||
       assh_algo_register_static(&context[0], algos))
@@ -669,7 +669,7 @@ int main(int argc, char **argv)
 
   /* init client context */
   if (assh_context_init(&context[1], ASSH_CLIENT,
-			assh_leaks_allocator, NULL, &assh_prng_weak, NULL) ||
+			assh_leaks_allocator, NULL, &assh_prng_dummy, NULL) ||
       assh_service_register_va(&context[1], &assh_service_userauth_client,
 			       &assh_service_connection, NULL) ||
       assh_algo_register_static(&context[1], algos))

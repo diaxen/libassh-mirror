@@ -1399,7 +1399,7 @@ int main(int argc, char **argv)
     return -1;
 
   if (assh_context_init(&context, ASSH_CLIENT_SERVER,
-                        NULL, NULL, &assh_prng_weak, NULL))
+                        NULL, NULL, &assh_prng_dummy, NULL))
     return -1;
 
   test_convert();

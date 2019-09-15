@@ -54,7 +54,7 @@
 #include <assh/helper_server.h>
 #include <assh/helper_io.h>
 
-#include "prng_dummy.h"
+#include "prng_weak.h"
 #include "keys.h"
 
 #define ERROR(...) do { fprintf(stderr, __VA_ARGS__); exit(1); } while (0)
@@ -94,7 +94,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
   struct assh_context_s context;
 
   if (assh_context_init(&context, flags[0] & 1 ? ASSH_SERVER : ASSH_CLIENT,
-			  NULL, NULL, &assh_prng_dummy, &context_prng_seed) != ASSH_OK ||
+			  NULL, NULL, &assh_prng_dummy, NULL) != ASSH_OK ||
       assh_service_register_default(&context) != ASSH_OK ||
       assh_algo_register_static(&context, algos) != ASSH_OK)
     ERROR("Unable to create an assh context.\n");

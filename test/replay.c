@@ -113,7 +113,7 @@
 #include "fifo.h"
 #include "test.h"
 #include "keys.h"
-#include "prng_dummy.h"
+#include "prng_weak.h"
 
 #include <stdio.h>
 #include <getopt.h>
@@ -1370,7 +1370,7 @@ static void replay_file(const char *fname)
 
       if (assh_context_init(&context[0], ASSH_SERVER,
 			    assh_leaks_allocator, NULL,
-			    &assh_prng_dummy, &context_prng_seed))
+			    &assh_prng_dummy, NULL))
 	TEST_FAIL("server ctx init\n");
 
       if (context_load(&context[0], f_in[0], 0))
@@ -1385,7 +1385,7 @@ static void replay_file(const char *fname)
 
       if (assh_context_init(&context[1], ASSH_CLIENT,
 			    assh_leaks_allocator, NULL,
-			    &assh_prng_dummy, &context_prng_seed))
+			    &assh_prng_dummy, NULL))
 	TEST_FAIL("client ctx init\n");
 
       if (context_load(&context[1], f_in[1], 1))
@@ -1517,14 +1517,14 @@ static void record(int argc, char **argv)
 #if defined(CONFIG_ASSH_SERVER)
   if (assh_context_init(&context[0], ASSH_SERVER,
 			assh_leaks_allocator, NULL,
-			&assh_prng_dummy, &context_prng_seed))
+			&assh_prng_dummy, NULL))
     TEST_FAIL("server ctx init\n");
 #endif
 
 #if defined(CONFIG_ASSH_CLIENT)
   if (assh_context_init(&context[1], ASSH_CLIENT,
 			assh_leaks_allocator, NULL,
-			&assh_prng_dummy, &context_prng_seed))
+			&assh_prng_dummy, NULL))
     TEST_FAIL("client ctx init\n");
 #endif
 
@@ -1661,11 +1661,11 @@ static void record(int argc, char **argv)
 
 		/* creating a key use random bits but we need to keep
 		   the prng in sync with the replay session. */
-		uint64_t seed = *(uint64_t*)c->prng_pv;
+		uint64_t seed = assh_load_u64le(c->prng_pv);
 		if (assh_key_create(c, keys, bits, algo, role))
 		  TEST_FAIL("unable to create key: `%s'\n", optarg);
 		/* restore seed */
-		*(uint64_t*)c->prng_pv = seed;
+		assh_store_u64le(c->prng_pv, seed);
 	      }
 	    else
 	      {

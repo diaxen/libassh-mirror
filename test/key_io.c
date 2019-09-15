@@ -315,7 +315,7 @@ int main(int argc, char **argv)
     return -1;
 
   if (assh_context_create(&context, ASSH_CLIENT_SERVER,
-			  assh_leaks_allocator, NULL, &assh_prng_weak, NULL))
+			  assh_leaks_allocator, NULL, &assh_prng_dummy, NULL))
     return -1;
 
   if (assh_algo_register_va(context, 0, 0, 0,
