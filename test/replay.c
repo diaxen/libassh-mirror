@@ -1651,6 +1651,7 @@ static void record(int argc, char **argv)
 
 	    if (col)
 	      {
+#ifdef CONFIG_ASSH_KEY_CREATE
 		size_t bits = atoi(col + 1);
 		*col = 0;
 
@@ -1666,6 +1667,9 @@ static void record(int argc, char **argv)
 		  TEST_FAIL("unable to create key: `%s'\n", optarg);
 		/* restore seed */
 		assh_store_u64le(c->prng_pv, seed);
+#else
+		TEST_FAIL("unable to create key: disabled at compile time\n");
+#endif
 	      }
 	    else
 	      {
