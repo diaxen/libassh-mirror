@@ -18,10 +18,10 @@ static ASSH_CIPHER_PROCESS_FCN(assh_fuzz_process)
       uint64_t r = prng_rand_max / packet_fuzz;
       uint32_t i;
 
-      for (i = 0; i < len; i++)
-        if (r > assh_prng_rand())
+      for (i = 0; i < len * 8; i++)
+        if (r > assh_prng_rand() * 8ULL)
           {
-            data[i] ^= 1 << (assh_prng_rand() % 8);
+            data[i / 8] ^= 1 << (i % 8);
             packet_fuzz_bits++;
           }
     }
