@@ -700,7 +700,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_kex_rsa1024_suitable_key)
 #ifdef CONFIG_ASSH_KEY_CREATE
     return 0;
 #else
-    return 1;
+    return c->type == ASSH_SERVER;
 #endif
   if (key->algo != &assh_key_rsa || key->role != ASSH_ALGO_KEX)
     return 0;
@@ -735,7 +735,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_kex_rsa2048_suitable_key)
 #ifdef CONFIG_ASSH_KEY_CREATE
     return 0;
 #else
-    return 1;
+    return c->type == ASSH_SERVER;
 #endif
   if (key->algo != &assh_key_rsa || key->role != ASSH_ALGO_KEX)
     return 0;
