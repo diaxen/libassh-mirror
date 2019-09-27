@@ -198,6 +198,11 @@ static int test()
 	    goto done;
 	  TEST_FAIL("error event");
 
+	case ASSH_EVENT_DISCONNECT:
+	  if (packet_fuzz)
+	    goto done;
+	  TEST_FAIL("disconnect event");
+
 	case ASSH_EVENT_KEX_DONE:
 	  assert(!session[0].tr_user_auth_done);
 	  assert(!session[0].user_auth_done);
@@ -393,6 +398,11 @@ static int test()
 	  if (packet_fuzz || alloc_fuzz)
 	    goto done;
 	  TEST_FAIL("error event");
+
+	case ASSH_EVENT_DISCONNECT:
+	  if (packet_fuzz)
+	    goto done;
+	  TEST_FAIL("disconnect event");
 
 	case ASSH_EVENT_KEX_DONE:
 	  assert(!session[1].tr_user_auth_done);
