@@ -126,14 +126,14 @@ TESTS += signature
 signature_SOURCES = signature.c
 signature_LDADD = $(top_builddir)/src/libassh.la
 signature_CFLAGS = -I$(top_srcdir)/src
+endif
+endif
 
 noinst_PROGRAMS += signature2
 TESTS += signature2
 signature2_SOURCES = signature2.c
 signature2_LDADD = $(top_builddir)/src/libassh.la
 signature2_CFLAGS = -I$(top_srcdir)/src
-endif
-endif
 
 noinst_PROGRAMS += algo_list
 TESTS += algo_list
