@@ -109,35 +109,36 @@ assh_error_t test_sign(unsigned int max_size)
 	  err = assh_sign_check(context, a, key, c, d, sign, sign_len, &sign_safety);
 	  TEST_ASSERT(err == ASSH_OK);
 
-	  if (sign_safety > a->algo.safety || sign_safety > key->safety)
-	    abort();
+	  TEST_ASSERT(sign_safety <= a->algo.safety && sign_safety <= key->safety);
 
-          unsigned int r1 = assh_prng_rand() % sign_len;
-          unsigned char r2 = assh_prng_rand();
-          if (!r2)
-            r2++;
+	  while (1)
+	    {
+	      unsigned int r1 = assh_prng_rand() % sign_len;
+	      unsigned char r2 = assh_prng_rand();
+	      r2 += !r2;
+
 #ifdef CONFIG_ASSH_DEBUG_SIGN
-          fprintf(stderr, "Mangling signature byte %u, previous=0x%02x, new=0x%02x\n",
-                    r1, sign[r1], sign[r1] ^ r2);
+	      fprintf(stderr, "Mangling signature byte %u, previous=0x%02x, new=0x%02x\n",
+		      r1, sign[r1], sign[r1] ^ r2);
 #endif
-	  sign[r1] ^= r2;
-
-          fprintf(stderr, "V");
-
-	  err = assh_sign_check(context, a, key, c, d, sign, sign_len, &sign_safety);
-	  TEST_ASSERT(err != ASSH_OK);
+	      /* mangle */
+	      sign[r1] ^= r2;
 
 	      fprintf(stderr, "V");
 
-	  err = assh_sign_check(context, a, key, c, d, sign, sign_len, &sign_safety);
-	  TEST_ASSERT(err == ASSH_OK);
+	      err = assh_sign_check(context, a, key, c, d, sign, sign_len, &sign_safety);
+	      if (err != ASSH_OK)
+		break;   /* successfully broke the signature */
 
-	  if (sign_safety > a->algo.safety || sign_safety > key->safety)
-	    abort();
+	      /* restore */
+	      sign[r1] ^= r2;
+	    }
 
 	  if (size)
 	    {
-	      r1 = assh_prng_rand() % size;
+	      unsigned int r1 = assh_prng_rand() % size;
+	      unsigned char r2 = assh_prng_rand();
+	      r2 += !r2;
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
 	      fprintf(stderr, "Mangling data byte %u, previous=0x%02x, new=0x%02x\n",
