@@ -1,6 +1,8 @@
 
 #include <assh/assh_cipher.h>
 
+#include "fuzz.h"
+
 /* byte period of random bit error,
    no error is introduced when 0 */
 static uint32_t packet_fuzz = 0;
@@ -14,17 +16,7 @@ static ASSH_CIPHER_INIT_FCN(assh_fuzz_init)
 static ASSH_CIPHER_PROCESS_FCN(assh_fuzz_process)
 {
   if (packet_fuzz)
-    {
-      uint64_t r = prng_rand_max / packet_fuzz;
-      uint32_t i;
-
-      for (i = 0; i < len * 8; i++)
-        if (r > assh_prng_rand() * 8ULL)
-          {
-            data[i / 8] ^= 1 << (i % 8);
-            packet_fuzz_bits++;
-          }
-    }
+    packet_fuzz_bits += aash_fuzz_mangle(data, len, packet_fuzz);
   return ASSH_OK;
 }
 

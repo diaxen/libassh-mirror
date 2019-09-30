@@ -165,4 +165,5 @@ test.h \
 leaks_check.h \
 prng_weak.h \
 cipher_fuzz.h \
+fuzz.h \
 *.ssh
