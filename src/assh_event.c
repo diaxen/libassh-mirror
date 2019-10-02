@@ -113,14 +113,11 @@ assh_event_done(struct assh_session_s *s,
     ASSH_DEBUG("ctx=%p session=%p event done id=%u\n", s->ctx, s, e->id);
 #endif
 
-  assert((inerr & ~0x1ff) == 0);
-
   if (s->tr_st == ASSH_TR_CLOSED)
     return;
 
   if (e->f_done != NULL)
-    assh_session_error(s,
-      e->f_done(s, e, inerr));
+    assh_session_error(s, e->f_done(s, e, ASSH_ERR_ERROR(inerr)));
   e->f_done = NULL;
 
 #ifndef NDEBUG
