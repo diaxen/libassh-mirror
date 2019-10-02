@@ -242,8 +242,12 @@ const char * assh_error_str(assh_error_t err);
 
 /** @This extracts the @ref assh_error_e part of an error code
     returned by a function.
-    @see assh_error_t @see assh_error_e */
+    @see assh_error_t @see assh_error_e @see #ASSH_ERR_SUCESS */
 #define ASSH_ERR_ERROR(code) ((enum assh_error_e)((code) & 0xfff))
+
+/** @This evaluate to true when the status code is not an error.
+    @see #ASSH_STATUS */
+#define ASSH_ERR_SUCCESS(code) (ASSH_ERR_ERROR(code) < 0x100)
 
 /** @This extracts the @ref assh_error_severity_e part of an error
     code returned by a function.
