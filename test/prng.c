@@ -51,7 +51,8 @@ main(int argc, char **argv)
     {
       size_t len = 1 + rand() % 64;
       uint8_t buf[len];
-      assh_prng_get(&context, buf, len, ASSH_PRNG_QUALITY_LONGTERM_KEY);
+      if (assh_prng_get(&context, buf, len, ASSH_PRNG_QUALITY_LONGTERM_KEY))
+	TEST_FAIL("prng get");
       assh_hexdump("ltk", buf, sizeof(buf));
     }
 

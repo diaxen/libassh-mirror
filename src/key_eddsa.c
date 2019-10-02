@@ -207,7 +207,6 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_eddsa_output)
   assh_error_t err;
 
   size_t n = ASSH_ALIGN8(k->curve->bits) / 8;
-  size_t tlen = strlen(k->key.algo->name);
 
   const uint8_t *kp = k->data;
   const uint8_t *ks = k->data + n;

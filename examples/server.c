@@ -69,6 +69,9 @@
 #include <time.h>
 #include <signal.h>
 #include <unistd.h>
+#ifdef CONFIG_ASSH_POSIX_SETGROUPS
+# include <grp.h>
+#endif
 
 #define ERROR(...) do { fprintf(stderr, __VA_ARGS__); exit(1); } while (0)
 
@@ -194,15 +197,20 @@ its_exec(struct its_s *its,
   switch (its->state)
     {
     case ITS_PIPE: {
-      int child_stderr[2];
-      int child_stdout[2];
-      int child_stdin[2];
 
       /* no pty allocated yet, use pipes in order to
 	 communicate with the child */
-      pipe(child_stderr);
-      pipe(child_stdout);
-      pipe(child_stdin);
+      int child_stderr[2];
+      if (pipe(child_stderr))
+	return -1;
+
+      int child_stdout[2];
+      if (pipe(child_stdout))
+	goto pipe_out_err;
+
+      int child_stdin[2];
+      if (pipe(child_stdin))
+	goto pipe_in_err;
 
       its->child_stderr_fd = child_stderr[0];
       its->child_stdout_fd = child_stdout[0];
@@ -211,7 +219,7 @@ its_exec(struct its_s *its,
       /* fork child process */
       child_pid = fork();
       if (child_pid < 0)
-	return -1;
+	goto fork_err;
 
       if (!child_pid)
 	{
@@ -237,6 +245,17 @@ its_exec(struct its_s *its,
       close(child_stdout[1]);
       close(child_stdin[0]);
       break;
+
+     fork_err:
+      close(child_stdin[0]);
+      close(child_stdin[1]);
+     pipe_in_err:
+      close(child_stdout[0]);
+      close(child_stdout[1]);
+     pipe_out_err:
+      close(child_stderr[0]);
+      close(child_stderr[1]);
+      return -1;
     }
 
 #ifdef CONFIG_ASSH_POSIX_OPENPT
@@ -570,13 +589,13 @@ ssh_loop(struct assh_session_s *session,
 	  /* change the process user id when user authentication is over */
 	  uid_t uid;
 	  gid_t gid;
-	  if (asshh_server_event_user_id(session, &uid, &gid, &event))
-	    abort();
+	  if (asshh_server_event_user_id(session, &uid, &gid, &event) ||
 #ifdef CONFIG_ASSH_POSIX_SETGROUPS
-	  setgroups(0, NULL);
+	      setgroups(0, NULL) ||
 #endif
-	  setgid(gid);
-	  setuid(uid);
+	      setgid(gid) ||
+	      setuid(uid))
+	    abort();
 	  break;
 	}
                                                         /* anchor evchopen */
@@ -725,7 +744,8 @@ server_connected(struct assh_context_s *context,
       p[0].events |= POLLOUT;
 
     /* also register file descriptors related to child processes */
-    unsigned i, poll_i = 1;
+    unsigned i;
+    int poll_i = 1;
     for (i = 0; i < its_table_count; i++)
       its_poll_setup(its_table[i], session, p, &poll_i);
                                                         /* anchor poll */

@@ -39,13 +39,15 @@ struct fifo_s
   size_t size;
 };
 
-static inline void fifo_init(struct fifo_s *f)
+static inline void
+fifo_init(struct fifo_s *f)
 {
   f->ptr = 0;
   f->size = 0;
 }
 
-static inline size_t fifo_read(struct fifo_s *f, uint8_t *data, size_t size)
+static inline size_t
+fifo_read(struct fifo_s *f, uint8_t *data, size_t size)
 {
   size_t osize = size;
   while (f->size > 0 && size > 0)
@@ -56,7 +58,8 @@ static inline size_t fifo_read(struct fifo_s *f, uint8_t *data, size_t size)
   return osize - size;
 }
 
-static inline size_t fifo_write(struct fifo_s *f, const uint8_t *data, size_t size)
+static inline size_t
+fifo_write(struct fifo_s *f, const uint8_t *data, size_t size)
 {
   size_t osize = size;
   while (f->size < sizeof(f->buf) && size > 0)
@@ -68,7 +71,8 @@ static inline size_t fifo_write(struct fifo_s *f, const uint8_t *data, size_t si
 }
 
 /* handle ssh stream between the client and server sessions */
-static assh_bool_t fifo_rw_event(struct fifo_s fifo[2], struct assh_event_s *e, uint8_t i)
+static inline assh_bool_t
+fifo_rw_event(struct fifo_s fifo[2], struct assh_event_s *e, uint8_t i)
 {
   switch (e->id)
     {

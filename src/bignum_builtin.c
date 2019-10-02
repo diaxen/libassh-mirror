@@ -329,7 +329,7 @@ assh_bignum_rand(struct assh_context_s *c,
 {
   assh_error_t err;
   assh_bnword_t *n = bn->n;
-  size_t i, l = assh_bignum_words(bn->bits);
+  size_t l = assh_bignum_words(bn->bits);
 
   if (l == 0)
     return ASSH_OK;

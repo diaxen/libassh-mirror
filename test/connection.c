@@ -666,7 +666,7 @@ void test(int (*fend)(int, int), int n, int evrate)
 	      struct rq_fifo_entry_s *rqe;
 
 	      rqe = &lrqf->entry[lrqf->first % RQ_FIFO_SIZE];
-	      ASSH_DEBUG("ASSH_EVENT_REQUEST_SUCCESS %p:%p %u\n", e->rq, rqe);
+	      ASSH_DEBUG("ASSH_EVENT_REQUEST_SUCCESS %p:%p\n", e->rq, rqe);
 
 	      TEST_ASSERT(e->rq == rqe->srq);
 
@@ -730,7 +730,7 @@ void test(int (*fend)(int, int), int n, int evrate)
 		  lrqf->count--;
 		}
 
-	      ASSH_DEBUG("ASSH_EVENT_REQUEST_FAILURE %p:%p %u\n", e->rq, rqe);
+	      ASSH_DEBUG("ASSH_EVENT_REQUEST_FAILURE %p:%p\n", e->rq, rqe);
 
 	      TEST_ASSERT(e->rq == rqe->srq);
 
@@ -1031,7 +1031,7 @@ static int end_no_more_requests(int j, int n)
 	  global_rq_fifo[1].count > 0 ||
 	  ch_refs > 0);
 
-#warning check alloc counts when there is no more reuqests/channels
+  /* TODO check alloc counts when there is no more reuqests/channels */
 }
 
 static int end_early_cleanup(int j, int n)

@@ -441,7 +441,7 @@ assh_bignum_modinv_mt(struct assh_context_s *ctx,
 
   /* prime modulus - 2 */
   assh_bnword_t p = 0, *pn = mt->mod.n;
-  assh_bnslong_t t = (assh_bnslong_t)-2 << ASSH_BIGNUM_W;
+  assh_bnslong_t t = ~(assh_bnlong_t)0 << (ASSH_BIGNUM_W + 1);
 
   memcpy(sq, a->n, ml * sizeof(assh_bnword_t));
 

@@ -635,7 +635,8 @@ void test(int (*fend)(int, int), int cnt, int evrate,
 	      struct assh_event_channel_data_s *e = &event.connection.channel_data;
 	      e->transferred = assh_prng_rand() % (e->data.size + 1);
 	      ASSH_DEBUG("ASSH_EVENT_CHANNEL_DATA %p\n", e->ch);
-	      assh_channel_window_adjust(e->ch, e->transferred);
+	      if (!ASSH_ERR_SUCCESS(assh_channel_window_adjust(e->ch, e->transferred)) && !alloc_fuzz)
+		TEST_FAIL("assh_channel_window_adjust");
 	      ch_data_recv++;
 	      break;
 	    }
@@ -756,13 +757,13 @@ static int end_disconnect(int j, int n)
   if (assh_prng_rand() % 8192 == 0)
     {
       assh_session_disconnect(&session[0], assh_prng_rand() % 15 + 1,
-			      "dummy error message" + assh_prng_rand() % 8);
+		      (const char*)"dummy error message" + assh_prng_rand() % 8);
       disconnect_count++;
     }
   if (assh_prng_rand() % 8192 == 0)
     {
       assh_session_disconnect(&session[1], assh_prng_rand() % 15 + 1,
-			      "dummy error message" + assh_prng_rand() % 8);
+		      (const char*)"dummy error message" + assh_prng_rand() % 8);
       disconnect_count++;
     }
   return 1;

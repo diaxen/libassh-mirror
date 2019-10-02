@@ -66,16 +66,6 @@ assh_key_ecdsa_lookup_oid(const uint8_t *id, size_t id_len)
   return NULL;
 };
 
-static const struct assh_key_ecdsa_id_s *
-assh_key_ecdsa_lookup_bits(size_t bits)
-{
-  const struct assh_key_ecdsa_id_s *n;
-  for (n = assh_key_ecdsa_id; n->name != NULL; n++)
-    if (bits == n->curve->bits)
-      return n;
-  return NULL;
-};
-
 static ASSH_KEY_CMP_FCN(assh_key_ecdsa_cmp)
 {
   assert(key->algo == &assh_key_ecdsa_nistp);
@@ -317,7 +307,6 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_ecdsa_output)
 
   assert(curve->bits == assh_bignum_bits(&k->xn));
   assert(curve->bits == assh_bignum_bits(&k->yn));
-  size_t n = ASSH_ALIGN8(curve->bits) / 8;
 
   switch (format)
     {
@@ -426,6 +415,16 @@ static ASSH_KEY_LOAD_FCN(assh_key_ecdsa_load)
 }
 
 #ifdef CONFIG_ASSH_KEY_CREATE
+static const struct assh_key_ecdsa_id_s *
+assh_key_ecdsa_lookup_bits(size_t bits)
+{
+  const struct assh_key_ecdsa_id_s *n;
+  for (n = assh_key_ecdsa_id; n->name != NULL; n++)
+    if (bits == n->curve->bits)
+      return n;
+  return NULL;
+};
+
 static ASSH_KEY_CREATE_FCN(assh_key_ecdsa_nistp_create)
 {
   assh_error_t err;

@@ -737,7 +737,7 @@ static void test_scan_ok()
     TEST_ASSERT(z == 0x78);
   }
 
-#warning test ( )
+  /* TODO test ( ) */
 }
 
 static void test_scan_error()

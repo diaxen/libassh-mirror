@@ -189,10 +189,10 @@ int main(int argc, char **argv)
 	      /* find the extra amount of bytes we are allowed to send */
 	      size_t diff = ev->new_size - ev->old_size;
 
-	      assh_event_done(session, &event, ASSH_OK);
-
 	      /* allow the remote host to send more bytes */
-	      assh_channel_window_adjust(ev->ch, diff);
+	      assh_error_t err = assh_channel_window_adjust(ev->ch, diff);
+
+	      assh_event_done(session, &event, err);
 	      break;
 	    }
                                                         /* anchor rqev */

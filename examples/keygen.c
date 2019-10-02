@@ -120,7 +120,7 @@ static const struct assh_key_algo_s * get_type(const char *type)
 static const char *
 get_passphrase(const char *prompt, struct assh_context_s *context)
 {
-  fprintf(stderr, prompt);
+  fputs(prompt, stderr);
 
   const char *p;
   if (asshh_fd_get_password(context, &p, 80, 0, 0))

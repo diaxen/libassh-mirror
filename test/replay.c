@@ -418,9 +418,6 @@ static void test()
   uint_fast8_t running = 3;
 
   uint_fast8_t started = 0;
-  uint_fast8_t kex_count[2];
-#warning kex count
-  kex_count[0] = kex_count[1] = 2;
   struct assh_channel_s *ch[2];
 
   char *password_p = password;
@@ -876,7 +873,8 @@ static void test()
 			TEST_FAIL("unexpected end of stream\n");
 		      int s = fget_u16(f_in[i]);
 		      uint8_t st[s];
-		      fread(st, 1, s, f_in[i]);
+		      if (fread(st, 1, s, f_in[i]) != s)
+			TEST_FAIL("unexpected end of stream\n");
 		      if (s != te->buf.size || memcmp(st, te->buf.data, s))
 			{
 			  assh_hexdump("expected", st, s);
@@ -1032,7 +1030,8 @@ char * context_load_str(FILE *in)
 {
   size_t l = fget_u16(in);
   char str[l];
-  fread(str, l, 1, in);
+  if (fread(str, 1, l, in) != l)
+    TEST_FAIL("unexpected end of stream\n");
   str[l - 1] = 0;
   return strdup(str);
 }
@@ -1055,7 +1054,8 @@ context_load_key(struct assh_context_s *ctx, FILE *in, struct assh_key_s **key)
   int s = fget_u16(in);
   uint8_t blob[s];
   const uint8_t *b = blob;
-  fread(blob, s, 1, in);
+  if (fread(blob, 1, s, in) != s)
+    TEST_FAIL("unexpected end of stream\n");
 
   if (assh_key_load(ctx, key, a, role, format, &b, s))
     TEST_FAIL("key loading failed\n");

@@ -496,10 +496,12 @@ void test(const struct assh_algo_kex_s *kex,
 	    }
 
 	  if (!assh_event_get(&session[i], &event, 0))
-	    if (!packet_fuzz)
-	      TEST_FAIL("seed %u, event_get %u terminated\n", seed, i);
-	    else
-	      goto done;
+	    {
+	      if (!packet_fuzz)
+		TEST_FAIL("seed %u, event_get %u terminated\n", seed, i);
+	      else
+		goto done;
+	    }
 
 	  switch (event.id)
 	    {
