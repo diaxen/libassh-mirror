@@ -376,27 +376,37 @@ extern const struct assh_algo_kex_s assh_kex_m383_sha384;
 extern const struct assh_algo_kex_s assh_kex_m511_sha512;
 
 /** Standard @tt diffie-hellman-group-exchange-sha1 algorithm
-    specified in rfc4419, favors group size of n^2/12 bits and allows
-    groups size of n^2/16 bits where n is the size of the symmetric
-    cipher key. */
+    specified in rfc4419. The client requests group size in range
+    [1024, 4096] depending on the length of the cipher key. The server
+    accepts group size in range [1024, 8192].
+    @xsee {Prime field Diffie-Hellman with group exchange} */
 extern const struct assh_algo_kex_s assh_kex_dh_gex_sha1;
 
 /** Standard @tt diffie-hellman-group-exchange-sha256 algorithm
-    specified in rfc4419, favors group size of n^2/12 bits and allows
-    groups size of n^2/16 bits where n is the size of the symmetric
-    cipher key. @xsee {Prime field Diffie-Hellman with group exchange}*/
+    specified in rfc4419. The client requests group size in range
+    [1024, 2048] depending on the length of the cipher key. The server
+    accepts group size in range [1024, 8192].
+    @see assh_kex_dh_gex_sha256_8
+    @see assh_kex_dh_gex_sha256_4
+    @xsee {Prime field Diffie-Hellman with group exchange} */
 extern const struct assh_algo_kex_s assh_kex_dh_gex_sha256_12;
 
 /** Standard @tt diffie-hellman-group-exchange-sha256 algorithm
-    specified in rfc4419, favors group size of n^2/8 bits and allows
-    groups size of n^2/12 bits where n is the size of the symmetric
-    cipher key. @xsee {Prime field Diffie-Hellman with group exchange} */
+    specified in rfc4419. The client requests group size in range
+    [2048, 4096] depending on the length of the cipher key. The server
+    accepts group size in range [2048, 8192].
+    @see assh_kex_dh_gex_sha256_12
+    @see assh_kex_dh_gex_sha256_4
+    @xsee {Prime field Diffie-Hellman with group exchange} */
 extern const struct assh_algo_kex_s assh_kex_dh_gex_sha256_8;
 
 /** Standard @tt diffie-hellman-group-exchange-sha256 algorithm
-    specified in rfc4419, favors group size of n^2/4 bits and allows
-    groups size of n^2/8 bits where n is the size of the symmetric
-    cipher key. @xsee {Prime field Diffie-Hellman with group exchange} */
+    specified in rfc4419. The client requests group size in range
+    [4096, 16384] depending on the length of the cipher key. The server
+    accepts group size in range [4096, 16384].
+    @see assh_kex_dh_gex_sha256_12
+    @see assh_kex_dh_gex_sha256_8
+    @xsee {Prime field Diffie-Hellman with group exchange} */
 extern const struct assh_algo_kex_s assh_kex_dh_gex_sha256_4;
 
 /** Standard @tt rsa1024-sha1 algorithm specified in rfc4432.

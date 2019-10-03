@@ -50,6 +50,9 @@
 
 #define DH_MAX_GRSIZE 16384
 
+#define DH_MAX_RFC_SUGGESTED_GRSIZE 8192
+#define DH_MIN_RFC_GRSIZE 1024
+
 /* derive group size from symmetric key size, see doc/dh/ */
 #define ASSH_DH_GEX_GRPSIZE(n, div) ((n) * (n) / (div))
 
@@ -74,6 +77,7 @@ struct assh_kex_dh_gex_private_s
   uint8_t request_type;
 
   /* minimum and favorite group sizes */
+  uint16_t algo_max;
   uint16_t algo_min;
   uint16_t algo_n;
 
@@ -121,7 +125,7 @@ static assh_status_t assh_kex_dh_gex_client_send_size(struct assh_session_s *s)
 
   ASSH_ASSERT(assh_packet_add_u32(p, pv->algo_min));
   ASSH_ASSERT(assh_packet_add_u32(p, pv->algo_n));
-  ASSH_ASSERT(assh_packet_add_u32(p, DH_MAX_GRSIZE));
+  ASSH_ASSERT(assh_packet_add_u32(p, pv->algo_max));
 
   assh_transport_push(s, p);
   ASSH_SET_STATE(pv, state, ASSH_KEX_DH_GEX_CLIENT_WAIT_GROUP);
@@ -167,8 +171,14 @@ static assh_status_t assh_kex_dh_gex_client_wait_group(struct assh_session_s *s,
   ASSH_DEBUG("kex_dh_gex server group size: %u\n", n);
 #endif
 
+  uint_fast16_t algo_max = pv->algo_max;
+
+  /* do not enforce a limit we couldn't advertise */
+  if (pv->state == ASSH_KEX_DH_GEX_CLIENT_WAIT_GROUP_OLD)
+    algo_max = ASSH_MAX(DH_MAX_RFC_SUGGESTED_GRSIZE, algo_max);
+
   ASSH_RET_IF_TRUE(n < pv->algo_min, ASSH_ERR_WEAK_ALGORITHM);
-  ASSH_RET_IF_TRUE(n > DH_MAX_GRSIZE, ASSH_ERR_NOTSUP);
+  ASSH_RET_IF_TRUE(n > algo_max, ASSH_ERR_NOTSUP);
 
   pv->server_n = n;
 
@@ -360,7 +370,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_dh_gex_host_key_lookup_done)
 
   assh_store_u32(bit_sizes + 0, pv->algo_min);
   assh_store_u32(bit_sizes + 4, pv->algo_n);
-  assh_store_u32(bit_sizes + 8, DH_MAX_GRSIZE);
+  assh_store_u32(bit_sizes + 8, pv->algo_max);
 
   switch (pv->request_type)
     {
@@ -432,7 +442,7 @@ static assh_status_t assh_kex_dh_gex_server_wait_size(struct assh_session_s *s,
   assh_status_t err;
 
   const uint8_t *next = p->head.end;
-  size_t min, max;
+  size_t min, max, n;
   pv->request_type = p->head.msg;
 
   switch (pv->request_type)
@@ -444,46 +454,52 @@ static assh_status_t assh_kex_dh_gex_server_wait_size(struct assh_session_s *s,
       ASSH_RET_ON_ERR(assh_packet_check_u32(p, &pv->client_max, next, &next));
 
       /* check group size bounds */
-      ASSH_RET_IF_TRUE(pv->client_n > pv->client_max ||
-                   pv->client_n < pv->client_min || pv->client_n < 1024,
+      n = pv->client_n;
+      ASSH_RET_IF_TRUE(n > pv->client_max ||
+                   n < pv->client_min || n < DH_MIN_RFC_GRSIZE,
                    ASSH_ERR_BAD_DATA);
 
-      ASSH_RET_IF_TRUE(pv->client_min > DH_MAX_GRSIZE,
+      ASSH_RET_IF_TRUE(pv->client_min > pv->algo_max,
                    ASSH_ERR_NOTSUP);
 
-      /* get group size intervals intersection */
+      /* group size intervals intersection */
       min = ASSH_MAX(pv->algo_min, pv->client_min);
-      max = ASSH_MIN(pv->client_max, DH_MAX_GRSIZE);
+      max = ASSH_MIN(pv->algo_max, pv->client_max);
+
+      /* random interval around requested size */
+      min = ASSH_MAX(min, n * 7 / 8);
+      max = ASSH_MIN(max, n * 3 / 2);
       break;
 #endif
 
     case SSH_MSG_KEX_DH_GEX_REQUEST_OLD:
       ASSH_RET_ON_ERR(assh_packet_check_u32(p, &pv->client_n, next, &next));
       pv->client_min = pv->client_max = 0;
+
+      /* restrict requested size to supported interval */
       min = pv->algo_min;
-      max = 8192;
+      max = pv->algo_max;
+      n = ASSH_MAX(min, ASSH_MIN(max, pv->client_n));
+
+      /* random interval around requested size */
+      min = ASSH_MAX(min, n);
+      max = ASSH_MIN(max, n * 3 / 2);
       break;
 
     default:
       ASSH_RETURN(assh_transport_unimp(s, p));
     }
 
-  min = ASSH_MAX(min, pv->client_n - pv->client_n / 16);
-  max = ASSH_MIN(max, pv->client_n + pv->client_n / 8);
-
-  min = ASSH_ALIGN8(min);
-  max -= max % 8;
-
-  ASSH_RET_IF_TRUE(max < min, ASSH_ERR_WEAK_ALGORITHM);
+  ASSH_RET_IF_TRUE(max < min, ASSH_ERR_NOTSUP);
 
   /* randomize group size */
   uint8_t r_[2];
   ASSH_RET_ON_ERR(assh_prng_get(s->ctx, r_, 2, ASSH_PRNG_QUALITY_NONCE));
   uint16_t r = r_[0] | (r_[1] << 8);
-  r = r % (max - min + 1);
-  r -= r % 8;
 
-  size_t bits = min + r;
+  size_t bits = min + r * (max - min + 1) / 65536;
+  bits -= bits % 8;
+
   pv->server_n = bits;
   assh_kex_lower_safety(s, ASSH_SAFETY_PRIMEFIELD(bits));
 
@@ -769,11 +785,15 @@ static ASSH_KEX_PROCESS_FCN(assh_kex_dh_gex_process)
 static assh_status_t assh_kex_dh_gex_init(struct assh_session_s *s,
                                          const struct assh_hash_algo_s *hash,
                                          size_t cipher_key_size,
-                                         uint_fast8_t ldiv, uint_fast16_t algo_min)
+                                         uint_fast8_t ldiv,
+					 uint_fast16_t algo_min,
+					 uint_fast16_t algo_max)
 {
   assh_status_t err;
   struct assh_kex_dh_gex_private_s *pv;
 
+  assert(algo_max <= DH_MAX_GRSIZE);
+  assert(algo_min <= algo_max);
   cipher_key_size = ASSH_MIN(ASSH_MAX(cipher_key_size, 64), 256);
 
   size_t exp_n = cipher_key_size * 2;
@@ -791,6 +811,7 @@ static assh_status_t assh_kex_dh_gex_init(struct assh_session_s *s,
 #ifdef CONFIG_ASSH_SERVER
     case ASSH_SERVER:
       ASSH_SET_STATE(pv, state, ASSH_KEX_DH_GEX_SERVER_WAIT_SIZE);
+      algo_max = ASSH_MAX(DH_MAX_RFC_SUGGESTED_GRSIZE, algo_max);
       break;
 #endif
     default:
@@ -799,14 +820,15 @@ static assh_status_t assh_kex_dh_gex_init(struct assh_session_s *s,
 
   s->kex_pv = pv;
   pv->hash = hash;
-  pv->algo_min = ASSH_MIN(algo_min, DH_MAX_GRSIZE);
+  pv->algo_min = algo_min;
+  pv->algo_max = algo_max;
   pv->algo_n = ASSH_MIN(ASSH_MAX(ASSH_DH_GEX_GRPSIZE(cipher_key_size, ldiv),
-                                 algo_min), DH_MAX_GRSIZE);
+                                 algo_min), algo_max);
   pv->exp_n = cipher_key_size * 2;
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
-  ASSH_DEBUG("kex_dh_gex request algo_n:%u bits, algo_min:%u bits, exp_n:%u bits\n",
-             pv->algo_n, pv->algo_min, pv->exp_n);
+  ASSH_DEBUG("kex_dh_gex init algo_n:%u bits, algo_min:%u bits, algo_max:%u bits, exp_n:%u bits\n",
+             pv->algo_n, pv->algo_min, pv->algo_max, pv->exp_n);
 #endif
 
   assh_bignum_init(s->ctx, &pv->pn, 0);
@@ -867,24 +889,24 @@ static ASSH_KEX_CLEANUP_FCN(assh_kex_dh_gex_cleanup)
 
 static ASSH_KEX_INIT_FCN(assh_kex_dh_gex_sha1_init)
 {
-  return assh_kex_dh_gex_init(s, &assh_hash_sha1, cipher_key_size, 12, 1024);
+  return assh_kex_dh_gex_init(s, &assh_hash_sha1, cipher_key_size, 12, 1024, 4096);
 }
 
 const struct assh_algo_kex_s assh_kex_dh_gex_sha1 =
 {
-  ASSH_ALGO_BASE(KEX, 25, 30,
+  ASSH_ALGO_BASE(KEX, ASSH_SAFETY_PRIMEFIELD(1024), 10,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
-                      "diffie-hellman-group-exchange-sha1" })
+	              "diffie-hellman-group-exchange-sha1" }),
+    ASSH_ALGO_VARIANT(9, "1024 <= group <= 4096")
   ),
   .f_init = assh_kex_dh_gex_sha1_init,
   .f_cleanup = assh_kex_dh_gex_cleanup,
   .f_process = assh_kex_dh_gex_process,
 };
 
-
 static ASSH_KEX_INIT_FCN(assh_kex_dh_gex_sha256_12_init)
 {
-  return assh_kex_dh_gex_init(s, &assh_hash_sha256, cipher_key_size, 12, 1024);
+  return assh_kex_dh_gex_init(s, &assh_hash_sha256, cipher_key_size, 12, 1024, 2048);
 }
 
 const struct assh_algo_kex_s assh_kex_dh_gex_sha256_12 =
@@ -892,7 +914,7 @@ const struct assh_algo_kex_s assh_kex_dh_gex_sha256_12 =
   ASSH_ALGO_BASE(KEX, ASSH_SAFETY_PRIMEFIELD(1024), 30,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                       "diffie-hellman-group-exchange-sha256" }),
-    ASSH_ALGO_VARIANT(10, "group size >= 1024, preferred n^2/12")
+    ASSH_ALGO_VARIANT(10, "1024 <= group <= 2048")
   ),
   .f_init = assh_kex_dh_gex_sha256_12_init,
   .f_cleanup = assh_kex_dh_gex_cleanup,
@@ -902,15 +924,15 @@ const struct assh_algo_kex_s assh_kex_dh_gex_sha256_12 =
 
 static ASSH_KEX_INIT_FCN(assh_kex_dh_gex_sha256_8_init)
 {
-  return assh_kex_dh_gex_init(s, &assh_hash_sha256, cipher_key_size, 8, 2048);
+  return assh_kex_dh_gex_init(s, &assh_hash_sha256, cipher_key_size, 8, 2048, 4096);
 }
 
 const struct assh_algo_kex_s assh_kex_dh_gex_sha256_8 =
 {
-  ASSH_ALGO_BASE(KEX, ASSH_SAFETY_PRIMEFIELD(2048), 20,
+  ASSH_ALGO_BASE(KEX, ASSH_SAFETY_PRIMEFIELD(2048), 10,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                       "diffie-hellman-group-exchange-sha256" }),
-    ASSH_ALGO_VARIANT(9, "group size >= 2048, preferred n^2/8")
+    ASSH_ALGO_VARIANT(9, "2048 <= group <= 4096")
   ),
   .f_init = assh_kex_dh_gex_sha256_8_init,
   .f_cleanup = assh_kex_dh_gex_cleanup,
@@ -920,15 +942,15 @@ const struct assh_algo_kex_s assh_kex_dh_gex_sha256_8 =
 
 static ASSH_KEX_INIT_FCN(assh_kex_dh_gex_sha256_4_init)
 {
-  return assh_kex_dh_gex_init(s, &assh_hash_sha256, cipher_key_size, 4, 4096);
+  return assh_kex_dh_gex_init(s, &assh_hash_sha256, cipher_key_size, 4, 4096, DH_MAX_GRSIZE);
 }
 
 const struct assh_algo_kex_s assh_kex_dh_gex_sha256_4 =
 {
-  ASSH_ALGO_BASE(KEX, ASSH_SAFETY_PRIMEFIELD(4096), 10,
+  ASSH_ALGO_BASE(KEX, ASSH_SAFETY_PRIMEFIELD(4096), 1,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                       "diffie-hellman-group-exchange-sha256" }),
-    ASSH_ALGO_VARIANT(8, "group size >= 4096, preferred n^2/4")
+    ASSH_ALGO_VARIANT(8, "group >= 4096")
   ),
   .f_init = assh_kex_dh_gex_sha256_4_init,
   .f_cleanup = assh_kex_dh_gex_cleanup,

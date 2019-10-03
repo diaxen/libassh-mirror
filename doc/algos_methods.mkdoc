@@ -132,10 +132,8 @@ methods and key formats.
     are available, based on estimates provided in @sinvoke{3526}rfc
     and @sinvoke{3766}rfc. The size of the group offered by the server
     depends on the retained @xref{algoreg}{variant} of the DH @hl
-    algorithm as well as the size of the symmetric key needed by the
-    cipher @hl algorithm. Given @em {n}, the bits size of the
-    symmetric key, group size may range from @em {n*n/16} to @em
-    {n*n/4}.
+    algorithm as well as the size of the symmetric key used by the
+    cipher @hl algorithm.
   @end section
 
   @section {RSA encrypted secret}
