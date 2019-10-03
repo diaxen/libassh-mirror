@@ -53,19 +53,19 @@ enum assh_userauth_state_e
 };
 
 #define ASSH_USERAUTH_CLIENT_REQ(n)					\
-  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_session_s *s,	\
+  ASSH_WARN_UNUSED_RESULT assh_status_t (n)(struct assh_session_s *s,	\
                    const struct assh_event_userauth_client_methods_s *ev)
 
 typedef ASSH_USERAUTH_CLIENT_REQ(assh_userauth_client_req_t);
 
 #define ASSH_USERAUTH_CLIENT_RETRY(n)					\
-  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_session_s *s,	\
+  ASSH_WARN_UNUSED_RESULT assh_status_t (n)(struct assh_session_s *s,	\
 					   struct assh_event_s *e)
 
 typedef ASSH_USERAUTH_CLIENT_RETRY(assh_userauth_client_retry_t);
 
 #define ASSH_USERAUTH_CLIENT_PROCESS(n)					\
-  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_session_s *s,	\
+  ASSH_WARN_UNUSED_RESULT assh_status_t (n)(struct assh_session_s *s,	\
 					   struct assh_packet_s *p,	\
 					   struct assh_event_s *e)
 
@@ -118,13 +118,13 @@ struct assh_userauth_context_s
 #endif
 };
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_userauth_client_pck_head(struct assh_session_s *s,
                               struct assh_packet_s **pout,
                               const char *method,
                               size_t extra_len);
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_userauth_client_get_methods(struct assh_session_s *s,
                                  struct assh_event_s *e,
                                  assh_bool_t partial_success);
@@ -132,13 +132,13 @@ assh_userauth_client_get_methods(struct assh_session_s *s,
 #if defined(CONFIG_ASSH_CLIENT_AUTH_HOSTBASED) || \
   defined(CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY)
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_userauth_client_send_sign(struct assh_session_s *s,
                                struct assh_userauth_keys_s *k,
                                struct assh_packet_s *pout,
                                size_t sign_len);
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_userauth_client_get_sign(struct assh_session_s *s,
                               struct assh_event_userauth_client_sign_s *ev,
                               struct assh_userauth_keys_s *k,

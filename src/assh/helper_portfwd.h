@@ -65,14 +65,14 @@ asshh_portfwd_size_tcpip_forward(const struct asshh_portfwd_tcpip_forward_s *i);
 /** @This encodes the port forwarding request object in a
     buffer suitable for calling the @ref assh_request function. This
     function fails when the provided buffer is not large enough. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_portfwd_encode_tcpip_forward(uint8_t *data, size_t size,
                                 const struct asshh_portfwd_tcpip_forward_s *i);
 
 /** @This encodes and sends a port forwarding request
     @csee asshh_portfwd_encode_tcpip_forward
     @see assh_request */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_portfwd_send_tcpip_forward(struct assh_session_s *s,
                               struct assh_request_s **rq,
                               const struct asshh_portfwd_tcpip_forward_s *i);
@@ -84,7 +84,7 @@ asshh_portfwd_send_tcpip_forward(struct assh_session_s *s,
     passed buffer. The @tt data buffer must remain valid because
     string buffers are not copied. This function fails when the buffer
     contains invalid data. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_portfwd_decode_tcpip_forward(struct asshh_portfwd_tcpip_forward_s *i,
                                 const uint8_t *data, size_t size);
 #endif
@@ -110,7 +110,7 @@ asshh_portfwd_size_tcpip_forward_reply(const struct asshh_portfwd_tcpip_forward_
 /** @This encodes the port forwarding request reply object in
     a buffer suitable for calling the @ref assh_request function. This
     function fails when the provided buffer is not large enough. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_portfwd_encode_tcpip_forward_reply(uint8_t *data, size_t size,
                                       const struct asshh_portfwd_tcpip_forward_reply_s *i);
 
@@ -118,7 +118,7 @@ asshh_portfwd_encode_tcpip_forward_reply(uint8_t *data, size_t size,
     from the passed buffer. The @tt data buffer must remain valid
     because string buffers are not copied. This function fails when
     the buffer contains invalid data. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_portfwd_decode_tcpip_forward_reply(struct asshh_portfwd_tcpip_forward_reply_s *i,
                                       const uint8_t *data, size_t size);
 
@@ -147,14 +147,14 @@ asshh_portfwd_size_cancel_tcpip_forward(const struct asshh_portfwd_cancel_tcpip_
 /** @This encodes the port forwarding cancel object in a
     buffer suitable for calling the @ref assh_request function. This
     function fails when the provided buffer is not large enough. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_portfwd_encode_cancel_tcpip_forward(uint8_t *data, size_t size,
                                        const struct asshh_portfwd_cancel_tcpip_forward_s *i);
 
 /** @This encodes and sends a port forwarding cancel
     @csee asshh_portfwd_encode_cancel_tcpip_forward
     @see assh_request */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_portfwd_send_cancel_tcpip_forward(struct assh_session_s *s,
                                      struct assh_request_s **rq,
                                      const struct asshh_portfwd_cancel_tcpip_forward_s *i);
@@ -166,7 +166,7 @@ asshh_portfwd_send_cancel_tcpip_forward(struct assh_session_s *s,
     passed buffer. The @tt data buffer must remain valid because
     string buffers are not copied. This function fails when the buffer
     contains invalid data. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_portfwd_decode_cancel_tcpip_forward(struct asshh_portfwd_cancel_tcpip_forward_s *i,
                                        const uint8_t *data, size_t size);
 #endif
@@ -199,14 +199,14 @@ asshh_portfwd_size_forwarded_tcpip(const struct asshh_portfwd_forwarded_tcpip_s 
     object in a buffer suitable for calling the @ref assh_request
     function. This function fails when the provided buffer is not
     large enough. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_portfwd_encode_forwarded_tcpip(uint8_t *data, size_t size,
                                   const struct asshh_portfwd_forwarded_tcpip_s *i);
 
 /** @This requests a incoming forwarded connection channel open.
     @csee asshh_portfwd_encode_forwarded_tcpip
     @see assh_channel_open */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_portfwd_open_forwarded_tcpip(struct assh_session_s *s,
                                 struct assh_channel_s **ch,
                                 const struct asshh_portfwd_forwarded_tcpip_s *i);
@@ -215,7 +215,7 @@ asshh_portfwd_open_forwarded_tcpip(struct assh_session_s *s,
     object from the passed buffer. The @tt data buffer must remain
     valid because string buffers are not copied. This function fails
     when the buffer contains invalid data. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_portfwd_decode_forwarded_tcpip(struct asshh_portfwd_forwarded_tcpip_s *i,
                                   const uint8_t *data, size_t size);
 
@@ -249,14 +249,14 @@ asshh_portfwd_size_direct_tcpip(const struct asshh_portfwd_direct_tcpip_s *i);
     in a buffer suitable for calling the @ref assh_request
     function. This function fails when the provided buffer is not
     large enough. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_portfwd_encode_direct_tcpip(uint8_t *data, size_t size,
                                const struct asshh_portfwd_direct_tcpip_s *i);
 
 /** @This requests a direct tcp/ip forwarding channel open.
     @csee asshh_portfwd_encode_direct_tcpip
     @see assh_channel_open */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_portfwd_open_direct_tcpip(struct assh_session_s *s,
                              struct assh_channel_s **ch,
                              const struct asshh_portfwd_direct_tcpip_s *i);
@@ -268,7 +268,7 @@ asshh_portfwd_open_direct_tcpip(struct assh_session_s *s,
     from the passed buffer. The @tt data buffer must remain valid
     because string buffers are not copied. This function fails when
     the buffer contains invalid data. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_portfwd_decode_direct_tcpip(struct asshh_portfwd_direct_tcpip_s *i,
                                const uint8_t *data, size_t size);
 #endif

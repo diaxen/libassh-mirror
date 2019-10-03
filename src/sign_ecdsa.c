@@ -36,7 +36,7 @@
 static ASSH_SIGN_GENERATE_FCN(assh_sign_ecdsa_generate)
 {
   const struct assh_key_ecdsa_s *k = (const void*)key;
-  assh_error_t err;
+  assh_status_t err;
 
   const struct assh_weierstrass_curve_s *curve = k->id->curve;
   const struct assh_hash_algo_s *hash = k->id->hash;
@@ -210,7 +210,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_ecdsa_generate)
 static ASSH_SIGN_CHECK_FCN(assh_sign_ecdsa_check)
 {
   const struct assh_key_ecdsa_s *k = (const void*)key;
-  assh_error_t err;
+  assh_status_t err;
 
   const struct assh_weierstrass_curve_s *curve = k->id->curve;
   const struct assh_hash_algo_s *hash = k->id->hash;

@@ -69,12 +69,12 @@ struct assh_kex_ecdhws_private_s
   uint8_t *pvkey;
 };
 
-static assh_error_t ASSH_WARN_UNUSED_RESULT
+static assh_status_t ASSH_WARN_UNUSED_RESULT
 assh_weierstrass_base_mul(struct assh_session_s *s)
 {
   struct assh_kex_ecdhws_private_s *pv = s->kex_pv;
   const struct assh_weierstrass_curve_s *curve = pv->curve;
-  assh_error_t err;
+  assh_status_t err;
 
   assert(curve->cofactor == 1);
 
@@ -126,13 +126,13 @@ assh_weierstrass_base_mul(struct assh_session_s *s)
                 (size_t)curve->bits));
 }
 
-static assh_error_t ASSH_WARN_UNUSED_RESULT
+static assh_status_t ASSH_WARN_UNUSED_RESULT
 assh_weierstrass_point_mul(struct assh_session_s *s, uint8_t *px,
                            const uint8_t *r)
 {
   struct assh_kex_ecdhws_private_s *pv = s->kex_pv;
   const struct assh_weierstrass_curve_s *curve = pv->curve;
-  assh_error_t err;
+  assh_status_t err;
 
   assert(curve->cofactor == 1);
 
@@ -189,11 +189,11 @@ assh_weierstrass_point_mul(struct assh_session_s *s, uint8_t *px,
 }
 
 #ifdef CONFIG_ASSH_CLIENT
-static assh_error_t assh_kex_ecdhws_client_send_pubkey(struct assh_session_s *s)
+static assh_status_t assh_kex_ecdhws_client_send_pubkey(struct assh_session_s *s)
 {
   struct assh_kex_ecdhws_private_s *pv = s->kex_pv;
   struct assh_context_s *c = s->ctx;
-  assh_error_t err;
+  assh_status_t err;
 
   /* generate ephemeral key pair */
   ASSH_RET_ON_ERR(assh_prng_get(s->ctx, pv->pvkey, pv->size,
@@ -220,11 +220,11 @@ static assh_error_t assh_kex_ecdhws_client_send_pubkey(struct assh_session_s *s)
 static ASSH_EVENT_DONE_FCN(assh_kex_ecdhws_host_key_lookup_done)
 {
   struct assh_kex_ecdhws_private_s *pv = s->kex_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   assert(pv->state == ASSH_KEX_ECDHWS_CLIENT_LOOKUP_HOST_KEY_WAIT);
 
-  if (!e->kex.hostkey_lookup.accept || ASSH_ERR_ERROR(inerr))
+  if (!e->kex.hostkey_lookup.accept || ASSH_STATUS(inerr))
     ASSH_RETURN(assh_kex_end(s, 0) | ASSH_ERRSV_DISCONNECT);
 
   struct assh_packet_s *p = pv->pck;
@@ -279,12 +279,12 @@ static ASSH_EVENT_DONE_FCN(assh_kex_ecdhws_host_key_lookup_done)
   return err;
 }
 
-static assh_error_t assh_kex_ecdhws_client_wait_reply(struct assh_session_s *s,
+static assh_status_t assh_kex_ecdhws_client_wait_reply(struct assh_session_s *s,
                                                       struct assh_packet_s *p,
                                                       struct assh_event_s *e)
 {
   struct assh_kex_ecdhws_private_s *pv = s->kex_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(p->head.msg != SSH_MSG_KEX_ECDH_REPLY, ASSH_ERR_PROTOCOL);
 
@@ -312,12 +312,12 @@ static assh_error_t assh_kex_ecdhws_client_wait_reply(struct assh_session_s *s,
 
 #ifdef CONFIG_ASSH_SERVER
 
-static assh_error_t assh_kex_ecdhws_server_wait_pubkey(struct assh_session_s *s,
+static assh_status_t assh_kex_ecdhws_server_wait_pubkey(struct assh_session_s *s,
                                                        struct assh_packet_s *p)
 {
   struct assh_kex_ecdhws_private_s *pv = s->kex_pv;
   struct assh_context_s *c = s->ctx;
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(p->head.msg != SSH_MSG_KEX_ECDH_INIT,
 	       ASSH_ERR_PROTOCOL);
@@ -390,7 +390,7 @@ static assh_error_t assh_kex_ecdhws_server_wait_pubkey(struct assh_session_s *s,
 static ASSH_KEX_PROCESS_FCN(assh_kex_ecdhws_process)
 {
   struct assh_kex_ecdhws_private_s *pv = s->kex_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   switch (pv->state)
     {
@@ -437,12 +437,12 @@ static ASSH_KEX_CLEANUP_FCN(assh_kex_ecdhws_cleanup)
   s->kex_pv = NULL;
 }
 
-static assh_error_t
+static assh_status_t
 assh_kex_ecdhws_init(struct assh_session_s *s,
                      const struct assh_weierstrass_curve_s *curve,
                      const struct assh_hash_algo_s *hash)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   size_t l = ASSH_ALIGN8(curve->bits) / 8;
 

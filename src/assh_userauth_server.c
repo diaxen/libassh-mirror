@@ -61,7 +61,7 @@ static const struct assh_userauth_server_method_s
 
 static ASSH_SERVICE_INIT_FCN(assh_userauth_server_init)
 {
-  assh_error_t err;
+  assh_status_t err;
   struct assh_userauth_context_s *pv;
 
   ASSH_RET_IF_TRUE(s->user_auth_done, ASSH_ERR_PROTOCOL);
@@ -129,12 +129,12 @@ static ASSH_SERVICE_CLEANUP_FCN(assh_userauth_server_cleanup)
 }
 
 /* send the authentication failure packet */
-static assh_error_t
+static assh_status_t
 assh_userauth_server_send_failure(struct assh_session_s *s,
                                   assh_bool_t partial)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   size_t psize = /* name-list size */ 4 + /* boolean */ 1;
 
@@ -181,10 +181,10 @@ assh_userauth_server_send_failure(struct assh_session_s *s,
 static ASSH_EVENT_DONE_FCN(assh_userauth_server_success_done)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   /* promote event processing error */
-  ASSH_RET_IF_TRUE(ASSH_ERR_ERROR(inerr), inerr | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_IF_TRUE(ASSH_STATUS(inerr), inerr | ASSH_ERRSV_DISCONNECT);
 
   const struct assh_event_userauth_server_success_s *ev =
     &e->userauth_server.success;
@@ -216,7 +216,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_success_done)
 }
 
 /* handle authentication success */
-assh_error_t assh_userauth_server_success(struct assh_session_s *s,
+assh_status_t assh_userauth_server_success(struct assh_session_s *s,
                                           struct assh_event_s *e)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
@@ -240,7 +240,7 @@ assh_error_t assh_userauth_server_success(struct assh_session_s *s,
 #if defined(CONFIG_ASSH_SERVER_AUTH_HOSTBASED) || \
   defined(CONFIG_ASSH_SERVER_AUTH_PUBLICKEY)
 
-assh_error_t
+assh_status_t
 assh_userauth_server_get_key(struct assh_session_s *s,
                              const uint8_t *algo_name,
                              const uint8_t *pub_blob,
@@ -248,7 +248,7 @@ assh_userauth_server_get_key(struct assh_session_s *s,
                              struct assh_key_s **pub_key,
                              const struct assh_algo_name_s **namep)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   /* check if we support the requested signature algorithm */
   if (assh_algo_by_name(s->ctx, ASSH_ALGO_SIGN, (char*)algo_name + 4,
@@ -271,13 +271,13 @@ assh_userauth_server_get_key(struct assh_session_s *s,
   return ASSH_OK;
 }
 
-assh_error_t
+assh_status_t
 assh_userauth_server_sign_check(struct assh_session_s *s,
                                 struct assh_packet_s *p,
                                 const uint8_t *sign_str)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   uint8_t sid_len[4];   /* fake string header for session id */
   assh_store_u32(sid_len, s->session_id_len);
@@ -302,12 +302,12 @@ assh_userauth_server_sign_check(struct assh_session_s *s,
 
 #endif
 
-static assh_error_t assh_userauth_server_req(struct assh_session_s *s,
+static assh_status_t assh_userauth_server_req(struct assh_session_s *s,
                                              struct assh_packet_s *p,
                                              struct assh_event_s *e)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   switch (p->head.msg)
     {
@@ -381,10 +381,10 @@ static assh_error_t assh_userauth_server_req(struct assh_session_s *s,
 static ASSH_EVENT_DONE_FCN(assh_userauth_server_get_methods_done)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   /* promote event processing error */
-  ASSH_RET_IF_TRUE(ASSH_ERR_ERROR(inerr), inerr | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_IF_TRUE(ASSH_STATUS(inerr), inerr | ASSH_ERRSV_DISCONNECT);
 
   const struct assh_event_userauth_server_methods_s *ev =
     &e->userauth_server.methods;
@@ -423,7 +423,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_get_methods_done)
   return ASSH_OK;
 }
 
-static assh_error_t
+static assh_status_t
 assh_userauth_server_get_methods(struct assh_session_s *s,
                                  struct assh_event_s *e)
 {
@@ -469,7 +469,7 @@ assh_userauth_server_get_methods_failed(struct assh_session_s *s,
 }
 
 /* handle authentication failure */
-assh_error_t
+assh_status_t
 assh_userauth_server_failure(struct assh_session_s *s,
                              struct assh_event_s *e)
 {
@@ -491,7 +491,7 @@ assh_userauth_server_failure(struct assh_session_s *s,
 static ASSH_SERVICE_PROCESS_FCN(assh_userauth_server_process)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   if (s->tr_st >= ASSH_TR_DISCONNECT)
     return ASSH_OK;

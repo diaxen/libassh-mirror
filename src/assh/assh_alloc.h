@@ -61,7 +61,7 @@ enum assh_alloc_type_e
 };
 
 /** @internal @This allocates memory. */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_alloc(struct assh_context_s *c, size_t size,
 	   enum assh_alloc_type_e type, void **result)
 {
@@ -72,7 +72,7 @@ assh_alloc(struct assh_context_s *c, size_t size,
 }
 
 /** @internal @This reallocates memory. */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_realloc(struct assh_context_s *c, void **ptr, size_t size,
 	     enum assh_alloc_type_e type)
 {

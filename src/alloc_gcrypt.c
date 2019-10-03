@@ -31,7 +31,7 @@
 
 ASSH_ALLOCATOR(assh_gcrypt_allocator)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   if (*ptr == NULL)
     {

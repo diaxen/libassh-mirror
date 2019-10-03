@@ -135,7 +135,7 @@ assh_bignum_div_update_q(uint_fast32_t d_len, assh_bnword_t * __restrict__ d,
     }
 }
 
-static assh_error_t
+static assh_status_t
 assh_bignum_div_euclidean_vt(assh_bnword_t * __restrict__ r,
                              uint_fast32_t r_len,
                              assh_bnword_t * __restrict__ d,
@@ -143,7 +143,7 @@ assh_bignum_div_euclidean_vt(assh_bnword_t * __restrict__ r,
                              const assh_bnword_t * __restrict__ b,
                              uint_fast32_t b_len)
 {
-  assh_error_t err;
+  assh_status_t err;
   uint_fast32_t az, al, bz, bl, da, sa;
   assh_bnword_t at, bt, q;
 
@@ -245,7 +245,7 @@ assh_bignum_div_euclidean_ct(assh_bnword_t * __restrict__ rn,
     rn[i] = t = (assh_bnlong_t)rn[i] + (t >> ASSH_BIGNUM_W);
 }
 
-assh_error_t
+assh_status_t
 assh_bignum_div_euclidean(assh_bnword_t * __restrict__ rn,
                           uint_fast32_t r_len,
                           assh_bnword_t * __restrict__ dn,
@@ -254,7 +254,7 @@ assh_bignum_div_euclidean(assh_bnword_t * __restrict__ rn,
                           uint_fast32_t b_len,
                           assh_bool_t secret, int_fast32_t bitlen_diff)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   if (!secret)
     ASSH_RET_ON_ERR(assh_bignum_div_euclidean_vt(rn, r_len, dn, d_len, bn, b_len));
@@ -273,7 +273,7 @@ assh_bignum_div_sc_size(const struct assh_bignum_s *r,
   return assh_bignum_words(a->bits);
 }
 
-assh_error_t
+assh_status_t
 assh_bignum_div(struct assh_context_s *ctx,
                 assh_bnword_t *s,
                 struct assh_bignum_s *r,
@@ -281,7 +281,7 @@ assh_bignum_div(struct assh_context_s *ctx,
                 const struct assh_bignum_s *a,
                 const struct assh_bignum_s *b)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   assert(r != d && a != d && b != d && b != r);
   assert(a->bits >= b->bits);
@@ -333,14 +333,14 @@ assh_bignum_modinv_sc_size(const struct assh_bignum_s *m)
   return assh_bignum_words(m->bits) * 3;
 }
 
-assh_error_t
+assh_status_t
 assh_bignum_modinv(struct assh_context_s *ctx,
                    assh_bnword_t *r,
                    struct assh_bignum_s *u,
                    const struct assh_bignum_s *a,
                    const struct assh_bignum_s *m)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   assert(u != a && u != m);
   assert(!a->secret && !m->secret);
@@ -415,14 +415,14 @@ assh_bignum_gcd_sc_size(const struct assh_bignum_s *a,
   return al > bl ? al : bl;
 }
 
-assh_error_t
+assh_status_t
 assh_bignum_gcd(struct assh_context_s *ctx,
                 assh_bnword_t *s,
                 struct assh_bignum_s *g,
                 const struct assh_bignum_s *a,
                 const struct assh_bignum_s *b)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   assert(g != a && g != b);
   assert(g->bits >= a->bits || g->bits >= b->bits);

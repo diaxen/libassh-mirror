@@ -32,7 +32,7 @@
 #include <assh/assh_sign.h>
 #include <assh/assh_alloc.h>
 
-static assh_error_t
+static assh_status_t
 assh_userauth_client_pck_pubkey(struct assh_session_s *s,
                                 struct assh_packet_s **pout,
                                 assh_bool_t second,
@@ -40,7 +40,7 @@ assh_userauth_client_pck_pubkey(struct assh_session_s *s,
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
   struct assh_key_s *pub_key = pv->pubkey.keys;
-  assh_error_t err;
+  assh_status_t err;
 
   size_t algo_name_len = strlen(assh_algo_name(&pv->pubkey.algo->algo));
 
@@ -80,10 +80,10 @@ assh_userauth_client_pck_pubkey(struct assh_session_s *s,
 static ASSH_EVENT_DONE_FCN(assh_userauth_client_pubkey_sign_done)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   /* promote event processing error */
-  ASSH_RET_IF_TRUE(ASSH_ERR_ERROR(inerr), inerr | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_IF_TRUE(ASSH_STATUS(inerr), inerr | ASSH_ERRSV_DISCONNECT);
 
   struct assh_packet_s *pout = pv->pck;
   const struct assh_event_userauth_client_sign_s *ev = &e->userauth_client.sign;
@@ -100,12 +100,12 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_pubkey_sign_done)
 }
 
 /* compute and send public key with signature */
-static assh_error_t
+static assh_status_t
 assh_userauth_client_send_pubkey(struct assh_session_s *s,
                                  struct assh_event_s *e)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   const struct assh_algo_sign_s *algo = (const void *)pv->pubkey.algo;
 
@@ -143,13 +143,13 @@ assh_userauth_client_send_pubkey(struct assh_session_s *s,
 }
 
 /* send a public key authentication probing request */
-static assh_error_t
+static assh_status_t
 assh_userauth_client_send_pubkey_lookup(struct assh_session_s *s,
                                         struct assh_event_s *e)
 {
 #ifdef CONFIG_ASSH_CLIENT_AUTH_USE_PKOK
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   struct assh_packet_s *pout;
 
@@ -168,7 +168,7 @@ static ASSH_USERAUTH_CLIENT_RETRY(assh_userauth_client_pubkey_retry)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
   struct assh_userauth_keys_s *k = &pv->pubkey;
-  assh_error_t err;
+  assh_status_t err;
 
   assh_userauth_client_key_next(s, k);
 
@@ -185,7 +185,7 @@ static ASSH_USERAUTH_CLIENT_REQ(assh_userauth_client_pubkey_req)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
   struct assh_userauth_keys_s *k = &pv->pubkey;
-  assh_error_t err;
+  assh_status_t err;
 
   assh_userauth_client_key_get(s, k, ev->keys);
 
@@ -200,7 +200,7 @@ static ASSH_USERAUTH_CLIENT_REQ(assh_userauth_client_pubkey_req)
 static ASSH_USERAUTH_CLIENT_PROCESS(assh_userauth_client_pubkey_process)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   switch (pv->state)
     {

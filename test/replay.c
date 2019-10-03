@@ -429,7 +429,7 @@ static void test()
       for (i = 0; i < 2; i++)
 	{
 	  struct assh_event_s event;
-	  assh_error_t everr = ASSH_OK;
+	  assh_status_t everr = ASSH_OK;
 	  const char *side = i ? "client" : "server";
 
 	  ASSH_DEBUG("---- %s %u ----\n", side, iter[i]);
@@ -975,7 +975,7 @@ static void test()
     }
 }
 
-static assh_error_t
+static assh_status_t
 algo_lookup(enum assh_algo_class_e cl, const char *name,
 	    const struct assh_algo_s **algo)
 {
@@ -1061,7 +1061,7 @@ context_load_key(struct assh_context_s *ctx, FILE *in, struct assh_key_s **key)
     TEST_FAIL("key loading failed\n");
 }
 
-static assh_error_t
+static assh_status_t
 context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 {
   while (1)

@@ -78,14 +78,14 @@ assh_rfc1421_key_ops[] = {
 };
 
 /* derive cipher key from passphrase, used for pem enciphered keys */
-static ASSH_WARN_UNUSED_RESULT assh_error_t
+static ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_evp_bytes_to_key(struct assh_context_s *c,
                       const struct assh_hash_algo_s *hash,
                       const char *pass, size_t pass_len,
                       const uint8_t *salt, size_t salt_len,
                       uint8_t *key, size_t key_len, size_t rounds)
 {
-  assh_error_t err;
+  assh_status_t err;
   size_t i, j;
 
   ASSH_SCRATCH_ALLOC(c, uint8_t, sc,
@@ -127,14 +127,14 @@ assh_evp_bytes_to_key(struct assh_context_s *c,
   return err;
 }
 
-static ASSH_WARN_UNUSED_RESULT assh_error_t
+static ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_load_rfc4716_rfc1421(struct assh_context_s *c, FILE *file,
                           uint8_t *kdata, size_t *klen, assh_bool_t enc,
                           const struct assh_key_algo_s **algo,
                           const char *passphrase, char **comment)
 {
   struct asshh_base64_ctx_s ctx;
-  assh_error_t err = ASSH_OK;
+  assh_status_t err = ASSH_OK;
   char in[80], *l;
   uint_fast8_t state = 0;
   const struct assh_algo_cipher_s *cipher = NULL;
@@ -282,21 +282,21 @@ assh_load_rfc4716_rfc1421(struct assh_context_s *c, FILE *file,
     }
 
  err_:
-  if (ASSH_ERR_ERROR(err) != ASSH_OK &&
+  if (ASSH_STATUS(err) != ASSH_OK &&
       comment != NULL && *comment != NULL)
     assh_free(c, (void*)*comment);
 
   return err;
 }
 
-static ASSH_WARN_UNUSED_RESULT assh_error_t
+static ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_load_pub_openssh(struct assh_context_s *c, FILE *file,
                       uint8_t *kdata, size_t *klen,
                       const struct assh_key_algo_s **algo,
                       char **comment)
 {
   struct asshh_base64_ctx_s ctx;
-  assh_error_t err;
+  assh_status_t err;
   int_fast16_t in;
   uint_fast8_t alen = 0, clen = 0;
   uint_fast8_t state = 0;
@@ -372,14 +372,14 @@ assh_load_pub_openssh(struct assh_context_s *c, FILE *file,
 }
 
 
-static ASSH_WARN_UNUSED_RESULT assh_error_t
+static ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_load_openssh_v1_blob_pub(struct assh_context_s *c,
                               struct assh_key_s **head,
                               const struct assh_key_algo_s *algo,
                               enum assh_algo_class_e role,
                               uint8_t *blob, size_t blob_len)
 {
-  assh_error_t err = ASSH_OK;
+  assh_status_t err = ASSH_OK;
 
   ASSH_RET_IF_TRUE(blob_len < sizeof(OPENSSH_V1_AUTH_MAGIC), ASSH_ERR_INPUT_OVERFLOW);
   ASSH_RET_IF_TRUE(memcmp(blob, OPENSSH_V1_AUTH_MAGIC, sizeof(OPENSSH_V1_AUTH_MAGIC)),
@@ -404,7 +404,7 @@ assh_load_openssh_v1_blob_pub(struct assh_context_s *c,
   return ASSH_OK;
 }
 
-static ASSH_WARN_UNUSED_RESULT assh_error_t
+static ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_load_openssh_v1_blob(struct assh_context_s *c,
 			  struct assh_key_s **head,
 			  const struct assh_key_algo_s *algo,
@@ -412,7 +412,7 @@ assh_load_openssh_v1_blob(struct assh_context_s *c,
                           uint8_t *blob, size_t blob_len,
 			  const char *passphrase)
 {
-  assh_error_t err = ASSH_OK;
+  assh_status_t err = ASSH_OK;
 
   ASSH_RET_IF_TRUE(blob_len < sizeof(OPENSSH_V1_AUTH_MAGIC), ASSH_ERR_INPUT_OVERFLOW);
   ASSH_RET_IF_TRUE(memcmp(blob, OPENSSH_V1_AUTH_MAGIC, sizeof(OPENSSH_V1_AUTH_MAGIC)),
@@ -481,7 +481,7 @@ assh_load_openssh_v1_blob(struct assh_context_s *c,
       cipher->f_cleanup(c, cipher_ctx);
     err_sc:
       ASSH_SCRATCH_FREE(c, sc);
-      if (ASSH_ERR_ERROR(err) != ASSH_OK)
+      if (ASSH_STATUS(err) != ASSH_OK)
         return err;
     }
 
@@ -531,9 +531,9 @@ assh_load_openssh_v1_blob(struct assh_context_s *c,
   return err;
 }
 
-static assh_error_t assh_key_file_size(FILE *file, size_t *size)
+static assh_status_t assh_key_file_size(FILE *file, size_t *size)
 {
-  assh_error_t err;
+  assh_status_t err;
   size_t cur = ftell(file);
 
   ASSH_RET_IF_TRUE(fseek(file, 0, SEEK_END), ASSH_ERR_IO);
@@ -543,7 +543,7 @@ static assh_error_t assh_key_file_size(FILE *file, size_t *size)
   return ASSH_OK;
 }
 
-static assh_error_t
+static assh_status_t
 assh_load_key_file_guess(struct assh_context_s *c,
                          struct assh_key_s **head,
                          const struct assh_key_algo_s *algo,
@@ -551,7 +551,7 @@ assh_load_key_file_guess(struct assh_context_s *c,
                          FILE *file, const char *passphrase,
                          size_t size_hint)
 {
-  assh_error_t err;
+  assh_status_t err;
   uint_fast8_t i;
 
   long pos = ftell(file);
@@ -569,7 +569,7 @@ assh_load_key_file_guess(struct assh_context_s *c,
       err = asshh_load_key_file(c, head, algo, role, file,
                                i, passphrase, size_hint);
 
-      switch (ASSH_ERR_ERROR(err))
+      switch (ASSH_STATUS(err))
         {
         case ASSH_ERR_MISSING_KEY:
         case ASSH_ERR_WRONG_KEY:
@@ -583,14 +583,14 @@ assh_load_key_file_guess(struct assh_context_s *c,
   ASSH_RETURN(ASSH_ERR_MISSING_ALGO);
 }
 
-assh_error_t asshh_load_key_file(struct assh_context_s *c,
+assh_status_t asshh_load_key_file(struct assh_context_s *c,
 				struct assh_key_s **head,
 				const struct assh_key_algo_s *algo,
 				enum assh_algo_class_e role,
 				FILE *file, enum assh_key_format_e format,
 				const char *passphrase, size_t size_hint)
 {
-  assh_error_t err = ASSH_OK;
+  assh_status_t err = ASSH_OK;
 
   if (format == ASSH_KEY_FMT_NONE)
     ASSH_RETURN(assh_load_key_file_guess(c, head, algo, role,
@@ -685,7 +685,7 @@ assh_error_t asshh_load_key_file(struct assh_context_s *c,
   return err;
 }
 
-assh_error_t asshh_load_key_filename(struct assh_context_s *c,
+assh_status_t asshh_load_key_filename(struct assh_context_s *c,
 				    struct assh_key_s **head,
 				    const struct assh_key_algo_s *algo,
 				    enum assh_algo_class_e role,
@@ -693,7 +693,7 @@ assh_error_t asshh_load_key_filename(struct assh_context_s *c,
 				    enum assh_key_format_e format,
 				    const char *passphrase, size_t size_hint)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   FILE *file = fopen(filename, "rb");
   ASSH_RET_IF_TRUE(file == NULL, ASSH_ERR_IO);
@@ -706,7 +706,7 @@ assh_error_t asshh_load_key_filename(struct assh_context_s *c,
   return err;
 }
 
-assh_error_t asshh_load_hostkey_file(struct assh_context_s *c,
+assh_status_t asshh_load_hostkey_file(struct assh_context_s *c,
 				    const struct assh_key_algo_s *algo,
 				    enum assh_algo_class_e role,
 				    FILE *file,
@@ -720,7 +720,7 @@ assh_error_t asshh_load_hostkey_file(struct assh_context_s *c,
   return ASSH_ERR_NOTSUP;
 }
 
-assh_error_t asshh_load_hostkey_filename(struct assh_context_s *c,
+assh_status_t asshh_load_hostkey_filename(struct assh_context_s *c,
 					const struct assh_key_algo_s *algo,
 					enum assh_algo_class_e role,
 					const char *filename,
@@ -734,14 +734,14 @@ assh_error_t asshh_load_hostkey_filename(struct assh_context_s *c,
   return ASSH_ERR_NOTSUP;
 }
 
-static ASSH_WARN_UNUSED_RESULT assh_error_t
+static ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_save_openssh_v1_blob(struct assh_context_s *c,
                           const struct assh_key_s *head,
                           const char *passphrase,
                           const struct assh_algo_cipher_s *cipher,
                           uint8_t *blob, size_t *blob_len)
 {
-  assh_error_t err;
+  assh_status_t err;
   const char *kdfname = "none";
   const char *ciphername = "none";
   const size_t salt_size = 16;
@@ -879,7 +879,7 @@ assh_save_openssh_v1_blob(struct assh_context_s *c,
           cipher->f_cleanup(c, cipher_ctx);
         err_sc:
           ASSH_SCRATCH_FREE(c, sc);
-          if (ASSH_ERR_ERROR(err) != ASSH_OK)
+          if (ASSH_STATUS(err) != ASSH_OK)
             return err;
         }
 
@@ -891,12 +891,12 @@ assh_save_openssh_v1_blob(struct assh_context_s *c,
   return err;
 }
 
-static ASSH_WARN_UNUSED_RESULT assh_error_t
+static ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_save_pub_openssh(struct assh_context_s *c,
 		      const struct assh_key_s *head, FILE *file,
 		      const uint8_t *blob, size_t blob_len)
 {
-  assh_error_t err;
+  assh_status_t err;
   struct asshh_base64_ctx_s b64;
   size_t maxlen = asshh_base64_encoded_size(blob_len);
   uint8_t tmp[maxlen];
@@ -916,13 +916,13 @@ assh_save_pub_openssh(struct assh_context_s *c,
 }
 
 
-static ASSH_WARN_UNUSED_RESULT assh_error_t
+static ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_save_rfc4716(struct assh_context_s *c,
 		  const struct assh_key_s *head, FILE *file,
 		  const uint8_t *blob,
 		  size_t blob_len)
 {
-  assh_error_t err;
+  assh_status_t err;
   struct asshh_base64_ctx_s b64;
   size_t maxlen = asshh_base64_encoded_size(blob_len);
   uint8_t tmp[maxlen];
@@ -952,13 +952,13 @@ assh_save_rfc4716(struct assh_context_s *c,
   return ASSH_OK;
 }
 
-static ASSH_WARN_UNUSED_RESULT assh_error_t
+static ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_save_rfc1421(struct assh_context_s *c,
 		  const struct assh_key_s *head, FILE *file,
 		  const char *type, uint8_t *blob,
 		  size_t blob_len, const char *passphrase)
 {
-  assh_error_t err = ASSH_OK;
+  assh_status_t err = ASSH_OK;
 
   fprintf(file, "-----%s %s KEY-----\n", "BEGIN", type);
 
@@ -1003,7 +1003,7 @@ assh_save_rfc1421(struct assh_context_s *c,
       cipher->f_cleanup(c, cipher_ctx);
     err_sc:
       ASSH_SCRATCH_FREE(c, sc);
-      if (ASSH_ERR_ERROR(err) != ASSH_OK)
+      if (ASSH_STATUS(err) != ASSH_OK)
         return err;
     }
 
@@ -1035,12 +1035,12 @@ assh_save_rfc1421(struct assh_context_s *c,
   return err;
 }
 
-assh_error_t asshh_save_key_file(struct assh_context_s *c,
+assh_status_t asshh_save_key_file(struct assh_context_s *c,
 				const struct assh_key_s *head,
 				FILE *file, enum assh_key_format_e format,
 				const char *passphrase)
 {
-  assh_error_t err;
+  assh_status_t err;
   enum assh_key_format_e subfmt;
   size_t blob_len;
 
@@ -1131,13 +1131,13 @@ assh_error_t asshh_save_key_file(struct assh_context_s *c,
   return err;
 }
 
-assh_error_t asshh_save_key_filename(struct assh_context_s *c,
+assh_status_t asshh_save_key_filename(struct assh_context_s *c,
 				    const struct assh_key_s *head,
 				    const char *filename,
 				    enum assh_key_format_e format,
 				    const char *passphrase)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   FILE *file = fopen(filename, "wb");
   ASSH_RET_IF_TRUE(file == NULL, ASSH_ERR_IO);
@@ -1149,14 +1149,14 @@ assh_error_t asshh_save_key_filename(struct assh_context_s *c,
   return err;
 }
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_key_fingerprint(struct assh_context_s *c,
 		     const struct assh_key_s *key,
 		     enum asshh_fingerprint_fmt_e fmt,
 		     char *buf, size_t *buf_size,
                      const char **fmt_name)
 {
-  assh_error_t err;
+  assh_status_t err;
   size_t msize;
   const char *name;
 

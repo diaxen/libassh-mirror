@@ -30,7 +30,7 @@
 
 static ASSH_KEX_PROCESS_FCN(assh_kex_none_process)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   assert(p == NULL);
 

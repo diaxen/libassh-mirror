@@ -238,7 +238,7 @@ ssh_loop(struct assh_session_s *session,
 
                                                         /* anchor eventdata */
         case ASSH_EVENT_CHANNEL_DATA: {
-          assh_error_t err = ASSH_OK;
+          assh_status_t err = ASSH_OK;
 
           /* return if we are not sure that we can write some data to
              the standard output right now */

@@ -41,11 +41,11 @@ void assh_hash_string(struct assh_hash_ctx_s *hctx, const uint8_t *str)
   hctx->algo->f_update(hctx, str, s + 4);
 }
 
-assh_error_t assh_hash_bignum(struct assh_context_s *ctx,
+assh_status_t assh_hash_bignum(struct assh_context_s *ctx,
                               struct assh_hash_ctx_s *hctx,
                               const struct assh_bignum_s *bn)
 {
-  assh_error_t err;
+  assh_status_t err;
   size_t l = assh_bignum_size_of_num(ASSH_BIGNUM_MPINT, bn);
 
   ASSH_SCRATCH_ALLOC(ctx, uint8_t, s, l, ASSH_ERRSV_CONTINUE, err);

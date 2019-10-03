@@ -178,7 +178,7 @@ struct assh_algo_s
    @see assh_algo_register
    @xcsee {algoreg}
 */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_register_va(struct assh_context_s *c, assh_safety_t safety,
 		      assh_safety_t min_safety, uint8_t min_speed, ...);
 
@@ -202,7 +202,7 @@ assh_algo_register_va(struct assh_context_s *c, assh_safety_t safety,
    @see assh_algo_register_default
    @xcsee {algoreg}
 */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_register(struct assh_context_s *c, assh_safety_t safety,
 		   assh_safety_t min_safety, uint8_t min_speed,
                    const struct assh_algo_s *table[]);
@@ -228,7 +228,7 @@ assh_algo_register(struct assh_context_s *c, assh_safety_t safety,
 
    @xcsee {algoreg}
 */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_register_static(struct assh_context_s *c,
                           const struct assh_algo_s *table[]);
 
@@ -249,7 +249,7 @@ assh_algo_registered(struct assh_context_s *c, uint_fast16_t i);
 
     @xcsee {algoreg}
 */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_register_default(struct assh_context_s *c,
                            assh_safety_t safety,
 			   assh_safety_t min_safety,
@@ -263,7 +263,7 @@ assh_algo_register_default(struct assh_context_s *c,
     It is not possible to modify registered algorithms when some
     sessions are associated to the context.
 */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_unregister(struct assh_context_s *c);
 
 /** @This returns the @hl algorithm default name from its descriptor. */
@@ -299,7 +299,7 @@ assh_algo_safety_name(const struct assh_algo_s *algo)
 /** @This finds an @hl algorithm with matching class and name in a
     @tt NULL terminated array of pointers to algorithm descriptors.
     @see assh_algo_table */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_by_name_static(const struct assh_algo_s **table,
                          enum assh_algo_class_e class_, const char *name,
                          size_t name_len, const struct assh_algo_s **algo,
@@ -308,7 +308,7 @@ assh_algo_by_name_static(const struct assh_algo_s **table,
 /** @internal @This finds a registered @hl algorithm with matching
     class and name. If the @tt namep parameter is not @tt NULL, the
     matched algorithm name is returned. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_by_name(struct assh_context_s *c,
 		  enum assh_algo_class_e class_, const char *name,
                   size_t name_len, const struct assh_algo_s **algo,
@@ -318,7 +318,7 @@ assh_algo_by_name(struct assh_context_s *c,
     used with the given key. If the @tt pos parameter is not @tt NULL,
     it specifies the starting index of the search and it will be
     updated with the index of the matching entry. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_by_key(struct assh_context_s *c,
                  const struct assh_key_s *key, uint16_t *pos,
                  const struct assh_algo_s **algo);

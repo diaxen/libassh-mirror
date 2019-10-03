@@ -27,14 +27,14 @@
 
 static ASSH_PRNG_INIT_FCN(assh_prng_openssl_init)
 {
-  assh_error_t err;
+  assh_status_t err;
   ASSH_RET_IF_TRUE(!RAND_poll(), ASSH_ERR_CRYPTO);
   return ASSH_OK;
 }
 
 static ASSH_PRNG_GET_FCN(assh_prng_openssl_get)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   switch (ASSH_PRNG_QUALITY(quality))
     {

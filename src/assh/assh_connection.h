@@ -314,7 +314,7 @@ struct assh_event_request_abort_s
 
    @see assh_request_failed_reply
 */
-assh_error_t
+assh_status_t
 assh_request_success_reply(struct assh_request_s *rq,
                            const uint8_t *rsp_data,
                            size_t rsp_data_len);
@@ -323,7 +323,7 @@ assh_request_success_reply(struct assh_request_s *rq,
    @This has the same behavior as @ref assh_request_success_reply but
    reports a request failure to the remote host.
 */
-assh_error_t
+assh_status_t
 assh_request_failed_reply(struct assh_request_s *rq);
 
 /************************************************* outgoing request */
@@ -391,7 +391,7 @@ struct assh_event_request_failure_s
    @This must not be called if the last event has not been
    acknowledged by calling the @ref assh_event_done function.
 */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_request(struct assh_session_s *s,
              struct assh_channel_s *ch,
              const char *type, size_t type_len,
@@ -479,7 +479,7 @@ struct assh_event_channel_abort_s
    @see assh_channel_open_success_reply
    @xsee{connapi}
 */
-assh_error_t
+assh_status_t
 assh_channel_open_success_reply2(struct assh_channel_s *ch,
                                  int32_t pkt_size, int32_t win_size,
                                  const uint8_t *rsp_data,
@@ -506,7 +506,7 @@ assh_channel_open_success_reply2(struct assh_channel_s *ch,
    @see assh_channel_open_failed_reply
    @xsee{connapi}
 */
-assh_error_t
+assh_status_t
 assh_channel_open_success_reply(struct assh_channel_s *ch,
                                 const uint8_t *rsp_data,
                                 size_t rsp_data_len);
@@ -532,7 +532,7 @@ assh_channel_open_success_reply(struct assh_channel_s *ch,
    @see assh_channel_open_success_reply
    @xsee{connapi}
 */
-assh_error_t
+assh_status_t
 assh_channel_open_failed_reply(struct assh_channel_s *ch,
                                enum assh_channel_open_reason_e reason);
 
@@ -610,7 +610,7 @@ struct assh_event_channel_failure_s
 
    @xsee{connapi}
 */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_channel_open(struct assh_session_s *s,
                   const char *type, size_t type_len,
                   const uint8_t *data, size_t data_len,
@@ -672,7 +672,7 @@ assh_channel_more_data(struct assh_session_s *s);
     This must be used when automatic local window adjustment is not
     enabled for the channel, as explained in @ref assh_channel_open.
  */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_channel_window_adjust(struct assh_channel_s *ch, size_t add);
 
 /**
@@ -726,7 +726,7 @@ struct assh_event_channel_window_s
    @see assh_channel_window_size
    @see assh_channel_data_alloc_ext
 */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_channel_data_alloc(struct assh_channel_s *ch,
                         uint8_t **data, size_t *size,
                         size_t min_size);
@@ -738,7 +738,7 @@ assh_channel_data_alloc(struct assh_channel_s *ch,
 
    @see assh_channel_data_alloc
 */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_channel_data_alloc_ext(struct assh_channel_s *ch,
                             uint32_t ext_type,
                             uint8_t **data, size_t *size,
@@ -755,7 +755,7 @@ assh_channel_data_alloc_ext(struct assh_channel_s *ch,
    @This must not be called if the last event has not been
    acknowledged by calling the @ref assh_event_done function.
 */
-assh_error_t
+assh_status_t
 assh_channel_data_send(struct assh_channel_s *ch, size_t size);
 
 /**
@@ -772,12 +772,12 @@ assh_channel_data_send(struct assh_channel_s *ch, size_t size);
 
    @see assh_channel_data_ext
 */
-ASSH_INLINE assh_error_t
+ASSH_INLINE assh_status_t
 assh_channel_data(struct assh_channel_s *ch,
                   const uint8_t *data, size_t *size)
 {
   uint8_t *d;
-  assh_error_t err;
+  assh_status_t err;
   if ((err = assh_channel_data_alloc(ch, &d, size, 1)))
     return err;
   memcpy(d, data, *size);
@@ -791,12 +791,12 @@ assh_channel_data(struct assh_channel_s *ch,
 
    @see assh_channel_data
 */
-ASSH_INLINE assh_error_t
+ASSH_INLINE assh_status_t
 assh_channel_data_ext(struct assh_channel_s *ch, uint32_t ext_type,
                       const uint8_t *data, size_t *size)
 {
   uint8_t *d;
-  assh_error_t err;
+  assh_status_t err;
   if ((err = assh_channel_data_alloc_ext(ch, ext_type, &d, size, 1)))
     return err;
   memcpy(d, data, *size);
@@ -817,7 +817,7 @@ size_t assh_channel_window_size(struct assh_channel_s *ch);
    @This must not be called if the last event has not been
    acknowledged by calling the @ref assh_event_done function.
 */
-assh_error_t
+assh_status_t
 assh_channel_dummy(struct assh_channel_s *ch, size_t size);
 
 /************************************************* incoming channel close/eof */
@@ -870,7 +870,7 @@ struct assh_event_channel_close_s
 
    @xsee{connapi}
 */
-assh_error_t
+assh_status_t
 assh_channel_eof(struct assh_channel_s *ch);
 
 /**
@@ -887,7 +887,7 @@ assh_channel_eof(struct assh_channel_s *ch);
 
    @xsee{connapi}
 */
-assh_error_t
+assh_status_t
 assh_channel_close(struct assh_channel_s *ch);
 
 /**************************************************/

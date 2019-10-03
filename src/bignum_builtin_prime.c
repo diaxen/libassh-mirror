@@ -171,14 +171,14 @@ assh_bignum_prime_sc_size(const struct assh_bignum_s *bn)
   return assh_bignum_words(bn->bits) * 4;
 }
 
-static assh_error_t ASSH_WARN_UNUSED_RESULT
+static assh_status_t ASSH_WARN_UNUSED_RESULT
 assh_bignum_miller_rabin(struct assh_context_s *c,
                          assh_bnword_t *s,
                          assh_bnword_t *rn,
                          const struct assh_bignum_s *bn,
                          size_t rounds, assh_bool_t *result)
 {
-  assh_error_t err;
+  assh_status_t err;
   size_t l = assh_bignum_words(bn->bits);
   assh_bnword_t *n = bn->n;
   size_t i;
@@ -308,13 +308,13 @@ assh_bignum_check_trivial_composite(const struct assh_bignum_s *bn,
   *result = composite;
 }
 
-assh_error_t ASSH_WARN_UNUSED_RESULT
+assh_status_t ASSH_WARN_UNUSED_RESULT
 assh_bignum_check_prime(struct assh_context_s *ctx,
                         assh_bnword_t *s,
                         const struct assh_bignum_s *bn,
                         size_t rounds, assh_bool_t *result)
 {
-  assh_error_t err;
+  assh_status_t err;
   size_t l = assh_bignum_words(bn->bits);
   assh_bnword_t *n = bn->n;
 
@@ -342,13 +342,13 @@ assh_bignum_check_prime(struct assh_context_s *ctx,
   return ASSH_OK;
 }
 
-assh_error_t
+assh_status_t
 assh_bignum_next_prime(struct assh_context_s *ctx,
                        assh_bnword_t *s,
                        struct assh_bignum_s *bn,
                        struct assh_bignum_s *step)
 {
-  assh_error_t err;
+  assh_status_t err;
   const size_t l = assh_bignum_words(bn->bits);
   assh_bnword_t *n = bn->n;
   uint32_t sieve_bits[8];
@@ -436,7 +436,7 @@ assh_bignum_next_prime(struct assh_context_s *ctx,
   return err;
 }
 
-assh_error_t
+assh_status_t
 assh_bignum_gen_prime(struct assh_context_s *c,
                       assh_bnword_t *s,
                       struct assh_bignum_s *bn,
@@ -444,7 +444,7 @@ assh_bignum_gen_prime(struct assh_context_s *c,
                       const struct assh_bignum_s *max,
                       enum assh_prng_quality_e quality)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_ON_ERR(assh_bignum_rand(c, bn, min, max, quality));
   ASSH_RET_ON_ERR(assh_bignum_next_prime(c, s, bn, NULL));

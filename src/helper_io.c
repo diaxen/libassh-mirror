@@ -40,12 +40,12 @@
 
 #include <termios.h>
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_fd_get_password(struct assh_context_s *c, const char **pass,
 		     size_t max_len, int fd, assh_bool_t echo)
 {
   struct termios t;
-  assh_error_t err;
+  assh_status_t err;
   char *p;
   int_fast8_t i = 0;
 
@@ -96,7 +96,7 @@ size_t
 asshh_fd_event(struct assh_session_s *s,
               struct assh_event_s *e, int fd)
 {
-  assh_error_t err = ASSH_OK;
+  assh_status_t err = ASSH_OK;
   ssize_t r;
 
   switch (e->id)

@@ -33,12 +33,12 @@
 static ASSH_EVENT_DONE_FCN(assh_userauth_server_none_done)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   const struct assh_event_userauth_server_none_s *ev =
     &e->userauth_server.none;
 
-  if (ASSH_ERR_ERROR(inerr) || !ev->accept)
+  if (ASSH_STATUS(inerr) || !ev->accept)
     ASSH_RET_ON_ERR(assh_userauth_server_failure(s, NULL) | ASSH_ERRSV_DISCONNECT);
   else
     ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_SUCCESS);

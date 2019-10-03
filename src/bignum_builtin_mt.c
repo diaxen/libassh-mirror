@@ -25,12 +25,12 @@
 
 #include <assh/assh_alloc.h>
 
-assh_error_t
+assh_status_t
 assh_bignum_mt_init(struct assh_context_s *c,
                     struct assh_bignum_mt_s *mt,
                     const struct assh_bignum_s *mod)
 {
-  assh_error_t err;
+  assh_status_t err;
 
 
   /* check modulus is odd */
@@ -333,7 +333,7 @@ assh_bignum_mul_mod_mt_sc_size(const struct assh_bignum_s *r,
   return 0;
 }
 
-assh_error_t
+assh_status_t
 assh_bignum_mul_mod_mt(struct assh_context_s *ctx,
                        assh_bnword_t *s,
                        struct assh_bignum_s *r,
@@ -341,7 +341,7 @@ assh_bignum_mul_mod_mt(struct assh_context_s *ctx,
                        const struct assh_bignum_s *b,
                        const struct assh_bignum_mt_s *mt)
 {
-  assh_error_t err = ASSH_OK;
+  assh_status_t err = ASSH_OK;
 
   assert(mt->mod.bits == a->bits &&
          mt->mod.bits == b->bits &&
@@ -368,7 +368,7 @@ assh_bignum_expmod_mt_sc_size(const struct assh_bignum_mt_s *mt)
   return assh_bignum_words(mt->max_bits) * 2;
 }
 
-assh_error_t
+assh_status_t
 assh_bignum_expmod_mt(struct assh_context_s *ctx,
                       assh_bnword_t *sq,
                       struct assh_bignum_s *r,
@@ -423,7 +423,7 @@ assh_bignum_modinv_mt_sc_size(const struct assh_bignum_mt_s *mt)
 }
 
 /* compute inverse using the Fermat little theorem */
-assh_error_t
+assh_status_t
 assh_bignum_modinv_mt(struct assh_context_s *ctx,
                       assh_bnword_t *sq,
                       struct assh_bignum_s *r,

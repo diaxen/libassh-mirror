@@ -173,7 +173,7 @@ assh_context_keepalive(struct assh_context_s *c, uint_fast16_t keepalive);
     function if you know that you use a standalone build of assh or if
     you already perform the initialization of the required third party
     libraries in your application code. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_deps_init(void);
 
 /** @This allocates and initializes an @ref assh_context_s instance.
@@ -186,7 +186,7 @@ assh_deps_init(void);
     argument to be not @tt {NULL}.
 
     @see assh_context_release */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_context_create(struct assh_context_s **ctx,
 		    enum assh_context_type_e type,
 		    assh_allocator_t *alloc, void *alloc_pv,
@@ -211,7 +211,7 @@ void assh_context_release(struct assh_context_s *ctx);
 
     @see assh_context_cleanup
 */
-ASSH_ABI_UNSAFE ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_ABI_UNSAFE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_context_init(struct assh_context_s *ctx,
                   enum assh_context_type_e type,
                   assh_allocator_t *alloc, void *alloc_pv,

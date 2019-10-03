@@ -54,11 +54,11 @@
 # include <crypt.h>
 #endif
 
-assh_error_t
+assh_status_t
 asshh_server_load_hk(struct assh_context_s *c)
 {
   uint_fast8_t count = 0;
-  assh_error_t err;
+  assh_status_t err;
 
   count += !asshh_load_hostkey_filename(c, &assh_key_dsa, ASSH_ALGO_SIGN,
 				   CONFIG_ASSH_OPENSSH_PREFIX "ssh_host_dsa_key",
@@ -88,12 +88,12 @@ asshh_server_load_hk(struct assh_context_s *c)
   return ASSH_OK;
 }
 
-assh_error_t
+assh_status_t
 asshh_server_ak_lookup(struct assh_session_s *s,
 			      const char *filename,
 			      const struct assh_key_s *key)
 {
-  assh_error_t err;
+  assh_status_t err;
   FILE *f = fopen(filename, "r");
   struct assh_key_s *k;
   uint_fast8_t state = 0;
@@ -146,12 +146,12 @@ asshh_server_ak_lookup(struct assh_session_s *s,
   ASSH_RETURN(ASSH_ERR_MISSING_KEY);
 }
 
-assh_error_t
+assh_status_t
 asshh_server_event_user_id(struct assh_session_s *s,
 			  uid_t *uid, gid_t *gid,
 			  struct assh_event_s *event)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   assert(event->id == ASSH_EVENT_USERAUTH_SERVER_SUCCESS);
 
@@ -179,11 +179,11 @@ asshh_server_event_user_id(struct assh_session_s *s,
   return err;
 }
 
-assh_error_t
+assh_status_t
 asshh_server_event_auth(struct assh_session_s *s,
 			       struct assh_event_s *event)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   static const size_t str_size = 128;
   ASSH_SCRATCH_ALLOC(s->ctx, char, str, str_size,

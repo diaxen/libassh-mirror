@@ -968,7 +968,7 @@ void test_ops()
 	assh_bignum_init(&context, &r, t->rbits);
 
 	memset(buf, 0, sizeof(buf));
-	assh_error_t e = assh_bignum_bytecode(&context, 0, t->bytecode, "NNNTTMMMMms",
+	assh_status_t e = assh_bignum_bytecode(&context, 0, t->bytecode, "NNNTTMMMMms",
 					      &a, &b, &r, t->a, t->b, buf, t->m, t->abits);
 
 	if (t->err)
@@ -1177,9 +1177,9 @@ void test_div(unsigned int count)
   fprintf(stderr, "d");
 }
 
-assh_error_t test_move(unsigned int count)
+assh_status_t test_move(unsigned int count)
 {
-  assh_error_t err;
+  assh_status_t err;
   int i;
 
   for (i = 0; i < count; i++)

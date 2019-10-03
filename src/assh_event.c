@@ -33,7 +33,7 @@
 
 static ASSH_EVENT_DONE_FCN(assh_event_error_done)
 {
-  assert(ASSH_ERR_ERROR(s->last_err) != ASSH_OK);
+  assert(ASSH_STATUS(s->last_err) != ASSH_OK);
   s->last_err = ASSH_OK;
   return ASSH_OK;
 }
@@ -42,7 +42,7 @@ assh_bool_t assh_event_get(struct assh_session_s *s,
                            struct assh_event_s *e,
                            assh_time_t time)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   s->time = time;
 
@@ -50,7 +50,7 @@ assh_bool_t assh_event_get(struct assh_session_s *s,
     {
       assert(s->event_done);
 
-      if (ASSH_ERR_ERROR(s->last_err) != ASSH_OK)
+      if (ASSH_STATUS(s->last_err) != ASSH_OK)
         goto err_event;        /* report an event for the pending error */
 
       e->id = ASSH_EVENT_INVALID;
@@ -106,7 +106,7 @@ assh_bool_t assh_event_get(struct assh_session_s *s,
 void
 assh_event_done(struct assh_session_s *s,
                 struct assh_event_s *e,
-                enum assh_error_e inerr)
+                enum assh_status_e inerr)
 {
 #ifdef CONFIG_ASSH_DEBUG_EVENT
   if (e->id > 2)
@@ -117,7 +117,7 @@ assh_event_done(struct assh_session_s *s,
     return;
 
   if (e->f_done != NULL)
-    assh_session_error(s, e->f_done(s, e, ASSH_ERR_ERROR(inerr)));
+    assh_session_error(s, e->f_done(s, e, ASSH_STATUS(inerr)));
   e->f_done = NULL;
 
 #ifndef NDEBUG

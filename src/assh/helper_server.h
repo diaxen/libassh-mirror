@@ -45,11 +45,11 @@
 
 /** @This loads some host keys from standard locations.  The function
     is successful when at least one key has been loaded. */
-assh_error_t
+assh_status_t
 asshh_server_load_hk(struct assh_context_s *c);
 
 /** @This looks for a specific key in a pool of authorized user keys. */
-assh_error_t
+assh_status_t
 asshh_server_ak_lookup(struct assh_session_s *s,
 			      const char *filename,
 			      const struct assh_key_s *key);
@@ -68,7 +68,7 @@ asshh_server_ak_lookup(struct assh_session_s *s,
     @This takes care of calling the @ref assh_event_done function in
     any case.
 */
-assh_error_t
+assh_status_t
 asshh_server_event_auth(struct assh_session_s *s,
 			       struct assh_event_s *event);
 
@@ -78,7 +78,7 @@ asshh_server_event_auth(struct assh_session_s *s,
     @This takes care of calling the @ref assh_event_done function in
     any case.
 */
-assh_error_t
+assh_status_t
 asshh_server_event_user_id(struct assh_session_s *s,
 			  uid_t *uid, gid_t *gid,
 			  struct assh_event_s *event);

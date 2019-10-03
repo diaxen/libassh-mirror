@@ -47,11 +47,11 @@
 #include <ctype.h>
 #include <stdarg.h>
 
-assh_error_t
+assh_status_t
 asshh_client_get_known_hosts(struct assh_context_s *c, struct assh_key_s **keys,
 				    const char *filename, const char *host)
 {
-  assh_error_t err;
+  assh_status_t err;
   FILE *f = fopen(filename, "r");
   uint_fast8_t state = 3;
   uint_fast8_t hlen = 0;
@@ -135,11 +135,11 @@ asshh_client_get_known_hosts(struct assh_context_s *c, struct assh_key_s **keys,
   return ASSH_OK;
 }
 
-assh_error_t
+assh_status_t
 asshh_client_add_known_hosts(struct assh_context_s *c, const char *filename,
 				    const char *host, const struct assh_key_s *key)
 {
-  assh_error_t err;
+  assh_status_t err;
   FILE *f = fopen(filename, "a");
 
   ASSH_RET_IF_TRUE(f == NULL, ASSH_ERR_IO);
@@ -210,7 +210,7 @@ asshh_client_event_hk_lookup_va(struct assh_session_s *s, FILE *out, FILE *in,
   struct assh_event_kex_hostkey_lookup_s *ev =
     &event->kex.hostkey_lookup;
   struct assh_context_s *c = s->ctx;
-  assh_error_t err;
+  assh_status_t err;
 
   struct assh_key_s *mk, *k, *ek = ev->key;
   struct assh_key_s *keys = NULL;
@@ -364,7 +364,7 @@ asshh_client_event_hk_lookup_va(struct assh_session_s *s, FILE *out, FILE *in,
   assh_event_done(s, event, err);
 }
 
-static assh_error_t
+static assh_status_t
 asshh_client_load_key_passphrase(struct assh_context_s *c, FILE *out, FILE *in,
 				struct assh_key_s **head,
 				const struct assh_key_algo_s *algo,
@@ -372,12 +372,12 @@ asshh_client_load_key_passphrase(struct assh_context_s *c, FILE *out, FILE *in,
 				const char *filename,
 				enum assh_key_format_e format)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   err = asshh_load_key_filename(c, head, algo, role,
 			       filename, format, NULL, 0);
 
-  switch (ASSH_ERR_ERROR(err))
+  switch (ASSH_STATUS(err))
     {
     case ASSH_OK:
       return ASSH_OK;
@@ -425,7 +425,7 @@ asshh_client_event_auth(struct assh_session_s *s, FILE *out, FILE *in,
 			       struct assh_event_s *event)
 {
   struct assh_context_s *c = s->ctx;
-  assh_error_t err;
+  assh_status_t err;
 
   switch (event->id)
     {
@@ -500,7 +500,7 @@ asshh_client_event_auth(struct assh_session_s *s, FILE *out, FILE *in,
 	      fputc('\n', out);
 	    }
 
-	  if (ASSH_ERR_ERROR(err) == ASSH_OK)
+	  if (ASSH_STATUS(err) == ASSH_OK)
 	    {
 	      /* select password authentication */
 	      assh_buffer_strset(&ev->password, pass);
@@ -553,14 +553,14 @@ asshh_client_event_auth(struct assh_session_s *s, FILE *out, FILE *in,
       err = asshh_fd_get_password(c, &old_pass, 80, fileno(in), 0);
       fputc('\n', out);
 
-      if (ASSH_ERR_ERROR(err) == ASSH_OK)
+      if (ASSH_STATUS(err) == ASSH_OK)
 	{
 	  fprintf(out, "New password for `%s@%s': ",
 		  user, host);
 	  err = asshh_fd_get_password(c, &new_pass, 80, fileno(in), 0);
 	  fputc('\n', out);
 
-	  if (ASSH_ERR_ERROR(err) == ASSH_OK)
+	  if (ASSH_STATUS(err) == ASSH_OK)
 	    {
 	      assh_buffer_strset(&ev->old_password, old_pass);
 	      assh_buffer_strset(&ev->new_password, new_pass);
@@ -608,7 +608,7 @@ asshh_client_event_auth(struct assh_session_s *s, FILE *out, FILE *in,
 	      const char *v;
 	      asshh_print_string(out, &ev->prompts[i]);
 	      err = asshh_fd_get_password(c, &v, 80, fileno(in), (ev->echos >> i) & 1);
-	      if (ASSH_ERR_ERROR(err) != ASSH_OK)
+	      if (ASSH_STATUS(err) != ASSH_OK)
 		break;
 	      fputc('\n', out);
 	      assh_buffer_strset(&rsp[i], v);

@@ -37,10 +37,10 @@
 #include <stdarg.h>
 #include <string.h>
 
-assh_error_t assh_service_register(struct assh_context_s *c,
+assh_status_t assh_service_register(struct assh_context_s *c,
 				   struct assh_service_s *srv)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(srv->side != ASSH_CLIENT_SERVER &&
                srv->side != c->type, ASSH_ERR_NOTSUP);
@@ -51,10 +51,10 @@ assh_error_t assh_service_register(struct assh_context_s *c,
   return ASSH_OK;
 }
 
-assh_error_t
+assh_status_t
 assh_service_register_va(struct assh_context_s *c, ...)
 {
-  assh_error_t err = ASSH_OK;
+  assh_status_t err = ASSH_OK;
   va_list ap;
   va_start(ap, c);
 
@@ -71,9 +71,9 @@ assh_service_register_va(struct assh_context_s *c, ...)
   return err;
 }
 
-assh_error_t assh_service_register_default(struct assh_context_s *c)
+assh_status_t assh_service_register_default(struct assh_context_s *c)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   switch (c->type)
     {
@@ -94,7 +94,7 @@ assh_error_t assh_service_register_default(struct assh_context_s *c)
     }
 }
 
-assh_error_t assh_service_by_name(struct assh_context_s *c,
+assh_status_t assh_service_by_name(struct assh_context_s *c,
                                   size_t name_len, const char *name,
                                   const struct assh_service_s **srv_)
 {
@@ -116,11 +116,11 @@ assh_error_t assh_service_by_name(struct assh_context_s *c,
 }
 
 #ifdef CONFIG_ASSH_SERVER
-static assh_error_t
+static assh_status_t
 assh_service_got_request(struct assh_session_s *s,
                          struct assh_packet_s *p)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   const uint8_t *name = p->head.end, *name_end;
   ASSH_RET_ON_ERR(assh_packet_check_string(p, name, &name_end));
@@ -153,11 +153,11 @@ assh_service_got_request(struct assh_session_s *s,
 #endif
 
 #ifdef CONFIG_ASSH_CLIENT
-static assh_error_t
+static assh_status_t
 assh_service_got_accept(struct assh_session_s *s,
                         struct assh_packet_s *p)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   /* check accepted service name */
   const uint8_t *name = p->head.end, *name_end;
@@ -169,10 +169,10 @@ assh_service_got_accept(struct assh_session_s *s,
   return ASSH_OK;
 }
 
-static assh_error_t
+static assh_status_t
 assh_service_send_request(struct assh_session_s *s)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   /** get next service to request */
   ASSH_RET_IF_TRUE(s->srv_index >= s->ctx->srvs_count,
@@ -224,12 +224,12 @@ void assh_service_start(struct assh_session_s *s,
 }
 
 #ifdef CONFIG_ASSH_CLIENT
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_service_next(struct assh_session_s *s,
                   const struct assh_service_s **srv)
 {
   struct assh_context_s *c = s->ctx;
-  assh_error_t err;
+  assh_status_t err;
 
   assert(c->type == ASSH_CLIENT);
 
@@ -245,11 +245,11 @@ static ASSH_EVENT_DONE_FCN(assh_event_service_start_done)
   return ASSH_OK;
 }
 
-assh_error_t assh_service_loop(struct assh_session_s *s,
+assh_status_t assh_service_loop(struct assh_session_s *s,
                                struct assh_packet_s *p,
                                struct assh_event_s *e)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   while (1)
     {
@@ -363,7 +363,7 @@ assh_error_t assh_service_loop(struct assh_session_s *s,
         /* need to start the next service or
            packet not consumed yet */
         if (s->srv_st == ASSH_SRV_INIT ||
-            ASSH_ERR_ERROR(err) == ASSH_NO_DATA)
+            ASSH_STATUS(err) == ASSH_NO_DATA)
           continue;
 
         return ASSH_OK;

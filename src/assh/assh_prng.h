@@ -64,7 +64,7 @@ enum assh_prng_quality_e
 
 /** @internal @see assh_prng_init_t */
 #define ASSH_PRNG_INIT_FCN(n) \
-  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_context_s *c, \
+  ASSH_WARN_UNUSED_RESULT assh_status_t (n)(struct assh_context_s *c, \
                                 const struct assh_buffer_s *seed)
 
 /** @internal @This defines the function type for the initialization
@@ -74,7 +74,7 @@ typedef ASSH_PRNG_INIT_FCN(assh_prng_init_t);
 
 /** @internal @see assh_prng_get_t */
 #define ASSH_PRNG_GET_FCN(n) \
-  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_context_s *c,    \
+  ASSH_WARN_UNUSED_RESULT assh_status_t (n)(struct assh_context_s *c,    \
                                            uint8_t *rdata, size_t rdata_len, \
 					   uint_fast8_t quality)
 /** @internal @This defines the function type for the random generation
@@ -99,7 +99,7 @@ struct assh_prng_s
 };
 
 /** @internal @This fills the buffer with random data. */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_prng_get(struct assh_context_s *c,
               uint8_t *rdata, size_t rdata_len,
               enum assh_prng_quality_e quality)

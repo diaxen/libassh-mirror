@@ -131,13 +131,13 @@ struct assh_bignum_s
 };
 
 /** @internal @see assh_bignum_bytecode_t */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_bignum_builtin_bytecode(struct assh_context_s *c, uint8_t cond,
                              const assh_bignum_op_t *ops,
                              const char *format, va_list ap);
 
 /** @internal @see assh_bignum_convert_t */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_bignum_builtin_convert(struct assh_context_s *c,
                             enum assh_bignum_fmt_e srcfmt,
                             enum assh_bignum_fmt_e dstfmt,
@@ -179,13 +179,13 @@ assh_bignum_builtin_release(struct assh_context_s *ctx,
 
     Resources used by temporary numbers are automatically released when
     the function returns. */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_bignum_bytecode(struct assh_context_s *c, uint8_t cond,
                      const assh_bignum_op_t *ops,
                      const char *format, ...)
 {
   va_list ap;
-  assh_error_t err;
+  assh_status_t err;
   va_start(ap, format);
   err = assh_bignum_builtin_bytecode(c, cond, ops, format, ap);
   va_end(ap);
@@ -212,7 +212,7 @@ assh_bignum_bytecode(struct assh_context_s *c, uint8_t cond,
     When converting between two native big numbers, the current bits
     size of the source might be larger than the size of the destination
     provided that the actual value fits in the destination. */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_bignum_convert(struct assh_context_s *c,
                     enum assh_bignum_fmt_e src_fmt,
                     enum assh_bignum_fmt_e dst_fmt,
@@ -246,7 +246,7 @@ assh_bignum_size_of_num(enum assh_bignum_fmt_e dst_fmt,
     the input format is either @ref ASSH_BIGNUM_MSB_RAW or
     @ref ASSH_BIGNUM_LSB_RAW, the @tt size parameter must be used to
     pass the bytes size of the buffer. */
-assh_error_t ASSH_WARN_UNUSED_RESULT
+assh_status_t ASSH_WARN_UNUSED_RESULT
 assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
                          const void *data, size_t *size,
                          size_t *val_size, size_t *bits);

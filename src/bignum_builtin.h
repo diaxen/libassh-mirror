@@ -154,7 +154,7 @@ void
 assh_bignum_cswap(assh_bnword_t *an, assh_bnword_t *bn,
                   size_t l, assh_bool_t c);
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_bignum_copy(struct assh_bignum_s *dst,
                  const struct assh_bignum_s *src);
 
@@ -163,12 +163,12 @@ assh_bignum_to_buffer(const struct assh_bignum_s *bn,
                       uint8_t *in, uint8_t **end,
                       enum assh_bignum_fmt_e format);
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_bignum_from_buffer(struct assh_bignum_s *bn,
                         const uint8_t * __restrict__ data,
                         size_t data_len, enum assh_bignum_fmt_e format);
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_bignum_from_uint(struct assh_bignum_s *bn,
                       uintptr_t x);
 
@@ -191,7 +191,7 @@ enum assh_bignum_cmp_result_e
 assh_bignum_cmp(const struct assh_bignum_s *a,
                 const struct assh_bignum_s *b);
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_bignum_rand(struct assh_context_s *c,
                  struct assh_bignum_s *bn,
                  const struct assh_bignum_s *min,
@@ -200,19 +200,19 @@ assh_bignum_rand(struct assh_context_s *c,
 
 /****************************** bignum_builtin_shift.c */
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_bignum_rshift(struct assh_bignum_s *dst,
                    const struct assh_bignum_s *src,
                    uint_fast32_t n);
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_bignum_lshift(struct assh_bignum_s *dst,
                    const struct assh_bignum_s *src,
                    uint_fast32_t n);
 
 /****************************** bignum_builtin_add.c */
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_bignum_addsub(struct assh_bignum_s *dst,
                    const struct assh_bignum_s *a,
                    const struct assh_bignum_s *b,
@@ -220,7 +220,7 @@ assh_bignum_addsub(struct assh_bignum_s *dst,
 
 /****************************** bignum_builtin_div.c */
 
-assh_error_t
+assh_status_t
 assh_bignum_div_euclidean(assh_bnword_t * __restrict__ rn,
                           uint_fast32_t r_len,
                           assh_bnword_t * __restrict__ dn,
@@ -233,7 +233,7 @@ size_t
 assh_bignum_div_sc_size(const struct assh_bignum_s *r,
                         const struct assh_bignum_s *a);
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_bignum_div(struct assh_context_s *ctx,
                 assh_bnword_t *s,
                 struct assh_bignum_s *r,
@@ -244,7 +244,7 @@ assh_bignum_div(struct assh_context_s *ctx,
 size_t
 assh_bignum_modinv_sc_size(const struct assh_bignum_s *m);
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_bignum_modinv(struct assh_context_s *ctx,
                    assh_bnword_t *s,
                    struct assh_bignum_s *u,
@@ -255,7 +255,7 @@ size_t
 assh_bignum_gcd_sc_size(const struct assh_bignum_s *a,
                         const struct assh_bignum_s *b);
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_bignum_gcd(struct assh_context_s *ctx,
                 assh_bnword_t *s,
                 struct assh_bignum_s *g,
@@ -269,7 +269,7 @@ assh_bignum_mul_sc_size(const struct assh_bignum_s *r,
                         const struct assh_bignum_s *a,
                         const struct assh_bignum_s *b);
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_bignum_mul(struct assh_context_s *ctx,
                 assh_bnword_t *s,
                 struct assh_bignum_s *r,
@@ -280,7 +280,7 @@ size_t
 assh_bignum_mul_mod_sc_size(const struct assh_bignum_s *a,
                             const struct assh_bignum_s *b);
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_bignum_mul_mod(struct assh_context_s *ctx,
                     assh_bnword_t *s,
                     struct assh_bignum_s *r,
@@ -312,7 +312,7 @@ assh_bignum_mt_reduce(const struct assh_bignum_mt_s *mt,
                       assh_bnword_t * __restrict__ a,
                       const assh_bnword_t * __restrict__ x);
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_bignum_mt_init(struct assh_context_s *c,
                     struct assh_bignum_mt_s *mt,
                     const struct assh_bignum_s *mod);
@@ -344,7 +344,7 @@ assh_bignum_mul_mod_mt_sc_size(const struct assh_bignum_s *r,
                                const struct assh_bignum_s *a,
                                const struct assh_bignum_s *b);
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_bignum_mul_mod_mt(struct assh_context_s *ctx,
                        assh_bnword_t *s,
                        struct assh_bignum_s *r,
@@ -355,7 +355,7 @@ assh_bignum_mul_mod_mt(struct assh_context_s *ctx,
 size_t
 assh_bignum_expmod_mt_sc_size(const struct assh_bignum_mt_s *mt);
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_bignum_expmod_mt(struct assh_context_s *ctx,
                       assh_bnword_t *s,
                       struct assh_bignum_s *r,
@@ -366,7 +366,7 @@ assh_bignum_expmod_mt(struct assh_context_s *ctx,
 size_t
 assh_bignum_modinv_mt_sc_size(const struct assh_bignum_mt_s *mt);
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_bignum_modinv_mt(struct assh_context_s *ctx,
                       assh_bnword_t *s,
                       struct assh_bignum_s *r,
@@ -378,19 +378,19 @@ assh_bignum_modinv_mt(struct assh_context_s *ctx,
 size_t
 assh_bignum_prime_sc_size(const struct assh_bignum_s *bn);
 
-assh_error_t ASSH_WARN_UNUSED_RESULT
+assh_status_t ASSH_WARN_UNUSED_RESULT
 assh_bignum_check_prime(struct assh_context_s *ctx,
                         assh_bnword_t *s,
                         const struct assh_bignum_s *bn,
                         size_t rounds, assh_bool_t *result);
 
-assh_error_t ASSH_WARN_UNUSED_RESULT
+assh_status_t ASSH_WARN_UNUSED_RESULT
 assh_bignum_next_prime(struct assh_context_s *ctx,
                        assh_bnword_t *s,
                        struct assh_bignum_s *bn,
                        struct assh_bignum_s *step);
 
-assh_error_t ASSH_WARN_UNUSED_RESULT
+assh_status_t ASSH_WARN_UNUSED_RESULT
 assh_bignum_gen_prime(struct assh_context_s *c,
                       assh_bnword_t *s,
                       struct assh_bignum_s *bn,

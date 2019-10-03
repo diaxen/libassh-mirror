@@ -40,10 +40,10 @@
 # include <openssl/crypto.h>
 #endif
 
-assh_error_t
+assh_status_t
 assh_deps_init()
 {
-  assh_error_t err;
+  assh_status_t err;
 
 #ifdef CONFIG_ASSH_USE_GCRYPT
   ASSH_RET_IF_TRUE(!gcry_check_version(GCRYPT_VERSION),
@@ -80,14 +80,14 @@ assh_default_alloc()
   return NULL;
 }
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_context_init(struct assh_context_s *c,
                   enum assh_context_type_e type,
                   assh_allocator_t *alloc, void *alloc_pv,
                   const struct assh_prng_s *prng,
                   const struct assh_buffer_s *prng_seed)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   c->session_count = 0;
 
@@ -175,14 +175,14 @@ assh_context_init(struct assh_context_s *c,
   return ASSH_OK;
 }
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_context_create(struct assh_context_s **ctx,
 		    enum assh_context_type_e type,
 		    assh_allocator_t *alloc, void *alloc_pv,
                     const struct assh_prng_s *prng,
                     const struct assh_buffer_s *prng_seed)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   if (alloc == NULL)
     {

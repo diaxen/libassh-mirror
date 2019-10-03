@@ -34,7 +34,7 @@
 static ASSH_EVENT_DONE_FCN(assh_userauth_server_kbresponse_done)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   assh_free(s->ctx, pv->keyboard_array);
   pv->keyboard_array = NULL;
@@ -45,7 +45,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_kbresponse_done)
   const struct assh_event_userauth_server_kbresponse_s *ev =
     &e->userauth_server.kbresponse;
 
-  if (ASSH_ERR_ERROR(inerr))
+  if (ASSH_STATUS(inerr))
     goto failure;
 
   switch (ev->result)
@@ -65,13 +65,13 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_kbresponse_done)
   return ASSH_OK;
 }
 
-static assh_error_t
+static assh_status_t
 assh_userauth_server_kbresponse(struct assh_session_s *s,
                                 struct assh_packet_s *p,
                                 struct assh_event_s *e)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(p->head.msg != SSH_MSG_USERAUTH_INFO_RESPONSE,
                ASSH_ERR_PROTOCOL);
@@ -126,14 +126,14 @@ assh_userauth_server_kbresponse(struct assh_session_s *s,
 static ASSH_EVENT_DONE_FCN(assh_userauth_server_kbinfo_done)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   assert(pv->state == ASSH_USERAUTH_ST_KEYBOARD_INFO);
 
   assh_packet_release(pv->pck);
   pv->pck = NULL;
 
-  if (ASSH_ERR_ERROR(inerr))
+  if (ASSH_STATUS(inerr))
     ASSH_RETURN(assh_userauth_server_failure(s, NULL)
                    | ASSH_ERRSV_DISCONNECT);
 
@@ -185,7 +185,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_kbinfo_done)
   return ASSH_OK;
 }
 
-static assh_error_t
+static assh_status_t
 assh_userauth_server_kbinfo(struct assh_session_s *s,
                             struct assh_event_s *e,
                             const uint8_t *sub)
@@ -218,7 +218,7 @@ assh_userauth_server_kbinfo(struct assh_session_s *s,
 static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_kbinfo)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   const uint8_t *lang = auth_data;
   const uint8_t *sub;
@@ -237,7 +237,7 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_kbinfo)
 static ASSH_USERAUTH_SERVER_PROCESS(assh_userauth_server_kbprocess)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   switch (pv->state)
     {

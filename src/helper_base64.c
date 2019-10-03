@@ -52,11 +52,11 @@ static const int8_t b642bin[128] =
     -1, -1, -1, -1, -1
   };
 
-assh_error_t
+assh_status_t
 asshh_base64_encode_update(struct asshh_base64_ctx_s *ctx,
 			  const uint8_t *bin, size_t bin_len)
 {
-  assh_error_t err;
+  assh_status_t err;
   uint32_t x = ctx->x;
   size_t in = ctx->in;
   uint8_t *out = ctx->out;
@@ -84,11 +84,11 @@ asshh_base64_encode_update(struct asshh_base64_ctx_s *ctx,
   return ASSH_OK;
 }
 
-assh_error_t
+assh_status_t
 asshh_base64_decode_update(struct asshh_base64_ctx_s *ctx,
 			  const uint8_t *b64, size_t b64_len)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   while (b64_len--)
     {
@@ -119,10 +119,10 @@ asshh_base64_decode_update(struct asshh_base64_ctx_s *ctx,
   return ASSH_OK;
 }
 
-assh_error_t
+assh_status_t
 asshh_base64_decode_final(struct asshh_base64_ctx_s *ctx)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE((ctx->in + ctx->pad) & 3, ASSH_ERR_BAD_DATA);
 
@@ -141,10 +141,10 @@ asshh_base64_decode_final(struct asshh_base64_ctx_s *ctx)
   return ASSH_OK;
 }
 
-assh_error_t
+assh_status_t
 asshh_base64_encode_final(struct asshh_base64_ctx_s *ctx)
 {
-  assh_error_t err;
+  assh_status_t err;
   uint8_t *out = ctx->out;
   uint32_t x = ctx->x;
   size_t in = ctx->in;

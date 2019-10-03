@@ -48,12 +48,12 @@ static const enum assh_algo_class_e assh_kex_algos_classes[8] = {
   ASSH_ALGO_COMPRESS, ASSH_ALGO_COMPRESS
 };
 
-static assh_error_t
+static assh_status_t
 assh_kex_list(struct assh_session_s *s, struct assh_packet_s *p,
               uint_fast16_t *algoidx, enum assh_algo_class_e class_,
               assh_bool_t out)
 {
-  assh_error_t err;
+  assh_status_t err;
   struct assh_context_s *c = s->ctx;
   assh_bool_t first = 0;
   uint8_t *list;
@@ -107,9 +107,9 @@ assh_kex_list(struct assh_session_s *s, struct assh_packet_s *p,
   return ASSH_OK;
 }
 
-assh_error_t assh_kex_send_init(struct assh_session_s *s)
+assh_status_t assh_kex_send_init(struct assh_session_s *s)
 {
-  assh_error_t err;
+  assh_status_t err;
   struct assh_context_s *c = s->ctx;
 
   struct assh_packet_s *p;
@@ -164,12 +164,12 @@ assh_error_t assh_kex_send_init(struct assh_session_s *s)
 
 #ifdef CONFIG_ASSH_SERVER
 /* select server side algorithms based on KEX init lists from client */
-static assh_error_t
+static assh_status_t
 assh_kex_server_algos(struct assh_session_s *s, const uint8_t *lists[9],
                       const struct assh_algo_s *algos[8])
 {
   struct assh_context_s *c = s->ctx;
-  assh_error_t err;
+  assh_status_t err;
   uint_fast8_t i;
 
   for (i = 0; i < 8; i++)
@@ -243,12 +243,12 @@ assh_kex_server_algos(struct assh_session_s *s, const uint8_t *lists[9],
 
 #ifdef CONFIG_ASSH_CLIENT
 /* select client side algorithms based on KEX init lists from server */
-static assh_error_t
+static assh_status_t
 assh_kex_client_algos(struct assh_session_s *s, const uint8_t *lists[9],
                       const struct assh_algo_s *algos[8])
 {
   struct assh_context_s *c = s->ctx;
-  assh_error_t err;
+  assh_status_t err;
   uint_fast16_t i, j, k;
 
   for (k = j = i = 0; i < 8; i++)
@@ -342,9 +342,9 @@ assh_kex_client_algos(struct assh_session_s *s, const uint8_t *lists[9],
 }
 #endif
 
-assh_error_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p)
+assh_status_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   const uint8_t *lists[11];
   unsigned int i;
@@ -489,13 +489,13 @@ void assh_kex_lower_safety(struct assh_session_s *s, assh_safety_t safety)
 }
 
 /* derive cipher/mac/iv key from shared secret */
-static assh_error_t assh_kex_new_key(struct assh_session_s *s,
+static assh_status_t assh_kex_new_key(struct assh_session_s *s,
                                      struct assh_hash_ctx_s *hash_ctx,
                                      const struct assh_hash_algo_s *hash_algo,
                                      const uint8_t *ex_hash, const uint8_t *secret_str,
                                      char c, uint8_t *key, size_t key_size)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_SCRATCH_ALLOC(s->ctx, uint8_t, buf, ASSH_MAX_SYMKEY_SIZE + ASSH_MAX_HASH_SIZE,
 		     ASSH_ERRSV_CONTINUE, err);
@@ -544,13 +544,13 @@ static assh_error_t assh_kex_new_key(struct assh_session_s *s,
   return err;
 }
 
-assh_error_t
+assh_status_t
 assh_kex_new_keys(struct assh_session_s *s,
                   const struct assh_hash_algo_s *hash_algo,
                   const uint8_t *ex_hash,
                   const uint8_t *secret_str)
 {
-  assh_error_t err;
+  assh_status_t err;
 #if defined(CONFIG_ASSH_SERVER) && defined(CONFIG_ASSH_CLIENT)
   const char *c = s->ctx->type == ASSH_SERVER ? "ACBDEF" : "BDACFE";
 #elif defined(CONFIG_ASSH_CLIENT)
@@ -688,13 +688,13 @@ assh_kex_new_keys(struct assh_session_s *s,
 }
 
 #ifdef CONFIG_ASSH_CLIENT
-assh_error_t
+assh_status_t
 assh_kex_client_get_key(struct assh_session_s *s,
                         const uint8_t *ks_str,
                         struct assh_event_s *e,
                         assh_event_done_t *done, void *pv)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   /* load key */
   const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
@@ -727,7 +727,7 @@ assh_kex_client_get_key(struct assh_session_s *s,
   return err;
 }
 
-assh_error_t
+assh_status_t
 assh_kex_client_hash1(struct assh_session_s *s,
                       struct assh_hash_ctx_s *hash_ctx,
                       const uint8_t *k_str)
@@ -744,13 +744,13 @@ assh_kex_client_hash1(struct assh_session_s *s,
   return ASSH_OK;
 }
 
-assh_error_t
+assh_status_t
 assh_kex_client_hash2(struct assh_session_s *s,
                       struct assh_hash_ctx_s *hash_ctx,
                       const uint8_t *secret_str,
                       const uint8_t *h_str)
 {
-  assh_error_t err;
+  assh_status_t err;
   struct assh_context_s *c = s->ctx;
 
   assh_hash_string(hash_ctx, secret_str);
@@ -780,14 +780,14 @@ assh_kex_client_hash2(struct assh_session_s *s,
 #endif
 
 #ifdef CONFIG_ASSH_SERVER
-assh_error_t
+assh_status_t
 assh_kex_server_hash1(struct assh_session_s *s, size_t kex_len,
                       struct assh_hash_ctx_s *hash_ctx,
                       struct assh_packet_s **pout, size_t *sign_len,
                       struct assh_key_s **host_key,
                       enum assh_ssh_msg_e msg)
 {
-  assh_error_t err;
+  assh_status_t err;
   struct assh_context_s *c = s->ctx;
 
   /* look for an host key pair which can be used with the selected algorithm. */
@@ -830,14 +830,14 @@ assh_kex_server_hash1(struct assh_session_s *s, size_t kex_len,
   return err;
 }
 
-assh_error_t
+assh_status_t
 assh_kex_server_hash2(struct assh_session_s *s,
                       struct assh_hash_ctx_s *hash_ctx,
                       struct assh_packet_s *pout, size_t sign_len,
                       const struct assh_key_s *host_key,
                       const uint8_t *secret_str)
 {
-  assh_error_t err;
+  assh_status_t err;
   struct assh_context_s *c = s->ctx;
   const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
 
@@ -890,9 +890,9 @@ void assh_kex_keys_cleanup(struct assh_session_s *s, struct assh_kex_keys_s *key
   assh_free(s->ctx, keys);
 }
 
-assh_error_t assh_kex_end(struct assh_session_s *s, assh_bool_t accept)
+assh_status_t assh_kex_end(struct assh_session_s *s, assh_bool_t accept)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   if (s->kex_pv != NULL)
     s->kex->f_cleanup(s);
@@ -950,10 +950,10 @@ void assh_kex_done(struct assh_session_s *s,
   e->kex.done.algos_out = out;
 }
 
-assh_error_t
+assh_status_t
 assh_kex_set_threshold(struct assh_session_s *s, uint32_t bytes)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(bytes < 1 || bytes > ASSH_REKEX_THRESHOLD,
 	       ASSH_ERR_BAD_ARG | ASSH_ERRSV_CONTINUE);

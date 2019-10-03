@@ -131,14 +131,14 @@ assh_bignum_mul_sc_size(const struct assh_bignum_s *r,
   return sl;
 }
 
-assh_error_t
+assh_status_t
 assh_bignum_mul(struct assh_context_s *ctx,
                 assh_bnword_t *s,
                 struct assh_bignum_s *r,
                 const struct assh_bignum_s *a,
                 const struct assh_bignum_s *b)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   assert(r != a && r != b);
 
@@ -190,7 +190,7 @@ assh_bignum_mul_mod_sc_size(const struct assh_bignum_s *a,
   return l;
 }
 
-assh_error_t
+assh_status_t
 assh_bignum_mul_mod(struct assh_context_s *ctx,
                     assh_bnword_t *x,
                     struct assh_bignum_s *r,
@@ -198,7 +198,7 @@ assh_bignum_mul_mod(struct assh_context_s *ctx,
                     const struct assh_bignum_s *b,
                     const struct assh_bignum_s *m)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(r->bits < m->bits, ASSH_ERR_OUTPUT_OVERFLOW);
 

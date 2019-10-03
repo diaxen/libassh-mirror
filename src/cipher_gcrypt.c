@@ -37,13 +37,13 @@ struct assh_cipher_gcrypt_context_s
   uint8_t iv[12];
 };
 
-static assh_error_t
+static assh_status_t
 assh_cipher_gcrypt_init(const struct assh_algo_cipher_s *cipher,
 			struct assh_cipher_gcrypt_context_s *ctx,
 			const uint8_t *key, const uint8_t *iv,
 			int algo, int mode, assh_bool_t encrypt)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P),
                ASSH_ERR_CRYPTO);
@@ -105,7 +105,7 @@ assh_cipher_gcrypt_init(const struct assh_algo_cipher_s *cipher,
 
 static ASSH_CIPHER_PROCESS_FCN(assh_cipher_gcrypt_process_GCM)
 {
-  assh_error_t err;
+  assh_status_t err;
   struct assh_cipher_gcrypt_context_s *ctx = ctx_;
   size_t auth_size = ctx->cipher->auth_size;
   size_t block_size = ctx->cipher->block_size;
@@ -145,7 +145,7 @@ static ASSH_CIPHER_PROCESS_FCN(assh_cipher_gcrypt_process_GCM)
 
 static ASSH_CIPHER_PROCESS_FCN(assh_cipher_gcrypt_process)
 {
-  assh_error_t err;
+  assh_status_t err;
   struct assh_cipher_gcrypt_context_s *ctx = ctx_;
   size_t block_size = ctx->cipher->block_size;
 

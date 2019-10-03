@@ -40,12 +40,12 @@ struct assh_hmac_context_s
   uint8_t *buf;
 };
 
-static assh_error_t
+static assh_status_t
 assh_hmac_init(struct assh_context_s *c, const struct assh_algo_mac_s *mac,
                struct assh_hmac_context_s *ctx,
                const uint8_t *key, const struct assh_hash_algo_s *hash)
 {
-  assh_error_t err;
+  assh_status_t err;
   uint_fast16_t i;
 
   assert(hash->hash_size != 0);
@@ -107,7 +107,7 @@ static ASSH_MAC_COMPUTE_FCN(assh_hmac_compute)
 {
   struct assh_hmac_context_s *ctx = ctx_;
   uint8_t be_seq[4];
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_ON_ERR(assh_hash_copy(ctx->hash_ci_t, ctx->hash_ci));
   assh_store_u32(be_seq, seq);
@@ -136,7 +136,7 @@ static ASSH_MAC_COMPUTE_FCN(assh_hmac_compute)
 static ASSH_MAC_CHECK_FCN(assh_hmac_check)
 {
   struct assh_hmac_context_s *ctx = ctx_;
-  assh_error_t err;
+  assh_status_t err;
   uint_fast8_t l = ctx->mac->mac_size;
   uint8_t buf[l];
 

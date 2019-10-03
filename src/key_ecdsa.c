@@ -116,13 +116,13 @@ static ASSH_KEY_CLEANUP_FCN(assh_key_ecdsa_cleanup)
 }
 
 #ifdef CONFIG_ASSH_KEY_CREATE
-static assh_error_t
+static assh_status_t
 assh_key_ecdsa_create(struct assh_context_s *c,
                       const struct assh_key_algo_s *algo,
                       struct assh_key_s **key,
                       const struct assh_key_ecdsa_id_s *id)
 {
-  assh_error_t err;
+  assh_status_t err;
   struct assh_key_ecdsa_s *k;
   const struct assh_weierstrass_curve_s *curve = id->curve;
 
@@ -199,7 +199,7 @@ assh_key_ecdsa_create(struct assh_context_s *c,
 #ifdef CONFIG_ASSH_KEY_VALIDATE
 static ASSH_KEY_VALIDATE_FCN(assh_key_ecdsa_validate)
 {
-  assh_error_t err;
+  assh_status_t err;
   struct assh_key_ecdsa_s *k = (void*)key;
   const struct assh_weierstrass_curve_s *curve = k->id->curve;
 
@@ -236,7 +236,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_ecdsa_validate)
   err = assh_bignum_bytecode(c, 0, bytecode, "DDNNTTTTTTm",
                              curve->p, curve->b, &k->xn, &k->yn);
 
-  switch (ASSH_ERR_ERROR(err))
+  switch (ASSH_STATUS(err))
     {
     case ASSH_ERR_NUM_COMPARE_FAILED:
     case ASSH_ERR_NUM_OVERFLOW:
@@ -254,7 +254,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_ecdsa_validate)
 
 static ASSH_BLOB_SCAN_FCN(assh_key_ecdsa_scan_name)
 {
-  assh_error_t err;
+  assh_status_t err;
   struct assh_key_ecdsa_s *k = pv;
   const struct assh_key_ecdsa_id_s *id;
 
@@ -276,7 +276,7 @@ static ASSH_BLOB_SCAN_FCN(assh_key_ecdsa_scan_name)
 
 static ASSH_BLOB_SCAN_FCN(assh_key_ecdsa_scan_oid)
 {
-  assh_error_t err;
+  assh_status_t err;
   struct assh_key_ecdsa_s *k = pv;
   const struct assh_key_ecdsa_id_s *id;
 
@@ -303,7 +303,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_ecdsa_output)
   assert(key->algo == &assh_key_ecdsa_nistp);
 
   const struct assh_weierstrass_curve_s *curve = k->id->curve;
-  assh_error_t err;
+  assh_status_t err;
 
   assert(curve->bits == assh_bignum_bits(&k->xn));
   assert(curve->bits == assh_bignum_bits(&k->yn));
@@ -339,7 +339,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_ecdsa_output)
 
 static ASSH_KEY_LOAD_FCN(assh_key_ecdsa_load)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   const uint8_t *blob = *blob_;
   struct assh_key_ecdsa_s *k = (void*)*key;
@@ -427,7 +427,7 @@ assh_key_ecdsa_lookup_bits(size_t bits)
 
 static ASSH_KEY_CREATE_FCN(assh_key_ecdsa_nistp_create)
 {
-  assh_error_t err;
+  assh_status_t err;
   const struct assh_key_ecdsa_id_s *id = assh_key_ecdsa_lookup_bits(bits);
   ASSH_RET_IF_TRUE(id == NULL, ASSH_ERR_NOTSUP);
   ASSH_RETURN(assh_key_ecdsa_create(c, algo, key, id));

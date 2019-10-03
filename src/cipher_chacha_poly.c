@@ -324,7 +324,7 @@ static ASSH_CIPHER_INIT_FCN(assh_chachapoly_init)
 static ASSH_CIPHER_PROCESS_FCN(assh_chachapoly_process)
 {
   struct assh_cipher_chachapoly_context_s *ctx = ctx_;
-  assh_error_t err;
+  assh_status_t err;
 
   if (!ctx->encrypt)
     {

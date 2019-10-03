@@ -217,14 +217,14 @@ enum assh_ssh_disconnect_e
 
 /** @internal @This allocates a new packet. The @tt buffer_size
     parameter specifies total allocated size. The size is not limited. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_packet_alloc_raw(struct assh_context_s *c, size_t raw_size,
                    struct assh_packet_s **p);
 
 /** @internal @This allocates a new packet is the specified size can't
     be stored in the current packet. The original packet is not
     released and the data are not copied. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_packet_realloc_raw(struct assh_context_s *c,
                         struct assh_packet_s **p_,
                         size_t raw_size);
@@ -232,7 +232,7 @@ assh_packet_realloc_raw(struct assh_context_s *c,
 /** @internal @This allocates a new packet. The @tt payload_size_m1
     parameter specifies the size of the payload minus one. This is
     amount of bytes between the message id and the padding. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_packet_alloc(struct assh_context_s *c,
                   uint8_t msg, size_t payload_size_m1,
                   struct assh_packet_s **result);
@@ -283,25 +283,25 @@ assh_packet_refinc(struct assh_packet_s *p)
 }
 
 /** @internal @This creates a copy of a packet. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_packet_dup(struct assh_packet_s *p,
                 struct assh_packet_s **copy);
 
 /** @internal @This allocates an array of bytes in a packet
     and returns a pointer to the array. If there is not enough space
     left in the packet, an error is returned. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_packet_add_array(struct assh_packet_s *p, size_t len, uint8_t **result);
 
 /** @internal @This allocates an unsigned 32 bits integer in a packet
     and sets its value. If there is not enough space left in the
     packet, an error is returned. */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_packet_add_u32(struct assh_packet_s *p, uint32_t value)
 {
   uint8_t *be;
-  assh_error_t err = assh_packet_add_array(p, 4, &be);
-  if (ASSH_ERR_ERROR(err) == ASSH_OK)
+  assh_status_t err = assh_packet_add_array(p, 4, &be);
+  if (ASSH_STATUS(err) == ASSH_OK)
     assh_store_u32(be, value);
   return err;
 }
@@ -309,7 +309,7 @@ assh_packet_add_u32(struct assh_packet_s *p, uint32_t value)
 /** @internal @This allocates a string in a packet and returns
     a pointer to the first char of the string. If there is not enough
     space left in the packet, and error is returned. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_packet_add_string(struct assh_packet_s *p, size_t len, uint8_t **result);
 
 /** @internal @This enlarges a string previously allocated in
@@ -317,7 +317,7 @@ assh_packet_add_string(struct assh_packet_s *p, size_t len, uint8_t **result);
     string. If there is not enough space left in the packet, an error
     is returned. The string must be the last allocated thing in the
     packet when this function is called. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_packet_enlarge_string(struct assh_packet_s *p, uint8_t *str,
                            size_t len, uint8_t **result);
 
@@ -337,14 +337,14 @@ void assh_packet_string_resized(struct assh_packet_s *p, uint8_t *str);
     the given big number in mpint representation as string content. A
     storage size large enough to store the number may be passed to the
     function or 0 if it is not known. */
-assh_error_t ASSH_WARN_UNUSED_RESULT
+assh_status_t ASSH_WARN_UNUSED_RESULT
 assh_packet_add_mpint(struct assh_context_s *ctx,
                       struct assh_packet_s *p,
                       const struct assh_bignum_s *bn);
 
 /** @internal @This checks that a string is well inside packet
     bounds. @see assh_check_string */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_packet_check_string(const struct assh_packet_s *p, const uint8_t *str,
                          const uint8_t **next)
 {
@@ -353,7 +353,7 @@ assh_packet_check_string(const struct assh_packet_s *p, const uint8_t *str,
 
 /** @internal @This checks that an array is well inside packet
     bounds. @see assh_check_array */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_packet_check_array(const struct assh_packet_s *p, const uint8_t *array,
                         size_t array_len, const uint8_t **next)
 {
@@ -363,12 +363,12 @@ assh_packet_check_array(const struct assh_packet_s *p, const uint8_t *array,
 /** @internal @This checks that a 32 bits integer is well
     inside packet bounds and converts the value from network byte
     order. @see assh_packet_check_array */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_packet_check_u32(const struct assh_packet_s *p, uint32_t *u32,
 		      const uint8_t *data, const uint8_t **next)
 {
-  assh_error_t err = assh_packet_check_array(p, data, 4, next);
-  if (ASSH_ERR_ERROR(err) == ASSH_OK)
+  assh_status_t err = assh_packet_check_array(p, data, 4, next);
+  if (ASSH_STATUS(err) == ASSH_OK)
     *u32 = assh_load_u32(data);
   return err;
 }

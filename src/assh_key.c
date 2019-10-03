@@ -82,14 +82,14 @@ assh_key_algo_guess(struct assh_context_s *c,
     }
 }
 
-assh_error_t assh_key_load(struct assh_context_s *c,
+assh_status_t assh_key_load(struct assh_context_s *c,
                            struct assh_key_s **key,
                            const struct assh_key_algo_s *algo,
                            enum assh_algo_class_e role,
                            enum assh_key_format_e format,
                            const uint8_t **blob, size_t blob_len)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   if (algo == NULL)
     algo = assh_key_algo_guess(c, format, *blob, blob_len, role);
@@ -110,13 +110,13 @@ assh_error_t assh_key_load(struct assh_context_s *c,
 }
 
 #ifdef CONFIG_ASSH_KEY_CREATE
-assh_error_t
+assh_status_t
 assh_key_create(struct assh_context_s *c,
                 struct assh_key_s **key, size_t bits,
                 const struct assh_key_algo_s *algo,
                 enum assh_algo_class_e role)
 {
-  assh_error_t err;
+  assh_status_t err;
   struct assh_key_s *k;
 
   ASSH_RET_ON_ERR(algo->f_create(c, algo, bits, &k));
@@ -132,12 +132,12 @@ assh_key_create(struct assh_context_s *c,
 }
 #endif
 
-assh_error_t
+assh_status_t
 assh_key_comment(struct assh_context_s *c,
                  struct assh_key_s *key,
                  const char *comment)
 {
-  assh_error_t err;
+  assh_status_t err;
   assh_free(c, key->comment);
   ASSH_RETURN(assh_strdup(c, &key->comment, comment, ASSH_ALLOC_INTERNAL));
 }
@@ -157,7 +157,7 @@ void assh_key_drop(struct assh_context_s *c,
     }
 }
 
-assh_error_t
+assh_status_t
 assh_key_lookup(struct assh_context_s *c,
                 struct assh_key_s **key,
                 const struct assh_algo_s *algo)
@@ -175,7 +175,7 @@ assh_key_lookup(struct assh_context_s *c,
   return ASSH_OK;
 }
 
-assh_error_t
+assh_status_t
 assh_key_algo_by_name_static(const struct assh_key_algo_s **table,
                              const char *name, size_t name_len,
                              const struct assh_key_algo_s **algo)

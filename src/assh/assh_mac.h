@@ -39,7 +39,7 @@
 
 /** @internal @see assh_mac_init_t */
 #define ASSH_MAC_INIT_FCN(n)                                            \
-  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_context_s *c,    \
+  ASSH_WARN_UNUSED_RESULT assh_status_t (n)(struct assh_context_s *c,    \
                                            void *ctx_, const uint8_t *key)
 
 /** @internal @This defines the function type for the mac
@@ -50,7 +50,7 @@ typedef ASSH_MAC_INIT_FCN(assh_mac_init_t);
 
 /** @internal @see assh_mac_compute_t */
 #define ASSH_MAC_COMPUTE_FCN(n)                                         \
-  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(void *ctx_, uint32_t seq,    \
+  ASSH_WARN_UNUSED_RESULT assh_status_t (n)(void *ctx_, uint32_t seq,    \
                                            const uint8_t *data, size_t len, \
                                            uint8_t *mac)
 
@@ -60,7 +60,7 @@ typedef ASSH_MAC_COMPUTE_FCN(assh_mac_compute_t);
 
 /** @internal @see assh_mac_check_t */
 #define ASSH_MAC_CHECK_FCN(n) \
-  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(void *ctx_, uint32_t seq, \
+  ASSH_WARN_UNUSED_RESULT assh_status_t (n)(void *ctx_, uint32_t seq, \
                                            const uint8_t *data, size_t len, \
                                            const uint8_t *mac)
 

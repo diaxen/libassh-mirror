@@ -23,13 +23,13 @@
 
 #include "bignum_builtin.h"
 
-assh_error_t
+assh_status_t
 assh_bignum_addsub(struct assh_bignum_s *dst,
                    const struct assh_bignum_s *a,
                    const struct assh_bignum_s *b,
                    assh_bnword_t smask)
 {
-  assh_error_t err;
+  assh_status_t err;
   assh_bnword_t amask = 0;
 
   /* make A the largest bits length */

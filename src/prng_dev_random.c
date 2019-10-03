@@ -37,7 +37,7 @@ struct assh_prng_pv_s
 
 static ASSH_PRNG_INIT_FCN(assh_prng_dev_random_init)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_ON_ERR(assh_alloc(c, sizeof(struct assh_prng_pv_s),
                           ASSH_ALLOC_INTERNAL, &c->prng_pv));
@@ -50,7 +50,7 @@ static ASSH_PRNG_INIT_FCN(assh_prng_dev_random_init)
 static ASSH_PRNG_GET_FCN(assh_prng_dev_random_get)
 {
   struct assh_prng_pv_s *pv = c->prng_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   if (pv->ufd < 0 && pv->rfd < 0)
     {

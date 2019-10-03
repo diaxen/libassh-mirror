@@ -52,7 +52,7 @@ asshh_fd_event(struct assh_session_s *s,
     found. The terminal echo is disabled. Characters beyond the
     specified length are read but ignored. This function fails if the
     file descriptor is not a tty. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_fd_get_password(struct assh_context_s *c, const char **pass,
 		     size_t max_len, int fd, assh_bool_t echo);
 

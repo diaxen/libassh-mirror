@@ -130,7 +130,7 @@ its_child2channel(struct its_s *its,
 static assh_bool_t
 its_channel2child(struct its_s *its, struct pollfd *p,
 		  struct assh_event_channel_data_s *ev,
-		  assh_error_t *err);
+		  assh_status_t *err);
                                                         /* anchor itsapiclose */
 static void
 its_eof(struct its_s *its,
@@ -361,7 +361,7 @@ its_child2channel(struct its_s *its,
 	{
 	  size_t s = 256;
 
-	  if (ASSH_ERR_ERROR(assh_channel_data_alloc(its->channel,
+	  if (ASSH_STATUS(assh_channel_data_alloc(its->channel,
 					     &buf, &s, 1)) == ASSH_OK)
 	    {
 	      /* read data from the child directly in the
@@ -381,7 +381,7 @@ its_child2channel(struct its_s *its,
 	    {
 	      size_t s = 256;
 
-	      if (ASSH_ERR_ERROR(assh_channel_data_alloc_ext(its->channel,
+	      if (ASSH_STATUS(assh_channel_data_alloc_ext(its->channel,
 					  1, &buf, &s, 1)) == ASSH_OK)
 		{
 		  ssize_t r = read(its->child_stderr_fd, buf, s);
@@ -419,7 +419,7 @@ its_child2channel(struct its_s *its,
 static assh_bool_t
 its_channel2child(struct its_s *its, struct pollfd *p,
 				  struct assh_event_channel_data_s *ev,
-				  assh_error_t *err)
+				  assh_status_t *err)
 {
   int i = its->poll_index;
   ssize_t r;
@@ -621,7 +621,7 @@ ssh_loop(struct assh_session_s *session,
 	case ASSH_EVENT_REQUEST: {
 	  struct assh_event_request_s *ev =
 	    &event.connection.request;
-	  assh_error_t err = ASSH_OK;
+	  assh_status_t err = ASSH_OK;
 
 	  /* handle some standard requests associated to our session,
 	     relying on request decoding helper functions. */
@@ -637,7 +637,7 @@ ssh_loop(struct assh_session_s *session,
 		  err = asshh_inter_decode_pty_req(&rqi, ev->rq_data.data,
 						  ev->rq_data.size);
 
-		  if (ASSH_ERR_ERROR(err) == ASSH_OK && !its_pty(its))
+		  if (ASSH_STATUS(err) == ASSH_OK && !its_pty(its))
 		    ev->reply = ASSH_CONNECTION_REPLY_SUCCESS;
 #endif
 		}
@@ -656,7 +656,7 @@ ssh_loop(struct assh_session_s *session,
 		  err = asshh_inter_decode_exec(&rqi, ev->rq_data.data,
 					       ev->rq_data.size);
 
-		  if (ASSH_ERR_ERROR(err) == ASSH_OK)
+		  if (ASSH_STATUS(err) == ASSH_OK)
 		    {
 		      /* we need a null terminated string */
 		      char *cmd = assh_buffer_strdup(&rqi.command);
@@ -699,7 +699,7 @@ ssh_loop(struct assh_session_s *session,
           struct assh_event_channel_data_s *ev =
 	    &event.connection.channel_data;
 	  struct its_s *its = assh_channel_pv(ev->ch);
-	  assh_error_t err;
+	  assh_status_t err;
 
 	  assh_bool_t wait = its_channel2child(its, p, ev, &err);
 	  assh_event_done(session, &event, err);

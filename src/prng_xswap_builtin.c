@@ -112,7 +112,7 @@ static ASSH_PRNG_INIT_FCN(assh_prng_xswap_init)
 {
   uint8_t *rdata = seed->data;
   size_t rdata_len = seed->len;
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(rdata == NULL || rdata_len < 16, ASSH_ERR_BAD_ARG);
 

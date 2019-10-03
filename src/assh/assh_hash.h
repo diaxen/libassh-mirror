@@ -47,7 +47,7 @@ struct assh_hash_ctx_s
 
 /** @internal @see assh_hash_init_t */
 #define ASSH_HASH_INIT_FCN(n) \
-  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_context_s *c, \
+  ASSH_WARN_UNUSED_RESULT assh_status_t (n)(struct assh_context_s *c, \
                                            struct assh_hash_ctx_s *hctx, \
                                            const struct assh_hash_algo_s *algo)
 
@@ -57,7 +57,7 @@ typedef ASSH_HASH_INIT_FCN(assh_hash_init_t);
 
 /** @internal @see assh_hash_copy_t */
 #define ASSH_HASH_COPY_FCN(n) \
-  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_hash_ctx_s *hctx_dst, \
+  ASSH_WARN_UNUSED_RESULT assh_status_t (n)(struct assh_hash_ctx_s *hctx_dst, \
                                            const struct assh_hash_ctx_s *hctx_src)
 
 /** @internal @This defines the function type for the hash context copy
@@ -119,7 +119,7 @@ void assh_hash_bytes_as_string(struct assh_hash_ctx_s *hctx,
 
 /** @internal @This convert the big number to the ssh mpint
     representation and hash the resulting buffer. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_hash_bignum(struct assh_context_s *ctx,
                  struct assh_hash_ctx_s *hctx,
                  const struct assh_bignum_s *bn);
@@ -133,7 +133,7 @@ void assh_hash_payload_as_string(struct assh_hash_ctx_s *hctx,
 /** @internal @This initializes an hash algorithm context. The @tt
     hctx argument must points to a buffer allocated in secure memory
     of size given by @ref assh_hash_algo_s::ctx_size. */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_hash_init(struct assh_context_s *c,
                struct assh_hash_ctx_s *hctx,
                const struct assh_hash_algo_s *algo)
@@ -145,7 +145,7 @@ assh_hash_init(struct assh_context_s *c,
 /** @internal @This creates a copy of the hash algorithm context. The
     new context must be released as if it was created by @ref
     assh_hash_init. */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_hash_copy(struct assh_hash_ctx_s *hctx_dst,
                struct assh_hash_ctx_s *hctx_src)
 {

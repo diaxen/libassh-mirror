@@ -31,10 +31,10 @@
 
 #include <string.h>
 
-static assh_error_t
+static assh_status_t
 assh_sign_dsa_hash_algo(const struct assh_hash_algo_s **algo, uint_fast16_t n)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   switch (n)
     {
@@ -57,7 +57,7 @@ assh_sign_dsa_hash_algo(const struct assh_hash_algo_s **algo, uint_fast16_t n)
 static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
 {
   const struct assh_key_dsa_s *k = (const void*)key;
-  assh_error_t err;
+  assh_status_t err;
 
   //  uint_fast16_t l = assh_bignum_bits(&k->pn);
   uint_fast16_t n = assh_bignum_bits(&k->qn);
@@ -200,7 +200,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_dsa_generate)
 static ASSH_SIGN_CHECK_FCN(assh_sign_dsa_check)
 {
   const struct assh_key_dsa_s *k = (const void*)key;
-  assh_error_t err;
+  assh_status_t err;
 
   //  uint_fast16_t l = assh_bignum_bits(&k->pn);
   uint_fast16_t n = assh_bignum_bits(&k->qn);

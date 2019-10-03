@@ -55,7 +55,7 @@ static ASSH_COMPRESS_INIT_FCN(assh_compress_zlib_init)
 {
   struct assh_zlib_ctx_s *ctx = ctx_;
   z_stream *s = &ctx->stream;
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_ON_ERR(assh_alloc(c, CONFIG_ASSH_MAX_PAYLOAD,
                           ASSH_ALLOC_INTERNAL, (void**)&ctx->buf));
@@ -89,7 +89,7 @@ static ASSH_COMPRESS_PROCESS_FCN(assh_compress_zlib_process)
   struct assh_zlib_ctx_s *ctx = ctx_;
   z_stream *s = &ctx->stream;
   struct assh_packet_s *pin = *p_;
-  assh_error_t err;
+  assh_status_t err;
 
   size_t payload_size = pin->data_size - ASSH_PACKET_HEADLEN;
 

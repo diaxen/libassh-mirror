@@ -301,7 +301,7 @@ int main(int argc, char *argv[])
 
       while (1)                 /* retry passphrase prompt */
         {
-          switch (ASSH_ERR_ERROR(asshh_load_key_file(context, &key, type,
+          switch (ASSH_STATUS(asshh_load_key_file(context, &key, type,
                                    ASSH_ALGO_ANY, ifile, ifmt, p, 0)))
             {
             case ASSH_OK:
@@ -421,7 +421,7 @@ int main(int argc, char *argv[])
           char fp[128];
           size_t fps = sizeof(fp);
 
-          assh_error_t err = asshh_key_fingerprint(context, key,
+          assh_status_t err = asshh_key_fingerprint(context, key,
                                          fpf, fp, &fps, &fpf_name);
           if (err == ASSH_NO_DATA)
             break;

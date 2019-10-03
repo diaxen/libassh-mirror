@@ -43,7 +43,7 @@ static ASSH_MAC_CLEANUP_FCN(assh_hmac_openssl_cleanup)
 static ASSH_MAC_COMPUTE_FCN(assh_hmac_openssl_compute)
 {
   struct assh_hmac_openssl_context_s *ctx = ctx_;
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(!HMAC_Init_ex(ctx->octx, NULL, 0, NULL, NULL), ASSH_ERR_CRYPTO);
 
@@ -63,7 +63,7 @@ static ASSH_MAC_COMPUTE_FCN(assh_hmac_openssl_compute)
 static ASSH_MAC_CHECK_FCN(assh_hmac_openssl_check)
 {
   struct assh_hmac_openssl_context_s *ctx = ctx_;
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(!HMAC_Init_ex(ctx->octx, NULL, 0, NULL, NULL), ASSH_ERR_CRYPTO);
 
@@ -80,11 +80,11 @@ static ASSH_MAC_CHECK_FCN(assh_hmac_openssl_check)
   return ASSH_OK;
 }
 
-static assh_error_t assh_hmac_openssl_init(const struct assh_algo_mac_s *mac,
+static assh_status_t assh_hmac_openssl_init(const struct assh_algo_mac_s *mac,
 				   struct assh_hmac_openssl_context_s *ctx,
 				   const uint8_t *key, const EVP_MD *md)
 {
-  assh_error_t err;
+  assh_status_t err;
   ctx->mac = mac;
   ctx->octx = HMAC_CTX_new();
 

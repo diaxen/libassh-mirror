@@ -206,7 +206,7 @@ int main(int argc, char **argv)
                                                         /* anchor evdata */
 	case ASSH_EVENT_CHANNEL_DATA: {
           struct assh_event_channel_data_s *ev = &event.connection.channel_data;
-          assh_error_t err = ASSH_OK;
+          assh_status_t err = ASSH_OK;
 
 	  /* write remote command output sent over the channel to the
 	     standard output. */

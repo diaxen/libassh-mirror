@@ -297,7 +297,7 @@ static ASSH_CIPHER_INIT_FCN(assh_aes256_init)
 static ASSH_CIPHER_PROCESS_FCN(assh_aes_cbc_process)
 {
   struct assh_cipher_aes_context_s *ctx = ctx_;
-  assh_error_t err;
+  assh_status_t err;
   uint32_t b[4];
   uint_fast8_t i;
 
@@ -343,7 +343,7 @@ static ASSH_CIPHER_PROCESS_FCN(assh_aes_cbc_process)
 static ASSH_CIPHER_PROCESS_FCN(assh_aes_ctr_process)
 {
   struct assh_cipher_aes_context_s *ctx = ctx_;
-  assh_error_t err;
+  assh_status_t err;
   uint32_t b[4];
   uint32_t *iv = ctx->iv;
   uint_fast8_t i;

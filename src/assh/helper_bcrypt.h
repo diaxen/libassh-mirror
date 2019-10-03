@@ -30,7 +30,7 @@
 #ifndef ASSH_HELPER_BCRYPT_H_
 #define ASSH_HELPER_BCRYPT_H_
 
-assh_error_t
+assh_status_t
 asshh_bcrypt_pbkdf(struct assh_context_s *c,
 		  const char *pass, size_t passlen,
 		  const uint8_t *salt, size_t saltlen,

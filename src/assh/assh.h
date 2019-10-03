@@ -118,12 +118,12 @@ enum assh_userauth_methods_e;
 typedef uint8_t assh_bool_t;
 
 /** The error code integer type returned by @em assh functions. It is
-    composed of two parts specified by the @ref assh_error_e and @ref
-    assh_error_severity_e enums.
-    @see #ASSH_ERR_ERROR
-    @see #ASSH_ERR_SEVERITY
+    composed of two parts specified by the @ref assh_status_e and @ref
+    assh_severity_e enums.
+    @see #ASSH_STATUS
+    @see #ASSH_SEVERITY
 */
-typedef int_fast16_t assh_error_t;
+typedef int_fast16_t assh_status_t;
 
 /** This is used to estimate algorithms and keys safety. The safety
     factor ranges are defined as this:
@@ -154,7 +154,7 @@ assh_safety_name(assh_safety_t safety)
 }
 
 /** @This specifies the error severity and must be ored with
-    an @ref assh_error_e value.
+    an @ref assh_status_e value.
 
     These values indicate how the state of the session is
     impacted by the associated error.
@@ -162,7 +162,7 @@ assh_safety_name(assh_safety_t safety)
     Multiple error severity bits may be ored together; in this case
     the highest bit set prevails. This allows increasing the error
     severity returned by a callee from the caller function. */
-enum assh_error_severity_e
+enum assh_severity_e
 {
   /** The error is not critical and the connection may continue. This
       is the default when no severity is specified. */
@@ -174,7 +174,7 @@ enum assh_error_severity_e
 
 /** @This specifies the possible errors returned by the @em libassh
     functions and passed to the @ref assh_event_done function. */
-enum assh_error_e
+enum assh_status_e
 {
   /** Success. */
   ASSH_OK                          = 0,
@@ -238,21 +238,21 @@ enum assh_error_e
 
 /** @This returns an error string description of the passed error
     code. */
-const char * assh_error_str(assh_error_t err);
+const char * assh_error_str(assh_status_t err);
 
-/** @This extracts the @ref assh_error_e part of an error code
+/** @This extracts the @ref assh_status_e part of an status code
     returned by a function.
-    @see assh_error_t @see assh_error_e @see #ASSH_ERR_SUCESS */
-#define ASSH_ERR_ERROR(code) ((enum assh_error_e)((code) & 0xfff))
+    @see assh_status_t @see assh_status_e @see #ASSH_ERR_SUCESS */
+#define ASSH_STATUS(code) ((enum assh_status_e)((code) & 0xfff))
 
 /** @This evaluate to true when the status code is not an error.
     @see #ASSH_STATUS */
-#define ASSH_ERR_SUCCESS(code) (ASSH_ERR_ERROR(code) < 0x100)
+#define ASSH_SUCCESS(code) (ASSH_STATUS(code) < 0x100)
 
-/** @This extracts the @ref assh_error_severity_e part of an error
+/** @This extracts the @ref assh_severity_e part of an status
     code returned by a function.
-    @see assh_error_t @see assh_error_severity_e */
-#define ASSH_ERR_SEVERITY(code) ((enum assh_error_severity_e)((code) & 0xf000))
+    @see assh_status_t @see assh_severity_e */
+#define ASSH_SEVERITY(code) ((enum assh_severity_e)((code) & 0xf000))
 
 /** @internal Log2 of smallest packet size bucket in the packet
     allocator pool. */
@@ -290,23 +290,23 @@ const char * assh_error_str(assh_error_t err);
 /** @internal */
 void assh_hexdump(const char *name, const void *data, size_t len);
 
-/** @internal @This takes an @ref assh_error_t value returned by a
+/** @internal @This takes an @ref assh_status_t value returned by a
     function and asserts that the error code is @ref ASSH_OK. */
 #define ASSH_ASSERT(expr)                      \
   do {                                         \
-    assh_error_t _e_ = (expr);                 \
+    assh_status_t _e_ = (expr);                 \
     (void)_e_;                                 \
     assert((_e_ & 0xfff) == ASSH_OK);          \
   } while(0)
 
 #ifndef CONFIG_ASSH_DEBUG
 
-/** @internal */
+/** @internal @multiple */
 # define ASSH_DEBUG(...)
 # define ASSH_DEBUG_(...)
 # define ASSH_DEBUG_HEXDUMP(...)
 
-/** @internal @This takes an @ref assh_error_t value returned by a
+/** @internal @This takes an @ref assh_status_t value returned by a
     function of the library and assigns it to the locally defined @tt
     err variable.
 
@@ -316,7 +316,7 @@ void assh_hexdump(const char *name, const void *data, size_t len);
     It can be made verbose by defining the @ref #CONFIG_ASSH_DEBUG and
     @ref CONFIG_ASSH_CALLTRACE macros.
 
-    @see assh_error_e @see assh_error_t
+    @see assh_status_e @see assh_status_t
     @see #ASSH_RET_ON_ERR @see ASSH_RETURN */
 # define ASSH_JMP_ON_ERR(expr, label)           \
   do {                                          \
@@ -324,7 +324,7 @@ void assh_hexdump(const char *name, const void *data, size_t len);
       goto label;                               \
   } while (0)
 
-/** @internal @This takes an @ref assh_error_t value returned by a
+/** @internal @This takes an @ref assh_status_t value returned by a
     function and assigns it to the locally defined @tt err variable.
 
     It forwards the error to the calling function for any error codes
@@ -334,7 +334,7 @@ void assh_hexdump(const char *name, const void *data, size_t len);
     It can be made verbose by defining the @ref #CONFIG_ASSH_DEBUG and
     @ref CONFIG_ASSH_CALLTRACE macros.
 
-    @see assh_error_e @see assh_error_t
+    @see assh_status_e @see assh_status_t
     @see #ASSH_JMP_ON_ERR @see ASSH_RETURN */
 # define ASSH_RET_ON_ERR(expr)                  \
   do {                                          \
@@ -342,7 +342,7 @@ void assh_hexdump(const char *name, const void *data, size_t len);
       return err;                               \
   } while (0)
 
-/** @internal @This takes an @ref assh_error_t value returned by a
+/** @internal @This takes an @ref assh_status_t value returned by a
     function and forwards it to the calling function in any case.
 
     The execution never continues to the next line.
@@ -351,7 +351,7 @@ void assh_hexdump(const char *name, const void *data, size_t len);
     @ref CONFIG_ASSH_CALLTRACE macros. In the other case, it only
     performs a function return.
 
-    @see assh_error_t
+    @see assh_status_t
     @see #ASSH_JMP_ON_ERR @see #ASSH_RET_ON_ERR */
 # define ASSH_RETURN(expr)                      \
   do {                                          \
@@ -363,7 +363,7 @@ void assh_hexdump(const char *name, const void *data, size_t len);
 
 #include <stdio.h>
 
-/** @internal */
+/** @internal @multiple */
 # define ASSH_DEBUG(...) fprintf(stderr, "assh_debug: " __VA_ARGS__)
 # define ASSH_DEBUG_(...) fprintf(stderr, __VA_ARGS__)
 # define ASSH_DEBUG_HEXDUMP(...) assh_hexdump(__VA_ARGS__)
@@ -496,7 +496,7 @@ void assh_hexdump(const char *name, const void *data, size_t len);
 
 /** @internal This macro specifies the prototype of a memory allocator function.
     @see assh_allocator_t */
-#define ASSH_ALLOCATOR(n) assh_error_t (n)(void *alloc_pv, void **ptr, \
+#define ASSH_ALLOCATOR(n) assh_status_t (n)(void *alloc_pv, void **ptr, \
 					   size_t size, enum assh_alloc_type_e type)
 
 /** This is the memory allocator function type. A pointer to function

@@ -34,7 +34,7 @@
 static ASSH_USERAUTH_CLIENT_REQ(assh_userauth_client_keyboard_req)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   uint8_t *str;
 
@@ -60,7 +60,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_keyboard_info_done)
 {
   struct assh_context_s *c = s->ctx;
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   assh_packet_release(pv->pck);
   pv->pck = NULL;
@@ -68,7 +68,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_keyboard_info_done)
   struct assh_packet_s *pout;
   const struct assh_event_userauth_client_keyboard_s *ev = &e->userauth_client.keyboard;
 
-  size_t i, count = ASSH_ERR_ERROR(inerr) ? 0 : ev->count;
+  size_t i, count = ASSH_STATUS(inerr) ? 0 : ev->count;
 
   size_t psize = 4;
   for (i = 0; i < count; i++)
@@ -85,7 +85,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_keyboard_info_done)
 
   for (i = 0; i < count; i++)
     {
-      size_t len = ASSH_ERR_ERROR(inerr) ? 0 : ev->responses[i].len;
+      size_t len = ASSH_STATUS(inerr) ? 0 : ev->responses[i].len;
       ASSH_ASSERT(assh_packet_add_string(pout, len, &str));
       if (len)
         memcpy(str, ev->responses[i].str, len);
@@ -100,14 +100,14 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_keyboard_info_done)
   return ASSH_OK;
 }
 
-static assh_error_t
+static assh_status_t
 assh_userauth_client_req_keyboard_info(struct assh_session_s *s,
                                        struct assh_packet_s *p,
                                        struct assh_event_s *e)
 {
   struct assh_context_s *c = s->ctx;
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   const uint8_t *name = p->head.end;
   const uint8_t *ins, *lang, *count_, *prompt, *echo;
@@ -166,7 +166,7 @@ assh_userauth_client_req_keyboard_info(struct assh_session_s *s,
 static ASSH_USERAUTH_CLIENT_PROCESS(assh_userauth_client_keyboard_process)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   switch (pv->state)
     {

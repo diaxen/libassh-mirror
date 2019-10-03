@@ -23,9 +23,9 @@ enum action_e {
   ACTION_FUZZ_CHECK = 4,
 };
 
-assh_error_t test_sign(unsigned int max_size, enum action_e action)
+assh_status_t test_sign(unsigned int max_size, enum action_e action)
 {
-  assh_error_t err;
+  assh_status_t err;
   int i;
 
   max_size -= max_size % TEST_STEP;
@@ -196,7 +196,7 @@ static void usage()
 
 int main(int argc, char **argv)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   if (assh_deps_init())
     return -1;

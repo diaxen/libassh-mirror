@@ -25,12 +25,12 @@
 
 #include <assh/assh_alloc.h>
 
-static ASSH_WARN_UNUSED_RESULT assh_error_t
+static ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_bignum_realloc(struct assh_context_s *c,
                     struct assh_bignum_s *bn,
                     assh_bool_t secret, assh_bool_t perserve)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   bn->secret = secret;
   secret |= bn->secure;
@@ -60,14 +60,14 @@ assh_bignum_realloc(struct assh_context_s *c,
   return ASSH_OK;
 }
 
-assh_error_t
+assh_status_t
 assh_bignum_builtin_convert(struct assh_context_s *c,
                             enum assh_bignum_fmt_e srcfmt,
                             enum assh_bignum_fmt_e dstfmt,
                             const void *src, void *dst, uint8_t **next,
                             assh_bool_t secret)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   const struct assh_bignum_s *srcn = src;
   struct assh_bignum_s *dstn = dst;
@@ -195,13 +195,13 @@ assh_bignum_builtin_print(void *arg, enum assh_bignum_fmt_e fmt,
 #endif
 }
 
-assh_error_t
+assh_status_t
 assh_bignum_builtin_bytecode(struct assh_context_s *c, uint8_t cond,
                              const assh_bignum_op_t *ops,
                              const char *format, va_list ap)
 {
   uint_fast8_t flen, tlen, mlen;
-  assh_error_t err;
+  assh_status_t err;
   uint_fast8_t i, j, k;
   uint_fast16_t pc = 0;
   uint32_t opc;

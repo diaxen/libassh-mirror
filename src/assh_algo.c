@@ -159,9 +159,9 @@ static void assh_algo_kex_init_size(struct assh_context_s *c)
   c->kex_init_size = kex_init_size;
 }
 
-static assh_error_t assh_algo_extend(struct assh_context_s *c)
+static assh_status_t assh_algo_extend(struct assh_context_s *c)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(!c->algo_realloc && c->algos, ASSH_ERR_NOTSUP);
   size_t count = c->algo_max + 16;
@@ -173,12 +173,12 @@ static assh_error_t assh_algo_extend(struct assh_context_s *c)
   return ASSH_OK;
 }
 
-assh_error_t assh_algo_register_static(struct assh_context_s *c,
+assh_status_t assh_algo_register_static(struct assh_context_s *c,
                                        const struct assh_algo_s *table[])
 {
   size_t i = 0;
   uint_fast8_t m = 0;
-  assh_error_t err;
+  assh_status_t err;
   const struct assh_algo_s *l, *a = table[0];
 
   ASSH_RET_IF_TRUE(c->session_count, ASSH_ERR_BUSY);
@@ -205,11 +205,11 @@ assh_error_t assh_algo_register_static(struct assh_context_s *c,
   return ASSH_OK;
 }
 
-assh_error_t assh_algo_register(struct assh_context_s *c, assh_safety_t safety,
+assh_status_t assh_algo_register(struct assh_context_s *c, assh_safety_t safety,
 				assh_safety_t min_safety, uint8_t min_speed,
                                 const struct assh_algo_s *table[])
 {
-  assh_error_t err = ASSH_OK;
+  assh_status_t err = ASSH_OK;
   size_t i, count = c->algo_cnt;
 
   ASSH_RET_IF_TRUE(c->session_count, ASSH_ERR_BUSY);
@@ -241,10 +241,10 @@ assh_algo_registered(struct assh_context_s *c, uint_fast16_t i)
   return c->algos[i];
 }
 
-assh_error_t assh_algo_register_va(struct assh_context_s *c, assh_safety_t safety,
+assh_status_t assh_algo_register_va(struct assh_context_s *c, assh_safety_t safety,
 				   assh_safety_t min_safety, uint8_t min_speed, ...)
 {
-  assh_error_t err = ASSH_OK;
+  assh_status_t err = ASSH_OK;
   va_list ap;
   size_t count = c->algo_cnt;
 
@@ -276,9 +276,9 @@ assh_error_t assh_algo_register_va(struct assh_context_s *c, assh_safety_t safet
   return err;
 }
 
-assh_error_t assh_algo_unregister(struct assh_context_s *c)
+assh_status_t assh_algo_unregister(struct assh_context_s *c)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(c->session_count, ASSH_ERR_BUSY);
 
@@ -510,7 +510,7 @@ assh_algo_name_match(const struct assh_algo_s *a,
   return NULL;
 }
 
-assh_error_t
+assh_status_t
 assh_algo_by_name_static(const struct assh_algo_s **table,
                          enum assh_algo_class_e class_, const char *name,
                          size_t name_len, const struct assh_algo_s **algo,
@@ -534,7 +534,7 @@ assh_algo_by_name_static(const struct assh_algo_s **table,
   return ASSH_NOT_FOUND;
 }
 
-assh_error_t
+assh_status_t
 assh_algo_by_name(struct assh_context_s *c,
                   enum assh_algo_class_e class_, const char *name,
                   size_t name_len, const struct assh_algo_s **algo,
@@ -558,7 +558,7 @@ assh_algo_by_name(struct assh_context_s *c,
   return ASSH_NOT_FOUND;
 }
 
-assh_error_t assh_algo_by_key(struct assh_context_s *c,
+assh_status_t assh_algo_by_key(struct assh_context_s *c,
 			      const struct assh_key_s *key, uint16_t *pos,
 			      const struct assh_algo_s **algo)
 {

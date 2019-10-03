@@ -23,7 +23,7 @@
 
 #include "bignum_builtin.h"
 
-assh_error_t
+assh_status_t
 assh_bignum_rshift(struct assh_bignum_s *dst,
                    const struct assh_bignum_s *src,
                    uint_fast32_t n)
@@ -55,7 +55,7 @@ assh_bignum_rshift(struct assh_bignum_s *dst,
   return ASSH_OK;
 }
 
-assh_error_t
+assh_status_t
 assh_bignum_lshift(struct assh_bignum_s *dst,
                    const struct assh_bignum_s *src,
                    uint_fast32_t n)

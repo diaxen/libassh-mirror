@@ -96,7 +96,7 @@ static ASSH_KEY_CLEANUP_FCN(assh_key_dsa_cleanup)
 #ifdef CONFIG_ASSH_KEY_CREATE
 static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(bits < 1024 || bits > 4096, ASSH_ERR_NOTSUP);
 
@@ -211,7 +211,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
 static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
 {
   struct assh_key_dsa_s *k = (void*)key;
-  assh_error_t err;
+  assh_status_t err;
 
   /*
    * FIPS 186-4 Appendix A2.2
@@ -298,7 +298,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
   err = assh_bignum_bytecode(c, key->private << 1, bytecode1, "NNNNNTTm",
                              &k->pn, &k->qn, &k->gn, &k->xn, &k->yn);
 
-  switch (ASSH_ERR_ERROR(err))
+  switch (ASSH_STATUS(err))
     {
     case ASSH_ERR_NUM_COMPARE_FAILED:
     case ASSH_ERR_NUM_OVERFLOW:
@@ -317,7 +317,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_dsa_validate)
 static ASSH_KEY_OUTPUT_FCN(assh_key_dsa_output)
 {
   struct assh_key_dsa_s *k = (void*)key;
-  assh_error_t err;
+  assh_status_t err;
 
   assert(key->algo == &assh_key_dsa);
 
@@ -347,7 +347,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_dsa_output)
 static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
 {
   const uint8_t *blob = *blob_;
-  assh_error_t err;
+  assh_status_t err;
 
   struct assh_key_dsa_s *k = (void*)*key;
   assh_bool_t private = 0;

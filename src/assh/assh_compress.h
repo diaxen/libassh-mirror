@@ -39,7 +39,7 @@
 
 /** @internal @see assh_compress_init_t */
 #define ASSH_COMPRESS_INIT_FCN(n) \
-  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_context_s *c,	\
+  ASSH_WARN_UNUSED_RESULT assh_status_t (n)(struct assh_context_s *c,	\
 					   void *ctx_, assh_bool_t compress)
 
 /** @internal @This defines the function type for the
@@ -48,7 +48,7 @@ typedef ASSH_COMPRESS_INIT_FCN(assh_compress_init_t);
 
 /** @internal @see assh_compress_process_t */
 #define ASSH_COMPRESS_PROCESS_FCN(n) \
-  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_context_s *c, \
+  ASSH_WARN_UNUSED_RESULT assh_status_t (n)(struct assh_context_s *c, \
                                            void *ctx_, struct assh_packet_s **p_, \
                                            assh_bool_t auth_done)
 

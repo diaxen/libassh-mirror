@@ -46,7 +46,7 @@ test_sign(struct assh_context_s *c,
 }
 
 /* test key blob load/store functions implemented in key modules */
-static assh_error_t test_algo(struct assh_context_s *c, size_t count)
+static assh_status_t test_algo(struct assh_context_s *c, size_t count)
 {
   static const struct tests_s algo_tests[] =
     {
@@ -158,7 +158,7 @@ static assh_error_t test_algo(struct assh_context_s *c, size_t count)
 }
 
 /* test key container load/save functions implemented in helpers */
-static assh_error_t test_helper(struct assh_context_s *c, size_t count)
+static assh_status_t test_helper(struct assh_context_s *c, size_t count)
 {
   static const struct tests_s helper_tests[] =
     {

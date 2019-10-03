@@ -149,7 +149,7 @@ assh_memcmp(const uint8_t *nula, const uint8_t *nulb, size_t len)
 }
 
 /** @see assh_blob_scan_fcn_t */
-#define ASSH_BLOB_SCAN_FCN(n) assh_error_t (n)                          \
+#define ASSH_BLOB_SCAN_FCN(n) assh_status_t (n)                          \
     (struct assh_context_s *c, const uint8_t *content,                  \
      size_t len, void *pv)
 
@@ -240,12 +240,12 @@ err = assh_blob_scan("s t< Z $", &blob, &blob_len, out_size, out);
 err = assh_blob_scan("s( b4I b2I o )", &blob, &blob_len, &x, &y);
     @end code
 */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_blob_scan(struct assh_context_s *c, const char *format,
                const uint8_t **blob, size_t *blob_len, ...);
 
 /** @see assh_blob_scan */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_blob_scan_va(struct assh_context_s *c, const char *format,
                     const uint8_t **blob, size_t *blob_len, va_list ap);
 
@@ -317,24 +317,24 @@ err = assh_blob_write("Zs", blob, &len, "content");
 err = assh_blob_write("( Ib I[2b )s", blob, &len, 0x12345678, 0xabcd);
     @end code
 */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_blob_write(const char *format, uint8_t *blob, size_t *blob_len, ...);
 
 /** @see assh_blob_write */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_blob_write_va(const char *format, uint8_t *blob, size_t *blob_len, va_list ap);
 
 /** @internal @This checks that an array is well inside a
     buffer. If no error is returned, the @tt next parameter is set to
     point to the first byte following the array in the buffer. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_check_array(const uint8_t *buffer, size_t buffer_len,
                  const uint8_t *array, size_t array_len, const uint8_t **next);
 
 /** @internal @This checks that a string is well inside a
     buffer. If no error is returned, the @tt next parameter is set to
     point to the first byte following the string in the buffer. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_check_string(const uint8_t *buffer, size_t buffer_len,
                   const uint8_t *str, const uint8_t **next);
 
@@ -343,7 +343,7 @@ assh_check_string(const uint8_t *buffer, size_t buffer_len,
     point to the first byte of the value and the @tt next parameter is
     set to point to the first byte in the buffer following the
     value. Any of these two parameters may be @tt NULL. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_check_asn1(const uint8_t *buffer, size_t buffer_len, const uint8_t *str,
                 const uint8_t **value, const uint8_t **next, uint8_t id);
 
@@ -373,12 +373,12 @@ assh_ssh_string_compare(const uint8_t *ssh_str, const char *nul_str)
     string. An error is returned if the size of the buffer is not
     large enough to store the string along with its nul terminating
     byte. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_ssh_string_copy(const uint8_t *ssh_str, char *nul_str, size_t max_len);
 
 /** @internal @This behaves like the standard @tt strdup function but
     relies on the context registered memory allocator. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_strdup(struct assh_context_s *c, char **r,
             const char *str, enum assh_alloc_type_e type);
 

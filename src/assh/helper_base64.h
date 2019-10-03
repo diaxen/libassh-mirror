@@ -45,18 +45,18 @@ void
 asshh_base64_init(struct asshh_base64_ctx_s *ctx,
 			uint8_t *out, size_t out_len);
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_base64_decode_update(struct asshh_base64_ctx_s *ctx,
 			  const uint8_t *b64, size_t b64_len);
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_base64_decode_final(struct asshh_base64_ctx_s *ctx);
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_base64_encode_update(struct asshh_base64_ctx_s *ctx,
 			  const uint8_t *bin, size_t bin_len);
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_base64_encode_final(struct asshh_base64_ctx_s *ctx);
 
 ASSH_INLINE size_t

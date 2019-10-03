@@ -190,7 +190,7 @@ int main(int argc, char **argv)
 	      size_t diff = ev->new_size - ev->old_size;
 
 	      /* allow the remote host to send more bytes */
-	      assh_error_t err = assh_channel_window_adjust(ev->ch, diff);
+	      assh_status_t err = assh_channel_window_adjust(ev->ch, diff);
 
 	      assh_event_done(session, &event, err);
 	      break;
@@ -218,11 +218,11 @@ int main(int argc, char **argv)
 
 	      /* allocate output data packet */
 	      uint8_t *data;
-	      assh_error_t err = assh_channel_data_alloc(ev->ch, &data, &size, 1);
+	      assh_status_t err = assh_channel_data_alloc(ev->ch, &data, &size, 1);
 
                                                         /* anchor evdatasend */
 	      /* copy input data to the output buffer */
-	      if (ASSH_ERR_ERROR(err) == ASSH_OK)
+	      if (ASSH_STATUS(err) == ASSH_OK)
 		{
 		  memcpy(data, ev->data.data, size);
 		  ev->transferred = size;
@@ -231,7 +231,7 @@ int main(int argc, char **argv)
 	      /* acknowledge input data event before sending */
 	      assh_event_done(session, &event, ASSH_OK);
 
-	      if (ASSH_ERR_ERROR(err) == ASSH_OK)  /* send data */
+	      if (ASSH_STATUS(err) == ASSH_OK)  /* send data */
 		assh_channel_data_send(ev->ch, size);
 
 	      break;

@@ -41,7 +41,7 @@ static ASSH_MAC_CLEANUP_FCN(assh_hmac_gcrypt_cleanup)
 static ASSH_MAC_COMPUTE_FCN(assh_hmac_gcrypt_compute)
 {
   struct assh_hmac_gcrypt_context_s *ctx = ctx_;
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(gcry_mac_reset(ctx->hd), ASSH_ERR_CRYPTO);
 
@@ -59,7 +59,7 @@ static ASSH_MAC_COMPUTE_FCN(assh_hmac_gcrypt_compute)
 static ASSH_MAC_CHECK_FCN(assh_hmac_gcrypt_check)
 {
   struct assh_hmac_gcrypt_context_s *ctx = ctx_;
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(gcry_mac_reset(ctx->hd), ASSH_ERR_CRYPTO);
 
@@ -73,11 +73,11 @@ static ASSH_MAC_CHECK_FCN(assh_hmac_gcrypt_check)
   return ASSH_OK;
 }
 
-static assh_error_t assh_hmac_gcrypt_init(const struct assh_algo_mac_s *mac,
+static assh_status_t assh_hmac_gcrypt_init(const struct assh_algo_mac_s *mac,
 				   struct assh_hmac_gcrypt_context_s *ctx,
 				   const uint8_t *key, int algo)
 {
-  assh_error_t err;
+  assh_status_t err;
   ctx->mac = mac;
 
   ASSH_RET_IF_TRUE(!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P),

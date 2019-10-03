@@ -87,7 +87,7 @@ static ASSH_KEY_CLEANUP_FCN(assh_key_rsa_cleanup)
 #ifdef CONFIG_ASSH_KEY_CREATE
 static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(bits < 1024, ASSH_ERR_NOTSUP);
   bits += bits & 1;
@@ -201,7 +201,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
 static ASSH_KEY_VALIDATE_FCN(assh_key_rsa_validate)
 {
   struct assh_key_rsa_s *k = (void*)key;
-  assh_error_t err;
+  assh_status_t err;
 
   enum bytecode_args_e
   {
@@ -289,7 +289,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_rsa_validate)
                              &k->qn, &k->dpn, &k->dqn, &k->in,
 			     pqsize);
 
-  switch (ASSH_ERR_ERROR(err))
+  switch (ASSH_STATUS(err))
     {
     case ASSH_ERR_NUM_COMPARE_FAILED:
     case ASSH_ERR_NUM_OVERFLOW:
@@ -311,7 +311,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_rsa_validate)
 static ASSH_KEY_OUTPUT_FCN(assh_key_rsa_output)
 {
   struct assh_key_rsa_s *k = (void*)key;
-  assh_error_t err;
+  assh_status_t err;
 
   assert(key->algo == &assh_key_rsa);
 
@@ -349,7 +349,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_rsa_output)
 static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
 {
   const uint8_t *blob = *blob_;
-  assh_error_t err;
+  assh_status_t err;
 
   struct assh_key_rsa_s *k = (void*)*key;
   assh_bool_t private = 0;

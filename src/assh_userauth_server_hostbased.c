@@ -33,14 +33,14 @@
 static ASSH_EVENT_DONE_FCN(assh_userauth_server_hostbased_done)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   assert(pv->state == ASSH_USERAUTH_ST_HOSTBASED_VERIFY);
 
   const struct assh_event_userauth_server_hostbased_s *ev =
     &e->userauth_server.hostbased;
 
-  if (ASSH_ERR_ERROR(inerr) || !ev->found)
+  if (ASSH_STATUS(inerr) || !ev->found)
     {
       assh_packet_release(pv->pck);
       pv->pck = NULL;
@@ -65,7 +65,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_hostbased_done)
 static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_hostbased)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   const uint8_t *algo_name = auth_data;
   const uint8_t *pub_blob, *hostname, *husername, *sign;
@@ -82,7 +82,7 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_hostbased)
   ASSH_RET_ON_ERR(assh_userauth_server_get_key(s, algo_name, pub_blob,
                  &algo, &pub_key, NULL));
 
-  if (ASSH_ERR_ERROR(err) == ASSH_NO_DATA)
+  if (ASSH_STATUS(err) == ASSH_NO_DATA)
     ASSH_RETURN(assh_userauth_server_failure(s, e));
 
   pv->algo = (void*)algo;

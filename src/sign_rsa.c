@@ -71,7 +71,7 @@ static const struct assh_rsa_digest_s assh_rsa_digests[RSA_DIGEST_count] =
 #define ASSH_RSA_SHA256_ID "\x00\x00\x00\x0crsa-sha2-256"
 #define ASSH_RSA_SHA512_ID "\x00\x00\x00\x0crsa-sha2-512"
 
-static ASSH_WARN_UNUSED_RESULT assh_error_t
+static ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_sign_rsa_generate(struct assh_context_s *c,
                        const struct assh_key_s *key,
                        size_t data_count,
@@ -81,7 +81,7 @@ assh_sign_rsa_generate(struct assh_context_s *c,
                        const char *algo_id)
 {
   const struct assh_key_rsa_s *k = (const void*)key;
-  assh_error_t err;
+  assh_status_t err;
 
   assert(key->algo == &assh_key_rsa);
 
@@ -209,7 +209,7 @@ assh_sign_rsa_generate(struct assh_context_s *c,
   return err;
 }
 
-static ASSH_WARN_UNUSED_RESULT assh_error_t
+static ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_sign_rsa_check(struct assh_context_s *c,
                      const struct assh_key_s *key, size_t data_count,
                      const struct assh_cbuffer_s data[],
@@ -217,7 +217,7 @@ assh_sign_rsa_check(struct assh_context_s *c,
                      uint8_t digest_mask, const char *algo_id)
 {
   const struct assh_key_rsa_s *k = (const void*)key;
-  assh_error_t err;
+  assh_status_t err;
 
   assert(key->algo == &assh_key_rsa);
 

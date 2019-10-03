@@ -93,11 +93,11 @@ assh_bignum_cswap(assh_bnword_t *an, assh_bnword_t *bn,
 }
 
 /* This function copies a value between two big number objects. */
-assh_error_t
+assh_status_t
 assh_bignum_copy(struct assh_bignum_s *dst,
                  const struct assh_bignum_s *src)
 {
-  assh_error_t err;
+  assh_status_t err;
   size_t al = assh_bignum_words(dst->bits);
   size_t bl = assh_bignum_words(src->bits);
   size_t i, l = ASSH_MIN(al, bl);
@@ -197,12 +197,12 @@ assh_bignum_to_buffer(const struct assh_bignum_s *bn,
     *end = p;
 }
 
-assh_error_t
+assh_status_t
 assh_bignum_from_buffer(struct assh_bignum_s *bn,
                         const uint8_t * __restrict__ data,
                         size_t data_len, enum assh_bignum_fmt_e format)
 {
-  assh_error_t err;
+  assh_status_t err;
   size_t i, j, l = assh_bignum_words(bn->bits);
   size_t k = 0;
   assh_bnword_t x, *n = bn->n;
@@ -238,13 +238,13 @@ assh_bignum_from_buffer(struct assh_bignum_s *bn,
   return ASSH_OK;
 }
 
-assh_error_t
+assh_status_t
 assh_bignum_from_uint(struct assh_bignum_s *bn,
                       uintptr_t x)
 {
   size_t i, l = assh_bignum_words(bn->bits);
   assh_bnword_t *n = bn->n;
-  assh_error_t err;
+  assh_status_t err;
 
   for (i = 0; i < l; i++)
     {
@@ -320,14 +320,14 @@ assh_bignum_cmp(const struct assh_bignum_s *a,
   return gt | (lt << 1);
 }
 
-assh_error_t
+assh_status_t
 assh_bignum_rand(struct assh_context_s *c,
                  struct assh_bignum_s *bn,
                  const struct assh_bignum_s *min,
                  const struct assh_bignum_s *max,
                  enum assh_prng_quality_e quality)
 {
-  assh_error_t err;
+  assh_status_t err;
   assh_bnword_t *n = bn->n;
   size_t l = assh_bignum_words(bn->bits);
 

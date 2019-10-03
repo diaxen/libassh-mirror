@@ -80,12 +80,12 @@ struct assh_kex_rsa_private_s
   uint16_t minklen;
 };
 
-static assh_error_t assh_kex_rsa_mgf1(struct assh_context_s *c,
+static assh_status_t assh_kex_rsa_mgf1(struct assh_context_s *c,
 				      const struct assh_hash_algo_s *algo,
 				      const uint8_t *in, size_t inlen,
 				      uint8_t *out, size_t outlen)
 {
-  assh_error_t err;
+  assh_status_t err;
   uint32_t i;
   size_t j, k;
   uint8_t cnt[4];
@@ -138,11 +138,11 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
 {
   struct assh_context_s *c = s->ctx;
   struct assh_kex_rsa_private_s *pv = s->kex_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   assert(pv->state == ASSH_KEX_RSA_CLIENT_LOOKUP_HOST_KEY_WAIT);
 
-  if (!e->kex.hostkey_lookup.accept || ASSH_ERR_ERROR(inerr))
+  if (!e->kex.hostkey_lookup.accept || ASSH_STATUS(inerr))
     ASSH_RETURN(assh_kex_end(s, 0) | ASSH_ERRSV_DISCONNECT);
 
   /* SSH_MSG_KEXRSA_PUBKEY packet */
@@ -273,12 +273,12 @@ static ASSH_EVENT_DONE_FCN(assh_kex_rsa_host_key_lookup_done)
   return err;
 }
 
-static assh_error_t assh_kex_rsa_client_wait_pubkey(struct assh_session_s *s,
+static assh_status_t assh_kex_rsa_client_wait_pubkey(struct assh_session_s *s,
 						    struct assh_packet_s *p,
 						    struct assh_event_s *e)
 {
   struct assh_kex_rsa_private_s *pv = s->kex_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(p->head.msg != SSH_MSG_KEXRSA_PUBKEY, ASSH_ERR_PROTOCOL);
 
@@ -297,11 +297,11 @@ static assh_error_t assh_kex_rsa_client_wait_pubkey(struct assh_session_s *s,
   return ASSH_OK;
 }
 
-static assh_error_t assh_kex_rsa_client_wait_sign(struct assh_session_s *s,
+static assh_status_t assh_kex_rsa_client_wait_sign(struct assh_session_s *s,
 						  struct assh_packet_s *p)
 {
   struct assh_kex_rsa_private_s *pv = s->kex_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   /* SSH_MSG_KEXRSA_PUBKEY packet */
   const uint8_t *ks_str = pv->pck->head.end;
@@ -342,9 +342,9 @@ static assh_error_t assh_kex_rsa_client_wait_sign(struct assh_session_s *s,
 #endif
 
 #ifdef CONFIG_ASSH_SERVER
-static assh_error_t assh_kex_rsa_server_send_pubkey(struct assh_session_s *s)
+static assh_status_t assh_kex_rsa_server_send_pubkey(struct assh_session_s *s)
 {
-  assh_error_t err;
+  assh_status_t err;
   struct assh_context_s *c = s->ctx;
   struct assh_kex_rsa_private_s *pv = s->kex_pv;
 
@@ -407,12 +407,12 @@ static assh_error_t assh_kex_rsa_server_send_pubkey(struct assh_session_s *s)
   return err;
 }
 
-static assh_error_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
+static assh_status_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
 						    struct assh_packet_s *p)
 {
   struct assh_context_s *c = s->ctx;
   struct assh_kex_rsa_private_s *pv = s->kex_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(p->head.msg != SSH_MSG_KEXRSA_SECRET, ASSH_ERR_PROTOCOL);
 
@@ -546,7 +546,7 @@ static assh_error_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
 static ASSH_KEX_PROCESS_FCN(assh_kex_rsa_process)
 {
   struct assh_kex_rsa_private_s *pv = s->kex_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   switch (pv->state)
     {
@@ -585,14 +585,14 @@ static ASSH_KEX_PROCESS_FCN(assh_kex_rsa_process)
   ASSH_UNREACHABLE();
 }
 
-static assh_error_t assh_kex_rsa_init(struct assh_session_s *s,
+static assh_status_t assh_kex_rsa_init(struct assh_session_s *s,
 				      size_t cipher_key_size, size_t minklen,
 				      const struct assh_algo_s *algo,
 				      const struct assh_hash_algo_s *hash,
 				      const uint8_t *lhash)
 {
   struct assh_context_s *c = s->ctx;
-  assh_error_t err;
+  assh_status_t err;
   struct assh_kex_rsa_private_s *pv;
 
   ASSH_RET_ON_ERR(assh_alloc(c, sizeof(*pv), ASSH_ALLOC_INTERNAL, (void**)&pv));

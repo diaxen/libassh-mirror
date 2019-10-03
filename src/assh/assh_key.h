@@ -84,7 +84,7 @@ enum assh_key_format_e
 };
 
 /** @internal @see assh_key_load_t */
-#define ASSH_KEY_LOAD_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t (n)   \
+#define ASSH_KEY_LOAD_FCN(n) ASSH_WARN_UNUSED_RESULT assh_status_t (n)   \
   (struct assh_context_s *c,                                            \
    const struct assh_key_algo_s *algo,                                   \
    const uint8_t **blob_, size_t blob_len,                              \
@@ -97,7 +97,7 @@ typedef ASSH_KEY_LOAD_FCN(assh_key_load_t);
 
 #ifdef CONFIG_ASSH_KEY_CREATE
 /** @internal @see assh_key_create_t */
-#define ASSH_KEY_CREATE_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t (n) \
+#define ASSH_KEY_CREATE_FCN(n) ASSH_WARN_UNUSED_RESULT assh_status_t (n) \
   (struct assh_context_s *c,                                            \
    const struct assh_key_algo_s *algo,                                  \
    size_t bits, struct assh_key_s **key)
@@ -127,7 +127,7 @@ enum assh_key_validate_result_e
 };
 
 /** @internal @see assh_key_validate_t */
-#define ASSH_KEY_VALIDATE_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t (n) \
+#define ASSH_KEY_VALIDATE_FCN(n) ASSH_WARN_UNUSED_RESULT assh_status_t (n) \
   (struct assh_context_s *c,                                            \
    const struct assh_key_s *key,                                        \
    enum assh_key_validate_result_e *result)
@@ -138,7 +138,7 @@ typedef ASSH_KEY_VALIDATE_FCN(assh_key_validate_t);
 #endif
 
 /** @internal @see assh_key_output_t */
-#define ASSH_KEY_OUTPUT_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t (n) \
+#define ASSH_KEY_OUTPUT_FCN(n) ASSH_WARN_UNUSED_RESULT assh_status_t (n) \
   (struct assh_context_s *c,                                            \
    const struct assh_key_s *key,                                        \
    uint8_t *blob, size_t *blob_len,                                     \
@@ -267,7 +267,7 @@ struct assh_key_s
     functions provided by @ref @assh/helper_key.h
 
     @xsee {Key storage formats} */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_key_load(struct assh_context_s *c,
               struct assh_key_s **key,
               const struct assh_key_algo_s *algo,
@@ -277,7 +277,7 @@ assh_key_load(struct assh_context_s *c,
 
 #ifdef CONFIG_ASSH_KEY_CREATE
 /** @This creates a new key of specified type and bits size. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_key_create(struct assh_context_s *c,
                 struct assh_key_s **key, size_t bits,
                 const struct assh_key_algo_s *algo,
@@ -285,7 +285,7 @@ assh_key_create(struct assh_context_s *c,
 #endif
 
 /** @This changes the key comment string. */
-assh_error_t
+assh_status_t
 assh_key_comment(struct assh_context_s *c,
                  struct assh_key_s *key,
                  const char *comment);
@@ -302,7 +302,7 @@ assh_key_comment(struct assh_context_s *c,
     This function will only support some binary key formats specific
     to a given key algorithm. More formats are handled by helper
     functions provided by @ref @assh/helper_key.h */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_key_output(struct assh_context_s *c,
                 const struct assh_key_s *key,
                 uint8_t *blob, size_t *blob_len,
@@ -358,7 +358,7 @@ assh_key_refinc(struct assh_key_s *key)
 
 #ifdef CONFIG_ASSH_KEY_VALIDATE
 /** @This checks the validity of the key. */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_key_validate(struct assh_context_s *c,
                   const struct assh_key_s *key,
                   enum assh_key_validate_result_e *result)
@@ -370,7 +370,7 @@ assh_key_validate(struct assh_context_s *c,
 
 /** @This looks for a key usable with the given algorithm
     among keys registered on the context. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_key_lookup(struct assh_context_s *c,
                 struct assh_key_s **key,
                 const struct assh_algo_s *algo);
@@ -403,7 +403,7 @@ extern const struct assh_key_algo_s assh_key_none;
 /** @This finds a key algorithm with matching name in a @tt NULL
     terminated array of pointers to key algorithm descriptors. @see
     assh_key_algo_table */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_key_algo_by_name_static(const struct assh_key_algo_s **table,
                              const char *name, size_t name_len,
                              const struct assh_key_algo_s **algo);

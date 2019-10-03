@@ -75,7 +75,7 @@ struct assh_event_s ev;
 
 while (assh_event_get(session, &ev, time(0)))
   {
-    assh_error_t err = ASSH_OK;
+    assh_status_t err = ASSH_OK;
 
     switch (ev.id)
       {
@@ -86,7 +86,7 @@ while (assh_event_get(session, &ev, time(0)))
   }
       @end code
 
-  A processing @ref{assh_error_e}{error code} can be reported
+  A processing @ref{assh_status_e}{error code} can be reported
   to the library when acknowledging an event.
 
   The event structure contains @tt const fields and writable

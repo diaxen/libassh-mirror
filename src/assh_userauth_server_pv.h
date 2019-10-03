@@ -50,7 +50,7 @@ enum assh_userauth_state_e
 };
 
 #define ASSH_USERAUTH_SERVER_REQ(n)                             \
-  assh_error_t (n)(struct assh_session_s *s,                    \
+  assh_status_t (n)(struct assh_session_s *s,                    \
                    struct assh_packet_s *p,                     \
                    struct assh_event_s *e,                      \
                    const uint8_t *auth_data)
@@ -58,7 +58,7 @@ enum assh_userauth_state_e
 typedef ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_t);
 
 #define ASSH_USERAUTH_SERVER_PROCESS(n)				\
-  assh_error_t (n)(struct assh_session_s *s,                    \
+  assh_status_t (n)(struct assh_session_s *s,                    \
                    struct assh_packet_s *p,                     \
                    struct assh_event_s *e)
 
@@ -112,15 +112,15 @@ struct assh_userauth_context_s
 #endif
 };
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_userauth_server_failure(struct assh_session_s *s,
                              struct assh_event_s *e);
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_userauth_server_success(struct assh_session_s *s,
 			     struct assh_event_s *e);
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_userauth_server_get_key(struct assh_session_s *s,
                              const uint8_t *algo_name,
                              const uint8_t *pub_blob,
@@ -128,7 +128,7 @@ assh_userauth_server_get_key(struct assh_session_s *s,
                              struct assh_key_s **pub_key,
                              const struct assh_algo_name_s **namep);
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_userauth_server_sign_check(struct assh_session_s *s,
                                 struct assh_packet_s *p,
                                 const uint8_t *sign_str);

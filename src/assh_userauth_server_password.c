@@ -30,12 +30,12 @@
 #include <assh/assh_transport.h>
 #include <assh/assh_event.h>
 
-static assh_error_t
+static assh_status_t
 assh_userauth_server_pwchange(struct assh_session_s *s,
                               const struct assh_event_s *e)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   const struct assh_event_userauth_server_password_s *ev =
     &e->userauth_server.password;
@@ -66,7 +66,7 @@ assh_userauth_server_pwchange(struct assh_session_s *s,
 static ASSH_EVENT_DONE_FCN(assh_userauth_server_password_done)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   assert(pv->state == ASSH_USERAUTH_ST_PASSWORD);
 
@@ -76,7 +76,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_password_done)
   const struct assh_event_userauth_server_password_s *ev =
     &e->userauth_server.password;
 
-  if (ASSH_ERR_ERROR(inerr))
+  if (ASSH_STATUS(inerr))
     goto failure;
 
   switch (ev->result)
@@ -100,7 +100,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_password_done)
 static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_password)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   const uint8_t *pwchange = auth_data;
   const uint8_t *password, *new_password;

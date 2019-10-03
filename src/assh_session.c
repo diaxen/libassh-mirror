@@ -38,10 +38,10 @@ static ASSH_KEX_FILTER_FCN(assh_session_kex_filter)
   return 1;
 }
 
-assh_error_t assh_session_init(struct assh_context_s *c,
+assh_status_t assh_session_init(struct assh_context_s *c,
 			       struct assh_session_s *s)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(c->algo_cnt == 0, ASSH_ERR_BUSY);
 
@@ -99,10 +99,10 @@ assh_error_t assh_session_init(struct assh_context_s *c,
   return ASSH_OK;
 }
 
-assh_error_t assh_session_create(struct assh_context_s *c,
+assh_status_t assh_session_create(struct assh_context_s *c,
 				 struct assh_session_s **s)
 {
-  assh_error_t err;
+  assh_status_t err;
   ASSH_RET_ON_ERR(assh_alloc(c, sizeof(**s), ASSH_ALLOC_INTERNAL, (void**)s));
   ASSH_JMP_ON_ERR(assh_session_init(c, *s), err);
   return ASSH_OK;
@@ -152,7 +152,7 @@ void assh_session_cleanup(struct assh_session_s *s)
   s->ctx->session_count--;
 }
 
-const char * assh_error_str(assh_error_t err)
+const char * assh_error_str(assh_status_t err)
 {
   const char * str[ASSH_ERR_count - 0x100] = {
     [ASSH_ERR_IO - 0x100]
@@ -201,18 +201,18 @@ const char * assh_error_str(assh_error_t err)
     = "Protocol timeout",
   };
 
-  err = ASSH_ERR_ERROR(err);
+  err = ASSH_STATUS(err);
   if (err < 0x100)
     return "Success";
   return str[err - 0x100];
 }
 
-static assh_error_t
+static assh_status_t
 assh_session_send_disconnect(struct assh_session_s *s,
                              enum assh_ssh_disconnect_e reason,
                              const char *desc)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   size_t sz = 0;
   if (desc != NULL)
@@ -238,12 +238,12 @@ assh_session_send_disconnect(struct assh_session_s *s,
   return ASSH_OK;
 }
 
-void assh_session_error(struct assh_session_s *s, assh_error_t inerr)
+void assh_session_error(struct assh_session_s *s, assh_status_t inerr)
 {
   if (!(inerr & 0x100))
     return;
 
-  if (ASSH_ERR_SEVERITY(inerr) <= ASSH_ERR_SEVERITY(s->last_err))
+  if (ASSH_SEVERITY(inerr) <= ASSH_SEVERITY(s->last_err))
     return;
 
   if (s->tr_st == ASSH_TR_CLOSED)
@@ -261,7 +261,7 @@ void assh_session_error(struct assh_session_s *s, assh_error_t inerr)
 
   uint32_t reason = SSH_DISCONNECT_RESERVED;
 
-  switch (ASSH_ERR_ERROR(inerr))
+  switch (ASSH_STATUS(inerr))
     {
     case ASSH_ERR_BAD_DATA:
     case ASSH_ERR_PROTOCOL:
@@ -309,12 +309,12 @@ uint_fast8_t assh_session_safety(struct assh_session_s *s)
                   s->cur_keys_in->safety);
 }
 
-assh_error_t
+assh_status_t
 assh_session_disconnect(struct assh_session_s *s,
                         enum assh_ssh_disconnect_e reason,
                         const char *desc)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   switch (s->tr_st)
     {
@@ -342,11 +342,11 @@ assh_session_disconnect(struct assh_session_s *s,
     }
 }
 
-assh_error_t
+assh_status_t
 assh_session_algo_filter(struct assh_session_s *s,
                          assh_kex_filter_t *filter)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   switch (s->tr_st)
     {

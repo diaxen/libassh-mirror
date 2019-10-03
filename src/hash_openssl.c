@@ -55,7 +55,7 @@ static ASSH_HASH_CLEANUP_FCN(assh_openssl_##id_##_hash_cleanup)		\
 static ASSH_HASH_INIT_FCN(assh_openssl_##id_##_hash_##id_##_init)	\
 {									\
   struct assh_hash_openssl_##id_##_context_s *ctx = (void*)hctx;	\
-  assh_error_t err;							\
+  assh_status_t err;							\
   ASSH_RET_IF_TRUE(!prefix_##_Init(&ctx->octx), ASSH_ERR_CRYPTO);	\
   return ASSH_OK;							\
 }									\

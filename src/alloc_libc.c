@@ -34,7 +34,7 @@
 
 ASSH_ALLOCATOR(assh_libc_allocator)
 {
-  assh_error_t err;
+  assh_status_t err;
 
 #ifdef CONFIG_ASSH_MALLOC_USABLE_SIZE
   if (*ptr)

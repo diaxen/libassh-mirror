@@ -13,9 +13,9 @@
 
 struct assh_context_s *context;
 
-assh_error_t test_const()
+assh_status_t test_const()
 {
-  assh_error_t err;
+  assh_status_t err;
   int i, j;
 
   for (i = 0; algos[i].algo; i++)
@@ -92,9 +92,9 @@ assh_error_t test_const()
   return ASSH_OK;
 }
 
-assh_error_t test_load(unsigned int max_size)
+assh_status_t test_load(unsigned int max_size)
 {
-  assh_error_t err;
+  assh_status_t err;
   int i;
 
   for (i = 0; algos[i].algo; i++)
@@ -161,7 +161,7 @@ assh_error_t test_load(unsigned int max_size)
 int main(int argc, char **argv)
 {
   unsigned int s = argc > 1 ? atoi(argv[1]) : time(0);
-  assh_error_t err;
+  assh_status_t err;
   int i;
 
   if (assh_deps_init())

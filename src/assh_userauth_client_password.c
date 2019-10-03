@@ -31,13 +31,13 @@
 #include <assh/assh_event.h>
 
 /* send a password authentication request */
-static assh_error_t
+static assh_status_t
 assh_userauth_client_send_password(struct assh_session_s *s,
                                    const struct assh_cbuffer_s *password,
                                    const struct assh_cbuffer_s *new_password)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   uint8_t *bool_, *str;
 
@@ -75,7 +75,7 @@ assh_userauth_client_send_password(struct assh_session_s *s,
 
 static ASSH_USERAUTH_CLIENT_REQ(assh_userauth_client_password_req)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RETURN(assh_userauth_client_send_password(s,
                 &ev->password, NULL));
@@ -85,12 +85,12 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_req_pwchange_done)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
   const struct assh_event_userauth_client_pwchange_s *ev = &e->userauth_client.pwchange;
-  assh_error_t err;
+  assh_status_t err;
 
   assh_packet_release(pv->pck);
   pv->pck = NULL;
 
-  if (!ASSH_ERR_ERROR(inerr) &&
+  if (!ASSH_STATUS(inerr) &&
       ev->old_password.len && ev->new_password.len)
     {
       ASSH_RET_ON_ERR(assh_userauth_client_send_password(s,
@@ -104,13 +104,13 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_req_pwchange_done)
   return ASSH_OK;
 }
 
-static assh_error_t
+static assh_status_t
 assh_userauth_client_req_pwchange(struct assh_session_s *s,
                                   struct assh_packet_s *p,
                                   struct assh_event_s *e)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-   assh_error_t err;
+   assh_status_t err;
 
   const uint8_t *end, *lang, *prompt = p->head.end;
 
@@ -137,7 +137,7 @@ assh_userauth_client_req_pwchange(struct assh_session_s *s,
 static ASSH_USERAUTH_CLIENT_PROCESS(assh_userauth_client_password_process)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   switch (pv->state)
     {

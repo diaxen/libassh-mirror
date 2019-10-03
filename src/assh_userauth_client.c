@@ -60,7 +60,7 @@ static ASSH_SERVICE_INIT_FCN(assh_userauth_client_init)
 {
   struct assh_userauth_context_s *pv;
   const struct assh_service_s *srv;
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_ON_ERR(assh_service_next(s, &srv));
 
@@ -126,14 +126,14 @@ ASSH_USERAUTH_CLIENT_RETRY(assh_userauth_client_no_retry)
 
 /* allocate a packet and append user name, service name and auth
    method name fields. */
-assh_error_t
+assh_status_t
 assh_userauth_client_pck_head(struct assh_session_s *s,
                               struct assh_packet_s **pout,
                               const char *method,
                               size_t extra_len)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   size_t srvname_len = strlen(pv->srv->name);
   size_t method_len = strlen(method);
@@ -223,13 +223,13 @@ assh_userauth_client_key_get(struct assh_session_s *s,
 }
 
 /* generate and send signature of authentication data */
-assh_error_t
+assh_status_t
 assh_userauth_client_send_sign(struct assh_session_s *s,
                                struct assh_userauth_keys_s *k,
                                struct assh_packet_s *pout,
                                size_t sign_len)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   uint8_t *sign;
 
@@ -255,7 +255,7 @@ assh_userauth_client_send_sign(struct assh_session_s *s,
 }
 
 /* initializes an event which requests signature of authentication data */
-assh_error_t
+assh_status_t
 assh_userauth_client_get_sign(struct assh_session_s *s,
                               struct assh_event_userauth_client_sign_s *ev,
                               struct assh_userauth_keys_s *k,
@@ -263,7 +263,7 @@ assh_userauth_client_get_sign(struct assh_session_s *s,
                               size_t sign_len)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   uint8_t *sign;
 
@@ -299,12 +299,12 @@ assh_userauth_client_get_sign(struct assh_session_s *s,
 static ASSH_EVENT_DONE_FCN(assh_userauth_client_username_done)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   assert(pv->state == ASSH_USERAUTH_ST_GET_USERNAME);
 
   /* promote event processing error */
-  ASSH_RET_IF_TRUE(ASSH_ERR_ERROR(inerr), inerr | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_IF_TRUE(ASSH_STATUS(inerr), inerr | ASSH_ERRSV_DISCONNECT);
 
   const struct assh_event_userauth_client_user_s *ev = &e->userauth_client.user;
 
@@ -321,7 +321,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_username_done)
   ASSH_RETURN(pv->method->f_req(s, NULL) | ASSH_ERRSV_DISCONNECT);
 }
 
-static assh_error_t
+static assh_status_t
 assh_userauth_client_username(struct assh_session_s *s,
                               struct assh_event_s *e)
 {
@@ -339,12 +339,12 @@ assh_userauth_client_username(struct assh_session_s *s,
 static ASSH_EVENT_DONE_FCN(assh_userauth_client_get_methods_done)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   assert(pv->state == ASSH_USERAUTH_ST_GET_METHODS);
 
   /* promote event processing error */
-  ASSH_RET_IF_TRUE(ASSH_ERR_ERROR(inerr), inerr | ASSH_ERRSV_DISCONNECT);
+  ASSH_RET_IF_TRUE(ASSH_STATUS(inerr), inerr | ASSH_ERRSV_DISCONNECT);
 
   const struct assh_event_userauth_client_methods_s *ev =
     &e->userauth_client.methods;
@@ -367,7 +367,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_get_methods_done)
    ASSH_RETURN(ASSH_ERR_NO_AUTH | ASSH_ERRSV_DISCONNECT);
 }
 
-assh_error_t
+assh_status_t
 assh_userauth_client_get_methods(struct assh_session_s *s,
                                  struct assh_event_s *e,
                                  assh_bool_t partial_success)
@@ -403,7 +403,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_success_done)
   return ASSH_OK;
 }
 
-static assh_error_t
+static assh_status_t
 assh_userauth_client_success(struct assh_session_s *s,
                              struct assh_event_s *e)
 {
@@ -418,13 +418,13 @@ assh_userauth_client_success(struct assh_session_s *s,
 }
 
 /* extract the list of acceptable authentication methods from a failure packet */
-static assh_error_t
+static assh_status_t
 assh_userauth_client_failure(struct assh_session_s *s,
                              struct assh_packet_s *p,
                              struct assh_event_s *e)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   const uint8_t *methods = p->head.end;
   const uint8_t *partial_success, *n;
@@ -455,7 +455,7 @@ assh_userauth_client_failure(struct assh_session_s *s,
               /* test if the method wants to retry authentication without
                  requesting the appliction to select other methods */
               ASSH_RET_ON_ERR(m->f_retry(s, e));
-              if (ASSH_ERR_ERROR(err) != ASSH_NO_DATA)
+              if (ASSH_STATUS(err) != ASSH_NO_DATA)
                 return ASSH_OK;
 
               mask |= m->mask;
@@ -480,12 +480,12 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_banner_done)
   return ASSH_OK;
 }
 
-static assh_error_t assh_userauth_client_banner(struct assh_session_s *s,
+static assh_status_t assh_userauth_client_banner(struct assh_session_s *s,
                                                 struct assh_packet_s *p,
                                                 struct assh_event_s *e)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   const uint8_t *text = p->head.end;
   const uint8_t *lang;
@@ -511,7 +511,7 @@ static assh_error_t assh_userauth_client_banner(struct assh_session_s *s,
 
 ASSH_USERAUTH_CLIENT_PROCESS(assh_userauth_client_default_process)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   if (p == NULL)
     return ASSH_OK;
@@ -538,7 +538,7 @@ ASSH_USERAUTH_CLIENT_PROCESS(assh_userauth_client_default_process)
 static ASSH_SERVICE_PROCESS_FCN(assh_userauth_client_process)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   if (s->tr_st >= ASSH_TR_DISCONNECT)
     return ASSH_OK;

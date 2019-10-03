@@ -84,7 +84,7 @@ void assh_transport_push(struct assh_session_s *s,
 
 static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 {
-  assh_error_t err;
+  assh_status_t err;
   struct assh_kex_keys_s *k = s->cur_keys_in;
   uint_fast8_t hsize = k->cipher->head_size;
 
@@ -289,7 +289,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
     }
 }
 
-assh_error_t assh_transport_read(struct assh_session_s *s,
+assh_status_t assh_transport_read(struct assh_session_s *s,
 				 struct assh_event_s *e)
 {
   struct assh_kex_keys_s *k = s->cur_keys_in;
@@ -344,7 +344,7 @@ assh_error_t assh_transport_read(struct assh_session_s *s,
 
 static ASSH_EVENT_DONE_FCN(assh_event_write_done)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   if (inerr)
     {
@@ -403,10 +403,10 @@ static ASSH_EVENT_DONE_FCN(assh_event_write_done)
     }
 }
 
-assh_error_t assh_transport_write(struct assh_session_s *s,
+assh_status_t assh_transport_write(struct assh_session_s *s,
 				  struct assh_event_s *e)
 {
-  assh_error_t err;
+  assh_status_t err;
   uint8_t const ** const data = &e->transport.write.buf.data;
   size_t *size = &e->transport.write.buf.size;
 
@@ -629,12 +629,12 @@ static ASSH_EVENT_DONE_FCN(assh_transport_pkt_event_done)
   return ASSH_OK;
 }
 
-static assh_error_t
+static assh_status_t
 assh_transport_got_disconnect(struct assh_session_s *s,
 			      struct assh_event_s *e,
 			      struct assh_packet_s *p)
 {
-  assh_error_t err;
+  assh_status_t err;
   struct assh_event_transport_disconnect_s *ev
     = &e->transport.disconnect;
 
@@ -657,12 +657,12 @@ assh_transport_got_disconnect(struct assh_session_s *s,
   return ASSH_OK;
 }
 
-static assh_error_t
+static assh_status_t
 assh_transport_got_debug(struct assh_session_s *s,
 			 struct assh_event_s *e,
 			 struct assh_packet_s *p)
 {
-  assh_error_t err;
+  assh_status_t err;
   struct assh_event_transport_debug_s *ev
     = &e->transport.debug;
 
@@ -685,12 +685,12 @@ assh_transport_got_debug(struct assh_session_s *s,
   return ASSH_OK;
 }
 
-assh_error_t
+assh_status_t
 assh_transport_debug(struct assh_session_s *s,
 		     assh_bool_t display, const char *msg,
 		     const char *lang)
 {
-  assh_error_t err;
+  assh_status_t err;
   struct assh_packet_s *pout;
 
   size_t msg_len = strlen(msg);
@@ -712,10 +712,10 @@ assh_transport_debug(struct assh_session_s *s,
   return ASSH_OK;
 }
 
-assh_error_t assh_transport_unimp(struct assh_session_s *s,
+assh_status_t assh_transport_unimp(struct assh_session_s *s,
 				  struct assh_packet_s *pin)
 {
-  assh_error_t err;
+  assh_status_t err;
   struct assh_packet_s *p;
 
   if (pin->head.msg != SSH_MSG_UNIMPLEMENTED)
@@ -728,10 +728,10 @@ assh_error_t assh_transport_unimp(struct assh_session_s *s,
   return ASSH_OK;
 }
 
-assh_error_t assh_transport_dispatch(struct assh_session_s *s,
+assh_status_t assh_transport_dispatch(struct assh_session_s *s,
 				     struct assh_event_s *e)
 {
-  assh_error_t err = ASSH_OK;
+  assh_status_t err = ASSH_OK;
   enum assh_ssh_msg_e msg = SSH_MSG_INVALID;
   struct assh_packet_s *p = s->in_pck;
 
@@ -945,7 +945,7 @@ assh_error_t assh_transport_dispatch(struct assh_session_s *s,
       /* run the service loop */
       err = assh_service_loop(s, p, e);
 
-      if (ASSH_ERR_ERROR(err) == ASSH_NO_DATA)
+      if (ASSH_STATUS(err) == ASSH_NO_DATA)
 	return ASSH_OK;	/* do not consume the input packet */
 
       break;

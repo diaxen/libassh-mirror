@@ -40,7 +40,7 @@
 #include "assh_buffer.h"
 
 /** @internal @see assh_sign_generate_t */
-#define ASSH_SIGN_GENERATE_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t(n) \
+#define ASSH_SIGN_GENERATE_FCN(n) ASSH_WARN_UNUSED_RESULT assh_status_t(n) \
   (struct assh_context_s *c,						\
    const struct assh_key_s *key, size_t data_count,			\
    const struct assh_cbuffer_s data[], uint8_t *sign, size_t *sign_len)
@@ -51,7 +51,7 @@
 typedef ASSH_SIGN_GENERATE_FCN(assh_sign_generate_t);
 
 /** @internal @see assh_sign_check_t */
-#define ASSH_SIGN_CHECK_FCN(n) ASSH_WARN_UNUSED_RESULT assh_error_t (n) \
+#define ASSH_SIGN_CHECK_FCN(n) ASSH_WARN_UNUSED_RESULT assh_status_t (n) \
   (struct assh_context_s *c,						\
    const struct assh_key_s *key, size_t data_count,			\
    const struct assh_cbuffer_s data[],                                  \
@@ -90,7 +90,7 @@ struct assh_algo_sign_s
     @tt sign_len parmeter with a size value which is greater or equal
     to what is needed to hold the signature blob. In this case, the
     @tt data_* parameters are not used and the key need not be private. */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_sign_generate(struct assh_context_s *c, const struct assh_algo_sign_s *algo,
                    const struct assh_key_s *key, size_t data_count,
                    const struct assh_cbuffer_s data[],
@@ -102,7 +102,7 @@ assh_sign_generate(struct assh_context_s *c, const struct assh_algo_sign_s *algo
 /** @internal @This checks the signature of the passed data using the
     provided key. The data can be split into multiple buffers. The @tt
     data_count parameter must specify the number of data buffers used. */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_sign_check(struct assh_context_s *c, const struct assh_algo_sign_s *algo,
                 const struct assh_key_s *key, size_t data_count,
                 const struct assh_cbuffer_s data[],

@@ -112,7 +112,7 @@ static void get_data(size_t *size, const uint8_t **data)
 void test(int (*fend)(int, int), int cnt, int evrate,
 	  unsigned alloc_f, assh_bool_t disco)
 {
-  assh_error_t err;
+  assh_status_t err;
   unsigned int i, j;
   assh_bool_t started[2] = {};
   assh_bool_t kex_done = 0;
@@ -245,7 +245,7 @@ void test(int (*fend)(int, int), int cnt, int evrate,
 		    const uint8_t *data = NULL;
 		    if (!ch)
 		      get_data(&data_len, &data);
-		    assh_error_t er = assh_request_success_reply(rq, data, data_len);
+		    assh_status_t er = assh_request_success_reply(rq, data, data_len);
 		    if (er > ASSH_NO_DATA)
 		      {
 			if (alloc_f)
@@ -257,7 +257,7 @@ void test(int (*fend)(int, int), int cnt, int evrate,
 		    break;
 		  }
 		  case 1: {
-		    assh_error_t er = assh_request_failed_reply(rq);
+		    assh_status_t er = assh_request_failed_reply(rq);
 		    if (er > ASSH_NO_DATA)
 		      {
 			if (alloc_f)
@@ -373,7 +373,7 @@ void test(int (*fend)(int, int), int cnt, int evrate,
 			    uint8_t *d;
 			    size_t m = assh_prng_rand() % 64;
 			    size_t s = assh_prng_rand() % (m + 1);
-			    assh_error_t er = assh_channel_data_alloc(ch, &d, &s, m);
+			    assh_status_t er = assh_channel_data_alloc(ch, &d, &s, m);
 			    if (er > ASSH_NO_DATA)
 			      {
 				if (alloc_f)
@@ -422,13 +422,13 @@ void test(int (*fend)(int, int), int cnt, int evrate,
 	  if (!assh_event_get(&session[i], &event, 0))
 	    continue;
 
-	  assh_error_t everr = ASSH_OK;
+	  assh_status_t everr = ASSH_OK;
 
 	  if (evrate && !(assh_prng_rand() % evrate))
 	    {
 	      ev_err_count++;
 	      everr = (assh_prng_rand() % 32 + 0x100);
-	      if (ASSH_ERR_ERROR(everr) == ASSH_ERR_PROTOCOL && !packet_fuzz)
+	      if (ASSH_STATUS(everr) == ASSH_ERR_PROTOCOL && !packet_fuzz)
 		everr = ASSH_OK;
 	    }
 
@@ -635,7 +635,7 @@ void test(int (*fend)(int, int), int cnt, int evrate,
 	      struct assh_event_channel_data_s *e = &event.connection.channel_data;
 	      e->transferred = assh_prng_rand() % (e->data.size + 1);
 	      ASSH_DEBUG("ASSH_EVENT_CHANNEL_DATA %p\n", e->ch);
-	      if (!ASSH_ERR_SUCCESS(assh_channel_window_adjust(e->ch, e->transferred)) && !alloc_fuzz)
+	      if (!ASSH_SUCCESS(assh_channel_window_adjust(e->ch, e->transferred)) && !alloc_fuzz)
 		TEST_FAIL("assh_channel_window_adjust");
 	      ch_data_recv++;
 	      break;
@@ -667,14 +667,14 @@ void test(int (*fend)(int, int), int cnt, int evrate,
 	    case ASSH_EVENT_SESSION_ERROR: {
 	      everr = ASSH_OK;
 	      err = event.session.error.code;
-	      if (ASSH_ERR_SEVERITY(err))
+	      if (ASSH_SEVERITY(err))
 		started[i] = 0;
 	      if (session[i^1].tr_st >= ASSH_TR_DISCONNECT &&
-		  (ASSH_ERR_ERROR(err) == ASSH_ERR_IO))
+		  (ASSH_STATUS(err) == ASSH_ERR_IO))
 		break;
 	      if (!evrate && !packet_fuzz && !alloc_fuzz)
 		TEST_FAIL("(ctx %u seed %u) unexpected error event 0x%lx\n", i, seed, err);
-	      if (ASSH_ERR_ERROR(err) == ASSH_ERR_PROTOCOL && !packet_fuzz)
+	      if (ASSH_STATUS(err) == ASSH_ERR_PROTOCOL && !packet_fuzz)
 		TEST_FAIL("(ctx %u seed %u) unexpected protocol error\n", i, seed);
 	      break;
 	    }

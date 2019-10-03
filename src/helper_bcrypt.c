@@ -439,13 +439,13 @@ bcrypt_hash(struct bcrypt_scratch_s *s)
     assh_store_u32le(s->tmpout + i * 4, s->cdata[i]);
 }
 
-static assh_error_t
+static assh_status_t
 bcrypt_hash_sha512(struct assh_context_s *c,
 		   struct assh_hash_ctx_s *hash_ctx,
 		   uint8_t *out, const void *in,
 		   size_t len)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_ON_ERR(assh_hash_init(c, hash_ctx, &assh_hash_sha512));
   assh_hash_update(hash_ctx, in, len);
@@ -455,13 +455,13 @@ bcrypt_hash_sha512(struct assh_context_s *c,
   return ASSH_OK;
 }
 
-assh_error_t
+assh_status_t
 asshh_bcrypt_pbkdf(struct assh_context_s *c,
 		  const char *pass, size_t passlen,
 		  const uint8_t *salt, size_t saltlen,
 		  uint8_t *key, size_t keylen, size_t rounds)
 {
-  assh_error_t err = ASSH_OK;
+  assh_status_t err = ASSH_OK;
 
   size_t i, j, amt, stride;
   uint32_t count;

@@ -32,7 +32,7 @@
 static ASSH_USERAUTH_CLIENT_REQ(assh_userauth_client_none_req)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   struct assh_packet_s *pout;
 

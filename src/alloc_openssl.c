@@ -32,7 +32,7 @@
 
 ASSH_ALLOCATOR(assh_openssl_allocator)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   switch (type)
     {

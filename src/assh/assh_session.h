@@ -143,7 +143,7 @@ struct assh_session_s
 
   /** last error reported to @ref assh_session_error. This will be
       reported as an @ref ASSH_EVENT_SESSION_ERROR event. */
-  assh_error_t last_err;
+  assh_status_t last_err;
 
   /** Current date as reported by the last IO request. */
   assh_time_t time;
@@ -226,10 +226,10 @@ struct assh_session_s
     occurs. Because not all errors are fatal, the event may be
     reported multiple times during a single session.
 
-    @see #ASSH_ERR_ERROR @see #ASSH_ERR_SEVERITY */
+    @see #ASSH_STATUS @see #ASSH_SEVERITY */
 struct assh_event_session_error_s
 {
-  assh_error_t code;
+  assh_status_t code;
 };
 
 /** @This contains all session related event structures. */
@@ -253,7 +253,7 @@ void * assh_session_get_pv(struct assh_session_s *ctx);
 
     @see assh_session_cleanup
 */
-ASSH_ABI_UNSAFE ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_ABI_UNSAFE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_session_init(struct assh_context_s *c,
 		  struct assh_session_s *s);
 
@@ -261,7 +261,7 @@ assh_session_init(struct assh_context_s *c,
 
     @see assh_session_release
 */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_session_create(struct assh_context_s *c,
 		    struct assh_session_s **s);
 
@@ -286,15 +286,15 @@ void assh_session_release(struct assh_session_s *s);
     assh_event_done function. It is also called from other functions
     of the public API which can modify the session state.
 
-    @see assh_error_e @see assh_error_severity_e
+    @see assh_status_e @see assh_severity_e
 */
-void assh_session_error(struct assh_session_s *s, assh_error_t err);
+void assh_session_error(struct assh_session_s *s, assh_status_t err);
 
 /** @This schedules the end of the session and sends an
     SSH_MSG_DISCONNECT message to the remote host. The @ref
     assh_event_get function must still be called until no more events
     are available. */
-assh_error_t
+assh_status_t
 assh_session_disconnect(struct assh_session_s *s,
                         enum assh_ssh_disconnect_e reason,
                         const char *desc);
@@ -308,7 +308,7 @@ assh_safety_t assh_session_safety(struct assh_session_s *s);
 /** @This setups a per session algorithm filter. The @tt filter
     parameter may be @tt NULL to disable filtering. It will fail if a
     key exchange in ongoing. @xsee{suppalgos} */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_session_algo_filter(struct assh_session_s *s,
                          assh_kex_filter_t *filter);
 

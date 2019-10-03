@@ -60,10 +60,10 @@ static assh_bool_t bignum_cmp(struct assh_bignum_s *bn, intptr_t x)
   return assh_bignum_bytecode(&context, 0, bytecode, "NTi", bn, x) == 0;
 }
 
-assh_error_t
+assh_status_t
 blob_write_alloc(const char *format, uint8_t **blob_, size_t *blob_len, ...)
 {
-  assh_error_t err;
+  assh_status_t err;
   va_list ap;
   uint8_t *blob = NULL;
 

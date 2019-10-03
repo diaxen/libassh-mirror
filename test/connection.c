@@ -173,7 +173,7 @@ static void pop_request(struct rq_fifo_s *lrqf)
 
 void test(int (*fend)(int, int), int n, int evrate)
 {
-  assh_error_t err;
+  assh_status_t err;
   unsigned int i, j;
   assh_bool_t started[2] = {};
   assh_bool_t closed[2] = {};
@@ -332,7 +332,7 @@ void test(int (*fend)(int, int), int n, int evrate)
 			memset(rqe->rsp_data, assh_prng_rand(), rqe->data_len);
 		      }
 
-		    assh_error_t er = assh_request_success_reply(rqe->rrq, rqe->rsp_data, rqe->data_len);
+		    assh_status_t er = assh_request_success_reply(rqe->rrq, rqe->rsp_data, rqe->data_len);
 		    if (er > ASSH_NO_DATA)
 		      TEST_FAIL("(ctx %u seed %u) assh_request_reply(ASSH_CONNECTION_REPLY_SUCCESS)\n", i, seed);
 		    ASSH_DEBUG("assh_request_success_reply %p\n", rqe->rrq);
@@ -342,7 +342,7 @@ void test(int (*fend)(int, int), int n, int evrate)
 		    break;
 		  }
 		  case 1: {
-		    assh_error_t er = assh_request_failed_reply(rqe->rrq);
+		    assh_status_t er = assh_request_failed_reply(rqe->rrq);
 		    if (er > ASSH_NO_DATA)
 		      TEST_FAIL("(ctx %u seed %u) assh_request_reply(ASSH_CONNECTION_REPLY_FAILED)\n", i, seed);
 		    ASSH_DEBUG("assh_request_failed_reply %p\n", rqe->rrq);
@@ -487,13 +487,13 @@ void test(int (*fend)(int, int), int n, int evrate)
 	      continue;
 	    }
 
-	  assh_error_t everr = ASSH_OK;
+	  assh_status_t everr = ASSH_OK;
 
 	  if (evrate && !(assh_prng_rand() % evrate))
 	    {
 	      ev_err_count++;
 	      everr = (assh_prng_rand() % 32 + 0x100);
-	      if (ASSH_ERR_ERROR(everr) == ASSH_ERR_PROTOCOL)
+	      if (ASSH_STATUS(everr) == ASSH_ERR_PROTOCOL)
 		everr = ASSH_OK;
 	    }
 
@@ -503,7 +503,7 @@ void test(int (*fend)(int, int), int n, int evrate)
 	      err = event.session.error.code;
 	      if (!evrate)
 		TEST_FAIL("(ctx %u seed %u) unexpected error event 0x%lx\n", i, seed, err);
-	      if (ASSH_ERR_ERROR(err) == ASSH_ERR_PROTOCOL)
+	      if (ASSH_STATUS(err) == ASSH_ERR_PROTOCOL)
 		TEST_FAIL("(ctx %u seed %u) unexpected protocol error\n", i, seed);
 	      started[i] = 0;
 	      break;

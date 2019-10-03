@@ -74,11 +74,11 @@ assh_scan_compare(const char **format_, size_t a, size_t b)
   return r;
 }
 
-assh_error_t
+assh_status_t
 assh_blob_scan_va(struct assh_context_s *c, const char *format,
 		  const uint8_t **blob, size_t *blob_len, va_list ap)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   struct {
     const uint8_t *blob, *next;
@@ -379,11 +379,11 @@ assh_blob_scan_va(struct assh_context_s *c, const char *format,
     }
 }
 
-assh_error_t
+assh_status_t
 assh_blob_scan(struct assh_context_s *c, const char *format,
 	       const uint8_t **blob, size_t *blob_len, ...)
 {
-  assh_error_t err;
+  assh_status_t err;
   va_list ap;
 
   va_start(ap, blob_len);
@@ -393,13 +393,13 @@ assh_blob_scan(struct assh_context_s *c, const char *format,
   ASSH_RETURN(err);
 }
 
-assh_error_t
+assh_status_t
 assh_blob_write_va(const char *format, uint8_t *blob, size_t *blob_len, va_list ap)
 {
   uint8_t *b = blob;
   uint8_t *e = blob + *blob_len;
   uint8_t *n;
-  assh_error_t err;
+  assh_status_t err;
 
   struct {
     uint8_t *head;
@@ -682,10 +682,10 @@ assh_blob_write_va(const char *format, uint8_t *blob, size_t *blob_len, va_list 
     }
 }
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_blob_write(const char *format, uint8_t *blob, size_t *blob_len, ...)
 {
-  assh_error_t err;
+  assh_status_t err;
   va_list ap;
 
   va_start(ap, blob_len);
@@ -695,11 +695,11 @@ assh_blob_write(const char *format, uint8_t *blob, size_t *blob_len, ...)
   ASSH_RETURN(err);
 }
 
-assh_error_t
+assh_status_t
 assh_check_asn1(const uint8_t *buffer, size_t buffer_len, const uint8_t *str,
                 const uint8_t **value, const uint8_t **next, uint8_t id)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   const uint8_t *e = buffer + buffer_len;
   ASSH_RET_IF_TRUE(str < buffer || str > e - 2, ASSH_ERR_INPUT_OVERFLOW);
@@ -722,11 +722,11 @@ assh_check_asn1(const uint8_t *buffer, size_t buffer_len, const uint8_t *str,
   return ASSH_OK;
 }
 
-assh_error_t
+assh_status_t
 assh_check_string(const uint8_t *buffer, size_t buffer_len,
                   const uint8_t *str, const uint8_t **next)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   const uint8_t *e = buffer + buffer_len;
   ASSH_RET_IF_TRUE(str < buffer || str > e - 4, ASSH_ERR_INPUT_OVERFLOW);
@@ -737,11 +737,11 @@ assh_check_string(const uint8_t *buffer, size_t buffer_len,
   return ASSH_OK;
 }
 
-assh_error_t
+assh_status_t
 assh_check_array(const uint8_t *buffer, size_t buffer_len,
                  const uint8_t *array, size_t array_len, const uint8_t **next)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   const uint8_t *e = buffer + buffer_len;
   ASSH_RET_IF_TRUE(array < buffer || array > e, ASSH_ERR_INPUT_OVERFLOW);
@@ -751,10 +751,10 @@ assh_check_array(const uint8_t *buffer, size_t buffer_len,
   return ASSH_OK;
 }
 
-assh_error_t
+assh_status_t
 assh_ssh_string_copy(const uint8_t *ssh_str, char *nul_str, size_t max_len)
 {
-  assh_error_t err;
+  assh_status_t err;
 
   size_t len = assh_load_u32(ssh_str);
   assert(max_len > 0);
@@ -789,10 +789,10 @@ assh_append_asn1(uint8_t **dst, uint8_t id, size_t len)
   *dst = d;
 }
 
-assh_error_t assh_strdup(struct assh_context_s *c, char **r,
+assh_status_t assh_strdup(struct assh_context_s *c, char **r,
                          const char *str, enum assh_alloc_type_e type)
 {
-  assh_error_t err;
+  assh_status_t err;
   *r = NULL;
   if (str != NULL)
     {

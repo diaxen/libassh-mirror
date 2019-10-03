@@ -57,14 +57,14 @@
     A comment string containing the location (file name and line
     number) is attached to each loaded key.
 */
-assh_error_t
+assh_status_t
 asshh_client_get_known_hosts(struct assh_context_s *c,
                                     struct assh_key_s **keys,
                                     const char *filename,
                                     const char *host);
 
 /** @This adds a public key at the end of the ssh_knwon_host file. */
-assh_error_t
+assh_status_t
 asshh_client_add_known_hosts(struct assh_context_s *c,
                                     const char *filename,
                                     const char *host,

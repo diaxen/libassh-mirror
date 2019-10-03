@@ -108,11 +108,11 @@ struct assh_kex_dh_gex_private_s
 };
 
 #ifdef CONFIG_ASSH_CLIENT
-static assh_error_t assh_kex_dh_gex_client_send_size(struct assh_session_s *s)
+static assh_status_t assh_kex_dh_gex_client_send_size(struct assh_session_s *s)
 {
   struct assh_kex_dh_gex_private_s *pv = s->kex_pv;
   struct assh_context_s *c = s->ctx;
-  assh_error_t err;
+  assh_status_t err;
 
   struct assh_packet_s *p;
 
@@ -128,11 +128,11 @@ static assh_error_t assh_kex_dh_gex_client_send_size(struct assh_session_s *s)
   return ASSH_OK;
 }
 
-static assh_error_t assh_kex_dh_gex_client_send_size_old(struct assh_session_s *s)
+static assh_status_t assh_kex_dh_gex_client_send_size_old(struct assh_session_s *s)
 {
   struct assh_kex_dh_gex_private_s *pv = s->kex_pv;
   struct assh_context_s *c = s->ctx;
-  assh_error_t err;
+  assh_status_t err;
 
   struct assh_packet_s *p;
 
@@ -146,11 +146,11 @@ static assh_error_t assh_kex_dh_gex_client_send_size_old(struct assh_session_s *
   return ASSH_OK;
 }
 
-static assh_error_t assh_kex_dh_gex_client_wait_group(struct assh_session_s *s,
+static assh_status_t assh_kex_dh_gex_client_wait_group(struct assh_session_s *s,
                                                       struct assh_packet_s *p)
 {
   struct assh_kex_dh_gex_private_s *pv = s->kex_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(p->head.msg != SSH_MSG_KEX_DH_GEX_GROUP, ASSH_ERR_PROTOCOL);
 
@@ -263,11 +263,11 @@ static assh_error_t assh_kex_dh_gex_client_wait_group(struct assh_session_s *s,
 static ASSH_EVENT_DONE_FCN(assh_kex_dh_gex_host_key_lookup_done)
 {
   struct assh_kex_dh_gex_private_s *pv = s->kex_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   assert(pv->state == ASSH_KEX_DH_GEX_CLIENT_LOOKUP_HOST_KEY_WAIT);
 
-  if (!e->kex.hostkey_lookup.accept || ASSH_ERR_ERROR(inerr))
+  if (!e->kex.hostkey_lookup.accept || ASSH_STATUS(inerr))
     ASSH_RETURN(assh_kex_end(s, 0) | ASSH_ERRSV_DISCONNECT);
 
   struct assh_packet_s *p = pv->pck;
@@ -397,12 +397,12 @@ static ASSH_EVENT_DONE_FCN(assh_kex_dh_gex_host_key_lookup_done)
   return err;
 }
 
-static assh_error_t assh_kex_dh_gex_client_wait_f(struct assh_session_s *s,
+static assh_status_t assh_kex_dh_gex_client_wait_f(struct assh_session_s *s,
                                                   struct assh_packet_s *p,
                                                   struct assh_event_s *e)
 {
   struct assh_kex_dh_gex_private_s *pv = s->kex_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(p->head.msg != SSH_MSG_KEX_DH_GEX_REPLY, ASSH_ERR_PROTOCOL);
 
@@ -424,12 +424,12 @@ static assh_error_t assh_kex_dh_gex_client_wait_f(struct assh_session_s *s,
 #endif
 
 #ifdef CONFIG_ASSH_SERVER
-static assh_error_t assh_kex_dh_gex_server_wait_size(struct assh_session_s *s,
+static assh_status_t assh_kex_dh_gex_server_wait_size(struct assh_session_s *s,
                                                      struct assh_packet_s *p)
 {
   struct assh_kex_dh_gex_private_s *pv = s->kex_pv;
   struct assh_context_s *c = s->ctx;
-  assh_error_t err;
+  assh_status_t err;
 
   const uint8_t *next = p->head.end;
   size_t min, max;
@@ -560,12 +560,12 @@ static assh_error_t assh_kex_dh_gex_server_wait_size(struct assh_session_s *s,
   return err;
 }
 
-static assh_error_t assh_kex_dh_gex_server_wait_e(struct assh_session_s *s,
+static assh_status_t assh_kex_dh_gex_server_wait_e(struct assh_session_s *s,
                                                   struct assh_packet_s *p)
 {
   struct assh_kex_dh_gex_private_s *pv = s->kex_pv;
   struct assh_context_s *c = s->ctx;
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(p->head.msg != SSH_MSG_KEX_DH_GEX_INIT,
 	       ASSH_ERR_PROTOCOL);
@@ -715,7 +715,7 @@ static assh_error_t assh_kex_dh_gex_server_wait_e(struct assh_session_s *s,
 static ASSH_KEX_PROCESS_FCN(assh_kex_dh_gex_process)
 {
   struct assh_kex_dh_gex_private_s *pv = s->kex_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   switch (pv->state)
     {
@@ -766,12 +766,12 @@ static ASSH_KEX_PROCESS_FCN(assh_kex_dh_gex_process)
   ASSH_UNREACHABLE();
 }
 
-static assh_error_t assh_kex_dh_gex_init(struct assh_session_s *s,
+static assh_status_t assh_kex_dh_gex_init(struct assh_session_s *s,
                                          const struct assh_hash_algo_s *hash,
                                          size_t cipher_key_size,
                                          uint_fast8_t ldiv, uint_fast16_t algo_min)
 {
-  assh_error_t err;
+  assh_status_t err;
   struct assh_kex_dh_gex_private_s *pv;
 
   cipher_key_size = ASSH_MIN(ASSH_MAX(cipher_key_size, 64), 256);

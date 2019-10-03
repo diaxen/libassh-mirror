@@ -28,7 +28,7 @@
 
 size_t assh_bignum_size_of_bits(enum assh_bignum_fmt_e fmt, size_t bits)
 {
-  assh_error_t err;
+  assh_status_t err;
   size_t l, n = ASSH_ALIGN8(bits) / 8; /* bytes size */
 
   switch (fmt)
@@ -89,12 +89,12 @@ static inline uint8_t assh_hex_clz(char c)
   return (0x11122331 >> (x & 30)) & 3;
 }
 
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
                          const void *data, size_t *size,
                          size_t *val_size, size_t *bits)
 {
-  assh_error_t err;
+  assh_status_t err;
   size_t l, n, b;
 
   switch (fmt)

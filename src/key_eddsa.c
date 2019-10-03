@@ -53,14 +53,14 @@ static ASSH_KEY_CMP_FCN(assh_key_eddsa_cmp)
 }
 
 #ifdef CONFIG_ASSH_KEY_CREATE
-static assh_error_t
+static assh_status_t
 assh_key_eddsa_create(struct assh_context_s *c,
                       const struct assh_key_algo_s *algo,
                       struct assh_key_s **key,
                       const struct assh_edward_curve_s *curve,
                       const struct assh_hash_algo_s *hash)
 {
-  assh_error_t err;
+  assh_status_t err;
   struct assh_key_eddsa_s *k;
 
   size_t n = ASSH_ALIGN8(curve->bits) / 8;
@@ -204,7 +204,7 @@ static ASSH_KEY_CLEANUP_FCN(assh_key_eddsa_cleanup)
 static ASSH_KEY_OUTPUT_FCN(assh_key_eddsa_output)
 {
   struct assh_key_eddsa_s *k = (void*)key;
-  assh_error_t err;
+  assh_status_t err;
 
   size_t n = ASSH_ALIGN8(k->curve->bits) / 8;
 
@@ -233,7 +233,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_eddsa_output)
     }
 }
 
-static assh_error_t
+static assh_status_t
 assh_key_eddsa_load(struct assh_context_s *c,
                     const struct assh_key_algo_s *algo,
                     const uint8_t **blob_, size_t blob_len,
@@ -243,7 +243,7 @@ assh_key_eddsa_load(struct assh_context_s *c,
                     const struct assh_hash_algo_s *hash)
 {
   const uint8_t *blob = *blob_;
-  assh_error_t err;
+  assh_status_t err;
 
   /* allocate key structure */
   struct assh_key_eddsa_s *k = (void*)*key;

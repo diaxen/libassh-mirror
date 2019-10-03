@@ -35,7 +35,7 @@
 static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   const struct assh_event_userauth_server_userkey_s *ev =
     &e->userauth_server.userkey;
@@ -45,7 +45,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
     case ASSH_USERAUTH_ST_PUBKEY_PKOK: {      /* may need to send PK_OK */
       ASSH_SET_STATE(pv, state, ASSH_USERAUTH_ST_WAIT_RQ);
 
-      if (ASSH_ERR_ERROR(inerr) || !ev->found)
+      if (ASSH_STATUS(inerr) || !ev->found)
         break;
 
       /* alloc packet */
@@ -83,7 +83,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
 
     case ASSH_USERAUTH_ST_PUBKEY_VERIFY: {
 
-      if (ASSH_ERR_ERROR(inerr) || !ev->found)
+      if (ASSH_STATUS(inerr) || !ev->found)
         {
           assh_packet_release(pv->pck);
           pv->pck = NULL;
@@ -113,7 +113,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_userkey_done)
 static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_pubkey)
 {
   struct assh_userauth_context_s *pv = s->srv_pv;
-  assh_error_t err;
+  assh_status_t err;
 
   const uint8_t *second = auth_data;
   const uint8_t *algo_name, *pub_blob, *sign;
@@ -128,7 +128,7 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_pubkey)
   ASSH_RET_ON_ERR(assh_userauth_server_get_key(s, algo_name, pub_blob,
                  &algo, &pub_key, &pv->algo_name));
 
-  if (ASSH_ERR_ERROR(err) == ASSH_NO_DATA)
+  if (ASSH_STATUS(err) == ASSH_NO_DATA)
     ASSH_RETURN(assh_userauth_server_failure(s, e));
 
   /* test if the key has been previously found in the list of authorized user keys. */

@@ -37,7 +37,7 @@ static ASSH_HASH_COPY_FCN(assh_gcrypt_hash_copy)
 {
   const struct assh_hash_gcrypt_context_s *src = (const void*)hctx_src;
   struct assh_hash_gcrypt_context_s *dst = (void*)hctx_dst;
-  assh_error_t err;
+  assh_status_t err;
 
   dst->ctx = src->ctx;
   ASSH_RET_IF_TRUE(gcry_md_copy(&dst->hd, src->hd),
@@ -85,7 +85,7 @@ static ASSH_HASH_FINAL_FCN(assh_gcrypt_hash_##id_##_final)              \
 static ASSH_HASH_INIT_FCN(assh_gcrypt_hash_##id_##_init)                \
 {                                                                       \
   struct assh_hash_gcrypt_context_s *gctx = (void*)hctx;                \
-  assh_error_t err;                                                     \
+  assh_status_t err;                                                     \
                                                                         \
   ASSH_RET_IF_TRUE(!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P),    \
                ASSH_ERR_CRYPTO);                                        \

@@ -26,12 +26,12 @@
 #include <assh/assh_connection.h>
 
 #ifdef CONFIG_ASSH_CLIENT
-assh_error_t
+assh_status_t
 asshh_inter_open_session(struct assh_session_s *s,
                         struct assh_channel_s **ch)
 
 {
-  assh_error_t err;
+  assh_status_t err;
   ASSH_RET_ON_ERR(assh_channel_open(s, "session", 7, NULL, 0, -1, -1, ch));
 
   return ASSH_OK;
@@ -80,12 +80,12 @@ asshh_inter_size_pty_req(const struct asshh_inter_pty_req_s *i)
        ;
 }
 
-assh_error_t
+assh_status_t
 asshh_inter_encode_pty_req(uint8_t *data, size_t size,
 				const struct asshh_inter_pty_req_s *i)
 
 {
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(asshh_inter_size_pty_req(i) > size,
 	       ASSH_ERR_OUTPUT_OVERFLOW);
@@ -115,14 +115,14 @@ asshh_inter_encode_pty_req(uint8_t *data, size_t size,
 
   return ASSH_OK;
 }
-assh_error_t
+assh_status_t
 asshh_inter_send_pty_req(struct assh_session_s *s,
                         struct assh_channel_s *ch,
                         struct assh_request_s **rq,
                         const struct asshh_inter_pty_req_s *i)
 
 {
-  assh_error_t err;
+  assh_status_t err;
 
   size_t sz = asshh_inter_size_pty_req(i);
   uint8_t buf[sz];
@@ -136,12 +136,12 @@ asshh_inter_send_pty_req(struct assh_session_s *s,
 
 #ifdef CONFIG_ASSH_SERVER
 
-assh_error_t
+assh_status_t
 asshh_inter_decode_pty_req(struct asshh_inter_pty_req_s *i,
                           const uint8_t *data, size_t size)
 
 {
-  assh_error_t err;
+  assh_status_t err;
   const uint8_t *n, *d = data;
 
   ASSH_RET_ON_ERR(assh_check_string(data, size, d, &n));
@@ -197,12 +197,12 @@ asshh_inter_size_x11_req(const struct asshh_inter_x11_req_s *i)
        ;
 }
 
-assh_error_t
+assh_status_t
 asshh_inter_encode_x11_req(uint8_t *data, size_t size,
 				const struct asshh_inter_x11_req_s *i)
 
 {
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(asshh_inter_size_x11_req(i) > size,
 	       ASSH_ERR_OUTPUT_OVERFLOW);
@@ -225,14 +225,14 @@ asshh_inter_encode_x11_req(uint8_t *data, size_t size,
 
   return ASSH_OK;
 }
-assh_error_t
+assh_status_t
 asshh_inter_send_x11_req(struct assh_session_s *s,
                         struct assh_channel_s *ch,
                         struct assh_request_s **rq,
                         const struct asshh_inter_x11_req_s *i)
 
 {
-  assh_error_t err;
+  assh_status_t err;
 
   size_t sz = asshh_inter_size_x11_req(i);
   uint8_t buf[sz];
@@ -246,12 +246,12 @@ asshh_inter_send_x11_req(struct assh_session_s *s,
 
 #ifdef CONFIG_ASSH_SERVER
 
-assh_error_t
+assh_status_t
 asshh_inter_decode_x11_req(struct asshh_inter_x11_req_s *i,
                           const uint8_t *data, size_t size)
 
 {
-  assh_error_t err;
+  assh_status_t err;
   const uint8_t *n, *d = data;
 
   ASSH_RET_ON_ERR(assh_check_array(data, size, d, 1, &n));
@@ -294,12 +294,12 @@ asshh_inter_size_x11(const struct asshh_inter_x11_s *i)
        ;
 }
 
-assh_error_t
+assh_status_t
 asshh_inter_encode_x11(uint8_t *data, size_t size,
 				const struct asshh_inter_x11_s *i)
 
 {
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(asshh_inter_size_x11(i) > size,
 	       ASSH_ERR_OUTPUT_OVERFLOW);
@@ -315,13 +315,13 @@ asshh_inter_encode_x11(uint8_t *data, size_t size,
 
   return ASSH_OK;
 }
-assh_error_t
+assh_status_t
 asshh_inter_open_x11(struct assh_session_s *s,
                     struct assh_channel_s **ch,
                     const struct asshh_inter_x11_s *i)
 
 {
-  assh_error_t err;
+  assh_status_t err;
 
   size_t sz = asshh_inter_size_x11(i);
   uint8_t buf[sz];
@@ -332,12 +332,12 @@ asshh_inter_open_x11(struct assh_session_s *s,
   return ASSH_OK;
 }
 
-assh_error_t
+assh_status_t
 asshh_inter_decode_x11(struct asshh_inter_x11_s *i,
                       const uint8_t *data, size_t size)
 
 {
-  assh_error_t err;
+  assh_status_t err;
   const uint8_t *n, *d = data;
 
   ASSH_RET_ON_ERR(assh_check_string(data, size, d, &n));
@@ -373,12 +373,12 @@ asshh_inter_size_env(const struct asshh_inter_env_s *i)
        ;
 }
 
-assh_error_t
+assh_status_t
 asshh_inter_encode_env(uint8_t *data, size_t size,
 				const struct asshh_inter_env_s *i)
 
 {
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(asshh_inter_size_env(i) > size,
 	       ASSH_ERR_OUTPUT_OVERFLOW);
@@ -396,14 +396,14 @@ asshh_inter_encode_env(uint8_t *data, size_t size,
 
   return ASSH_OK;
 }
-assh_error_t
+assh_status_t
 asshh_inter_send_env(struct assh_session_s *s,
                     struct assh_channel_s *ch,
                     struct assh_request_s **rq,
                     const struct asshh_inter_env_s *i)
 
 {
-  assh_error_t err;
+  assh_status_t err;
 
   size_t sz = asshh_inter_size_env(i);
   uint8_t buf[sz];
@@ -417,12 +417,12 @@ asshh_inter_send_env(struct assh_session_s *s,
 
 #ifdef CONFIG_ASSH_SERVER
 
-assh_error_t
+assh_status_t
 asshh_inter_decode_env(struct asshh_inter_env_s *i,
                       const uint8_t *data, size_t size)
 
 {
-  assh_error_t err;
+  assh_status_t err;
   const uint8_t *n, *d = data;
 
   ASSH_RET_ON_ERR(assh_check_string(data, size, d, &n));
@@ -439,13 +439,13 @@ asshh_inter_decode_env(struct asshh_inter_env_s *i,
 #endif
 
 #ifdef CONFIG_ASSH_CLIENT
-assh_error_t
+assh_status_t
 asshh_inter_send_shell(struct assh_session_s *s,
                       struct assh_channel_s *ch,
                       struct assh_request_s **rq)
 
 {
-  assh_error_t err;
+  assh_status_t err;
   ASSH_RET_ON_ERR(assh_request(s, ch, "shell", 5, NULL, 0, rq));
 
   return ASSH_OK;
@@ -469,12 +469,12 @@ asshh_inter_size_exec(const struct asshh_inter_exec_s *i)
        ;
 }
 
-assh_error_t
+assh_status_t
 asshh_inter_encode_exec(uint8_t *data, size_t size,
 				const struct asshh_inter_exec_s *i)
 
 {
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(asshh_inter_size_exec(i) > size,
 	       ASSH_ERR_OUTPUT_OVERFLOW);
@@ -487,14 +487,14 @@ asshh_inter_encode_exec(uint8_t *data, size_t size,
 
   return ASSH_OK;
 }
-assh_error_t
+assh_status_t
 asshh_inter_send_exec(struct assh_session_s *s,
                      struct assh_channel_s *ch,
                      struct assh_request_s **rq,
                      const struct asshh_inter_exec_s *i)
 
 {
-  assh_error_t err;
+  assh_status_t err;
 
   size_t sz = asshh_inter_size_exec(i);
   uint8_t buf[sz];
@@ -508,12 +508,12 @@ asshh_inter_send_exec(struct assh_session_s *s,
 
 #ifdef CONFIG_ASSH_SERVER
 
-assh_error_t
+assh_status_t
 asshh_inter_decode_exec(struct asshh_inter_exec_s *i,
                        const uint8_t *data, size_t size)
 
 {
-  assh_error_t err;
+  assh_status_t err;
   const uint8_t *n, *d = data;
 
   ASSH_RET_ON_ERR(assh_check_string(data, size, d, &n));
@@ -541,12 +541,12 @@ asshh_inter_size_subsystem(const struct asshh_inter_subsystem_s *i)
        ;
 }
 
-assh_error_t
+assh_status_t
 asshh_inter_encode_subsystem(uint8_t *data, size_t size,
 				const struct asshh_inter_subsystem_s *i)
 
 {
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(asshh_inter_size_subsystem(i) > size,
 	       ASSH_ERR_OUTPUT_OVERFLOW);
@@ -559,14 +559,14 @@ asshh_inter_encode_subsystem(uint8_t *data, size_t size,
 
   return ASSH_OK;
 }
-assh_error_t
+assh_status_t
 asshh_inter_send_subsystem(struct assh_session_s *s,
                           struct assh_channel_s *ch,
                           struct assh_request_s **rq,
                           const struct asshh_inter_subsystem_s *i)
 
 {
-  assh_error_t err;
+  assh_status_t err;
 
   size_t sz = asshh_inter_size_subsystem(i);
   uint8_t buf[sz];
@@ -580,12 +580,12 @@ asshh_inter_send_subsystem(struct assh_session_s *s,
 
 #ifdef CONFIG_ASSH_SERVER
 
-assh_error_t
+assh_status_t
 asshh_inter_decode_subsystem(struct asshh_inter_subsystem_s *i,
                             const uint8_t *data, size_t size)
 
 {
-  assh_error_t err;
+  assh_status_t err;
   const uint8_t *n, *d = data;
 
   ASSH_RET_ON_ERR(assh_check_string(data, size, d, &n));
@@ -621,12 +621,12 @@ asshh_inter_size_window_change(const struct asshh_inter_window_change_s *i)
        ;
 }
 
-assh_error_t
+assh_status_t
 asshh_inter_encode_window_change(uint8_t *data, size_t size,
 				const struct asshh_inter_window_change_s *i)
 
 {
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(asshh_inter_size_window_change(i) > size,
 	       ASSH_ERR_OUTPUT_OVERFLOW);
@@ -646,13 +646,13 @@ asshh_inter_encode_window_change(uint8_t *data, size_t size,
 
   return ASSH_OK;
 }
-assh_error_t
+assh_status_t
 asshh_inter_send_window_change(struct assh_session_s *s,
                               struct assh_channel_s *ch,
                               const struct asshh_inter_window_change_s *i)
 
 {
-  assh_error_t err;
+  assh_status_t err;
 
   size_t sz = asshh_inter_size_window_change(i);
   uint8_t buf[sz];
@@ -666,12 +666,12 @@ asshh_inter_send_window_change(struct assh_session_s *s,
 
 #ifdef CONFIG_ASSH_SERVER
 
-assh_error_t
+assh_status_t
 asshh_inter_decode_window_change(struct asshh_inter_window_change_s *i,
                                 const uint8_t *data, size_t size)
 
 {
-  assh_error_t err;
+  assh_status_t err;
   const uint8_t *n, *d = data;
 
   ASSH_RET_ON_ERR(assh_check_array(data, size, d, 16, &n));
@@ -705,12 +705,12 @@ asshh_inter_size_xon_xoff(const struct asshh_inter_xon_xoff_s *i)
        ;
 }
 
-assh_error_t
+assh_status_t
 asshh_inter_encode_xon_xoff(uint8_t *data, size_t size,
 				const struct asshh_inter_xon_xoff_s *i)
 
 {
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(asshh_inter_size_xon_xoff(i) > size,
 	       ASSH_ERR_OUTPUT_OVERFLOW);
@@ -721,13 +721,13 @@ asshh_inter_encode_xon_xoff(uint8_t *data, size_t size,
 
   return ASSH_OK;
 }
-assh_error_t
+assh_status_t
 asshh_inter_send_xon_xoff(struct assh_session_s *s,
                          struct assh_channel_s *ch,
                          const struct asshh_inter_xon_xoff_s *i)
 
 {
-  assh_error_t err;
+  assh_status_t err;
 
   size_t sz = asshh_inter_size_xon_xoff(i);
   uint8_t buf[sz];
@@ -738,12 +738,12 @@ asshh_inter_send_xon_xoff(struct assh_session_s *s,
   return ASSH_OK;
 }
 
-assh_error_t
+assh_status_t
 asshh_inter_decode_xon_xoff(struct asshh_inter_xon_xoff_s *i,
                            const uint8_t *data, size_t size)
 
 {
-  assh_error_t err;
+  assh_status_t err;
   const uint8_t *n, *d = data;
 
   ASSH_RET_ON_ERR(assh_check_array(data, size, d, 1, &n));
@@ -770,12 +770,12 @@ asshh_inter_size_signal(const struct asshh_inter_signal_s *i)
        ;
 }
 
-assh_error_t
+assh_status_t
 asshh_inter_encode_signal(uint8_t *data, size_t size,
 				const struct asshh_inter_signal_s *i)
 
 {
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(asshh_inter_size_signal(i) > size,
 	       ASSH_ERR_OUTPUT_OVERFLOW);
@@ -788,13 +788,13 @@ asshh_inter_encode_signal(uint8_t *data, size_t size,
 
   return ASSH_OK;
 }
-assh_error_t
+assh_status_t
 asshh_inter_send_signal(struct assh_session_s *s,
                        struct assh_channel_s *ch,
                        const struct asshh_inter_signal_s *i)
 
 {
-  assh_error_t err;
+  assh_status_t err;
 
   size_t sz = asshh_inter_size_signal(i);
   uint8_t buf[sz];
@@ -808,12 +808,12 @@ asshh_inter_send_signal(struct assh_session_s *s,
 
 #ifdef CONFIG_ASSH_SERVER
 
-assh_error_t
+assh_status_t
 asshh_inter_decode_signal(struct asshh_inter_signal_s *i,
                          const uint8_t *data, size_t size)
 
 {
-  assh_error_t err;
+  assh_status_t err;
   const uint8_t *n, *d = data;
 
   ASSH_RET_ON_ERR(assh_check_string(data, size, d, &n));
@@ -838,12 +838,12 @@ asshh_inter_size_exit_status(const struct asshh_inter_exit_status_s *i)
        ;
 }
 
-assh_error_t
+assh_status_t
 asshh_inter_encode_exit_status(uint8_t *data, size_t size,
 				const struct asshh_inter_exit_status_s *i)
 
 {
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(asshh_inter_size_exit_status(i) > size,
 	       ASSH_ERR_OUTPUT_OVERFLOW);
@@ -854,13 +854,13 @@ asshh_inter_encode_exit_status(uint8_t *data, size_t size,
 
   return ASSH_OK;
 }
-assh_error_t
+assh_status_t
 asshh_inter_send_exit_status(struct assh_session_s *s,
                             struct assh_channel_s *ch,
                             const struct asshh_inter_exit_status_s *i)
 
 {
-  assh_error_t err;
+  assh_status_t err;
 
   size_t sz = asshh_inter_size_exit_status(i);
   uint8_t buf[sz];
@@ -871,12 +871,12 @@ asshh_inter_send_exit_status(struct assh_session_s *s,
   return ASSH_OK;
 }
 
-assh_error_t
+assh_status_t
 asshh_inter_decode_exit_status(struct asshh_inter_exit_status_s *i,
                               const uint8_t *data, size_t size)
 
 {
-  assh_error_t err;
+  assh_status_t err;
   const uint8_t *n, *d = data;
 
   ASSH_RET_ON_ERR(assh_check_array(data, size, d, 4, &n));
@@ -912,12 +912,12 @@ asshh_inter_size_exit_signal(const struct asshh_inter_exit_signal_s *i)
        ;
 }
 
-assh_error_t
+assh_status_t
 asshh_inter_encode_exit_signal(uint8_t *data, size_t size,
 				const struct asshh_inter_exit_signal_s *i)
 
 {
-  assh_error_t err;
+  assh_status_t err;
 
   ASSH_RET_IF_TRUE(asshh_inter_size_exit_signal(i) > size,
 	       ASSH_ERR_OUTPUT_OVERFLOW);
@@ -942,13 +942,13 @@ asshh_inter_encode_exit_signal(uint8_t *data, size_t size,
 
   return ASSH_OK;
 }
-assh_error_t
+assh_status_t
 asshh_inter_send_exit_signal(struct assh_session_s *s,
                             struct assh_channel_s *ch,
                             const struct asshh_inter_exit_signal_s *i)
 
 {
-  assh_error_t err;
+  assh_status_t err;
 
   size_t sz = asshh_inter_size_exit_signal(i);
   uint8_t buf[sz];
@@ -959,12 +959,12 @@ asshh_inter_send_exit_signal(struct assh_session_s *s,
   return ASSH_OK;
 }
 
-assh_error_t
+assh_status_t
 asshh_inter_decode_exit_signal(struct asshh_inter_exit_signal_s *i,
                               const uint8_t *data, size_t size)
 
 {
-  assh_error_t err;
+  assh_status_t err;
   const uint8_t *n, *d = data;
 
   ASSH_RET_ON_ERR(assh_check_string(data, size, d, &n));

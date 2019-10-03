@@ -53,7 +53,7 @@ enum assh_service_state_e
 
 /** @internal @see assh_service_init_t */
 #define ASSH_SERVICE_INIT_FCN(n) \
-  ASSH_WARN_UNUSED_RESULT assh_error_t (n)(struct assh_session_s *s)
+  ASSH_WARN_UNUSED_RESULT assh_status_t (n)(struct assh_session_s *s)
 
 /** @internal @This defines the function type for the initialization
     operation of the ssh service module interface. This function is
@@ -75,7 +75,7 @@ typedef ASSH_SERVICE_INIT_FCN(assh_service_init_t);
 typedef ASSH_SERVICE_CLEANUP_FCN(assh_service_cleanup_t);
 
 /** @internal @see assh_service_process_t */
-#define ASSH_SERVICE_PROCESS_FCN(n) assh_error_t (n)(struct assh_session_s *s, \
+#define ASSH_SERVICE_PROCESS_FCN(n) assh_status_t (n)(struct assh_session_s *s, \
                                                      struct assh_packet_s *p, \
                                                      struct assh_event_s *e)
 
@@ -141,7 +141,7 @@ union assh_event_service_u
 
 /** @This registers a single @ref assh_service_s for use by
     the given context. @see assh_service_register_va */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_service_register(struct assh_context_s *c,
 		      struct assh_service_s *srv);
 
@@ -151,23 +151,23 @@ assh_service_register(struct assh_context_s *c,
     When registering @hl service modules onto a client context, the
     registration order determines the order used to request execution
     of the @hl services.  @see assh_service_register */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_service_register_va(struct assh_context_s *c, ...);
 
 /** @This registers the standard @tt ssh-userauth and @tt
     ssh-connection services. The appropriate client or server @hl
     services are used depending on the context type. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_service_register_default(struct assh_context_s *c);
 
 /** @internal */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_service_loop(struct assh_session_s *s,
                   struct assh_packet_s *p,
                   struct assh_event_s *e);
 
 /** @This lookup a registered service by name. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_service_by_name(struct assh_context_s *c,
                      size_t name_len, const char *name,
                      const struct assh_service_s **srv_);
@@ -175,7 +175,7 @@ assh_service_by_name(struct assh_context_s *c,
 /** @internal @This returns the next @hl service which must be started
     for the current client session. Designed for use by @hl service
     implementations. */
-ASSH_WARN_UNUSED_RESULT assh_error_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_service_next(struct assh_session_s *s,
                   const struct assh_service_s **srv);
 
