@@ -109,7 +109,7 @@ methods and key formats.
     @end list
 
     There are additional such @hl algorithms with larger primes,
-    specified in @xref {draftmodp}:
+    specified in @xref {rfc8268}:
     @list
       @item @tt {diffie-hellman-group15-sha512} (3072 bits prime).
       @item @tt {diffie-hellman-group16-sha512} (4096 bits prime).

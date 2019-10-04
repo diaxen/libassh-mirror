@@ -1,13 +1,4 @@
 
-@bib{analy01} Williams S.C. (2011) Analysis of the SSH Key Exchange Protocol. In: Chen L. (eds) Cryptography and Coding. IMACC 2011. Lecture Notes in Computer Science, vol 7089. Springer, Berlin, Heidelberg
-@bib{model01} P. Fiterau-Brostean, Toon Lenaerts, E. Poll, J. de Ruiter, F.W. Vaandrager, and P. Verleg. Model Learning and Model Checking of SSH Implementations. In Proceedings 24th ACM SIGSOFT International SPIN Symposium on Model Checking of Software, 13-14 July 2017, Santa Barbara, CA, USA, pages 142-151. ACM, NY, 2017.
-@bib{infer01} Vaandrager, F.W. Inferring SSH state machines using protocol state fuzzing.
-@bib{model02} Tijssen, M.: Automatic modeling of ssh implementations with state machine learning algorithms. Bachelor's thesis, Radboud University Nijmegen (June 2014).
-@bib{trspec01} Erik Poll and Aleksy Schubert, Rigorous specifications of the SSH transport layer.
-@bib{curve25519libssh} Aris Adamantiadis, description of the @em{curve25519-sha256@libssh.org.txt} algorithm
-@bib{curve25519} Curve25519: new Diffie-Hellman speed records
-@bib{ietfladdsc} IETF draft-ladd-safecurves-04
-@bib{safecurves} @url {http://safecurves.cr.yp.to} {SafeCurves}: choosing safe curves for elliptic-curve cryptography
 @bib{rfc2440} @url {https://tools.ietf.org/html/rfc2440}{rfc2440} : OpenPGP Message Format
 @bib{rfc4250} @url {https://tools.ietf.org/html/rfc4250}{rfc4250} : The Secure Shell (SSH) Protocol Assigned Numbers
 @bib{rfc4251} @url {https://tools.ietf.org/html/rfc4251}{rfc4251} : The Secure Shell (SSH) Protocol Architecture
@@ -25,7 +16,16 @@
 @bib{rfc6668} @url {https://tools.ietf.org/html/rfc6668}{rfc6668} : SHA-2 Data Integrity Verification for the Secure Shell (SSH) Transport Layer Protocol
 @bib{rfc3526} @url {https://tools.ietf.org/html/rfc3526}{rfc3526} : More Modular Exponential (MODP) Diffie-Hellman groups for Internet Key Exchange (IKE)
 @bib{rfc3766} @url {https://tools.ietf.org/html/rfc3766}{rfc3766} : Determining Strengths For Public Keys Used For Exchanging Symmetric Key
-@bib{draftmodp} draft-ietf-curdle-ssh-modp-dh-sha2-05
-@bib{fips1864} @em {FIPS 186.4}
-@bib{draftsignsha2} @em{IETF draft-rsa-dsa-sha2-256-03}
-@bib{hshssign} @em {High-speed high-security signatures}
+@bib{rfc8268} @url {https://tools.ietf.org/html/rfc8268}{rfc8268} : More Modular Exponentiation (MODP) Diffie-Hellman (DH) Key Exchange (KEX) Groups for Secure Shell (SSH)
+@bib{curve25519} @url {https://cr.yp.to/ecdh/curve25519-20060209.pdf}{curve25519-20060209.pdf} : Curve25519: new Diffie-Hellman speed records
+@bib{ietfladdsc} @url {https://tools.ietf.org/html/draft-ladd-safecurves-04}{draft-ladd-safecurves-04.txt} : Additional Elliptic Curves for IETF protocols
+@bib{safecurves} @url {http://safecurves.cr.yp.to} {SafeCurves}: choosing safe curves for elliptic-curve cryptography
+@bib{fips1864} @url {https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf}{FIPS 186.4} : Digital Signature Standard (DSS)
+@bib{draftsignsha2} @url {https://tools.ietf.org/html/draft-rsa-dsa-sha2-256-03}{draft-rsa-dsa-sha2-256-03.txt} : Use of RSA Keys with SHA-2 256 and 512 in Secure Shell (SSH)
+@bib{hshssign} @url {https://ed25519.cr.yp.to/ed25519-20110705.pdf}{ed25519-20110705.pdf} : High-speed high-security signatures - Ed25518
+@bib{analy01} Williams S.C. (2011) Analysis of the SSH Key Exchange Protocol. In: Chen L. (eds) Cryptography and Coding. IMACC 2011. Lecture Notes in Computer Science, vol 7089. Springer, Berlin, Heidelberg
+@bib{model01} P. Fiterau-Brostean, Toon Lenaerts, E. Poll, J. de Ruiter, F.W. Vaandrager, and P. Verleg. Model Learning and Model Checking of SSH Implementations. In Proceedings 24th ACM SIGSOFT International SPIN Symposium on Model Checking of Software, 13-14 July 2017, Santa Barbara, CA, USA, pages 142-151. ACM, NY, 2017.
+@bib{infer01} Vaandrager, F.W. Inferring SSH state machines using protocol state fuzzing.
+@bib{model02} Tijssen, M.: Automatic modeling of ssh implementations with state machine learning algorithms. Bachelor's thesis, Radboud University Nijmegen (June 2014).
+@bib{trspec01} Erik Poll and Aleksy Schubert, Rigorous specifications of the SSH transport layer.
+@bib{curve25519libssh} Aris Adamantiadis, description of the @em{curve25519-sha256@libssh.org.txt} algorithm
