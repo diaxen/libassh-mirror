@@ -637,6 +637,7 @@ asshh_client_init_inter_session(struct asshh_client_inter_session_s *ctx,
   ASSH_SET_STATE(ctx, state, ASSH_CLIENT_INTER_ST_INIT);
   ctx->command = command;
   ctx->term = term;
+  ctx->char_width = ctx->char_height = 0;
   ctx->channel = NULL;
   ctx->request = NULL;
 }
@@ -684,7 +685,7 @@ asshh_client_event_inter_session(struct assh_session_s *s,
       ASSH_SET_STATE(ctx, state, ASSH_CLIENT_INTER_ST_PTY);
 
       struct asshh_inter_pty_req_s i;
-      asshh_inter_init_pty_req(&i, ctx->term, 0, 0, 0, 0, NULL);
+      asshh_inter_init_pty_req(&i, ctx->term, ctx->char_width, ctx->char_height, 0, 0, NULL);
 
       if (asshh_inter_send_pty_req(s, ctx->channel, &ctx->request, &i))
 	goto err;

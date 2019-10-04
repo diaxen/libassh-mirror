@@ -68,6 +68,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <termios.h>
+#ifdef CONFIG_ASSH_TIOCGWINSZ
+# include <sys/ioctl.h>
+#endif
 
 #define ERROR(...) do { fprintf(stderr, __VA_ARGS__); exit(1); } while (0)
 
@@ -224,7 +227,17 @@ ssh_loop(struct assh_session_s *session,
               t = term;
               cfmakeraw(&t);
               tcsetattr(0, 0, &t);
-            }
+
+#ifdef CONFIG_ASSH_TIOCGWINSZ
+	      /* get terminal size */
+	      struct winsize ws;
+	      if (!ioctl(STDIN_FILENO, TIOCGWINSZ, &ws))
+		{
+		  inter->char_width = ws.ws_col;
+		  inter->char_height = ws.ws_row;
+		}
+#endif
+	    }
 
         case ASSH_EVENT_CHANNEL_CONFIRMATION:
         case ASSH_EVENT_CHANNEL_FAILURE:

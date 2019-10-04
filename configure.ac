@@ -56,6 +56,12 @@ AC_COMPILE_IFELSE([
   	     void *arg);
 ], AC_DEFINE(CONFIG_ASSH_GNU_QSORTR, 1, [Use GNU qsort_r]) )
 
+AC_COMPILE_IFELSE([
+  #include <sys/ioctl.h>
+  struct winsize ws;
+  int i = TIOCGWINSZ;
+], AC_DEFINE(CONFIG_ASSH_TIOCGWINSZ, 1, [Use GNU TIOCGWINSZ ioctl]) )
+
 AC_CHECK_LIB(c, posix_openpt,
   AC_DEFINE(CONFIG_ASSH_POSIX_OPENPT, 1, [Use posix_openpt when defined.])
   AC_DEFINE(_XOPEN_SOURCE, 600, [_XOPEN_SOURCE])

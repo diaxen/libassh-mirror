@@ -182,6 +182,7 @@ struct asshh_client_inter_session_s
   enum asshh_client_inter_session_state_e state;
   const char *command;
   const char *term;
+  uint_fast16_t char_width, char_height;
   struct assh_channel_s *channel;
   struct assh_request_s *request;
 };
