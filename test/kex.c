@@ -62,6 +62,12 @@ struct algo_with_key_s
   size_t key_size;
 };
 
+const char *kex_filter = NULL;
+const char *sign_filter = NULL;
+const char *cipher_filter = NULL;
+const char *mac_filter = NULL;
+const char *comp_filter = NULL;
+
 /* all kex algorithms, multiple set of parameters */
 static const struct algo_with_key_s kex_list_slow[] =
 {
@@ -609,28 +615,35 @@ void test_loop(unsigned int seed,
 
   while (*comp)
     {
-      while (*mac)
-	{
-	  while (*cipher)
-	    {
-	      while (sign->algo)
+      if (!comp_filter || strstr(assh_algo_name(&(*comp)->algo), comp_filter))
+	while (*mac)
+	  {
+	    if (!mac_filter || strstr(assh_algo_name(&(*mac)->algo), mac_filter))
+	      while (*cipher)
 		{
-		  while (kex->algo)
-		    {
-		      assh_prng_seed(seed);
-		      test(kex->algo, sign->algo, *cipher, *mac, *comp,
-			   kex, sign, seed, cycles);
-		      kex++;
-		    }
-		  kex = kex_list;
-		  sign++;
+		  if (!cipher_filter || strstr(assh_algo_name(&(*cipher)->algo), cipher_filter))
+		    while (sign->algo)
+		      {
+			if (!sign_filter || strstr(assh_algo_name(sign->algo), sign_filter))
+			  while (kex->algo)
+			    {
+			      if (!kex_filter || strstr(assh_algo_name(kex->algo), kex_filter))
+				{
+				  assh_prng_seed(seed);
+				  test(kex->algo, sign->algo, *cipher, *mac, *comp,
+				       kex, sign, seed, cycles);
+				}
+			      kex++;
+			    }
+			kex = kex_list;
+			sign++;
+		      }
+		  sign = sign_list;
+		  cipher++;
 		}
-	      sign = sign_list;
-	      cipher++;
-	    }
-	  cipher = cipher_list;
-	  mac++;
-	}
+	    cipher = cipher_list;
+	    mac++;
+	  }
       mac = mac_list;
       comp++;
     }
@@ -648,7 +661,12 @@ static void usage()
 	  "    -a         run memory allocator fuzzing tests\n"
 	  "    -p         run packet corruption fuzzing tests\n"
 	  "    -f         run more fuzzing tests\n"
-	  "    -S         test more algorithm variants (slow)\n"
+	  "    -m         test more algorithm variants (slow)\n"
+	  "    -K substr  filter by key-exchange algo name\n"
+	  "    -S substr  filter by signature algo name\n"
+	  "    -C substr  filter by cipher algo name\n"
+	  "    -M substr  filter by mac algo name\n"
+	  "    -P substr  filter by compression algo name\n"
 	  "    -c count   set number of test passes (default 100)\n"
 	  "    -s seed    set initial seed (default: time(0))\n"
 	  );
@@ -672,7 +690,7 @@ int main(int argc, char **argv)
   assh_bool_t slow = 0;
   int opt;
 
-  while ((opt = getopt(argc, argv, "tpafhSs:c:")) != -1)
+  while ((opt = getopt(argc, argv, "tpafhms:c:K:S:C:M:P:")) != -1)
     {
       switch (opt)
 	{
@@ -697,11 +715,26 @@ int main(int argc, char **argv)
 	case 's':
 	  seed = atoi(optarg);
 	  break;
-	case 'S':
+	case 'm':
 	  slow = 1;
 	  break;
 	case 'c':
 	  count = atoi(optarg);
+	  break;
+	case 'K':
+	  kex_filter = optarg;
+	  break;
+	case 'S':
+	  sign_filter = optarg;
+	  break;
+	case 'C':
+	  cipher_filter = optarg;
+	  break;
+	case 'M':
+	  mac_filter = optarg;
+	  break;
+	case 'P':
+	  comp_filter = optarg;
 	  break;
 	case 'h':
 	  usage();
