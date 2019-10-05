@@ -234,6 +234,8 @@ static struct assh_context_s context[2];
 static struct assh_session_s session[2];
 static FILE *f_out;
 static FILE *f_in[2];
+static uint32_t f_in_iter[2];
+static uint16_t f_in_sz[2];
 static int sock;
 static int verbose = 0;
 static uint32_t kex_th = 0;
@@ -261,7 +263,7 @@ static uint16_t keyboard_accepts = 0; /* 2 bit per try */
 static char *keyboard_infos = NULL;
 static uint_fast8_t multi_auth = 0;
 
-static uint32_t iter[2];
+static uint32_t iter;
 static uint32_t max_iter[2] = { 0, 0 };
 
 static void term_handler(int sig)
@@ -273,11 +275,9 @@ static void term_handler(int sig)
     exit(1);
 
   if (action == RECORD_CLIENT_SERVER ||
-      action == RECORD_SERVER_CONNECT)
-    fprintf(stderr, "[server] iterations: %u\n", iter[0]);
-  if (action == RECORD_CLIENT_SERVER ||
+      action == RECORD_SERVER_CONNECT ||
       action == RECORD_CLIENT_CONNECT)
-    fprintf(stderr, "[client] iterations: %u\n", iter[1]);
+    fprintf(stderr, "iterations: %u\n", iter);
 
   if (action == RECORD_CLIENT_SERVER)
     exit(1);
@@ -377,7 +377,6 @@ static void test()
       struct assh_context_s *c = &context[i];
 
       fifo_init(&fifo[i]);
-      iter[i] = 0;
 
       switch (action)
 	{
@@ -424,7 +423,7 @@ static void test()
   char *kbrps_p = keyboard_replies;
   char *kbinfo_p = keyboard_infos;
 
-  while (running)
+  for (iter = 0; running; iter++)
     {
       for (i = 0; i < 2; i++)
 	{
@@ -432,7 +431,7 @@ static void test()
 	  assh_status_t everr = ASSH_OK;
 	  const char *side = i ? "client" : "server";
 
-	  ASSH_DEBUG("---- %s %u ----\n", side, iter[i]);
+	  ASSH_DEBUG("---- %s #%u ----\n", side, iter);
 
 	  switch (action)
 	    {
@@ -446,38 +445,53 @@ static void test()
 	    read_from_network: {
 	      uint8_t buf[CONFIG_ASSH_MAX_PAYLOAD];
 	      struct pollfd p;
+
+	      if (!((running >> i) & 1))
+		continue;
+
 	      p.fd = sock;
 	      p.events = POLLIN;
+	      ssize_t r = 0;
+
 	      switch (poll(&p, 1, 100))
 		{
 		case 1: {
-		  ssize_t r = recv(sock, buf, sizeof(buf), 0);
+		  r = recv(sock, buf, sizeof(buf), 0);
 		  if (r > 0)
 		    {
 		      if (verbose > 2)
-			assh_hexdump(i ? "remote client -> server"
-				: "remote server -> client"
-				, buf, r);
+			{
+			  fprintf(stderr, "[%s] iterations: %u\n", side, iter);
+			  assh_hexdump(i ? "remote client -> server"
+				       : "remote server -> client"
+				       , buf, r);
+			}
 		      fifo_write(&fifo[i ^ 1], buf, r);
 		      raw_write(i ^ 1, buf, r);
-
-		      fputc(i | 2, f_out);
-		      fput_u16(r, f_out);
-		      fwrite(buf, r, 1, f_out);
 		    }
 		  else
 		    {
-		      running &= ~(1 << i);
+		      case -1:
+			running &= ~(1 << i);
+			r = 0;
+			if (verbose > 2)
+			  fprintf(stderr, "[%s] EOF\n", side);
 		    }
-		  break;
+
+		  fputc(i | CHUNK_PKT_REMOTE2CLI, f_out);
+		  fput_u16(r + 4, f_out);
+		  fput_u32(iter, f_out);
+		  if (r)
+		    fwrite(buf, r, 1, f_out);
+		  continue;
 		}
 
 		case 0:
 		  continue;
-		case -1:
-		  running &= ~(1 << i);
+
+		default:
+		  ASSH_UNREACHABLE();
 		}
-	      continue;
 	    }
 
 	    case REPLAY_CLIENT:
@@ -489,32 +503,54 @@ static void test()
 		break;
 
 	    replay_from_file: {
-		if (((running >> !i) & 1) &&
-		    fifo[i ^ 1].size != 0)
+		if (!((running >> i) & 1))
 		  continue;
 
-		/* replay packets from file */
-		int d = fget_dir(f_in[i], i);
+		if (f_in_iter[i] == 0)
+		  {
+		    /* replay packets from file */
+		    int d = fget_dir(f_in[i], i);
+		    if (d < 0)
+		      TEST_FAIL("unexpected end of stream\n");
 
-		if (d < 0)
+		    int s = fget_u16(f_in[i]);
+		    if (s < 4)
+		      TEST_FAIL("unexpected end of stream\n");
+		    f_in_iter[i] = fget_u32(f_in[i]);
+		    f_in_sz[i] = s - 4;
+		  }
+
+		/* do not replay the payload early */
+		if (f_in_iter[i] > iter)
+		  continue;
+
+		if (f_in_iter[i] < iter)
+		  TEST_FAIL("iteration out of sync %u %u\n", f_in_iter[i], iter);
+
+		int s = f_in_sz[i];
+
+		if (s == 0)
 		  {
 		    running &= ~(1 << i);
 		    if (verbose > 2)
 		      fprintf(stderr, "[%s] EOF\n", side);
-		    continue;
+		  }
+		else
+		  {
+		    uint8_t st[s];
+		    if (fread(st, 1, s, f_in[i]) != s)
+		      TEST_FAIL("unexpected end of stream\n");
+		    fifo_write(&fifo[i ^ 1], st, s);
+		    raw_write(i ^ 1, st, s);
+		    if (verbose > 2)
+		      {
+			fprintf(stderr, "[%s] iterations: %u\n", side, iter);
+			assh_hexdump(i ? "replay client -> server"
+				       : "replay server -> client", st, s);
+		      }
 		  }
 
-		int s = fget_u16(f_in[i]);
-		if (s < 0)
-		  TEST_FAIL("unexpected end of stream\n");
-		uint8_t st[s];
-		if (fread(st, 1, s, f_in[i]) != s)
-		  TEST_FAIL("unexpected end of stream\n");
-		fifo_write(&fifo[i ^ 1], st, s);
-		raw_write(i ^ 1, st, s);
-		if (verbose > 2)
-		  assh_hexdump(i ? "replay client -> server"
-			  : "replay server -> client", st, s);
+		f_in_iter[i] = 0;
 		continue;
 	      }
 
@@ -832,9 +868,6 @@ static void test()
 		  te->transferred = fifo_read(&fifo[i], te->buf.data, te->buf.size);
 		}
 
-	      if (te->transferred == te->buf.size)
-		iter[i]++;
-
 	      break;
 	    }
 
@@ -843,17 +876,19 @@ static void test()
 
 	      if (session[i].stream_out_size == 0)
 		{
+		  assert(te->buf.size > 0);
 		  switch (action)
 		    {
 		    case RECORD_CLIENT_CONNECT:
 		    case RECORD_SERVER_CONNECT:
 		    case RECORD_CLIENT_SERVER:
-		      fputc(i, f_out);
-		      fput_u16(te->buf.size, f_out);
+		      fputc(i | CHUNK_PKT_SRV2CLI, f_out);
+		      fput_u16(te->buf.size + 4, f_out);
+		      fput_u32(iter, f_out);
 		      fwrite(te->buf.data, te->buf.size, 1, f_out);
 		      if (verbose > 2)
 			{
-			  fprintf(stderr, "[%s] iterations: %u\n", side, iter[i]);
+			  fprintf(stderr, "[%s] iterations: %u\n", side, iter);
 			  assh_hexdump(i ? "client -> server" : "server -> client",
 				       te->buf.data, te->buf.size);
 			}
@@ -864,7 +899,7 @@ static void test()
 		    case REPLAY_CLIENT_SERVER: {
 		      if (verbose > 2)
 			{
-			  fprintf(stderr, "[%s] iterations: %u\n", side, iter[i]);
+			  fprintf(stderr, "[%s] iterations: %u\n", side, iter);
 			  assh_hexdump(i ? "client -> server" : "server -> client",
 				       te->buf.data, te->buf.size);
 			}
@@ -872,6 +907,12 @@ static void test()
 		      if (d < 0)
 			TEST_FAIL("unexpected end of stream\n");
 		      int s = fget_u16(f_in[i]);
+		      if (s < 4)
+			TEST_FAIL("unexpected end of stream\n");
+		      uint32_t it = fget_u32(f_in[i]);
+		      if (it != iter)
+			TEST_FAIL("iteration out of sync %u %u\n", it, iter);
+		      s -= 4;
 		      uint8_t st[s];
 		      if (fread(st, 1, s, f_in[i]) != s)
 			TEST_FAIL("unexpected end of stream\n");
@@ -900,6 +941,7 @@ static void test()
 		  int r = send(sock, te->buf.data, te->buf.size, 0);
 		  if (r < 0)
 		    everr = ASSH_ERR_IO;
+		  assert(r == te->buf.size);
 		  te->transferred = r;
 		  break;
 		}
@@ -920,7 +962,7 @@ static void test()
 
 	  assh_event_done(&session[i], &event, everr);
 
-	  if (max_iter[i] && iter[i] == max_iter[i])
+	  if (max_iter[i] && iter >= max_iter[i])
 	    {
 	      if (verbose > 0)
 		fprintf(stderr, "[%s] max iterations reached, disconnecting\n", side);
@@ -1351,12 +1393,14 @@ static void replay_file(const char *fname)
   fprintf(stderr, "replaying `%s' ...\n", fname);
 
   f_in[0] = fopen(fname, "rb");
+  f_in_iter[0] = 0;
   if (!f_in[0])
     TEST_FAIL("unable to open input stream file\n");
 
   action = fgetc(f_in[0]) & 3;
 
   f_in[1] = fopen(fname, "rb");
+  f_in_iter[1] = 0;
   if (!f_in[1])
     TEST_FAIL("unable to open input stream file\n");
 
