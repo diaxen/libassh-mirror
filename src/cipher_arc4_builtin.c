@@ -105,7 +105,7 @@ static ASSH_CIPHER_CLEANUP_FCN(assh_arc4_cleanup)
 
 const struct assh_algo_cipher_s assh_cipher_arc4 =
 {
-  ASSH_ALGO_BASE(CIPHER, 5, 80,
+  ASSH_ALGO_BASE(CIPHER, "assh-builtin", 5, 80,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                       "arcfour" })
   ),
@@ -120,7 +120,7 @@ const struct assh_algo_cipher_s assh_cipher_arc4 =
 
 const struct assh_algo_cipher_s assh_cipher_arc4_128 =
 {
-  ASSH_ALGO_BASE(CIPHER, 10, 80,
+  ASSH_ALGO_BASE(CIPHER, "assh-builtin", 10, 80,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                       "arcfour128" })
   ),
@@ -135,7 +135,7 @@ const struct assh_algo_cipher_s assh_cipher_arc4_128 =
 
 const struct assh_algo_cipher_s assh_cipher_arc4_256 =
 {
-  ASSH_ALGO_BASE(CIPHER, 15, 80,
+  ASSH_ALGO_BASE(CIPHER, "assh-builtin", 15, 80,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                       "arcfour256" })
   ),

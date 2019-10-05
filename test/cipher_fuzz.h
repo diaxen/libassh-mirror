@@ -26,7 +26,7 @@ static ASSH_CIPHER_CLEANUP_FCN(assh_fuzz_cleanup)
 
 const struct assh_algo_cipher_s assh_cipher_fuzz =
 {
-  ASSH_ALGO_BASE(CIPHER, 0, 99,
+  ASSH_ALGO_BASE(CIPHER, "assh-test", 0, 99,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
                       "fuzz" })
   ),

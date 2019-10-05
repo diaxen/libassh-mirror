@@ -40,7 +40,7 @@ static ASSH_COMPRESS_CLEANUP_FCN(assh_compress_none_cleanup)
 
 const struct assh_algo_compress_s assh_compress_none =
 {
-  ASSH_ALGO_BASE(COMPRESS, 99, 99,
+  ASSH_ALGO_BASE(COMPRESS, "assh-builtin", 99, 99,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "none" })
   ),
   .ctx_size = 0,

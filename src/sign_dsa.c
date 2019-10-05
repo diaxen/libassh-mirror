@@ -323,7 +323,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key_768)
 
 const struct assh_algo_sign_s assh_sign_dsa768 =
 {
-  ASSH_ALGO_BASE(SIGN, 15, 40,
+  ASSH_ALGO_BASE(SIGN, "assh-builtin", 15, 40,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "ssh-dss" }),
     ASSH_ALGO_VARIANT( 2, "768+ bits keys" ),
     .f_suitable_key = assh_sign_dsa_suitable_key_768,
@@ -346,7 +346,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key_1024)
 
 const struct assh_algo_sign_s assh_sign_dsa1024 =
 {
-  ASSH_ALGO_BASE(SIGN, 20, 40,
+  ASSH_ALGO_BASE(SIGN, "assh-builtin", 20, 40,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "ssh-dss" }),
     ASSH_ALGO_VARIANT( 2, "1024+ bits keys" ),
     .f_suitable_key = assh_sign_dsa_suitable_key_1024,
@@ -369,7 +369,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key_2048_224)
 
 const struct assh_algo_sign_s assh_sign_dsa2048_sha224 =
 {
-  ASSH_ALGO_BASE(SIGN, 35, 30,
+  ASSH_ALGO_BASE(SIGN, "assh-builtin", 35, 30,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
 	              "dsa2048-sha224@libassh.org" }),
     .f_suitable_key = assh_sign_dsa_suitable_key_2048_224,
@@ -393,7 +393,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key_2048_256)
 
 const struct assh_algo_sign_s assh_sign_dsa2048_sha256 =
 {
-  ASSH_ALGO_BASE(SIGN, 40, 30,
+  ASSH_ALGO_BASE(SIGN, "assh-builtin", 40, 30,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
 	              "dsa2048-sha256@libassh.org" }),
     .f_suitable_key = assh_sign_dsa_suitable_key_2048_256,
@@ -417,7 +417,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key_3072_256)
 
 const struct assh_algo_sign_s assh_sign_dsa3072_sha256 =
 {
-  ASSH_ALGO_BASE(SIGN, 50, 30,
+  ASSH_ALGO_BASE(SIGN, "assh-builtin", 50, 30,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
 	              "dsa3072-sha256@libassh.org" }),
     .f_suitable_key = assh_sign_dsa_suitable_key_3072_256,

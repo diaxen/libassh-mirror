@@ -110,7 +110,7 @@ static ASSH_MAC_INIT_FCN(assh_hmac_openssl_##id_##_init)                \
 									\
 const struct assh_algo_mac_s assh_hmac_##id_ =				\
 {									\
-  ASSH_ALGO_BASE(MAC, saf_, spd_,                                       \
+  ASSH_ALGO_BASE(MAC, "assh-openssl", saf_, spd_,                       \
                  ASSH_ALGO_NAMES(__VA_ARGS__)),                         \
   .ctx_size = sizeof(struct assh_hmac_openssl_context_s),		\
   .key_size = ksize_,							\

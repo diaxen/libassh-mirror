@@ -147,7 +147,7 @@ static ASSH_COMPRESS_CLEANUP_FCN(assh_compress_zlib_cleanup)
 
 const struct assh_algo_compress_s assh_compress_zlib =
 {
-  ASSH_ALGO_BASE(COMPRESS, 10, 50,
+  ASSH_ALGO_BASE(COMPRESS, "assh-builtin", 10, 50,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "zlib" })
   ),
   .ctx_size = sizeof(struct assh_zlib_ctx_s),
@@ -158,7 +158,7 @@ const struct assh_algo_compress_s assh_compress_zlib =
 
 const struct assh_algo_compress_s assh_compress_zlib_openssh =
 {
-  ASSH_ALGO_BASE(COMPRESS, 20, 50,
+  ASSH_ALGO_BASE(COMPRESS, "assh-builtin", 20, 50,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON, "zlib@openssh.com" })
   ),
   .ctx_size = sizeof(struct assh_zlib_ctx_s),

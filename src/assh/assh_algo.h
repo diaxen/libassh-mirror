@@ -112,12 +112,13 @@ struct assh_algo_name_s
 #define ASSH_ALGO_API_VERSION 0
 
 /** @internal @This initializes the fields of the @ref assh_algo_s structure */
-#define ASSH_ALGO_BASE(class__, safety_, speed_, ...)                   \
+#define ASSH_ALGO_BASE(class__, implem_, safety_, speed_, ...)		\
   .algo = {                                                             \
     .class_ = ASSH_ALGO_##class__,                                      \
     .api = ASSH_ALGO_API_VERSION,                                       \
     .safety = safety_,                                                  \
     .speed = speed_,                                                    \
+    .implem = implem_,                                                  \
     __VA_ARGS__                                                         \
   }
 
@@ -152,9 +153,11 @@ struct assh_algo_s
   /** List of SSH algorithm identifiers, used during key exchange */
   const struct assh_algo_name_s *names;
 
-  /** Variant description string, used when multiple declarations of
-      the same algorithm name exist. */
+  /** Variant description string. */
   const char *variant;
+
+  /** Implementation identification string.  Format is @em {vendor-library}. */
+  const char *implem;
 
   /** Pointer to associated key operations, may be @tt NULL. */
   const struct assh_key_algo_s *key;

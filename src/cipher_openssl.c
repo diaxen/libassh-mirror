@@ -228,7 +228,7 @@ static ASSH_CIPHER_INIT_FCN(assh_cipher_openssl_##id_##_init)		\
 									\
 const struct assh_algo_cipher_s assh_cipher_##id_ =			\
 {									\
-  ASSH_ALGO_BASE(CIPHER, saf_, spd_,                                    \
+  ASSH_ALGO_BASE(CIPHER, "assh-openssl", saf_, spd_,                    \
                  ASSH_ALGO_NAMES(__VA_ARGS__)),                         \
   .ctx_size = sizeof(struct assh_cipher_openssl_context_s),		\
   .block_size = bsize_,							\
