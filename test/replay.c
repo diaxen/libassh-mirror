@@ -245,6 +245,7 @@ static FILE *f_raw_cli_out = NULL;
 static FILE *f_raw_srv_out = NULL;
 
 /* client */
+static char *command = NULL;
 static char *username = NULL;
 static char *password = NULL;
 static char *keyboard_replies = NULL;
@@ -369,9 +370,17 @@ static int fget_dir(FILE *f, int dir)
 
 /*************************************************** main loop */
 
-static void test()
+#define REPLAY_FAIL(...) do {						\
+    fprintf(stderr, "  \033[0;91mFailed\033[;m : " TEST_LOC_(__LINE__) __VA_ARGS__);	\
+    result = 1;								\
+    goto cleanup;							\
+  } while (0)								\
+
+static int test()
 {
   unsigned i;
+  int result = 0;
+
   for (i = 0; i < 2; i++)
     {
       struct assh_context_s *c = &context[i];
@@ -511,11 +520,11 @@ static void test()
 		    /* replay packets from file */
 		    int d = fget_dir(f_in[i], i);
 		    if (d < 0)
-		      TEST_FAIL("unexpected end of stream\n");
+		      REPLAY_FAIL("unexpected end of stream\n");
 
 		    int s = fget_u16(f_in[i]);
 		    if (s < 4)
-		      TEST_FAIL("unexpected end of stream\n");
+		      REPLAY_FAIL("unexpected end of stream\n");
 		    f_in_iter[i] = fget_u32(f_in[i]);
 		    f_in_sz[i] = s - 4;
 		  }
@@ -525,7 +534,7 @@ static void test()
 		  continue;
 
 		if (f_in_iter[i] < iter)
-		  TEST_FAIL("iteration out of sync %u %u\n", f_in_iter[i], iter);
+		  REPLAY_FAIL("iteration out of sync %u %u\n", f_in_iter[i], iter);
 
 		int s = f_in_sz[i];
 
@@ -539,7 +548,7 @@ static void test()
 		  {
 		    uint8_t st[s];
 		    if (fread(st, 1, s, f_in[i]) != s)
-		      TEST_FAIL("unexpected end of stream\n");
+		      REPLAY_FAIL("unexpected end of stream\n");
 		    fifo_write(&fifo[i ^ 1], st, s);
 		    raw_write(i ^ 1, st, s);
 		    if (verbose > 2)
@@ -905,22 +914,22 @@ static void test()
 			}
 		      int d = fget_dir(f_in[i], i);
 		      if (d < 0)
-			TEST_FAIL("unexpected end of stream\n");
+			REPLAY_FAIL("unexpected end of stream\n");
 		      int s = fget_u16(f_in[i]);
 		      if (s < 4)
-			TEST_FAIL("unexpected end of stream\n");
+			REPLAY_FAIL("unexpected end of stream\n");
 		      uint32_t it = fget_u32(f_in[i]);
 		      if (it != iter)
-			TEST_FAIL("iteration out of sync %u %u\n", it, iter);
+			REPLAY_FAIL("iteration out of sync %u %u\n", it, iter);
 		      s -= 4;
 		      uint8_t st[s];
 		      if (fread(st, 1, s, f_in[i]) != s)
-			TEST_FAIL("unexpected end of stream\n");
+			REPLAY_FAIL("unexpected end of stream\n");
 		      if (s != te->buf.size || memcmp(st, te->buf.data, s))
 			{
 			  assh_hexdump("expected", st, s);
 			  assh_hexdump("unexpected", te->buf.data, s);
-			  TEST_FAIL("stream chunk with unexpected content\n");
+			  REPLAY_FAIL("stream chunk with unexpected content\n");
 			}
 		      break;
 		    }
@@ -972,7 +981,7 @@ static void test()
 	  if (action == RECORD_CLIENT_SERVER)
 	    {
 	      if (stall >= 100)
-		TEST_FAIL("stalled %u\n", i);
+		REPLAY_FAIL("stalled %u\n", i);
 	    }
 	}
     }
@@ -981,17 +990,17 @@ static void test()
     {
     case REPLAY_CLIENT_SERVER:
       if (fget_dir(f_in[0], 0) >= 0)
-	TEST_FAIL("end of server stream not reached\n");
+	REPLAY_FAIL("end of server stream not reached\n");
       if (fget_dir(f_in[1], 1) >= 0)
-	TEST_FAIL("end of client stream not reached\n");
+	REPLAY_FAIL("end of client stream not reached\n");
       break;
     case REPLAY_SERVER:
       if (fget_dir(f_in[0], 0) >= 0)
-	TEST_FAIL("end of server stream not reached\n");
+	REPLAY_FAIL("end of server stream not reached\n");
       break;
     case REPLAY_CLIENT:
       if (fget_dir(f_in[1], 1) >= 0)
-	TEST_FAIL("end of client stream not reached\n");
+	REPLAY_FAIL("end of client stream not reached\n");
       break;
     case RECORD_CLIENT_SERVER:
     case RECORD_SERVER_CONNECT:
@@ -999,6 +1008,7 @@ static void test()
       break;
     }
 
+ cleanup:
   switch (action)
     {
     case RECORD_CLIENT_SERVER:
@@ -1015,6 +1025,8 @@ static void test()
       assh_session_cleanup(&session[1]);
       break;
     }
+
+  return result;
 }
 
 static assh_status_t
@@ -1052,6 +1064,9 @@ algo_lookup(enum assh_algo_class_e cl, const char *name,
 
 void context_cleanup_strings(void)
 {
+  free(command);
+  command = NULL;
+
   free(username);
   username = strdup("test");
 
@@ -1246,11 +1261,10 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 	  break;
 
 	case CHUNK_COMMAND_LINE: {
-	  if (verbose == 0)
-	    goto skip_s;
-	  const char *cmd = context_load_str(in);
-	  fprintf(stderr, "[%s] options: %s\n", side, cmd);
-	  free((void*)cmd);
+	  free(command);
+	  command = context_load_str(in);
+	  if (verbose > 0)
+	    fprintf(stderr, "[%s] command line: %s\n", side, command);
 	  break;
 	}
 
@@ -1388,9 +1402,9 @@ context_store(struct assh_context_s *ctx, unsigned i)
     }
 }
 
-static void replay_file(const char *fname)
+static int replay_file(const char *fname)
 {
-  fprintf(stderr, "replaying `%s' ...\n", fname);
+  fprintf(stderr, "Replaying `%s' ...\n", fname);
 
   f_in[0] = fopen(fname, "rb");
   f_in_iter[0] = 0;
@@ -1436,7 +1450,10 @@ static void replay_file(const char *fname)
 	TEST_FAIL("client ctx load\n");
     }
 
-  test();
+  int result = test();
+
+  if (result)
+    fprintf(stderr, "  Command line: %s\n", command);
 
   if (action & REPLAY_SERVER)
     assh_context_cleanup(&context[0]);
@@ -1450,9 +1467,11 @@ static void replay_file(const char *fname)
 
   if (alloc_size != 0)
     TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
+
+  return result;
 }
 
-static void replay_directory(int argc, char **argv)
+static int replay_directory(int argc, char **argv)
 {
   const char *dname = ".";
   int opt;
@@ -1484,6 +1503,7 @@ static void replay_directory(int argc, char **argv)
 
   struct dirent *ent;
   assh_bool_t done = 0;
+  int result = 0;
 
   while ((ent = readdir(d)))
     if (ent->d_type & (DT_REG | DT_LNK))
@@ -1495,7 +1515,7 @@ static void replay_directory(int argc, char **argv)
 	  if (save_raw)
 	    open_raw_files(path);
 	  context_cleanup_strings();
-	  replay_file(path);
+	  result |= replay_file(path);
 	  if (save_raw)
 	    close_raw_files();
 	  done = 1;
@@ -1507,9 +1527,11 @@ static void replay_directory(int argc, char **argv)
     TEST_FAIL("no .ssh stream file found in the directory `%s'\n", dname);
 
   fprintf(stderr, "Done.\n");
+
+  return result;
 }
 
-static void replay(int argc, char **argv)
+static int replay(int argc, char **argv)
 {
   const char *fname = "stream.ssh";
 
@@ -1542,15 +1564,17 @@ static void replay(int argc, char **argv)
   if (save_raw)
     open_raw_files(fname);
 
-  replay_file(fname);
+  int result = replay_file(fname);
 
   if (save_raw)
     close_raw_files();
 
   fprintf(stderr, "Done.\n");
+
+  return result;
 }
 
-static void record(int argc, char **argv)
+static int record(int argc, char **argv)
 {
   const char *hostname = "localhost";
   const char *port = NULL;
@@ -1888,7 +1912,7 @@ static void record(int argc, char **argv)
   if (action & REPLAY_CLIENT)
     context_store(&context[1], 1);
 
-  test();
+  int result = test();
 
   if (save_raw)
     close_raw_files();
@@ -1903,6 +1927,8 @@ static void record(int argc, char **argv)
     TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
 
   fprintf(stderr, "Done.\n");
+
+  return result;
 }
 
 int main(int argc, char **argv)
@@ -1915,22 +1941,25 @@ int main(int argc, char **argv)
   };
   sigaction(SIGINT, &act, NULL);
 
+  int result = 1;
+
   if (argc < 2)
-    replay_directory(0, NULL);
+    result = replay_directory(0, NULL);
   else if (!strcmp(argv[1], "replay"))
-    replay(argc - 1, argv + 1);
+    result = replay(argc - 1, argv + 1);
   else if (!strcmp(argv[1], "record"))
-    record(argc - 1, argv + 1);
+    result = record(argc - 1, argv + 1);
   else if (!strcmp(argv[1], "replay_all"))
-    replay_directory(argc - 1, argv + 1);
+    result = replay_directory(argc - 1, argv + 1);
   else
     usage();
 
+  free(command);
   free(username);
   free(password);
   free(keyboard_replies);
   free(keyboard_infos);
   free(hostbased_host);
 
-  return 0;
+  return result;
 }
