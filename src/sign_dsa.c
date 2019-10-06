@@ -26,7 +26,6 @@
 #include <assh/assh_sign.h>
 #include <assh/key_dsa.h>
 #include <assh/assh_hash.h>
-#include <assh/assh_prng.h>
 #include <assh/assh_alloc.h>
 
 #include <string.h>
@@ -328,6 +327,7 @@ const struct assh_algo_sign_s assh_sign_dsa768 =
     ASSH_ALGO_VARIANT( 2, "768+ bits keys" ),
     .f_suitable_key = assh_sign_dsa_suitable_key_768,
     .key = &assh_key_dsa,
+    .nondeterministic = 1,
   ),
   .f_generate = assh_sign_dsa_generate,
   .f_check = assh_sign_dsa_check,
@@ -351,6 +351,7 @@ const struct assh_algo_sign_s assh_sign_dsa1024 =
     ASSH_ALGO_VARIANT( 2, "1024+ bits keys" ),
     .f_suitable_key = assh_sign_dsa_suitable_key_1024,
     .key = &assh_key_dsa,
+    .nondeterministic = 1,
   ),
   .f_generate = assh_sign_dsa_generate,
   .f_check = assh_sign_dsa_check,
@@ -374,6 +375,7 @@ const struct assh_algo_sign_s assh_sign_dsa2048_sha224 =
 	              "dsa2048-sha224@libassh.org" }),
     .f_suitable_key = assh_sign_dsa_suitable_key_2048_224,
     .key = &assh_key_dsa,
+    .nondeterministic = 1,
   ),
   .groups = 1,
   .f_generate = assh_sign_dsa_generate,
@@ -398,6 +400,7 @@ const struct assh_algo_sign_s assh_sign_dsa2048_sha256 =
 	              "dsa2048-sha256@libassh.org" }),
     .f_suitable_key = assh_sign_dsa_suitable_key_2048_256,
     .key = &assh_key_dsa,
+    .nondeterministic = 1,
   ),
   .groups = 1,
   .f_generate = assh_sign_dsa_generate,
@@ -422,6 +425,7 @@ const struct assh_algo_sign_s assh_sign_dsa3072_sha256 =
 	              "dsa3072-sha256@libassh.org" }),
     .f_suitable_key = assh_sign_dsa_suitable_key_3072_256,
     .key = &assh_key_dsa,
+    .nondeterministic = 1,
   ),
   .groups = 1,
   .f_generate = assh_sign_dsa_generate,

@@ -26,7 +26,6 @@
 #include <assh/assh_sign.h>
 #include <assh/key_eddsa.h>
 #include <assh/assh_hash.h>
-#include <assh/assh_prng.h>
 #include <assh/assh_alloc.h>
 
 #include <string.h>
@@ -524,6 +523,7 @@ const struct assh_algo_sign_s assh_sign_ed25519 =
                       "ssh-ed25519" }),
     .f_suitable_key = assh_sign_ed25519_suitable_key,
     .key = &assh_key_ed25519,
+    .nondeterministic = 1,
   ),
   .f_generate = assh_sign_eddsa_generate,
   .f_check = assh_sign_eddsa_check,
@@ -544,6 +544,7 @@ const struct assh_algo_sign_s assh_sign_eddsa_e382 =
                       "eddsa-e382-shake256@libassh.org" }),
     .f_suitable_key = assh_sign_eddsa_e382_suitable_key,
     .key = &assh_key_eddsa_e382,
+    .nondeterministic = 1,
   ),
   .f_generate = assh_sign_eddsa_generate,
   .f_check = assh_sign_eddsa_check,
@@ -564,6 +565,7 @@ const struct assh_algo_sign_s assh_sign_eddsa_e521 =
                       "eddsa-e521-shake256@libassh.org" }),
     .f_suitable_key = assh_sign_eddsa_e521_suitable_key,
     .key = &assh_key_eddsa_e521,
+    .nondeterministic = 1,
   ),
   .f_generate = assh_sign_eddsa_generate,
   .f_check = assh_sign_eddsa_check,

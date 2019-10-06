@@ -897,7 +897,8 @@ const struct assh_algo_kex_s assh_kex_dh_gex_sha1 =
   ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(1024), 10,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
 	              "diffie-hellman-group-exchange-sha1" }),
-    ASSH_ALGO_VARIANT(9, "1024 <= group <= 4096")
+    ASSH_ALGO_VARIANT(9, "1024 <= group <= 4096"),
+    .nondeterministic = 1
   ),
   .f_init = assh_kex_dh_gex_sha1_init,
   .f_cleanup = assh_kex_dh_gex_cleanup,
@@ -914,7 +915,8 @@ const struct assh_algo_kex_s assh_kex_dh_gex_sha256_12 =
   ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(1024), 30,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                       "diffie-hellman-group-exchange-sha256" }),
-    ASSH_ALGO_VARIANT(10, "1024 <= group <= 2048")
+    ASSH_ALGO_VARIANT(10, "1024 <= group <= 2048"),
+    .nondeterministic = 1
   ),
   .f_init = assh_kex_dh_gex_sha256_12_init,
   .f_cleanup = assh_kex_dh_gex_cleanup,
@@ -932,7 +934,8 @@ const struct assh_algo_kex_s assh_kex_dh_gex_sha256_8 =
   ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(2048), 10,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                       "diffie-hellman-group-exchange-sha256" }),
-    ASSH_ALGO_VARIANT(9, "2048 <= group <= 4096")
+    ASSH_ALGO_VARIANT(9, "2048 <= group <= 4096"),
+    .nondeterministic = 1
   ),
   .f_init = assh_kex_dh_gex_sha256_8_init,
   .f_cleanup = assh_kex_dh_gex_cleanup,
@@ -950,7 +953,8 @@ const struct assh_algo_kex_s assh_kex_dh_gex_sha256_4 =
   ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(4096), 1,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                       "diffie-hellman-group-exchange-sha256" }),
-    ASSH_ALGO_VARIANT(8, "group >= 4096")
+    ASSH_ALGO_VARIANT(8, "group >= 4096"),
+    .nondeterministic = 1
   ),
   .f_init = assh_kex_dh_gex_sha256_4_init,
   .f_cleanup = assh_kex_dh_gex_cleanup,

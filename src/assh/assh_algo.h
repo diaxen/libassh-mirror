@@ -150,6 +150,10 @@ struct assh_algo_s
   /** speed factor in range [0, 99] */
   uint8_t speed:7;
 
+  /** Must be set when a different implementation may yield a
+      different result due to use of random data. */
+  uint8_t nondeterministic:1;
+
   /** List of SSH algorithm identifiers, used during key exchange */
   const struct assh_algo_name_s *names;
 
