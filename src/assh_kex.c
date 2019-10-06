@@ -392,7 +392,7 @@ assh_status_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *
   assh_safety_t kin_safety = kex->algo.safety;
 
   if (!kex->implicit_auth)
-    kin_safety = ASSH_MIN(kin_safety, sign->algo.safety);
+    kin_safety = ASSH_MIN(kin_safety, (assh_safety_t)sign->algo.safety);
 
   assh_safety_t kout_safety = kin_safety;
 
@@ -422,9 +422,9 @@ assh_status_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *
     + mac_in->ctx_size;
   ASSH_RET_ON_ERR(assh_alloc(s->ctx, kin_size, ASSH_ALLOC_SECUR, (void**)&kin));
 
-  kin_safety = ASSH_MIN(kin_safety, cipher_in->algo.safety);
+  kin_safety = ASSH_MIN(kin_safety, (assh_safety_t)cipher_in->algo.safety);
   if (!cipher_in->auth_size)
-    kin_safety = ASSH_MIN(kin_safety, mac_in->algo.safety);
+    kin_safety = ASSH_MIN(kin_safety, (assh_safety_t)mac_in->algo.safety);
 
   struct assh_kex_keys_s *kout;
   size_t kout_size = sizeof(*kout) + cipher_out->ctx_size + cmp_out->ctx_size
@@ -432,9 +432,9 @@ assh_status_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *
   ASSH_JMP_ON_ERR(assh_alloc(s->ctx, kout_size, ASSH_ALLOC_SECUR, (void**)&kout),
 	       err_kin);
 
-  kout_safety = ASSH_MIN(kout_safety, cipher_out->algo.safety);
+  kout_safety = ASSH_MIN(kout_safety, (assh_safety_t)cipher_out->algo.safety);
   if (!cipher_out->auth_size)
-    kout_safety = ASSH_MIN(kout_safety, mac_out->algo.safety);
+    kout_safety = ASSH_MIN(kout_safety, (assh_safety_t)mac_out->algo.safety);
 
   size_t key_size = ASSH_MAX(cipher_in->key_size, cipher_out->key_size) * 8;
 

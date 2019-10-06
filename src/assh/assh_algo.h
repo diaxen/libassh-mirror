@@ -146,9 +146,9 @@ struct assh_algo_s
   uint8_t priority:5;
 
   /** safety factor in range [0, 99] */
-  assh_safety_t safety;
+  uint8_t safety:7;
   /** speed factor in range [0, 99] */
-  uint8_t speed;
+  uint8_t speed:7;
 
   /** List of SSH algorithm identifiers, used during key exchange */
   const struct assh_algo_name_s *names;

@@ -108,7 +108,7 @@ assh_sign_check(struct assh_context_s *c, const struct assh_algo_sign_s *algo,
                 const struct assh_cbuffer_s data[],
                 const uint8_t *sign, size_t sign_len, assh_safety_t *safety)
 {
-  *safety = ASSH_MIN(algo->algo.safety, key->safety);
+  *safety = ASSH_MIN((assh_safety_t)algo->algo.safety, key->safety);
   return algo->f_check(c, key, data_count, data, sign, sign_len, safety);
 }
 
