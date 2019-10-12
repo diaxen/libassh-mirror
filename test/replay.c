@@ -70,12 +70,17 @@
       1 byte algo class
       2 bytes: algorithm name len
       N bytes: algorithm name
+      2 byte: implem name len
+      N bytes: implem name
+      2 byte: variant name len
+      N bytes: variant name
 
     For chunk types 6, 7, 11 and 16, data layout is:
       1 byte: key format
       1 byte: key role
-      2 byte: algo name len
-      N bytes: algo name
+      2 byte: key algo name len
+      N bytes: key algo name
+      2 byte: key blob len
       N bytes: key blob
 
     For chunk types 9, 10, 12, 14 and 15, data layout is:
@@ -188,9 +193,10 @@ static int usage()
 	  "                 instead of running an assh server session.\n"
 	  "    -p port      specify the tcp port.\n"
 	  "    -t N         set the re-kex threshold in bytes.\n"
-	  "    -b T:algo    select an algorithm for both server and client side.\n"
-	  "                 T specifis the algorithm type:\n"
-	  "                   k:kex, s:sign, c:cipher, m:mac, C:compress\n"
+	  "    -b T:A[:V:I] select an algorithm for both server and client side.\n"
+	  "                   T specifies the algorithm type:\n"
+	  "                     k:kex, s:sign, c:cipher, m:mac, C:compress\n"
+	  "                   A is the name, V the variant, I the implementation\n"
 
 	  "  Client only options:\n"
 	  "    -H host      specify the remote server address.\n"
@@ -1031,6 +1037,7 @@ static int test()
 
 static assh_status_t
 algo_lookup(enum assh_algo_class_e cl, const char *name,
+	    const char *variant, const char *implem,
 	    const struct assh_algo_s **algo)
 {
   if (!strcmp(name, "none") || !strcmp(name, "none@libassh.org"))
@@ -1058,7 +1065,43 @@ algo_lookup(enum assh_algo_class_e cl, const char *name,
     }
   else
     {
-      return assh_algo_by_name_static(assh_algo_table, cl, name, strlen(name), algo, NULL);
+      const struct assh_algo_s **table = assh_algo_table;
+      const struct assh_algo_s *a;
+
+      while ((a = *table++) != NULL)
+	{
+	  if (cl != a->class_)
+	    continue;
+
+	  const struct assh_algo_name_s *n;
+	  for (n = a->names; n->spec; n++)
+	    if (!strcmp(name, n->name))
+	      break;
+
+	  if (!n->spec)
+	    continue;
+
+	  if (implem && strcmp(implem, a->implem) && a->nondeterministic)
+	    {
+	      if (verbose > 1)
+		fprintf(stderr, "  `%s' implementation mismatch `%s' != `%s'.\n",
+			name, implem, a->implem);
+	      continue;
+	    }
+
+	  if (variant && (!a->variant || strcmp(variant, a->variant)))
+	    {
+	      if (verbose > 1)
+		fprintf(stderr, "  `%s' variant mismatch `%s' != `%s'.\n",
+			name, implem, a->implem);
+	      continue;
+	    }
+
+	  *algo = a;
+	  return ASSH_OK;
+	}
+
+      return ASSH_NOT_FOUND;
     }
 }
 
@@ -1086,6 +1129,8 @@ void context_cleanup_strings(void)
 char * context_load_str(FILE *in)
 {
   size_t l = fget_u16(in);
+  if (!l)
+    return NULL;
   char str[l];
   if (fread(str, 1, l, in) != l)
     TEST_FAIL("unexpected end of stream\n");
@@ -1093,16 +1138,16 @@ char * context_load_str(FILE *in)
   return strdup(str);
 }
 
-static void
+static int
 context_load_key(struct assh_context_s *ctx, FILE *in, struct assh_key_s **key)
 {
   enum assh_key_format_e format = fgetc(in);
   enum assh_algo_class_e role = fgetc(in);
 
   char *name = context_load_str(in);
-  const struct assh_key_algo_s *a;
-  if (assh_key_algo_by_name_static(assh_key_algo_table, name, strlen(name), &a))
-    TEST_FAIL("ASSH_ERR_MISSING_ALGO");
+  const struct assh_key_algo_s *ka;
+  if (assh_key_algo_by_name_static(assh_key_algo_table, name, strlen(name), &ka))
+    return 1;
 
   if (verbose > 0)
     fprintf(stderr, "`%s'\n", name);
@@ -1114,11 +1159,13 @@ context_load_key(struct assh_context_s *ctx, FILE *in, struct assh_key_s **key)
   if (fread(blob, 1, s, in) != s)
     TEST_FAIL("unexpected end of stream\n");
 
-  if (assh_key_load(ctx, key, a, role, format, &b, s))
+  if (assh_key_load(ctx, key, ka, role, format, &b, s))
     TEST_FAIL("key loading failed\n");
+
+  return 0;
 }
 
-static assh_status_t
+static int
 context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 {
   while (1)
@@ -1135,7 +1182,7 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 	case CHUNK_PKT_REMOTE2CLI:
 	case CHUNK_PKT_REMOTE2SRV:	/* start of data stream */
 	  ungetc(o, in);
-	  return ASSH_OK;
+	  return 0;
 
 	case CHUNK_SRV_ALGO:			/* algo register */
 	case CHUNK_CLI_ALGO: {
@@ -1144,13 +1191,19 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 	    goto skip;
 	  enum assh_algo_class_e cl = fgetc(in);
 	  char *name = context_load_str(in);
-	  if (verbose > 0)
-	    fprintf(stderr, "[%s] Loading algorithm: `%s'.\n", side, name);
+	  char *implem = context_load_str(in);
+	  char *variant = context_load_str(in);
 	  const struct assh_algo_s *a;
-	  if (algo_lookup(cl, name, &a)
-	      || assh_algo_register_va(ctx, 50, 0, 0, a, NULL))
-	    TEST_FAIL("ASSH_ERR_MISSING_ALGO: %s\n", name);
+	  if (verbose > 0)
+	      fprintf(stderr, "[%s] Loading algorithm: `%s'.\n", side, name);
+	  assh_bool_t mismatch = algo_lookup(cl, name, variant, implem, &a);
+	  if (!mismatch && assh_algo_register_va(ctx, 50, 0, 0, a, NULL))
+	    TEST_FAIL("unable to register algorithm\n");
 	  free(name);
+	  free(implem);
+	  free(variant);
+	  if (mismatch)
+	    return 1;
 	  break;
 	}
 
@@ -1161,7 +1214,8 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 	    goto skip;
 	  if (verbose > 0)
 	    fprintf(stderr, "[%s] Loading kex keys: ", side);
-	  context_load_key(ctx, in, &ctx->keys);
+	  if (context_load_key(ctx, in, &ctx->keys))
+	    return 1;
 	  break;
 
 	case CHUNK_USER_KEY:		/* userauth key */
@@ -1170,7 +1224,8 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 	    goto skip;
 	  if (verbose > 0)
 	    fprintf(stderr, "[client] Loading user key: ");
-	  context_load_key(ctx, in, &userauth_keys);
+	  if (context_load_key(ctx, in, &userauth_keys))
+	    return 1;
 	  break;
 
 	case CHUNK_KEX_TH:			/* kex threshold */
@@ -1251,7 +1306,8 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 	    goto skip;
 	  if (verbose > 0)
 	    fprintf(stderr, "[client] Loading hostbased keys.");
-	  context_load_key(ctx, in, &hostbased_keys);
+	  if (context_load_key(ctx, in, &hostbased_keys))
+	    return 1;
 	  break;
 
 	case CHUNK_MAX_ITERS:
@@ -1281,6 +1337,7 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
     }
 }
 
+
 static void
 context_store_key(struct assh_context_s *ctx, struct assh_key_s *k)
 {
@@ -1297,11 +1354,13 @@ context_store_key(struct assh_context_s *ctx, struct assh_key_s *k)
   if (assh_key_output(ctx, k, blob, &klen, fmt))
     TEST_FAIL("key output error\n");
 
-  fput_u16(6 + nlen + klen, f_out);
+  fput_u16(1 + 1 + 2 + nlen + 2 + klen, f_out);
   fputc(fmt, f_out);
   fputc(k->role, f_out);
+
   fput_u16(nlen, f_out);
   fwrite(name, nlen, 1, f_out);
+
   fput_u16(klen, f_out);
   fwrite(blob, klen, 1, f_out);
 }
@@ -1314,12 +1373,23 @@ context_store(struct assh_context_s *ctx, unsigned i)
     {
       const struct assh_algo_s *a = ctx->algos[j];
       const char *name = assh_algo_name(a);
-      uint_fast16_t len = strlen(name) + 1;
+      uint_fast16_t nlen = strlen(name) + 1;
+      uint_fast16_t ilen = strlen(a->implem) + 1;
+      uint_fast16_t vlen = a->variant ? strlen(a->variant) + 1 : 0;
+
       fputc(i ? CHUNK_CLI_ALGO : CHUNK_SRV_ALGO, f_out);
-      fput_u16(len + 3, f_out);
+      fput_u16(1 + 2 + nlen + 2 + ilen + 2 + vlen, f_out);
       fputc(a->class_, f_out);
-      fput_u16(len, f_out);
-      fwrite(name, len, 1, f_out);
+
+      fput_u16(nlen, f_out);
+      fwrite(name, nlen, 1, f_out);
+
+      fput_u16(ilen, f_out);
+      fwrite(a->implem, ilen, 1, f_out);
+
+      fput_u16(vlen, f_out);
+      if (vlen)
+	fwrite(a->variant, vlen, 1, f_out);
     }
 
   struct assh_key_s *k;
@@ -1420,6 +1490,8 @@ static int replay_file(const char *fname)
 
   fgetc(f_in[1]);
 
+  int result = 0;
+
   if (action & REPLAY_SERVER)
     {
 #if !defined(CONFIG_ASSH_SERVER)
@@ -1432,7 +1504,10 @@ static int replay_file(const char *fname)
 	TEST_FAIL("server ctx init\n");
 
       if (context_load(&context[0], f_in[0], 0))
-	TEST_FAIL("server ctx load\n");
+	{
+	  fprintf(stderr, "  Skipped: Missing algorithm\n");
+	  goto skip_1;
+	}
     }
 
   if (action & REPLAY_CLIENT)
@@ -1447,23 +1522,28 @@ static int replay_file(const char *fname)
 	TEST_FAIL("client ctx init\n");
 
       if (context_load(&context[1], f_in[1], 1))
-	TEST_FAIL("client ctx load\n");
+	{
+	  fprintf(stderr, "  Skipped: Missing algorithm\n");
+	  goto skip_2;
+	}
     }
 
-  int result = test();
+  result = test();
 
   if (result)
     fprintf(stderr, "  Command line: %s\n", command);
 
-  if (action & REPLAY_SERVER)
-    assh_context_cleanup(&context[0]);
-
+ skip_2:
   if (action & REPLAY_CLIENT)
     {
       assh_key_flush(&context[1], &hostbased_keys);
       assh_key_flush(&context[1], &userauth_keys);
       assh_context_cleanup(&context[1]);
     }
+
+ skip_1:
+  if (action & REPLAY_SERVER)
+    assh_context_cleanup(&context[0]);
 
   if (alloc_size != 0)
     TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
@@ -1680,7 +1760,22 @@ static int record(int argc, char **argv)
 	    }
 	  optarg += 2;
 	  const struct assh_algo_s *a;
-	  if (algo_lookup(cl, optarg, &a))
+	  const char *variant = NULL, *implem = NULL;
+	  char *col = strchr(optarg, ':');
+	  if (col)
+	    {
+	      *col = 0;
+	      variant = col + 1;
+	      col = strchr(variant, ':');
+	      if (col)
+		{
+		  *col = 0;
+		  implem = col + 1;
+		}
+	      if (!*variant)
+		variant = NULL;
+	    }
+	  if (algo_lookup(cl, optarg, variant, implem, &a))
 	    TEST_FAIL("algorithm not available: `%s'\n", optarg);
 
 #if defined(CONFIG_ASSH_SERVER)
