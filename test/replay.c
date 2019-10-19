@@ -415,9 +415,17 @@ static int test()
 	  ASSH_UNREACHABLE();
 	}
 
+#if !defined(CONFIG_ASSH_CLIENT)
+      if (assh_service_register_va(c, &assh_service_userauth_server,
+				   &assh_service_connection, NULL))
+#elif !defined(CONFIG_ASSH_SERVER)
+      if (assh_service_register_va(c, &assh_service_userauth_client,
+				   &assh_service_connection, NULL))
+#else
       if (assh_service_register_va(c, i ? &assh_service_userauth_client
 				        : &assh_service_userauth_server,
 				   &assh_service_connection, NULL))
+#endif
 	TEST_FAIL("service register\n");
 
       if (assh_session_init(c, &session[i]))
@@ -626,12 +634,14 @@ static int test()
 			);
 	      break;
 
+#if defined(CONFIG_ASSH_CLIENT)
 	    case ASSH_EVENT_KEX_HOSTKEY_LOOKUP:
 	      if (verbose > 0)
 		fprintf(stderr, "[%s] Host key lookup.\n", side);
 	      assert(i == 1);
 	      event.kex.hostkey_lookup.accept = hostkey_accept;
 	      break;
+#endif
 
 	    case ASSH_EVENT_KEX_DONE:
 	      if (verbose > 0)
@@ -651,6 +661,7 @@ static int test()
 		}
 	      break;
 
+#if defined(CONFIG_ASSH_CLIENT)
 	    case ASSH_EVENT_USERAUTH_CLIENT_USER:
 	      assh_buffer_strset(&event.userauth_client.user.username, username);
 	      break;
@@ -755,7 +766,9 @@ static int test()
 	      if (verbose > 0)
 		fprintf(stderr, "[client] Userauth sign.\n");
 	      break;
+#endif
 
+#if defined(CONFIG_ASSH_SERVER)
 	    case ASSH_EVENT_USERAUTH_SERVER_METHODS:
 	      event.userauth_server.methods.methods = userauth_server;
 	      if (verbose > 0)
@@ -850,6 +863,7 @@ static int test()
 		}
 
 	      break;
+#endif
 
 	    case ASSH_EVENT_CHANNEL_OPEN:
 	      event.connection.channel_open.reply = ASSH_CONNECTION_REPLY_SUCCESS;
@@ -1495,9 +1509,9 @@ static int replay_file(const char *fname)
   if (action & REPLAY_SERVER)
     {
 #if !defined(CONFIG_ASSH_SERVER)
-      TEST_FAIL("server support not available\n");
-#endif
-
+      fprintf(stderr, "  Skipped: Server support not available\n");
+      goto skip_1;
+#else
       if (assh_context_init(&context[0], ASSH_SERVER,
 			    assh_leaks_allocator, NULL,
 			    &assh_prng_dummy, NULL))
@@ -1508,14 +1522,15 @@ static int replay_file(const char *fname)
 	  fprintf(stderr, "  Skipped: Missing algorithm\n");
 	  goto skip_1;
 	}
+#endif
     }
 
   if (action & REPLAY_CLIENT)
     {
 #if !defined(CONFIG_ASSH_CLIENT)
-      TEST_FAIL("client support not available\n");
-#endif
-
+      fprintf(stderr, "  Skipped: Client support not available\n");
+      goto skip_2;
+#else
       if (assh_context_init(&context[1], ASSH_CLIENT,
 			    assh_leaks_allocator, NULL,
 			    &assh_prng_dummy, NULL))
@@ -1526,6 +1541,7 @@ static int replay_file(const char *fname)
 	  fprintf(stderr, "  Skipped: Missing algorithm\n");
 	  goto skip_2;
 	}
+#endif
     }
 
   result = test();
@@ -1534,20 +1550,26 @@ static int replay_file(const char *fname)
     fprintf(stderr, "  Command line: %s\n", command);
 
  skip_2:
+#if defined(CONFIG_ASSH_CLIENT)
   if (action & REPLAY_CLIENT)
     {
       assh_key_flush(&context[1], &hostbased_keys);
       assh_key_flush(&context[1], &userauth_keys);
       assh_context_cleanup(&context[1]);
     }
+#endif
 
  skip_1:
+#if defined(CONFIG_ASSH_SERVER)
   if (action & REPLAY_SERVER)
     assh_context_cleanup(&context[0]);
+#endif
+
+  fclose(f_in[0]);
+  fclose(f_in[1]);
 
   if (alloc_size != 0)
     TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
-
   return result;
 }
 
