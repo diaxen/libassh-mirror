@@ -47,8 +47,8 @@ static const char *class_names[] = ASSH_ALGO_CLASS_NAMES;
 
 static void show_table()
 {
-  fprintf(stderr, "  Class      Name                                     Std Speed Safety\n"
-	          "------------------------------------------------------------------------");
+  fprintf(stderr, "  Class      Name                                 Implem    Std Speed Safety\n"
+	          "----------------------------------------------------------------------------");
 
   uint_fast16_t i;
   const struct assh_algo_s *a;
@@ -64,15 +64,15 @@ static void show_table()
 	  cl = a->class_;
 	}
 
-      fprintf(stderr, "  %-10s %s%-40s%s %c  %3u   %3u\n",
+      fprintf(stderr, "  %-10s %s%-36s%s %-12s %c  %3u   %3u\n",
 	      class_names[a->class_], "\x1b[1m",
-	      n->name, "\x1b[m", std(n->spec), a->speed, a->safety);
+	      n->name, "\x1b[m", a->implem, std(n->spec), a->speed, a->safety);
 
       if (a->variant != NULL)
-	fprintf(stderr, "               %-40s\n", a->variant);
+	fprintf(stderr, "    Variant:   %-40s\n", a->variant);
 
       for (n++; n->spec; n++)
-	fprintf(stderr, "  ALIAS      %-40s %c\n", n->name, std(n->spec));
+	fprintf(stderr, "    Alias :  %-40s %c\n", n->name, std(n->spec));
     }
 }
 
