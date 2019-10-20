@@ -176,10 +176,10 @@ struct assh_algo_s
    If this function is called more than once, the internal array of
    algorithms is resized and new algorithms are appended.
 
-   It is not possible to modify registered algorithms when some
-   sessions are associated to the context. The @ref
+   It is not possible to modify the list of registered algorithms when
+   some sessions are associated to the context. The @ref
    assh_session_algo_filter function can still be used to setup a per
-   session algorithm filter.
+   session algorithm filter for the @hl key-exchange.
 
    @see assh_algo_register_default
    @see assh_algo_register
@@ -231,7 +231,7 @@ assh_algo_register(struct assh_context_s *c, assh_safety_t safety,
    It is not possible to modify registered algorithms when some
    sessions are associated to the context.  The @ref
    assh_session_algo_filter function can still be used to setup a per
-   session algorithm filter.
+   session algorithm filter for the @hl key-exchange.
 
    @xcsee {algoreg}
 */

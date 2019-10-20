@@ -47,10 +47,14 @@
 
 /** This is a per session algorithm filtering function.
 
-    @tt 1 must be returned in order to make the algorithm available for
-    the session. The result of this function must not vary for a given
-    algorithm unless the @ref assh_session_algo_filter function has
-    been called successfully.
+    @tt 1 must be returned in order to make the algorithm available
+    for the session @hl key-exchange. This can not be used to prevent
+    registered signature algorithms from being used during the user
+    authentication process.
+
+    The result of this function must not vary between calls for a
+    given algorithm, unless the @ref assh_session_algo_filter function
+    has been called successfully.
 
     The @tt out parameter specifies the direction and is relevant for
     cipher, mac and compression algorithms.
@@ -305,9 +309,10 @@ assh_session_disconnect(struct assh_session_s *s,
     lifetime.  @see assh_algo_register_va */
 assh_safety_t assh_session_safety(struct assh_session_s *s);
 
-/** @This setups a per session algorithm filter. The @tt filter
-    parameter may be @tt NULL to disable filtering. It will fail if a
-    key exchange in ongoing. @xsee{suppalgos} */
+/** @This setups a per session algorithm filter for the @hl
+    key-exchange. The @tt filter parameter may be @tt NULL to disable
+    filtering. It will fail if a key exchange is currently
+    running. @xsee{suppalgos} */
 ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_session_algo_filter(struct assh_session_s *s,
                          assh_kex_filter_t *filter);
