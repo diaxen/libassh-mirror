@@ -42,7 +42,7 @@ main(int argc, char **argv)
   seed.len = 16;
 
   if (assh_context_init(&context, ASSH_CLIENT_SERVER, assh_leaks_allocator,
-			NULL, &assh_prng_xswap, &seed))
+			NULL, NULL, &seed))
     TEST_FAIL("context init");
 
   uint_fast8_t i;
