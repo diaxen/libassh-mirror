@@ -133,7 +133,7 @@ get_passphrase(const char *prompt, struct assh_context_s *context)
 
 static void usage(const char *program, assh_bool_t opts)
 {
-  fprintf(stderr, "usage: %s [-h | options] create|validate|convert|fingerprint|list\n", program);
+  fprintf(stderr, "usage: %s [-h | options] create|validate|convert|fingerprint\n", program);
 
   if (opts)
     fprintf(stderr, "List of available options:\n\n"
@@ -249,12 +249,6 @@ int main(int argc, char *argv[])
     action_mask = ASSH_KEYGEN_LOAD | ASSH_KEYGEN_SAVE;
   else if (!strcmp(action, "fingerprint"))
     action_mask = ASSH_KEYGEN_LOAD | ASSH_KEYGEN_FP;
-  else if (!strcmp(action, "list"))
-    {
-      get_type(NULL);
-      get_format(NULL);
-      return 0;
-    }
   else
     {
       usage(argv[0], 0);
