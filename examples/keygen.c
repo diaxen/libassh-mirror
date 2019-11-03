@@ -42,6 +42,12 @@ enum assh_keygen_action_e
   ASSH_KEYGEN_FP       = 16,
 };
 
+
+#define KEY_ALGO_TABLE_MAXSIZE 16
+static const struct assh_key_algo_s *key_algo_table[KEY_ALGO_TABLE_MAXSIZE];
+static size_t key_algo_table_size;
+
+
 #define ERROR(...) do { fprintf(stderr, "error: " __VA_ARGS__); exit(1); } while (0)
 
 static void list_formats(assh_bool_t internal)
@@ -93,20 +99,20 @@ static FILE * get_file(const char *file, int mode)
 
 static void list_types()
 {
-  const struct assh_key_algo_s **types = assh_key_algo_table;
+  const struct assh_key_algo_s **types = key_algo_table;
   unsigned i;
 
   fprintf(stderr, "Supported key types:\n");
-  for (i = 0; types[i] != NULL; i++)
+  for (i = 0; i < key_algo_table_size; i++)
     fprintf(stderr, "  %s\n", types[i]->name);
 }
 
 static const struct assh_key_algo_s * get_type(const char *type)
 {
-  const struct assh_key_algo_s **types = assh_key_algo_table;
+  const struct assh_key_algo_s **types = key_algo_table;
   unsigned i;
   if (type)
-    for (i = 0; types[i] != NULL; i++)
+    for (i = 0; i < key_algo_table_size; i++)
       if (!strcmp(types[i]->name, type))
         return types[i];
 
@@ -170,6 +176,21 @@ int main(int argc, char *argv[])
   FILE *ifile = NULL;
   FILE *ofile = NULL;
 
+  /* create a library context */
+
+  struct assh_context_s *context;
+
+  if (assh_context_create(&context, ASSH_CLIENT_SERVER,
+                          NULL, NULL, NULL, NULL))
+    ERROR("Unable to create context.\n");
+
+  if (assh_algo_register_default(context, 0, 0, 0))
+    ERROR("Unable to register algorithms.\n");
+
+  key_algo_table_size = KEY_ALGO_TABLE_MAXSIZE;
+  assh_key_algo_enumerate(context, ASSH_ALGO_ANY,
+			  &key_algo_table_size, key_algo_table);
+
   /* parse command list arguments */
 
   while ((opt = getopt(argc, argv, "hb:f:g:o:i:t:r:p:Pc:lL")) != -1)
@@ -224,17 +245,6 @@ int main(int argc, char *argv[])
 
   if (optind + 1 != argc)
     usage(argv[0], 0);
-
-  /* create a library context */
-
-  struct assh_context_s *context;
-
-  if (assh_context_create(&context, ASSH_CLIENT_SERVER,
-                          NULL, NULL, NULL, NULL))
-    ERROR("Unable to create context.\n");
-
-  if (assh_algo_register_default(context, 0, 0, 0))
-    ERROR("Unable to register algorithms.\n");
 
   const char *action = argv[optind];
   unsigned action_mask = 0;

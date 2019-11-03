@@ -1160,7 +1160,7 @@ context_load_key(struct assh_context_s *ctx, FILE *in, struct assh_key_s **key)
 
   char *name = context_load_str(in);
   const struct assh_key_algo_s *ka;
-  if (assh_key_algo_by_name_static(assh_key_algo_table, name, strlen(name), &ka))
+  if (assh_key_algo_by_name(ctx, role, name, strlen(name), &ka))
     return 1;
 
   if (verbose > 0)
@@ -1841,8 +1841,7 @@ static int record(int argc, char **argv)
 		*col = 0;
 
 		const struct assh_key_algo_s *algo;
-		if (assh_key_algo_by_name_static(assh_key_algo_table,
-						 optarg, strlen(optarg), &algo))
+		if (assh_key_algo_by_name(c, role, optarg, strlen(optarg), &algo))
 		  TEST_FAIL("key algorithm not available: `%s'\n", optarg);
 
 		/* creating a key use random bits but we need to keep

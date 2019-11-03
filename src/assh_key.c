@@ -176,32 +176,65 @@ assh_key_lookup(struct assh_context_s *c,
 }
 
 assh_status_t
-assh_key_algo_by_name_static(const struct assh_key_algo_s **table,
-                             const char *name, size_t name_len,
-                             const struct assh_key_algo_s **algo)
+assh_key_algo_enumerate(struct assh_context_s *c,
+			enum assh_algo_class_e cl, size_t *count,
+			const struct assh_key_algo_s **table)
 {
-  const struct assh_key_algo_s *a;
+  uint_fast16_t i, j;
+  size_t max = *count;
+  size_t cnt = 0;
 
-  while ((a = *table++) != NULL)
-    if (!assh_string_strcmp(name, name_len, a->name))
-      {
-	*algo = a;
-	return ASSH_OK;
-      }
+  for (i = 0; i < c->algo_cnt; i++)
+    {
+      const struct assh_algo_s *a = c->algos[i];
+
+      if (!a->key)
+	continue;
+
+      if (cl != ASSH_ALGO_ANY && cl != a->class_)
+	continue;
+
+      for (j = 0; j < cnt; j++)
+	if (table[j] == a->key)
+	  goto next;
+
+      if (cnt == max)
+	return ASSH_NO_DATA;
+
+      table[cnt++] = a->key;
+
+    next:
+      ;
+    }
+
+  *count = cnt;
+  return ASSH_OK;
+}
+
+assh_status_t
+assh_key_algo_by_name(const struct assh_context_s *c,
+		      enum assh_algo_class_e cl,
+		      const char *name, size_t name_len,
+		      const struct assh_key_algo_s **algo)
+{
+  uint_fast16_t i;
+
+  for (i = 0; i < c->algo_cnt; i++)
+    {
+      const struct assh_algo_s *a = c->algos[i];
+
+      if (cl != ASSH_ALGO_ANY && cl != a->class_)
+	continue;
+
+      if (a->key && !assh_string_strcmp(name, name_len, a->key->name))
+	{
+	  *algo = a->key;
+	  return ASSH_OK;
+	}
+    }
 
   return ASSH_NOT_FOUND;
 }
-
-const struct assh_key_algo_s *assh_key_algo_table[] = {
-  &assh_key_none,
-  &assh_key_dsa,
-  &assh_key_rsa,
-  &assh_key_ed25519,
-  &assh_key_eddsa_e382,
-  &assh_key_eddsa_e521,
-  &assh_key_ecdsa_nistp,
-  NULL
-};
 
 static const struct assh_key_format_desc_s
 assh_key_format_table[ASSH_KEY_FMT_LAST + 1] = {

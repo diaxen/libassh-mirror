@@ -202,9 +202,6 @@ struct assh_key_algo_s
   uint16_t max_bits;
 };
 
-/** @tt NULL terminated array of key algorithms supported by the library. */
-extern const struct assh_key_algo_s *assh_key_algo_table[];
-
 /** @This describes a key format.
     @see assh_key_format_desc */
 struct assh_key_format_desc_s
@@ -397,15 +394,30 @@ assh_key_safety_name(struct assh_key_s *key)
   return assh_safety_name(key->safety);
 }
 
+/** @This finds a key algorithm with matching name.
+    @see assh_key_algo_enumerate */
+ASSH_WARN_UNUSED_RESULT assh_status_t
+assh_key_algo_by_name(const struct assh_context_s *c,
+		      enum assh_algo_class_e cl,
+		      const char *name, size_t name_len,
+		      const struct assh_key_algo_s **algo);
+
+/** @This fills a table of pointers to key algorithms associated to
+    the registered algorithms of the context.
+
+    The @tt count parameter must initially indicate the maximum number
+    of entries that can be stored in the table. It is updated with the
+    actual number of entries stored.
+
+    @This returns @ref ASSH_NO_DATA when there is not enough space to
+    store all the entries.
+*/
+assh_status_t
+assh_key_algo_enumerate(struct assh_context_s *c,
+			enum assh_algo_class_e cl, size_t *count,
+			const struct assh_key_algo_s **table);
+
 /** Dummy key algorithm */
 extern const struct assh_key_algo_s assh_key_none;
-
-/** @This finds a key algorithm with matching name in a @tt NULL
-    terminated array of pointers to key algorithm descriptors. @see
-    assh_key_algo_table */
-ASSH_WARN_UNUSED_RESULT assh_status_t
-assh_key_algo_by_name_static(const struct assh_key_algo_s **table,
-                             const char *name, size_t name_len,
-                             const struct assh_key_algo_s **algo);
 
 #endif
