@@ -902,15 +902,60 @@ static int test()
 
 	    case ASSH_EVENT_WRITE: {
 	      struct assh_event_transport_write_s *te = &event.transport.write;
+	      const char *dir = i ? "client -> server" : "server -> client";
+	      assert(te->buf.size > 0);
+	      te->transferred = te->buf.size;
 
-	      if (session[i].stream_out_size == 0)
+	      switch (action)
 		{
-		  assert(te->buf.size > 0);
-		  switch (action)
+		case RECORD_CLIENT_SERVER:
+		case REPLAY_CLIENT_SERVER:
+		  stall++;
+		  if ((te->buf.size != 0) && (fifo[i ^ 1].size != FIFO_BUF_SIZE))
+		    stall = 0;
+		  if (fifo_write(&fifo[i ^ 1], te->buf.data, te->buf.size) != te->buf.size)
+		    TEST_FAIL("packet too long");
+		  break;
+
+		case RECORD_CLIENT_CONNECT:
+		case RECORD_SERVER_CONNECT: {
+		  size_t s = te->buf.size;
+		  const uint8_t *d = te->buf.data;
+		  while (s > 0)
 		    {
-		    case RECORD_CLIENT_CONNECT:
-		    case RECORD_SERVER_CONNECT:
-		    case RECORD_CLIENT_SERVER:
+		      int r = send(sock, d, s, 0);
+		      if (r < 0)
+			{
+			  everr = ASSH_ERR_IO;
+			  break;
+			}
+		      s -= r;
+		      d += r;
+		    }
+		  break;
+		}
+
+		case REPLAY_CLIENT:
+		case REPLAY_SERVER:
+		  break;
+		}
+
+	      switch (action)
+		{
+		case RECORD_CLIENT_CONNECT:
+		case RECORD_SERVER_CONNECT:
+		    case RECORD_CLIENT_SERVER: {
+		  if (everr)
+		    {
+		      if (verbose > 2)
+			fprintf(stderr, "[%s] iterations: %u : %s broken pipe\n",
+				side, iter, dir);
+		      fputc(i | CHUNK_PKT_SRV2CLI, f_out);
+		      fput_u16(4, f_out); /* no data */
+		      fput_u32(iter, f_out);
+		    }
+		  else
+		    {
 		      fputc(i | CHUNK_PKT_SRV2CLI, f_out);
 		      fput_u16(te->buf.size + 4, f_out);
 		      fput_u32(iter, f_out);
@@ -918,30 +963,40 @@ static int test()
 		      if (verbose > 2)
 			{
 			  fprintf(stderr, "[%s] iterations: %u\n", side, iter);
-			  assh_hexdump(i ? "client -> server" : "server -> client",
-				       te->buf.data, te->buf.size);
+			  assh_hexdump(dir, te->buf.data, te->buf.size);
 			}
-		      break;
+		    }
+		  break;
+		}
 
-		    case REPLAY_CLIENT:
-		    case REPLAY_SERVER:
-		    case REPLAY_CLIENT_SERVER: {
+		case REPLAY_CLIENT:
+		case REPLAY_SERVER:
+		case REPLAY_CLIENT_SERVER: {
+		  if (verbose > 2)
+		    {
+		      fprintf(stderr, "[%s] iterations: %u\n", side, iter);
+		      assh_hexdump(dir, te->buf.data, te->buf.size);
+		    }
+		  int d = fget_dir(f_in[i], i);
+		  if (d < 0)
+		    REPLAY_FAIL("unexpected end of stream\n");
+		  int s = fget_u16(f_in[i]);
+		  if (s < 4)
+		    REPLAY_FAIL("unexpected end of stream\n");
+		  uint32_t it = fget_u32(f_in[i]);
+		  s -= 4;
+		  if (it != iter)
+		    REPLAY_FAIL("iteration out of sync %u %u\n", it, iter);
+
+		  if (s == 0)
+		    {
 		      if (verbose > 2)
-			{
-			  fprintf(stderr, "[%s] iterations: %u\n", side, iter);
-			  assh_hexdump(i ? "client -> server" : "server -> client",
-				       te->buf.data, te->buf.size);
-			}
-		      int d = fget_dir(f_in[i], i);
-		      if (d < 0)
-			REPLAY_FAIL("unexpected end of stream\n");
-		      int s = fget_u16(f_in[i]);
-		      if (s < 4)
-			REPLAY_FAIL("unexpected end of stream\n");
-		      uint32_t it = fget_u32(f_in[i]);
-		      if (it != iter)
-			REPLAY_FAIL("iteration out of sync %u %u\n", it, iter);
-		      s -= 4;
+			fprintf(stderr, "[%s] iterations: %u : %s broken pipe\n",
+				side, iter, dir);
+		      everr = ASSH_ERR_IO;
+		    }
+		  else
+		    {
 		      uint8_t st[s];
 		      if (fread(st, 1, s, f_in[i]) != s)
 			REPLAY_FAIL("unexpected end of stream\n");
@@ -951,36 +1006,14 @@ static int test()
 			  assh_hexdump("unexpected", te->buf.data, s);
 			  REPLAY_FAIL("stream chunk with unexpected content\n");
 			}
-		      break;
 		    }
-		    }
-		}
-
-	      switch (action)
-		{
-		case RECORD_CLIENT_SERVER:
-		case REPLAY_CLIENT_SERVER:
-		  stall++;
-		  if ((te->buf.size != 0) && (fifo[i ^ 1].size != FIFO_BUF_SIZE))
-		    stall = 0;
-		  te->transferred = fifo_write(&fifo[i ^ 1], te->buf.data, te->buf.size);
-		  break;
-		case RECORD_CLIENT_CONNECT:
-		case RECORD_SERVER_CONNECT: {
-		  int r = send(sock, te->buf.data, te->buf.size, 0);
-		  if (r < 0)
-		    everr = ASSH_ERR_IO;
-		  assert(r == te->buf.size);
-		  te->transferred = r;
-		  break;
-		}
-		case REPLAY_CLIENT:
-		case REPLAY_SERVER:
-		  te->transferred = te->buf.size;
 		  break;
 		}
 
-	      raw_write(i ^ 1, te->buf.data, te->transferred);
+		}
+
+	      if (!everr)
+		raw_write(i ^ 1, te->buf.data, te->transferred);
 
 	      break;
 	    }
@@ -2056,6 +2089,7 @@ int main(int argc, char **argv)
     .sa_handler = term_handler,
   };
   sigaction(SIGINT, &act, NULL);
+  signal(SIGPIPE, SIG_IGN);
 
   int result = 1;
 
