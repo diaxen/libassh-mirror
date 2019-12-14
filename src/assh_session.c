@@ -60,9 +60,9 @@ assh_status_t assh_session_init(struct assh_context_s *c,
   s->kex_max_bytes = ASSH_REKEX_THRESHOLD;
   s->kex_filter = assh_session_kex_filter;
   s->kex_done = 0;
+  s->kex_host_key = NULL;
 
 #ifdef CONFIG_ASSH_CLIENT
-  s->kex_host_key = NULL;
   s->srv_index = 0;
 #endif
   ASSH_SET_STATE(s, srv_st, ASSH_SRV_NONE);
@@ -145,9 +145,7 @@ void assh_session_cleanup(struct assh_session_s *s)
   assh_packet_release(s->in_pck);
   assh_packet_release(s->stream_in_pck);
 
-#ifdef CONFIG_ASSH_CLIENT
   assh_key_drop(s->ctx, &s->kex_host_key);
-#endif
 
   s->ctx->session_count--;
 }

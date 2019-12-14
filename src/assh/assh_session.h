@@ -113,12 +113,10 @@ struct assh_session_s
   const struct assh_service_s *srv;
   /** Current service private data. */
   void *srv_pv;
-#ifdef CONFIG_ASSH_CLIENT
-  /** Host key sent by server. The key is loaded by @ref
-      assh_kex_client_get_key and released when the @ref
-      ASSH_EVENT_KEX_DONE event is acknowledged.  */
+
+  /** Host key sent by the server. The key released when the
+      @ref ASSH_EVENT_KEX_DONE event is acknowledged.  */
   struct assh_key_s *kex_host_key;
-#endif
 
   /** Queue of ssh output packets. Packets in this queue will be
       enciphered and sent. */

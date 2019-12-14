@@ -795,9 +795,13 @@ assh_kex_server_hash1(struct assh_session_s *s, size_t kex_len,
 
   ASSH_RET_IF_TRUE(assh_key_lookup(c, host_key, &s->host_sign_algo->algo) != ASSH_OK,
                ASSH_ERR_MISSING_KEY);
-  const struct assh_key_s *hk = *host_key;
+  struct assh_key_s *hk = *host_key;
 
   assh_kex_lower_safety(s, hk->safety);
+
+  assert(s->kex_host_key == NULL);
+  s->kex_host_key = hk;
+  assh_key_refinc(hk);
 
   /* alloc reply packet */
   size_t ks_len;
@@ -920,9 +924,7 @@ assh_status_t assh_kex_end(struct assh_session_s *s, assh_bool_t accept)
 
 static ASSH_EVENT_DONE_FCN(assh_event_kex_done_done)
 {
-#ifdef CONFIG_ASSH_CLIENT
   assh_key_drop(s->ctx, &s->kex_host_key);
-#endif
   s->kex_done = 1;
   return ASSH_OK;
 }
@@ -932,11 +934,8 @@ void assh_kex_done(struct assh_session_s *s,
 {
   e->id = ASSH_EVENT_KEX_DONE;
   e->f_done = assh_event_kex_done_done;
-#ifdef CONFIG_ASSH_CLIENT
   e->kex.done.host_key = s->kex_host_key;
-#else
-  e->kex.done.host_key = NULL;
-#endif
+
   const struct assh_kex_keys_s *in = s->cur_keys_in;
   const struct assh_kex_keys_s *out = s->new_keys_out != NULL
     ? s->new_keys_out : s->cur_keys_out;
