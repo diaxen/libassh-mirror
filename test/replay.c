@@ -198,9 +198,11 @@ static int usage()
 	  "                     k:kex, s:sign, c:cipher, m:mac, C:compress\n"
 	  "                   A is the name, V the variant, I the implementation\n"
 
+#if defined(CONFIG_ASSH_CLIENT)
 	  "  Client only options:\n"
 	  "    -H host      specify the remote server address.\n"
 	  "    -a T:algo    select an algorithm for the client side only.\n"
+	  "    -O 0|1       host key accept decision.\n"
 	  "    -u name      specify a login name for user authentication.\n"
 	  "    -P pass,pass specify a list of passwords to try.\n"
 	  "    -k file      load an userauth user key file.\n"
@@ -210,17 +212,18 @@ static int usage()
 	  "    -K algo:bits create an userauth host key.\n"
 	  "    -S host      specify the userauth host name.\n"
 	  "    -i N         make client disconnects after N iterations.\n\n"
+#endif
 
+#if defined(CONFIG_ASSH_SERVER)
 	  "  Server only options:\n"
 	  "    -A T:algo    select an algorithm for the server side only.\n"
-	  "    -j file      load a host key file for the server side.\n"
-	  "    -j algo:bits create a host key for the server side.\n"
-	  "    -J file      load a kex key file for the server side.\n"
+	  "    -J file      load a host key file for the server side.\n"
+	  "    -J algo:bits create a host key for the server side.\n"
+	  "    -j file      load a kex key file for the server side.\n"
 	  "    -j algo:bits create a kex key for the server side.\n"
 	  "    -J algo:bits create a host key for the server side.\n"
 	  "    -w 0102...   reverse list of userauth password decisions\n"
 	  "                 (0:fail, 1:success, 2:pw change request).\n"
-	  "    -O 0|1       host key accept decision.\n"
 	  "    -l 01010...  reverse list of userauth pubkey decisions.\n"
 	  "    -o 01010...  reverse list of userauth hostbased decisions.\n"
 	  "    -Y a,b;c,d   list of keyboard userauth prompts.\n"
@@ -229,6 +232,7 @@ static int usage()
 	  "    -M mask      override server userauth methods in use.\n"
 	  "    -F N         specify the number of multi factor auths.\n"
 	  "    -I N         make server disconnects after N iterations.\n"
+#endif
 	  );
 
   exit(1);
@@ -1260,7 +1264,7 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 	  if (i != (o & 1))
 	    goto skip;
 	  if (verbose > 0)
-	    fprintf(stderr, "[%s] Loading kex keys: ", side);
+	    fprintf(stderr, "[%s] Loading kex/host keys: ", side);
 	  if (context_load_key(ctx, in, &ctx->keys))
 	    return 1;
 	  break;
