@@ -207,7 +207,7 @@ int main(int argc, char *argv[])
           ifmt = get_format(optarg);
           break;
         case 'o':
-          ofile = get_file(optarg, O_CREAT | O_WRONLY);
+          ofile = get_file(optarg, O_CREAT | O_WRONLY | O_TRUNC);
           break;
         case 'i':
           ifile = get_file(optarg, O_RDONLY);
