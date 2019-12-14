@@ -1612,7 +1612,10 @@ static int replay_file(const char *fname)
 
 static int replay_directory(int argc, char **argv)
 {
-  const char *dname = ".";
+  const char *dname = getenv("srcdir");
+  if (!dname)
+    dname = ".";
+
   int opt;
 
   while ((opt = getopt(argc, argv, "vhd:R")) != -1)
