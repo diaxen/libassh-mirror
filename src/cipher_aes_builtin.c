@@ -408,7 +408,9 @@ const struct assh_algo_cipher_s assh_cipher_aes256_cbc =
 {
   ASSH_ALGO_BASE(CIPHER, "assh-builtin", 60, 60,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
-                      "aes256-cbc" })
+                      "aes256-cbc" },
+                   { ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_OLDNAME,
+		       "rijndael-cbc@lysator.liu.se" })
   ),
   .ctx_size = sizeof(struct assh_cipher_aes_context_s),
   .block_size = 16,
