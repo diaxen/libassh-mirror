@@ -2,7 +2,7 @@
 
   libassh - asynchronous ssh2 client/server library.
 
-  Copyright (C) 2013 Alexandre Becoulet <alexandre.becoulet@free.fr>
+  Copyright (C) 2013-2020 Alexandre Becoulet <alexandre.becoulet@free.fr>
 
   This library is free software; you can redistribute it and/or modify
   it under the terms of the GNU Lesser General Public License as
