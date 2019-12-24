@@ -130,6 +130,7 @@ struct assh_service_s
 */
 struct assh_event_service_start_s
 {
+  /** A pointer to the module descriptor of the starting @hl service. (ro) */
   const struct assh_service_s * ASSH_EV_CONST srv;
 };
 

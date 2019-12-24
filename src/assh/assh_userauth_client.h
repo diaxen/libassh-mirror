@@ -56,7 +56,8 @@
 */
 struct assh_event_userauth_client_user_s
 {
-  struct assh_cbuffer_s    username;    //< output
+  /** The user name transmitted to server (rw) */
+  struct assh_cbuffer_s username;
 };
 
 /** This event is reported when the client-side user authentication
@@ -102,16 +103,31 @@ struct assh_event_userauth_client_user_s
 */
 struct assh_event_userauth_client_methods_s
 {
-  ASSH_EV_CONST assh_bool_t    partial_success; //< input
-  ASSH_EV_CONST enum assh_userauth_methods_e methods; //< input
-  enum assh_userauth_methods_e select;       //< output
+  /** Advertises multi-factor authentication. (ro) */
+  ASSH_EV_CONST assh_bool_t partial_success;
+
+  /** Methods accepted by the server. (ro) */
+  ASSH_EV_CONST enum assh_userauth_methods_e methods;
+
+  /** Must be set to the retained method. (rw) */
+  enum assh_userauth_methods_e select;
+
   union {
-    struct assh_cbuffer_s       password;     //< output
-    struct assh_key_s          *keys;        //< output
-    struct assh_cbuffer_s       keyboard_sub; //< output
+    /** The password credential. (rw) */
+    struct assh_cbuffer_s password;
+
+    /** The user or host public key credential. (rw) */
+    struct assh_key_s *keys;
+
+    /** The keyboard sub-method. (rw) */
+    struct assh_cbuffer_s keyboard_sub;
   };
-  struct assh_cbuffer_s       host_name;   //< output
-  struct assh_cbuffer_s       host_username;   //< output
+
+  /** The host name. (rw) */
+  struct assh_cbuffer_s host_name;
+
+  /** The host user name. */
+  struct assh_cbuffer_s host_username;
 };
 
 /** This event is reported when the client-side user authentication
@@ -127,10 +143,17 @@ struct assh_event_userauth_client_methods_s
  */
 struct assh_event_userauth_client_sign_s
 {
-  struct assh_key_s * ASSH_EV_CONST pub_key;    //< input
-  const struct assh_algo_sign_s * ASSH_EV_CONST algo; //< input
-  ASSH_EV_CONST struct assh_cbuffer_s auth_data; //< input
-  struct assh_buffer_s sign;       //< output
+  /** The associated public key. (ro) */
+  struct assh_key_s * ASSH_EV_CONST pub_key;
+
+  /** The signature algorithm. (ro) */
+  const struct assh_algo_sign_s * ASSH_EV_CONST algo;
+
+  /** The data to authenticate. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s auth_data;
+
+  /** Used to store the generated signature. (rw) */
+  struct assh_buffer_s sign;
 };
 
 /** This event is reported when the client-side user authentication
@@ -140,8 +163,11 @@ struct assh_event_userauth_client_sign_s
 */
 struct assh_event_userauth_client_banner_s
 {
-  ASSH_EV_CONST struct assh_cbuffer_s text; //< output
-  ASSH_EV_CONST struct assh_cbuffer_s lang;   //< output
+  /** The banner text transmitted by the server. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s text;
+
+  /** The language tag. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s lang;
 };
 
 /** This event is reported when the client-side user authentication
@@ -155,10 +181,17 @@ struct assh_event_userauth_client_banner_s
 */
 struct assh_event_userauth_client_pwchange_s
 {
-  ASSH_EV_CONST struct assh_cbuffer_s prompt;       //< output
-  ASSH_EV_CONST struct assh_cbuffer_s lang;         //< output
-  struct assh_cbuffer_s               old_password; //< input
-  struct assh_cbuffer_s               new_password; //< input
+  /** The password change prompt string. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s prompt;
+
+  /** The language tag. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s lang;
+
+  /** The old password must be stored here. (rw) */
+  struct assh_cbuffer_s old_password;
+
+  /** The new password must be stored here. (rw) */
+  struct assh_cbuffer_s new_password;
 };
 
 
@@ -180,13 +213,24 @@ struct assh_event_userauth_client_pwchange_s
 */
 struct assh_event_userauth_client_keyboard_s
 {
-  ASSH_EV_CONST struct assh_cbuffer_s name; //< input
-  ASSH_EV_CONST struct assh_cbuffer_s instruction; //< input
-  ASSH_EV_CONST uint32_t             echos; //< input
-  ASSH_EV_CONST uint_fast8_t         count; //< input
+  /** The name transmitted by the server. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s name;
+
+  /** The instructions transmitted by the server. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s instruction;
+
+  /** Indicate fields that must be echoed. (ro) */
+  ASSH_EV_CONST uint32_t echos;
+
+  /** The number of fields. (ro) */
+  ASSH_EV_CONST uint_fast8_t count;
+
   union {
-    ASSH_EV_CONST struct assh_cbuffer_s * prompts; //< input
-    struct assh_cbuffer_s *responses; //< output
+    /** The array of prompt strings. (ro) */
+    ASSH_EV_CONST struct assh_cbuffer_s *prompts;
+
+    /** The array of response strings. (rw) */
+    struct assh_cbuffer_s *responses;
   };
 };
 
@@ -194,12 +238,12 @@ struct assh_event_userauth_client_keyboard_s
     structures. */
 union assh_event_userauth_client_u
 {
-  struct assh_event_userauth_client_user_s    user;
+  struct assh_event_userauth_client_user_s user;
   struct assh_event_userauth_client_methods_s methods;
-  struct assh_event_userauth_client_banner_s  banner;
+  struct assh_event_userauth_client_banner_s banner;
   struct assh_event_userauth_client_pwchange_s pwchange;
   struct assh_event_userauth_client_keyboard_s keyboard;
-  struct assh_event_userauth_client_sign_s    sign;
+  struct assh_event_userauth_client_sign_s sign;
 };
 
 /** @This implements the standard client side @tt ssh-userauth service. */

@@ -38,6 +38,7 @@
 
 #include "assh.h"
 #include "assh_buffer.h"
+#include "assh_packet.h"
 
 /** @internal @This specifies the transport status of an ssh session. */
 enum assh_transport_state_e
@@ -109,8 +110,11 @@ enum assh_stream_out_state_e
 */
 struct assh_event_transport_read_s
 {
-  ASSH_EV_CONST struct assh_buffer_s buf;         //< input
-  size_t                             transferred; //< output
+  /** Must be filled with the incoming @em ssh2 stream. (rw) */
+  ASSH_EV_CONST struct assh_buffer_s buf;
+
+  /** Must be set to the amount of data copied to the buffer. (rw) */
+  size_t transferred;
 };
 
 /** The @ref ASSH_EVENT_WRITE event is reported when some ssh stream
@@ -131,8 +135,11 @@ struct assh_event_transport_read_s
 */
 struct assh_event_transport_write_s
 {
-  ASSH_EV_CONST struct assh_cbuffer_s buf;         //< input
-  size_t                             transferred; //< output
+  /** Contains the outgoing @em ssh2 stream. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s buf;
+
+  /** Must be set to the amount of data copied from the buffer. (rw) */
+  size_t transferred;
 };
 
 /** The @ref ASSH_EVENT_DISCONNECT event is reported when the remote
@@ -141,18 +148,28 @@ struct assh_event_transport_write_s
     message. */
 struct assh_event_transport_disconnect_s
 {
-  ASSH_EV_CONST uint32_t reason;                    //< input
-  ASSH_EV_CONST struct assh_cbuffer_s desc;         //< input
-  ASSH_EV_CONST struct assh_cbuffer_s lang;         //< input
+  /** Disconnect reason as specified in @sinvoke{4250}rfc. (ro) */
+  ASSH_EV_CONST enum assh_ssh_disconnect_e reason;
+
+  /** Human readable disconnect reason. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s desc;
+
+  /** Tha language tag. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s lang;
 };
 
 /** The @ref ASSH_EVENT_DEBUG event is reported when the remote host
     transmitted an @ref SSH_MSG_DEBUG message. */
 struct assh_event_transport_debug_s
 {
-  ASSH_EV_CONST assh_bool_t display;                //< input
-  ASSH_EV_CONST struct assh_cbuffer_s msg;          //< input
-  ASSH_EV_CONST struct assh_cbuffer_s lang;         //< input
+  /** Set when the debug message should be displayed. (ro) */
+  ASSH_EV_CONST assh_bool_t display;
+
+  /** The actual debug message. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s msg;
+
+  /** Tha language tag. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s lang;
 };
 
 /** @This contains all transport related event structures. */

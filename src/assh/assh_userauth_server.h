@@ -69,11 +69,20 @@
     @see ASSH_EVENT_USERAUTH_SERVER_METHODS */
 struct assh_event_userauth_server_methods_s
 {
-  ASSH_EV_CONST enum assh_userauth_methods_e failed;  //< input
-  enum assh_userauth_methods_e methods; //< output
-  uint_fast8_t                 retries; //< output
-  struct assh_cbuffer_s        banner;  //< output
-  struct assh_cbuffer_s        bnlang;  //< output
+  /** The last failed method. (ro) */
+  ASSH_EV_CONST enum assh_userauth_methods_e failed;
+
+  /** The methods that will be proposed to the client. (rw) */
+  enum assh_userauth_methods_e methods;
+
+  /** The number of allowed retries. (rw) */
+  uint_fast8_t retries;
+
+  /** The banner text may be stored here when used. (rw) */
+  struct assh_cbuffer_s banner;
+
+  /** The banner language tag. (rw) */
+  struct assh_cbuffer_s bnlang;
 };
 
 /** This event is reported when the server-side user authentication
@@ -86,9 +95,14 @@ struct assh_event_userauth_server_methods_s
     @see ASSH_EVENT_USERAUTH_SERVER_NONE */
 struct assh_event_userauth_server_none_s
 {
-  ASSH_EV_CONST struct assh_cbuffer_s     username;  //< input
-  const struct assh_service_s * ASSH_EV_CONST service;   //< input
-  assh_bool_t                             accept;    //< output
+  /** The user name transmitted by the client. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s username;
+
+  /** A pointer to the service that the client wants to run. (ro) */
+  const struct assh_service_s * ASSH_EV_CONST service;
+
+  /** Accept login without credential when true. (rw) */
+  assh_bool_t accept;
 };
 
 /** This event is reported when the server-side user authentication
@@ -103,17 +117,27 @@ struct assh_event_userauth_server_none_s
     @see ASSH_EVENT_USERAUTH_SERVER_USERKEY */
 struct assh_event_userauth_server_userkey_s
 {
-  ASSH_EV_CONST struct assh_cbuffer_s     username;  //< input
-  const struct assh_service_s * ASSH_EV_CONST    service;   //< input
-  struct assh_key_s * ASSH_EV_CONST       pub_key;   //< input
-  assh_bool_t                             found;     //< output
+  /** The user name transmitted by the client. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s username;
+
+  /** A pointer to the service that the client wants to run. (ro) */
+  const struct assh_service_s * ASSH_EV_CONST service;
+
+  /** The user public key provided by the client. (ro) */
+  struct assh_key_s * ASSH_EV_CONST pub_key;
+
+  /** Acknowledge that the key is authorized when true. (rw) */
+  assh_bool_t found;
 };
 
 /** @see assh_event_userauth_server_password_s */
 enum assh_event_userauth_server_pwstatus_s
 {
+  /** Indicates password authentication failure. */
   ASSH_SERVER_PWSTATUS_FAILURE,
+  /** Indicates password authentication success. */
   ASSH_SERVER_PWSTATUS_SUCCESS,
+  /** Indicates that a password change request must be transmitted. */
   ASSH_SERVER_PWSTATUS_CHANGE,
 };
 
@@ -134,13 +158,26 @@ enum assh_event_userauth_server_pwstatus_s
     @see ASSH_EVENT_USERAUTH_SERVER_PASSWORD */
 struct assh_event_userauth_server_password_s
 {
-  ASSH_EV_CONST struct assh_cbuffer_s username;    //< input
-  const struct assh_service_s * ASSH_EV_CONST service;    //< input
-  ASSH_EV_CONST struct assh_cbuffer_s password;    //< input
-  ASSH_EV_CONST struct assh_cbuffer_s new_password; //< input
-  struct assh_cbuffer_s               change_prompt; //< output
-  struct assh_cbuffer_s               change_lang;   //< output
-  enum assh_event_userauth_server_pwstatus_s result; //< output
+  /** The user name transmitted by the client. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s username;
+
+  /** A pointer to the service that the client wants to run. (ro) */
+  const struct assh_service_s * ASSH_EV_CONST service;
+
+  /** The current password transmitted by the client. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s password;
+
+  /** The new password transmitted by the client. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s new_password;
+
+  /** A prompt string for the password change request. (rw) */
+  struct assh_cbuffer_s change_prompt;
+
+  /** The prompt language tag. (rw) */
+  struct assh_cbuffer_s change_lang;
+
+  /** Used to acknowledge that the password is correct. (rw) */
+  enum assh_event_userauth_server_pwstatus_s result;
 };
 
 /** This event is reported when the server-side user authentication
@@ -155,12 +192,23 @@ struct assh_event_userauth_server_password_s
     @see ASSH_EVENT_USERAUTH_SERVER_HOSTBASED */
 struct assh_event_userauth_server_hostbased_s
 {
-  ASSH_EV_CONST struct assh_cbuffer_s username;    //< input
-  const struct assh_service_s * ASSH_EV_CONST service;    //< input
-  struct assh_key_s * ASSH_EV_CONST   host_key;    //< input
-  ASSH_EV_CONST struct assh_cbuffer_s hostname;    //< input
-  ASSH_EV_CONST struct assh_cbuffer_s host_username; //< input
-  assh_bool_t                         found;     //< output
+  /** The user name transmitted by the client. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s username;
+
+  /** A pointer to the service that the client wants to run. (ro) */
+  const struct assh_service_s * ASSH_EV_CONST service;
+
+  /** The host public key transmitted by the client. (ro) */
+  struct assh_key_s * ASSH_EV_CONST host_key;
+
+  /** The host name transmitted by the client. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s hostname;
+
+  /** The host user name transmitted by the client. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s host_username;
+
+  /** Used to acknowledge that the key is authorized. (rw) */
+  assh_bool_t found;
 };
 
 /** This event is reported when the server-side user authentication
@@ -186,21 +234,39 @@ struct assh_event_userauth_server_hostbased_s
 */
 struct assh_event_userauth_server_kbinfo_s
 {
-  ASSH_EV_CONST struct assh_cbuffer_s username;  //< input
-  const struct assh_service_s * ASSH_EV_CONST service;  //< input
-  ASSH_EV_CONST struct assh_cbuffer_s sub; //< input
-  struct assh_cbuffer_s name; //< output
-  struct assh_cbuffer_s instruction; //< output
-  uint32_t             echos; //< output
-  uint_fast8_t         count; //< output
-  const struct assh_cbuffer_s *prompts; //< output
+  /** The user name transmitted by the client. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s username;
+
+  /** A pointer to the service that the client wants to run. (ro) */
+  const struct assh_service_s * ASSH_EV_CONST service;
+
+  /** The sub-method name transmitted by the client. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s sub;
+
+  /** Used to store the name transmitted to the client. (rw) */
+  struct assh_cbuffer_s name;
+
+  /** Used to store the instructions transmitted to the client. (rw) */
+  struct assh_cbuffer_s instruction;
+
+  /** Used to indicate the fields that must be echoed. (rw) */
+  uint32_t echos;
+
+  /** Used to indicate the number of fields. (rw) */
+  uint_fast8_t count;
+
+  /** Must point to an array of prompt strings. (rw) */
+  const struct assh_cbuffer_s *prompts;
 };
 
 /** @see assh_event_userauth_server_kbresponse_s */
 enum assh_event_userauth_server_kbstatus_e
 {
+  /** Indicates keyboard authentication failure. */
   ASSH_SERVER_KBSTATUS_FAILURE,
+  /** Indicates keyboard authentication success. */
   ASSH_SERVER_KBSTATUS_SUCCESS,
+  /** Indicates that more fields queries must be transmitted. */
   ASSH_SERVER_KBSTATUS_CONTINUE,
 };
 
@@ -219,8 +285,13 @@ enum assh_event_userauth_server_kbstatus_e
 */
 struct assh_event_userauth_server_kbresponse_s
 {
-  ASSH_EV_CONST uint_fast8_t count; //< output
-  ASSH_EV_CONST struct assh_cbuffer_s * responses; //< output
+  /** The number of fields. (ro) */
+  ASSH_EV_CONST uint_fast8_t count;
+
+  /** The array of responses transmitted by the client. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s * responses;
+
+  /** Used to decide what to do next. (rw) */
   enum assh_event_userauth_server_kbstatus_e result;
 };
 
@@ -237,11 +308,20 @@ struct assh_event_userauth_server_kbresponse_s
     @see ASSH_EVENT_USERAUTH_SERVER_SUCCESS */
 struct assh_event_userauth_server_success_s
 {
-  ASSH_EV_CONST struct assh_cbuffer_s username;  //< input
-  const struct assh_service_s * ASSH_EV_CONST service;  //< input
-  ASSH_EV_CONST enum assh_userauth_methods_e method; //< input
-  enum assh_userauth_methods_e       methods;        //< output
-  ASSH_EV_CONST assh_safety_t        sign_safety;    //< input
+  /** The user name transmitted by the client. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s username;
+
+  /** A pointer to the service that will be started. (ro) */
+  const struct assh_service_s * ASSH_EV_CONST service;
+
+  /** Indicates the successfull authentication method. (ro) */
+  ASSH_EV_CONST enum assh_userauth_methods_e method;
+
+  /** May be updated to continue with multi-factor authentication. (rw) */
+  enum assh_userauth_methods_e methods;
+
+  /** The safety factor of authentication signatures. (ro) */
+  ASSH_EV_CONST assh_safety_t sign_safety;
 };
 
 /** @This contains all server side user authentication related event

@@ -231,7 +231,8 @@ struct assh_session_s
     @see #ASSH_STATUS @see #ASSH_SEVERITY */
 struct assh_event_session_error_s
 {
-  assh_status_t code;
+  /** The error code reported by the library. (ro) */
+  ASSH_EV_CONST assh_status_t code;
 };
 
 /** @This contains all session related event structures. */

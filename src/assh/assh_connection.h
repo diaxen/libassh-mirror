@@ -266,12 +266,23 @@ assh_request_state(struct assh_request_s *rq);
 */
 struct assh_event_request_s
 {
-  struct assh_channel_s * ASSH_EV_CONST ch;         //< from library
-  struct assh_request_s * ASSH_EV_CONST rq;         //< from library
-  ASSH_EV_CONST struct assh_cbuffer_s   type;       //< from library
-  ASSH_EV_CONST struct assh_cbuffer_s   rq_data;    //< from library
-  enum assh_connection_reply_e          reply;      //< to library
-  struct assh_cbuffer_s                  rsp_data;   //< to library
+  /** A pointer to the associated channel object if any. (ro) */
+  struct assh_channel_s * ASSH_EV_CONST ch;
+
+  /** A pointer to the request object. (ro) */
+  struct assh_request_s * ASSH_EV_CONST rq;
+
+  /** The textual type of the request. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s type;
+
+  /** The associated data if any. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s rq_data;
+
+  /** Used to store the request reply. (rw) */
+  enum assh_connection_reply_e reply;
+
+  /** Used to store the request reply data if any. (rw) */
+  struct assh_cbuffer_s rsp_data;
 };
 
 /**
@@ -285,8 +296,11 @@ struct assh_event_request_s
 */
 struct assh_event_request_abort_s
 {
-  struct assh_channel_s * ASSH_EV_CONST ch;         //< from library
-  struct assh_request_s * ASSH_EV_CONST rq;         //< from library
+  /** A pointer to the associated channel object if any. (ro) */
+  struct assh_channel_s * ASSH_EV_CONST ch;
+
+  /** A pointer to the request object. (ro) */
+  struct assh_request_s * ASSH_EV_CONST rq;
 };
 
 /**
@@ -345,9 +359,14 @@ assh_request_failed_reply(struct assh_request_s *rq);
 */
 struct assh_event_request_success_s
 {
-  struct assh_channel_s      * ASSH_EV_CONST ch;        //< from library
-  struct assh_request_s      * ASSH_EV_CONST rq;        //< from library
-  ASSH_EV_CONST struct assh_cbuffer_s        rsp_data;  //< from library
+  /** A pointer to the associated channel object if any. (ro) */
+  struct assh_channel_s * ASSH_EV_CONST ch;
+
+  /** A pointer to the request object. (ro) */
+  struct assh_request_s * ASSH_EV_CONST rq;
+
+  /** The request reply associated data if any. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s rsp_data;
 };
 
 /**
@@ -364,9 +383,14 @@ struct assh_event_request_success_s
 */
 struct assh_event_request_failure_s
 {
-  struct assh_channel_s      * ASSH_EV_CONST ch;        //< from library
-  struct assh_request_s      * ASSH_EV_CONST rq;        //< from library
-  ASSH_EV_CONST enum assh_request_reason_e reason;      //< from library
+  /** A pointer to the associated channel object if any. (ro) */
+  struct assh_channel_s * ASSH_EV_CONST ch;
+
+  /** A pointer to the request object. (ro) */
+  struct assh_request_s * ASSH_EV_CONST rq;
+
+  /** The request failure reason. (ro) */
+  ASSH_EV_CONST enum assh_request_reason_e reason;
 };
 
 
@@ -443,16 +467,35 @@ assh_request(struct assh_session_s *s,
 */
 struct assh_event_channel_open_s
 {
-  struct assh_channel_s * ASSH_EV_CONST ch;       //< from library
-  ASSH_EV_CONST struct assh_cbuffer_s   type;     //< from library
-  ASSH_EV_CONST struct assh_cbuffer_s   rq_data;  //< from library
-  enum assh_connection_reply_e          reply;    //< to library
-  enum assh_channel_open_reason_e       reason;   //< to library
-  int32_t                               win_size; //< to/from library
-  int32_t                               pkt_size; //< to/from library
-  ASSH_EV_CONST uint32_t                rwin_size; //< from library
-  ASSH_EV_CONST uint32_t                rpkt_size; //< from library
-  struct assh_cbuffer_s                 rsp_data; //< to library
+  /** A pointer to the channel object. (ro) */
+  struct assh_channel_s * ASSH_EV_CONST ch;
+
+  /** The textual type of the channel. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s type;
+
+  /** The associated data if any. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s rq_data;
+
+  /** Used to store the channel open reply. (rw) */
+  enum assh_connection_reply_e reply;
+
+  /** Used to store the channel open failure reason. (rw) */
+  enum assh_channel_open_reason_e reason;
+
+  /** The requested initial window size. (rw) */
+  int32_t win_size;
+
+  /** The requested packet size. (rw) */
+  int32_t pkt_size;
+
+  /** The remote window size. (ro) */
+  ASSH_EV_CONST uint32_t rwin_size;
+
+  /** The remote packet size. (ro) */
+  ASSH_EV_CONST uint32_t rpkt_size;
+
+  /** Used to store the reply data if any. (rw) */
+  struct assh_cbuffer_s rsp_data;
 };
 
 /**
@@ -467,7 +510,8 @@ struct assh_event_channel_open_s
 */
 struct assh_event_channel_abort_s
 {
-  struct assh_channel_s * ASSH_EV_CONST ch;         //< from library
+  /** A pointer to the channel object. (ro) */
+  struct assh_channel_s * ASSH_EV_CONST ch;
 };
 
 /**
@@ -556,10 +600,17 @@ assh_channel_open_failed_reply(struct assh_channel_s *ch,
 */
 struct assh_event_channel_confirmation_s
 {
-  struct assh_channel_s * ASSH_EV_CONST         ch;         //< from library
-  ASSH_EV_CONST struct assh_cbuffer_s           rsp_data;   //< from library
-  ASSH_EV_CONST uint32_t                        rwin_size; //< from library
-  ASSH_EV_CONST uint32_t                        rpkt_size; //< from library
+  /** A pointer to the channel object. (ro) */
+  struct assh_channel_s * ASSH_EV_CONST ch;
+
+  /** The associated data if any. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s rsp_data;
+
+  /** The remote window size. (ro) */
+  ASSH_EV_CONST uint32_t rwin_size;
+
+  /** The remote packet size. (ro) */
+  ASSH_EV_CONST uint32_t rpkt_size;
 };
 
 /**
@@ -575,8 +626,11 @@ struct assh_event_channel_confirmation_s
 */
 struct assh_event_channel_failure_s
 {
-  struct assh_channel_s * ASSH_EV_CONST         ch;         //< from library
-  ASSH_EV_CONST enum assh_channel_open_reason_e reason;     //< from library
+  /** A pointer to the channel object. (ro) */
+  struct assh_channel_s * ASSH_EV_CONST ch;
+
+  /** The channel open failure reason. (ro) */
+  ASSH_EV_CONST enum assh_channel_open_reason_e reason;
 };
 
 /**
@@ -646,11 +700,20 @@ assh_channel_open(struct assh_session_s *s,
 */
 struct assh_event_channel_data_s
 {
-  struct assh_channel_s * ASSH_EV_CONST   ch;         //< from library
-  ASSH_EV_CONST assh_bool_t               ext;        //< from library
-  ASSH_EV_CONST uint32_t                  ext_type;   //< from library
-  ASSH_EV_CONST struct assh_cbuffer_s     data;       //< from library
-  size_t                                  transferred; //< to library
+  /** A pointer to the channel object. (ro) */
+  struct assh_channel_s * ASSH_EV_CONST ch;
+
+  /** Indicate extended data. (ro) */
+  ASSH_EV_CONST assh_bool_t ext;
+
+  /** The type of extended data. (ro) */
+  ASSH_EV_CONST uint32_t ext_type;
+
+  /** The actual data transmitted over the channel. (ro) */
+  ASSH_EV_CONST struct assh_cbuffer_s data;
+
+  /** Must be set to the amount of data copied from the buffer. (rw) */
+  size_t transferred;
 };
 
 /** @This returns a pointer to a channel with pending data.
@@ -687,9 +750,14 @@ assh_channel_window_adjust(struct assh_channel_s *ch, size_t add);
 */
 struct assh_event_channel_window_s
 {
-  struct assh_channel_s * ASSH_EV_CONST   ch;         //< from library
-  ASSH_EV_CONST uint32_t                  old_size;   //< from library
-  ASSH_EV_CONST uint32_t                  new_size;   //< from library
+  /** A pointer to the channel object. (ro) */
+  struct assh_channel_s * ASSH_EV_CONST ch;
+
+  /** The previous window size. (ro) */
+  ASSH_EV_CONST uint32_t old_size;
+
+  /** The new window size. (ro) */
+  ASSH_EV_CONST uint32_t new_size;
 };
 
 /************************************************* outgoing channel data */
@@ -836,7 +904,8 @@ assh_channel_dummy(struct assh_channel_s *ch, size_t size);
 */
 struct assh_event_channel_eof_s
 {
-  struct assh_channel_s   * ASSH_EV_CONST ch; //< from library
+  /** A pointer to the channel object. (ro) */
+  struct assh_channel_s   * ASSH_EV_CONST ch;
 };
 
 
@@ -851,7 +920,8 @@ struct assh_event_channel_eof_s
 */
 struct assh_event_channel_close_s
 {
-  struct assh_channel_s           * ASSH_EV_CONST ch; //< from library
+  /** A pointer to the channel object. (ro) */
+  struct assh_channel_s * ASSH_EV_CONST ch;
 };
 
 /************************************************* outgoing channel close/eof */

@@ -278,17 +278,19 @@ struct assh_kex_keys_s
 */
 struct assh_event_kex_hostkey_lookup_s
 {
-  struct assh_key_s * ASSH_EV_CONST key;  //< from library
-  assh_bool_t ASSH_EV_CONST initial; //< from library
-  assh_bool_t               accept;  //< to library
+  /** Public host key provided by the server. (ro) */
+  struct assh_key_s * ASSH_EV_CONST key;
+
+  /** May be updated to acknowledge that the host key is trusted. (rw) */
+  assh_bool_t accept;
+
+  /** Set when this is the first @hl key-exchange of the session. (ro) */
+  assh_bool_t ASSH_EV_CONST initial;
 };
 
 /**
    The @ref ASSH_EVENT_KEX_DONE event is returned when a kex exchange
    has completed.
-
-   For client sessions, the server host key is provided in the @tt
-   host_key field.
 
    The remote software version string is exposed in the @tt ident
    field as well as selected algorithms in the @tt algo* fields.
@@ -298,13 +300,26 @@ struct assh_event_kex_hostkey_lookup_s
 */
 struct assh_event_kex_done_s
 {
-  struct assh_key_s * ASSH_EV_CONST host_key;  //< from library
-  struct assh_cbuffer_s ASSH_EV_CONST ident;  //< from library
-  const struct assh_algo_kex_s * ASSH_EV_CONST algo_kex; //< from library
-  const struct assh_kex_keys_s * ASSH_EV_CONST algos_in; //< from library
-  const struct assh_kex_keys_s * ASSH_EV_CONST algos_out; //< from library
-  assh_safety_t ASSH_EV_CONST safety;  //< from library
-  assh_bool_t ASSH_EV_CONST initial; //< from library
+  /** The host key used during the @hl key-exchange. (ro) */
+  struct assh_key_s * ASSH_EV_CONST host_key;
+
+  /** Remote software version string. (ro) */
+  struct assh_cbuffer_s ASSH_EV_CONST ident;
+
+  /** @hl Key-exchange @hl algorithm used. (ro) */
+  const struct assh_algo_kex_s * ASSH_EV_CONST algo_kex;
+
+  /** The set of @hl algorithms used to process incoming packets. (ro) */
+  const struct assh_kex_keys_s * ASSH_EV_CONST algos_in;
+
+  /** The set of @hl algorithms used to process ougoing packets. (ro) */
+  const struct assh_kex_keys_s * ASSH_EV_CONST algos_out;
+
+  /** @hl Key-exchange overall safety factor. (ro) */
+  assh_safety_t ASSH_EV_CONST safety;
+
+  /** True when this is the first @hl key-exchange of the session. (ro) */
+  assh_bool_t ASSH_EV_CONST initial;
 };
 
 /** @This contains all key-exchange related event structures. */
