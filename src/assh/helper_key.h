@@ -39,6 +39,26 @@
 
 #include <stdio.h>
 
+/** @This lookup the key algorithm name and calls the @ref
+    assh_key_load function.  */
+ASSH_WARN_UNUSED_RESULT assh_status_t
+asshh_key_load(struct assh_context_s *c,
+	       struct assh_key_s **key,
+	       const char *key_algo,
+	       enum assh_algo_class_e role,
+	       enum assh_key_format_e format,
+	       const uint8_t **blob, size_t blob_len);
+
+#ifdef CONFIG_ASSH_KEY_CREATE
+/** @This lookup the key algorithm name and calls the @ref
+    assh_key_create function.  */
+ASSH_WARN_UNUSED_RESULT assh_status_t
+asshh_key_create(struct assh_context_s *c,
+                struct assh_key_s **key, size_t bits,
+		const char *key_algo,
+                enum assh_algo_class_e role);
+#endif
+
 /** @This loads a key from a file handle and inserts the key
     in the @tt head linked list. Both binary and text key formats are
     supported. This function relies on @ref assh_key_load to load the

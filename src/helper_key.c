@@ -583,6 +583,42 @@ assh_load_key_file_guess(struct assh_context_s *c,
   ASSH_RETURN(ASSH_ERR_MISSING_ALGO);
 }
 
+assh_status_t
+asshh_key_load(struct assh_context_s *c,
+	       struct assh_key_s **key,
+	       const char *key_algo,
+	       enum assh_algo_class_e role,
+	       enum assh_key_format_e format,
+	       const uint8_t **blob, size_t blob_len)
+{
+  assh_status_t err = ASSH_OK;
+  const struct assh_key_algo_s *algo = NULL;
+
+  ASSH_RET_IF_TRUE(key_algo && assh_key_algo_by_name(c, role,
+		     key_algo, strlen(key_algo), &algo),
+		   ASSH_ERR_MISSING_ALGO);
+
+  ASSH_RETURN(assh_key_load(c, key, algo, role, format, blob, blob_len));
+}
+
+#ifdef CONFIG_ASSH_KEY_CREATE
+assh_status_t
+asshh_key_create(struct assh_context_s *c,
+                struct assh_key_s **key, size_t bits,
+		const char *key_algo,
+                enum assh_algo_class_e role)
+{
+  assh_status_t err = ASSH_OK;
+  const struct assh_key_algo_s *algo = NULL;
+
+  ASSH_RET_IF_TRUE(key_algo && assh_key_algo_by_name(c, role,
+		     key_algo, strlen(key_algo), &algo),
+		   ASSH_ERR_MISSING_ALGO);
+
+  ASSH_RETURN(assh_key_create(c, key, bits, algo, role));
+}
+#endif
+
 assh_status_t asshh_load_key_file(struct assh_context_s *c,
 				struct assh_key_s **head,
 				const struct assh_key_algo_s *algo,
