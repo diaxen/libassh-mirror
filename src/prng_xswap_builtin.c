@@ -163,7 +163,7 @@ static ASSH_PRNG_GET_FCN(assh_prng_xswap_get)
 
   while (rdata_len > 0)
     {
-      uint_fast8_t l = ASSH_MIN(16, rdata_len);
+      uint_fast8_t l = assh_min_uint(16, rdata_len);
       assh_prng_xswap_round(ctx);
       memcpy(rdata, ctx->buf, l);
       rdata_len -= l;

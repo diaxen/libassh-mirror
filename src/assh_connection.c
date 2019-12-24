@@ -1000,7 +1000,7 @@ assh_channel_open_success_reply2(struct assh_channel_s *ch,
   if (ch->auto_window)
     win_size = pkt_size;
 
-  ch->lpkt_size = ASSH_MIN(pkt_size, ASSH_CHANNEL_MAX_PKTSIZE);
+  ch->lpkt_size = assh_min_uint(pkt_size, ASSH_CHANNEL_MAX_PKTSIZE);
   ch->lwin_left = win_size;
 
   struct assh_packet_s *pout;
@@ -1203,7 +1203,7 @@ assh_channel_open(struct assh_session_s *s,
   if (ch->auto_window)
     win_size = pkt_size;
 
-  ch->lpkt_size = ASSH_MIN(pkt_size, ASSH_CHANNEL_MAX_PKTSIZE);
+  ch->lpkt_size = assh_min_uint(pkt_size, ASSH_CHANNEL_MAX_PKTSIZE);
   ch->lwin_left = win_size;
   ch->mentry.id = assh_channel_next_id(pv);
   ASSH_SET_STATE(ch, state, ASSH_CHANNEL_ST_OPEN_SENT);
@@ -1657,7 +1657,7 @@ size_t assh_channel_window_size(struct assh_channel_s *ch)
 
     case ASSH_CHANNEL_ST_OPEN:
     case ASSH_CHANNEL_ST_EOF_RECEIVED:
-      return ASSH_MIN(ch->rpkt_size, ch->rwin_left);
+      return assh_min_uint(ch->rpkt_size, ch->rwin_left);
     }
 }
 

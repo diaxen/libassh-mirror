@@ -75,7 +75,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_client_keyboard_info_done)
     psize += 4 + ev->responses[i].len;
 
   ASSH_RET_ON_ERR(assh_packet_alloc(s->ctx, SSH_MSG_USERAUTH_INFO_RESPONSE,
-                                 ASSH_MAX(psize, 256), &pout)
+                                 assh_max_uint(psize, 256), &pout)
                | ASSH_ERRSV_DISCONNECT);
   pout->padding = ASSH_PADDING_MAX;
 

@@ -507,7 +507,7 @@ asshh_bcrypt_pbkdf(struct assh_context_s *c,
 	}
 
       /* pbkdf2 deviation: ouput the key material non-linearly. */
-      amt = ASSH_MIN(amt, keylen);
+      amt = assh_min_uint(amt, keylen);
       for (i = 0; i < amt; i++)
 	key[i * stride + (count - 1)] = s->out[i];
       keylen -= amt;

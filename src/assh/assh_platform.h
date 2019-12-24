@@ -174,15 +174,6 @@ ASSH_INLINE void assh_clear(void *data, size_t len)
 #endif
 }
 
-/** @internal */
-#define ASSH_MAX(a, b) ({ typeof(a) __a = (a); typeof(b) __b = (b); __a > __b ? __a : __b; })
-
-/** @internal */
-#define ASSH_MIN(a, b) ({ typeof(a) __a = (a); typeof(b) __b = (b); __a < __b ? __a : __b; })
-
-/** @internal */
-#define ASSH_SWAP(a, b) do { typeof(a) __a = (a); typeof(b) __b = (b); (a) = __b; (b) = __a; } while(0)
-
 #ifdef __GNUC__
 /** @internal */
 #define assh_clz8(x)  (__builtin_clz((uint8_t)(x)) + 8 - sizeof(int) * 8)

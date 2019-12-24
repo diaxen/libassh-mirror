@@ -397,9 +397,9 @@ assh_bignum_modinv(struct assh_context_s *ctx,
 
       if (assh_bignum_div_cmp(xr, rl, xp, pl) > 0)
 	{
-	  ASSH_SWAP(rl, pl);
-	  ASSH_SWAP(xr, xp);
-	  ASSH_SWAP(xu, xv);
+	  ASSH_SWAP(uint_fast32_t, rl, pl);
+	  ASSH_SWAP(assh_bnword_t *, xr, xp);
+	  ASSH_SWAP(assh_bnword_t *, xu, xv);
 	}
     }
 
@@ -442,7 +442,7 @@ assh_bignum_gcd(struct assh_context_s *ctx,
      input number, the gcd value will be available in both buffers
      at the end */
   if (al < bl)
-    ASSH_SWAP(xr, xp);
+    ASSH_SWAP(assh_bnword_t *, xr, xp);
 
   memmove(xr, an, al * sizeof(assh_bnword_t));
   memmove(xp, bn, bl * sizeof(assh_bnword_t));
@@ -463,8 +463,8 @@ assh_bignum_gcd(struct assh_context_s *ctx,
         break;
       if (c > 0)
 	{
-	  ASSH_SWAP(rl, pl);
-	  ASSH_SWAP(xr, xp);
+	  ASSH_SWAP(uint_fast32_t, rl, pl);
+	  ASSH_SWAP(assh_bnword_t *, xr, xp);
 	}
 
       assh_bignum_div_clz(rl, xr, &az, &al, &at);

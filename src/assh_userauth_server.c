@@ -295,7 +295,7 @@ assh_userauth_server_sign_check(struct assh_session_s *s,
   ASSH_RET_ON_ERR(assh_sign_check(s->ctx, pv->algo, pv->pub_key, 3,
                  data, sign_str + 4, assh_load_u32(sign_str), &sign_safety));
 
-  pv->safety = ASSH_MIN(sign_safety, pv->safety);
+  pv->safety = assh_min_uint(sign_safety, pv->safety);
 
   return ASSH_OK;
 }

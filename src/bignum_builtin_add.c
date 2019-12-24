@@ -35,7 +35,7 @@ assh_bignum_addsub(struct assh_bignum_s *dst,
   /* make A the largest bits length */
   if (a->bits < b->bits)
     {
-      ASSH_SWAP(a, b);
+      ASSH_SWAP(const struct assh_bignum_s *, a, b);
       amask ^= smask;
     }
 

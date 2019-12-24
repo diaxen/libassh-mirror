@@ -528,6 +528,37 @@ ASSH_INLINE const uint8_t ** assh_uint8ptr_cast(uint8_t **p)
   return (const uint8_t **)p;
 }
 
+/** @internal */
+ASSH_INLINE uintptr_t assh_max_uint(uintptr_t a, uintptr_t b)
+{
+  return a > b ? a : b;
+}
+
+/** @internal */
+ASSH_INLINE intptr_t assh_max_int(intptr_t a, intptr_t b)
+{
+  return a > b ? a : b;
+}
+
+/** @internal */
+ASSH_INLINE uintptr_t assh_min_uint(uintptr_t a, uintptr_t b)
+{
+  return a < b ? a : b;
+}
+
+/** @internal */
+ASSH_INLINE intptr_t assh_min_int(intptr_t a, intptr_t b)
+{
+  return a < b ? a : b;
+}
+
+/** @internal */
+#define ASSH_SWAP(type, a, b) do {	\
+    type __a = (a);		  	\
+    type __b = (b);		  	\
+    (a) = __b; (b) = __a;	  	\
+  } while(0)
+
 /** @internal @This generates contant time ctz and clz functions */
 #define ASSH_CT_CTLZ_GEN(n, l)                                        \
 /** @internal @This computes the number of trailing zero bits of a    \

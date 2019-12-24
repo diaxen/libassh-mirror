@@ -84,7 +84,8 @@ static void assh_algo_filter_variants(struct assh_context_s *c,
 	  else if (a->priority < b->priority ||
                    a->safety < min_safety ||
                    a->speed < min_speed)
-	    ASSH_SWAP(c->algos[k], c->algos[i]);
+	    ASSH_SWAP(const struct assh_algo_s *,
+		      c->algos[k], c->algos[i]);
 	}
       c->algo_cnt = k;
     next:;

@@ -484,8 +484,8 @@ static assh_status_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
     ASSH_BOP_END(),
   };
 
-  intptr_t pqsize = ASSH_MAX(assh_bignum_bits(&t_key->pn),
-			     assh_bignum_bits(&t_key->qn));
+  intptr_t pqsize = assh_max_uint(assh_bignum_bits(&t_key->pn),
+				  assh_bignum_bits(&t_key->qn));
 
   ASSH_RET_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "DNNNNNNTTTTTTms",
                    /* Data */ em,

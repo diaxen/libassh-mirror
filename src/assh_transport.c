@@ -307,8 +307,8 @@ assh_status_t assh_transport_read(struct assh_session_s *s,
       ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_IDENT_DONE);
       /* any indent residue must fit in stream_in_stub and
 	 must not span more than one binary packet. */
-      *size = ASSH_MIN(ASSH_MIN_BLOCK_SIZE,
-		       sizeof(s->ident_str) - s->stream_in_size);
+      *size = assh_min_uint(ASSH_MIN_BLOCK_SIZE,
+			    sizeof(s->ident_str) - s->stream_in_size);
       break;
 
     /* read stream into packet head buffer */
@@ -478,7 +478,7 @@ assh_status_t assh_transport_write(struct assh_session_s *s,
 	}
 
       /* compute various length and payload pointer values */
-      uint_fast8_t align = ASSH_MAX(k->cipher->block_size, 8);
+      uint_fast8_t align = assh_max_uint(k->cipher->block_size, 8);
       size_t mac_len = k->mac->mac_size + k->cipher->auth_size;
 
       size_t cipher_len = p->data_size;
@@ -495,7 +495,7 @@ assh_status_t assh_transport_write(struct assh_session_s *s,
 	    pad_len += align;
 	  break;
 	case ASSH_PADDING_MAX:
-	  pad_len = ASSH_MIN(255, p->alloc_size - p->data_size - mac_len);
+	  pad_len = assh_min_uint(255, p->alloc_size - p->data_size - mac_len);
 	  pad_len -= (pad_len + cipher_len) % align;
 	  break;
 	default:

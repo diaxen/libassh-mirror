@@ -114,7 +114,7 @@ assh_evp_bytes_to_key(struct assh_context_s *c,
           assh_hash_cleanup(hash_ctx);
         }
 
-      size_t l = ASSH_MIN(hsize, key_len);
+      size_t l = assh_min_uint(hsize, key_len);
       memcpy(key, tmp, l);
       key_len -= l;
       key += l;

@@ -175,7 +175,7 @@ static assh_status_t assh_kex_dh_gex_client_wait_group(struct assh_session_s *s,
 
   /* do not enforce a limit we couldn't advertise */
   if (pv->state == ASSH_KEX_DH_GEX_CLIENT_WAIT_GROUP_OLD)
-    algo_max = ASSH_MAX(DH_MAX_RFC_SUGGESTED_GRSIZE, algo_max);
+    algo_max = assh_max_uint(DH_MAX_RFC_SUGGESTED_GRSIZE, algo_max);
 
   ASSH_RET_IF_TRUE(n < pv->algo_min, ASSH_ERR_WEAK_ALGORITHM);
   ASSH_RET_IF_TRUE(n > algo_max, ASSH_ERR_NOTSUP);
@@ -463,12 +463,12 @@ static assh_status_t assh_kex_dh_gex_server_wait_size(struct assh_session_s *s,
                    ASSH_ERR_NOTSUP);
 
       /* group size intervals intersection */
-      min = ASSH_MAX(pv->algo_min, pv->client_min);
-      max = ASSH_MIN(pv->algo_max, pv->client_max);
+      min = assh_max_uint(pv->algo_min, pv->client_min);
+      max = assh_min_uint(pv->algo_max, pv->client_max);
 
       /* random interval around requested size */
-      min = ASSH_MAX(min, n * 7 / 8);
-      max = ASSH_MIN(max, n * 3 / 2);
+      min = assh_max_uint(min, n * 7 / 8);
+      max = assh_min_uint(max, n * 3 / 2);
       break;
 #endif
 
@@ -479,11 +479,11 @@ static assh_status_t assh_kex_dh_gex_server_wait_size(struct assh_session_s *s,
       /* restrict requested size to supported interval */
       min = pv->algo_min;
       max = pv->algo_max;
-      n = ASSH_MAX(min, ASSH_MIN(max, pv->client_n));
+      n = assh_max_uint(min, assh_min_uint(max, pv->client_n));
 
       /* random interval around requested size */
-      min = ASSH_MAX(min, n);
-      max = ASSH_MIN(max, n * 3 / 2);
+      min = assh_max_uint(min, n);
+      max = assh_min_uint(max, n * 3 / 2);
       break;
 
     default:
@@ -794,7 +794,7 @@ static assh_status_t assh_kex_dh_gex_init(struct assh_session_s *s,
 
   assert(algo_max <= DH_MAX_GRSIZE);
   assert(algo_min <= algo_max);
-  cipher_key_size = ASSH_MIN(ASSH_MAX(cipher_key_size, 64), 256);
+  cipher_key_size = assh_min_uint(assh_max_uint(cipher_key_size, 64), 256);
 
   size_t exp_n = cipher_key_size * 2;
 
@@ -811,7 +811,7 @@ static assh_status_t assh_kex_dh_gex_init(struct assh_session_s *s,
 #ifdef CONFIG_ASSH_SERVER
     case ASSH_SERVER:
       ASSH_SET_STATE(pv, state, ASSH_KEX_DH_GEX_SERVER_WAIT_SIZE);
-      algo_max = ASSH_MAX(DH_MAX_RFC_SUGGESTED_GRSIZE, algo_max);
+      algo_max = assh_max_uint(DH_MAX_RFC_SUGGESTED_GRSIZE, algo_max);
       break;
 #endif
     default:
@@ -822,8 +822,9 @@ static assh_status_t assh_kex_dh_gex_init(struct assh_session_s *s,
   pv->hash = hash;
   pv->algo_min = algo_min;
   pv->algo_max = algo_max;
-  pv->algo_n = ASSH_MIN(ASSH_MAX(ASSH_DH_GEX_GRPSIZE(cipher_key_size, ldiv),
-                                 algo_min), algo_max);
+  pv->algo_n = assh_min_uint(assh_max_uint(
+		   ASSH_DH_GEX_GRPSIZE(cipher_key_size, ldiv),
+		   algo_min), algo_max);
   pv->exp_n = cipher_key_size * 2;
 
 #ifdef CONFIG_ASSH_DEBUG_KEX

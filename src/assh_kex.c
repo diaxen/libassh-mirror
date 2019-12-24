@@ -392,7 +392,7 @@ assh_status_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *
   assh_safety_t kin_safety = kex->algo.safety;
 
   if (!kex->implicit_auth)
-    kin_safety = ASSH_MIN(kin_safety, (assh_safety_t)sign->algo.safety);
+    kin_safety = assh_min_uint(kin_safety, sign->algo.safety);
 
   assh_safety_t kout_safety = kin_safety;
 
@@ -422,9 +422,9 @@ assh_status_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *
     + mac_in->ctx_size;
   ASSH_RET_ON_ERR(assh_alloc(s->ctx, kin_size, ASSH_ALLOC_SECUR, (void**)&kin));
 
-  kin_safety = ASSH_MIN(kin_safety, (assh_safety_t)cipher_in->algo.safety);
+  kin_safety = assh_min_uint(kin_safety, cipher_in->algo.safety);
   if (!cipher_in->auth_size)
-    kin_safety = ASSH_MIN(kin_safety, (assh_safety_t)mac_in->algo.safety);
+    kin_safety = assh_min_uint(kin_safety, mac_in->algo.safety);
 
   struct assh_kex_keys_s *kout;
   size_t kout_size = sizeof(*kout) + cipher_out->ctx_size + cmp_out->ctx_size
@@ -432,11 +432,11 @@ assh_status_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *
   ASSH_JMP_ON_ERR(assh_alloc(s->ctx, kout_size, ASSH_ALLOC_SECUR, (void**)&kout),
 	       err_kin);
 
-  kout_safety = ASSH_MIN(kout_safety, (assh_safety_t)cipher_out->algo.safety);
+  kout_safety = assh_min_uint(kout_safety, cipher_out->algo.safety);
   if (!cipher_out->auth_size)
-    kout_safety = ASSH_MIN(kout_safety, (assh_safety_t)mac_out->algo.safety);
+    kout_safety = assh_min_uint(kout_safety, mac_out->algo.safety);
 
-  size_t key_size = ASSH_MAX(cipher_in->key_size, cipher_out->key_size) * 8;
+  size_t key_size = assh_max_uint(cipher_in->key_size, cipher_out->key_size) * 8;
 
   /* initialize input keys structure */
   kin->cmp_ctx = kin->mac_ctx = kin->cipher_ctx = NULL;
@@ -484,8 +484,8 @@ void assh_kex_lower_safety(struct assh_session_s *s, assh_safety_t safety)
 #ifdef CONFIG_ASSH_DEBUG_KEX
   ASSH_DEBUG("lowering safety to %u\n", safety);
 #endif
-  s->new_keys_in->safety = ASSH_MIN(safety, s->new_keys_in->safety);
-  s->new_keys_out->safety = ASSH_MIN(safety, s->new_keys_out->safety);
+  s->new_keys_in->safety = assh_min_uint(safety, s->new_keys_in->safety);
+  s->new_keys_out->safety = assh_min_uint(safety, s->new_keys_out->safety);
 }
 
 /* derive cipher/mac/iv key from shared secret */
@@ -565,7 +565,7 @@ assh_kex_new_keys(struct assh_session_s *s,
 
   ASSH_SCRATCH_ALLOC(s->ctx, uint8_t, scratch, hash_algo->ctx_size +
            /* iv */  ASSH_MAX_BLOCK_SIZE +
-           /* key */ ASSH_MAX(ASSH_MAX_EKEY_SIZE, ASSH_MAX_IKEY_SIZE),
+           /* key */ assh_max_uint(ASSH_MAX_EKEY_SIZE, ASSH_MAX_IKEY_SIZE),
                      ASSH_ERRSV_CONTINUE, err);
 
   void *hash_ctx = scratch;
@@ -942,7 +942,7 @@ void assh_kex_done(struct assh_session_s *s,
 
   e->kex.done.ident.data = s->ident_str;
   e->kex.done.ident.size = s->ident_len;
-  e->kex.done.safety = ASSH_MIN(in->safety, out->safety);
+  e->kex.done.safety = assh_min_uint(in->safety, out->safety);
   e->kex.done.initial = !s->kex_done;
   e->kex.done.algo_kex = s->kex;
   e->kex.done.algos_in = in;

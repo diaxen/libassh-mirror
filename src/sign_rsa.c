@@ -193,8 +193,8 @@ assh_sign_rsa_generate(struct assh_context_s *c,
     ASSH_BOP_END(),
   };
 
-  intptr_t pqsize = ASSH_MAX(assh_bignum_bits(&k->pn),
-			     assh_bignum_bits(&k->qn));
+  intptr_t pqsize = assh_max_uint(assh_bignum_bits(&k->pn),
+				  assh_bignum_bits(&k->qn));
 
   ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "DDNNNNNNTTTTTTms",
                    /* Data */ c_str, em_buf,
@@ -308,7 +308,7 @@ assh_sign_rsa_check(struct assh_context_s *c,
   ASSH_DEBUG_HEXDUMP("rsa check hash", hash, digest->algo->hash_size);
 #endif
 
-  *safety = ASSH_MIN(*safety, digest->algo->safety);
+  *safety = assh_min_uint(*safety, digest->algo->safety);
 
   ASSH_JMP_IF_TRUE(assh_memcmp(hash, em, digest->algo->hash_size),
                ASSH_ERR_NUM_COMPARE_FAILED, err_hash);

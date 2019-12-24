@@ -53,8 +53,8 @@ assh_bnword_t assh_bnword_egcd(assh_bnword_t a, assh_bnword_t b,
     {
       if (a < b)
         {
-          ASSH_SWAP(a, b);
-          ASSH_SWAP(r, q);
+          ASSH_SWAP(assh_bnword_t, a, b);
+          ASSH_SWAP(assh_bnword_t, r, q);
         }
       sh = assh_bn_clz(b) - assh_bn_clz(a);
       c = b << sh;
@@ -100,7 +100,7 @@ assh_bignum_copy(struct assh_bignum_s *dst,
   assh_status_t err;
   size_t al = assh_bignum_words(dst->bits);
   size_t bl = assh_bignum_words(src->bits);
-  size_t i, l = ASSH_MIN(al, bl);
+  size_t i, l = assh_min_uint(al, bl);
   assh_bnword_t x = 0;
   assh_bnword_t *dn = dst->n, *sn = src->n;
 
@@ -290,7 +290,7 @@ assh_bignum_cmp(const struct assh_bignum_s *a,
 {
   size_t al = assh_bignum_words(a->bits);
   size_t bl = assh_bignum_words(b->bits);
-  size_t i, l = ASSH_MIN(al, bl);
+  size_t i, l = assh_min_uint(al, bl);
   assh_bnword_t *an = a->n, *bn = b->n;
   int_fast8_t lt = 0, gt = 0, eq;
 

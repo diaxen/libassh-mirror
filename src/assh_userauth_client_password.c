@@ -48,7 +48,7 @@ assh_userauth_client_send_password(struct assh_session_s *s,
 
   /* Any password with a length less than 128 bytes will result in a
      packet of the same size. */
-  size_t pw_hidden_len = ASSH_MAX((size_t)pw_len, 128);
+  size_t pw_hidden_len = assh_max_uint((size_t)pw_len, 128);
 
   ASSH_RET_ON_ERR(assh_userauth_client_pck_head(s, &pout, "password",
 	           1 + pw_hidden_len));
