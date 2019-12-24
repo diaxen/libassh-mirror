@@ -64,7 +64,7 @@ assh/assh_event.h
   @end section
 @end if
 
-@section TP {Sales pitch}
+@section TP {What is libassh ?}
   @include sales_pitch.mkdoc
 @end section
 

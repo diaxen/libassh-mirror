@@ -11,8 +11,8 @@ provided build system, these macros need to be defined properly. This
 can be achieved by providing an @tt assh_config.h file and defining
 the @tt HAVE_CONFIG_H macro.
 
-The available macros are described in @ref{@doc/config.h}{this
-sample header file}.
+The available macros are described in @ref{@doc/config.h}{a sample
+header file}.
 
 The @tt config_tests.mk make script can be used to build and test
-the library with different sets of feature enabled.
+the library with different sets of features enabled.

@@ -82,7 +82,7 @@ These components are described in the following subsections.
   fields starting with a 32 bits length header.
 
   The @em{Transport Layer Protocol} is designed so that incoming and
-  outgoing packets are processed by the selected @hl
+  outgoing packets are processed by the selected cryptographic @hl
   algorithms. However the binary packets are neither enciphered nor
   compressed before the end of the first @hl key-exchange process
   that performs the initial @hl algorithms selection.
@@ -102,7 +102,7 @@ These components are described in the following subsections.
   boundaries. The task of recovering packet boundaries is
   left to the @em ssh2 transport layer.
 
-  When an authenticated cipher is used, no separate message
+  When an authenticated cipher is used instead, no separate message
   authentication @hl algorithm is used. Depending on the design of the
   authenticated cipher @hl algorithm, the size field may not be
   enciphered. Note that reliably hiding the actual size of the packets
@@ -154,8 +154,8 @@ These components are described in the following subsections.
   @end list
 
   Because public key cryptography is involved, the process may be
-  computationally intensive. Depending on the selected method, it
-  can be costly, especially on embedded platforms.
+  computationally intensive. Depending on the selected @hl algorithm,
+  it can be costly, especially on embedded platforms.
 
   The key-exchange process starts when the two peers each transmit
   an @ref SSH_MSG_KEXINIT packet. This packet contains lists of
@@ -182,7 +182,7 @@ These components are described in the following subsections.
   The @hl{transport layer} protocol provides a generic mechanism
   that let the client request execution of an @em ssh2
   @hl service. Services are identified by textual names so that
-  new one can be developed. No service is running initially and a
+  new ones can be developed. No service is running initially and a
   single service can run at a given time. The same service needs
   to run on both sides.
 
@@ -205,7 +205,7 @@ These components are described in the following subsections.
       data over multiplexed @hl channels as detailed
       below. This is what the client and server applications
       commonly use to communicate over @em {ssh2}. It is
-      specified in @sinvoke{4254}rfc and described in the
+      specified in @sinvoke{4254}rfc and is described in the
       next subsection.
 
     @item Although the @hl{transport layer} is designed to
@@ -251,8 +251,9 @@ These components are described in the following subsections.
       name. Opening a new @hl channel is an asynchronous process
       and multiple open messages can be sent without waiting for
       replies. The replies can be sent in any order, so that
-      connecting to a remote resource using a @hl channel may
-      take some time without blocking other @hl channels.
+      connecting to a remote resource due to a @hl channel
+      open request may take some time without blocking other
+      @hl channels.
 
       The protocol supports a windowed flow control mechanism
       which enables limiting the data throughput per @hl
@@ -282,14 +283,14 @@ These components are described in the following subsections.
       Examples of standard @hl request types are the @tt shell
       and @tt exec ones that request execution of a process on
       the server. Those must be related to an open @hl channel
-      of the @tt {session} type and are used to transport the
+      of the @tt {session} type that is used to transport the
       standard IO streams of the remotely executing process.
 
-    @item An other set is specified for supporting the TCP/IP
-      @hl{port forwarding} feature. It allows the client to
-      connect to a remote TCP port from the server and can also be
-      used to instruct the server to listen on a TCP port and
-      forward any incoming connections back to the client.
+    @item An other set is specified for supporting the TCP @hl{port
+      forwarding} feature. It allows the client to connect to a remote
+      TCP port on the behalf of the server and can also be used to
+      instruct the server to listen on a TCP port and forward any
+      incoming connections back to the client.
   @end list
 
   The application is allowed to implement private @hl
@@ -304,7 +305,7 @@ These components are described in the following subsections.
   @section {Transport layer implementation}
     The @hl{transport layer} is implemented in the library core
     and relies on @hl algorithm @hl modules for
-    cryptographic processing of the packets and data
+    cryptographic processing of the packets and for data
     compression. It extracts @ref assh_packet_s {packet objects}
     from the incoming @em ssh2 stream and also generates the
     outgoing @em ssh2 stream from packet objects present in the

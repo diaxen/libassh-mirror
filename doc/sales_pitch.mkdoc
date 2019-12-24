@@ -58,7 +58,7 @@ available with details of the internal API.
   crypto algorithms specific code in the core protocol
   implementation. This approach enforces uses of well defined and
   documented APIs between the software components, which eases the
-  code review process and allows writing @xref{test suite}{unit tests}.
+  code review process.
 
   Although it's well known that basing protocol implementations on
   @sinvoke{Finite-state machine}{finite state machines}wp helps
@@ -103,11 +103,11 @@ available with details of the internal API.
   on @em POSIX platforms. Optional support for file formats used by
   @em OpenSSH is provided as well.
 
-  Because the library comes with a set of standard @em ssh2
-  @hl algorithm implementations, it can be used
-  standalone. Alternate modules relying on external libraries like
-  @em Libgcrypt, @em OpenSSL and @em Zlib are available in order
-  to further extend the set of supported @hl{algorithms and methods}.
+  Because the library comes with a set of standard @em ssh2 @hl
+  algorithm implementations, it can be used standalone. Alternate
+  modules relying on external libraries like @em Libgcrypt, @em
+  OpenSSL, @em libsodium and @em Zlib are available in order to
+  further extend the set of supported @hl{algorithms and methods}.
 
   The clear @xref{source tree}{source organization} and file naming
   helps identify the core components and modules when porting the
@@ -123,17 +123,16 @@ available with details of the internal API.
   loaded and saved. The library is also able to generate new
   @hl{user keys} and @hl{host keys}.
 
-  Because using fast and secure @em ssh2 @hl algorithms among
-  those supported by the remote peer is the most desirable thing for
-  the user, the library is able to compute a simple score that can
-  be used to advertise the overall level of security of a
-  @hl session. This is based on @hl algorithms negotiated
-  during the @hl key-exchange process as well as involved @hl{host
-  keys}. It is also possible to select and sort @hl algorithms
-  based on their speed and safety before running a
-  @hl session. This helps the user keep control without requiring
-  him to know strengths and weakness of the various crypto
-  @hl algorithms.
+  Because using fast and secure @em ssh2 @hl algorithms among those
+  supported by the remote implementation is the most desirable thing
+  for the user, the library is able to compute a simple score that can
+  be used to advertise the overall level of security of a @hl
+  session. This is based on @hl algorithms negotiated during the @hl
+  key-exchange process as well as involved @hl{host keys}. It is also
+  possible to select and sort @hl algorithms based on their speed and
+  safety before running a @hl session. This helps the user keep
+  control without requiring him to know strengths and weakness of the
+  various crypto @hl algorithms.
 
   @sinvoke{Multi-factor authentication}{Multi-factor user
   authentication}wp and password change requests are both
@@ -174,27 +173,31 @@ available with details of the internal API.
 @end section
 
 @section T {Testing}
-  The library comes with @hl{test programs} which implement unit
-  tests and stress tests. It helps ensure that the implementation
-  follows the standard and behaves well on corner cases.
+  A set of @xref{test programs} helps ensure that the @em ssh2
+  implementation follows the standard and behaves well on corner
+  cases.
 
-  Stress tests are implemented by making a server and a client instance
-  talk to each other, performing many @hl key-exchange,
-  @hl{user authentication} and @hl channel operations per
-  second. Because the library is not bound to a particular network
-  stack, the two instances under test are able to efficiently
-  exchange the @em ssh2 network stream using memory buffers in the
-  same test program.
+  The @em libassh design supports testability. The modular approach
+  enables writing unit tests for the variaous components as well as
+  plugging custom test components. Thanks to the portable design, a
+  client instance and a server instance living in the same test
+  program are able to communicate in a deterministic and efficient
+  manner because no operating system calls are involved. Several
+  stress tests are available for the different protocol layers. They
+  are able to perform many @hl key-exchange, @hl{user authentication}
+  and @hl channel operations per second.
 
-  Fuzzing is used in order to reach more corner cases. Randomly
-  corrupted packets and random memory allocation failures are
-  injected while the library is tested for compliance and memory
-  leaks.
+  Fuzzing is used to reach more corner cases. Randomly corrupted
+  packets and random memory allocation failures are injected while the
+  library is tested for compliance and memory leaks. In addition to
+  the fuzzing features integrated in the various stress test programs,
+  a @url{https://llvm.org/docs/LibFuzzer.html}{libfuzzer} based test
+  application is included.
 
-  In order to keep @em libaash compatible with other implementations
-  of @em ssh2, a @hl session replaying tool is also provided. It
-  allows including regression tests against other implementations as
-  part of the test suite. Because it records and replays sessions at
-  the packet level, other implementations do not need to be
-  available when running the tests.
+  In order to maintain the compatibility of @em libaash with other
+  implementations of @em ssh2, a @hl session replaying tool is also
+  provided. It allows including regression tests against other
+  implementations as part of the test suite. Because it records and
+  replays sessions at the packet level, other implementations do not
+  need to be available when running the tests.
 @end section

@@ -2,10 +2,10 @@
 The @em ssh2 protocol is designed for extensibility as described in
 the @xref {Protocol architecture} section.
 
-When the @hl key-exchange process starts, the peers agree on the
-@em ssh2 @hl algorithms that will be used to secure the
-connection. There are five types of @hl algorithms that need to
-be agreed upon: @xref{kexalgos}{key-exchange algorithms},
+When the @hl key-exchange process starts, the client and server
+programs agree on the @em ssh2 @hl algorithms that will be used
+to secure the connection. There are five types of @hl algorithms that
+need to be agreed upon: @xref{kexalgos}{key-exchange algorithms},
 @xref{authalgos}{host authentication algorithms},
 @xref{cipheralgos}{cipher algorithms}, @xref{macalgos}{message
 authentication algorithms} and @xref{compalgos}{compression
@@ -20,7 +20,7 @@ relying on any external library. Additional modules can be added in
 order to support alternate implementations as well as new algorithms
 and hardware acceleration.
 
-There are also multiples features of the protocol that are named and
+There are also multiple features of the protocol that are named and
 negotiated independently of the @hl key-exchange process. This is
 the case of @hl services and @hl{user authentication} methods,
 for instance.
@@ -41,10 +41,10 @@ methods and key formats.
   @list
     @item They can be used to filter algorithms on registration.
     @item They are used along with application provided weight values
-      to compute a score for retained algorithms. This allows the
+      to compute a score for the retained algorithms. This allows the
       application to favor speed or safety. The score is then used to
       advertise lists of algorithms during the @hl key-exchange
-      process, sorted according application requirements.
+      process, sorted according to the application requirements.
     @item They are used to compute an overall score of the safety of
       the session. This score depends on keys and algorithms negotiated
       with the remote host during the last @hl key-exchange process.
@@ -57,9 +57,9 @@ methods and key formats.
       @hl algorithms on the @ref assh_context_s {context
       object}. Depending on the library function used for that
       purpose, a specific list of @hl algorithms is provided by
-      the application, or the library filters among the supported
-      @hl algorithm based on the safety requirement provided by
-      the application.
+      the application, or the library is instructed to filter among
+      the supported @hl algorithms based on the safety requirement
+      provided by the application.
     @item When multiple variants of the same @hl algorithm are
       available, the one with the lowest safety that matches the
       requirement is retained. The application is free to use a low
@@ -90,7 +90,7 @@ methods and key formats.
   @label{kexalgos}
 
   Modules of this type implement more than a simple algorithm. A
-  @hl key-exchange module needs to provide both, the crypto used to
+  @hl key-exchange module needs to provide both the crypto used to
   establish a shared secret and the associated part of the @em ssh2
   protocol.
 
@@ -182,9 +182,10 @@ methods and key formats.
   Modules of this type implement signature algorithms that are used
   during the @hl key-exchange process.
 
-  Those modules can also be involved in the @hl{user
-  authentication} process even though the algorithm selected during
-  the key-exchange is only used to authenticate the server host.
+  The authentication @hl algorithms can also be involved in the
+  @hl{user authentication} process, even though the @hl key-exchange
+  process only designate the specific algorithm used to authenticate
+  the server host.
 
   Signature generation and checking primitives are
   implemented. Companions modules with ability to create, load and
@@ -231,9 +232,9 @@ methods and key formats.
     accepted by recent implementations due to security concerns.
     This may yield compatibility issues because the @hl algorithm
     name has not changed. That's why @em libassh provides variants
-    of this algorithms. Depending on the variant retained on
+    of this algorithm. Depending on the variant retained on
     algorithm registration, lower key sizes and weak hash algorithms
-    will be rejected. Here are the behaviors of the provided
+    will be rejected. Here is the behavior of the provided
     variants:
 
     @list

@@ -1,9 +1,9 @@
 
 This section gives an overview of the source code organization. It
 is of interest for those writing new modules and playing with the
-library internal.
+library internals.
 
-The source tree is organized as follow:
+The source tree is organized as follows:
 @list
   @item @tt{src/} : The source code of the library
     @xref{coremod}{core and modules}.
@@ -58,7 +58,7 @@ Some @hl helper functions are provided for
 convenience. Unlike other parts of the library, these files
 contains system calls and platform specific stuff. It is not used
 by the other parts of the library and are only provided for use by
-the application. It doesn't rely on the private APIs of the library:
+the application. They don't rely on the private APIs of the library:
 @list
   @item @tt{src/helper_client.c} : This provides event handlers
     for common ssh client behavior.

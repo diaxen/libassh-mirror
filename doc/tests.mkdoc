@@ -5,9 +5,14 @@ with @em {libassh}.
   @item The @tt test/algo_list.c program displays the list of
     algorithms supported by the current build of the library.
 
-  @item The @tt test/replay.c program is able to record @em ssh2
-    sessions against other client and server implementations and
-    replay them as part of the test suite.
+  @item The @tt test/bignum.c program contains various unit tests
+    and stress tests of the built-in big number engine.
+
+  @item The @tt test/buffer.c program tests the buffer and blob
+    parsing related code.
+
+  @item The @tt test/cipher.c program tests the cipher
+    @hl algorithms against known @em ssh2 binary packet contents.
 
   @item The @tt test/connection.c runs a stress test of the
     @hl{connection protocol} service by randomly performing many @hl
@@ -17,9 +22,51 @@ with @em {libassh}.
     of the behavior on both sides.
 
   @item The @tt test/connection2.c program runs a similar
-    @hl{connection protocol} stress test. It does not maintains a
+    @hl{connection protocol} stress test. It does not maintain a
     local state but is able to inject corrupted packets and memory
     allocation failures.
+
+  @item The @tt test/fail.c test program is expected to fail.
+
+  @item The @tt test/gex_primes.c program checks the list of safe
+    prime numbers used by the @tt {diffie-hellman-group-exchange-*}
+    class of @hl algorithms. A fast and distributed safe prime
+    generator tool is provided in @tt {extra/}.
+
+  @item The @tt test/hash.c program tests the hash
+    functions used internally by the library.
+
+  @item The @tt test/kex.c program generates many combinations of
+    @hl algorithms provided by the library and runs a
+    @hl key-exchange process between two sessions for each
+    generated set. It is also able to inject corrupted packets and
+    memory allocation failures.
+
+  @item The @tt test/key_io.c program tests loading and storing
+    @hl{SSH keys} of various types in all supported formats.
+
+  @item The @tt test/libfuzzer.c program relies on the @em LLVM
+    @url{https://llvm.org/docs/LibFuzzer.html}{libfuzzer} library to
+    provide coverage-guided fuzz testing.
+
+  @item The @tt test/mac.c program tests the message authentication
+    @hl algorithms.
+
+  @item The @tt test/prng.c program dumps some random data from the
+    prng module.
+
+  @item The @tt test/replay.c program is able to record @em ssh2
+    sessions against other client and server implementations and
+    replay them as part of the test suite.
+
+  @item The @tt test/signature.c program tests the signature
+    @hl algorithms provided with the library against known inputs
+    and outputs.
+
+  @item The @tt test/signature2.c program tests the signature
+    @hl algorithms provided with the library by generating
+    signature of random data. It checks that the verification fails
+    when either the signature or the data is modified.
 
   @item The @tt test/userauth.c program runs a stress test of the
     user authentication services by performing many user
@@ -35,43 +82,4 @@ with @em {libassh}.
     authentication on wrong behavior of the client that do not
     occur normally.
 
-  @item The @tt test/cipher.c program tests the cipher
-    @hl algorithms against known @em ssh2 binary packet contents.
-
-  @item The @tt test/mac.c program tests the message authentication
-    @hl algorithms.
-
-  @item The @tt test/kex.c program generates many combinations of
-    @hl algorithms provided by the library and runs a
-    @hl key-exchange process between two sessions for each
-    generated set. It is also able to injects corrupted packets and
-    memory allocation failures.
-
-  @item The @tt test/signature.c program tests the signature
-    @hl algorithms provided with the library against known inputs
-    and outputs.
-
-  @item The @tt test/signature2.c program tests the signature
-    @hl algorithms provided with the library by generating
-    signature of random data. It checks that the verification fails
-    when either the signature or the data is modified.
-
-  @item The @tt test/key_io.c program tests loading and storing
-    @hl{SSH keys} of various types in all supported formats.
-
-  @item The @tt test/gex_primes.c program checks the list of safe
-    prime numbers used by the @tt {diffie-hellman-group-exchange-*}
-    class of @hl algorithms. A fast and distributed safe prime
-    generator tool is provided in @tt {extra/}.
-
-  @item The @tt test/bignum.c program contains various unit tests
-    and stress tests of the built-in big number engine.
-
-  @item The @tt test/hash.c program tests the hash
-    functions used internally by the library.
-
-  @item The @tt test/buffer.c program tests the buffer and blob
-    parsing related code.
-
-  @item The @tt test/fail.c test program is expected to fail.
 @end list

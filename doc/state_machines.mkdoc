@@ -23,9 +23,9 @@ library.
     @item The @xref{fsmsrv}{service FSM} manages selection and
       execution of the @em ssh2 @hl services running on top
       of the @hl{transport layer}. On a client @hl session,
-      the @em{service FSM} send service requests to the server,
+      the @em{service FSM} sends service requests to the server,
       then initializes and run the next service. On a server
-      @hl session, the @em{service FSM} wait for client
+      @hl session, the @em{service FSM} waits for client
       requests, then initializes and run the requested service.
   @end list
 
@@ -43,7 +43,7 @@ library.
     @item It lets the running @hl key-exchange or
       @hl service report an event to the application.
     @item If no event has been reported, the @em{output FSM} is
-      executed, unless disconnected from the remote peer. This may
+      executed, unless disconnected from the remote host. This may
       report an @ref ASSH_EVENT_WRITE event to the application.
     @item If no event has been reported by the @em{output FSM},
       the @em{input FSM} is executed, unless disconnecting. This
@@ -63,7 +63,7 @@ library.
 
   The @xref{fsmcauth}{client user
   authentication FSM} handles authentications requests from the
-  application and forward them to the remote server.
+  application and forwards them to the remote server.
 
   The @xref{fsmsauth}{server user
   authentication FSM} replies to authentications requests from the

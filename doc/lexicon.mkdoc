@@ -63,7 +63,7 @@ meaning when used in the context of the @em ssh2 protocol.
 
 @section {Host based user authentication}
   The @em {host based user authentication} method is one of the user
-  authentication mechanism optionally provided by the @hl{user
+  authentication mechanisms optionally provided by the @hl{user
   authentication} service. It allows the client application to
   authenticate its user on the server based on the @hl{host key}
   of the host that is running the client. @xsee{srvlayer}
@@ -234,7 +234,7 @@ meaning when used in the context of the @em ssh2 protocol.
 @section {Version string}
   @label {version strings}
 
-  The @em {version strings} transmitted on connection allows to
-  identify the remote @em ssh2 software vendor and revision.
-  @xsee{trlayer}
+  The client and the server both transmit their @em {version strings}
+  when the connection is established. It allows to identify the remote
+  @em ssh2 software.  @xsee{trlayer}
 @end section

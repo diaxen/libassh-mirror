@@ -85,7 +85,7 @@ $ examples/client localhost ls
 
   The I/O events are reported by the library in order to let the
   application transfer the @em ssh2 stream over the network. In this
-  examples, this is left to an @hl helper function designed to read and
+  example, this is left to an @hl helper function designed to read and
   write the @em ssh2 network stream using the application provided
   socket file descriptor:
   @example examples/rexec.c:evio
@@ -375,7 +375,7 @@ $ examples/client localhost ls
     @example examples/client.c:sshloop
 
     Only data transfer related events are shown here, as handling of
-    other events mostly rely on @hl helpers functions that deal with
+    other events mostly rely on @hl helper functions that deal with
     @hl{user authentication} and @hl{interactive session}
     management. This is detailed in the @xref{exremote}{remote
     command execution} example.
@@ -537,7 +537,7 @@ localhost$ example/fwdexec forward_host rexec_host command
     protocol} starts. The @ref asshh_portfwd_open_direct_tcpip function
     serializes our @tt fwd_rq parameters and calls the @ref
     assh_channel_open function. This makes the @tt fwd_channel
-    variable points to the opening channel object.
+    variable point to the opening channel object.
     @example examples/fwdexec.c:fwdevsrvstart
 
     We then need to wait for the @hl channel open reply from @em
@@ -545,7 +545,7 @@ localhost$ example/fwdexec forward_host rexec_host command
     @example examples/fwdexec.c:fwdevchopen
 
     At this point, @em fwd_host has initiated a TCP connection to
-    @em rexec_host on the behalf of our application. It will start
+    @em rexec_host on behalf of our application. It will start
     to forward any data transmitted by @em rexec_host to our @em fwd
     session. The library will report this as incoming channel
     data. When this occurs, we just have to copy as many data as we
@@ -576,7 +576,7 @@ localhost$ example/fwdexec forward_host rexec_host command
     the fifo is empty.
     @example examples/fwdexec.c:rexecevread
 
-    Because we do not use a fifo in the other direction, there are
+    Because we do not use a fifo in the other direction, there is
     more work to do in order to send the @em rexec network stream
     through the port forwarding channel. We first have to make sure
     that the channel exists and has reached the @ref
@@ -642,7 +642,7 @@ localhost$ example/fwdexec forward_host rexec_host command
     existing @tt its_s objects in a table:
     @example examples/server.c:itstable
 
-    The application functions described below do manage the @tt
+    The application functions described below manage the @tt
     its_s instances. This consists in calling @em POSIX functions in
     order to create the child process and redirect its I/O. The
     content of these functions is not detailed here because an
@@ -691,7 +691,7 @@ localhost$ example/fwdexec forward_host rexec_host command
     @example examples/server.c:itsapidata2
 
     Finally, the @tt its_eof and @tt its_close functions are called
-    when the library report that the remote client has closed its I/O
+    when the library reports that the remote client has closed its I/O
     streams. The @tt its_eof function changes the state of our
     @hl{interactive session} related object to @tt {ITS_HALF_NO_RECV}
     or @tt {ITS_CLOSED}, depending on its previous state. The @tt
@@ -827,7 +827,7 @@ localhost$ example/fwdexec forward_host rexec_host command
 @section TP {SSH key management tool}
   @label {exkeygen}
 
-  This examples application performs @hl{user keys} and @hl{host keys}
+  This example application performs @hl{user keys} and @hl{host keys}
   related operations. It relies on the @ref assh_key_create, @ref
   asshh_load_key_file, @ref assh_key_validate and @ref
   asshh_save_key_file functions provided by the library.
