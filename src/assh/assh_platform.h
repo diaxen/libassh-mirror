@@ -168,9 +168,13 @@ ASSH_INLINE uint32_t assh_swap_u32(uint32_t x)
 
 ASSH_INLINE void assh_clear(void *data, size_t len)
 {
-  memset(data, 0, len);
 #ifdef __GNUC__
-  asm volatile ("" ::: "memory");
+  memset(data, 0, len);
+  __asm__ volatile ("" ::: "memory");
+#else
+  volatile uint8_t *d = data;
+  while (len--)
+    *d++ = 0;
 #endif
 }
 
