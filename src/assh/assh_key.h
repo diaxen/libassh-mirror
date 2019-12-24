@@ -245,6 +245,8 @@ struct assh_key_s
   /** Key algorithm */
   const struct assh_key_algo_s *algo;
 
+  uint32_t ref_count;
+
   /** Class of algorithm the key is intended to be used with */
   enum assh_algo_class_e role:3;
 
@@ -252,7 +254,6 @@ struct assh_key_s
   assh_bool_t stored:1;
 
   assh_safety_t safety;
-  uint8_t ref_count;
 };
 
 /** @This allocates and intiailizes the key structure from
