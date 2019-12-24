@@ -60,9 +60,10 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <string.h>
-#include <netinet/ip.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
 #include <netdb.h>
 #include <assert.h>
 #include <stdlib.h>
