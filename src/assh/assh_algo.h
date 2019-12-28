@@ -181,6 +181,7 @@ struct assh_algo_s
    assh_session_algo_filter function can still be used to setup a per
    session algorithm filter for the @hl key-exchange.
 
+   @see assh_algo_register_names_va
    @see assh_algo_register_default
    @see assh_algo_register
    @xcsee {algoreg}
@@ -188,6 +189,32 @@ struct assh_algo_s
 ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_register_va(struct assh_context_s *c, assh_safety_t safety,
 		      assh_safety_t min_safety, uint8_t min_speed, ...);
+
+/**
+   @This registers the algorithms with the given names for specified
+   class for use the given library context. The last entry must be @tt
+   NULL.
+
+   This function needs to be called more than once to register
+   different classes of algorithms.
+
+   It is not possible to modify the list of registered algorithms when
+   some sessions are associated to the context. The @ref
+   assh_session_algo_filter function can still be used to setup a per
+   session algorithm filter for the @hl key-exchange.
+
+   The function is successful when at least one of the designated
+   algorithms has been registered successfully.
+
+   @see assh_algo_register_va
+   @see assh_algo_register_default
+   @see assh_algo_register
+   @xcsee {algoreg}
+*/
+ASSH_WARN_UNUSED_RESULT assh_status_t
+assh_algo_register_names_va(struct assh_context_s *c, assh_safety_t safety,
+			    assh_safety_t min_safety, uint8_t min_speed,
+			    enum assh_algo_class_e class_, ...);
 
 /**
    @This registers the specified array of @hl algorithms for use by

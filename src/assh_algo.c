@@ -277,6 +277,47 @@ assh_status_t assh_algo_register_va(struct assh_context_s *c, assh_safety_t safe
   return err;
 }
 
+assh_status_t assh_algo_register_names_va(struct assh_context_s *c, assh_safety_t safety,
+					  assh_safety_t min_safety, uint8_t min_speed,
+					  enum assh_algo_class_e class_, ...)
+{
+  assh_status_t err = ASSH_OK;
+  va_list ap;
+  size_t count = c->algo_cnt;
+  const char *name;
+
+  ASSH_RET_IF_TRUE(c->session_count, ASSH_ERR_BUSY);
+  ASSH_RET_IF_TRUE(safety > 99, ASSH_ERR_BAD_ARG);
+
+  va_start(ap, class_);
+
+  /* append algorithms to the array */
+  while ((name = va_arg(ap, const char *)))
+    {
+      const struct assh_algo_s *algo;
+
+      if (assh_algo_by_name_static(assh_algo_table, class_,
+				   name, strlen(name), &algo, NULL))
+	continue;
+
+      if (algo->safety < min_safety || algo->speed < min_speed)
+	continue;
+      if (count == c->algo_max)
+        ASSH_JMP_ON_ERR(assh_algo_extend(c), err_);
+      c->algos[count++] = algo;
+    }
+
+  ASSH_JMP_IF_TRUE(c->algo_cnt == count, ASSH_ERR_MISSING_ALGO, err_);
+
+  c->algo_cnt = count;
+  assh_algo_sort(c, safety, min_safety, min_speed);
+  assh_algo_kex_init_size(c);
+
+ err_:
+  va_end(ap);
+  return err;
+}
+
 assh_status_t assh_algo_unregister(struct assh_context_s *c)
 {
   assh_status_t err;
