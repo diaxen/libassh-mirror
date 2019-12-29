@@ -537,7 +537,7 @@ const struct assh_algo_s *assh_algo_table[] = {
   NULL
 };
 
-static const struct assh_algo_name_s *
+const struct assh_algo_name_s *
 assh_algo_name_match(const struct assh_algo_s *a,
                      enum assh_algo_class_e class_,
                      const char *name, size_t name_len)

@@ -339,6 +339,12 @@ assh_algo_by_name_static(const struct assh_algo_s **table,
                          size_t name_len, const struct assh_algo_s **algo,
                          const struct assh_algo_name_s **namep);
 
+/** @internal */
+const struct assh_algo_name_s *
+assh_algo_name_match(const struct assh_algo_s *a,
+                     enum assh_algo_class_e class_,
+                     const char *name, size_t name_len);
+
 /** @internal @This finds a registered @hl algorithm with matching
     class and name. If the @tt namep parameter is not @tt NULL, the
     matched algorithm name is returned. */
