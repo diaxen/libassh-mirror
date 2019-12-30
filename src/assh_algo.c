@@ -260,7 +260,7 @@ assh_status_t assh_algo_register_va(struct assh_context_s *c, assh_safety_t safe
       struct assh_algo_s *algo = va_arg(ap, void*);
       if (algo == NULL)
         break;
-      ASSH_RET_IF_TRUE(algo->api != ASSH_ALGO_API_VERSION, ASSH_ERR_BAD_ARG);
+      ASSH_JMP_IF_TRUE(algo->api != ASSH_ALGO_API_VERSION, ASSH_ERR_BAD_ARG, err_);
       if (algo->safety < min_safety || algo->speed < min_speed)
 	continue;
       if (count == c->algo_max)
