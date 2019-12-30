@@ -23,7 +23,6 @@
 
 #include <assh/assh_packet.h>
 #include <assh/assh_buffer.h>
-#include <assh/assh_bignum.h>
 #include <assh/assh_queue.h>
 #include <assh/assh_session.h>
 #include <assh/assh_alloc.h>
@@ -217,23 +216,6 @@ assh_packet_dup(struct assh_packet_s *p, struct assh_packet_s **copy)
   memcpy(r->data, p->data, p->data_size);
   r->data_size = p->data_size;
 
-  return ASSH_OK;
-}
-
-assh_status_t assh_packet_add_mpint(struct assh_context_s *ctx,
-                                   struct assh_packet_s *p,
-                                   const struct assh_bignum_s *bn)
-{
-  assh_status_t err;
-  size_t l = assh_bignum_size_of_num(ASSH_BIGNUM_MPINT, bn);
-
-  uint8_t *s;
-  ASSH_RET_ON_ERR(assh_packet_add_array(p, l, &s));
-
-  ASSH_RET_ON_ERR(assh_bignum_convert(ctx,
-    ASSH_BIGNUM_NATIVE, ASSH_BIGNUM_MPINT, bn, s, NULL, 0));
-
-  p->data_size -= l - assh_load_u32(s) - 4;
   return ASSH_OK;
 }
 

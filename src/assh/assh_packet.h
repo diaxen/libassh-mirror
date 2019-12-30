@@ -333,15 +333,6 @@ assh_packet_shrink_string(struct assh_packet_s *p, uint8_t *str,
     thing in the packet when this function is called. */
 void assh_packet_string_resized(struct assh_packet_s *p, uint8_t *str);
 
-/** @internal @This allocates a string in a packet and writes
-    the given big number in mpint representation as string content. A
-    storage size large enough to store the number may be passed to the
-    function or 0 if it is not known. */
-assh_status_t ASSH_WARN_UNUSED_RESULT
-assh_packet_add_mpint(struct assh_context_s *ctx,
-                      struct assh_packet_s *p,
-                      const struct assh_bignum_s *bn);
-
 /** @internal @This checks that a string is well inside packet
     bounds. @see assh_check_string */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
