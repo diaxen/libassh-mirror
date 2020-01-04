@@ -21,6 +21,9 @@
 
 */
 
+#ifndef ASSH_TEST_H_
+#define ASSH_TEST_H_
+
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -38,3 +41,45 @@
     if (!(c)) TEST_FAIL( "failed: " #c);	\
   } while (0)
 
+#include <assh/assh_algo.h>
+#include <assh/assh_prng.h>
+
+/** This swaps some bits with the given probability.
+    The number of bits swpped is returned. */
+unsigned
+aash_fuzz_mangle(uint8_t *data, size_t len, uint32_t ratio);
+
+/* byte period of random bit error,
+   no error is introduced when 0 */
+extern uint32_t packet_fuzz;
+extern unsigned long packet_fuzz_bits;
+
+extern const struct assh_algo_cipher_s assh_cipher_fuzz;
+
+/* make a session use the fuzz cipher from start
+   (before end of first key exchange) */
+void assh_cipher_fuzz_initreg(struct assh_context_s *c,
+                              struct assh_session_s *s);
+
+
+
+uint32_t assh_prng_rand_seed(uint64_t *seed);
+
+extern const uint32_t prng_rand_max;
+extern uint64_t prng_seed;
+
+static inline uint32_t assh_prng_rand()
+{
+  return assh_prng_rand_seed(&prng_seed);
+}
+
+static inline void assh_prng_seed(uint64_t seed)
+{
+  if (!seed)
+    seed++;
+  prng_seed = seed;
+}
+
+extern const struct assh_prng_s assh_prng_dummy;
+
+#endif
