@@ -35,6 +35,7 @@
 
 struct assh_context_s context;
 
+#ifdef CONFIG_ASSH_BIGNUM_BUILTIN
 static void bignum_set(struct assh_bignum_s *bn, size_t bits, intptr_t x)
 {
   assh_bignum_init(&context, bn, bits);
@@ -59,6 +60,7 @@ static assh_bool_t bignum_cmp(struct assh_bignum_s *bn, intptr_t x)
 
   return assh_bignum_bytecode(&context, 0, bytecode, "NTi", bn, x) == 0;
 }
+#endif
 
 assh_status_t
 blob_write_alloc(const char *format, uint8_t **blob_, size_t *blob_len, ...)
@@ -224,6 +226,7 @@ static void test_write_ok()
     free(blob);
   }
 
+#ifdef CONFIG_ASSH_BIGNUM_BUILTIN
   {
     struct assh_bignum_s a;
     bignum_set(&a, 80, 0x1234);
@@ -289,7 +292,7 @@ static void test_write_ok()
     assh_bignum_release(&context, &a);
     free(blob);
   }
-
+#endif
 }
 
 static void test_write_error()
@@ -614,6 +617,7 @@ static void test_scan_ok()
     TEST_ASSERT(b1.data == blob + 10);
   }
 
+#ifdef CONFIG_ASSH_BIGNUM_BUILTIN
   {
     static const uint8_t *blob = (const uint8_t *)"\x00\x00\x00\x02\x4b\xcdtest";
     struct assh_bignum_s a;
@@ -708,6 +712,7 @@ static void test_scan_ok()
 
     assh_bignum_release(&context, &a);
   }
+#endif
 
   {
     static const uint8_t *blob = (const uint8_t *)"\x12\x34\x56";
@@ -899,6 +904,7 @@ static void test_scan_error()
 		== ASSH_ERR_INPUT_OVERFLOW);
   }
 
+#ifdef CONFIG_ASSH_BIGNUM_BUILTIN
   {
     static const uint8_t *blob = (const uint8_t *)"\x00\x00\x00\x02\x4b\xcd";
     struct assh_bignum_s a;
@@ -912,6 +918,7 @@ static void test_scan_error()
 
     assh_bignum_release(&context, &a);
   }
+#endif
 }
 
 int

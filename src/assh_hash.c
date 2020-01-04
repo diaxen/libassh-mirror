@@ -41,6 +41,7 @@ void assh_hash_string(struct assh_hash_ctx_s *hctx, const uint8_t *str)
   hctx->algo->f_update(hctx, str, s + 4);
 }
 
+#ifdef CONFIG_ASSH_BIGNUM_BUILTIN
 assh_status_t assh_hash_bignum(struct assh_context_s *ctx,
                               struct assh_hash_ctx_s *hctx,
                               const struct assh_bignum_s *bn)
@@ -62,6 +63,7 @@ assh_status_t assh_hash_bignum(struct assh_context_s *ctx,
  err:
   return err;
 }
+#endif
 
 void assh_hash_payload_as_string(struct assh_hash_ctx_s *hctx,
                                  const struct assh_packet_s *p)

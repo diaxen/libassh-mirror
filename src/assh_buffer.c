@@ -21,7 +21,9 @@
 
 */
 
-#include "bignum_builtin.h"
+#ifdef CONFIG_ASSH_BIGNUM_BUILTIN
+# include "bignum_builtin.h"
+#endif
 
 #include <assh/assh_bignum.h>
 #include <assh/assh_buffer.h>
@@ -91,7 +93,9 @@ assh_blob_scan_va(struct assh_context_s *c, const char *format,
   st->blob_len = *blob_len;
 
   enum assh_bignum_fmt_e bnfmt = bnfmt;
+#ifdef CONFIG_ASSH_BIGNUM_BUILTIN
   struct assh_bignum_s *bn;
+#endif
 
   while (1)
     {
@@ -118,6 +122,7 @@ assh_blob_scan_va(struct assh_context_s *c, const char *format,
           break;
         }
 
+#ifdef CONFIG_ASSH_BIGNUM_BUILTIN
         case 'g': {
           bnfmt = ASSH_BIGNUM_MSB_RAW;
 	  bn = va_arg(ap, struct assh_bignum_s *);
@@ -127,6 +132,7 @@ assh_blob_scan_va(struct assh_context_s *c, const char *format,
                                            s, l, &st->next));
 	  goto format_G;
 	}
+#endif
 
         case 'b': {
           bnfmt = ASSH_BIGNUM_MSB_RAW;
@@ -153,10 +159,10 @@ assh_blob_scan_va(struct assh_context_s *c, const char *format,
 	  break;
 
         case 't': {
-	  size_t k = st->next - r;
+	  size_t l, k = st->next - r;
 	  goto do_compare;
 	case 'u':;
-          size_t l = st->next - s;
+          l = st->next - s;
           ASSH_RET_ON_ERR(assh_bignum_size_of_data(bnfmt,
                             s, &l, NULL, &k));
 	  do_compare:
@@ -282,6 +288,7 @@ assh_blob_scan_va(struct assh_context_s *c, const char *format,
           break;
         }
 
+#ifdef CONFIG_ASSH_BIGNUM_BUILTIN
         case 'K': {
           bn = va_arg(ap, struct assh_bignum_s *);
           assert(s != NULL);
@@ -341,6 +348,7 @@ assh_blob_scan_va(struct assh_context_s *c, const char *format,
 			   ASSH_BIGNUM_NATIVE, s, bn, NULL, secret));
           break;
         }
+#endif
 
 	case 'F': {
 	  assh_blob_scan_fcn_t *fcn = va_arg(ap, assh_blob_scan_fcn_t*);
@@ -416,6 +424,7 @@ assh_blob_write_va(const char *format, uint8_t *blob, size_t *blob_len, va_list 
       /* content specifiers */
       switch (odata)
 	{
+#ifdef CONFIG_ASSH_BIGNUM_BUILTIN
 	case 'G': {
 	  const struct assh_bignum_s *bn = va_arg(ap, void*);
 
@@ -458,6 +467,7 @@ assh_blob_write_va(const char *format, uint8_t *blob, size_t *blob_len, va_list 
 
 	  continue;
 	}
+#endif
 
 	case 'Z': {
 	  const char *s = va_arg(ap, void*);

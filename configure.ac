@@ -375,6 +375,7 @@ AC_CHECK_HEADERS(valgrind/memcheck.h, [
   AC_DEFINE([CONFIG_ASSH_VALGRIND], [], [Use valgrind headers for better checking when defined.])
 ])
 
+   AC_DEFINE(CONFIG_ASSH_BIGNUM_BUILTIN, 1, [Enable bignum engine when defined.])
 AM_CONDITIONAL(COND_server,  [test x$enable_server = xyes])
 AM_CONDITIONAL(COND_client,  [test x$enable_client = xyes])
 

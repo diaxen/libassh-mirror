@@ -117,12 +117,14 @@ void assh_hash_string(struct assh_hash_ctx_s *hctx, const uint8_t *str);
 void assh_hash_bytes_as_string(struct assh_hash_ctx_s *hctx,
                                const uint8_t *bytes, size_t len);
 
+#ifdef CONFIG_ASSH_BIGNUM_BUILTIN
 /** @internal @This convert the big number to the ssh mpint
     representation and hash the resulting buffer. */
 ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_hash_bignum(struct assh_context_s *ctx,
                  struct assh_hash_ctx_s *hctx,
                  const struct assh_bignum_s *bn);
+#endif
 
 /** @internal @This hash the packet payload. The packet must contain a
     valid 32 bits size header; not check is performed by this
