@@ -23,6 +23,7 @@
 
 
 #include <assh/assh_mac.h>
+#include <assh/mod_builtin.h>
 #include <assh/assh_hash.h>
 #include <assh/assh_buffer.h>
 #include <assh/assh_alloc.h>
@@ -150,10 +151,10 @@ static ASSH_MAC_CHECK_FCN(assh_hmac_check)
 
 static ASSH_MAC_INIT_FCN(assh_hmac_md5_init)
 {
-  return assh_hmac_init(c, &assh_hmac_md5, ctx_, key, &assh_hash_md5);
+  return assh_hmac_init(c, &assh_mac_builtin_md5, ctx_, key, &assh_hash_md5);
 }
 
-const struct assh_algo_mac_s assh_hmac_md5 = 
+const struct assh_algo_mac_s assh_mac_builtin_md5 = 
 {
   ASSH_ALGO_BASE(MAC, "assh-builtin", 30, 70,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
@@ -168,7 +169,7 @@ const struct assh_algo_mac_s assh_hmac_md5 =
   .f_cleanup = assh_hmac_cleanup,
 };
 
-const struct assh_algo_mac_s assh_hmac_md5_etm = 
+const struct assh_algo_mac_s assh_mac_builtin_md5_etm = 
 {
   ASSH_ALGO_BASE(MAC, "assh-builtin", 31, 70,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,
@@ -187,10 +188,10 @@ const struct assh_algo_mac_s assh_hmac_md5_etm =
 
 static ASSH_MAC_INIT_FCN(assh_hmac_md5_96_init)
 {
-  return assh_hmac_init(c, &assh_hmac_md5_96, ctx_, key, &assh_hash_md5);
+  return assh_hmac_init(c, &assh_mac_builtin_md5_96, ctx_, key, &assh_hash_md5);
 }
 
-const struct assh_algo_mac_s assh_hmac_md5_96 = 
+const struct assh_algo_mac_s assh_mac_builtin_md5_96 = 
 {
   ASSH_ALGO_BASE(MAC, "assh-builtin", 20, 75,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
@@ -205,7 +206,7 @@ const struct assh_algo_mac_s assh_hmac_md5_96 =
   .f_cleanup = assh_hmac_cleanup,
 };
 
-const struct assh_algo_mac_s assh_hmac_md5_96_etm = 
+const struct assh_algo_mac_s assh_mac_builtin_md5_96_etm = 
 {
   ASSH_ALGO_BASE(MAC, "assh-builtin", 21, 75,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,
@@ -227,10 +228,10 @@ const struct assh_algo_mac_s assh_hmac_md5_96_etm =
 
 static ASSH_MAC_INIT_FCN(assh_hmac_sha1_init)
 {
-  return assh_hmac_init(c, &assh_hmac_sha1, ctx_, key, &assh_hash_sha1);
+  return assh_hmac_init(c, &assh_mac_builtin_sha1, ctx_, key, &assh_hash_sha1);
 }
 
-const struct assh_algo_mac_s assh_hmac_sha1 = 
+const struct assh_algo_mac_s assh_mac_builtin_sha1 = 
 {
   ASSH_ALGO_BASE(MAC, "assh-builtin", 35, 70,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
@@ -245,7 +246,7 @@ const struct assh_algo_mac_s assh_hmac_sha1 =
   .f_cleanup = assh_hmac_cleanup,
 };
 
-const struct assh_algo_mac_s assh_hmac_sha1_etm = 
+const struct assh_algo_mac_s assh_mac_builtin_sha1_etm = 
 {
   ASSH_ALGO_BASE(MAC, "assh-builtin", 36, 70,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,
@@ -264,10 +265,10 @@ const struct assh_algo_mac_s assh_hmac_sha1_etm =
 
 static ASSH_MAC_INIT_FCN(assh_hmac_sha1_96_init)
 {
-  return assh_hmac_init(c, &assh_hmac_sha1_96, ctx_, key, &assh_hash_sha1);
+  return assh_hmac_init(c, &assh_mac_builtin_sha1_96, ctx_, key, &assh_hash_sha1);
 }
 
-const struct assh_algo_mac_s assh_hmac_sha1_96 = 
+const struct assh_algo_mac_s assh_mac_builtin_sha1_96 = 
 {
   ASSH_ALGO_BASE(MAC, "assh-builtin", 25, 75,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
@@ -282,7 +283,7 @@ const struct assh_algo_mac_s assh_hmac_sha1_96 =
   .f_cleanup = assh_hmac_cleanup,
 };
 
-const struct assh_algo_mac_s assh_hmac_sha1_96_etm = 
+const struct assh_algo_mac_s assh_mac_builtin_sha1_96_etm = 
 {
   ASSH_ALGO_BASE(MAC, "assh-builtin", 26, 75,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,
@@ -304,10 +305,10 @@ const struct assh_algo_mac_s assh_hmac_sha1_96_etm =
 
 static ASSH_MAC_INIT_FCN(assh_hmac_sha256_init)
 {
-  return assh_hmac_init(c, &assh_hmac_sha256, ctx_, key, &assh_hash_sha256);
+  return assh_hmac_init(c, &assh_mac_builtin_sha256, ctx_, key, &assh_hash_sha256);
 }
 
-const struct assh_algo_mac_s assh_hmac_sha256 = 
+const struct assh_algo_mac_s assh_mac_builtin_sha256 = 
 {
   ASSH_ALGO_BASE(MAC, "assh-builtin", 40, 60,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
@@ -322,7 +323,7 @@ const struct assh_algo_mac_s assh_hmac_sha256 =
   .f_cleanup = assh_hmac_cleanup,
 };
 
-const struct assh_algo_mac_s assh_hmac_sha256_etm = 
+const struct assh_algo_mac_s assh_mac_builtin_sha256_etm = 
 {
   ASSH_ALGO_BASE(MAC, "assh-builtin", 41, 60,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,
@@ -341,10 +342,10 @@ const struct assh_algo_mac_s assh_hmac_sha256_etm =
 
 static ASSH_MAC_INIT_FCN(assh_hmac_sha512_init)
 {
-  return assh_hmac_init(c, &assh_hmac_sha512, ctx_, key, &assh_hash_sha512);
+  return assh_hmac_init(c, &assh_mac_builtin_sha512, ctx_, key, &assh_hash_sha512);
 }
 
-const struct assh_algo_mac_s assh_hmac_sha512 = 
+const struct assh_algo_mac_s assh_mac_builtin_sha512 = 
 {
   ASSH_ALGO_BASE(MAC, "assh-builtin", 50, 50,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
@@ -359,7 +360,7 @@ const struct assh_algo_mac_s assh_hmac_sha512 =
   .f_cleanup = assh_hmac_cleanup,
 };
 
-const struct assh_algo_mac_s assh_hmac_sha512_etm =
+const struct assh_algo_mac_s assh_mac_builtin_sha512_etm =
 {
   ASSH_ALGO_BASE(MAC, "assh-builtin", 51, 50,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,

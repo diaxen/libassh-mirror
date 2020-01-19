@@ -28,11 +28,6 @@
 #include <assh/assh_context.h>
 #include <assh/assh_alloc.h>
 
-#include <assh/key_rsa.h>
-#include <assh/key_dsa.h>
-#include <assh/key_eddsa.h>
-#include <assh/key_ecdsa.h>
-
 #include <string.h>
 
 static const struct assh_key_algo_s *

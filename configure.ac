@@ -83,18 +83,6 @@ AC_CHECK_LIB(crypt, crypt_r,
   AC_DEFINE(CONFIG_ASSH_CRYPT_R, 1, [Use crypt_r when defined.])
 )
 
-case "${ac_cv_sizeof_long}_${bnlong_size}" in
-    8_x)
-         AC_DEFINE(CONFIG_ASSH_BIGNUM_WORD, 64, [Bignum uses 64 bits words when defined.])
-    ;;
-    8_8|4_8)
-         AC_DEFINE(CONFIG_ASSH_BIGNUM_WORD, 32, [Bignum uses 64 bits words when defined.])
-    ;;
-    *)
-         AC_DEFINE(CONFIG_ASSH_BIGNUM_WORD, 16, [Bignum uses 16 bits words when defined.])
-    ;;
-esac
-
 AC_ARG_ENABLE(server, AC_HELP_STRING(--disable-server, [Disable SSH server support]),
 		       enable_server=$enableval, enable_server=yes)
 
@@ -125,14 +113,23 @@ AC_ARG_ENABLE(key_create, AC_HELP_STRING(--disable-key-create, [Disable key crea
 AC_ARG_WITH(hashes, AC_HELP_STRING(--with-hashes, [Specifies backend to use for hash algorithms (builtin, external, gcrypt, openssl)]),
 		       [with_hashes=$withval], with_hashes=external)
 
-AC_ARG_WITH(ciphers, AC_HELP_STRING(--with-ciphers, [Specifies backend to use for cipher algorithms (builtin, external, gcrypt, openssl)]),
-		       [with_ciphers=$withval], with_ciphers=external)
+AC_ARG_WITH(kex, AC_HELP_STRING(--with-kex, [Specifies backend to use for key-exchange algorithms (builtin, all)]),
+		       [with_kex=$withval], with_kex=all)
 
-AC_ARG_WITH(prng, AC_HELP_STRING(--with-prng, [Specifies backend to use for random source (builtin, external, gcrypt, openssl)]),
-		       [with_prng=$withval], with_prng=external)
+AC_ARG_WITH(sign, AC_HELP_STRING(--with-sign, [Specifies backend to use for signature algorithms (builtin, all)]),
+		       [with_sign=$withval], with_sign=all)
+
+AC_ARG_WITH(ciphers, AC_HELP_STRING(--with-ciphers, [Specifies backend to use for cipher algorithms (builtin, external, gcrypt, openssl, all)]),
+		       [with_ciphers=$withval], with_ciphers=all)
+
+AC_ARG_WITH(macs, AC_HELP_STRING(--with-macs, [Specifies backend to use for MAC algorithms (builtin, external, gcrypt, openssl, all)]),
+		       [with_macs=$withval], with_macs=all)
+
+AC_ARG_WITH(prng, AC_HELP_STRING(--with-prng, [Specifies backend to use for random source (builtin, external, devrandom, gcrypt, openssl, all)]),
+		       [with_prng=$withval], with_prng=all)
 
 AC_ARG_WITH(alloc, AC_HELP_STRING(--with-alloc, [Specifies backend to use for secure memory allocation (none, libc, external, gcrypt, openssl)]),
-		       [with_alloc=$withval], with_alloc=external)
+		       [with_alloc=$withval], with_alloc=all)
 
 AC_ARG_WITH(gcrypt, AC_HELP_STRING(--without-gcrypt, [Disable use of gcrypt support]),
 		       with_gcrypt=$withval, with_gcrypt=yes)
@@ -152,222 +149,202 @@ AC_ARG_ENABLE(alloca, AC_HELP_STRING(--enable-alloca, [Store key related materia
 AC_ARG_ENABLE(assert, AC_HELP_STRING(--disable-assert, [Disable assert() by defining the NDEBUG macro]),
 		       enable_assert=$enableval, enable_assert=yes)
 
+AC_DEFINE([CONFIG_ASSH_HASH_MD5], [], [Enable MD5 hash])
+CONFIG_ASSH_USE_BUILTIN_MD5=yes
+AC_DEFINE([CONFIG_ASSH_HASH_SHA1], [], [Enable SHA1 hash])
+CONFIG_ASSH_USE_BUILTIN_SHA1=yes
+AC_DEFINE([CONFIG_ASSH_HASH_SHA2], [], [Enable SHA2 hash])
+CONFIG_ASSH_USE_BUILTIN_SHA2=yes
+AC_DEFINE([CONFIG_ASSH_HASH_SHA3], [], [Enable SHA3 hash])
+CONFIG_ASSH_USE_BUILTIN_SHA3=yes
+
 if test -e /dev/random ; then
-  if test x$with_prng = xdevrandom || test x$with_prng = xexternal ; then
+  case "$with_prng" in
+    *external*)
+      with_prng=devrandom ;&
+    *devrandom*|*all*)
     AC_DEFINE([CONFIG_ASSH_USE_DEV_RANDOM], [], [Enable support for unix @tt {/dev/u?random} random generator when defined.])
-    with_prng=devrandom
-  fi
-else
-  with_devrandom=no
+    CONFIG_ASSH_USE_DEV_RANDOM=yes
+  esac
 fi
 
+case "$with_kex" in
+  *builtin*|*all*)
+    AC_DEFINE([CONFIG_ASSH_USE_BUILTIN_KEX], [], [Enable builtin key-exchange algorithms when defined.])
+    CONFIG_ASSH_USE_BUILTIN_KEX=yes
+esac
+
+case "$with_sign" in
+  *builtin*|*all*)
+    AC_DEFINE([CONFIG_ASSH_USE_BUILTIN_SIGN], [], [Enable builtin signature algorithms when defined.])
+    CONFIG_ASSH_USE_BUILTIN_SIGN=yes
+esac
+
+case "$with_ciphers" in
+  *builtin*|*all*)
+    AC_DEFINE([CONFIG_ASSH_USE_BUILTIN_CIPHERS], [], [Enable builtin cipher algorithms when defined.])
+    CONFIG_ASSH_USE_BUILTIN_CIPHERS=yes
+esac
+
+case "$with_macs" in
+  *builtin*|*all*)
+    AC_DEFINE([CONFIG_ASSH_USE_BUILTIN_MACS], [], [Enable builtin MAC algorithms when defined.])
+    CONFIG_ASSH_USE_BUILTIN_MACS=yes
+esac
+
+case "$with_alloc" in
+  *libc*|*all*)
+  AC_DEFINE([CONFIG_ASSH_USE_LIBC_ALLOC], [], [Enable support for the C library allocator which is not secur on some platforms.])
+  CONFIG_ASSH_USE_LIBC_ALLOC=yes
+esac
+
+case "$with_prng" in
+  *builtin*|*all*)
+  AC_DEFINE([CONFIG_ASSH_USE_BUILTIN_PRNG], [], [Enable support for builtin PRNG.])
+  CONFIG_ASSH_USE_BUILTIN_PRNG=yes
+esac
+
+CONFIG_ASSH_USE_GCRYPT=no
 if test x$with_gcrypt = xyes ; then
   AC_CHECK_LIB(gcrypt, gcry_check_version, [
     AC_CHECK_HEADERS(gcrypt.h, [
 
-      if test x$with_hashes = xgcrypt || test x$with_hashes = xexternal ; then
-      	with_hashes=gcrypt
-      	AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_HASH], [], [Use Libgcrypt hash algorithms implementations when defined.])
-        AC_DEFINE([CONFIG_ASSH_HASH_RIPEMD160], [], [Enable the RIPE-MD-160 MAC algorithm when defined.])
-      fi
+      case "$with_hashes" in
+        *external*|*gcrypt*)
+      	  with_hashes=gcrypt
+      	  AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_HASH], [], [Use Libgcrypt hash algorithms implementations when defined.])
+	  CONFIG_ASSH_USE_GCRYPT_HASH=yes
+          CONFIG_ASSH_USE_BUILTIN_MD5=no
+          CONFIG_ASSH_USE_BUILTIN_SHA1=no
+          CONFIG_ASSH_USE_BUILTIN_SHA2=no
+          AC_TRY_COMPILE([#include <gcrypt.h>], [return GCRY_MD_SHA3_256;], [
+            CONFIG_ASSH_USE_BUILTIN_SHA3=no
+            AC_DEFINE([CONFIG_ASSH_GCRYPT_HAS_SHA3], [], [Enable gcrypt implementation of SHA3])
+	    CONFIG_ASSH_GCRYPT_HAS_SHA3=yes
+          ])
+      esac
 
-      if test x$with_prng = xgcrypt || test x$with_prng = xexternal ; then
-        with_prng=gcrypt
-	AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_PRNG], [], [Enable Libgcrypt random number generator when defined.])
-      fi
+      case "$with_prng" in
+        *external*)
+          with_prng=gcrypt ;&
+        *gcrypt*|*all*)
+	  AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_PRNG], [], [Enable Libgcrypt random number generator when defined.])
+	  CONFIG_ASSH_USE_GCRYPT_PRNG=yes
+      esac
 
-      if test x$with_alloc = xgcrypt || test x$with_alloc = xexternal ; then
-        with_alloc=gcrypt
-	AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_ALLOC], [], [Enable Libgcrypt secur memory allocator when defined.])
-      fi
+      case "$with_alloc" in
+        *external*)
+          with_alloc=gcrypt ;&
+        *gcrypt*|*all*)
+	  AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_ALLOC], [], [Enable Libgcrypt secur memory allocator when defined.])
+	  CONFIG_ASSH_USE_GCRYPT_ALLOC=yes
+      esac
 
-      if test x$with_ciphers = xgcrypt || test x$with_ciphers = xexternal ; then
-        with_ciphers=gcrypt
-	AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_CIPHERS], [], [Enable Libgcrypt cipher algorithms when defined.])
-	AC_DEFINE([CONFIG_ASSH_CIPHER_ARCFOUR], [], [Enable the Arcfour cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_TDES_CBC], [], [Enable the Triple-DES cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_TDES_CTR], [], [Enable the Triple-DES cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_CAST128_CBC], [], [Enable the CAST128 cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_CAST128_CTR], [], [Enable the CAST128 cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_IDEA_CBC], [], [Enable the IDEA cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_IDEA_CTR], [], [Enable the IDEA cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_BLOWFISH_CBC], [], [Enable the Blowfish cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_BLOWFISH_CTR], [], [Enable the Blowfish cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_AES128_CBC], [], [Enable the AES cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_AES192_CBC], [], [Enable the AES cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_AES256_CBC], [], [Enable the AES cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_AES128_CTR], [], [Enable the AES cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_AES192_CTR], [], [Enable the AES cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_AES256_CTR], [], [Enable the AES cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_AES128_GCM], [], [Enable the AES cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_AES256_GCM], [], [Enable the AES cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_TWOFISH128_CBC], [], [Enable the Twofish cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_TWOFISH256_CBC], [], [Enable the Twofish cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_TWOFISH128_CTR], [], [Enable the Twofish cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_TWOFISH256_CTR], [], [Enable the Twofish cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_TWOFISH128_GCM], [], [Enable the Twofish cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_TWOFISH256_GCM], [], [Enable the Twofish cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_SERPENT128_CBC], [], [Enable the Serpent cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_SERPENT192_CBC], [], [Enable the Serpent cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_SERPENT256_CBC], [], [Enable the Serpent cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_SERPENT128_CTR], [], [Enable the Serpent cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_SERPENT192_CTR], [], [Enable the Serpent cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_SERPENT256_CTR], [], [Enable the Serpent cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_SERPENT128_GCM], [], [Enable the Serpent cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_SERPENT256_GCM], [], [Enable the Serpent cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_CAMELLIA128_CBC], [], [Enable the Camellia cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_CAMELLIA192_CBC], [], [Enable the Camellia cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_CAMELLIA256_CBC], [], [Enable the Camellia cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_CAMELLIA128_CTR], [], [Enable the Camellia cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_CAMELLIA192_CTR], [], [Enable the Camellia cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_CAMELLIA256_CTR], [], [Enable the Camellia cipher when defined.])
-      fi
+      case "$with_ciphers" in
+        *external*)
+          with_ciphers=gcrypt ;&
+        *gcrypt*|*all*)
+	  AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_CIPHERS], [], [Enable Libgcrypt cipher algorithms when defined.])
+	  CONFIG_ASSH_USE_GCRYPT_CIPHERS=yes
+      esac
 
-      AC_TRY_COMPILE([#include <gcrypt.h>], [return GCRY_MD_SHA3_256;], [
-        AC_DEFINE([CONFIG_ASSH_GCRYPT_HAS_SHA3], [], [Enable gcrypt implementation of SHA3])
-	with_gcrypt_sha3=yes
-      ])
+      case "$with_macs" in
+        *external*)
+          with_macs=gcrypt ;&
+        *gcrypt*|*all*)
+	  AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_MACS], [], [Enable Libgcrypt MAC algorithms when defined.])
+	  CONFIG_ASSH_USE_GCRYPT_MACS=yes
+      esac
 
-      if test x$with_hashes = xgcrypt ||
-      	 test x$with_alloc = xgcrypt ||
-      	 test x$with_ciphers = xgcrypt ||
-      	 test x$with_prng = xgcrypt ; then
+      if test x$CONFIG_ASSH_USE_GCRYPT_HASH = xyes ||
+      	 test x$CONFIG_ASSH_USE_GCRYPT_CIPHERS = xyes ||
+      	 test x$CONFIG_ASSH_USE_GCRYPT_ALLOC = xyes ||
+      	 test x$CONFIG_ASSH_USE_GCRYPT_MACS = xyes ||
+      	 test x$CONFIG_ASSH_USE_GCRYPT_PRNG = xyes ; then
         LIBS="$LIBS -lgcrypt"
         AC_DEFINE([CONFIG_ASSH_USE_GCRYPT], [], [Enable the Libgcrypt support when defined.])
+	CONFIG_ASSH_USE_GCRYPT=yes
       fi
-
-    ], [
-      with_gcrypt=no
     ])
-  ], [
-    with_gcrypt=no
   ])
 fi
 
+CONFIG_ASSH_USE_OPENSSL=no
 if test x$with_openssl = xyes ; then
   AC_CHECK_LIB(crypto, OpenSSL_version, [
     AC_CHECK_HEADERS(openssl/crypto.h, [
+     AC_CHECK_HEADERS(openssl/opensslconf.h, [
 
-      if test x$with_hashes = xopenssl || test x$with_hashes = xexternal ; then
+      case "$with_hashes" in
+        *external*|*openssl*)
 	AC_CHECK_LIB(crypto, EVP_md5, [
 	  AC_CHECK_LIB(crypto, EVP_sha1, [
             with_hashes=openssl
 	    AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_HASH], [], [Use openssl hash algorithms implementations when defined.])
-	    AC_CHECK_LIB(crypto, EVP_ripemd160, [
-              AC_DEFINE([CONFIG_ASSH_HASH_RIPEMD160], [], [Enable the RIPE-MD-160 MAC algorithm when defined.])
-	    ])
+	    CONFIG_ASSH_USE_OPENSSL_HASH=yes
+            CONFIG_ASSH_USE_BUILTIN_MD5=no
+            CONFIG_ASSH_USE_BUILTIN_SHA1=no
+            CONFIG_ASSH_USE_BUILTIN_SHA2=no
 	  ])
 	 ])
-      fi
+      esac
 
-      if test x$with_prng = xopenssl || test x$with_prng = xexternal ; then
-	AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_PRNG], [], [Enable openssl random number generator when defined.])
-      fi
+      case "$with_prng" in
+        *external*)
+          with_prng=openssl ;&
+        *openssl*|*all*)
+	  AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_PRNG], [], [Enable openssl random number generator when defined.])
+	  CONFIG_ASSH_USE_OPENSSL_PRNG=yes
+      esac
 
-      if test x$with_alloc = xopenssl || test x$with_alloc = xexternal ; then
-        with_alloc=openssl
-	AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_ALLOC], [], [Enable openssl secur memory allocator when defined.])
-	AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_HEAP_SIZE], [0x10000], [Value passed to the CRYPTO_secure_malloc_init function.])
-      fi
+      case "$with_alloc" in
+        *external*)
+          with_alloc=openssl ;&
+        *openssl*|*all*)
+	  AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_HEAP_SIZE], [0x10000], [Value passed to the CRYPTO_secure_malloc_init function.])
+	  AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_ALLOC], [], [Enable openssl secur memory allocator when defined.])
+	  CONFIG_ASSH_USE_OPENSSL_ALLOC=yes
+      esac
 
-      if test x$with_ciphers = xopenssl || test x$with_ciphers = xexternal ; then
-        with_ciphers=openssl
-	AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_CIPHERS], [], [Enable openssl cipher algorithms when defined.])
-	AC_CHECK_LIB(crypto, EVP_rc4, [
-	  AC_DEFINE([CONFIG_ASSH_CIPHER_ARCFOUR], [], [Enable the Arcfour cipher when defined.])
-	])
-	AC_CHECK_LIB(crypto, EVP_des_ede3_cbc, [
-          AC_DEFINE([CONFIG_ASSH_CIPHER_TDES_CBC], [], [Enable the Triple-DES cipher when defined.])
-	])
-	AC_CHECK_LIB(crypto, EVP_bf_cbc, [
-          AC_DEFINE([CONFIG_ASSH_CIPHER_BLOWFISH_CBC], [], [Enable the Blowfish cipher when defined.])
-	])
-	AC_CHECK_LIB(crypto, EVP_cast5_cbc, [
-          AC_DEFINE([CONFIG_ASSH_CIPHER_CAST128_CBC], [], [Enable the CAST128 cipher when defined.])
-	])
-	AC_CHECK_LIB(crypto, EVP_idea_cbc, [
-          AC_DEFINE([CONFIG_ASSH_CIPHER_IDEA_CBC], [], [Enable the IDEA cipher when defined.])
-	])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_AES128_CBC], [], [Enable the AES cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_AES192_CBC], [], [Enable the AES cipher when defined.])
-        AC_DEFINE([CONFIG_ASSH_CIPHER_AES256_CBC], [], [Enable the AES cipher when defined.])
-	AC_CHECK_LIB(crypto, EVP_aes_128_ctr, [
-          AC_DEFINE([CONFIG_ASSH_CIPHER_AES128_CTR], [], [Enable the AES cipher when defined.])
-          AC_DEFINE([CONFIG_ASSH_CIPHER_AES192_CTR], [], [Enable the AES cipher when defined.])
-          AC_DEFINE([CONFIG_ASSH_CIPHER_AES256_CTR], [], [Enable the AES cipher when defined.])
-	])
-	AC_CHECK_LIB(crypto, EVP_aes_128_gcm, [
-          AC_DEFINE([CONFIG_ASSH_CIPHER_AES128_GCM], [], [Enable the AES-GCM cipher when defined.])
-          AC_DEFINE([CONFIG_ASSH_CIPHER_AES256_GCM], [], [Enable the AES-GCM cipher when defined.])
-	])
-	AC_CHECK_LIB(crypto, EVP_camellia_128_cbc, [
-          AC_DEFINE([CONFIG_ASSH_CIPHER_CAMELLIA128_CBC], [], [Enable the Camellia cipher when defined.])
-          AC_DEFINE([CONFIG_ASSH_CIPHER_CAMELLIA192_CBC], [], [Enable the Camellia cipher when defined.])
-          AC_DEFINE([CONFIG_ASSH_CIPHER_CAMELLIA256_CBC], [], [Enable the Camellia cipher when defined.])
-	])
-	AC_CHECK_LIB(crypto, EVP_camellia_128_ctr, [
-          AC_DEFINE([CONFIG_ASSH_CIPHER_CAMELLIA128_CTR], [], [Enable the Camellia cipher when defined.])
-          AC_DEFINE([CONFIG_ASSH_CIPHER_CAMELLIA192_CTR], [], [Enable the Camellia cipher when defined.])
-          AC_DEFINE([CONFIG_ASSH_CIPHER_CAMELLIA256_CTR], [], [Enable the Camellia cipher when defined.])
-	])
-      fi
+      case "$with_ciphers" in
+        *external*)
+          with_ciphers=openssl ;&
+        *openssl*|*all*)
+	  AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_CIPHERS], [], [Enable openssl cipher algorithms when defined.])
+	  CONFIG_ASSH_USE_OPENSSL_CIPHERS=yes
+      esac
 
-      if test x$with_hashes = xopenssl ||
-      	 test x$with_alloc = xopenssl ||
-      	 test x$with_ciphers = xopenssl ||
-      	 test x$with_prng = xopenssl ; then
+      case "$with_macs" in
+        *external*)
+          with_macs=openssl ;&
+        *openssl*|*all*)
+	  AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_MACS], [], [Enable openssl MAC algorithms when defined.])
+	  CONFIG_ASSH_USE_OPENSSL_MACS=yes
+      esac
+
+      if test x$CONFIG_ASSH_USE_OPENSSL_HASH = xyes ||
+      	 test x$CONFIG_ASSH_USE_OPENSSL_CIPHERS = xyes ||
+      	 test x$CONFIG_ASSH_USE_OPENSSL_ALLOC = xyes ||
+      	 test x$CONFIG_ASSH_USE_OPENSSL_MACS = xyes ||
+      	 test x$CONFIG_ASSH_USE_OPENSSL_PRNG = xyes ; then
         LIBS="$LIBS -lcrypto"
         AC_DEFINE([CONFIG_ASSH_USE_OPENSSL], [], [Enable the openssl support when defined.])
+	CONFIG_ASSH_USE_OPENSSL=yes
       fi
-
-    ], [
-      with_openssl=no
     ])
-  ], [
-    with_openssl=no
+   ])
   ])
 fi
 
-if test x$with_gcrypt = xno && test x$with_openssl = xno ; then
-  with_hashes=builtin
-  with_alloc=libc
-  with_ciphers=builtin
-  if test x$with_devrandom = xno ; then
-    with_prng=builtin
-  fi
-fi
-
-if test x$with_ciphers = xbuiltin ; then
-  AC_DEFINE([CONFIG_ASSH_CIPHER_ARCFOUR], [], [Enable the Arcfour cipher when defined.])
-  AC_DEFINE([CONFIG_ASSH_CIPHER_AES128_CBC], [], [Enable the AES cipher when defined.])
-  AC_DEFINE([CONFIG_ASSH_CIPHER_AES192_CBC], [], [Enable the AES cipher when defined.])
-  AC_DEFINE([CONFIG_ASSH_CIPHER_AES256_CBC], [], [Enable the AES cipher when defined.])
-  AC_DEFINE([CONFIG_ASSH_CIPHER_AES128_CTR], [], [Enable the AES cipher when defined.])
-  AC_DEFINE([CONFIG_ASSH_CIPHER_AES192_CTR], [], [Enable the AES cipher when defined.])
-  AC_DEFINE([CONFIG_ASSH_CIPHER_AES256_CTR], [], [Enable the AES cipher when defined.])
-fi
-
-if test x$with_alloc = xlibc ; then
-  AC_DEFINE([CONFIG_ASSH_USE_LIBC_ALLOC], [], [Enable support for the C library allocator which is not secur on some platforms.])
-fi
-
-AC_DEFINE([CONFIG_ASSH_CIPHER_CHACHAPOLY], [], [Enable the Chacha20-Poly1305 cipher when defined.])
-AC_DEFINE([CONFIG_ASSH_HASH_MD5], [], [Enable the MD5 message digest when defined.])
-AC_DEFINE([CONFIG_ASSH_HASH_SHA1], [], [Enable the SHA1 message digest when defined.])
-AC_DEFINE([CONFIG_ASSH_HASH_SHA2], [], [Enable the SHA2 message digest when defined.])
-AC_DEFINE([CONFIG_ASSH_HASH_SHA3], [], [Enable the SHA3 message digest when defined.])
-
+CONFIG_ASSH_USE_ZLIB=no
 if test x$with_zlib = xyes ; then
   AC_CHECK_LIB(z, zlibVersion, [
     AC_CHECK_HEADERS(zlib.h, [
       LIBS="$LIBS -lz"
       AC_DEFINE([CONFIG_ASSH_USE_ZLIB], [], [Enable the zlib library when defined.])
+      CONFIG_ASSH_USE_ZLIB=yes
       AC_DEFINE([CONFIG_ASSH_ZLIB_ALLOC], [ASSH_ALLOC_INTERNAL], [Specifies the allocator storage type used for the zlib context.])
-    ], [
-      with_zlib=no
     ])
-  ], [
-    with_zlib=no
   ])
 fi
 
@@ -375,29 +352,59 @@ AC_CHECK_HEADERS(valgrind/memcheck.h, [
   AC_DEFINE([CONFIG_ASSH_VALGRIND], [], [Use valgrind headers for better checking when defined.])
 ])
 
+if test x$CONFIG_ASSH_USE_BUILTIN_KEX = xyes ||
+   test x$CONFIG_ASSH_USE_BUILTIN_SIGN = xyes ; then
+
    AC_DEFINE(CONFIG_ASSH_BIGNUM_BUILTIN, 1, [Enable bignum engine when defined.])
+   CONFIG_ASSH_BIGNUM_BUILTIN=yes
+
+   case "${ac_cv_sizeof_long}_${bnlong_size}" in
+       8_x)
+            AC_DEFINE(CONFIG_ASSH_BIGNUM_WORD, 64, [Bignum uses 64 bits words when defined.])
+       ;;
+       8_8|4_8)
+            AC_DEFINE(CONFIG_ASSH_BIGNUM_WORD, 32, [Bignum uses 64 bits words when defined.])
+       ;;
+       *)
+            AC_DEFINE(CONFIG_ASSH_BIGNUM_WORD, 16, [Bignum uses 16 bits words when defined.])
+       ;;
+   esac
+
+fi
+
 AM_CONDITIONAL(COND_server,  [test x$enable_server = xyes])
 AM_CONDITIONAL(COND_client,  [test x$enable_client = xyes])
 
-AM_CONDITIONAL(COND_libc_alloc,      [test x$with_alloc = xlibc])
+AM_CONDITIONAL(COND_libc_alloc,      [test x$CONFIG_ASSH_USE_LIBC_ALLOC = xyes])
 
-AM_CONDITIONAL(COND_builtin_hash,    [test x$with_hashes = xbuiltin])
-AM_CONDITIONAL(COND_builtin_ciphers, [test x$with_ciphers = xbuiltin])
-AM_CONDITIONAL(COND_builtin_prng,    [test x$with_prng = xbuiltin])
-AM_CONDITIONAL(COND_dev_random,      [test x$with_prng = xdevrandom])
+AM_CONDITIONAL(COND_prng_devrandom,  [test x$CONFIG_ASSH_USE_DEV_RANDOM = xyes])
 
-AM_CONDITIONAL(COND_gcrypt_hash,     [test x$with_hashes = xgcrypt])
-AM_CONDITIONAL(COND_gcrypt_sha3,     [test x$with_gcrypt_sha3 = xyes])
-AM_CONDITIONAL(COND_gcrypt_alloc,    [test x$with_alloc = xgcrypt])
-AM_CONDITIONAL(COND_gcrypt_ciphers,  [test x$with_ciphers = xgcrypt])
-AM_CONDITIONAL(COND_gcrypt_prng,     [test x$with_prng = xgcrypt])
+AM_CONDITIONAL(COND_kex_builtin,     [test x$CONFIG_ASSH_USE_BUILTIN_KEX = xyes])
+AM_CONDITIONAL(COND_sign_builtin,    [test x$CONFIG_ASSH_USE_BUILTIN_SIGN = xyes])
+AM_CONDITIONAL(COND_kex_sign_builtin, [test x$CONFIG_ASSH_USE_BUILTIN_KEX = xyes ||
+				       test x$CONFIG_ASSH_USE_BUILTIN_SIGN = xyes])
+AM_CONDITIONAL(COND_bignum_builtin,  [test x$CONFIG_ASSH_BIGNUM_BUILTIN = xyes])
+AM_CONDITIONAL(COND_ciphers_builtin, [test x$CONFIG_ASSH_USE_BUILTIN_CIPHERS = xyes])
+AM_CONDITIONAL(COND_macs_builtin,    [test x$CONFIG_ASSH_USE_BUILTIN_MACS = xyes])
+AM_CONDITIONAL(COND_md5_builtin,     [test x$CONFIG_ASSH_USE_BUILTIN_MD5 = xyes])
+AM_CONDITIONAL(COND_sha1_builtin,    [test x$CONFIG_ASSH_USE_BUILTIN_SHA1 = xyes])
+AM_CONDITIONAL(COND_sha2_builtin,    [test x$CONFIG_ASSH_USE_BUILTIN_SHA2 = xyes])
+AM_CONDITIONAL(COND_sha3_builtin,    [test x$CONFIG_ASSH_USE_BUILTIN_SHA3 = xyes])
+AM_CONDITIONAL(COND_prng_builtin,    [test x$CONFIG_ASSH_USE_BUILTIN_PRNG = xyes])
 
-AM_CONDITIONAL(COND_openssl_hash,    [test x$with_hashes = xopenssl])
-AM_CONDITIONAL(COND_openssl_alloc,   [test x$with_alloc = xopenssl])
-AM_CONDITIONAL(COND_openssl_ciphers, [test x$with_ciphers = xopenssl])
-AM_CONDITIONAL(COND_openssl_prng,    [test x$with_prng = xopenssl])
+AM_CONDITIONAL(COND_hash_gcrypt,     [test x$CONFIG_ASSH_USE_GCRYPT_HASH = xyes])
+AM_CONDITIONAL(COND_alloc_gcrypt,    [test x$CONFIG_ASSH_USE_GCRYPT_ALLOC = xyes])
+AM_CONDITIONAL(COND_ciphers_gcrypt,  [test x$CONFIG_ASSH_USE_GCRYPT_CIPHERS = xyes])
+AM_CONDITIONAL(COND_macs_gcrypt,     [test x$CONFIG_ASSH_USE_GCRYPT_MACS = xyes])
+AM_CONDITIONAL(COND_prng_gcrypt,     [test x$CONFIG_ASSH_USE_GCRYPT_PRNG = xyes])
 
-AM_CONDITIONAL(COND_zlib,            [test x$with_zlib = xyes])
+AM_CONDITIONAL(COND_hash_openssl,    [test x$CONFIG_ASSH_USE_OPENSSL_HASH = xyes])
+AM_CONDITIONAL(COND_alloc_openssl,   [test x$CONFIG_ASSH_USE_OPENSSL_ALLOC = xyes])
+AM_CONDITIONAL(COND_ciphers_openssl, [test x$CONFIG_ASSH_USE_OPENSSL_CIPHERS = xyes])
+AM_CONDITIONAL(COND_macs_openssl,    [test x$CONFIG_ASSH_USE_OPENSSL_MACS = xyes])
+AM_CONDITIONAL(COND_prng_openssl,    [test x$CONFIG_ASSH_USE_OPENSSL_PRNG = xyes])
+
+AM_CONDITIONAL(COND_zlib,            [test x$CONFIG_ASSH_USE_ZLIB = xyes])
 
 AM_CONDITIONAL(COND_password_userauth, [test x$enable_password_userauth = xyes])
 AM_CONDITIONAL(COND_hostbased_userauth, [test x$enable_hostbased_userauth = xyes])

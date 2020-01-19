@@ -54,65 +54,6 @@
 /** @This specifies the word width used for bignum operations. */
 #define CONFIG_ASSH_BIGNUM_WORD 64
 
-/** When defined, @this enables the Arcfour cipher. */
-#define CONFIG_ASSH_CIPHER_ARCFOUR
-
-/** @multiple When defined, @this allows use of the Triple-DES cipher. */
-#define CONFIG_ASSH_CIPHER_TDES_CBC
-#define CONFIG_ASSH_CIPHER_TDES_CTR
-
-/** @multiple When defined, @this allows use of the CAST128 cipher. */
-#define CONFIG_ASSH_CIPHER_CAST128_CBC
-#define CONFIG_ASSH_CIPHER_CAST128_CTR
-
-/** @multiple When defined, @this allows use of the IDEA cipher. */
-#define CONFIG_ASSH_CIPHER_IDEA_CBC
-#define CONFIG_ASSH_CIPHER_IDEA_CTR
-
-/** @multiple When defined, @this allows use of the Blowfish cipher. */
-#define CONFIG_ASSH_CIPHER_BLOWFISH_CBC
-#define CONFIG_ASSH_CIPHER_BLOWFISH_CTR
-
-/** @multiple When defined, @this allows use of the AES cipher. */
-#define CONFIG_ASSH_CIPHER_AES128_CBC
-#define CONFIG_ASSH_CIPHER_AES192_CBC
-#define CONFIG_ASSH_CIPHER_AES256_CBC
-#define CONFIG_ASSH_CIPHER_AES128_CTR
-#define CONFIG_ASSH_CIPHER_AES192_CTR
-#define CONFIG_ASSH_CIPHER_AES256_CTR
-#define CONFIG_ASSH_CIPHER_AES128_GCM
-#define CONFIG_ASSH_CIPHER_AES256_GCM
-
-/** @multiple When defined, @this allows use of the Twofish cipher. */
-#define CONFIG_ASSH_CIPHER_TWOFISH128_CBC
-#define CONFIG_ASSH_CIPHER_TWOFISH256_CBC
-#define CONFIG_ASSH_CIPHER_TWOFISH128_CTR
-#define CONFIG_ASSH_CIPHER_TWOFISH256_CTR
-#define CONFIG_ASSH_CIPHER_TWOFISH128_GCM
-#define CONFIG_ASSH_CIPHER_TWOFISH256_GCM
-
-/** @multiple When defined, @this allows use of the Serpent cipher. */
-#define CONFIG_ASSH_CIPHER_SERPENT128_CBC
-#define CONFIG_ASSH_CIPHER_SERPENT192_CBC
-#define CONFIG_ASSH_CIPHER_SERPENT256_CBC
-#define CONFIG_ASSH_CIPHER_SERPENT128_CTR
-#define CONFIG_ASSH_CIPHER_SERPENT192_CTR
-#define CONFIG_ASSH_CIPHER_SERPENT256_CTR
-#define CONFIG_ASSH_CIPHER_SERPENT128_GCM
-#define CONFIG_ASSH_CIPHER_SERPENT256_GCM
-
-/** @multiple When defined, @this allows use of the Camellia cipher. */
-#define CONFIG_ASSH_CIPHER_CAMELLIA128_CBC
-#define CONFIG_ASSH_CIPHER_CAMELLIA192_CBC
-#define CONFIG_ASSH_CIPHER_CAMELLIA256_CBC
-#define CONFIG_ASSH_CIPHER_CAMELLIA128_CTR
-#define CONFIG_ASSH_CIPHER_CAMELLIA192_CTR
-#define CONFIG_ASSH_CIPHER_CAMELLIA256_CTR
-
-/** @multiple When defined, @this allows use of the Chacha20-Poly1305
-    authenticated cipher. */
-#define CONFIG_ASSH_CIPHER_CHACHAPOLY
-
 /** When defined, @this enables support for the client side of the SSH
     protocol. */
 #define CONFIG_ASSH_CLIENT

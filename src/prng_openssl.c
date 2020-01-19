@@ -22,6 +22,7 @@
 */
 
 #include <assh/assh_prng.h>
+#include <assh/mod_openssl.h>
 
 #include <openssl/rand.h>
 

@@ -34,6 +34,7 @@
 #include "prng_weak.h"
 #include "test.h"
 #include "fuzz.h"
+#include "leaks_check.h"
 
 #define TEST_STEP 4
 
@@ -45,154 +46,194 @@ enum action_e {
   ACTION_FUZZ_CHECK = 4,
 };
 
-assh_status_t test_sign(unsigned int max_size, enum action_e action)
+void test_sign(unsigned int max_size, enum action_e action)
 {
-  assh_status_t err;
   int i;
 
   max_size -= max_size % TEST_STEP;
 
   for (i = 0; algos[i].algo; i++)
     {
-      const struct assh_algo_sign_s *a = algos[i].algo;
-      struct assh_key_s *key, *key2;
+      const struct assh_algo_s **a;
+      assh_bool_t done = 0;
 
-      fprintf(stderr, "\n%s sign/verify: ", assh_algo_name(&a->algo));
+      for (a = assh_algo_table; *a; a++)
+	{
+	  const struct assh_algo_sign_s *sa = (void*)*a;
 
-      uint8_t key_blob[algos[i].key_len];
-      memcpy(key_blob, algos[i].key, sizeof(key_blob));
+	  if (!assh_algo_name_match(*a, ASSH_ALGO_SIGN,
+				    algos[i].algo, strlen(algos[i].algo)))
+	    continue;
 
-      fprintf(stderr, "L");
-      const uint8_t *kb = key_blob + 1;
-      ASSH_RET_ON_ERR(assh_key_load(context, &key2, a->algo.key, ASSH_ALGO_SIGN,
-				 key_blob[0], &kb, sizeof(key_blob) - 1));
+	  if (algos[i].variant && (!sa->algo.variant ||
+		   strcmp(algos[i].variant, sa->algo.variant)))
+	    continue;
+
+	  done = 1;
+
+	  struct assh_key_s *key, *key2;
+
+	  fprintf(stderr, "\n%s (%s) (%s) sign/verify: ",
+		  assh_algo_name(&sa->algo), sa->algo.implem,
+		  sa->algo.variant ? sa->algo.variant : "");
+
+	  struct assh_context_s *context;
+
+	  if (assh_context_create(&context, ASSH_CLIENT_SERVER,
+				  assh_leaks_allocator, NULL, &assh_prng_dummy, NULL))
+	    TEST_FAIL("context create\n");
+
+	  if (assh_algo_register_va(context, 0, 0, 0, sa, NULL))
+	    TEST_FAIL("algo register\n");
+
+	  uint8_t key_blob[algos[i].key_len];
+	  memcpy(key_blob, algos[i].key, sizeof(key_blob));
+
+	  fprintf(stderr, "L");
+	  const uint8_t *kb = key_blob + 1;
+	  if (assh_key_load(context, &key2, sa->algo.key, ASSH_ALGO_SIGN,
+			    key_blob[0], &kb, sizeof(key_blob) - 1))
+	    TEST_FAIL("key load");
 
 #ifdef CONFIG_ASSH_KEY_VALIDATE
-      if (action & ACTION_VALIDATE_KEYS)
-	{
-	  enum assh_key_validate_result_e r;
-	  ASSH_RET_ON_ERR(assh_key_validate(context, key2, &r));
-	  TEST_ASSERT(r > 0);
-	}
+	  if (action & ACTION_VALIDATE_KEYS)
+	    {
+	      enum assh_key_validate_result_e r;
+	      if (assh_key_validate(context, key2, &r))
+		TEST_FAIL("key validate");
+	      TEST_ASSERT(r > 0);
+	    }
 #endif
 
-      TEST_ASSERT(assh_key_cmp(context, key2, key2, 0));
-      TEST_ASSERT(assh_key_cmp(context, key2, key2, 1));
+	  TEST_ASSERT(assh_key_cmp(context, key2, key2, 0));
+	  TEST_ASSERT(assh_key_cmp(context, key2, key2, 1));
 
-      key = key2;
+	  key = key2;
 
-      int size;
-      for (size = max_size; size != 0; )
-	{
-#ifdef CONFIG_ASSH_KEY_CREATE
-	  if (algos[i].gen_key && (action & ACTION_NEW_KEYS))
+	  int size;
+	  for (size = max_size; size != 0; )
 	    {
-	      size_t kbits = algos[i].kbits_min + assh_prng_rand()
-                           % (algos[i].kbits_max - algos[i].kbits_min + 1);
-              fprintf(stderr, "N");
-	      ASSH_RET_ON_ERR(assh_key_create(context, &key, kbits,
-	                    a->algo.key, ASSH_ALGO_SIGN));
+#ifdef CONFIG_ASSH_KEY_CREATE
+	      if (algos[i].gen_key && (action & ACTION_NEW_KEYS))
+		{
+		  size_t kbits = algos[i].kbits_min + assh_prng_rand()
+		    % (algos[i].kbits_max - algos[i].kbits_min + 1);
+		  fprintf(stderr, "N");
+		  if (assh_key_create(context, &key, kbits,
+				      sa->algo.key, ASSH_ALGO_SIGN))
+		    TEST_FAIL("key create");
 
 # ifdef CONFIG_ASSH_KEY_VALIDATE
-              fprintf(stderr, "C");
-	      enum assh_key_validate_result_e r;
-	      ASSH_RET_ON_ERR(assh_key_validate(context, key, &r));
-	      TEST_ASSERT(r > 0);
+		  fprintf(stderr, "C");
+		  enum assh_key_validate_result_e r;
+		  if (assh_key_validate(context, key, &r))
+		    TEST_FAIL("key validate");
+		  TEST_ASSERT(r > 0);
 # endif
-	      TEST_ASSERT(assh_key_cmp(context, key, key, 0));
-	      TEST_ASSERT(assh_key_cmp(context, key, key, 1));
+		  TEST_ASSERT(assh_key_cmp(context, key, key, 0));
+		  TEST_ASSERT(assh_key_cmp(context, key, key, 1));
 
-	      TEST_ASSERT(!assh_key_cmp(context, key, key2, 0));
-	      TEST_ASSERT(!assh_key_cmp(context, key, key2, 1));
-            }
+		  TEST_ASSERT(!assh_key_cmp(context, key, key2, 0));
+		  TEST_ASSERT(!assh_key_cmp(context, key, key2, 1));
+		}
 #endif
 
-	  size -= TEST_STEP;
-	  uint8_t data[size];
-	  ASSH_RET_ON_ERR(context->prng->f_get(context, data, size,
-                                           ASSH_PRNG_QUALITY_WEAK));
+	      size -= TEST_STEP;
+	      uint8_t data[size];
+	      if (context->prng->f_get(context, data, size,
+				       ASSH_PRNG_QUALITY_WEAK))
+		TEST_FAIL("prng get");
 
-	  struct assh_cbuffer_s d[8];
-	  int c = 0;
-	  int s = 0;
-	  while (s < size)
-	    {
-	      int r = assh_prng_rand() % 128 + 128;
-	      if (s + r > size)
-		r = size - s;
-	      d[c].data = data + s;
-	      d[c].size = r;
-	      s += r;
-              c++;
-	    }
-
-	  size_t sign_len;
-
-          fprintf(stderr, "g");
-
-	  ASSH_RET_ON_ERR(assh_sign_generate(context, a, key, c, d, NULL, &sign_len));
-	  TEST_ASSERT(sign_len > 0);
-
-	  uint8_t sign[sign_len];
-	  ASSH_RET_ON_ERR(assh_sign_generate(context, a, key, c, d, sign, &sign_len));
-
-          fprintf(stderr, "v");
-
-	  assh_safety_t sign_safety;
-
-	  err = assh_sign_check(context, a, key, c, d, sign, sign_len, &sign_safety);
-	  TEST_ASSERT(err == ASSH_OK);
-
-	  TEST_ASSERT(sign_safety <= a->algo.safety && sign_safety <= key->safety);
-
-	  if (action & ACTION_FUZZ_CHECK)
-	    {
-	      unsigned mc, fc = 256;
-
-	      while (fc)
+	      struct assh_cbuffer_s d[8];
+	      int c = 0;
+	      int s = 0;
+	      while (s < size)
 		{
-		  uint8_t sign2[sign_len];
-		  memcpy(sign2, sign, sign_len);
-
-		  do {
-		    mc = aash_fuzz_mangle(sign2, sign_len, 10 + assh_prng_rand() % 1024);
-		  } while (!mc);
-
-		  fprintf(stderr, "V");
-
-		  err = assh_sign_check(context, a, key, c, d, sign2, sign_len, &sign_safety);
-
-		  if (err != ASSH_OK)
-		    fc--;   /* successfully broke the signature */
+		  int r = assh_prng_rand() % 128 + 128;
+		  if (s + r > size)
+		    r = size - s;
+		  d[c].data = data + s;
+		  d[c].size = r;
+		  s += r;
+		  c++;
 		}
-	    }
 
-	  if (size)
-	    {
-	      unsigned int r1 = assh_prng_rand() % size;
-	      unsigned char r2 = assh_prng_rand();
-	      r2 += !r2;
+	      size_t sign_len;
+
+	      fprintf(stderr, "g");
+
+	      if (assh_sign_generate(context, sa, key, c, d, NULL, &sign_len))
+		TEST_FAIL("sign generate");
+	      TEST_ASSERT(sign_len > 0);
+
+	      uint8_t sign[sign_len];
+	      if (assh_sign_generate(context, sa, key, c, d, sign, &sign_len))
+		TEST_FAIL("sign generate");
+
+	      fprintf(stderr, "v");
+
+	      assh_safety_t sign_safety;
+
+	      assh_status_t err = assh_sign_check(context, sa, key, c, d, sign, sign_len, &sign_safety);
+	      TEST_ASSERT(err == ASSH_OK);
+
+	      TEST_ASSERT(sign_safety <= sa->algo.safety &&
+			  sign_safety <= key->safety);
+
+	      if (action & ACTION_FUZZ_CHECK)
+		{
+		  unsigned mc, fc = 256;
+
+		  while (fc)
+		    {
+		      uint8_t sign2[sign_len];
+		      memcpy(sign2, sign, sign_len);
+
+		      do {
+			mc = aash_fuzz_mangle(sign2, sign_len, 10 + assh_prng_rand() % 1024);
+		      } while (!mc);
+
+		      fprintf(stderr, "V");
+
+		      err = assh_sign_check(context, sa, key, c, d, sign2, sign_len, &sign_safety);
+
+		      if (err != ASSH_OK)
+			fc--;   /* successfully broke the signature */
+		    }
+		}
+
+	      if (size)
+		{
+		  unsigned int r1 = assh_prng_rand() % size;
+		  unsigned char r2 = assh_prng_rand();
+		  r2 += !r2;
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
-	      fprintf(stderr, "Mangling data byte %u, previous=0x%02x, new=0x%02x\n",
-	                r1, data[r1], data[r1] ^ r2);
+		  fprintf(stderr, "Mangling data byte %u, previous=0x%02x, new=0x%02x\n",
+			  r1, data[r1], data[r1] ^ r2);
 #endif
-	      data[r1] ^= r2;
+		  data[r1] ^= r2;
 
-	      err = assh_sign_check(context, a, key, c, d, sign, sign_len, &sign_safety);
-	      TEST_ASSERT(err != ASSH_OK);
-	    }
+		  err = assh_sign_check(context, sa, key, c, d, sign, sign_len, &sign_safety);
+		  TEST_ASSERT(err != ASSH_OK);
+		}
 
 #ifdef CONFIG_ASSH_KEY_CREATE
-	  if (algos[i].gen_key && (action & ACTION_NEW_KEYS))
-	    assh_key_drop(context, &key);
+	      if (algos[i].gen_key && (action & ACTION_NEW_KEYS))
+		assh_key_drop(context, &key);
 #endif
+	    }
+
+	  assh_key_drop(context, &key2);
+	  assh_context_release(context);
+
+	  if (alloc_size != 0)
+	    TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
 	}
 
-      assh_key_drop(context, &key2);
+      if (!done)
+	fprintf(stderr, "skipping %s, no implementation\n", algos[i].algo);
     }
-
-  return ASSH_OK;
 }
 
 static void usage()
@@ -218,10 +259,8 @@ static void usage()
 
 int main(int argc, char **argv)
 {
-  assh_status_t err;
-
   if (assh_deps_init())
-    return -1;
+    TEST_FAIL("deps init");
 
   enum action_e action = 0;
   unsigned seed = time(0);
@@ -265,22 +304,11 @@ int main(int argc, char **argv)
   if (!action)
     action = ACTION_NEW_KEYS | ACTION_VALIDATE_KEYS;
 
-  if (assh_context_create(&context, ASSH_CLIENT_SERVER,
-			NULL, NULL, &assh_prng_dummy, NULL))
-    return -1;
-
-  unsigned i;
-  for (i = 0; algos[i].algo; i++)
-    ASSH_RET_ON_ERR(assh_algo_register_va(context, 0, 0, 0, algos[i].algo, NULL));
-
   assh_prng_seed(seed);
   fprintf(stderr, "Seed: %u", seed);
 
   while (count--)
-    if (test_sign(max_size, action))
-      return 2;
-
-  assh_context_cleanup(context);
+    test_sign(max_size, action);
 
   fprintf(stderr, "\nDone.\n");
   return 0;

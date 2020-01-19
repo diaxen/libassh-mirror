@@ -21,16 +21,14 @@
 
 */
 
+#include <assh/assh_buffer.h>
+#include <assh/assh_alloc.h>
+#include <assh/assh_packet.h>
+#include <assh/assh_bignum.h>
+
 #ifdef CONFIG_ASSH_BIGNUM_BUILTIN
 # include "bignum_builtin.h"
 #endif
-
-#include <assh/assh_bignum.h>
-#include <assh/assh_buffer.h>
-#include <assh/assh_alloc.h>
-
-#include <assh/assh_packet.h>
-#include <assh/assh_bignum.h>
 
 #include <ctype.h>
 

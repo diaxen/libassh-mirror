@@ -145,10 +145,10 @@ static ASSH_COMPRESS_CLEANUP_FCN(assh_compress_zlib_cleanup)
   assh_free(c, ctx->buf);
 }
 
-const struct assh_algo_compress_s assh_compress_zlib =
+const struct assh_algo_compress_s assh_compress_zlib_zlib =
 {
-  ASSH_ALGO_BASE(COMPRESS, "assh-builtin", 10, 50,
-    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "zlib" })
+  ASSH_ALGO_BASE(COMPRESS, "assh-zlib", 10, 50,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "zlib" }),
     .nondeterministic = 1,
   ),
   .ctx_size = sizeof(struct assh_zlib_ctx_s),
@@ -157,10 +157,10 @@ const struct assh_algo_compress_s assh_compress_zlib =
   .f_cleanup = assh_compress_zlib_cleanup,
 };
 
-const struct assh_algo_compress_s assh_compress_zlib_openssh =
+const struct assh_algo_compress_s assh_compress_zlib_zlib_openssh =
 {
-  ASSH_ALGO_BASE(COMPRESS, "assh-builtin", 20, 50,
-    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON, "zlib@openssh.com" })
+  ASSH_ALGO_BASE(COMPRESS, "assh-zlib", 20, 50,
+    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON, "zlib@openssh.com" }),
     .nondeterministic = 1,
   ),
   .ctx_size = sizeof(struct assh_zlib_ctx_s),

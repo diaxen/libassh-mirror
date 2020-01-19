@@ -192,7 +192,7 @@ assh_kex_server_algos(struct assh_session_s *s, const uint8_t *lists[9],
           if (cipher->auth_size)
             {
               /* ignore MAC algorithm */
-              algos[i] = &assh_hmac_none.algo;
+              algos[i] = &assh_mac_none.algo;
               continue;
             }
           break;
@@ -277,7 +277,7 @@ assh_kex_client_algos(struct assh_session_s *s, const uint8_t *lists[9],
           if (cipher->auth_size)
             {
               /* ignore MAC algorithm */
-              algos[i ^ 1] = &assh_hmac_none.algo;
+              algos[i ^ 1] = &assh_mac_none.algo;
               continue;
             }
           break;
@@ -875,7 +875,7 @@ assh_kex_server_hash2(struct assh_session_s *s,
 const struct assh_kex_keys_s assh_keys_none =
 {
   .cipher = &assh_cipher_none,
-  .mac = &assh_hmac_none,
+  .mac = &assh_mac_none,
   .cmp = &assh_compress_none,
 };
 

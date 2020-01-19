@@ -31,10 +31,6 @@
 #include <assh/helper_io.h>
 #include <assh/helper_interactive.h>
 #include <assh/assh_key.h>
-#include <assh/key_rsa.h>
-#include <assh/key_dsa.h>
-#include <assh/key_eddsa.h>
-#include <assh/key_ecdsa.h>
 #include <assh/assh_kex.h>
 #include <assh/assh_userauth_client.h>
 #include <assh/assh_alloc.h>
@@ -367,14 +363,14 @@ asshh_client_event_hk_lookup_va(struct assh_session_s *s, FILE *out, FILE *in,
 static assh_status_t
 asshh_client_load_key_passphrase(struct assh_context_s *c, FILE *out, FILE *in,
 				struct assh_key_s **head,
-				const struct assh_key_algo_s *algo,
+				const char *key_algo,
 				enum assh_algo_class_e role,
 				const char *filename,
 				enum assh_key_format_e format)
 {
   assh_status_t err;
 
-  err = asshh_load_key_filename(c, head, algo, role,
+  err = asshh_load_key_filename(c, head, key_algo, role,
 			       filename, format, NULL, 0);
 
   switch (ASSH_STATUS(err))
@@ -388,7 +384,7 @@ asshh_client_load_key_passphrase(struct assh_context_s *c, FILE *out, FILE *in,
       const char *pass;
       ASSH_RET_ON_ERR(asshh_fd_get_password(c, &pass, 80, fileno(in), 0));
       putc('\n', out);
-      err = asshh_load_key_filename(c, head, algo, role,
+      err = asshh_load_key_filename(c, head, key_algo, role,
 				   filename, format, pass, 0);
       assh_free(c, (void*)pass);
     }
@@ -400,19 +396,19 @@ asshh_client_load_key_passphrase(struct assh_context_s *c, FILE *out, FILE *in,
 
 const struct asshh_client_user_key_s asshh_client_user_key_default[] =
 {
-  { "id_ed25519", &assh_key_ed25519,
+  { "id_ed25519", "ssh-ed25519",
     ASSH_ALGO_SIGN, ASSH_KEY_FMT_PV_OPENSSH_V1 },
-  { "id_rsa",     &assh_key_rsa,
+  { "id_rsa",     "ssh_rsa",
     ASSH_ALGO_SIGN, ASSH_KEY_FMT_PV_PEM },
-  { "id_rsa",     &assh_key_rsa,
+  { "id_rsa",     "ssh_rsa",
     ASSH_ALGO_SIGN, ASSH_KEY_FMT_PV_OPENSSH_V1 },
-  { "id_ecdsa",   &assh_key_ecdsa_nistp,
+  { "id_ecdsa",   "ecdsa-sha2-nist",
     ASSH_ALGO_SIGN, ASSH_KEY_FMT_PV_PEM },
-  { "id_ecdsa",   &assh_key_ecdsa_nistp,
+  { "id_ecdsa",   "ecdsa-sha2-nist",
     ASSH_ALGO_SIGN, ASSH_KEY_FMT_PV_OPENSSH_V1 },
-  { "id_dsa",     &assh_key_dsa,
+  { "id_dsa",     "ssh-dss",
     ASSH_ALGO_SIGN, ASSH_KEY_FMT_PV_PEM },
-  { "id_dsa",     &assh_key_dsa,
+  { "id_dsa",     "ssh-dss",
     ASSH_ALGO_SIGN, ASSH_KEY_FMT_PV_OPENSSH_V1 },
   { NULL }
 };
@@ -472,7 +468,7 @@ asshh_client_event_auth(struct assh_session_s *s, FILE *out, FILE *in,
 
 		  if (path)
 		    asshh_client_load_key_passphrase(c, out, in, &ev->keys,
-		      key_files->algo, key_files->role, path, key_files->format);
+		      key_files->key_algo, key_files->role, path, key_files->format);
 		}
 	    }
 

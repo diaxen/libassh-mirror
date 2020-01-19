@@ -45,7 +45,7 @@ static ASSH_MAC_CHECK_FCN(assh_hmac_none_check)
   return ASSH_OK;
 }
 
-const struct assh_algo_mac_s assh_hmac_none = 
+const struct assh_algo_mac_s assh_mac_none =
 {
   ASSH_ALGO_BASE(MAC, "assh-builtin", 0, 99,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,

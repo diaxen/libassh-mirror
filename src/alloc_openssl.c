@@ -22,6 +22,7 @@
 */
 
 #include <assh/assh_alloc.h>
+#include <assh/mod_openssl.h>
 
 #ifndef CONFIG_ASSH_USE_OPENSSL_ALLOC
 # error

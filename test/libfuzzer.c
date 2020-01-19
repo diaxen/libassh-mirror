@@ -45,10 +45,6 @@
 #include <assh/assh_event.h>
 #include <assh/assh_algo.h>
 #include <assh/assh_packet.h>
-#include <assh/key_eddsa.h>
-#include <assh/key_rsa.h>
-#include <assh/key_dsa.h>
-#include <assh/key_ecdsa.h>
 
 #include <assh/helper_key.h>
 #include <assh/helper_server.h>
@@ -71,19 +67,6 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 {
   prng_seed = 1;
 
-  static const struct assh_algo_s *algos[] = {
-    &assh_kex_none.algo,
-    &assh_kex_curve25519_sha256.algo,
-    &assh_kex_sha2_nistp256.algo,
-    &assh_kex_dh_group1_sha1.algo,
-    &assh_kex_dh_gex_sha1.algo,
-    &assh_sign_none.algo,
-    &assh_cipher_none.algo,
-    &assh_hmac_none.algo,
-    &assh_compress_none.algo,
-    NULL
-  };
-
   if (Size < 3)
     return 0;
 
@@ -96,7 +79,10 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
   if (assh_context_init(&context, flags[0] & 1 ? ASSH_SERVER : ASSH_CLIENT,
 			  NULL, NULL, &assh_prng_dummy, NULL) != ASSH_OK ||
       assh_service_register_default(&context) != ASSH_OK ||
-      assh_algo_register_static(&context, algos) != ASSH_OK)
+      assh_algo_register_va(&context, 0, 0, 0, &assh_kex_none.algo, &assh_sign_none.algo,
+			    &assh_mac_none.algo, &assh_cipher_none.algo,
+			    &assh_compress_none.algo, NULL) ||
+      assh_algo_register_default(&context, 0, 0, 0))
     ERROR("Unable to create an assh context.\n");
 
   struct assh_key_s *key_none;
@@ -128,7 +114,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 	    }
 	  else
 	    {
-	      size_t s = ASSH_MIN(Size, te->buf.size);
+	      size_t s = assh_min_uint(Size, te->buf.size);
 	      memcpy(te->buf.data, Data, s);
 	      te->transferred = s;
 	      Data += s;

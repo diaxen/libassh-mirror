@@ -21,7 +21,9 @@
 
 */
 
-#include <assh/key_ecdsa.h>
+#include "key_builtin_ecdsa_nist.h"
+
+#include <assh/mod_builtin.h>
 #include <assh/assh_bignum.h>
 #include <assh/assh_packet.h>
 #include <assh/assh_buffer.h>
@@ -68,7 +70,7 @@ assh_key_ecdsa_lookup_oid(const uint8_t *id, size_t id_len)
 
 static ASSH_KEY_CMP_FCN(assh_key_ecdsa_cmp)
 {
-  assert(key->algo == &assh_key_ecdsa_nistp);
+  assert(key->algo == &assh_key_builtin_ecdsa_nist);
 
   if (key->algo != b->algo)
     return 0;
@@ -203,7 +205,7 @@ static ASSH_KEY_VALIDATE_FCN(assh_key_ecdsa_validate)
   struct assh_key_ecdsa_s *k = (void*)key;
   const struct assh_weierstrass_curve_s *curve = k->id->curve;
 
-  assert(key->algo == &assh_key_ecdsa_nistp);
+  assert(key->algo == &assh_key_builtin_ecdsa_nist);
 
   if (curve->bits != assh_bignum_bits(&k->xn) ||
       curve->bits != assh_bignum_bits(&k->yn))
@@ -300,7 +302,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_ecdsa_output)
 {
   struct assh_key_ecdsa_s *k = (void*)key;
 
-  assert(key->algo == &assh_key_ecdsa_nistp);
+  assert(key->algo == &assh_key_builtin_ecdsa_nist);
 
   const struct assh_weierstrass_curve_s *curve = k->id->curve;
   assh_status_t err;
@@ -434,7 +436,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_ecdsa_nistp_create)
 }
 #endif
 
-const struct assh_key_algo_s assh_key_ecdsa_nistp =
+const struct assh_key_algo_s assh_key_builtin_ecdsa_nist =
 {
   .name = "ecdsa-sha2-nist",
   .min_bits = 256,

@@ -32,54 +32,6 @@
 
 #include <stdlib.h>
 
-#ifdef CONFIG_ASSH_USE_GCRYPT
-# include <gcrypt.h>
-#endif
-
-#ifdef CONFIG_ASSH_USE_OPENSSL_ALLOC
-# include <openssl/crypto.h>
-#endif
-
-assh_status_t
-assh_deps_init()
-{
-  assh_status_t err;
-
-#ifdef CONFIG_ASSH_USE_GCRYPT
-  ASSH_RET_IF_TRUE(!gcry_check_version(GCRYPT_VERSION),
-               ASSH_ERR_CRYPTO);
-
-  gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
-#endif
-
-#ifdef CONFIG_ASSH_USE_OPENSSL_ALLOC
-  if (!CRYPTO_secure_malloc_initialized())
-    ASSH_RET_IF_TRUE(CRYPTO_secure_malloc_init(
-                       CONFIG_ASSH_USE_OPENSSL_HEAP_SIZE, 64) != 1,
-                     ASSH_ERR_CRYPTO);
-#endif
-
-  return ASSH_OK;
-}
-
-static assh_allocator_t *
-assh_default_alloc()
-{
-#if defined(CONFIG_ASSH_USE_GCRYPT_ALLOC)
-  if (gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P))
-    return &assh_gcrypt_allocator;
-
-#elif defined(CONFIG_ASSH_USE_OPENSSL_ALLOC)
-  return &assh_openssl_allocator;
-
-#elif defined(CONFIG_ASSH_USE_LIBC_ALLOC)
-# warning The default allocator relies on the standard non-secur realloc function
-  return &assh_libc_allocator;
-#endif
-
-  return NULL;
-}
-
 ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_context_init(struct assh_context_s *c,
                   enum assh_context_type_e type,
@@ -129,17 +81,11 @@ assh_context_init(struct assh_context_s *c,
   c->alloc_pv = alloc_pv;
 
   if (prng == NULL)
-    {
-#ifdef CONFIG_ASSH_USE_GCRYPT_PRNG
-      prng = &assh_prng_gcrypt;
-#elif defined(CONFIG_ASSH_USE_OPENSSL_PRNG)
-      prng = &assh_prng_openssl;
-#elif defined(CONFIG_ASSH_USE_DEV_RANDOM)
-      prng = &assh_prng_dev_random;
-#else
-      prng = &assh_prng_xswap;
-#endif
-    }
+    prng = assh_default_prng();
+
+  ASSH_RET_IF_TRUE(prng == NULL,
+                   ASSH_ERR_MISSING_ALGO);
+
   c->prng = prng;
   ASSH_RET_ON_ERR(prng->f_init(c, prng_seed));
 

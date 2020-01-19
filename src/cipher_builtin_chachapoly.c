@@ -23,6 +23,7 @@
 
 #include <assh/assh_cipher.h>
 #include <assh/assh_buffer.h>
+#include <assh/mod_builtin.h>
 
 /******************************************************* chacha20 */
 
@@ -388,7 +389,7 @@ static ASSH_CIPHER_CLEANUP_FCN(assh_chachapoly_cleanup)
 {
 }
 
-const struct assh_algo_cipher_s assh_cipher_chachapoly =
+const struct assh_algo_cipher_s assh_cipher_builtin_chachapoly =
 {
   ASSH_ALGO_BASE(CIPHER, "assh-builtin", 80, 40,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON, "chacha20-poly1305@openssh.com" })

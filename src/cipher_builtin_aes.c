@@ -22,6 +22,7 @@
 */
 
 #include <assh/assh_cipher.h>
+#include <assh/mod_builtin.h>
 #include <assh/assh_packet.h>
 
 struct assh_cipher_aes_context_s
@@ -372,7 +373,7 @@ static ASSH_CIPHER_CLEANUP_FCN(assh_aes_cleanup)
 {
 }
 
-const struct assh_algo_cipher_s assh_cipher_aes128_cbc =
+const struct assh_algo_cipher_s assh_cipher_builtin_aes128_cbc =
 {
   ASSH_ALGO_BASE(CIPHER, "assh-builtin", 40, 70,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
@@ -388,7 +389,7 @@ const struct assh_algo_cipher_s assh_cipher_aes128_cbc =
   .f_cleanup = assh_aes_cleanup,
 };
 
-const struct assh_algo_cipher_s assh_cipher_aes192_cbc =
+const struct assh_algo_cipher_s assh_cipher_builtin_aes192_cbc =
 {
   ASSH_ALGO_BASE(CIPHER, "assh-builtin", 50, 65,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
@@ -404,7 +405,7 @@ const struct assh_algo_cipher_s assh_cipher_aes192_cbc =
   .f_cleanup = assh_aes_cleanup,
 };
 
-const struct assh_algo_cipher_s assh_cipher_aes256_cbc =
+const struct assh_algo_cipher_s assh_cipher_builtin_aes256_cbc =
 {
   ASSH_ALGO_BASE(CIPHER, "assh-builtin", 60, 60,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
@@ -422,7 +423,7 @@ const struct assh_algo_cipher_s assh_cipher_aes256_cbc =
   .f_cleanup = assh_aes_cleanup,
 };
 
-const struct assh_algo_cipher_s assh_cipher_aes128_ctr =
+const struct assh_algo_cipher_s assh_cipher_builtin_aes128_ctr =
 {
   ASSH_ALGO_BASE(CIPHER, "assh-builtin", 41, 70,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
@@ -438,7 +439,7 @@ const struct assh_algo_cipher_s assh_cipher_aes128_ctr =
   .f_cleanup = assh_aes_cleanup,
 };
 
-const struct assh_algo_cipher_s assh_cipher_aes192_ctr =
+const struct assh_algo_cipher_s assh_cipher_builtin_aes192_ctr =
 {
   ASSH_ALGO_BASE(CIPHER, "assh-builtin", 51, 65,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
@@ -454,7 +455,7 @@ const struct assh_algo_cipher_s assh_cipher_aes192_ctr =
   .f_cleanup = assh_aes_cleanup,
 };
 
-const struct assh_algo_cipher_s assh_cipher_aes256_ctr =
+const struct assh_algo_cipher_s assh_cipher_builtin_aes256_ctr =
 {
   ASSH_ALGO_BASE(CIPHER, "assh-builtin", 61, 60,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,

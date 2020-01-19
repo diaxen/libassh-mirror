@@ -36,6 +36,7 @@
 #include <assh/assh_alloc.h>
 #include <assh/assh_hash.h>
 #include <assh/assh_bignum.h>
+#include <assh/mod_builtin.h>
 
 #include "ecc_weierstrass.h"
 
@@ -483,7 +484,7 @@ static ASSH_KEX_INIT_FCN(assh_kex_nistp256_init)
   return assh_kex_ecdhws_init(s, &assh_nistp256_curve, &assh_hash_sha256);
 }
 
-const struct assh_algo_kex_s assh_kex_sha2_nistp256 =
+const struct assh_algo_kex_s assh_kex_builtin_sha2_nistp256 =
 {
   ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_NISTP256_SAFETY, 80,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
@@ -500,7 +501,7 @@ static ASSH_KEX_INIT_FCN(assh_kex_nistp384_init)
   return assh_kex_ecdhws_init(s, &assh_nistp384_curve, &assh_hash_sha384);
 }
 
-const struct assh_algo_kex_s assh_kex_sha2_nistp384 =
+const struct assh_algo_kex_s assh_kex_builtin_sha2_nistp384 =
 {
   ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_NISTP384_SAFETY, 70,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF, "ecdh-sha2-nistp384" }),
@@ -516,7 +517,7 @@ static ASSH_KEX_INIT_FCN(assh_kex_nistp521_init)
   return assh_kex_ecdhws_init(s, &assh_nistp521_curve, &assh_hash_sha512);
 }
 
-const struct assh_algo_kex_s assh_kex_sha2_nistp521 =
+const struct assh_algo_kex_s assh_kex_builtin_sha2_nistp521 =
 {
   ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_NISTP521_SAFETY, 60,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF, "ecdh-sha2-nistp521" }),

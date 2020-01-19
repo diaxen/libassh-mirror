@@ -123,39 +123,9 @@ ASSH_INLINE void assh_free(struct assh_context_s *c, void *ptr)
 
 #endif
 
-# ifdef CONFIG_ASSH_USE_LIBC_ALLOC
-/** This allocator relies on the libc @tt realloc function. This
-    allocator @b{is not} able to provide secure memory.
-
-    It does not requires private data; @tt NULL may be passed as @tt
-    alloc_pv parameter of the initialization function.
-*/
-ASSH_ALLOCATOR(assh_libc_allocator);
-# endif
-
-# ifdef CONFIG_ASSH_USE_GCRYPT_ALLOC
-/** This allocator relies on the secur memory allocation functions
-    provided by libgcrypt.
-
-    It does not requires private data; @tt NULL may be passed as @tt
-    alloc_pv parameter of the initialization function.
-*/
-ASSH_ALLOCATOR(assh_gcrypt_allocator);
-# endif
-
-# ifdef CONFIG_ASSH_USE_OPENSSL_ALLOC
-/** This allocator relies on the secur memory allocation functions
-    provided by the openssl library.
-
-    It does not requires private data; @tt NULL may be passed as @tt
-    alloc_pv parameter of the initialization function.
-
-    When this is enabled in the build, the @ref assh_deps_init
-    function calls the openssl @tt CRYPTO_secure_malloc_init function
-    unless the @tt CRYPTO_secure_malloc_initialized function indicates
-    that it has already been performed.
-*/
-ASSH_ALLOCATOR(assh_openssl_allocator);
-# endif
+/** @This returns the default allocator function. This depends on the
+    platform and build configuration. This may return @tt NULL. */
+assh_allocator_t *
+assh_default_alloc(void);
 
 #endif

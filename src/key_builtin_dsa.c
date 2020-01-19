@@ -21,7 +21,9 @@
 
 */
 
-#include <assh/key_dsa.h>
+#include "key_builtin_dsa.h"
+
+#include <assh/mod_builtin.h>
 #include <assh/assh_bignum.h>
 #include <assh/assh_packet.h>
 #include <assh/assh_buffer.h>
@@ -36,7 +38,7 @@
 
 static ASSH_KEY_CMP_FCN(assh_key_dsa_cmp)
 {
-  assert(key->algo == &assh_key_dsa);
+  assert(key->algo == &assh_key_builtin_dsa);
 
   if (key->algo != b->algo)
     return 0;
@@ -115,7 +117,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
   ASSH_RET_ON_ERR(assh_alloc(c, sizeof(struct assh_key_dsa_s),
                           ASSH_ALLOC_INTERNAL, (void**)&k));
 
-  k->key.algo = &assh_key_dsa;
+  k->key.algo = &assh_key_builtin_dsa;
   k->key.type = "ssh-dss";
   k->key.safety = ASSH_DSA_SAFETY(l, n);
   k->key.private = 1;
@@ -319,7 +321,7 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_dsa_output)
   struct assh_key_dsa_s *k = (void*)key;
   assh_status_t err;
 
-  assert(key->algo == &assh_key_dsa);
+  assert(key->algo == &assh_key_builtin_dsa);
 
   switch (format)
     {
@@ -359,7 +361,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
       ASSH_RET_ON_ERR(assh_alloc(c, sizeof(struct assh_key_dsa_s),
                                  ASSH_ALLOC_INTERNAL, (void**)&k));
 
-      k->key.algo = &assh_key_dsa;
+      k->key.algo = &assh_key_builtin_dsa;
       k->key.type = "ssh-dss";
 
       assh_bignum_init(c, &k->pn, 0); // , l);
@@ -431,7 +433,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
   return err;
 }
 
-const struct assh_key_algo_s assh_key_dsa =
+const struct assh_key_algo_s assh_key_builtin_dsa =
 {
   .name = "ssh-dss",
   .min_bits = 1024,

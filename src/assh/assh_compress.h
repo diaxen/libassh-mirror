@@ -82,10 +82,5 @@ ASSH_FIRST_FIELD_ASSERT(assh_algo_compress_s, algo);
 
 extern const struct assh_algo_compress_s assh_compress_none;
 
-# ifdef CONFIG_ASSH_USE_ZLIB
-extern const struct assh_algo_compress_s assh_compress_zlib;
-extern const struct assh_algo_compress_s assh_compress_zlib_openssh;
-# endif
-
 #endif
 

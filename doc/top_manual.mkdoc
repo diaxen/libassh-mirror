@@ -35,7 +35,6 @@ assh/assh_mac.h
 assh/assh_packet.h
 assh/assh_buffer.h
 assh/assh_prng.h
-assh/assh_queue.h
 assh/assh_service.h
 assh/assh_session.h
 assh/assh_sign.h
@@ -49,10 +48,10 @@ assh/helper_client.h
 assh/helper_server.h
 assh/helper_interactive.h
 assh/helper_portfwd.h
-assh/key_dsa.h
-assh/key_eddsa.h
-assh/key_ecdsa.h
-assh/key_rsa.h
+assh/mod_builtin.h
+assh/mod_gcrypt.h
+assh/mod_openssl.h
+assh/mod_zlib.h
 assh/assh_event.h
 }
 

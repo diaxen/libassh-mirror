@@ -32,6 +32,7 @@
 #include <assh/assh_alloc.h>
 #include <assh/assh_hash.h>
 #include <assh/assh_cipher.h>
+#include <assh/mod_builtin.h>
 
 #include <string.h>
 #include <stdlib.h>
@@ -534,7 +535,7 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_group1_sha1_init)
   return assh_kex_dh_init(s, cipher_key_size, &group);
 }
 
-const struct assh_algo_kex_s assh_kex_dh_group1_sha1 =
+const struct assh_algo_kex_s assh_kex_builtin_dh_group1_sha1 =
 {
   ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(1024)
                  /* precomputations */ / 2 /* sha1 */ - 1, 40,
@@ -576,7 +577,7 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_group14_sha1_init)
   return assh_kex_dh_init(s, cipher_key_size, &group);
 }
 
-const struct assh_algo_kex_s assh_kex_dh_group14_sha1 =
+const struct assh_algo_kex_s assh_kex_builtin_dh_group14_sha1 =
 {
   ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(2048)
                  /* precomputations */ / 2 /* sha1 */ - 1, 30,
@@ -618,7 +619,7 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_group14_sha256_init)
   return assh_kex_dh_init(s, cipher_key_size, &group);
 }
 
-const struct assh_algo_kex_s assh_kex_dh_group14_sha256 =
+const struct assh_algo_kex_s assh_kex_builtin_dh_group14_sha256 =
 {
   ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(2048)
                  /* precomputations */ / 2, 30,
@@ -666,7 +667,7 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_group15_sha512_init)
   return assh_kex_dh_init(s, cipher_key_size, &group);
 }
 
-const struct assh_algo_kex_s assh_kex_dh_group15_sha512 =
+const struct assh_algo_kex_s assh_kex_builtin_dh_group15_sha512 =
 {
   ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(3072)
                  /* precomputations */ / 2, 20,
@@ -721,7 +722,7 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_group16_sha512_init)
   return assh_kex_dh_init(s, cipher_key_size, &group);
 }
 
-const struct assh_algo_kex_s assh_kex_dh_group16_sha512 =
+const struct assh_algo_kex_s assh_kex_builtin_dh_group16_sha512 =
 {
   ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(4096)
                  /* precomputations */ / 2, 10,
@@ -790,7 +791,7 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_group17_sha512_init)
   return assh_kex_dh_init(s, cipher_key_size, &group);
 }
 
-const struct assh_algo_kex_s assh_kex_dh_group17_sha512 =
+const struct assh_algo_kex_s assh_kex_builtin_dh_group17_sha512 =
 {
   ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(6144)
                  /* precomputations */ / 2, 5,
@@ -874,7 +875,7 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_group18_sha512_init)
   return assh_kex_dh_init(s, cipher_key_size, &group);
 }
 
-const struct assh_algo_kex_s assh_kex_dh_group18_sha512 =
+const struct assh_algo_kex_s assh_kex_builtin_dh_group18_sha512 =
 {
   ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(8192)
                  /* precomputations */ / 2, 1,

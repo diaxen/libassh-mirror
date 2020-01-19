@@ -25,7 +25,9 @@
 
 struct sign_algo_s
 {
-  const struct assh_algo_sign_s *algo;
+  const char *algo;
+  const char *variant;
+  const char *implem;
   const uint8_t *key;
   int gen_key;
   size_t kbits_min;
@@ -37,14 +39,16 @@ struct sign_algo_s
 
 struct sign_algo_s algos[] = {
 
-  { &assh_sign_dsa1024,         dsa1024_key, 1, 1024, 2304, sizeof(dsa1024_key),
+  { "ssh-dss", "key >= 1024", "assh-builtin",
+    dsa1024_key, 1, 1024, 2304, sizeof(dsa1024_key),
     55,  (const uint8_t *)
     "\x00\x00\x00\x07\x73\x73\x68\x2d\x64\x73\x73\x00\x00\x00\x28\x11"
     "\x09\x68\x32\x63\x6c\x75\xbc\xb3\x3e\x88\x2a\xf9\xc8\xe7\x97\x4b"
     "\xe3\x4a\x1b\x20\x23\xfc\xd9\x6a\x9b\xd6\x2e\x43\x21\xdf\xa3\xc6"
     "\x24\xa7\x47\x84\x1a\x8b\xf1" },
 
-  { &assh_sign_rsa_sha1_md5,    rsa1024_key, 1, 1024, 1536, sizeof(rsa1024_key),
+  { "ssh-rsa", "sha*, md5, key >= 768", NULL,
+    rsa1024_key, 1, 1024, 1536, sizeof(rsa1024_key),
     143, (const uint8_t *)
     "\x00\x00\x00\x07\x73\x73\x68\x2d\x72\x73\x61\x00\x00\x00\x80\x4d"
     "\x18\xf5\xdf\xea\x0c\x3e\x15\xa0\x75\x50\x8b\x4f\x56\xa3\x3d\x6e"
@@ -57,7 +61,8 @@ struct sign_algo_s algos[] = {
     "\x31\x8a\x44\x94\x4a\x53\x49\x8d\x2f\xd1\x38\x48\x30\x20\xae"
     "\x00\x00\x00\x07\x73\x73\x68\x2d" },
 
-  { &assh_sign_rsa_sha256, rsa2048_key, 0, 1024, 2048, sizeof(rsa2048_key),
+  { "rsa-sha2-256", NULL, NULL,
+    rsa2048_key, 0, 1024, 2048, sizeof(rsa2048_key),
     276, (const uint8_t *)
     "\x00\x00\x00\x0c\x72\x73\x61\x2d\x73\x68\x61\x32\x2d\x32\x35\x36"
     "\x00\x00\x01\x00\x13\x54\xee\x4b\x3d\xf3\x7a\x81\xa0\x0f\x65\x8e"
@@ -79,12 +84,15 @@ struct sign_algo_s algos[] = {
     "\xef\xed\x1a\x91" },
 
   /* rsa key with bit_len(p) < bit_len(q) */
-  { &assh_sign_rsa_sha256, rsa1027_key_pQ, 0, 1027, 1027, sizeof(rsa1027_key_pQ) },
+  { "rsa-sha2-256", NULL, NULL,
+    rsa1027_key_pQ, 0, 1027, 1027, sizeof(rsa1027_key_pQ) },
 
   /* rsa key with bit_len(p) > bit_len(q) */
-  { &assh_sign_rsa_sha256, rsa1027_key_Pq, 0, 1027, 1027, sizeof(rsa1027_key_Pq) },
+  { "rsa-sha2-256", NULL, NULL,
+    rsa1027_key_Pq, 0, 1027, 1027, sizeof(rsa1027_key_Pq) },
 
-  { &assh_sign_ed25519,         ed25519_key, 1, 255, 255, sizeof(ed25519_key),
+  { "ssh-ed25519", NULL, NULL,
+    ed25519_key, 1, 255, 255, sizeof(ed25519_key),
     4 + 11 + 4 + 2 * 32, (const uint8_t *)
     "\x00\x00\x00\x0b\x73\x73\x68\x2d\x65\x64\x32\x35\x35\x31\x39\x00"
     "\x00\x00\x40\xde\xd8\x65\x27\x76\xb7\x37\x8e\x1d\xed\x4a\x87\xef"
@@ -93,7 +101,8 @@ struct sign_algo_s algos[] = {
     "\x41\xe9\x03\x46\x63\x9f\xe6\x25\xef\xc5\xcd\x8b\x92\xd8\xa5\x67"
     "\x0a\xe6\x05" },
 
-  { &assh_sign_eddsa_e382,      eddsa_e382_key, 1, 382, 382, sizeof(eddsa_e382_key),
+  { "eddsa-e382-shake256@libassh.org", NULL, NULL,
+    eddsa_e382_key, 1, 382, 382, sizeof(eddsa_e382_key),
     4 + 31 + 4 + 2 * 48, (const uint8_t *)
     "\x00\x00\x00\x1f\x65\x64\x64\x73\x61\x2d\x65\x33\x38\x32\x2d\x73"
     "\x68\x61\x6b\x65\x32\x35\x36\x40\x6c\x69\x62\x61\x73\x73\x68\x2e"
@@ -105,7 +114,8 @@ struct sign_algo_s algos[] = {
     "\xf8\x16\x45\x7a\x41\xc6\x92\x9f\x8c\xe5\xdb\x1d\xae\x6b\x39\x53"
     "\xce\x33\xe4\x13\xb0\x34\x06" },
 
-  { &assh_sign_eddsa_e521,      eddsa_e521_key, 1, 521, 521, sizeof(eddsa_e521_key),
+  { "eddsa-e521-shake256@libassh.org", NULL, NULL,
+    eddsa_e521_key, 1, 521, 521, sizeof(eddsa_e521_key),
     4 + 31 + 4 + 2 * 66, (const uint8_t *)
     "\x00\x00\x00\x1f\x65\x64\x64\x73\x61\x2d\x65\x35\x32\x31\x2d\x73"
     "\x68\x61\x6b\x65\x32\x35\x36\x40\x6c\x69\x62\x61\x73\x73\x68\x2e"
@@ -119,7 +129,8 @@ struct sign_algo_s algos[] = {
     "\x2d\x2e\x01\x03\x50\x27\x8a\x02\x92\x68\x6b\xbe\xbf\xfa\x57\x68"
     "\x04\xd3\x3a\x8e\x6f\x71\x60\x27\x8d\x4e\x00" },
 
-  { &assh_sign_nistp256, ecdsa_nistp256_key, 1, 256, 256, sizeof(ecdsa_nistp256_key),
+  { "ecdsa-sha2-nistp256", NULL, "assh-builtin",
+    ecdsa_nistp256_key, 1, 256, 256, sizeof(ecdsa_nistp256_key),
     101, (const uint8_t *)
     "\x00\x00\x00\x13\x65\x63\x64\x73\x61\x2d\x73\x68\x61\x32\x2d\x6e"
     "\x69\x73\x74\x70\x32\x35\x36\x00\x00\x00\x49\x00\x00\x00\x21\x00"
@@ -129,7 +140,8 @@ struct sign_algo_s algos[] = {
     "\x19\x77\xc9\xc3\x67\x41\x78\xa8\x2a\xf9\xa1\xcd\x67\xf2\xed\xbc"
     "\x10\x2e\x0f\x1a" },
 
-  { &assh_sign_nistp384, ecdsa_nistp384_key, 1, 384, 384, sizeof(ecdsa_nistp384_key),
+  { "ecdsa-sha2-nistp384", NULL, "assh-builtin",
+    ecdsa_nistp384_key, 1, 384, 384, sizeof(ecdsa_nistp384_key),
     133, (const uint8_t *)
     "\x00\x00\x00\x13\x65\x63\x64\x73\x61\x2d\x73\x68\x61\x32\x2d\x6e"
     "\x69\x73\x74\x70\x33\x38\x34\x00\x00\x00\x68\x00\x00\x00\x30\x1d"
@@ -141,7 +153,8 @@ struct sign_algo_s algos[] = {
     "\x3c\x82\x29\x9e\xe4\xe5\x02\xb7\x3c\xd8\x69\xc0\x6c\x4d\x72\x40"
     "\x2d\x30\xb3" },
 
-  { &assh_sign_nistp521, ecdsa_nistp521_key, 1, 521, 521, sizeof(ecdsa_nistp521_key),
+  { "ecdsa-sha2-nistp521", NULL, "assh-builtin",
+    ecdsa_nistp521_key, 1, 521, 521, sizeof(ecdsa_nistp521_key),
     169, (const uint8_t *)
     "\x00\x00\x00\x13\x65\x63\x64\x73\x61\x2d\x73\x68\x61\x32\x2d\x6e"
     "\x69\x73\x74\x70\x35\x32\x31\x00\x00\x00\x8c\x00\x00\x00\x42\x00"

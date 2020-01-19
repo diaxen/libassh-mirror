@@ -24,6 +24,7 @@
 #include <assh/assh_mac.h>
 #include <assh/assh_packet.h>
 #include <assh/assh_buffer.h>
+#include <assh/mod_openssl.h>
 
 #include <openssl/hmac.h>
 #include <openssl/evp.h>
@@ -101,14 +102,14 @@ static assh_status_t assh_hmac_openssl_init(const struct assh_algo_mac_s *mac,
 
 #define ASSH_OPENSSL_HMAC(id_, evp_, ksize_, msize_,                    \
                          saf_, spd_, etm_, ...)                         \
-extern const struct assh_algo_mac_s assh_hmac_##id_;			\
+extern const struct assh_algo_mac_s assh_mac_openssl_##id_;		\
 									\
 static ASSH_MAC_INIT_FCN(assh_hmac_openssl_##id_##_init)                \
 {									\
-  return assh_hmac_openssl_init(&assh_hmac_##id_, ctx_, key, evp_);     \
+  return assh_hmac_openssl_init(&assh_mac_openssl_##id_, ctx_, key, evp_);     \
 }									\
 									\
-const struct assh_algo_mac_s assh_hmac_##id_ =				\
+const struct assh_algo_mac_s assh_mac_openssl_##id_ =			\
 {									\
   ASSH_ALGO_BASE(MAC, "assh-openssl", saf_, spd_,                       \
                  ASSH_ALGO_NAMES(__VA_ARGS__)),                         \
@@ -122,6 +123,7 @@ const struct assh_algo_mac_s assh_hmac_##id_ =				\
   .f_cleanup = assh_hmac_openssl_cleanup,				\
 };
 
+# ifndef OPENSSL_NO_MD5
 ASSH_OPENSSL_HMAC(md5,           EVP_md5(),    16, 16, 30, 70, 0,
                  { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                    "hmac-md5" });
@@ -134,6 +136,8 @@ ASSH_OPENSSL_HMAC(md5_96,        EVP_md5(),    16, 12, 20, 75, 0,
 ASSH_OPENSSL_HMAC(md5_96_etm,    EVP_md5(),    16, 12, 21, 75, 1,
                  { ASSH_ALGO_STD_PRIVATE,
                    "hmac-md5-96-etm@openssh.com" });
+#endif
+
 
 ASSH_OPENSSL_HMAC(sha1,          EVP_sha1(),   20, 20, 35, 70, 0,
                  { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
@@ -162,9 +166,11 @@ ASSH_OPENSSL_HMAC(sha512_etm,    EVP_sha512(), 64, 64, 51, 50, 1,
                  { ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,
                    "hmac-sha2-512-etm@openssh.com" });
 
+# ifndef OPENSSL_NO_RMD160
 ASSH_OPENSSL_HMAC(ripemd160,     EVP_ripemd160(), 20, 20, 30, 70, 0,
                  { ASSH_ALGO_STD_IETF,
                    "hmac-ripemd160" });
 ASSH_OPENSSL_HMAC(ripemd160_etm, EVP_ripemd160(), 20, 20, 31, 70, 1,
                  { ASSH_ALGO_STD_PRIVATE,
                    "hmac-ripemd160-etm@openssh.com" });
+#endif

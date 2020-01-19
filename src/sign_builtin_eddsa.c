@@ -24,9 +24,11 @@
 #include <assh/assh_buffer.h>
 #include <assh/assh_bignum.h>
 #include <assh/assh_sign.h>
-#include <assh/key_eddsa.h>
+#include <assh/mod_builtin.h>
 #include <assh/assh_hash.h>
 #include <assh/assh_alloc.h>
+
+#include "key_builtin_eddsa.h"
 
 #include <string.h>
 
@@ -513,16 +515,16 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_ed25519_suitable_key)
 {
   if (key == NULL)
     return c->type == ASSH_SERVER;
-  return key->algo == &assh_key_ed25519;
+  return key->algo == &assh_key_builtin_ed25519;
 }
 
-const struct assh_algo_sign_s assh_sign_ed25519 =
+const struct assh_algo_sign_s assh_sign_builtin_ed25519 =
 {
   ASSH_ALGO_BASE(SIGN, "assh-builtin", 50, 90,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,
                       "ssh-ed25519" }),
     .f_suitable_key = assh_sign_ed25519_suitable_key,
-    .key = &assh_key_ed25519,
+    .key = &assh_key_builtin_ed25519,
     .nondeterministic = 1,
   ),
   .f_generate = assh_sign_eddsa_generate,
@@ -534,16 +536,16 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_eddsa_e382_suitable_key)
 {
   if (key == NULL)
     return c->type == ASSH_SERVER;
-  return key->algo == &assh_key_eddsa_e382;
+  return key->algo == &assh_key_builtin_eddsa_e382;
 }
 
-const struct assh_algo_sign_s assh_sign_eddsa_e382 =
+const struct assh_algo_sign_s assh_sign_builtin_eddsa_e382 =
 {
   ASSH_ALGO_BASE(SIGN, "assh-builtin", 70, 80,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
                       "eddsa-e382-shake256@libassh.org" }),
     .f_suitable_key = assh_sign_eddsa_e382_suitable_key,
-    .key = &assh_key_eddsa_e382,
+    .key = &assh_key_builtin_eddsa_e382,
     .nondeterministic = 1,
   ),
   .f_generate = assh_sign_eddsa_generate,
@@ -555,16 +557,16 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_eddsa_e521_suitable_key)
 {
   if (key == NULL)
     return c->type == ASSH_SERVER;
-  return key->algo == &assh_key_eddsa_e521;
+  return key->algo == &assh_key_builtin_eddsa_e521;
 }
 
-const struct assh_algo_sign_s assh_sign_eddsa_e521 =
+const struct assh_algo_sign_s assh_sign_builtin_eddsa_e521 =
 {
   ASSH_ALGO_BASE(SIGN, "assh-builtin", 90, 70,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
                       "eddsa-e521-shake256@libassh.org" }),
     .f_suitable_key = assh_sign_eddsa_e521_suitable_key,
-    .key = &assh_key_eddsa_e521,
+    .key = &assh_key_builtin_eddsa_e521,
     .nondeterministic = 1,
   ),
   .f_generate = assh_sign_eddsa_generate,

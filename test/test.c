@@ -203,3 +203,68 @@ const struct assh_prng_s assh_prng_dummy =
   .f_cleanup = assh_prng_dummy_cleanup,
 };
 
+/**************************************************************/
+
+assh_status_t
+test_algo_lookup(enum assh_algo_class_e cl, const char *name,
+		 const char *variant, const char *implem,
+		 const struct assh_algo_s **algo)
+{
+  if (!strcmp(name, "fuzz") && cl == ASSH_ALGO_CIPHER)
+    {
+      *algo = &assh_cipher_fuzz.algo;
+      return ASSH_OK;
+    }
+
+  if (!strcmp(name, "none") || !strcmp(name, "none@libassh.org"))
+    {
+      switch (cl)
+	{
+	case ASSH_ALGO_KEX:
+	  *algo = &assh_kex_none.algo;
+	  return ASSH_OK;
+	case ASSH_ALGO_SIGN:
+	  *algo = &assh_sign_none.algo;
+	  return ASSH_OK;
+	case ASSH_ALGO_CIPHER:
+	  *algo = &assh_cipher_none.algo;
+	  return ASSH_OK;
+	case ASSH_ALGO_MAC:
+	  *algo = &assh_mac_none.algo;
+	  return ASSH_OK;
+	case ASSH_ALGO_COMPRESS:
+	  *algo = &assh_compress_none.algo;
+	  return ASSH_OK;
+	default:
+	  abort();
+	}
+    }
+
+  const struct assh_algo_s **table = assh_algo_table;
+  const struct assh_algo_s *a;
+
+  while ((a = *table++) != NULL)
+    {
+      if (cl != ASSH_ALGO_ANY && cl != a->class_)
+	continue;
+
+      const struct assh_algo_name_s *n;
+      for (n = a->names; n->spec; n++)
+	if (!strcmp(name, n->name))
+	  break;
+
+      if (!n->spec)
+	continue;
+
+      if (implem && strcmp(implem, a->implem) && a->nondeterministic)
+	continue;
+
+      if (variant && (!a->variant || strcmp(variant, a->variant)))
+	continue;
+
+      *algo = a;
+      return ASSH_OK;
+    }
+
+  return ASSH_NOT_FOUND;
+}

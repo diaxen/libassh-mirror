@@ -21,51 +21,19 @@
 
 */
 
-#include <assh/assh_alloc.h>
-#include <assh/mod_gcrypt.h>
+/**
+   @file
+   @short Descriptors for algorithms and modules based on zlib
+*/
 
-#include <gcrypt.h>
+#ifndef ASSH_MOD_ZLIB_H_
+#define ASSH_MOD_ZLIB_H_
 
-#ifndef CONFIG_ASSH_USE_GCRYPT_ALLOC
-# error
+#include <assh/assh_compress.h>
+
+# ifdef CONFIG_ASSH_USE_ZLIB
+extern const struct assh_algo_compress_s assh_compress_zlib_zlib;
+extern const struct assh_algo_compress_s assh_compress_zlib_zlib_openssh;
+# endif
+
 #endif
-
-ASSH_ALLOCATOR(assh_gcrypt_allocator)
-{
-  assh_status_t err;
-
-  if (*ptr == NULL)
-    {
-      if (size == 0)
-	return ASSH_OK;
-
-      switch (type)
-	{
-        default:
-          ASSH_UNREACHABLE();
-	case ASSH_ALLOC_INTERNAL:
-	case ASSH_ALLOC_PACKET:
-	  *ptr = gcry_malloc(size);
-	  break;
-	case ASSH_ALLOC_SECUR:
-	case ASSH_ALLOC_SCRATCH:
-	  *ptr = gcry_malloc_secure(size);
-	  break;
-	}
-      ASSH_RET_IF_TRUE(*ptr == NULL, ASSH_ERR_MEM);
-      return ASSH_OK;
-    }
-  else if (size == 0)
-    {
-      gcry_free(*ptr);
-      return ASSH_OK;
-    }
-  else
-    {
-      *ptr = gcry_realloc(*ptr, size);
-      ASSH_RET_IF_TRUE(*ptr == NULL, ASSH_ERR_MEM);
-      return ASSH_OK;
-    }
-
-  return ASSH_OK;
-}

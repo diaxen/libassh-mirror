@@ -35,10 +35,6 @@
 #include <assh/assh_userauth_client.h>
 #include <assh/assh_userauth_server.h>
 #include <assh/assh_event.h>
-#include <assh/key_rsa.h>
-#include <assh/key_dsa.h>
-#include <assh/key_eddsa.h>
-#include <assh/key_ecdsa.h>
 
 #include <getopt.h>
 
@@ -63,15 +59,15 @@ struct test_key_s
 static struct test_key_s keys[TEST_KEYS_COUNT];
 
 struct {
-  const struct assh_key_algo_s *algo;
+  const char *name;
   size_t bits;
 } keys_algo[TEST_KEYS_COUNT] = {
-  { &assh_key_rsa, 1024 },
-  { &assh_key_dsa, 1024 },
-  { &assh_key_ed25519, 255 },
-  { &assh_key_eddsa_e521, 521 },
-  { &assh_key_ecdsa_nistp, 256 },
-  { &assh_key_ecdsa_nistp, 521 },
+  { "ssh-rsa", 1024 },
+  { "ssh-dss", 1024 },
+  { "ssh-ed25519", 255 },
+  { "eddsa-e521-shake256@libassh.org", 521 },
+  { "ecdsa-sha2-nist", 256 },
+  { "ecdsa-sha2-nist", 521 },
 };
 
 #define TEST_PASS_COUNT 5
@@ -127,7 +123,7 @@ static assh_bool_t use_keys(struct assh_key_s **k)
       case 1:
 	break;
       case 2:
-	if (keys[i].key_c->ref_count > 1)
+	if (!keys[i].key_c || keys[i].key_c->ref_count > 1)
 	  break;
 	done = 1;
 	assh_key_refinc(keys[i].key_c);
@@ -135,7 +131,7 @@ static assh_bool_t use_keys(struct assh_key_s **k)
 	auth_client_int_sign_count++;
 	break;
       case 3:
-	if (keys[i].key_cpub->ref_count > 1)
+	if (!keys[i].key_cpub || keys[i].key_cpub->ref_count > 1)
 	  break;
 	done = 1;
 	assh_key_refinc(keys[i].key_cpub);
@@ -246,7 +242,8 @@ static int test()
 
 	      uint_fast8_t i;
 	      for (i = 0; i < TEST_KEYS_COUNT; i++)
-		if (assh_key_cmp(&context[0], event.userauth_server.userkey.pub_key,
+		if (keys[i].key_s &&
+		    assh_key_cmp(&context[0], event.userauth_server.userkey.pub_key,
 				 keys[i].key_s, 1))
 		  break;
 	      if (i == TEST_KEYS_COUNT)
@@ -607,6 +604,17 @@ static void usage()
 	  );
 }
 
+static int algo_register(struct assh_context_s *c)
+{
+  return assh_algo_register_va(c, 0, 0, 0, &assh_kex_none.algo,
+			       &assh_sign_none.algo, &assh_cipher_fuzz.algo,
+			       &assh_mac_none.algo, &assh_compress_none.algo, NULL) ||
+    assh_algo_register_names_va(c, 0, 0, 0, ASSH_ALGO_SIGN,
+				"ssh-rsa", "ssh-dss", "ssh-ed25519",
+				"eddsa-e521-shake256@libassh.org",
+				"ecdsa-sha2-nistp256", "ecdsa-sha2-nistp521", NULL);
+}
+
 int main(int argc, char **argv)
 {
   if (assh_deps_init())
@@ -656,44 +664,51 @@ int main(int argc, char **argv)
   if (!action)
     action = ACTION_NOFUZZING;
 
-  static const struct assh_algo_s *algos[] = {
-    &assh_kex_none.algo, &assh_sign_none.algo,
-    &assh_sign_rsa_sha1.algo, &assh_sign_dsa1024.algo, &assh_sign_ed25519.algo,
-    &assh_sign_eddsa_e521.algo, &assh_sign_nistp256.algo, &assh_sign_nistp521.algo,
-    &assh_cipher_fuzz.algo, &assh_hmac_none.algo, &assh_compress_none.algo, NULL
-  };
-
   uint_fast8_t i;
   /* init server context */
   if (assh_context_init(&context[0], ASSH_SERVER,
 			assh_leaks_allocator, NULL, &assh_prng_dummy, NULL) ||
       assh_service_register_va(&context[0], &assh_service_userauth_server,
 			       &assh_service_connection, NULL) ||
-      assh_algo_register_static(&context[0], algos))
-    TEST_FAIL("");
+      algo_register(&context[0]))
+    TEST_FAIL("init server context");
 
   /* create host key */
   if (assh_key_create(&context[0], &context[0].keys, 0, &assh_key_none,
 		      ASSH_ALGO_SIGN) != ASSH_OK)
-    TEST_FAIL("");
+    TEST_FAIL("init client context");
 
   /* init client context */
   if (assh_context_init(&context[1], ASSH_CLIENT,
 			assh_leaks_allocator, NULL, &assh_prng_dummy, NULL) ||
       assh_service_register_va(&context[1], &assh_service_userauth_client,
 			       &assh_service_connection, NULL) ||
-      assh_algo_register_static(&context[1], algos))
+      algo_register(&context[1]))
     TEST_FAIL("");
 
   /* create some user authentication keys */
+  assh_bool_t keys_done = 0;
+
   for (i = 0; i < TEST_KEYS_COUNT; i++)
     {
+      const struct assh_key_algo_s *ka;
+      const char *kn = keys_algo[i].name;
+
       struct test_key_s *k = &keys[i];
-      k->key_s = k->key_c = NULL;
+      k->key_s = k->key_c = k->key_cpub = NULL;
+
+      if (assh_key_algo_by_name(&context[1], ASSH_ALGO_SIGN,
+				kn, strlen(kn), &ka))
+	{
+	  fprintf(stderr, "skipping %s key type, not supported\n", kn);
+	  continue;
+	}
+
+      keys_done = 1;
       ASSH_DEBUG("create key %u\n", i);
 
-      if (assh_key_create(&context[1], &k->key_c, keys_algo[i].bits,
-			  keys_algo[i].algo, ASSH_ALGO_SIGN))
+      if (asshh_key_create(&context[1], &k->key_c, keys_algo[i].bits,
+			   kn, ASSH_ALGO_SIGN))
 	TEST_FAIL("");
 
       if (assh_key_output(&context[1], k->key_c, NULL, &k->blob_len,
@@ -709,15 +724,18 @@ int main(int argc, char **argv)
 	TEST_FAIL("");
 
       const uint8_t *b = k->blob;
-      if (assh_key_load(&context[0], &k->key_s, keys_algo[i].algo, ASSH_ALGO_SIGN,
+      if (asshh_key_load(&context[0], &k->key_s, kn, ASSH_ALGO_SIGN,
 			ASSH_KEY_FMT_PUB_RFC4253, &b, k->blob_len))
 	TEST_FAIL("");
 
       b = k->blob;
-      if (assh_key_load(&context[1], &k->key_cpub, keys_algo[i].algo, ASSH_ALGO_SIGN,
+      if (asshh_key_load(&context[1], &k->key_cpub, kn, ASSH_ALGO_SIGN,
 			ASSH_KEY_FMT_PUB_RFC4253, &b, k->blob_len))
 	TEST_FAIL("");
     }
+
+  if (!keys_done)
+    TEST_FAIL("unable to create a single key");
 
   if (alloc_size == 0)
     TEST_FAIL("leak checking not working\n");
@@ -764,7 +782,7 @@ int main(int argc, char **argv)
 	{
 	  alloc_fuzz = 4 + assh_prng_rand() % 32;
 	  packet_fuzz = 10 + assh_prng_rand() % 1024;
-	  putc('A', stderr);
+	  putc('f', stderr);
 	  l++;
 	  test();
 	}

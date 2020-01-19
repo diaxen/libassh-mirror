@@ -21,7 +21,9 @@
 
 */
 
-#include <assh/key_eddsa.h>
+#include "key_builtin_eddsa.h"
+
+#include <assh/mod_builtin.h>
 #include <assh/assh_bignum.h>
 #include <assh/assh_packet.h>
 #include <assh/assh_buffer.h>
@@ -33,9 +35,9 @@
 
 static ASSH_KEY_CMP_FCN(assh_key_eddsa_cmp)
 {
-  assert(key->algo == &assh_key_ed25519 ||
-         key->algo == &assh_key_eddsa_e382 ||
-         key->algo == &assh_key_eddsa_e521);
+  assert(key->algo == &assh_key_builtin_ed25519 ||
+         key->algo == &assh_key_builtin_eddsa_e382 ||
+         key->algo == &assh_key_builtin_eddsa_e521);
 
   if (key->algo != b->algo)
     return 0;
@@ -212,9 +214,9 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_eddsa_output)
   const uint8_t *ks = k->data + n;
   const char *algo_name = k->key.algo->name;
 
-  assert(key->algo == &assh_key_ed25519 ||
-         key->algo == &assh_key_eddsa_e382 ||
-         key->algo == &assh_key_eddsa_e521);
+  assert(key->algo == &assh_key_builtin_ed25519 ||
+         key->algo == &assh_key_builtin_eddsa_e382 ||
+         key->algo == &assh_key_builtin_eddsa_e521);
 
   switch (format)
     {
@@ -343,7 +345,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_ed25519_create)
 }
 #endif
 
-const struct assh_key_algo_s assh_key_ed25519 =
+const struct assh_key_algo_s assh_key_builtin_ed25519 =
 {
   .name = "ssh-ed25519",
   .min_bits = 255,
@@ -412,7 +414,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_eddsa_e382_create)
 }
 #endif
 
-const struct assh_key_algo_s assh_key_eddsa_e382 =
+const struct assh_key_algo_s assh_key_builtin_eddsa_e382 =
 {
   .name = "eddsa-e382-shake256@libassh.org",
   .min_bits = 382,
@@ -489,7 +491,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_eddsa_e521_create)
 }
 #endif
 
-const struct assh_key_algo_s assh_key_eddsa_e521 =
+const struct assh_key_algo_s assh_key_builtin_eddsa_e521 =
 {
   .name = "eddsa-e521-shake256@libassh.org",
   .min_bits = 521,

@@ -27,6 +27,7 @@
 #include <assh/assh_packet.h>
 #include <assh/assh_alloc.h>
 #include <assh/assh_buffer.h>
+#include <assh/mod_builtin.h>
 
 #include <string.h>
 #include <stdlib.h>

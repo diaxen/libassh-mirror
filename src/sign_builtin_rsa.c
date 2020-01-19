@@ -24,10 +24,12 @@
 #include <assh/assh_buffer.h>
 #include <assh/assh_bignum.h>
 #include <assh/assh_sign.h>
-#include <assh/key_rsa.h>
+#include <assh/mod_builtin.h>
 #include <assh/assh_hash.h>
 #include <assh/assh_prng.h>
 #include <assh/assh_alloc.h>
+
+#include "key_builtin_rsa.h"
 
 #include <string.h>
 
@@ -83,7 +85,7 @@ assh_sign_rsa_generate(struct assh_context_s *c,
   const struct assh_key_rsa_s *k = (const void*)key;
   assh_status_t err;
 
-  assert(key->algo == &assh_key_rsa);
+  assert(key->algo == &assh_key_builtin_rsa);
 
   size_t n = ASSH_ALIGN8(assh_bignum_bits(&k->nn)) / 8;
 
@@ -219,7 +221,7 @@ assh_sign_rsa_check(struct assh_context_s *c,
   const struct assh_key_rsa_s *k = (const void*)key;
   assh_status_t err;
 
-  assert(key->algo == &assh_key_rsa);
+  assert(key->algo == &assh_key_builtin_rsa);
 
   size_t id_len = 4 + assh_load_u32((const uint8_t*)algo_id);
   size_t n = ASSH_ALIGN8(assh_bignum_bits(&k->nn)) / 8;
@@ -327,7 +329,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_768)
 {
   if (key == NULL)
     return c->type == ASSH_SERVER;
-  if (key->algo != &assh_key_rsa || key->role != ASSH_ALGO_SIGN)
+  if (key->algo != &assh_key_builtin_rsa || key->role != ASSH_ALGO_SIGN)
     return 0;
   const struct assh_key_rsa_s *k = (const void*)key;
   return assh_bignum_bits(&k->nn) >= 768;
@@ -350,13 +352,13 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate_sha1)
                       sign, sign_len, RSA_DIGEST_SHA1, ASSH_RSA_ID);
 }
 
-const struct assh_algo_sign_s assh_sign_rsa_sha1_md5 =
+const struct assh_algo_sign_s assh_sign_builtin_rsa_sha1_md5 =
 {
   ASSH_ALGO_BASE(SIGN, "assh-builtin", 15, 40,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "ssh-rsa" }),
-    ASSH_ALGO_VARIANT( 2, "sha*, md5, 768+ bits keys" ),
+    ASSH_ALGO_VARIANT( 2, "sha*, md5, key >= 768" ),
     .f_suitable_key = assh_sign_rsa_suitable_key_768,
-    .key = &assh_key_rsa,
+    .key = &assh_key_builtin_rsa,
   ),
   .f_generate = assh_sign_rsa_generate_sha1,
   .f_check = assh_sign_rsa_check_sha1_md5,
@@ -368,7 +370,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_1024)
 {
   if (key == NULL)
     return c->type == ASSH_SERVER;
-  if (key->algo != &assh_key_rsa || key->role != ASSH_ALGO_SIGN)
+  if (key->algo != &assh_key_builtin_rsa || key->role != ASSH_ALGO_SIGN)
     return 0;
   const struct assh_key_rsa_s *k = (const void*)key;
   return assh_bignum_bits(&k->nn) >= 1024;
@@ -384,13 +386,13 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_rsa_check_sha1)
                               | (1 << RSA_DIGEST_SHA512), ASSH_RSA_ID);
 }
 
-const struct assh_algo_sign_s assh_sign_rsa_sha1 =
+const struct assh_algo_sign_s assh_sign_builtin_rsa_sha1 =
 {
   ASSH_ALGO_BASE(SIGN, "assh-builtin", 20, 40,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "ssh-rsa" }),
-    ASSH_ALGO_VARIANT( 1, "sha*, 1024+ bits keys" ),
+    ASSH_ALGO_VARIANT( 1, "sha*, key >= 1024" ),
     .f_suitable_key = assh_sign_rsa_suitable_key_1024,
-    .key = &assh_key_rsa,
+    .key = &assh_key_builtin_rsa,
   ),
   .f_generate = assh_sign_rsa_generate_sha1,
   .f_check = assh_sign_rsa_check_sha1,
@@ -402,19 +404,19 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_2048)
 {
   if (key == NULL)
     return c->type == ASSH_SERVER;
-  if (key->algo != &assh_key_rsa || key->role != ASSH_ALGO_SIGN)
+  if (key->algo != &assh_key_builtin_rsa || key->role != ASSH_ALGO_SIGN)
     return 0;
   const struct assh_key_rsa_s *k = (const void*)key;
   return assh_bignum_bits(&k->nn) >= 2048;
 }
 
-const struct assh_algo_sign_s assh_sign_rsa_sha1_2048 =
+const struct assh_algo_sign_s assh_sign_builtin_rsa_sha1_2048 =
 {
   ASSH_ALGO_BASE(SIGN, "assh-builtin", 25, 30,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "ssh-rsa" }),
-    ASSH_ALGO_VARIANT( 0, "sha*, 2048+ bits keys" ),
+    ASSH_ALGO_VARIANT( 0, "sha*, key >= 2048" ),
     .f_suitable_key = assh_sign_rsa_suitable_key_2048,
-    .key = &assh_key_rsa,
+    .key = &assh_key_builtin_rsa,
   ),
   .f_generate = assh_sign_rsa_generate_sha1,
   .f_check = assh_sign_rsa_check_sha1,
@@ -437,13 +439,13 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate_sha256)
                                 ASSH_RSA_SHA256_ID);
 }
 
-const struct assh_algo_sign_s assh_sign_rsa_sha256 =
+const struct assh_algo_sign_s assh_sign_builtin_rsa_sha256 =
 {
   ASSH_ALGO_BASE(SIGN, "assh-builtin", 40, 30,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_DRAFT | ASSH_ALGO_ASSH,
                       "rsa-sha2-256" }),
     .f_suitable_key = assh_sign_rsa_suitable_key_2048,
-    .key = &assh_key_rsa,
+    .key = &assh_key_builtin_rsa,
   ),
   .groups = 1,
   .f_generate = assh_sign_rsa_generate_sha256,
@@ -466,13 +468,13 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate_sha512)
                                 ASSH_RSA_SHA512_ID);
 }
 
-const struct assh_algo_sign_s assh_sign_rsa_sha512 =
+const struct assh_algo_sign_s assh_sign_builtin_rsa_sha512 =
 {
   ASSH_ALGO_BASE(SIGN, "assh-builtin", 45, 30,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_DRAFT | ASSH_ALGO_ASSH,
                       "rsa-sha2-512" }),
     .f_suitable_key = assh_sign_rsa_suitable_key_2048,
-    .key = &assh_key_rsa,
+    .key = &assh_key_builtin_rsa,
   ),
   .groups = 1,
   .f_generate = assh_sign_rsa_generate_sha512,

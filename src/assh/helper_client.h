@@ -116,7 +116,7 @@ struct asshh_client_user_key_s
 {
   /** key filename to lookup in the .ssh user directory */
   const char *filename;
-  const struct assh_key_algo_s *algo;
+  const char *key_algo;
   enum assh_algo_class_e role;
   enum assh_key_format_e format;
 };

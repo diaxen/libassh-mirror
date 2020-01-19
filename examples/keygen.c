@@ -305,8 +305,8 @@ int main(int argc, char *argv[])
 
       while (1)                 /* retry passphrase prompt */
         {
-          switch (ASSH_STATUS(asshh_load_key_file(context, &key, type,
-                                   ASSH_ALGO_ANY, ifile, ifmt, p, 0)))
+          switch (ASSH_STATUS(asshh_load_key_file(context, &key,
+		   type ? type->name : NULL, ASSH_ALGO_ANY, ifile, ifmt, p, 0)))
             {
             case ASSH_OK:
               break;

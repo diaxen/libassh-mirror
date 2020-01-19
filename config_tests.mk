@@ -51,12 +51,12 @@ basic.cfgtest:
 	grep -q "define CONFIG_ASSH_USE_GCRYPT_HASH" config.h
 	grep -q "define CONFIG_ASSH_USE_GCRYPT_CIPHERS" config.h
 	grep -q "define CONFIG_ASSH_USE_GCRYPT_ALLOC" config.h
-	grep -q "undef CONFIG_ASSH_USE_GCRYPT_PRNG" config.h
-	grep -q "undef CONFIG_ASSH_USE_OPENSSL" config.h
+	grep -q "define CONFIG_ASSH_USE_GCRYPT_PRNG" config.h
+	grep -q "define CONFIG_ASSH_USE_OPENSSL" config.h
 	grep -q "undef CONFIG_ASSH_USE_OPENSSL_HASH" config.h
-	grep -q "undef CONFIG_ASSH_USE_OPENSSL_CIPHERS" config.h
-	grep -q "undef CONFIG_ASSH_USE_OPENSSL_ALLOC" config.h
-	grep -q "undef CONFIG_ASSH_USE_OPENSSL_PRNG" config.h
+	grep -q "define CONFIG_ASSH_USE_OPENSSL_CIPHERS" config.h
+	grep -q "define CONFIG_ASSH_USE_OPENSSL_ALLOC" config.h
+	grep -q "define CONFIG_ASSH_USE_OPENSSL_PRNG" config.h
 	grep -q "define CONFIG_ASSH_SERVER_AUTH_NONE" config.h
 	grep -q "define CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY" config.h
 	grep -q "define CONFIG_ASSH_SERVER_AUTH_PUBLICKEY" config.h

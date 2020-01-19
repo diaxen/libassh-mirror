@@ -44,6 +44,11 @@
 #include <assh/assh_algo.h>
 #include <assh/assh_prng.h>
 
+assh_status_t
+test_algo_lookup(enum assh_algo_class_e cl, const char *name,
+		 const char *variant, const char *implem,
+		 const struct assh_algo_s **algo);
+
 /** This swaps some bits with the given probability.
     The number of bits swpped is returned. */
 unsigned

@@ -52,7 +52,6 @@
 #include <assh/assh_event.h>
 #include <assh/assh_algo.h>
 #include <assh/assh_packet.h>
-#include <assh/key_eddsa.h>
 
 #include <assh/helper_key.h>
 #include <assh/helper_server.h>
@@ -842,8 +841,10 @@ int main(int argc, char **argv)
   /* load or create host key(s) */
   if (asshh_server_load_hk(context)
 #ifdef CONFIG_ASSH_KEY_CREATE
-      && assh_key_create(context, assh_context_keys(context),
-			 255, &assh_key_ed25519, ASSH_ALGO_SIGN)
+      && asshh_key_create(context, assh_context_keys(context),
+			  0, "ssh-ed25519", ASSH_ALGO_SIGN)
+      && asshh_key_create(context, assh_context_keys(context),
+			  0, "ssh-rsa", ASSH_ALGO_SIGN)
 #endif
       )
     ERROR("Unable to load or create host key.\n");

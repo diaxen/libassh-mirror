@@ -24,11 +24,12 @@
 #include <assh/assh_packet.h>
 #include <assh/assh_bignum.h>
 #include <assh/assh_sign.h>
-#include <assh/key_ecdsa.h>
+#include <assh/mod_builtin.h>
 #include <assh/assh_hash.h>
 #include <assh/assh_prng.h>
 #include <assh/assh_alloc.h>
 
+#include "key_builtin_ecdsa_nist.h"
 #include "ecc_weierstrass.h"
 
 #include <string.h>
@@ -361,18 +362,18 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_nistp256_suitable_key)
   if (key == NULL)
     return c->type == ASSH_SERVER;
   struct assh_key_ecdsa_s *k = (void*)key;
-  return key->algo == &assh_key_ecdsa_nistp &&
+  return key->algo == &assh_key_builtin_ecdsa_nist &&
     k->id->curve == &assh_nistp256_curve &&
     k->id->hash == &assh_hash_sha256;
 }
 
-const struct assh_algo_sign_s assh_sign_nistp256 =
+const struct assh_algo_sign_s assh_sign_builtin_nistp256 =
 {
   ASSH_ALGO_BASE(SIGN, "assh-builtin", ASSH_NISTP256_SAFETY, 90,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
 	              "ecdsa-sha2-nistp256" }),
     .f_suitable_key = assh_sign_nistp256_suitable_key,
-    .key = &assh_key_ecdsa_nistp,
+    .key = &assh_key_builtin_ecdsa_nist,
   ),
   .f_generate = assh_sign_ecdsa_generate,
   .f_check = assh_sign_ecdsa_check,
@@ -384,18 +385,18 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_nistp384_suitable_key)
   if (key == NULL)
     return c->type == ASSH_SERVER;
   struct assh_key_ecdsa_s *k = (void*)key;
-  return key->algo == &assh_key_ecdsa_nistp &&
+  return key->algo == &assh_key_builtin_ecdsa_nist &&
     k->id->curve == &assh_nistp384_curve &&
     k->id->hash == &assh_hash_sha384;
 }
 
-const struct assh_algo_sign_s assh_sign_nistp384 =
+const struct assh_algo_sign_s assh_sign_builtin_nistp384 =
 {
   ASSH_ALGO_BASE(SIGN, "assh-builtin", ASSH_NISTP384_SAFETY, 80,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
 	              "ecdsa-sha2-nistp384" }),
     .f_suitable_key = assh_sign_nistp384_suitable_key,
-    .key = &assh_key_ecdsa_nistp,
+    .key = &assh_key_builtin_ecdsa_nist,
   ),
   .f_generate = assh_sign_ecdsa_generate,
   .f_check = assh_sign_ecdsa_check,
@@ -407,18 +408,18 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_nistp521_suitable_key)
   if (key == NULL)
     return c->type == ASSH_SERVER;
   struct assh_key_ecdsa_s *k = (void*)key;
-  return key->algo == &assh_key_ecdsa_nistp &&
+  return key->algo == &assh_key_builtin_ecdsa_nist &&
     k->id->curve == &assh_nistp521_curve &&
     k->id->hash == &assh_hash_sha512;
 }
 
-const struct assh_algo_sign_s assh_sign_nistp521 =
+const struct assh_algo_sign_s assh_sign_builtin_nistp521 =
 {
   ASSH_ALGO_BASE(SIGN, "assh-builtin", ASSH_NISTP521_SAFETY, 70,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                       "ecdsa-sha2-nistp521" }),
     .f_suitable_key = assh_sign_nistp521_suitable_key,
-    .key = &assh_key_ecdsa_nistp,
+    .key = &assh_key_builtin_ecdsa_nist,
   ),
   .f_generate = assh_sign_ecdsa_generate,
   .f_check = assh_sign_ecdsa_check,

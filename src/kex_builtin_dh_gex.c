@@ -36,6 +36,7 @@
 #include <assh/assh_alloc.h>
 #include <assh/assh_hash.h>
 #include <assh/assh_cipher.h>
+#include <assh/mod_builtin.h>
 
 #ifdef CONFIG_ASSH_SERVER
 # include <assh/safe_primes.h>
@@ -893,7 +894,7 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_gex_sha1_init)
   return assh_kex_dh_gex_init(s, &assh_hash_sha1, cipher_key_size, 12, 1024, 4096);
 }
 
-const struct assh_algo_kex_s assh_kex_dh_gex_sha1 =
+const struct assh_algo_kex_s assh_kex_builtin_dh_gex_sha1 =
 {
   ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(1024), 10,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
@@ -911,7 +912,7 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_gex_sha256_12_init)
   return assh_kex_dh_gex_init(s, &assh_hash_sha256, cipher_key_size, 12, 1024, 2048);
 }
 
-const struct assh_algo_kex_s assh_kex_dh_gex_sha256_12 =
+const struct assh_algo_kex_s assh_kex_builtin_dh_gex_sha256_12 =
 {
   ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(1024), 30,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
@@ -930,7 +931,7 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_gex_sha256_8_init)
   return assh_kex_dh_gex_init(s, &assh_hash_sha256, cipher_key_size, 8, 2048, 4096);
 }
 
-const struct assh_algo_kex_s assh_kex_dh_gex_sha256_8 =
+const struct assh_algo_kex_s assh_kex_builtin_dh_gex_sha256_8 =
 {
   ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(2048), 10,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
@@ -949,7 +950,7 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_gex_sha256_4_init)
   return assh_kex_dh_gex_init(s, &assh_hash_sha256, cipher_key_size, 4, 4096, DH_MAX_GRSIZE);
 }
 
-const struct assh_algo_kex_s assh_kex_dh_gex_sha256_4 =
+const struct assh_algo_kex_s assh_kex_builtin_dh_gex_sha256_4 =
 {
   ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(4096), 1,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,

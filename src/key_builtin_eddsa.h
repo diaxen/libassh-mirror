@@ -70,11 +70,6 @@ struct assh_key_eddsa_s
 
 ASSH_FIRST_FIELD_ASSERT(assh_key_eddsa_s, key);
 
-/** @multiple Key operations descriptor for EdDSA keys */
-extern const struct assh_key_algo_s assh_key_ed25519;
-extern const struct assh_key_algo_s assh_key_eddsa_e382;
-extern const struct assh_key_algo_s assh_key_eddsa_e521;
-
 /** @multiple @internal Edward curve parameters */
 extern const struct assh_edward_curve_s assh_ed25519_curve;
 extern const struct assh_edward_curve_s assh_e382_curve;

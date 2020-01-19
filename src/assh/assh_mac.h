@@ -97,25 +97,7 @@ struct assh_algo_mac_s
 
 /** @multiple @This is a mac algorithm implementation descriptor.
     @xsee {macalgos} */
-extern const struct assh_algo_mac_s assh_hmac_none;
-extern const struct assh_algo_mac_s assh_hmac_md5;
-extern const struct assh_algo_mac_s assh_hmac_md5_96;
-extern const struct assh_algo_mac_s assh_hmac_sha1;
-extern const struct assh_algo_mac_s assh_hmac_sha1_96;
-extern const struct assh_algo_mac_s assh_hmac_sha256;
-extern const struct assh_algo_mac_s assh_hmac_sha512;
-
-extern const struct assh_algo_mac_s assh_hmac_md5_etm;
-extern const struct assh_algo_mac_s assh_hmac_md5_96_etm;
-extern const struct assh_algo_mac_s assh_hmac_sha1_etm;
-extern const struct assh_algo_mac_s assh_hmac_sha1_96_etm;
-extern const struct assh_algo_mac_s assh_hmac_sha256_etm;
-extern const struct assh_algo_mac_s assh_hmac_sha512_etm;
-
-#ifdef CONFIG_ASSH_HASH_RIPEMD160
-extern const struct assh_algo_mac_s assh_hmac_ripemd160;
-extern const struct assh_algo_mac_s assh_hmac_ripemd160_etm;
-#endif
+extern const struct assh_algo_mac_s assh_mac_none;
 
 #endif
 

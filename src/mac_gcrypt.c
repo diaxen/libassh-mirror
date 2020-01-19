@@ -22,6 +22,7 @@
 */
 
 #include <assh/assh_mac.h>
+#include <assh/mod_gcrypt.h>
 #include <assh/assh_packet.h>
 
 #include <gcrypt.h>
@@ -96,14 +97,16 @@ static assh_status_t assh_hmac_gcrypt_init(const struct assh_algo_mac_s *mac,
 
 #define ASSH_GCRYPT_HMAC(id_, name_, algo_, ksize_, msize_,             \
                          saf_, spd_, etm_, ...)                         \
-extern const struct assh_algo_mac_s assh_hmac_##id_;			\
+									\
+extern const struct assh_algo_mac_s assh_hmac_gcrypt_##id_;		\
 									\
 static ASSH_MAC_INIT_FCN(assh_hmac_gcrypt_##id_##_init)			\
 {									\
-  return assh_hmac_gcrypt_init(&assh_hmac_##id_, ctx_, key, GCRY_MAC_HMAC_##algo_);	\
+  return assh_hmac_gcrypt_init(&assh_mac_gcrypt_##id_, ctx_, key,	\
+			       GCRY_MAC_HMAC_##algo_);			\
 }									\
 									\
-const struct assh_algo_mac_s assh_hmac_##id_ =				\
+const struct assh_algo_mac_s assh_mac_gcrypt_##id_ =			\
 {									\
   ASSH_ALGO_BASE(MAC, "assh-gcrypt", saf_, spd_,                        \
                  ASSH_ALGO_NAMES(__VA_ARGS__)),                         \

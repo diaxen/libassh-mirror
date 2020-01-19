@@ -107,28 +107,9 @@ assh_prng_get(struct assh_context_s *c,
   return c->prng->f_get(c, rdata, rdata_len, quality);
 }
 
-/** @This is a descriptor for the builtin xswap prng.
-
-    When this prng is used, a seed of at least 16 bytes
-    must be passed to the @ref assh_context_create function. */
-extern const struct assh_prng_s assh_prng_xswap;
-
-#ifdef CONFIG_ASSH_USE_GCRYPT_PRNG
-/** @This is a descriptor for the @em Libgcrypt random number
-    generator module. */
-extern const struct assh_prng_s assh_prng_gcrypt;
-#endif
-
-#ifdef CONFIG_ASSH_USE_OPENSSL_PRNG
-/** @This is a descriptor for the @em OpenSSL random number
-    generator module. */
-extern const struct assh_prng_s assh_prng_openssl;
-#endif
-
-#ifdef CONFIG_ASSH_USE_DEV_RANDOM
-/** @This is a descriptor for the @tt /dev/random random number
-    generator module. */
-extern const struct assh_prng_s assh_prng_dev_random;
-#endif
+/** @This returns the default prng. This depends on the
+    platform and build configuration. This may return @tt NULL. */
+const struct assh_prng_s *
+assh_default_prng(void);
 
 #endif

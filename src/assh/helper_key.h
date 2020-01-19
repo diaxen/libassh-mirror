@@ -82,7 +82,7 @@ asshh_key_create(struct assh_context_s *c,
 ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_load_key_file(struct assh_context_s *c,
 		   struct assh_key_s **head,
-		   const struct assh_key_algo_s *algo,
+		   const char *key_algo,
 		   enum assh_algo_class_e role,
 		   FILE *file, enum assh_key_format_e format,
 		   const char *passphrase, size_t size_hint);
@@ -93,7 +93,7 @@ asshh_load_key_file(struct assh_context_s *c,
 ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_load_key_filename(struct assh_context_s *c,
 		       struct assh_key_s **head,
-		       const struct assh_key_algo_s *algo,
+		       const char *key_algo,
 		       enum assh_algo_class_e role,
 		       const char *filename,
 		       enum assh_key_format_e format,
@@ -103,7 +103,7 @@ asshh_load_key_filename(struct assh_context_s *c,
     library context. @see asshh_load_key_file */
 ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_load_hostkey_file(struct assh_context_s *c,
-		       const struct assh_key_algo_s *algo,
+		       const char *key_algo,
 		       enum assh_algo_class_e role,
 		       FILE *file,
 		       enum assh_key_format_e format, size_t size_hint);
@@ -112,7 +112,7 @@ asshh_load_hostkey_file(struct assh_context_s *c,
     library context. @see asshh_load_key_filename */
 ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_load_hostkey_filename(struct assh_context_s *c,
-			   const struct assh_key_algo_s *algo,
+			   const char *key_algo,
 			   enum assh_algo_class_e role,
 			   const char *filename,
 			   enum assh_key_format_e format, size_t size_hint);

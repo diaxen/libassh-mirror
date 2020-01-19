@@ -35,7 +35,6 @@
 #include <assh/assh_userauth_client.h>
 #include <assh/assh_userauth_server.h>
 #include <assh/assh_event.h>
-#include <assh/key_eddsa.h>
 
 #include "fifo.h"
 #include "prng_weak.h"
@@ -46,8 +45,8 @@ static struct fifo_s fifo[2];
 static struct assh_context_s context[2];
 static struct assh_session_s session[2];
 
-static const struct assh_key_algo_s *key_algo = &assh_key_ed25519;
-static const struct assh_algo_sign_s *sign_algo = &assh_sign_ed25519;
+static const struct assh_key_algo_s *key_algo = NULL;
+static const struct assh_algo_sign_s *sign_algo = NULL;
 static struct assh_key_s *key_s, *key_c, *key_cbad;
 
 enum test_state_e
@@ -2278,23 +2277,27 @@ static void test()
 
 /************************************************************** main */
 
+static int algo_register(struct assh_context_s *c)
+{
+  return assh_algo_register_va(c, 0, 0, 0, &assh_kex_none.algo, &assh_sign_none.algo,
+			       &assh_mac_none.algo, &assh_cipher_none.algo,
+			       &assh_compress_none.algo, NULL) ||
+    assh_algo_register_names_va(c, 0, 0, 0, ASSH_ALGO_SIGN,
+				"ssh-rsa", "ssh-dss", "ssh-ed25519",
+				"ecdsa-sha2-nistp256", NULL);
+}
+
 int main()
 {
   if (assh_deps_init())
-    return -1;
-
-  static const struct assh_algo_s *algos[] = {
-    &assh_kex_none.algo, &assh_sign_none.algo, &assh_sign_ed25519.algo,
-    &assh_cipher_none.algo, &assh_hmac_none.algo, &assh_compress_none.algo,
-    NULL
-  };
+    TEST_FAIL("deps init");
 
   /* init server context */
   if (assh_context_init(&context[0], ASSH_SERVER,
 			assh_leaks_allocator, NULL, &assh_prng_dummy, NULL) ||
       assh_service_register_va(&context[0], &assh_service_userauth_server,
 			       &assh_service_connection, NULL) ||
-      assh_algo_register_static(&context[0], algos))
+      algo_register(&context[0]))
     TEST_FAIL("");
 
   /* create host key */
@@ -2307,19 +2310,30 @@ int main()
 			assh_leaks_allocator, NULL, &assh_prng_dummy, NULL) ||
       assh_service_register_va(&context[1], &test_service_userauth_client,
 			       &assh_service_connection, NULL) ||
-      assh_algo_register_static(&context[1], algos))
+      algo_register(&context[1]))
     TEST_FAIL("");
 
   /* create some user authentication key */
   key_s = key_c = key_cbad = NULL;
 
-  if (assh_key_create(&context[1], &key_cbad, 255,
-		      key_algo, ASSH_ALGO_SIGN))
-    TEST_FAIL("");
+  if (asshh_key_create(&context[1], &key_cbad, 0,
+		      "ssh-ed25519", ASSH_ALGO_SIGN) &&
+      asshh_key_create(&context[1], &key_cbad, 0,
+		      "ecdsa-sha2-nist", ASSH_ALGO_SIGN) &&
+      asshh_key_create(&context[1], &key_cbad, 0,
+		      "ssh-rsa", ASSH_ALGO_SIGN) &&
+      asshh_key_create(&context[1], &key_cbad, 0,
+		      "ssh-dss", ASSH_ALGO_SIGN))
+    TEST_FAIL("unable to create an authentication key");
 
-  if (assh_key_create(&context[1], &key_c, 255,
+  key_algo = key_cbad->algo;
+
+  if (assh_algo_by_key(&context[1], key_cbad, NULL, (void*)&sign_algo))
+    TEST_FAIL("assh_algo_by_key");
+
+  if (assh_key_create(&context[1], &key_c, 0,
 		      key_algo, ASSH_ALGO_SIGN))
-    TEST_FAIL("");
+    TEST_FAIL("unable to create an authentication key");
 
   uint8_t *key_blob;
   size_t key_blob_len;

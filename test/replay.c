@@ -107,11 +107,6 @@
 #include <assh/helper_key.h>
 #include <assh/helper_io.h>
 
-#include <assh/key_rsa.h>
-#include <assh/key_dsa.h>
-#include <assh/key_eddsa.h>
-#include <assh/key_ecdsa.h>
-
 #define FIFO_BUF_SIZE CONFIG_ASSH_MAX_PAYLOAD
 
 #include "leaks_check.h"
@@ -1087,76 +1082,6 @@ static int test()
   return result;
 }
 
-static assh_status_t
-algo_lookup(enum assh_algo_class_e cl, const char *name,
-	    const char *variant, const char *implem,
-	    const struct assh_algo_s **algo)
-{
-  if (!strcmp(name, "none") || !strcmp(name, "none@libassh.org"))
-    {
-      switch (cl)
-	{
-	case ASSH_ALGO_KEX:
-	  *algo = &assh_kex_none.algo;
-	  return ASSH_OK;
-	case ASSH_ALGO_SIGN:
-	  *algo = &assh_sign_none.algo;
-	  return ASSH_OK;
-	case ASSH_ALGO_CIPHER:
-	  *algo = &assh_cipher_none.algo;
-	  return ASSH_OK;
-	case ASSH_ALGO_MAC:
-	  *algo = &assh_hmac_none.algo;
-	  return ASSH_OK;
-	case ASSH_ALGO_COMPRESS:
-	  *algo = &assh_compress_none.algo;
-	  return ASSH_OK;
-	default:
-	  abort();
-	}
-    }
-  else
-    {
-      const struct assh_algo_s **table = assh_algo_table;
-      const struct assh_algo_s *a;
-
-      while ((a = *table++) != NULL)
-	{
-	  if (cl != a->class_)
-	    continue;
-
-	  const struct assh_algo_name_s *n;
-	  for (n = a->names; n->spec; n++)
-	    if (!strcmp(name, n->name))
-	      break;
-
-	  if (!n->spec)
-	    continue;
-
-	  if (implem && strcmp(implem, a->implem) && a->nondeterministic)
-	    {
-	      if (verbose > 1)
-		fprintf(stderr, "  `%s' implementation mismatch `%s' != `%s'.\n",
-			name, implem, a->implem);
-	      continue;
-	    }
-
-	  if (variant && (!a->variant || strcmp(variant, a->variant)))
-	    {
-	      if (verbose > 1)
-		fprintf(stderr, "  `%s' variant mismatch `%s' != `%s'.\n",
-			name, implem, a->implem);
-	      continue;
-	    }
-
-	  *algo = a;
-	  return ASSH_OK;
-	}
-
-      return ASSH_NOT_FOUND;
-    }
-}
-
 void context_cleanup_strings(void)
 {
   free(command);
@@ -1248,7 +1173,7 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 	  const struct assh_algo_s *a;
 	  if (verbose > 0)
 	      fprintf(stderr, "[%s] Loading algorithm: `%s'.\n", side, name);
-	  assh_bool_t mismatch = algo_lookup(cl, name, variant, implem, &a);
+	  assh_bool_t mismatch = test_algo_lookup(cl, name, variant, implem, &a);
 	  if (!mismatch && assh_algo_register_va(ctx, 50, 0, 0, a, NULL))
 	    TEST_FAIL("unable to register algorithm\n");
 	  free(name);
@@ -1838,7 +1763,7 @@ static int record(int argc, char **argv)
 	      if (!*variant)
 		variant = NULL;
 	    }
-	  if (algo_lookup(cl, optarg, variant, implem, &a))
+	  if (test_algo_lookup(cl, optarg, variant, implem, &a))
 	    TEST_FAIL("algorithm not available: `%s'\n", optarg);
 
 #if defined(CONFIG_ASSH_SERVER)

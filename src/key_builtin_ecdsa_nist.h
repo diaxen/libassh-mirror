@@ -23,48 +23,48 @@
 
 /**
    @file
-   @short Key support for the Digitial Signature Algorithm
+   @short Key support for the ECDSA signature algorithm
 
-   This header file contains the API descriptor for the DSA key
+   This header file contains the API descriptor for the ECDSA key
    support module.
 
    @xsee{keysalgos}
-   @xsee{DSA signature}
+   @xsee{ECDSA signature}
    @xsee{coremod}
    @see{@assh/assh_key.h}
 */
 
-#ifndef ASSH_KEY_DSA_H_
-#define ASSH_KEY_DSA_H_
+#ifndef ASSH_KEY_ECDSA_H_
+#define ASSH_KEY_ECDSA_H_
 
 #include <assh/assh_key.h>
 #include <assh/assh_bignum.h>
 
-/** @internal DSA key storage */
-struct assh_key_dsa_s
+struct assh_weierstrass_curve_s;
+
+struct assh_key_ecdsa_id_s
 {
-  struct assh_key_s key;
-  /** public p */
-  struct assh_bignum_s pn;
-  /** public q */
-  struct assh_bignum_s qn;
-  /** public g */
-  struct assh_bignum_s gn;
-  /** public y */
-  struct assh_bignum_s yn;
-  /** private x, may be empty */
-  struct assh_bignum_s xn;
+  const char *name;
+  const uint8_t *oid;           /* len in oid[0] */
+  const struct assh_weierstrass_curve_s *curve;
+  const struct assh_hash_algo_s *hash;
 };
 
-ASSH_FIRST_FIELD_ASSERT(assh_key_dsa_s, key);
+/** @internal ECDSA key storage */
+struct assh_key_ecdsa_s
+{
+  struct assh_key_s key;
 
-/** Key operations descriptor for DSA keys */
-extern const struct assh_key_algo_s assh_key_dsa;
+  const struct assh_key_ecdsa_id_s *id;
 
-/** @internal */
-#define ASSH_DSA_ID     "\x00\x00\x00\x07ssh-dss"
-/** @internal */
-#define ASSH_DSA_ID_LEN (sizeof(ASSH_DSA_ID) - 1)
+  /* public key ec point */
+  struct assh_bignum_s xn;
+  struct assh_bignum_s yn;
+  /* private key scalar */
+  struct assh_bignum_s sn;
+};
+
+ASSH_FIRST_FIELD_ASSERT(assh_key_ecdsa_s, key);
 
 #endif
 

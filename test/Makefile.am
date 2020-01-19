@@ -104,6 +104,7 @@ endif
 
 ############################## bignum tests
 
+if COND_bignum_builtin
 noinst_PROGRAMS += bignum
 TESTS += bignum
 bignum_SOURCES = bignum.c
@@ -115,6 +116,7 @@ noinst_PROGRAMS += gex_primes
 gex_primes_SOURCES = gex_primes.c
 gex_primes_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
 gex_primes_CFLAGS = -I$(top_srcdir)/src
+endif
 
 ############################## signature tests
 

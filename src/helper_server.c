@@ -28,10 +28,6 @@
 
 #include "config.h"
 
-#include <assh/key_rsa.h>
-#include <assh/key_dsa.h>
-#include <assh/key_eddsa.h>
-#include <assh/key_ecdsa.h>
 #include <assh/helper_key.h>
 #include <assh/assh_key.h>
 #include <assh/assh_session.h>
@@ -60,27 +56,27 @@ asshh_server_load_hk(struct assh_context_s *c)
   uint_fast8_t count = 0;
   assh_status_t err;
 
-  count += !asshh_load_hostkey_filename(c, &assh_key_dsa, ASSH_ALGO_SIGN,
+  count += !asshh_load_hostkey_filename(c, "ssh-dss", ASSH_ALGO_SIGN,
 				   CONFIG_ASSH_OPENSSH_PREFIX "ssh_host_dsa_key",
 				   ASSH_KEY_FMT_PV_PEM_ASN1, 0);
 
-  count += !asshh_load_hostkey_filename(c, &assh_key_rsa, ASSH_ALGO_SIGN,
+  count += !asshh_load_hostkey_filename(c, "ssh_rsa", ASSH_ALGO_SIGN,
 				   CONFIG_ASSH_OPENSSH_PREFIX "ssh_host_rsa_key",
 				   ASSH_KEY_FMT_PV_PEM, 0);
 
-  count += !asshh_load_hostkey_filename(c, &assh_key_ed25519, ASSH_ALGO_SIGN,
+  count += !asshh_load_hostkey_filename(c, "ssh-ed25519", ASSH_ALGO_SIGN,
 				   CONFIG_ASSH_OPENSSH_PREFIX "ssh_host_ed25519_key",
 				   ASSH_KEY_FMT_PV_OPENSSH_V1, 0);
 
-  count += !asshh_load_hostkey_filename(c, &assh_key_eddsa_e382, ASSH_ALGO_SIGN,
+  count += !asshh_load_hostkey_filename(c, "eddsa-e382-shake256@libassh.org", ASSH_ALGO_SIGN,
 				   CONFIG_ASSH_OPENSSH_PREFIX "ssh_host_e382_key",
 				   ASSH_KEY_FMT_PV_OPENSSH_V1, 0);
 
-  count += !asshh_load_hostkey_filename(c, &assh_key_eddsa_e521, ASSH_ALGO_SIGN,
+  count += !asshh_load_hostkey_filename(c, "eddsa-e521-shake256@libassh.org", ASSH_ALGO_SIGN,
 				   CONFIG_ASSH_OPENSSH_PREFIX "ssh_host_e521_key",
 				   ASSH_KEY_FMT_PV_OPENSSH_V1, 0);
 
-  count += !asshh_load_hostkey_filename(c, &assh_key_ecdsa_nistp, ASSH_ALGO_SIGN,
+  count += !asshh_load_hostkey_filename(c, "ecdsa-sha2-nist", ASSH_ALGO_SIGN,
 				   CONFIG_ASSH_OPENSSH_PREFIX "ssh_host_ecdsa_key",
 				   ASSH_KEY_FMT_PV_PEM, 0);
 

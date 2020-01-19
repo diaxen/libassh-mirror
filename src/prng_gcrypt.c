@@ -23,6 +23,7 @@
 
 
 #include <assh/assh_prng.h>
+#include <assh/mod_gcrypt.h>
 #include <assh/assh_context.h>
 
 #include <string.h>

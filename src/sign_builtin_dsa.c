@@ -24,9 +24,11 @@
 #include <assh/assh_packet.h>
 #include <assh/assh_bignum.h>
 #include <assh/assh_sign.h>
-#include <assh/key_dsa.h>
+#include <assh/mod_builtin.h>
 #include <assh/assh_hash.h>
 #include <assh/assh_alloc.h>
+
+#include "key_builtin_dsa.h"
 
 #include <string.h>
 
@@ -313,20 +315,20 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key_768)
 {
   if (key == NULL)
     return c->type == ASSH_SERVER;
-  if (key->algo != &assh_key_dsa)
+  if (key->algo != &assh_key_builtin_dsa)
     return 0;
   const struct assh_key_dsa_s *k = (const void*)key;
-  return assh_bignum_bits(&k->qn) == 160 &&
+  return assh_bignum_bits(&k->qn) >= 160 &&
          assh_bignum_bits(&k->pn) >= 768;
 }
 
-const struct assh_algo_sign_s assh_sign_dsa768 =
+const struct assh_algo_sign_s assh_sign_builtin_dsa768 =
 {
   ASSH_ALGO_BASE(SIGN, "assh-builtin", 15, 40,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "ssh-dss" }),
-    ASSH_ALGO_VARIANT( 2, "768+ bits keys" ),
+    ASSH_ALGO_VARIANT( 2, "key >= 768" ),
     .f_suitable_key = assh_sign_dsa_suitable_key_768,
-    .key = &assh_key_dsa,
+    .key = &assh_key_builtin_dsa,
     .nondeterministic = 1,
   ),
   .f_generate = assh_sign_dsa_generate,
@@ -337,20 +339,20 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key_1024)
 {
   if (key == NULL)
     return c->type == ASSH_SERVER;
-  if (key->algo != &assh_key_dsa)
+  if (key->algo != &assh_key_builtin_dsa)
     return 0;
   const struct assh_key_dsa_s *k = (const void*)key;
   return assh_bignum_bits(&k->qn) >= 160 &&
          assh_bignum_bits(&k->pn) >= 1024;
 }
 
-const struct assh_algo_sign_s assh_sign_dsa1024 =
+const struct assh_algo_sign_s assh_sign_builtin_dsa1024 =
 {
   ASSH_ALGO_BASE(SIGN, "assh-builtin", 20, 40,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "ssh-dss" }),
-    ASSH_ALGO_VARIANT( 2, "1024+ bits keys" ),
+    ASSH_ALGO_VARIANT( 2, "key >= 1024" ),
     .f_suitable_key = assh_sign_dsa_suitable_key_1024,
-    .key = &assh_key_dsa,
+    .key = &assh_key_builtin_dsa,
     .nondeterministic = 1,
   ),
   .f_generate = assh_sign_dsa_generate,
@@ -361,20 +363,20 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key_2048_224)
 {
   if (key == NULL)
     return c->type == ASSH_SERVER;
-  if (key->algo != &assh_key_dsa)
+  if (key->algo != &assh_key_builtin_dsa)
     return 0;
   const struct assh_key_dsa_s *k = (const void*)key;
   return assh_bignum_bits(&k->qn) == 224 &&
          assh_bignum_bits(&k->pn) >= 2048;
 }
 
-const struct assh_algo_sign_s assh_sign_dsa2048_sha224 =
+const struct assh_algo_sign_s assh_sign_builtin_dsa2048_sha224 =
 {
   ASSH_ALGO_BASE(SIGN, "assh-builtin", 35, 30,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
 	              "dsa2048-sha224@libassh.org" }),
     .f_suitable_key = assh_sign_dsa_suitable_key_2048_224,
-    .key = &assh_key_dsa,
+    .key = &assh_key_builtin_dsa,
     .nondeterministic = 1,
   ),
   .groups = 1,
@@ -386,20 +388,20 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key_2048_256)
 {
   if (key == NULL)
     return c->type == ASSH_SERVER;
-  if (key->algo != &assh_key_dsa)
+  if (key->algo != &assh_key_builtin_dsa)
     return 0;
   const struct assh_key_dsa_s *k = (const void*)key;
   return assh_bignum_bits(&k->qn) == 256 &&
          assh_bignum_bits(&k->pn) >= 2048;
 }
 
-const struct assh_algo_sign_s assh_sign_dsa2048_sha256 =
+const struct assh_algo_sign_s assh_sign_builtin_dsa2048_sha256 =
 {
   ASSH_ALGO_BASE(SIGN, "assh-builtin", 40, 30,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
 	              "dsa2048-sha256@libassh.org" }),
     .f_suitable_key = assh_sign_dsa_suitable_key_2048_256,
-    .key = &assh_key_dsa,
+    .key = &assh_key_builtin_dsa,
     .nondeterministic = 1,
   ),
   .groups = 1,
@@ -411,20 +413,20 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key_3072_256)
 {
   if (key == NULL)
     return c->type == ASSH_SERVER;
-  if (key->algo != &assh_key_dsa)
+  if (key->algo != &assh_key_builtin_dsa)
     return 0;
   const struct assh_key_dsa_s *k = (const void*)key;
   return assh_bignum_bits(&k->qn) == 256 &&
          assh_bignum_bits(&k->pn) >= 3072;
 }
 
-const struct assh_algo_sign_s assh_sign_dsa3072_sha256 =
+const struct assh_algo_sign_s assh_sign_builtin_dsa3072_sha256 =
 {
   ASSH_ALGO_BASE(SIGN, "assh-builtin", 50, 30,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
 	              "dsa3072-sha256@libassh.org" }),
     .f_suitable_key = assh_sign_dsa_suitable_key_3072_256,
-    .key = &assh_key_dsa,
+    .key = &assh_key_builtin_dsa,
     .nondeterministic = 1,
   ),
   .groups = 1,

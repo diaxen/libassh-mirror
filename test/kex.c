@@ -34,11 +34,7 @@
 #include <assh/assh_service.h>
 #include <assh/assh_event.h>
 #include <assh/assh_userauth.h>
-
-#include <assh/key_rsa.h>
-#include <assh/key_dsa.h>
-#include <assh/key_eddsa.h>
-#include <assh/key_ecdsa.h>
+#include <assh/helper_key.h>
 
 #include "prng_weak.h"
 #include "leaks_check.h"
@@ -56,8 +52,9 @@ struct assh_session_s session[2];
 
 struct algo_with_key_s
 {
-  const void *algo;
-  const struct assh_key_algo_s *key_algo;
+  const char *algo;
+  const char *variant;
+  const char *key_algo;
   const uint8_t *key_blob;
   size_t key_size;
 };
@@ -71,333 +68,255 @@ const char *comp_filter = NULL;
 /* all kex algorithms, multiple set of parameters */
 static const struct algo_with_key_s kex_list_slow[] =
 {
-  { &assh_kex_none,              NULL, NULL, 0 },
-  { &assh_kex_curve25519_sha256, NULL, NULL, 0 },
-  { &assh_kex_m383_sha384,	   NULL, NULL, 0 },
-  { &assh_kex_m511_sha512,	   NULL, NULL, 0 },
-  { &assh_kex_sha2_nistp256,	   NULL, NULL, 0 },
-  { &assh_kex_sha2_nistp384,	   NULL, NULL, 0 },
-  { &assh_kex_sha2_nistp521,	   NULL, NULL, 0 },
-  { &assh_kex_dh_group1_sha1,	   NULL, NULL, 0 },
-  { &assh_kex_dh_group14_sha1,   NULL, NULL, 0 },
-  { &assh_kex_dh_group14_sha256,   NULL, NULL, 0 },
-  { &assh_kex_dh_group15_sha512,   NULL, NULL, 0 },
-  { &assh_kex_dh_group16_sha512,   NULL, NULL, 0 },
-  { &assh_kex_dh_group17_sha512,   NULL, NULL, 0 },
-  { &assh_kex_dh_group18_sha512,   NULL, NULL, 0 },
-  { &assh_kex_dh_gex_sha1,	   NULL, NULL, 0 },
-  { &assh_kex_dh_gex_sha256_12,  NULL, NULL, 0 },
+  { "none@libassh.org",                    NULL, NULL, NULL, 0 },
+  { "curve25519-sha256@libssh.org",        NULL, NULL, NULL, 0 },
+  { "m383-sha384@libassh.org",             NULL, NULL, NULL, 0 },
+  { "m511-sha512@libassh.org",             NULL, NULL, NULL, 0 },
+  { "ecdh-sha2-nistp256",                  NULL, NULL, NULL, 0 },
+  { "ecdh-sha2-nistp384",                  NULL, NULL, NULL, 0 },
+  { "ecdh-sha2-nistp521",                  NULL, NULL, NULL, 0 },
+  { "diffie-hellman-group1-sha1",          NULL, NULL, NULL, 0 },
+  { "diffie-hellman-group14-sha1",         NULL, NULL, NULL, 0 },
+  { "diffie-hellman-group14-sha256",       NULL, NULL, NULL, 0 },
+  { "diffie-hellman-group15-sha512",       NULL, NULL, NULL, 0 },
+  { "diffie-hellman-group16-sha512",       NULL, NULL, NULL, 0 },
+  { "diffie-hellman-group17-sha512",       NULL, NULL, NULL, 0 },
+  { "diffie-hellman-group18-sha512",       NULL, NULL, NULL, 0 },
+  { "diffie-hellman-group-exchange-sha1",  "1024 <= group <= 4096", NULL, NULL, 0 },
+  { "diffie-hellman-group-exchange-sha256", "1024 <= group <= 2048", NULL, NULL, 0 },
+  { "diffie-hellman-group-exchange-sha256", "2048 <= group <= 4096", NULL, NULL, 0 },
+  { "diffie-hellman-group-exchange-sha256", "group >= 4096", NULL, NULL, 0 },
 #ifdef CONFIG_ASSH_KEY_CREATE
-  { &assh_kex_rsa1024_sha1,	   NULL, NULL, 0 },
-  { &assh_kex_rsa1024_sha1,	   &assh_key_rsa, rsa1024_key, sizeof(rsa1024_key) },
-  { &assh_kex_rsa2048_sha256,	   &assh_key_rsa, rsa2048_key, sizeof(rsa2048_key) },
+  { "rsa1024-sha1",                        NULL, NULL, NULL, 0 },
 #endif
+  { "rsa1024-sha1",                        NULL, "ssh-rsa",
+    rsa1024_key, sizeof(rsa1024_key) },
+  { "rsa2048-sha256",                      NULL, "ssh-rsa",
+    rsa2048_key, sizeof(rsa2048_key) },
   { NULL },
 };
 
 /* all kex algorithms, reduced set of parameters */
 static const struct algo_with_key_s kex_list_long[] =
 {
-  { &assh_kex_none,              NULL, NULL, 0 },
-  { &assh_kex_curve25519_sha256, NULL, NULL, 0 },
-  { &assh_kex_m383_sha384,	   NULL, NULL, 0 },
-  { &assh_kex_m511_sha512,	   NULL, NULL, 0 },
-  { &assh_kex_sha2_nistp256,	   NULL, NULL, 0 },
-  { &assh_kex_sha2_nistp384,	   NULL, NULL, 0 },
-  { &assh_kex_sha2_nistp521,	   NULL, NULL, 0 },
-  { &assh_kex_dh_group1_sha1,	   NULL, NULL, 0 },
-  { &assh_kex_dh_group14_sha256,   NULL, NULL, 0 },
-  { &assh_kex_dh_gex_sha256_12,  NULL, NULL, 0 },
+  { "none@libassh.org",                    NULL, NULL, NULL, 0 },
+  { "curve25519-sha256@libssh.org",        NULL, NULL, NULL, 0 },
+  { "m383-sha384@libassh.org",             NULL, NULL, NULL, 0 },
+  { "m511-sha512@libassh.org",             NULL, NULL, NULL, 0 },
+  { "ecdh-sha2-nistp256",                  NULL, NULL, NULL, 0 },
+  { "ecdh-sha2-nistp384",                  NULL, NULL, NULL, 0 },
+  { "ecdh-sha2-nistp521",                  NULL, NULL, NULL, 0 },
+  { "diffie-hellman-group1-sha1",          NULL, NULL, NULL, 0 },
+  { "diffie-hellman-group14-sha256",       NULL, NULL, NULL, 0 },
+  { "diffie-hellman-group-exchange-sha256", "1024 <= group <= 2048", NULL, NULL, 0 },
 #ifdef CONFIG_ASSH_KEY_CREATE
-  { &assh_kex_rsa1024_sha1,	   NULL, NULL, 0 },
-  { &assh_kex_rsa2048_sha256,	   &assh_key_rsa, rsa2048_key, sizeof(rsa2048_key) },
+  { "rsa1024-sha1",                        NULL, NULL, NULL, 0 },
 #endif
+  { "rsa2048-sha256",                      NULL, "ssh-rsa",
+    rsa2048_key, sizeof(rsa2048_key) },
   { NULL },
 };
 
 /* all kex algorithms, single set of parameters */
 static const struct algo_with_key_s kex_list_all[] =
 {
-  { &assh_kex_none,              NULL, NULL, 0 },
-  { &assh_kex_curve25519_sha256, NULL, NULL, 0 },
-  { &assh_kex_sha2_nistp256,	   NULL, NULL, 0 },
-  { &assh_kex_dh_group1_sha1,	   NULL, NULL, 0 },
-  { &assh_kex_dh_gex_sha256_12,  NULL, NULL, 0 },
+  { "none@libassh.org",                    NULL, NULL, NULL, 0 },
+  { "curve25519-sha256@libssh.org",        NULL, NULL, NULL, 0 },
+  { "ecdh-sha2-nistp256",                  NULL, NULL, NULL, 0 },
+  { "diffie-hellman-group1-sha1",          NULL, NULL, NULL, 0 },
+  { "diffie-hellman-group-exchange-sha256", "1024 <= group <= 2048", NULL, NULL, 0 },
 #ifdef CONFIG_ASSH_KEY_CREATE
-  { &assh_kex_rsa1024_sha1,	   NULL, NULL, 0 },
-  { &assh_kex_rsa1024_sha1,	   &assh_key_rsa, rsa1024_key, sizeof(rsa1024_key) },
+  { "rsa1024-sha1",                        NULL, NULL, NULL, 0 },
 #endif
+  { "rsa1024-sha1",                        NULL, "ssh-rsa",
+    rsa1024_key, sizeof(rsa1024_key) },
   { NULL },
 };
 
 /* minimal set of kex algorithms for testing other classes */
 static const struct algo_with_key_s kex_list_short[] =
 {
-  { &assh_kex_none,              NULL, NULL, 0 },
-  { &assh_kex_curve25519_sha256, NULL, NULL, 0 },
+  { "none@libassh.org",                    NULL, NULL, NULL, 0 },
+  { "curve25519-sha256@libssh.org",        NULL, NULL, NULL, 0 },
   { NULL }
 };
 
 /* all sign algorithms, multiple set of parameters */
 static const struct algo_with_key_s sign_list_long[] =
 {
-  { &assh_sign_none,              &assh_key_none, (const uint8_t*)"\0", 0 },
-  { &assh_sign_dsa1024,           &assh_key_dsa, dsa1024_key, sizeof(dsa1024_key) - 1 },
-  { &assh_sign_nistp256,          &assh_key_ecdsa_nistp, ecdsa_nistp256_key, sizeof(ecdsa_nistp256_key) - 1 },
-  { &assh_sign_nistp384,          &assh_key_ecdsa_nistp, ecdsa_nistp384_key, sizeof(ecdsa_nistp384_key) - 1 },
-  { &assh_sign_nistp521,          &assh_key_ecdsa_nistp, ecdsa_nistp521_key, sizeof(ecdsa_nistp521_key) - 1 },
-  //  { &assh_sign_dsa2048_sha224,    &assh_key_dsa, dsa2048_key, sizeof(dsa2048_key) },
-  { &assh_sign_dsa2048_sha256,    &assh_key_dsa, dsa2048_key, sizeof(dsa2048_key) - 1 },
-  { &assh_sign_dsa3072_sha256,    &assh_key_dsa, dsa3072_key, sizeof(dsa3072_key) - 1 },
-  { &assh_sign_rsa_sha1_md5,      &assh_key_rsa, rsa1024_key, sizeof(rsa1024_key) - 1 },
-  { &assh_sign_rsa_sha1,          &assh_key_rsa, rsa1024_key, sizeof(rsa1024_key) - 1 },
-  { &assh_sign_rsa_sha1_2048,     &assh_key_rsa, rsa2048_key, sizeof(rsa2048_key) - 1 },
-  { &assh_sign_rsa_sha256,        &assh_key_rsa, rsa2048_key, sizeof(rsa2048_key) - 1 },
-  { &assh_sign_rsa_sha512,        &assh_key_rsa, rsa3072_key, sizeof(rsa3072_key) - 1 },
-  { &assh_sign_ed25519,           &assh_key_ed25519, ed25519_key, sizeof(ed25519_key) - 1 },
-  { &assh_sign_eddsa_e382,        &assh_key_eddsa_e382, eddsa_e382_key, sizeof(eddsa_e382_key) - 1 },
+  { "none@libassh.org",            NULL,                    "none",
+    (const uint8_t*)"\0", 0 },
+  { "ssh-dss",                     "key >= 1024",           "ssh-dss",
+    dsa1024_key, sizeof(dsa1024_key) - 1 },
+  { "ssh-dss",                     NULL,                    "ssh-dss",
+    dsa1024_key, sizeof(dsa1024_key) - 1 },
+  { "ecdsa-sha2-nistp256",         NULL,                    "ecdsa-sha2-nist",
+    ecdsa_nistp256_key, sizeof(ecdsa_nistp256_key) - 1 },
+  { "ecdsa-sha2-nistp384",         NULL,                    "ecdsa-sha2-nist",
+    ecdsa_nistp384_key, sizeof(ecdsa_nistp384_key) - 1 },
+  { "ecdsa-sha2-nistp521",         NULL,                    "ecdsa-sha2-nist",
+    ecdsa_nistp521_key, sizeof(ecdsa_nistp521_key) - 1 },
+//{ "dsa2048-sha224@libassh.org",  NULL,                    "ssh-dss",
+//  dsa2048_key, sizeof(dsa2048_key) - 1 },
+  { "dsa2048-sha256@libassh.org",  NULL,                    "ssh-dss",
+    dsa2048_key, sizeof(dsa2048_key) - 1 },
+  { "dsa3072-sha256@libassh.org",  NULL,                    "ssh-dss",
+    dsa3072_key, sizeof(dsa3072_key) - 1 },
+  { "ssh-rsa",                     "sha*, md5, key >= 768", "ssh-rsa",
+    rsa1024_key, sizeof(rsa1024_key) - 1 },
+  { "ssh-rsa",                     "sha*, key >= 1024",     "ssh-rsa",
+    rsa1024_key, sizeof(rsa1024_key) - 1 },
+  { "ssh-rsa",                     "sha*, key >= 2048",     "ssh-rsa",
+    rsa2048_key, sizeof(rsa2048_key) - 1 },
+  { "rsa-sha2-256",                NULL,                    "ssh-rsa",
+    rsa2048_key, sizeof(rsa2048_key) - 1 },
+  { "rsa-sha2-512",                NULL,                    "ssh-rsa",
+    rsa3072_key, sizeof(rsa3072_key) - 1 },
+  { "ssh-ed25519",                 NULL,                    "ssh-ed25519",
+    ed25519_key, sizeof(ed25519_key) - 1 },
+  { "eddsa-e382-shake256@libassh.org", NULL, "eddsa-e382-shake256@libassh.org",
+    eddsa_e382_key, sizeof(eddsa_e382_key) - 1 },
   { NULL }
 };
 
 /* all sign algorithms, single set of parameters */
 static const struct algo_with_key_s sign_list_all[] =
 {
-  { &assh_sign_none,              &assh_key_none, (const uint8_t*)"\0", 0 },
-  { &assh_sign_dsa768,            &assh_key_dsa, dsa1024_key, sizeof(dsa1024_key) - 1 },
-  { &assh_sign_nistp256,          &assh_key_ecdsa_nistp, ecdsa_nistp256_key, sizeof(ecdsa_nistp256_key) - 1 },
-  { &assh_sign_rsa_sha1_md5,      &assh_key_rsa, rsa1024_key, sizeof(rsa1024_key) - 1 },
-  { &assh_sign_ed25519,           &assh_key_ed25519, ed25519_key, sizeof(ed25519_key) - 1 },
+  { "none@libassh.org",            NULL,                    "none",
+    (const uint8_t*)"\0", 0 },
+  { "ssh-dss",                     "key >= 768",            "ssh-dss",
+    dsa1024_key, sizeof(dsa1024_key) - 1 },
+  { "ecdsa-sha2-nistp256",         NULL,                    "ecdsa-sha2-nist",
+    ecdsa_nistp256_key, sizeof(ecdsa_nistp256_key) - 1 },
+  { "ssh-rsa",                     "sha*, md5, key >= 768", "ssh-rsa",
+    rsa1024_key, sizeof(rsa1024_key) - 1 },
+  { "ssh-ed25519",                 NULL,                    "ssh-ed25519",
+    ed25519_key, sizeof(ed25519_key) - 1 },
   { NULL }
 };
 
 /* minimal set of sign algorithms for testing other classes */
 static const struct algo_with_key_s sign_list_short[] =
 {
-  { &assh_sign_none,              &assh_key_none, (const uint8_t*)"\0", 0 },
+  { "none@libassh.org",            NULL,                    "none",
+    (const uint8_t*)"\0", 0 },
   { NULL }
 };
 
 /* all mac algorithms */
-static const struct assh_algo_mac_s *mac_list_long[] =
+static const char *mac_list_long[] =
 {
-  &assh_hmac_none,
-# ifdef CONFIG_ASSH_HASH_MD5
-  &assh_hmac_md5,
-  &assh_hmac_md5_96,
-  &assh_hmac_md5_etm,
-  &assh_hmac_md5_96_etm,
-# endif
-# ifdef CONFIG_ASSH_HASH_SHA1
-  &assh_hmac_sha1,
-  &assh_hmac_sha1_96,
-  &assh_hmac_sha1_etm,
-  &assh_hmac_sha1_96_etm,
-# endif
-# ifdef CONFIG_ASSH_HASH_SHA2
-  &assh_hmac_sha256,
-  &assh_hmac_sha512,
-  &assh_hmac_sha256_etm,
-  &assh_hmac_sha512_etm,
-# endif
-# ifdef CONFIG_ASSH_HASH_RIPEMD160
-  &assh_hmac_ripemd160,
-# endif
+  "none",
+  "hmac-md5",
+  "hmac-md5-96",
+  "hmac-md5-etm@openssh.com",
+  "hmac-md5-96-etm@openssh.com",
+  "hmac-sha1",
+  "hmac-sha1-96",
+  "hmac-sha1-etm@openssh.com",
+  "hmac-sha1-96-etm@openssh.com",
+  "hmac-sha2-256",
+  "hmac-sha2-512",
+  "hmac-sha2-256-etm@openssh.com",
+  "hmac-sha2-512-etm@openssh.com",
+  "hmac-ripemd160",
   NULL
 };
 
 /* minimal set of mac algorithms for testing other classes */
-static const struct assh_algo_mac_s *mac_list_short[] =
+static const char *mac_list_short[] =
 {
-  &assh_hmac_md5,
+  "hmac-md5",
   NULL
 };
 
 /* single mac algorithm which let mangled packet through */
-static const struct assh_algo_mac_s *mac_list_fuzz[] =
+static const char *mac_list_fuzz[] =
 {
-  &assh_hmac_none,
+  "none",
   NULL
 };
 
 /* all cipher algorithms */
-static const struct assh_algo_cipher_s *cipher_list_long[] =
+static const char *cipher_list_long[] =
 {
-# ifdef CONFIG_ASSH_CIPHER_TDES_CBC
-  &assh_cipher_tdes_cbc,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_TDES_CTR
-  &assh_cipher_tdes_ctr,
-# endif
-
-# ifdef CONFIG_ASSH_CIPHER_CAST128_CBC
-  &assh_cipher_cast128_cbc,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_CAST128_CTR
-  &assh_cipher_cast128_ctr,
-# endif
-
-# ifdef CONFIG_ASSH_CIPHER_IDEA_CBC
-  &assh_cipher_idea_cbc,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_IDEA_CTR
-  &assh_cipher_idea_ctr,
-# endif
-
-# ifdef CONFIG_ASSH_CIPHER_BLOWFISH_CBC
-  &assh_cipher_blowfish_cbc,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_BLOWFISH_CTR
-  &assh_cipher_blowfish_ctr,
-# endif
-
-# ifdef CONFIG_ASSH_CIPHER_TWOFISH128_CBC
-  &assh_cipher_twofish128_cbc,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_TWOFISH192_CBC
-  &assh_cipher_twofish192_cbc,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_TWOFISH256_CBC
-  &assh_cipher_twofish256_cbc,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_TWOFISH128_CTR
-  &assh_cipher_twofish128_ctr,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_TWOFISH192_CTR
-  &assh_cipher_twofish192_ctr,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_TWOFISH256_CTR
-  &assh_cipher_twofish256_ctr,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_TWOFISH128_GCM
-  &assh_cipher_twofish128_gcm,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_TWOFISH256_GCM
-  &assh_cipher_twofish256_gcm,
-# endif
-
-# ifdef CONFIG_ASSH_CIPHER_SERPENT128_CBC
-  &assh_cipher_serpent128_cbc,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_SERPENT192_CBC
-  &assh_cipher_serpent192_cbc,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_SERPENT256_CBC
-  &assh_cipher_serpent256_cbc,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_SERPENT128_CTR
-  &assh_cipher_serpent128_ctr,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_SERPENT192_CTR
-  &assh_cipher_serpent192_ctr,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_SERPENT256_CTR
-  &assh_cipher_serpent256_ctr,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_SERPENT128_GCM
-  &assh_cipher_serpent128_gcm,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_SERPENT256_GCM
-  &assh_cipher_serpent256_gcm,
-# endif
-
-# ifdef CONFIG_ASSH_CIPHER_ARCFOUR
-  &assh_cipher_arc4,
-  &assh_cipher_arc4_128,
-  &assh_cipher_arc4_256,
-# endif
-
-# ifdef CONFIG_ASSH_CIPHER_AES128_CBC
-  &assh_cipher_aes128_cbc,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_AES192_CBC
-  &assh_cipher_aes192_cbc,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_AES256_CBC
-  &assh_cipher_aes256_cbc,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_AES128_CTR
-  &assh_cipher_aes128_ctr,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_AES192_CTR
-  &assh_cipher_aes192_ctr,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_AES256_CTR
-  &assh_cipher_aes256_ctr,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_AES128_GCM
-  &assh_cipher_aes128_gcm,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_AES256_GCM
-  &assh_cipher_aes256_gcm,
-# endif
-
-# ifdef CONFIG_ASSH_CIPHER_CAMELLIA128_CBC
-  &assh_cipher_camellia128_cbc,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_CAMELLIA192_CBC
-  &assh_cipher_camellia192_cbc,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_CAMELLIA256_CBC
-  &assh_cipher_camellia256_cbc,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_CAMELLIA128_CTR
-  &assh_cipher_camellia128_ctr,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_CAMELLIA192_CTR
-  &assh_cipher_camellia192_ctr,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_CAMELLIA256_CTR
-  &assh_cipher_camellia256_ctr,
-# endif
-
-# ifdef CONFIG_ASSH_CIPHER_CHACHAPOLY
-  &assh_cipher_chachapoly,
-# endif
+  "3des-cbc",
+  "3des-ctr",
+  "cast128-cbc",
+  "cast128-ctr",
+  "idea-cbc",
+  "idea-ctr",
+  "blowfish-cbc",
+  "blowfish-ctr",
+  "twofish128-cbc",
+  "twofish192-cbc",
+  "twofish256-cbc",
+  "twofish128-ctr",
+  "twofish192-ctr",
+  "twofish256-ctr",
+  "twofish128-gcm@libassh.org",
+  "twofish256-gcm@libassh.org",
+  "serpent128-cbc",
+  "serpent192-cbc",
+  "serpent256-cbc",
+  "serpent128-ctr",
+  "serpent192-ctr",
+  "serpent256-ctr",
+  "serpent128-gcm@libassh.org",
+  "serpent256-gcm@libassh.org",
+  "arcfour",
+  "arcfour128",
+  "arcfour256",
+  "aes128-cbc",
+  "aes192-cbc",
+  "aes256-cbc",
+  "aes128-ctr",
+  "aes192-ctr",
+  "aes256-ctr",
+  "aes128-gcm@openssh.com",
+  "aes256-gcm@openssh.com",
+  "camellia128-cbc",
+  "camellia192-cbc",
+  "camellia256-cbc",
+  "camellia128-ctr",
+  "camellia192-ctr",
+  "camellia256-ctr",
+  "chacha20-poly1305@openssh.com",
   NULL
 };
 
 /* cipher algorithms with different cipher_key_size for kex testing */
-static const struct assh_algo_cipher_s *cipher_list_short[] =
+static const char *cipher_list_short[] =
 {
-  &assh_cipher_none,
-# ifdef CONFIG_ASSH_CIPHER_ARCFOUR
-  &assh_cipher_arc4,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_AES192_CTR
-  &assh_cipher_aes192_ctr,
-#elif defined(CONFIG_ASSH_CIPHER_AES192_CBC)
-  &assh_cipher_aes192_cbc,
-# endif
-# ifdef CONFIG_ASSH_CIPHER_AES256_CTR
-  &assh_cipher_aes256_ctr,
-#elif defined(CONFIG_ASSH_CIPHER_AES256_CBC)
-  &assh_cipher_aes256_cbc,
-# endif
+  "none",
+  "arcfour",
+  "aes192-ctr",
+  "aes192-cbc",
+  "aes256-ctr",
+  "aes256-cbc",
   NULL
 };
 
 /* single cipher algorithms which mangle packet content */
-static const struct assh_algo_cipher_s *cipher_list_fuzz[] =
+static const char *cipher_list_fuzz[] =
 {
-  &assh_cipher_fuzz,
+  "fuzz",
   NULL
 };
 
 /* all compression algorithms */
-static const struct assh_algo_compress_s *comp_list_long[] =
+static const char *comp_list_long[] =
 {
-  &assh_compress_none,
-# ifdef CONFIG_ASSH_USE_ZLIB
-  &assh_compress_zlib,
-  &assh_compress_zlib_openssh,
-# endif
+  "none",
+  "zlib",
+  "zlib@openssh.com",
   NULL
 };
 
 /* minimal set of compression algorithms for testing other classes */
-static const struct assh_algo_compress_s *comp_list_short[] =
+static const char *comp_list_short[] =
 {
-  &assh_compress_none,
+  "none",
   NULL
 };
 
@@ -433,8 +352,8 @@ void test(const struct assh_algo_kex_s *kex,
   uint_fast8_t started = 0;
   struct assh_channel_s *ch[2];
 
-  fprintf(stderr, "%u: %s, %s, %s, %s, %s\n", seed,
-	  assh_algo_name(&kex->algo), assh_algo_name(&sign->algo),
+  fprintf(stderr, "%u: %s (%s), %s, %s, %s, %s\n", seed,
+	  assh_algo_name(&kex->algo), kex->algo.implem, assh_algo_name(&sign->algo),
 	  assh_algo_name(&cipher->algo), assh_algo_name(&mac->algo),
 	  assh_algo_name(&comp->algo));
 
@@ -451,7 +370,7 @@ void test(const struct assh_algo_kex_s *kex,
 	{
 	  do {
 	  const uint8_t *key_blob = sign_key->key_blob + 1;
-	  if (assh_key_load(c, &c->keys,
+	  if (asshh_key_load(c, &c->keys,
 			    sign_key->key_algo, ASSH_ALGO_SIGN, sign_key->key_blob[0],
 			    &key_blob, sign_key->key_size))
 	    {
@@ -466,7 +385,7 @@ void test(const struct assh_algo_kex_s *kex,
 	{
 	  do {
 	  const uint8_t *key_blob = kex_key->key_blob + 1;
-	  if (assh_key_load(c, &c->keys,
+	  if (asshh_key_load(c, &c->keys,
 			    kex_key->key_algo, ASSH_ALGO_KEX, kex_key->key_blob[0],
 			    &key_blob, kex_key->key_size))
 	    {
@@ -600,42 +519,73 @@ void test(const struct assh_algo_kex_s *kex,
     TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
 }
 
-void test_loop(unsigned int seed,
-	       const struct algo_with_key_s *kex,
-	       const struct algo_with_key_s *sign,
-	       const struct assh_algo_cipher_s **cipher,
-	       const struct assh_algo_mac_s **mac,
-	       const struct assh_algo_compress_s **comp,
-	       unsigned cycles)
+static assh_status_t
+algo_lookup(enum assh_algo_class_e cl, const char *name,
+	    const char *variant, const struct assh_algo_s **algo)
 {
-  const struct algo_with_key_s *kex_list = kex;
+  assh_status_t r = test_algo_lookup(cl, name, variant, NULL, algo);
+
+  if (r)
+    {
+      if (variant)
+	fprintf(stderr, "  %s (%s) not supported\n", name, variant);
+      else
+	fprintf(stderr, "  %s not supported\n", name);
+    }
+
+  return r;
+}
+
+static assh_bool_t test_loop_2(unsigned int seed,
+			       const struct assh_algo_kex_s *kex_a,
+			       const struct algo_with_key_s *kex,
+			       const struct algo_with_key_s *sign,
+			       const char **cipher,
+			       const char **mac,
+			       const char **comp,
+			       unsigned cycles)
+{
   const struct algo_with_key_s *sign_list = sign;
-  const struct assh_algo_cipher_s **cipher_list = cipher;
-  const struct assh_algo_mac_s **mac_list = mac;
+  const char **cipher_list = cipher;
+  const char **mac_list = mac;
+  assh_bool_t kex_done = 0;
 
   while (*comp)
     {
-      if (!comp_filter || strstr(assh_algo_name(&(*comp)->algo), comp_filter))
+      const struct assh_algo_compress_s *comp_a;
+
+      if ((!comp_filter || strstr(*comp, comp_filter)) &&
+	  !algo_lookup(ASSH_ALGO_COMPRESS, *comp, NULL,
+		       (const struct assh_algo_s **)&comp_a))
+
 	while (*mac)
 	  {
-	    if (!mac_filter || strstr(assh_algo_name(&(*mac)->algo), mac_filter))
+	    const struct assh_algo_mac_s *mac_a;
+
+	    if ((!mac_filter || strstr(*mac, mac_filter)) &&
+		!algo_lookup(ASSH_ALGO_MAC, *mac, NULL,
+			     (const struct assh_algo_s **)&mac_a))
 	      while (*cipher)
 		{
-		  if (!cipher_filter || strstr(assh_algo_name(&(*cipher)->algo), cipher_filter))
+		  const struct assh_algo_cipher_s *cipher_a;
+
+		  if ((!cipher_filter || strstr(*cipher, cipher_filter)) &&
+		      !algo_lookup(ASSH_ALGO_CIPHER, *cipher, NULL,
+				   (const struct assh_algo_s **)&cipher_a))
+
 		    while (sign->algo)
 		      {
-			if (!sign_filter || strstr(assh_algo_name(sign->algo), sign_filter))
-			  while (kex->algo)
-			    {
-			      if (!kex_filter || strstr(assh_algo_name(kex->algo), kex_filter))
-				{
-				  assh_prng_seed(seed);
-				  test(kex->algo, sign->algo, *cipher, *mac, *comp,
-				       kex, sign, seed, cycles);
-				}
-			      kex++;
-			    }
-			kex = kex_list;
+			const struct assh_algo_sign_s *sign_a;
+
+			if ((!sign_filter || strstr(sign->algo, sign_filter)) &&
+			    !algo_lookup(ASSH_ALGO_SIGN, sign->algo, sign->variant,
+					 (const struct assh_algo_s **)&sign_a))
+			  {
+			    assh_prng_seed(seed);
+			    kex_done = 1;
+			    test(kex_a, sign_a, cipher_a, mac_a, comp_a,
+				 kex, sign, seed, cycles);
+			  }
 			sign++;
 		      }
 		  sign = sign_list;
@@ -646,6 +596,55 @@ void test_loop(unsigned int seed,
 	  }
       mac = mac_list;
       comp++;
+    }
+
+  return kex_done;
+}
+
+void test_loop(unsigned int seed,
+	       const struct algo_with_key_s *kex,
+	       const struct algo_with_key_s *sign,
+	       const char **cipher,
+	       const char **mac,
+	       const char **comp,
+	       unsigned cycles)
+{
+  const struct assh_algo_kex_s *kex_a;
+
+  while (kex->algo)
+    {
+      const struct assh_algo_s **ka;
+
+      if (!strcmp(kex->algo, "none@libassh.org"))
+	{
+	  test_loop_2(seed, &assh_kex_none, kex, sign, cipher, mac, comp, cycles);
+	}
+      else
+	{
+	  assh_bool_t kex_done = 0;
+
+	  for (ka = assh_algo_table; *ka; ka++)
+	    {
+	      if (!assh_algo_name_match(*ka, ASSH_ALGO_KEX,
+					kex->algo, strlen(kex->algo)))
+		continue;
+	      kex_a = (const void*)*ka;
+
+	      if (kex_filter && !strstr(kex->algo, kex_filter))
+		continue;
+
+	      if (kex->variant && (!kex_a->algo.variant ||
+				   strcmp(kex->variant, kex_a->algo.variant)))
+		continue;
+
+	      kex_done |= test_loop_2(seed, kex_a, kex, sign, cipher, mac, comp, cycles);
+	    }
+
+	  if (!kex_done)
+	    fprintf(stderr, "  %s skipped, not supported\n", kex->algo);
+	}
+
+      kex++;
     }
 }
 

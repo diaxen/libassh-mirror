@@ -123,7 +123,7 @@ void test(int (*fend)(int, int), int cnt, int evrate,
 
   static const struct assh_algo_s *algos[] = {
     &assh_kex_none.algo, &assh_sign_none.algo,
-    &assh_cipher_fuzz.algo, &assh_hmac_none.algo, &assh_compress_none.algo,
+    &assh_cipher_fuzz.algo, &assh_mac_none.algo, &assh_compress_none.algo,
     NULL
   };
 

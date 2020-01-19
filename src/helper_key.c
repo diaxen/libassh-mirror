@@ -30,9 +30,6 @@
 #include <assh/assh_prng.h>
 #include <assh/assh_cipher.h>
 #include <assh/assh_hash.h>
-#include <assh/key_rsa.h>
-#include <assh/key_dsa.h>
-#include <assh/key_ecdsa.h>
 
 #include <string.h>
 #include <stdlib.h>
@@ -44,20 +41,14 @@
 struct assh_rfc1421_cipher_s
 {
   const char *name;
-  const struct assh_algo_cipher_s *cipher;
+  const char *cipher_name;
 };
 
 static const struct assh_rfc1421_cipher_s
 assh_rfc1421_ciphers[] = {
-#ifdef CONFIG_ASSH_CIPHER_AES128_CBC
-  { "AES-128-CBC", &assh_cipher_aes128_cbc },
-#endif
-#ifdef CONFIG_ASSH_CIPHER_AES256_CBC
-  { "AES-256-CBC", &assh_cipher_aes256_cbc },
-#endif
-#ifdef CONFIG_ASSH_CIPHER_TDES_CBC
-  { "DES-EDE3-CBC", &assh_cipher_tdes_cbc },
-#endif
+  { "AES-128-CBC", "aes128-cbc" },
+  { "AES-256-CBC", "aes256-cbc" },
+  { "DES-EDE3-CBC", "3des-cbc" },
   { NULL }
 };
 
@@ -65,15 +56,15 @@ struct assh_rfc1421_key_ops_s
 {
   const char *name;
   enum assh_key_format_e format;
-  const struct assh_key_algo_s *algo;
+  const char *algo_name;
 };
 
 static const struct assh_rfc1421_key_ops_s
 assh_rfc1421_key_ops[] = {
-  { "RSA PRIVATE", ASSH_KEY_FMT_PV_PEM,  &assh_key_rsa, },
-  { "RSA PUBLIC",  ASSH_KEY_FMT_PUB_PEM, &assh_key_rsa },
-  { "DSA PRIVATE", ASSH_KEY_FMT_PV_PEM,  &assh_key_dsa },
-  { "EC PRIVATE",  ASSH_KEY_FMT_PV_PEM,  &assh_key_ecdsa_nistp },
+  { "RSA PRIVATE", ASSH_KEY_FMT_PV_PEM,  "ssh-rsa", },
+  { "RSA PUBLIC",  ASSH_KEY_FMT_PUB_PEM, "ssh-rsa" },
+  { "DSA PRIVATE", ASSH_KEY_FMT_PV_PEM,  "ssh-dss" },
+  { "EC PRIVATE",  ASSH_KEY_FMT_PV_PEM,  "ecdsa-sha2-nist" },
   { NULL }
 };
 
@@ -171,8 +162,10 @@ assh_load_rfc4716_rfc1421(struct assh_context_s *c, FILE *file,
                   size_t l = strlen(name);
                   if (!strncmp(name, begin + 6, l) && begin[6 + l] == ' ')
                     {
-                      *algo = assh_rfc1421_key_ops[i].algo;
-                      break;
+		      const char *an = assh_rfc1421_key_ops[i].algo_name;
+		      if (ASSH_STATUS(assh_key_algo_by_name(c, ASSH_ALGO_ANY,
+					  an, strlen(an), algo)) == ASSH_OK)
+			break;
                     }
                 }
             }
@@ -202,7 +195,11 @@ assh_load_rfc4716_rfc1421(struct assh_context_s *c, FILE *file,
                     break;
                 }
               dek += j + 1;
-              cipher = assh_rfc1421_ciphers[i].cipher;
+
+	      const char *cn = assh_rfc1421_ciphers[i].cipher_name;
+	      ASSH_JMP_IF_TRUE(assh_algo_by_name_static(assh_algo_table, ASSH_ALGO_CIPHER,
+				 cn, strlen(cn), (const struct assh_algo_s**)&cipher, NULL),
+			       ASSH_ERR_MISSING_ALGO, err_);
 
               /* get iv */
               assert(cipher->iv_size <= sizeof(iv) * 8);
@@ -442,7 +439,7 @@ assh_load_openssh_v1_blob(struct assh_context_s *c,
 
       /* lookup cipher */
       const struct assh_algo_cipher_s *cipher;
-      ASSH_RET_IF_TRUE(assh_algo_by_name(c, ASSH_ALGO_CIPHER,
+      ASSH_RET_IF_TRUE(assh_algo_by_name_static(assh_algo_table, ASSH_ALGO_CIPHER,
                      (const char*)cipher_name + 4, assh_load_u32(cipher_name),
                      (const struct assh_algo_s **)&cipher, NULL) != ASSH_OK,
                    ASSH_ERR_MISSING_ALGO);
@@ -546,7 +543,7 @@ static assh_status_t assh_key_file_size(FILE *file, size_t *size)
 static assh_status_t
 assh_load_key_file_guess(struct assh_context_s *c,
                          struct assh_key_s **head,
-                         const struct assh_key_algo_s *algo,
+                         const char *key_algo,
                          enum assh_algo_class_e role,
                          FILE *file, const char *passphrase,
                          size_t size_hint)
@@ -566,7 +563,7 @@ assh_load_key_file_guess(struct assh_context_s *c,
 
       ASSH_RET_IF_TRUE(fseek(file, pos, SEEK_SET), ASSH_ERR_IO);
 
-      err = asshh_load_key_file(c, head, algo, role, file,
+      err = asshh_load_key_file(c, head, key_algo, role, file,
                                i, passphrase, size_hint);
 
       switch (ASSH_STATUS(err))
@@ -621,15 +618,20 @@ asshh_key_create(struct assh_context_s *c,
 
 assh_status_t asshh_load_key_file(struct assh_context_s *c,
 				struct assh_key_s **head,
-				const struct assh_key_algo_s *algo,
+				const char *key_algo,
 				enum assh_algo_class_e role,
 				FILE *file, enum assh_key_format_e format,
 				const char *passphrase, size_t size_hint)
 {
   assh_status_t err = ASSH_OK;
+  const struct assh_key_algo_s *algo = NULL;
+
+  ASSH_RET_IF_TRUE(key_algo && assh_key_algo_by_name(c, role,
+		     key_algo, strlen(key_algo), &algo),
+		   ASSH_ERR_MISSING_ALGO);
 
   if (format == ASSH_KEY_FMT_NONE)
-    ASSH_RETURN(assh_load_key_file_guess(c, head, algo, role,
+    ASSH_RETURN(assh_load_key_file_guess(c, head, key_algo, role,
                                          file, passphrase, size_hint));
 
   char *comment = NULL;
@@ -723,7 +725,7 @@ assh_status_t asshh_load_key_file(struct assh_context_s *c,
 
 assh_status_t asshh_load_key_filename(struct assh_context_s *c,
 				    struct assh_key_s **head,
-				    const struct assh_key_algo_s *algo,
+				    const char *key_algo,
 				    enum assh_algo_class_e role,
 				    const char *filename,
 				    enum assh_key_format_e format,
@@ -734,7 +736,7 @@ assh_status_t asshh_load_key_filename(struct assh_context_s *c,
   FILE *file = fopen(filename, "rb");
   ASSH_RET_IF_TRUE(file == NULL, ASSH_ERR_IO);
 
-  ASSH_JMP_ON_ERR(asshh_load_key_file(c, head, algo, role, file,
+  ASSH_JMP_ON_ERR(asshh_load_key_file(c, head, key_algo, role, file,
                                   format, passphrase, size_hint), err_);
 
  err_:
@@ -743,28 +745,28 @@ assh_status_t asshh_load_key_filename(struct assh_context_s *c,
 }
 
 assh_status_t asshh_load_hostkey_file(struct assh_context_s *c,
-				    const struct assh_key_algo_s *algo,
+				    const char *key_algo,
 				    enum assh_algo_class_e role,
 				    FILE *file,
 				    enum assh_key_format_e format, size_t size_hint)
 {
 #ifdef CONFIG_ASSH_SERVER
   if (c->type == ASSH_SERVER)
-    return asshh_load_key_file(c, &c->keys, algo, role,
+    return asshh_load_key_file(c, &c->keys, key_algo, role,
                               file, format, NULL, size_hint);
 #endif
   return ASSH_ERR_NOTSUP;
 }
 
 assh_status_t asshh_load_hostkey_filename(struct assh_context_s *c,
-					const struct assh_key_algo_s *algo,
+					const char *key_algo,
 					enum assh_algo_class_e role,
 					const char *filename,
 					enum assh_key_format_e format, size_t size_hint)
 {
 #ifdef CONFIG_ASSH_SERVER
   if (c->type == ASSH_SERVER)
-    return asshh_load_key_filename(c, &c->keys, algo, role,
+    return asshh_load_key_filename(c, &c->keys, key_algo, role,
                                   filename, format, NULL, size_hint);
 #endif
   return ASSH_ERR_NOTSUP;
@@ -774,12 +776,11 @@ static ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_save_openssh_v1_blob(struct assh_context_s *c,
                           const struct assh_key_s *head,
                           const char *passphrase,
-                          const struct assh_algo_cipher_s *cipher,
+                          const char *cipher_name,
                           uint8_t *blob, size_t *blob_len)
 {
   assh_status_t err;
   const char *kdfname = "none";
-  const char *ciphername = "none";
   const size_t salt_size = 16;
 #ifdef CONFIG_ASSH_DEBUG
   /* speedup testsuite */
@@ -790,12 +791,21 @@ assh_save_openssh_v1_blob(struct assh_context_s *c,
   size_t pad_len = 16;
   size_t pub_len, pv_len;
 
+  const struct assh_algo_cipher_s *cipher;
+
   size_t kdf_opt_len = 0;
   if (passphrase != NULL)
     {
       kdfname = "bcrypt";
       kdf_opt_len = 4 + salt_size + 4;
-      ciphername = assh_algo_name(&cipher->algo);
+      ASSH_RET_IF_TRUE(assh_algo_by_name_static(assh_algo_table, ASSH_ALGO_CIPHER,
+			cipher_name, strlen(cipher_name),
+			(const struct assh_algo_s**)&cipher, NULL),
+		       ASSH_ERR_MISSING_ALGO);
+    }
+  else
+    {
+      cipher_name = "none";
     }
 
   if (blob == NULL)
@@ -810,7 +820,7 @@ assh_save_openssh_v1_blob(struct assh_context_s *c,
       enc_len += pad_len - enc_len % pad_len;
 
       size_t len = sizeof(OPENSSH_V1_AUTH_MAGIC) +
-	4 + strlen(ciphername) +
+	4 + strlen(cipher_name) +
 	4 + strlen(kdfname) +
 	4 + kdf_opt_len +
 	4 +			/* number of keys */
@@ -826,9 +836,9 @@ assh_save_openssh_v1_blob(struct assh_context_s *c,
       memcpy(b, OPENSSH_V1_AUTH_MAGIC, sizeof(OPENSSH_V1_AUTH_MAGIC));
       b += sizeof(OPENSSH_V1_AUTH_MAGIC);
 
-      size_t l = strlen(ciphername);
+      size_t l = strlen(cipher_name);
       assh_store_u32(b, l);
-      memcpy(b + 4, ciphername, l);
+      memcpy(b + 4, cipher_name, l);
       b += 4 + l;
 
       l = strlen(kdfname);
@@ -1000,9 +1010,14 @@ assh_save_rfc1421(struct assh_context_s *c,
 
   if (passphrase != NULL)
     {
-      const struct assh_algo_cipher_s *cipher = &assh_cipher_aes128_cbc;
+      const struct assh_algo_cipher_s *cipher;
       uint8_t iv[16];
       uint_fast8_t i, j;
+
+      const char *cn = "aes128-cbc";
+      ASSH_RET_IF_TRUE(assh_algo_by_name_static(assh_algo_table, ASSH_ALGO_CIPHER,
+			 cn, strlen(cn), (const struct assh_algo_s**)&cipher, NULL),
+		       ASSH_ERR_MISSING_ALGO);
 
       fputs("Proc-Type: 4,ENCRYPTED\n"
             "DEK-Info: AES-128-CBC,", file);
@@ -1102,7 +1117,7 @@ assh_status_t asshh_save_key_file(struct assh_context_s *c,
     case ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB:
       subfmt = ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB;
       ASSH_RET_ON_ERR(assh_save_openssh_v1_blob(c, head, passphrase,
-                     &assh_cipher_aes256_cbc, NULL, &blob_len));
+                     "aes256-cbc", NULL, &blob_len));
       break;
 
     default:
@@ -1122,7 +1137,7 @@ assh_status_t asshh_save_key_file(struct assh_context_s *c,
     case ASSH_KEY_FMT_PV_OPENSSH_V1:
     case ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB:
       ASSH_JMP_ON_ERR(assh_save_openssh_v1_blob(c, head, passphrase,
-                     &assh_cipher_aes256_cbc, blob, &blob_len), err_sc);
+                     "aes256-cbc", blob, &blob_len), err_sc);
       break;
     }
 
@@ -1144,7 +1159,7 @@ assh_status_t asshh_save_key_file(struct assh_context_s *c,
         {
           type = assh_rfc1421_key_ops[i].name;
           ASSH_JMP_IF_TRUE(type == NULL, ASSH_ERR_NOTSUP, err_sc);
-          if (assh_rfc1421_key_ops[i].algo == head->algo &&
+          if (!strcmp(assh_rfc1421_key_ops[i].algo_name, head->algo->name) &&
               assh_rfc1421_key_ops[i].format == format)
             break;
         }
