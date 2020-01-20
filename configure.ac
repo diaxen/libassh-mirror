@@ -503,6 +503,7 @@ if test "$GCC" = "yes" ; then
 fi
 
 AC_OUTPUT([
+  libassh.pc
   Makefile
   src/Makefile
   src/assh/Makefile

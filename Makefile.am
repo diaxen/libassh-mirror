@@ -17,6 +17,9 @@
 SUBDIRS = src examples test doc
 ACLOCAL_AMFLAGS=-Im4
 
+pkgconfig_DATA = libassh.pc
+pkgconfigdir = $(libdir)/pkgconfig
+
 doc: manual internals
 
 manual:
