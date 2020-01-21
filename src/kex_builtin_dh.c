@@ -316,10 +316,11 @@ static assh_status_t assh_kex_dh_server_wait_e(struct assh_session_s *s,
   {
     G_mpint, P_mpint, E_mpint, F_mpint, K_mpint,
     X_n, G_n,
-    F, G, P, E, X, K, T, MT
+    X, F, G, P, E, K, T, MT
   };
 
   static const assh_bignum_op_t bytecode[] = {
+    ASSH_BOP_SIZE(      X,      X_n                     ),
     ASSH_BOP_SIZER(     F,      MT,	G_n		),
 
     ASSH_BOP_MOVE(      G,      G_mpint         	),

@@ -198,7 +198,7 @@ static assh_status_t assh_kex_dh_gex_client_wait_group(struct assh_session_s *s,
   enum bytecode_args_e
   {
     G_mpint, P_mpint, E_mpint,
-    G, P, E, X,
+    X, G, P, E,
     T1, T2, Q, MT, G_n
   };
 
@@ -253,7 +253,7 @@ static assh_status_t assh_kex_dh_gex_client_wait_group(struct assh_session_s *s,
 
   ASSH_JMP_ON_ERR(assh_bignum_bytecode(s->ctx, 0, bytecode, "MMMNNNNTTTms",
                                     /* M */ g_str, p_str, e_str,
-                                    /* N */ &pv->gn, &pv->pn, &pv->en, &pv->xn,
+                                    /* N */ &pv->xn, &pv->gn, &pv->pn, &pv->en,
                                     /* S */ (size_t)n), err_p);
 
   assert(pv->xn.secret);
