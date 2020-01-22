@@ -83,8 +83,15 @@ assh/assh_event.h
   @label{softarch}
 
   The architecture of the @em ssh2 protocol and the software
-  architecture of @em libassh are tightly coupled. The following
-  subsections describe both and present some software design choices.
+  architecture of @em libassh are tightly coupled.
+
+  The following subsections describe the @em ssh2 protocol and present
+  the related software design choices.
+
+  The diagram below gives an overview of the software components
+  discussed thereafter along with their dependencies.
+
+  @image soft_arch.png
 
   @section TP {Protocol architecture}
     @include protocol_arch.mkdoc
