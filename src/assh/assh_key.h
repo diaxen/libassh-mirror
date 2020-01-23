@@ -274,7 +274,8 @@ assh_key_load(struct assh_context_s *c,
               const uint8_t **blob, size_t blob_len);
 
 #ifdef CONFIG_ASSH_KEY_CREATE
-/** @This creates a new key of specified type and bits size. */
+/** @This creates a new key of specified type and bits size. A default
+ suggested key size is used when the @tt bits parameter is 0. */
 ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_key_create(struct assh_context_s *c,
                 struct assh_key_s **key, size_t bits,

@@ -216,8 +216,6 @@ int main(int argc, char *argv[])
           type = get_type(optarg);
           if (ofmt == ASSH_KEY_FMT_NONE)
             ofmt = type->formats[0];
-          if (bits == 0)
-            bits = type->bits;
           break;
         case 'p':
           passphrase = optarg;
@@ -280,8 +278,6 @@ int main(int argc, char *argv[])
 
       if (ofmt_desc->public)
         ERROR("Won't save new key in public only format.\n");
-      if (bits == 0)
-        ERROR("Missing -b option\n");
       if (ofile == NULL)
         ERROR("Missing -o option\n");
 

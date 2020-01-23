@@ -114,6 +114,9 @@ assh_key_create(struct assh_context_s *c,
   assh_status_t err;
   struct assh_key_s *k;
 
+  if (bits == 0)
+    bits = algo->bits;
+
   ASSH_RET_ON_ERR(algo->f_create(c, algo, bits, &k));
 
   k->role = role;
