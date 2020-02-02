@@ -80,6 +80,11 @@ TESTS += userauth_server
 userauth_server_SOURCES = userauth_server.c
 userauth_server_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
 userauth_server_CFLAGS = -I$(top_srcdir)/src
+
+noinst_PROGRAMS += kex_bench
+kex_bench_SOURCES = kex_bench.c
+kex_bench_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
+kex_bench_CFLAGS = -I$(top_srcdir)/src
 endif
 
 noinst_PROGRAMS += connection
