@@ -113,7 +113,7 @@ asshh_client_get_known_hosts(struct assh_context_s *c, struct assh_key_s **keys,
 	    break;
 
 	read_key:		/* load key */
-	  if (!asshh_load_key_file(c, keys, NULL, ASSH_ALGO_SIGN, f,
+	  if (!asshh_key_load_file(c, keys, NULL, ASSH_ALGO_SIGN, f,
 				  ASSH_KEY_FMT_PUB_OPENSSH, NULL, 0))
 	    {
 	      char comment[256];
@@ -142,7 +142,7 @@ asshh_client_add_known_hosts(struct assh_context_s *c, const char *filename,
 
   ASSH_JMP_IF_TRUE(fputs(host, f) == EOF, ASSH_ERR_IO, err_);
   ASSH_JMP_IF_TRUE(fputc(' ', f) == EOF, ASSH_ERR_IO, err_);
-  ASSH_JMP_ON_ERR(asshh_save_key_file(c, key, f, ASSH_KEY_FMT_PUB_OPENSSH, NULL), err_);
+  ASSH_JMP_ON_ERR(asshh_key_save_file(c, key, f, ASSH_KEY_FMT_PUB_OPENSSH, NULL), err_);
 
  err_:
   fclose(f);
@@ -370,7 +370,7 @@ asshh_client_load_key_passphrase(struct assh_context_s *c, FILE *out, FILE *in,
 {
   assh_status_t err;
 
-  err = asshh_load_key_filename(c, head, key_algo, role,
+  err = asshh_key_load_filename(c, head, key_algo, role,
 			       filename, format, NULL, 0);
 
   switch (ASSH_STATUS(err))
@@ -384,7 +384,7 @@ asshh_client_load_key_passphrase(struct assh_context_s *c, FILE *out, FILE *in,
       const char *pass;
       ASSH_RET_ON_ERR(asshh_fd_get_password(c, &pass, 80, fileno(in), 0));
       putc('\n', out);
-      err = asshh_load_key_filename(c, head, key_algo, role,
+      err = asshh_key_load_filename(c, head, key_algo, role,
 				   filename, format, pass, 0);
       assh_free(c, (void*)pass);
     }

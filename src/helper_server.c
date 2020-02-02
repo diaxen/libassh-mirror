@@ -56,27 +56,27 @@ asshh_server_load_hk(struct assh_context_s *c)
   uint_fast8_t count = 0;
   assh_status_t err;
 
-  count += !asshh_load_hostkey_filename(c, "ssh-dss", ASSH_ALGO_SIGN,
+  count += !asshh_hostkey_load_filename(c, "ssh-dss", ASSH_ALGO_SIGN,
 				   CONFIG_ASSH_OPENSSH_PREFIX "ssh_host_dsa_key",
 				   ASSH_KEY_FMT_PV_PEM_ASN1, 0);
 
-  count += !asshh_load_hostkey_filename(c, "ssh_rsa", ASSH_ALGO_SIGN,
+  count += !asshh_hostkey_load_filename(c, "ssh_rsa", ASSH_ALGO_SIGN,
 				   CONFIG_ASSH_OPENSSH_PREFIX "ssh_host_rsa_key",
 				   ASSH_KEY_FMT_PV_PEM, 0);
 
-  count += !asshh_load_hostkey_filename(c, "ssh-ed25519", ASSH_ALGO_SIGN,
+  count += !asshh_hostkey_load_filename(c, "ssh-ed25519", ASSH_ALGO_SIGN,
 				   CONFIG_ASSH_OPENSSH_PREFIX "ssh_host_ed25519_key",
 				   ASSH_KEY_FMT_PV_OPENSSH_V1, 0);
 
-  count += !asshh_load_hostkey_filename(c, "eddsa-e382-shake256@libassh.org", ASSH_ALGO_SIGN,
+  count += !asshh_hostkey_load_filename(c, "eddsa-e382-shake256@libassh.org", ASSH_ALGO_SIGN,
 				   CONFIG_ASSH_OPENSSH_PREFIX "ssh_host_e382_key",
 				   ASSH_KEY_FMT_PV_OPENSSH_V1, 0);
 
-  count += !asshh_load_hostkey_filename(c, "eddsa-e521-shake256@libassh.org", ASSH_ALGO_SIGN,
+  count += !asshh_hostkey_load_filename(c, "eddsa-e521-shake256@libassh.org", ASSH_ALGO_SIGN,
 				   CONFIG_ASSH_OPENSSH_PREFIX "ssh_host_e521_key",
 				   ASSH_KEY_FMT_PV_OPENSSH_V1, 0);
 
-  count += !asshh_load_hostkey_filename(c, "ecdsa-sha2-nist", ASSH_ALGO_SIGN,
+  count += !asshh_hostkey_load_filename(c, "ecdsa-sha2-nist", ASSH_ALGO_SIGN,
 				   CONFIG_ASSH_OPENSSH_PREFIX "ssh_host_ecdsa_key",
 				   ASSH_KEY_FMT_PV_PEM, 0);
 
@@ -117,7 +117,7 @@ asshh_server_ak_lookup(struct assh_session_s *s,
 	      break;
 	    }
 
-	  if (!asshh_load_key_file(s->ctx, &k, NULL, ASSH_ALGO_SIGN, f,
+	  if (!asshh_key_load_file(s->ctx, &k, NULL, ASSH_ALGO_SIGN, f,
 				  ASSH_KEY_FMT_PUB_OPENSSH, NULL, 0))
 	    {
               assh_bool_t found = assh_key_cmp(s->ctx, k, key, 1);

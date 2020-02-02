@@ -563,7 +563,7 @@ assh_load_key_file_guess(struct assh_context_s *c,
 
       ASSH_RET_IF_TRUE(fseek(file, pos, SEEK_SET), ASSH_ERR_IO);
 
-      err = asshh_load_key_file(c, head, key_algo, role, file,
+      err = asshh_key_load_file(c, head, key_algo, role, file,
                                i, passphrase, size_hint);
 
       switch (ASSH_STATUS(err))
@@ -616,7 +616,7 @@ asshh_key_create(struct assh_context_s *c,
 }
 #endif
 
-assh_status_t asshh_load_key_file(struct assh_context_s *c,
+assh_status_t asshh_key_load_file(struct assh_context_s *c,
 				struct assh_key_s **head,
 				const char *key_algo,
 				enum assh_algo_class_e role,
@@ -723,7 +723,7 @@ assh_status_t asshh_load_key_file(struct assh_context_s *c,
   return err;
 }
 
-assh_status_t asshh_load_key_filename(struct assh_context_s *c,
+assh_status_t asshh_key_load_filename(struct assh_context_s *c,
 				    struct assh_key_s **head,
 				    const char *key_algo,
 				    enum assh_algo_class_e role,
@@ -736,7 +736,7 @@ assh_status_t asshh_load_key_filename(struct assh_context_s *c,
   FILE *file = fopen(filename, "rb");
   ASSH_RET_IF_TRUE(file == NULL, ASSH_ERR_IO);
 
-  ASSH_JMP_ON_ERR(asshh_load_key_file(c, head, key_algo, role, file,
+  ASSH_JMP_ON_ERR(asshh_key_load_file(c, head, key_algo, role, file,
                                   format, passphrase, size_hint), err_);
 
  err_:
@@ -744,7 +744,7 @@ assh_status_t asshh_load_key_filename(struct assh_context_s *c,
   return err;
 }
 
-assh_status_t asshh_load_hostkey_file(struct assh_context_s *c,
+assh_status_t asshh_hostkey_load_file(struct assh_context_s *c,
 				    const char *key_algo,
 				    enum assh_algo_class_e role,
 				    FILE *file,
@@ -752,13 +752,13 @@ assh_status_t asshh_load_hostkey_file(struct assh_context_s *c,
 {
 #ifdef CONFIG_ASSH_SERVER
   if (c->type == ASSH_SERVER)
-    return asshh_load_key_file(c, &c->keys, key_algo, role,
+    return asshh_key_load_file(c, &c->keys, key_algo, role,
                               file, format, NULL, size_hint);
 #endif
   return ASSH_ERR_NOTSUP;
 }
 
-assh_status_t asshh_load_hostkey_filename(struct assh_context_s *c,
+assh_status_t asshh_hostkey_load_filename(struct assh_context_s *c,
 					const char *key_algo,
 					enum assh_algo_class_e role,
 					const char *filename,
@@ -766,7 +766,7 @@ assh_status_t asshh_load_hostkey_filename(struct assh_context_s *c,
 {
 #ifdef CONFIG_ASSH_SERVER
   if (c->type == ASSH_SERVER)
-    return asshh_load_key_filename(c, &c->keys, key_algo, role,
+    return asshh_key_load_filename(c, &c->keys, key_algo, role,
                                   filename, format, NULL, size_hint);
 #endif
   return ASSH_ERR_NOTSUP;
@@ -1086,7 +1086,7 @@ assh_save_rfc1421(struct assh_context_s *c,
   return err;
 }
 
-assh_status_t asshh_save_key_file(struct assh_context_s *c,
+assh_status_t asshh_key_save_file(struct assh_context_s *c,
 				const struct assh_key_s *head,
 				FILE *file, enum assh_key_format_e format,
 				const char *passphrase)
@@ -1182,7 +1182,7 @@ assh_status_t asshh_save_key_file(struct assh_context_s *c,
   return err;
 }
 
-assh_status_t asshh_save_key_filename(struct assh_context_s *c,
+assh_status_t asshh_key_save_filename(struct assh_context_s *c,
 				    const struct assh_key_s *head,
 				    const char *filename,
 				    enum assh_key_format_e format,
@@ -1193,7 +1193,7 @@ assh_status_t asshh_save_key_filename(struct assh_context_s *c,
   FILE *file = fopen(filename, "wb");
   ASSH_RET_IF_TRUE(file == NULL, ASSH_ERR_IO);
 
-  ASSH_JMP_ON_ERR(asshh_save_key_file(c, head, file, format, passphrase), err_);
+  ASSH_JMP_ON_ERR(asshh_key_save_file(c, head, file, format, passphrase), err_);
 
  err_:
   fclose(file);

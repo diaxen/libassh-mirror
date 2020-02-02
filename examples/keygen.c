@@ -301,7 +301,7 @@ int main(int argc, char *argv[])
 
       while (1)                 /* retry passphrase prompt */
         {
-          switch (ASSH_STATUS(asshh_load_key_file(context, &key,
+          switch (ASSH_STATUS(asshh_key_load_file(context, &key,
 		   type ? type->name : NULL, ASSH_ALGO_ANY, ifile, ifmt, p, 0)))
             {
             case ASSH_OK:
@@ -405,7 +405,7 @@ int main(int argc, char *argv[])
             ERROR("Unable to set key comment.\n");
         }
 
-      if (asshh_save_key_file(context, key, ofile, ofmt, passphrase))
+      if (asshh_key_save_file(context, key, ofile, ofmt, passphrase))
         ERROR("Unable to save key.\n");
     }
 

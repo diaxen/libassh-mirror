@@ -51,7 +51,7 @@
     recognized by one of the registered algorithms. The input file
     must be in openssh ssh_knwon_host file format.
 
-    The keys are loaded by the @ref asshh_load_key_file function and
+    The keys are loaded by the @ref asshh_key_load_file function and
     must be released by calling @ref assh_key_flush.
 
     A comment string containing the location (file name and line

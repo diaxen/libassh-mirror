@@ -1823,7 +1823,7 @@ static int record(int argc, char **argv)
 	      }
 	    else
 	      {
-		if (asshh_load_key_filename(c, keys, NULL, role,
+		if (asshh_key_load_filename(c, keys, NULL, role,
 					   optarg, ASSH_KEY_FMT_NONE, NULL, 0))
 		  TEST_FAIL("unable to load key: `%s'\n", optarg);
 	      }

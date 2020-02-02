@@ -829,8 +829,8 @@ localhost$ example/fwdexec forward_host rexec_host command
 
   This example application performs @hl{user keys} and @hl{host keys}
   related operations. It relies on the @ref assh_key_create, @ref
-  asshh_load_key_file, @ref assh_key_validate and @ref
-  asshh_save_key_file functions provided by the library.
+  asshh_key_load_file, @ref assh_key_validate and @ref
+  asshh_key_save_file functions provided by the library.
 
   Here is how it can be invoked in order to generate a new
   @hl{user key}:

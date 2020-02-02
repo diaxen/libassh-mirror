@@ -241,8 +241,8 @@ void * assh_context_get_pv(struct assh_context_s *ctx);
     can be used to attach more keys. The @ref assh_key_flush
     function will be called on this list on context cleanup.
 
-    @see asshh_load_hostkey_file
-    @see asshh_load_hostkey_filename
+    @see asshh_hostkey_load_file
+    @see asshh_hostkey_load_filename
  */
 struct assh_key_s **
 assh_context_keys(struct assh_context_s *ctx);
