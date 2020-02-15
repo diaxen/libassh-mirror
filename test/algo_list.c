@@ -76,7 +76,7 @@ static void show_table()
     }
 }
 
-static void show_order(assh_safety_t safety)
+static void show_order(assh_safety_t safety, assh_safety_t min_safety, unsigned min_speed)
 {
   struct assh_context_s *c;
 
@@ -84,11 +84,11 @@ static void show_order(assh_safety_t safety)
                           NULL, NULL, NULL, NULL))
     return;
 
-  if (assh_algo_register_default(c, safety, 0, 0) != ASSH_OK)
+  if (assh_algo_register_default(c, safety, min_safety, min_speed) != ASSH_OK)
     return;
 
-  fprintf(stderr, "  Spd Saf Score Algorithm                                Variant\n"
-	          "------------------------------------------------------------------------------\n");
+  fprintf(stderr, "  Spd Saf Score Algorithm                                Implem        Variant\n"
+	          "-------------------------------------------------------------------------------\n");
 
   uint_fast16_t i;
   const struct assh_algo_s *a;
@@ -105,9 +105,9 @@ static void show_order(assh_safety_t safety)
 	  fprintf(stderr, "%s:\n", class_names[cl]);
 	}
 
-      fprintf(stderr, "  %3u %3u %5u %-40s %s\n",
+      fprintf(stderr, "  %3u %3u %5u %-40s %-13s %s\n",
               a->speed, a->safety, ASSH_ALGO_SCORE(a, safety),
-              n->name, a->variant ? a->variant : "");
+              n->name, a->implem, a->variant ? a->variant : "");
     }
 
   assh_context_release(c);
@@ -119,9 +119,17 @@ int main(int argc, char **argv)
     return -1;
 
   if (argc < 2)
-    show_table();
+    {
+      show_table();
+    }
   else
-    show_order(atoi(argv[1]));
+    {
+      assh_safety_t safety = atoi(argv[1]);
+      assh_safety_t min_safety = argc > 2 ? atoi(argv[2]) : 0;
+      unsigned min_speed = argc > 3 ? atoi(argv[3]) : 0;
+
+      show_order(safety, min_safety, min_speed);
+    }
 
   return 0;
 }
