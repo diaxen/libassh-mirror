@@ -200,6 +200,18 @@ assh_montgomery_point_mul(struct assh_session_s *s, uint8_t *result,
           result, basepoint, scalar, curve->prime, curve->a24, (size_t)curve->bits));
 }
 
+static uint8_t *
+assh_kex_curve25519_to_mpint(uint8_t *secret, uint8_t *secret_end)
+{
+  /* makes the secret looks like a mpint */
+  secret[4] = 0;
+  while (secret_end - secret > 4 && secret[4] == 0 &&
+         (secret_end - secret == 5 || !(secret[5] & 0x80)))
+    secret++;
+  assh_store_u32(secret, secret_end - secret - 4);
+  return secret;
+}
+
 static assh_status_t ASSH_WARN_UNUSED_RESULT
 assh_kex_ecdhmt_private_gen(struct assh_session_s *s,
                             uint8_t *private)
@@ -290,12 +302,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_ecdhmt_host_key_lookup_done)
                            qs_str + 4, pv->pvkey)
                | ASSH_ERRSV_DISCONNECT, err_sc);
 
-  /* makes the secret looks like a mpint */
-  secret[4] = 0;
-  while (secret_end - secret > 4 && secret[4] == 0 &&
-         (secret_end - secret == 5 || !(secret[5] & 0x80)))
-    secret++;
-  assh_store_u32(secret, secret_end - secret - 4);
+  secret = assh_kex_curve25519_to_mpint(secret, secret_end);
 
   /* compute exchange hash and send reply */
   ASSH_JMP_ON_ERR(assh_hash_init(s->ctx, hash_ctx, pv->hash)
@@ -390,12 +397,7 @@ static assh_status_t assh_kex_ecdhmt_server_wait_pubkey(struct assh_session_s *s
   ASSH_JMP_ON_ERR(assh_montgomery_point_mul(s, secret + 5,
                  qc_str + 4, pv->pvkey), err_sc);
 
-  /* makes the secret looks like a mpint */
-  secret[4] = 0;
-  while (secret_end - secret > 4 && secret[4] == 0 &&
-         (secret_end - secret == 5 || !(secret[5] & 0x80)))
-    secret++;
-  assh_store_u32(secret, secret_end - secret - 4);
+  secret = assh_kex_curve25519_to_mpint(secret, secret_end);
 
   /* compute exchange hash and send reply */
   ASSH_JMP_ON_ERR(assh_hash_init(s->ctx, hash_ctx, pv->hash), err_sc);
