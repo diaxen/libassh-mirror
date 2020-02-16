@@ -25,10 +25,10 @@ pkginclude_HEADERS = assh.h assh_algo.h assh_alloc.h assh_bignum.h \
 	assh_mac.h assh_map.h assh_packet.h assh_buffer.h assh_platform.h assh_prng.h \
 	assh_queue.h assh_service.h assh_session.h assh_sign.h assh_transport.h \
 	assh_userauth.h assh_userauth_client.h assh_userauth_server.h \
-	safe_primes.h mod_builtin.h mod_gcrypt.h mod_openssl.h mod_zlib.h \
+	mod_builtin.h mod_gcrypt.h mod_openssl.h mod_zlib.h mod_sodium.h \
 	helper_io.h helper_key.h helper_base64.h helper_bcrypt.h \
 	helper_interactive.h helper_portfwd.h \
-	helper_client.h helper_server.h
+	helper_client.h helper_server.h safe_primes.h
 
 assh_config.h: $(top_builddir)/config.h
 	grep 'NDEBUG\|CONFIG_ASSH' $(top_builddir)/config.h > $@ || true

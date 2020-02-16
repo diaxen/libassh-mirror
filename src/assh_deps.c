@@ -24,6 +24,7 @@
 #include <assh/mod_builtin.h>
 #include <assh/mod_openssl.h>
 #include <assh/mod_gcrypt.h>
+#include <assh/mod_sodium.h>
 #include <assh/mod_zlib.h>
 
 #ifdef CONFIG_ASSH_USE_GCRYPT
@@ -137,6 +138,10 @@ const struct assh_algo_s *assh_algo_table[] = {
   &assh_kex_builtin_sha2_nistp256.algo,
   &assh_kex_builtin_sha2_nistp384.algo,
   &assh_kex_builtin_sha2_nistp521.algo,
+#endif
+
+#ifdef CONFIG_ASSH_USE_SODIUM_KEX
+  &assh_kex_sodium_curve25519_sha256.algo,
 #endif
 
   /* sign */

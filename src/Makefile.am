@@ -116,6 +116,12 @@ if COND_prng_openssl
 libassh_la_SOURCES +=	prng_openssl.c
 endif
 
+
+if COND_kex_sodium
+libassh_la_SOURCES += kex_sodium_curve25519.c
+endif
+
+
 if COND_zlib
 libassh_la_SOURCES +=   compress_zlib.c
 endif

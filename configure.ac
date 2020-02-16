@@ -137,6 +137,9 @@ AC_ARG_WITH(gcrypt, AC_HELP_STRING(--without-gcrypt, [Disable use of gcrypt supp
 AC_ARG_WITH(openssl, AC_HELP_STRING(--without-openssl, [Disable use of openssl support]),
 		       with_openssl=$withval, with_openssl=yes)
 
+AC_ARG_WITH(sodium, AC_HELP_STRING(--without-sodium, [Disable use of libsodium support]),
+		       with_sodium=$withval, with_sodium=yes)
+
 AC_ARG_WITH(zlib, AC_HELP_STRING(--without-zlib, [Disable use of the zlib library]),
 		       with_zlib=$withval, with_zlib=yes)
 
@@ -336,6 +339,28 @@ if test x$with_openssl = xyes ; then
   ])
 fi
 
+CONFIG_ASSH_USE_SODIUM=no
+if test x$with_sodium = xyes ; then
+  AC_CHECK_LIB(sodium, crypto_scalarmult_curve25519, [
+    AC_CHECK_HEADERS(sodium/crypto_scalarmult_curve25519.h, [
+
+      case "$with_kex" in
+        *external*)
+          with_kex=sodium ;&
+        *sodium*|*all*)
+	  AC_DEFINE([CONFIG_ASSH_USE_SODIUM_KEX], [], [Enable libsodium key-exchange algorithms when defined.])
+	  CONFIG_ASSH_USE_SODIUM_KEX=yes
+      esac
+
+      if test x$CONFIG_ASSH_USE_SODIUM_KEX = xyes ; then
+        LIBS="$LIBS -lsodium"
+        AC_DEFINE([CONFIG_ASSH_USE_SODIUM], [], [Enable the libsodium support when defined.])
+	CONFIG_ASSH_USE_SODIUM=yes
+      fi
+   ])
+  ])
+fi
+
 CONFIG_ASSH_USE_ZLIB=no
 if test x$with_zlib = xyes ; then
   AC_CHECK_LIB(z, zlibVersion, [
@@ -403,6 +428,8 @@ AM_CONDITIONAL(COND_alloc_openssl,   [test x$CONFIG_ASSH_USE_OPENSSL_ALLOC = xye
 AM_CONDITIONAL(COND_ciphers_openssl, [test x$CONFIG_ASSH_USE_OPENSSL_CIPHERS = xyes])
 AM_CONDITIONAL(COND_macs_openssl,    [test x$CONFIG_ASSH_USE_OPENSSL_MACS = xyes])
 AM_CONDITIONAL(COND_prng_openssl,    [test x$CONFIG_ASSH_USE_OPENSSL_PRNG = xyes])
+
+AM_CONDITIONAL(COND_kex_sodium,      [test x$CONFIG_ASSH_USE_SODIUM_KEX = xyes])
 
 AM_CONDITIONAL(COND_zlib,            [test x$CONFIG_ASSH_USE_ZLIB = xyes])
 
