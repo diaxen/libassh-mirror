@@ -343,7 +343,6 @@ CONFIG_ASSH_USE_SODIUM=no
 if test x$with_sodium = xyes ; then
   AC_CHECK_LIB(sodium, crypto_scalarmult_curve25519, [
     AC_CHECK_HEADERS(sodium/crypto_scalarmult_curve25519.h, [
-
       case "$with_kex" in
         *external*)
           with_kex=sodium ;&
@@ -351,14 +350,27 @@ if test x$with_sodium = xyes ; then
 	  AC_DEFINE([CONFIG_ASSH_USE_SODIUM_KEX], [], [Enable libsodium key-exchange algorithms when defined.])
 	  CONFIG_ASSH_USE_SODIUM_KEX=yes
       esac
+   ])
+  ])
 
-      if test x$CONFIG_ASSH_USE_SODIUM_KEX = xyes ; then
+  AC_CHECK_LIB(sodium, crypto_sign_ed25519_detached, [
+    AC_CHECK_HEADERS(sodium/crypto_sign_ed25519.h, [
+      case "$with_sign" in
+        *external*)
+          with_sign=sodium ;&
+        *sodium*|*all*)
+	  AC_DEFINE([CONFIG_ASSH_USE_SODIUM_SIGN], [], [Enable libsodium signature algorithms when defined.])
+	  CONFIG_ASSH_USE_SODIUM_SIGN=yes
+      esac
+   ])
+  ])
+
+  if test x$CONFIG_ASSH_USE_SODIUM_KEX = xyes ||
+     test x$CONFIG_ASSH_USE_SODIUM_SIGN = xyes; then
         LIBS="$LIBS -lsodium"
         AC_DEFINE([CONFIG_ASSH_USE_SODIUM], [], [Enable the libsodium support when defined.])
 	CONFIG_ASSH_USE_SODIUM=yes
-      fi
-   ])
-  ])
+  fi
 fi
 
 CONFIG_ASSH_USE_ZLIB=no
@@ -430,6 +442,7 @@ AM_CONDITIONAL(COND_macs_openssl,    [test x$CONFIG_ASSH_USE_OPENSSL_MACS = xyes
 AM_CONDITIONAL(COND_prng_openssl,    [test x$CONFIG_ASSH_USE_OPENSSL_PRNG = xyes])
 
 AM_CONDITIONAL(COND_kex_sodium,      [test x$CONFIG_ASSH_USE_SODIUM_KEX = xyes])
+AM_CONDITIONAL(COND_sign_sodium,     [test x$CONFIG_ASSH_USE_SODIUM_SIGN = xyes])
 
 AM_CONDITIONAL(COND_zlib,            [test x$CONFIG_ASSH_USE_ZLIB = xyes])
 

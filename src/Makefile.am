@@ -121,6 +121,10 @@ if COND_kex_sodium
 libassh_la_SOURCES += kex_sodium_curve25519.c
 endif
 
+if COND_sign_sodium
+libassh_la_SOURCES += key_sodium_ed25519.c key_sodium_ed25519.h sign_sodium_ed25519.c
+endif
+
 
 if COND_zlib
 libassh_la_SOURCES +=   compress_zlib.c

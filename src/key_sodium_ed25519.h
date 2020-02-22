@@ -21,23 +21,29 @@
 
 */
 
-/**
-   @file
-   @short Descriptors for algorithms and modules based on libsodium
-*/
+#ifndef ASSH_KEY_SODIUM_ED25519_H_
+#define ASSH_KEY_SODIUM_ED25519_H_
 
-#ifndef ASSH_MOD_SODIUM_H_
-#define ASSH_MOD_SODIUM_H_
+#include <assh/assh_key.h>
 
-#include <assh/assh_kex.h>
+#define ASSH_ED25519_KSIZE 32
+#define ASSH_ED25519_SAFETY 50
 
-# ifdef CONFIG_ASSH_USE_SODIUM_KEX
-extern const struct assh_algo_kex_s assh_kex_sodium_curve25519_sha256;
-# endif
+/** @internal EdDSA key storage */
+struct assh_key_ed25519_s
+{
+  struct assh_key_s key;
 
-# ifdef CONFIG_ASSH_USE_SODIUM_SIGN
-extern const struct assh_algo_sign_s assh_sign_sodium_ed25519;
-extern const struct assh_key_algo_s assh_key_sodium_ed25519;
-# endif
+  union {
+    uint8_t keypair[ASSH_ED25519_KSIZE * 2];
+    struct {
+      uint8_t pvkey[ASSH_ED25519_KSIZE];
+      uint8_t pubkey[ASSH_ED25519_KSIZE];
+    };
+  };
+};
+
+ASSH_FIRST_FIELD_ASSERT(assh_key_ed25519_s, key);
 
 #endif
+

@@ -144,6 +144,10 @@ const struct assh_algo_s *assh_algo_table[] = {
   &assh_kex_sodium_curve25519_sha256.algo,
 #endif
 
+#ifdef CONFIG_ASSH_USE_SODIUM_SIGN
+  &assh_sign_sodium_ed25519.algo,
+#endif
+
   /* sign */
   // &assh_sign_none.algo,
 
