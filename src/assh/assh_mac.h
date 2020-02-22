@@ -40,7 +40,8 @@
 /** @internal @see assh_mac_init_t */
 #define ASSH_MAC_INIT_FCN(n)                                            \
   ASSH_WARN_UNUSED_RESULT assh_status_t (n)(struct assh_context_s *c,    \
-                                           void *ctx_, const uint8_t *key)
+					    void *ctx_, const uint8_t *key, \
+					    assh_bool_t generate)
 
 /** @internal @This defines the function type for the mac
     initialization operation of the mac module interface. The @tt
@@ -48,25 +49,16 @@
     of size given by @ref assh_algo_mac_s::ctx_size. */
 typedef ASSH_MAC_INIT_FCN(assh_mac_init_t);
 
-/** @internal @see assh_mac_compute_t */
-#define ASSH_MAC_COMPUTE_FCN(n)                                         \
-  ASSH_WARN_UNUSED_RESULT assh_status_t (n)(void *ctx_, uint32_t seq,    \
+/** @internal @see assh_mac_process_t */
+#define ASSH_MAC_PROCESS_FCN(n)                                         \
+  ASSH_WARN_UNUSED_RESULT assh_status_t (n)(void *ctx_,    \
                                            const uint8_t *data, size_t len, \
-                                           uint8_t *mac)
+                                           uint8_t *mac, uint32_t seq)
 
 /** @internal @This defines the function type for the mac computation
     operation of the mac module interface. */
-typedef ASSH_MAC_COMPUTE_FCN(assh_mac_compute_t);
+typedef ASSH_MAC_PROCESS_FCN(assh_mac_process_t);
 
-/** @internal @see assh_mac_check_t */
-#define ASSH_MAC_CHECK_FCN(n) \
-  ASSH_WARN_UNUSED_RESULT assh_status_t (n)(void *ctx_, uint32_t seq, \
-                                           const uint8_t *data, size_t len, \
-                                           const uint8_t *mac)
-
-/** @internal @This defines the function type for the mac checking
-    operation of the mac module interface. */
-typedef ASSH_MAC_CHECK_FCN(assh_mac_check_t);
 
 /** @internal @see assh_mac_cleanup_t */
 #define ASSH_MAC_CLEANUP_FCN(n) void (n)(struct assh_context_s *c, void *ctx_)
@@ -82,8 +74,7 @@ struct assh_algo_mac_s
 {
   struct assh_algo_s algo;
   assh_mac_init_t    *f_init;
-  assh_mac_compute_t *f_compute;
-  assh_mac_check_t  *f_check;
+  assh_mac_process_t *f_process;
   assh_mac_cleanup_t *f_cleanup;
   /** Size of the context structure needed to initialize the algorithm. */
   uint16_t ctx_size;

@@ -33,6 +33,7 @@ struct assh_hmac_openssl_context_s
 {
   const struct assh_algo_mac_s *mac;
   HMAC_CTX *octx;
+  assh_bool_t generate;
 };
 
 static ASSH_MAC_CLEANUP_FCN(assh_hmac_openssl_cleanup)
@@ -41,7 +42,7 @@ static ASSH_MAC_CLEANUP_FCN(assh_hmac_openssl_cleanup)
   HMAC_CTX_free(ctx->octx);
 }
 
-static ASSH_MAC_COMPUTE_FCN(assh_hmac_openssl_compute)
+static ASSH_MAC_PROCESS_FCN(assh_hmac_openssl_process)
 {
   struct assh_hmac_openssl_context_s *ctx = ctx_;
   assh_status_t err;
@@ -56,38 +57,23 @@ static ASSH_MAC_COMPUTE_FCN(assh_hmac_openssl_compute)
 
   uint8_t rmac[64];
   ASSH_RET_IF_TRUE(!HMAC_Final(ctx->octx, rmac, NULL), ASSH_ERR_CRYPTO);
-  memcpy(mac, rmac, ctx->mac->mac_size);
-
-  return ASSH_OK;
-}
-
-static ASSH_MAC_CHECK_FCN(assh_hmac_openssl_check)
-{
-  struct assh_hmac_openssl_context_s *ctx = ctx_;
-  assh_status_t err;
-
-  ASSH_RET_IF_TRUE(!HMAC_Init_ex(ctx->octx, NULL, 0, NULL, NULL), ASSH_ERR_CRYPTO);
-
-  uint8_t be_seq[4];
-  assh_store_u32(be_seq, seq);
-
-  ASSH_RET_IF_TRUE(!HMAC_Update(ctx->octx, be_seq, 4), ASSH_ERR_CRYPTO);
-  ASSH_RET_IF_TRUE(!HMAC_Update(ctx->octx, data, len), ASSH_ERR_CRYPTO);
-
-  uint8_t rmac[64];
-  ASSH_RET_IF_TRUE(!HMAC_Final(ctx->octx, rmac, NULL), ASSH_ERR_CRYPTO);
-  ASSH_RET_IF_TRUE(assh_memcmp(mac, rmac, ctx->mac->mac_size), ASSH_ERR_CRYPTO);
+  if (ctx->generate)
+    memcpy(mac, rmac, ctx->mac->mac_size);
+  else
+    ASSH_RET_IF_TRUE(assh_memcmp(mac, rmac, ctx->mac->mac_size), ASSH_ERR_CRYPTO);
 
   return ASSH_OK;
 }
 
 static assh_status_t assh_hmac_openssl_init(const struct assh_algo_mac_s *mac,
-				   struct assh_hmac_openssl_context_s *ctx,
-				   const uint8_t *key, const EVP_MD *md)
+					    struct assh_hmac_openssl_context_s *ctx,
+					    const uint8_t *key, const EVP_MD *md,
+					    assh_bool_t generate)
 {
   assh_status_t err;
   ctx->mac = mac;
   ctx->octx = HMAC_CTX_new();
+  ctx->generate = generate;
 
   ASSH_RET_IF_TRUE(ctx->octx == NULL, ASSH_ERR_CRYPTO);
   ASSH_JMP_IF_TRUE(!HMAC_Init_ex(ctx->octx, key, mac->key_size, md, NULL),
@@ -106,7 +92,8 @@ extern const struct assh_algo_mac_s assh_mac_openssl_##id_;		\
 									\
 static ASSH_MAC_INIT_FCN(assh_hmac_openssl_##id_##_init)                \
 {									\
-  return assh_hmac_openssl_init(&assh_mac_openssl_##id_, ctx_, key, evp_);     \
+  return assh_hmac_openssl_init(&assh_mac_openssl_##id_, ctx_,		\
+				key, evp_, generate);			\
 }									\
 									\
 const struct assh_algo_mac_s assh_mac_openssl_##id_ =			\
@@ -118,8 +105,7 @@ const struct assh_algo_mac_s assh_mac_openssl_##id_ =			\
   .mac_size = msize_,							\
   .etm = etm_,                                                          \
   .f_init = assh_hmac_openssl_##id_##_init,				\
-  .f_compute = assh_hmac_openssl_compute,				\
-  .f_check  = assh_hmac_openssl_check,					\
+  .f_process = assh_hmac_openssl_process,				\
   .f_cleanup = assh_hmac_openssl_cleanup,				\
 };
 

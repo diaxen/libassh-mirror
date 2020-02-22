@@ -72,12 +72,12 @@ static void bench(const struct assh_algo_mac_s *mac)
   {
     size_t c = cycles;
 
-    if (mac->f_init(&context, ectx, key))
+    if (mac->f_init(&context, ectx, key, 1))
       TEST_FAIL("encrypt init");
 
     gettimeofday(&tp_start, NULL);
     while (c--)
-      if (mac->f_compute(ectx, c, data, data_size, code))
+      if (mac->f_process(ectx, data, data_size, code, c))
 	TEST_FAIL("generate");
     gettimeofday(&tp_end, NULL);
 
@@ -96,18 +96,18 @@ static void bench(const struct assh_algo_mac_s *mac)
   {
     size_t c = cycles;
 
-    if (mac->f_init(&context, ectx, key))
+    if (mac->f_init(&context, ectx, key, 1))
       TEST_FAIL("generate init");
 
-    if (mac->f_init(&context, dctx, key))
+    if (mac->f_init(&context, dctx, key, 0))
       TEST_FAIL("verify init");
 
     gettimeofday(&tp_start, NULL);
     while (c--)
       {
-	if (mac->f_compute(ectx, c, data, data_size, code))
+	if (mac->f_process(ectx, data, data_size, code, c))
 	  TEST_FAIL("generate");
-	if (mac->f_compute(dctx, c, data, data_size, code))
+	if (mac->f_process(dctx, data, data_size, code, c))
 	  TEST_FAIL("verify");
       }
     gettimeofday(&tp_end, NULL);

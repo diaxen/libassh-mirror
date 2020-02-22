@@ -31,6 +31,7 @@ struct assh_hmac_gcrypt_context_s
 {
   const struct assh_algo_mac_s *mac;
   gcry_mac_hd_t hd;
+  assh_bool_t generate;
 };
 
 static ASSH_MAC_CLEANUP_FCN(assh_hmac_gcrypt_cleanup)
@@ -39,7 +40,7 @@ static ASSH_MAC_CLEANUP_FCN(assh_hmac_gcrypt_cleanup)
   gcry_mac_close(ctx->hd);
 }
 
-static ASSH_MAC_COMPUTE_FCN(assh_hmac_gcrypt_compute)
+static ASSH_MAC_PROCESS_FCN(assh_hmac_gcrypt_process)
 {
   struct assh_hmac_gcrypt_context_s *ctx = ctx_;
   assh_status_t err;
@@ -52,34 +53,26 @@ static ASSH_MAC_COMPUTE_FCN(assh_hmac_gcrypt_compute)
   ASSH_RET_IF_TRUE(gcry_mac_write(ctx->hd, be_seq, 4), ASSH_ERR_CRYPTO);
   ASSH_RET_IF_TRUE(gcry_mac_write(ctx->hd, data, len), ASSH_ERR_CRYPTO);
 
-  size_t s = ctx->mac->mac_size;
-  ASSH_RET_IF_TRUE(gcry_mac_read(ctx->hd, mac, &s), ASSH_ERR_CRYPTO);
-  return ASSH_OK;
-}
+  if (ctx->generate)
+    {
+      size_t s = ctx->mac->mac_size;
+      ASSH_RET_IF_TRUE(gcry_mac_read(ctx->hd, mac, &s), ASSH_ERR_CRYPTO);
+    }
+  else
+    {
+      ASSH_RET_IF_TRUE(gcry_mac_verify(ctx->hd, mac, ctx->mac->mac_size), ASSH_ERR_CRYPTO);
+    }
 
-static ASSH_MAC_CHECK_FCN(assh_hmac_gcrypt_check)
-{
-  struct assh_hmac_gcrypt_context_s *ctx = ctx_;
-  assh_status_t err;
-
-  ASSH_RET_IF_TRUE(gcry_mac_reset(ctx->hd), ASSH_ERR_CRYPTO);
-
-  uint8_t be_seq[4];
-  assh_store_u32(be_seq, seq);
-
-  ASSH_RET_IF_TRUE(gcry_mac_write(ctx->hd, be_seq, 4), ASSH_ERR_CRYPTO);
-  ASSH_RET_IF_TRUE(gcry_mac_write(ctx->hd, data, len), ASSH_ERR_CRYPTO);
-
-  ASSH_RET_IF_TRUE(gcry_mac_verify(ctx->hd, mac, ctx->mac->mac_size), ASSH_ERR_CRYPTO);
   return ASSH_OK;
 }
 
 static assh_status_t assh_hmac_gcrypt_init(const struct assh_algo_mac_s *mac,
 				   struct assh_hmac_gcrypt_context_s *ctx,
-				   const uint8_t *key, int algo)
+				   const uint8_t *key, int algo, assh_bool_t generate)
 {
   assh_status_t err;
   ctx->mac = mac;
+  ctx->generate = generate;
 
   ASSH_RET_IF_TRUE(!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P),
                ASSH_ERR_CRYPTO);
@@ -103,7 +96,7 @@ extern const struct assh_algo_mac_s assh_hmac_gcrypt_##id_;		\
 static ASSH_MAC_INIT_FCN(assh_hmac_gcrypt_##id_##_init)			\
 {									\
   return assh_hmac_gcrypt_init(&assh_mac_gcrypt_##id_, ctx_, key,	\
-			       GCRY_MAC_HMAC_##algo_);			\
+			       GCRY_MAC_HMAC_##algo_, generate);	\
 }									\
 									\
 const struct assh_algo_mac_s assh_mac_gcrypt_##id_ =			\
@@ -115,8 +108,7 @@ const struct assh_algo_mac_s assh_mac_gcrypt_##id_ =			\
   .mac_size = msize_,							\
   .etm = etm_,                                                          \
   .f_init = assh_hmac_gcrypt_##id_##_init,				\
-  .f_compute = assh_hmac_gcrypt_compute,				\
-  .f_check  = assh_hmac_gcrypt_check,					\
+  .f_process = assh_hmac_gcrypt_process,				\
   .f_cleanup = assh_hmac_gcrypt_cleanup,				\
 };
 

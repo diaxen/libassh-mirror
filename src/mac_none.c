@@ -35,12 +35,7 @@ static ASSH_MAC_CLEANUP_FCN(assh_hmac_none_cleanup)
 {
 }
 
-static ASSH_MAC_COMPUTE_FCN(assh_hmac_none_compute)
-{
-  return ASSH_OK;
-}
-
-static ASSH_MAC_CHECK_FCN(assh_hmac_none_check)
+static ASSH_MAC_PROCESS_FCN(assh_hmac_none_process)
 {
   return ASSH_OK;
 }
@@ -55,8 +50,7 @@ const struct assh_algo_mac_s assh_mac_none =
   .key_size = 0,
   .mac_size = 0,
   .f_init = assh_hmac_none_init,
-  .f_compute = assh_hmac_none_compute,
-  .f_check = assh_hmac_none_check,
+  .f_process = assh_hmac_none_process,
   .f_cleanup = assh_hmac_none_cleanup,
 };
 

@@ -635,7 +635,7 @@ assh_kex_new_keys(struct assh_session_s *s,
     }
   kin->mac_ctx = (void*)next_in_ctx;
   next_in_ctx += kin->mac->ctx_size;
-  ASSH_JMP_ON_ERR(kin->mac->f_init(s->ctx, kin->mac_ctx, key), err_mac_in);
+  ASSH_JMP_ON_ERR(kin->mac->f_init(s->ctx, kin->mac_ctx, key, 0), err_mac_in);
   c++;
 
   if (kout->mac->key_size)
@@ -650,7 +650,7 @@ assh_kex_new_keys(struct assh_session_s *s,
     }
   kout->mac_ctx = (void*)next_out_ctx;
   next_out_ctx += kout->mac->ctx_size;
-  ASSH_JMP_ON_ERR(kout->mac->f_init(s->ctx, kout->mac_ctx, key), err_mac_out);
+  ASSH_JMP_ON_ERR(kout->mac->f_init(s->ctx, kout->mac_ctx, key, 1), err_mac_out);
   c++;
 
   /* init input compression */

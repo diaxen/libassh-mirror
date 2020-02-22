@@ -214,9 +214,9 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 	}
       else if (k->mac->etm)	/* Encrypt then Mac */
 	{
-	  ASSH_RET_ON_ERR(k->mac->f_check(k->mac_ctx, seq, data,
-				       data_size - mac_len,
-				       data + data_size - mac_len)
+	  ASSH_RET_ON_ERR(k->mac->f_process(k->mac_ctx, data,
+					    data_size - mac_len,
+					    data + data_size - mac_len, seq)
 		       | ASSH_ERRSV_DISCONNECT);
 
 	  ASSH_RET_ON_ERR(k->cipher->f_process(k->cipher_ctx, data + 4,
@@ -229,9 +229,9 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 				  data_size - hsize - mac_len, ASSH_CIPHER_PCK_TAIL, seq)
 		       | ASSH_ERRSV_DISCONNECT);
 
-	  ASSH_RET_ON_ERR(k->mac->f_check(k->mac_ctx, seq, data,
-				       data_size - mac_len,
-				       data + data_size - mac_len)
+	  ASSH_RET_ON_ERR(k->mac->f_process(k->mac_ctx, data,
+					    data_size - mac_len,
+					    data + data_size - mac_len, seq)
 		       | ASSH_ERRSV_DISCONNECT);
 	}
 
@@ -531,14 +531,15 @@ assh_status_t assh_transport_write(struct assh_session_s *s,
 			    p->data_size - mac_len - 4, ASSH_CIPHER_PCK_TAIL, seq)
 		       | ASSH_ERRSV_DISCONNECT);
 
-	  ASSH_RET_ON_ERR(k->mac->f_compute(k->mac_ctx, seq, p->data,
-			 p->data_size - mac_len, mac_ptr)
+	  ASSH_RET_ON_ERR(k->mac->f_process(k->mac_ctx, p->data,
+			 p->data_size - mac_len, mac_ptr, seq)
 		       | ASSH_ERRSV_DISCONNECT);
 	}
       else			/* Mac and Encrypt */
 	{
-	  ASSH_RET_ON_ERR(k->mac->f_compute(k->mac_ctx, seq, p->data,
-			 p->data_size - mac_len, mac_ptr) | ASSH_ERRSV_DISCONNECT);
+	  ASSH_RET_ON_ERR(k->mac->f_process(k->mac_ctx, p->data,
+			 p->data_size - mac_len, mac_ptr, seq)
+			  | ASSH_ERRSV_DISCONNECT);
 
 	  ASSH_RET_ON_ERR(k->cipher->f_process(k->cipher_ctx, p->data,
 			    p->data_size - mac_len, ASSH_CIPHER_PCK_TAIL, seq)
