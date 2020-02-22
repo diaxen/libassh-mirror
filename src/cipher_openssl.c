@@ -129,11 +129,11 @@ static ASSH_CIPHER_PROCESS_FCN(assh_cipher_openssl_process_GCM)
   size_t block_size = ctx->cipher->block_size;
   size_t csize = len - 4 - ctx->cipher->auth_size;
 
-  ASSH_RET_IF_TRUE(csize & (block_size - 1),
-	       ASSH_ERR_INPUT_OVERFLOW);
-
   if (op == ASSH_CIPHER_PCK_HEAD)
     return ASSH_OK;
+
+  ASSH_RET_IF_TRUE(csize & (block_size - 1),
+	       ASSH_ERR_INPUT_OVERFLOW);
 
   ASSH_RET_IF_TRUE(!EVP_CipherInit_ex(ctx->octx, NULL, NULL, NULL, ctx->iv, -1),
                    ASSH_ERR_CRYPTO);

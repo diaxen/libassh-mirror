@@ -434,12 +434,7 @@ void test_cipher(const struct cipher_test_s *t,
   if (!t->out_count)
     TEST_FAIL("no output");
 
-  size_t size = 0;
-
-  if (t->head_size > 0)
-    size += t->head_size;
-  if (t->tail_size > 0)
-    size += t->tail_size;
+  size_t size = t->head_size + t->tail_size;
 
   uint8_t buf[size];
   memset(buf, 42, size);
@@ -490,8 +485,7 @@ void test_cipher(const struct cipher_test_s *t,
 
       /* decrypt */
       fprintf(stderr, "d");
-      if (t->head_size > 0 &&
-	  ac->f_process(ctx2, buf, t->head_size, ASSH_CIPHER_PCK_HEAD, seq))
+      if (ac->f_process(ctx2, buf, t->head_size, ASSH_CIPHER_PCK_HEAD, seq))
 	TEST_FAIL("decrypt head %u", i);
 
       fprintf(stderr, "D");

@@ -112,11 +112,11 @@ static ASSH_CIPHER_PROCESS_FCN(assh_cipher_gcrypt_process_GCM)
   size_t block_size = ctx->cipher->block_size;
   size_t csize = len - 4 - auth_size;
 
-  ASSH_RET_IF_TRUE(csize & (block_size - 1),
-               ASSH_ERR_INPUT_OVERFLOW);
-
   if (op == ASSH_CIPHER_PCK_HEAD)
     return ASSH_OK;
+
+  ASSH_RET_IF_TRUE(csize & (block_size - 1),
+               ASSH_ERR_INPUT_OVERFLOW);
 
   gcry_cipher_setiv(ctx->hd, ctx->iv, 12);
   gcry_cipher_authenticate(ctx->hd, data, 4);
