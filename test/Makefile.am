@@ -57,6 +57,11 @@ mac_SOURCES = mac.c
 mac_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
 mac_CFLAGS = -I$(top_srcdir)/src
 
+noinst_PROGRAMS += mac_bench
+mac_bench_SOURCES = mac_bench.c
+mac_bench_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
+mac_bench_CFLAGS = -I$(top_srcdir)/src
+
 noinst_PROGRAMS += prng
 prng_SOURCES = prng.c
 prng_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
