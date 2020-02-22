@@ -46,6 +46,11 @@ cipher_SOURCES = cipher.c
 cipher_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
 cipher_CFLAGS = -I$(top_srcdir)/src
 
+noinst_PROGRAMS += cipher_bench
+cipher_bench_SOURCES = cipher_bench.c
+cipher_bench_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
+cipher_bench_CFLAGS = -I$(top_srcdir)/src
+
 noinst_PROGRAMS += mac
 TESTS += mac
 mac_SOURCES = mac.c
