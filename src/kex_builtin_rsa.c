@@ -715,7 +715,7 @@ const struct assh_algo_kex_s assh_kex_builtin_rsa1024_sha1 =
   ASSH_ALGO_BASE(KEX, "assh-builtin", 10, 30,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF, "rsa1024-sha1" }),
     .f_suitable_key = assh_kex_rsa1024_suitable_key,
-    .key = &assh_key_builtin_rsa,
+    .key_algo = &assh_key_builtin_rsa,
     .nondeterministic = 1
   ),
   .f_init = assh_kex_rsa1024_sha1_init,
@@ -751,7 +751,7 @@ const struct assh_algo_kex_s assh_kex_builtin_rsa2048_sha256 =
   ASSH_ALGO_BASE(KEX, "assh-builtin", 20, 20,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF, "rsa2048-sha256"}),
     .f_suitable_key = assh_kex_rsa2048_suitable_key,
-    .key = &assh_key_builtin_rsa,
+    .key_algo = &assh_key_builtin_rsa,
     .nondeterministic = 1
   ),
   .f_init = assh_kex_rsa2048_sha256_init,

@@ -77,7 +77,7 @@ void test_const()
 
 	  fprintf(stderr, "L");
 	  const uint8_t *kb = key_blob + 1;
-	  if (assh_key_load(context, &key, sa->algo.key, ASSH_ALGO_SIGN,
+	  if (assh_key_load(context, &key, sa->algo.key_algo, ASSH_ALGO_SIGN,
 			    key_blob[0], &kb, sizeof(key_blob) - 1))
 	    TEST_FAIL("key load\n");
 
@@ -213,7 +213,7 @@ void test_load(unsigned int max_size)
 
 	      fprintf(stderr, "l");
 	      const uint8_t *kb = key_blob + 1;
-	      assh_status_t err = assh_key_load(context, &key, sa->algo.key, ASSH_ALGO_SIGN,
+	      assh_status_t err = assh_key_load(context, &key, sa->algo.key_algo, ASSH_ALGO_SIGN,
 						key_blob[0], &kb, sizeof(key_blob) - 1);
 
 	      if (!bad)

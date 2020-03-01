@@ -56,7 +56,7 @@ assh_key_algo_guess(struct assh_context_s *c,
         {
           algo = c->algos[i];
 
-          const struct assh_key_algo_s *ops = algo->key;
+          const struct assh_key_algo_s *ops = algo->key_algo;
           if (ops == NULL || algo->class_ != role)
             continue;
 
@@ -66,8 +66,8 @@ assh_key_algo_guess(struct assh_context_s *c,
 
       /* try to match algorithm names */
       if (!assh_algo_by_name(c, role, name, name_len, &algo, NULL) &&
-          algo->key != NULL)
-        return algo->key;
+          algo->key_algo != NULL)
+        return algo->key_algo;
 
       return NULL;
     }
@@ -186,20 +186,20 @@ assh_key_algo_enumerate(struct assh_context_s *c,
     {
       const struct assh_algo_s *a = c->algos[i];
 
-      if (!a->key)
+      if (!a->key_algo)
 	continue;
 
       if (cl != ASSH_ALGO_ANY && cl != a->class_)
 	continue;
 
       for (j = 0; j < cnt; j++)
-	if (table[j] == a->key)
+	if (table[j] == a->key_algo)
 	  goto next;
 
       if (cnt == max)
 	return ASSH_NO_DATA;
 
-      table[cnt++] = a->key;
+      table[cnt++] = a->key_algo;
 
     next:
       ;
@@ -224,9 +224,9 @@ assh_key_algo_by_name(const struct assh_context_s *c,
       if (cl != ASSH_ALGO_ANY && cl != a->class_)
 	continue;
 
-      if (a->key && !assh_string_strcmp(name, name_len, a->key->name))
+      if (a->key_algo && !assh_string_strcmp(name, name_len, a->key_algo->name))
 	{
-	  *algo = a->key;
+	  *algo = a->key_algo;
 	  return ASSH_OK;
 	}
     }

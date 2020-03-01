@@ -325,7 +325,7 @@ assh_load_pub_openssh(struct assh_context_s *c, FILE *file,
                                         algo_name, alen, &a, NULL))
                     *algo = NULL;
                   else
-                    *algo = a->key;
+                    *algo = a->key_algo;
                 }
               state = 1;
             }

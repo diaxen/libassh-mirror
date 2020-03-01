@@ -701,9 +701,9 @@ assh_kex_client_get_key(struct assh_session_s *s,
   struct assh_key_s *host_key = NULL;
 
   const uint8_t *key_blob = ks_str + 4;
-  ASSH_RET_ON_ERR(assh_key_load(s->ctx, &host_key, sign_algo->algo.key, ASSH_ALGO_SIGN,
-                             ASSH_KEY_FMT_PUB_RFC4253, &key_blob,
-                             assh_load_u32(ks_str)));
+  ASSH_RET_ON_ERR(assh_key_load(s->ctx, &host_key, sign_algo->algo.key_algo,
+				ASSH_ALGO_SIGN, ASSH_KEY_FMT_PUB_RFC4253, &key_blob,
+				assh_load_u32(ks_str)));
 
   /* check if the key can be used by the algorithm */
   ASSH_JMP_IF_TRUE(!assh_algo_suitable_key(s->ctx, &sign_algo->algo, host_key),

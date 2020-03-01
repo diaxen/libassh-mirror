@@ -257,7 +257,7 @@ assh_userauth_server_get_key(struct assh_session_s *s,
 
   /* load the public key from the client provided blob */
   const uint8_t *key_blob = pub_blob + 4;
-  ASSH_RET_ON_ERR(assh_key_load(s->ctx, pub_key, (*algo)->key, ASSH_ALGO_SIGN,
+  ASSH_RET_ON_ERR(assh_key_load(s->ctx, pub_key, (*algo)->key_algo, ASSH_ALGO_SIGN,
                  ASSH_KEY_FMT_PUB_RFC4253, &key_blob,
                  assh_load_u32(pub_blob)));
 

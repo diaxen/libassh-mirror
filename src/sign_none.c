@@ -52,7 +52,7 @@ const struct assh_algo_sign_s assh_sign_none =
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
                       "none@libassh.org" }),
     .f_suitable_key = assh_sign_none_suitable_key,
-    .key = &assh_key_none,
+    .key_algo = &assh_key_none,
   ),
   .f_generate = assh_sign_none_generate,
   .f_check = assh_sign_none_check,

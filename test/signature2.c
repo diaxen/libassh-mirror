@@ -91,7 +91,7 @@ void test_sign(unsigned int max_size, enum action_e action)
 
 	  fprintf(stderr, "L");
 	  const uint8_t *kb = key_blob + 1;
-	  if (assh_key_load(context, &key2, sa->algo.key, ASSH_ALGO_SIGN,
+	  if (assh_key_load(context, &key2, sa->algo.key_algo, ASSH_ALGO_SIGN,
 			    key_blob[0], &kb, sizeof(key_blob) - 1))
 	    TEST_FAIL("key load");
 
@@ -120,7 +120,7 @@ void test_sign(unsigned int max_size, enum action_e action)
 		    % (algos[i].kbits_max - algos[i].kbits_min + 1);
 		  fprintf(stderr, "N");
 		  if (assh_key_create(context, &key, kbits,
-				      sa->algo.key, ASSH_ALGO_SIGN))
+				      sa->algo.key_algo, ASSH_ALGO_SIGN))
 		    TEST_FAIL("key create");
 
 # ifdef CONFIG_ASSH_KEY_VALIDATE

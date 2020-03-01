@@ -169,7 +169,7 @@ const struct assh_algo_sign_s assh_sign_sodium_ed25519 =
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,
                       "ssh-ed25519" }),
     .f_suitable_key = assh_sign_ed25519_suitable_key,
-    .key = &assh_key_sodium_ed25519,
+    .key_algo = &assh_key_sodium_ed25519,
   ),
   .f_generate = assh_sign_ed25519_generate,
   .f_check = assh_sign_ed25519_check,

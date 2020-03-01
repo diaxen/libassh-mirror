@@ -216,7 +216,7 @@ void bench(const struct kex_bench_s *t,
 	TEST_FAIL("host key\n");
 
       if (t->key_bits && assh_key_create(context, assh_context_keys(context),
-				 t->key_bits, kex->algo.key, ASSH_ALGO_KEX))
+				 t->key_bits, kex->algo.key_algo, ASSH_ALGO_KEX))
 	TEST_FAIL("kex key\n");
     }
 
