@@ -226,3 +226,134 @@ assh_bignum_mul_mod(struct assh_context_s *ctx,
   return ASSH_OK;
 }
 
+void
+assh_bignum_mt_mul(const struct assh_bignum_mt_s *mt,
+                   assh_bnword_t * __restrict__ a,
+                   const assh_bnword_t * __restrict__ x,
+                   const assh_bnword_t * __restrict__ y)
+{
+  size_t i, j;
+  size_t ml = assh_bignum_words(mt->mod.bits);
+  assh_bnword_t *m = mt->mod.n;
+  assh_bnword_t q, k = 0;
+  assh_bnlong_t p, t, r;
+
+  /* montgomery multiplication algorithm */
+  for (i = 0; i < ml; i++)
+    a[i] = 0;
+
+  for (i = 0; i < ml; i++)
+    {
+      p = a[0] + (assh_bnlong_t)x[i] * y[0];
+      q = p * mt->n0;
+      r = (assh_bnlong_t)m[0] * q;
+
+      /* t = (p + r) >> ASSH_BIGNUM_W, do not drop carry */
+      t = (assh_bnlong_t)(assh_bnword_t)r + (assh_bnword_t)p;
+      t = (t >> ASSH_BIGNUM_W) + (r >> ASSH_BIGNUM_W) + (p >> ASSH_BIGNUM_W);
+
+      for (j = 1; j < ml; j++)
+        {
+          p = a[j] + (assh_bnlong_t)x[i] * y[j];
+          r = (assh_bnlong_t)m[j] * q + t;
+
+          /* a[j-1] = p + r,  t = (p + r) >> ASSH_BIGNUM_W */
+          t = (assh_bnlong_t)(assh_bnword_t)r + (assh_bnword_t)p;
+          a[j-1] = t;
+          t = (t >> ASSH_BIGNUM_W) + (r >> ASSH_BIGNUM_W) + (p >> ASSH_BIGNUM_W);
+        }
+      t += k;
+      a[j-1] = t;
+      k = t >> ASSH_BIGNUM_W;
+    }
+
+  /* Masked final subtraction */
+  q = (k ^ 1) - 1;
+  t = (assh_bnlong_t)(q & 1) << ASSH_BIGNUM_W;
+  for (i = 0; i < ml; i++)
+    a[i] = t = (assh_bnlong_t)a[i] + (q & ~m[i]) + (t >> ASSH_BIGNUM_W);
+}
+
+void
+assh_bignum_mt_reduce(const struct assh_bignum_mt_s *mt,
+                      assh_bnword_t * __restrict__ a,
+                      const assh_bnword_t * __restrict__ x)
+{
+  size_t i, j;
+  size_t ml = assh_bignum_words(mt->mod.bits);
+  assh_bnword_t *m = mt->mod.n;
+  assh_bnword_t e;
+
+  /* montgomery reduction algorithm */
+  for (i = 0; i < ml; i++)
+    a[i] = 0;
+
+  for (i = 0; i < ml; i++)
+    {
+      assh_bnlong_t p = a[0] + (assh_bnlong_t)x[i];
+      assh_bnword_t q = p * mt->n0;
+      assh_bnword_t pm = m[0];
+      assh_bnlong_t r = (assh_bnlong_t)pm * q;
+      assh_bnlong_t t = p + r;
+      e = 0;
+
+      for (j = 1; j < ml; j++)
+        {
+          assh_bnword_t cm = m[j];
+          p = a[j];
+          r = (assh_bnlong_t)cm * q + (t >> ASSH_BIGNUM_W);
+          t = p + r;
+          a[j-1] = t;
+          e |= (t ^ pm);
+          pm = cm;
+        }
+      q = (t >> ASSH_BIGNUM_W);
+      a[j-1] = q;
+      e |= (q ^ pm);
+    }
+
+  /* handle a == mod */
+  e = assh_bignum_eqzero(e) - 1;
+  for (i = 0; i < ml; i++)
+    a[i] &= e;
+}
+
+size_t
+assh_bignum_mul_mod_mt_sc_size(const struct assh_bignum_s *r,
+                               const struct assh_bignum_s *a,
+                               const struct assh_bignum_s *b)
+{
+  if (r == a || r == b)
+    return assh_bignum_words(r->bits);
+  return 0;
+}
+
+assh_status_t
+assh_bignum_mul_mod_mt(struct assh_context_s *ctx,
+                       assh_bnword_t *s,
+                       struct assh_bignum_s *r,
+                       const struct assh_bignum_s *a,
+                       const struct assh_bignum_s *b,
+                       const struct assh_bignum_mt_s *mt)
+{
+  assh_status_t err = ASSH_OK;
+
+  assert(mt->mod.bits == a->bits &&
+         mt->mod.bits == b->bits &&
+         mt->mod.bits == r->bits);
+
+  size_t rl = assh_bignum_words(r->bits);
+
+  if (r == a || r == b)
+    {
+      assh_bignum_mt_mul(mt, s, a->n, b->n);
+      memcpy(r->n, s, rl * sizeof(assh_bnword_t));
+    }
+  else
+    {
+      assh_bignum_mt_mul(mt, r->n, a->n, b->n);
+    }
+
+  return err;
+}
+
