@@ -486,11 +486,13 @@ static ASSH_KEX_INIT_FCN(assh_kex_nistp256_init)
 
 const struct assh_algo_kex_s assh_kex_builtin_sha2_nistp256 =
 {
-  ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_NISTP256_SAFETY, 80,
-    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
-                      "ecdh-sha2-nistp256" }),
-    .nondeterministic = 1,
-  ),
+  .algo_wk = {
+     ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_NISTP256_SAFETY, 80,
+       ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
+                         "ecdh-sha2-nistp256" }),
+       .nondeterministic = 1,
+     ),
+  },
   .f_init = assh_kex_nistp256_init,
   .f_cleanup = assh_kex_ecdhws_cleanup,
   .f_process = assh_kex_ecdhws_process,
@@ -503,10 +505,12 @@ static ASSH_KEX_INIT_FCN(assh_kex_nistp384_init)
 
 const struct assh_algo_kex_s assh_kex_builtin_sha2_nistp384 =
 {
-  ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_NISTP384_SAFETY, 70,
-    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF, "ecdh-sha2-nistp384" }),
-    .nondeterministic = 1,
-  ),
+  .algo_wk = {
+     ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_NISTP384_SAFETY, 70,
+       ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF, "ecdh-sha2-nistp384" }),
+       .nondeterministic = 1,
+     ),
+  },
   .f_init = assh_kex_nistp384_init,
   .f_cleanup = assh_kex_ecdhws_cleanup,
   .f_process = assh_kex_ecdhws_process,
@@ -519,10 +523,12 @@ static ASSH_KEX_INIT_FCN(assh_kex_nistp521_init)
 
 const struct assh_algo_kex_s assh_kex_builtin_sha2_nistp521 =
 {
-  ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_NISTP521_SAFETY, 60,
-    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF, "ecdh-sha2-nistp521" }),
-    .nondeterministic = 1,
-  ),
+  .algo_wk = {
+     ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_NISTP521_SAFETY, 60,
+       ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF, "ecdh-sha2-nistp521" }),
+       .nondeterministic = 1,
+     ),
+  },
   .f_init = assh_kex_nistp521_init,
   .f_cleanup = assh_kex_ecdhws_cleanup,
   .f_process = assh_kex_ecdhws_process,

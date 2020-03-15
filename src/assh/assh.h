@@ -59,6 +59,7 @@ struct assh_bignum_s;
 struct assh_key_s;
 struct assh_kex_keys_s;
 struct assh_algo_s;
+struct assh_algo_with_key_s;
 struct assh_algo_name_s;
 struct assh_algo_kex_s;
 struct assh_hash_algo_s;

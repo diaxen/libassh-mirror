@@ -48,16 +48,18 @@ assh_key_algo_guess(struct assh_context_s *c,
       const char *name = (const char*)blob + 4;
       size_t name_len = end - blob - 4;
 
-      const struct assh_algo_s *algo;
-
       /* try to match key ops type names */
+
       uint_fast16_t i;
       for (i = 0; i < c->algo_cnt; i++)
         {
-          algo = c->algos[i];
+          const struct assh_algo_with_key_s *algo_wk
+	    = assh_algo_with_key(c->algos[i]);
+	  if (!algo_wk)
+	    continue;
 
-          const struct assh_key_algo_s *ops = algo->key_algo;
-          if (ops == NULL || algo->class_ != role)
+          const struct assh_key_algo_s *ops = algo_wk->key_algo;
+          if (ops == NULL || algo_wk->algo.class_ != role)
             continue;
 
           if (!assh_string_strcmp(name, name_len, ops->name))
@@ -65,9 +67,14 @@ assh_key_algo_guess(struct assh_context_s *c,
         }
 
       /* try to match algorithm names */
-      if (!assh_algo_by_name(c, role, name, name_len, &algo, NULL) &&
-          algo->key_algo != NULL)
-        return algo->key_algo;
+      const struct assh_algo_s *algo;
+      if (!assh_algo_by_name(c, role, name, name_len, &algo, NULL))
+	{
+          const struct assh_algo_with_key_s *algo_wk
+	    = assh_algo_with_key(algo);
+          if (algo_wk && algo_wk->key_algo != NULL)
+	    return algo_wk->key_algo;
+	}
 
       return NULL;
     }
@@ -158,7 +165,7 @@ void assh_key_drop(struct assh_context_s *c,
 assh_status_t
 assh_key_lookup(struct assh_context_s *c,
                 struct assh_key_s **key,
-                const struct assh_algo_s *algo)
+                const struct assh_algo_with_key_s *algo)
 {
   struct assh_key_s *k = c->keys;
 
@@ -184,22 +191,23 @@ assh_key_algo_enumerate(struct assh_context_s *c,
 
   for (i = 0; i < c->algo_cnt; i++)
     {
-      const struct assh_algo_s *a = c->algos[i];
+      const struct assh_algo_with_key_s *ak =
+	assh_algo_with_key(c->algos[i]);
 
-      if (!a->key_algo)
+      if (!ak || !ak->key_algo)
 	continue;
 
-      if (cl != ASSH_ALGO_ANY && cl != a->class_)
+      if (cl != ASSH_ALGO_ANY && cl != ak->algo.class_)
 	continue;
 
       for (j = 0; j < cnt; j++)
-	if (table[j] == a->key_algo)
+	if (table[j] == ak->key_algo)
 	  goto next;
 
       if (cnt == max)
 	return ASSH_NO_DATA;
 
-      table[cnt++] = a->key_algo;
+      table[cnt++] = ak->key_algo;
 
     next:
       ;
@@ -219,14 +227,18 @@ assh_key_algo_by_name(const struct assh_context_s *c,
 
   for (i = 0; i < c->algo_cnt; i++)
     {
-      const struct assh_algo_s *a = c->algos[i];
+      const struct assh_algo_with_key_s *ak =
+	assh_algo_with_key(c->algos[i]);
 
-      if (cl != ASSH_ALGO_ANY && cl != a->class_)
+      if (!ak)
 	continue;
 
-      if (a->key_algo && !assh_string_strcmp(name, name_len, a->key_algo->name))
+      if (cl != ASSH_ALGO_ANY && cl != ak->algo.class_)
+	continue;
+
+      if (ak->key_algo && !assh_string_strcmp(name, name_len, ak->key_algo->name))
 	{
-	  *algo = a->key_algo;
+	  *algo = ak->key_algo;
 	  return ASSH_OK;
 	}
     }

@@ -79,7 +79,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
   if (assh_context_init(&context, flags[0] & 1 ? ASSH_SERVER : ASSH_CLIENT,
 			  NULL, NULL, &assh_prng_dummy, NULL) != ASSH_OK ||
       assh_service_register_default(&context) != ASSH_OK ||
-      assh_algo_register_va(&context, 0, 0, 0, &assh_kex_none.algo, &assh_sign_none.algo,
+      assh_algo_register_va(&context, 0, 0, 0, &assh_kex_none.algo_wk.algo,
+			    &assh_sign_none.algo_wk.algo,
 			    &assh_mac_none.algo, &assh_cipher_none.algo,
 			    &assh_compress_none.algo, NULL) ||
       assh_algo_register_default(&context, 0, 0, 0))

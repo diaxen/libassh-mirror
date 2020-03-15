@@ -538,12 +538,14 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_group1_sha1_init)
 
 const struct assh_algo_kex_s assh_kex_builtin_dh_group1_sha1 =
 {
-  ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(1024)
-                 /* precomputations */ / 2 /* sha1 */ - 1, 40,
-    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
-                      "diffie-hellman-group1-sha1" }),
-    .nondeterministic = 1,
-  ),
+  .algo_wk = {
+    ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(1024)
+                   /* precomputations */ / 2 /* sha1 */ - 1, 40,
+      ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
+                        "diffie-hellman-group1-sha1" }),
+      .nondeterministic = 1,
+    ),
+  },
   .f_init = assh_kex_dh_group1_sha1_init,
   .f_cleanup = assh_kex_dh_cleanup,
   .f_process = assh_kex_dh_process,
@@ -580,12 +582,14 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_group14_sha1_init)
 
 const struct assh_algo_kex_s assh_kex_builtin_dh_group14_sha1 =
 {
-  ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(2048)
-                 /* precomputations */ / 2 /* sha1 */ - 1, 30,
-    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
-                      "diffie-hellman-group14-sha1" }),
-    .nondeterministic = 1,
-  ),
+  .algo_wk = {
+    ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(2048)
+                   /* precomputations */ / 2 /* sha1 */ - 1, 30,
+      ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
+                        "diffie-hellman-group14-sha1" }),
+      .nondeterministic = 1,
+    ),
+  },
   .f_init = assh_kex_dh_group14_sha1_init,
   .f_cleanup = assh_kex_dh_cleanup,
   .f_process = assh_kex_dh_process,
@@ -622,12 +626,14 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_group14_sha256_init)
 
 const struct assh_algo_kex_s assh_kex_builtin_dh_group14_sha256 =
 {
-  ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(2048)
-                 /* precomputations */ / 2, 30,
-    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_DRAFT,
-                      "diffie-hellman-group14-sha256" }),
-    .nondeterministic = 1,
-  ),
+  .algo_wk = {
+    ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(2048)
+                   /* precomputations */ / 2, 30,
+      ASSH_ALGO_NAMES({ ASSH_ALGO_STD_DRAFT,
+                        "diffie-hellman-group14-sha256" }),
+      .nondeterministic = 1,
+    ),
+  },
   .f_init = assh_kex_dh_group14_sha256_init,
   .f_cleanup = assh_kex_dh_cleanup,
   .f_process = assh_kex_dh_process,
@@ -670,12 +676,14 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_group15_sha512_init)
 
 const struct assh_algo_kex_s assh_kex_builtin_dh_group15_sha512 =
 {
-  ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(3072)
-                 /* precomputations */ / 2, 20,
-    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_DRAFT,
-                      "diffie-hellman-group15-sha512" }),
-    .nondeterministic = 1,
-  ),
+  .algo_wk = {
+    ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(3072)
+                   /* precomputations */ / 2, 20,
+      ASSH_ALGO_NAMES({ ASSH_ALGO_STD_DRAFT,
+                        "diffie-hellman-group15-sha512" }),
+      .nondeterministic = 1,
+    ),
+  },
   .f_init = assh_kex_dh_group15_sha512_init,
   .f_cleanup = assh_kex_dh_cleanup,
   .f_process = assh_kex_dh_process,
@@ -725,12 +733,14 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_group16_sha512_init)
 
 const struct assh_algo_kex_s assh_kex_builtin_dh_group16_sha512 =
 {
-  ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(4096)
-                 /* precomputations */ / 2, 10,
-    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_DRAFT,
-                      "diffie-hellman-group16-sha512" }),
-    .nondeterministic = 1,
-  ),
+  .algo_wk = {
+    ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(4096)
+                   /* precomputations */ / 2, 10,
+      ASSH_ALGO_NAMES({ ASSH_ALGO_STD_DRAFT,
+                        "diffie-hellman-group16-sha512" }),
+      .nondeterministic = 1,
+    ),
+  },
   .f_init = assh_kex_dh_group16_sha512_init,
   .f_cleanup = assh_kex_dh_cleanup,
   .f_process = assh_kex_dh_process,
@@ -794,12 +804,14 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_group17_sha512_init)
 
 const struct assh_algo_kex_s assh_kex_builtin_dh_group17_sha512 =
 {
-  ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(6144)
-                 /* precomputations */ / 2, 5,
-    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_DRAFT,
-                      "diffie-hellman-group17-sha512" }),
-    .nondeterministic = 1,
-  ),
+  .algo_wk = {
+    ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(6144)
+                   /* precomputations */ / 2, 5,
+      ASSH_ALGO_NAMES({ ASSH_ALGO_STD_DRAFT,
+                        "diffie-hellman-group17-sha512" }),
+      .nondeterministic = 1,
+    ),
+  },
   .f_init = assh_kex_dh_group17_sha512_init,
   .f_cleanup = assh_kex_dh_cleanup,
   .f_process = assh_kex_dh_process,
@@ -878,12 +890,14 @@ static ASSH_KEX_INIT_FCN(assh_kex_dh_group18_sha512_init)
 
 const struct assh_algo_kex_s assh_kex_builtin_dh_group18_sha512 =
 {
-  ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(8192)
-                 /* precomputations */ / 2, 1,
-    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_DRAFT,
-                      "diffie-hellman-group18-sha512" }),
-    .nondeterministic = 1,
-  ),
+  .algo_wk = {
+    ASSH_ALGO_BASE(KEX, "assh-builtin", ASSH_SAFETY_PRIMEFIELD(8192)
+                   /* precomputations */ / 2, 1,
+      ASSH_ALGO_NAMES({ ASSH_ALGO_STD_DRAFT,
+                        "diffie-hellman-group18-sha512" }),
+      .nondeterministic = 1,
+    ),
+  },
   .f_init = assh_kex_dh_group18_sha512_init,
   .f_cleanup = assh_kex_dh_cleanup,
   .f_process = assh_kex_dh_process,

@@ -67,7 +67,7 @@ typedef ASSH_SIGN_CHECK_FCN(assh_sign_check_t);
     @xsee{coremod} */
 struct assh_algo_sign_s
 {
-  struct assh_algo_s algo;
+  struct assh_algo_with_key_s algo_wk;
 
   /** Bit mask used to define groups in a set of algorithms which can
       use the same type of key. This used to reduce the number of
@@ -77,6 +77,8 @@ struct assh_algo_sign_s
   assh_sign_generate_t *f_generate;
   assh_sign_check_t *f_check;
 };
+
+ASSH_FIRST_FIELD_ASSERT(assh_algo_sign_s, algo_wk);
 
 /** @internal @This computes the signature of the passed data using
     the provided private key then writes it to the @tt sign buffer. The @tt
@@ -108,7 +110,7 @@ assh_sign_check(struct assh_context_s *c, const struct assh_algo_sign_s *algo,
                 const struct assh_cbuffer_s data[],
                 const uint8_t *sign, size_t sign_len, assh_safety_t *safety)
 {
-  *safety = assh_min_uint(algo->algo.safety, key->safety);
+  *safety = assh_min_uint(algo->algo_wk.algo.safety, key->safety);
   return algo->f_check(c, key, data_count, data, sign, sign_len, safety);
 }
 

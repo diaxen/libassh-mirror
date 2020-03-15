@@ -51,8 +51,8 @@ void test_const()
 				    algos[i].algo, strlen(algos[i].algo)))
 	    continue;
 
-	  if (algos[i].variant && (!sa->algo.variant ||
-		   strcmp(algos[i].variant, sa->algo.variant)))
+	  if (algos[i].variant && (!sa->algo_wk.algo.variant ||
+		   strcmp(algos[i].variant, sa->algo_wk.algo.variant)))
 	    continue;
 
 	  done = 1;
@@ -60,8 +60,8 @@ void test_const()
 	  struct assh_key_s *key;
 
 	  fprintf(stderr, "\n%s (%s) (%s) const sign/verify: ",
-		  assh_algo_name(&sa->algo), sa->algo.implem,
-		  sa->algo.variant ? sa->algo.variant : "");
+		  assh_algo_name(&sa->algo_wk.algo), sa->algo_wk.algo.implem,
+		  sa->algo_wk.algo.variant ? sa->algo_wk.algo.variant : "");
 
 	  struct assh_context_s *context;
 
@@ -77,7 +77,7 @@ void test_const()
 
 	  fprintf(stderr, "L");
 	  const uint8_t *kb = key_blob + 1;
-	  if (assh_key_load(context, &key, sa->algo.key_algo, ASSH_ALGO_SIGN,
+	  if (assh_key_load(context, &key, sa->algo_wk.key_algo, ASSH_ALGO_SIGN,
 			    key_blob[0], &kb, sizeof(key_blob) - 1))
 	    TEST_FAIL("key load\n");
 
@@ -112,7 +112,7 @@ void test_const()
 	    TEST_FAIL("sign generate\n");
 
 	  if (algos[i].sign && (!algos[i].implem ||
-				!strcmp(algos[i].implem, sa->algo.implem)))
+				!strcmp(algos[i].implem, sa->algo_wk.algo.implem)))
 	    if (memcmp(algos[i].sign, sign, sign_len))
 	      {
 		assh_hexdump("expected", algos[i].sign, sign_len);
@@ -125,7 +125,7 @@ void test_const()
 	  if (assh_sign_check(context, sa, key, 3, d, sign, sign_len, &sign_safety))
 	    TEST_FAIL("sign check\n");
 
-	  if (sign_safety > sa->algo.safety || sign_safety > key->safety)
+	  if (sign_safety > sa->algo_wk.algo.safety || sign_safety > key->safety)
 	    TEST_FAIL("sign safety\n");
 
 	  data[assh_prng_rand() % sizeof(data)]++;
@@ -163,8 +163,8 @@ void test_load(unsigned int max_size)
 				    algos[i].algo, strlen(algos[i].algo)))
 	    continue;
 
-	  if (algos[i].variant && (!sa->algo.variant ||
-		   strcmp(algos[i].variant, sa->algo.variant)))
+	  if (algos[i].variant && (!sa->algo_wk.algo.variant ||
+		   strcmp(algos[i].variant, sa->algo_wk.algo.variant)))
 	    continue;
 
 	  done = 1;
@@ -172,8 +172,8 @@ void test_load(unsigned int max_size)
 	  struct assh_key_s *key;
 
 	  fprintf(stderr, "\n%s (%s) (%s) const load/validate: ",
-		  assh_algo_name(&sa->algo), sa->algo.implem,
-		  sa->algo.variant ? sa->algo.variant : "");
+		  assh_algo_name(&sa->algo_wk.algo), sa->algo_wk.algo.implem,
+		  sa->algo_wk.algo.variant ? sa->algo_wk.algo.variant : "");
 
 	  struct assh_context_s *context;
 
@@ -213,7 +213,7 @@ void test_load(unsigned int max_size)
 
 	      fprintf(stderr, "l");
 	      const uint8_t *kb = key_blob + 1;
-	      assh_status_t err = assh_key_load(context, &key, sa->algo.key_algo, ASSH_ALGO_SIGN,
+	      assh_status_t err = assh_key_load(context, &key, sa->algo_wk.key_algo, ASSH_ALGO_SIGN,
 						key_blob[0], &kb, sizeof(key_blob) - 1);
 
 	      if (!bad)

@@ -162,7 +162,7 @@ assh_userauth_client_key_next(struct assh_session_s *s,
 {
   while (k->keys != NULL)
     {
-      const struct assh_algo_s *algo;
+      const struct assh_algo_with_key_s *algo;
 
       if (assh_algo_by_key(s->ctx, k->keys,
                            &k->algo_idx, &algo) != ASSH_OK)
@@ -174,7 +174,7 @@ assh_userauth_client_key_next(struct assh_session_s *s,
           continue;
         }
 
-      assert(algo->class_ == ASSH_ALGO_SIGN);
+      assert(algo->algo.class_ == ASSH_ALGO_SIGN);
       k->algo = (void*)algo;
 
       k->algo_idx++;
@@ -201,13 +201,13 @@ assh_userauth_client_key_get(struct assh_session_s *s,
       struct assh_key_s *next = keys->next;
 
       /* insert provided keys in internal list */
-      const struct assh_algo_s *algo;
+      const struct assh_algo_with_key_s *algo;
       if (keys->role == ASSH_ALGO_SIGN &&
           assh_algo_by_key(s->ctx, keys, &k->algo_idx, &algo) == ASSH_OK)
         {
           assh_key_insert(&k->keys, keys);
 
-          assert(algo->class_ == ASSH_ALGO_SIGN);
+          assert(algo->algo.class_ == ASSH_ALGO_SIGN);
           k->algo = (void*)algo;
           k->algo_groups = k->algo->groups;
 

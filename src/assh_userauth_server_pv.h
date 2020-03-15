@@ -124,7 +124,7 @@ ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_userauth_server_get_key(struct assh_session_s *s,
                              const uint8_t *algo_name,
                              const uint8_t *pub_blob,
-                             const struct assh_algo_s **algo,
+                             const struct assh_algo_sign_s **algo,
                              struct assh_key_s **pub_key,
                              const struct assh_algo_name_s **namep);
 

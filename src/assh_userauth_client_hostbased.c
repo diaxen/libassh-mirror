@@ -44,7 +44,7 @@ assh_userauth_client_pck_hostbased(struct assh_session_s *s,
 
   const struct assh_algo_sign_s *algo = (const void *)pv->hostkey.algo;
 
-  size_t algo_name_len = strlen(assh_algo_name(&algo->algo));
+  size_t algo_name_len = strlen(assh_algo_name(&algo->algo_wk.algo));
 
   size_t blob_len;
   ASSH_RET_ON_ERR(assh_key_output(s->ctx, pub_key,
@@ -61,7 +61,7 @@ assh_userauth_client_pck_hostbased(struct assh_session_s *s,
   /* add signature algorithm name */
   uint8_t *str;
   ASSH_ASSERT(assh_packet_add_string(*pout, algo_name_len, &str));
-  memcpy(str, assh_algo_name(&pv->hostkey.algo->algo), algo_name_len);
+  memcpy(str, assh_algo_name(&pv->hostkey.algo->algo_wk.algo), algo_name_len);
 
   /* add public key blob */
   uint8_t *blob;

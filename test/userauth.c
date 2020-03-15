@@ -606,8 +606,8 @@ static void usage()
 
 static int algo_register(struct assh_context_s *c)
 {
-  return assh_algo_register_va(c, 0, 0, 0, &assh_kex_none.algo,
-			       &assh_sign_none.algo, &assh_cipher_fuzz.algo,
+  return assh_algo_register_va(c, 0, 0, 0, &assh_kex_none.algo_wk.algo,
+			       &assh_sign_none.algo_wk.algo, &assh_cipher_fuzz.algo,
 			       &assh_mac_none.algo, &assh_compress_none.algo, NULL) ||
     assh_algo_register_names_va(c, 0, 0, 0, ASSH_ALGO_SIGN,
 				"ssh-rsa", "ssh-dss", "ssh-ed25519",

@@ -70,9 +70,11 @@ assh_kex_list(struct assh_session_s *s, struct assh_packet_s *p,
       if (a->class_ != class_)
         break;
 
+      const struct assh_algo_with_key_s *ak =
+	assh_algo_with_key(a);
       /* check host key availability for this algorithm */
-      if (assh_algo_suitable_key(c, a, NULL) &&
-          assh_key_lookup(c, NULL, a) != ASSH_OK)
+      if (ak && assh_algo_suitable_key(c, ak, NULL) &&
+          assh_key_lookup(c, NULL, ak) != ASSH_OK)
         continue;
 
       const struct assh_algo_name_s *name;
@@ -181,7 +183,7 @@ assh_kex_server_algos(struct assh_session_s *s, const uint8_t *lists[9],
           if (kex->implicit_auth)
             {
               /* ignore host key algorithm */
-              s->kex_preferred[i] = algos[i] = &assh_sign_none.algo;
+              s->kex_preferred[i] = algos[i] = &assh_sign_none.algo_wk.algo;
               continue;
             }
           break;
@@ -221,8 +223,10 @@ assh_kex_server_algos(struct assh_session_s *s, const uint8_t *lists[9],
             goto next;
 
           /* check algorithm key availability */
-          if (assh_algo_suitable_key(c, a, NULL) &&
-              assh_key_lookup(c, NULL, a) != ASSH_OK)
+	  const struct assh_algo_with_key_s *ak =
+	    assh_algo_with_key(a);
+          if (ak && assh_algo_suitable_key(c, ak, NULL) &&
+              assh_key_lookup(c, NULL, ak) != ASSH_OK)
             goto next;
 
           algos[i] = a;
@@ -265,7 +269,7 @@ assh_kex_client_algos(struct assh_session_s *s, const uint8_t *lists[9],
           if (kex->implicit_auth)
             {
               /* ignore host key algorithm */
-              s->kex_preferred[i] = algos[i] = &assh_sign_none.algo;
+              s->kex_preferred[i] = algos[i] = &assh_sign_none.algo_wk.algo;
               continue;
             }
           break;
@@ -389,10 +393,10 @@ assh_status_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *
   const struct assh_algo_compress_s *cmp_in   = (const void *)algos[6];
   const struct assh_algo_compress_s *cmp_out  = (const void *)algos[7];
 
-  assh_safety_t kin_safety = kex->algo.safety;
+  assh_safety_t kin_safety = kex->algo_wk.algo.safety;
 
   if (!kex->implicit_auth)
-    kin_safety = assh_min_uint(kin_safety, sign->algo.safety);
+    kin_safety = assh_min_uint(kin_safety, sign->algo_wk.algo.safety);
 
   assh_safety_t kout_safety = kin_safety;
 
@@ -701,12 +705,12 @@ assh_kex_client_get_key(struct assh_session_s *s,
   struct assh_key_s *host_key = NULL;
 
   const uint8_t *key_blob = ks_str + 4;
-  ASSH_RET_ON_ERR(assh_key_load(s->ctx, &host_key, sign_algo->algo.key_algo,
+  ASSH_RET_ON_ERR(assh_key_load(s->ctx, &host_key, sign_algo->algo_wk.key_algo,
 				ASSH_ALGO_SIGN, ASSH_KEY_FMT_PUB_RFC4253, &key_blob,
 				assh_load_u32(ks_str)));
 
   /* check if the key can be used by the algorithm */
-  ASSH_JMP_IF_TRUE(!assh_algo_suitable_key(s->ctx, &sign_algo->algo, host_key),
+  ASSH_JMP_IF_TRUE(!assh_algo_suitable_key(s->ctx, &sign_algo->algo_wk, host_key),
                ASSH_ERR_WEAK_ALGORITHM, err_hk);
 
   /* Return an host key lookup event */
@@ -793,7 +797,7 @@ assh_kex_server_hash1(struct assh_session_s *s, size_t kex_len,
   /* look for an host key pair which can be used with the selected algorithm. */
   const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
 
-  ASSH_RET_IF_TRUE(assh_key_lookup(c, host_key, &s->host_sign_algo->algo) != ASSH_OK,
+  ASSH_RET_IF_TRUE(assh_key_lookup(c, host_key, &s->host_sign_algo->algo_wk) != ASSH_OK,
                ASSH_ERR_MISSING_KEY);
   struct assh_key_s *hk = *host_key;
 

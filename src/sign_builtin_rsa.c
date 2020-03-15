@@ -354,12 +354,14 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate_sha1)
 
 const struct assh_algo_sign_s assh_sign_builtin_rsa_sha1_md5 =
 {
-  ASSH_ALGO_BASE(SIGN, "assh-builtin", 15, 40,
-    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "ssh-rsa" }),
-    ASSH_ALGO_VARIANT( 2, "sha*, md5, key >= 768" ),
-    .f_suitable_key = assh_sign_rsa_suitable_key_768,
+  .algo_wk = {
+    ASSH_ALGO_BASE(SIGN, "assh-builtin", 15, 40,
+      ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "ssh-rsa" }),
+      ASSH_ALGO_VARIANT( 2, "sha*, md5, key >= 768" ),
+    ),
     .key_algo = &assh_key_builtin_rsa,
-  ),
+    .f_suitable_key = assh_sign_rsa_suitable_key_768,
+  },
   .f_generate = assh_sign_rsa_generate_sha1,
   .f_check = assh_sign_rsa_check_sha1_md5,
 };
@@ -388,12 +390,14 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_rsa_check_sha1)
 
 const struct assh_algo_sign_s assh_sign_builtin_rsa_sha1 =
 {
-  ASSH_ALGO_BASE(SIGN, "assh-builtin", 20, 40,
-    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "ssh-rsa" }),
-    ASSH_ALGO_VARIANT( 1, "sha*, key >= 1024" ),
+  .algo_wk = {
+    ASSH_ALGO_BASE(SIGN, "assh-builtin", 20, 40,
+      ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "ssh-rsa" }),
+      ASSH_ALGO_VARIANT( 1, "sha*, key >= 1024" ),
+    ),
     .f_suitable_key = assh_sign_rsa_suitable_key_1024,
     .key_algo = &assh_key_builtin_rsa,
-  ),
+  },
   .f_generate = assh_sign_rsa_generate_sha1,
   .f_check = assh_sign_rsa_check_sha1,
 };
@@ -412,12 +416,14 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_2048)
 
 const struct assh_algo_sign_s assh_sign_builtin_rsa_sha1_2048 =
 {
-  ASSH_ALGO_BASE(SIGN, "assh-builtin", 25, 30,
-    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "ssh-rsa" }),
-    ASSH_ALGO_VARIANT( 0, "sha*, key >= 2048" ),
+  .algo_wk = {
+    ASSH_ALGO_BASE(SIGN, "assh-builtin", 25, 30,
+      ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "ssh-rsa" }),
+      ASSH_ALGO_VARIANT( 0, "sha*, key >= 2048" ),
+    ),
     .f_suitable_key = assh_sign_rsa_suitable_key_2048,
     .key_algo = &assh_key_builtin_rsa,
-  ),
+  },
   .f_generate = assh_sign_rsa_generate_sha1,
   .f_check = assh_sign_rsa_check_sha1,
 };
@@ -441,12 +447,14 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate_sha256)
 
 const struct assh_algo_sign_s assh_sign_builtin_rsa_sha256 =
 {
-  ASSH_ALGO_BASE(SIGN, "assh-builtin", 40, 30,
-    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_DRAFT | ASSH_ALGO_ASSH,
-                      "rsa-sha2-256" }),
+  .algo_wk = {
+    ASSH_ALGO_BASE(SIGN, "assh-builtin", 40, 30,
+      ASSH_ALGO_NAMES({ ASSH_ALGO_STD_DRAFT | ASSH_ALGO_ASSH,
+                        "rsa-sha2-256" }),
+    ),
     .f_suitable_key = assh_sign_rsa_suitable_key_2048,
     .key_algo = &assh_key_builtin_rsa,
-  ),
+  },
   .groups = 1,
   .f_generate = assh_sign_rsa_generate_sha256,
   .f_check = assh_sign_rsa_check_sha256,
@@ -470,12 +478,14 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate_sha512)
 
 const struct assh_algo_sign_s assh_sign_builtin_rsa_sha512 =
 {
-  ASSH_ALGO_BASE(SIGN, "assh-builtin", 45, 30,
-    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_DRAFT | ASSH_ALGO_ASSH,
-                      "rsa-sha2-512" }),
+  .algo_wk = {
+    ASSH_ALGO_BASE(SIGN, "assh-builtin", 45, 30,
+      ASSH_ALGO_NAMES({ ASSH_ALGO_STD_DRAFT | ASSH_ALGO_ASSH,
+                        "rsa-sha2-512" }),
+    ),
     .f_suitable_key = assh_sign_rsa_suitable_key_2048,
     .key_algo = &assh_key_builtin_rsa,
-  ),
+  },
   .groups = 1,
   .f_generate = assh_sign_rsa_generate_sha512,
   .f_check = assh_sign_rsa_check_sha512,

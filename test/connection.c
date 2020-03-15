@@ -184,7 +184,7 @@ void test(int (*fend)(int, int), int n, int evrate)
   ASSH_DEBUG("==============================================================\n");
 
   static const struct assh_algo_s *algos[] = {
-    &assh_kex_none.algo, &assh_sign_none.algo,
+    &assh_kex_none.algo_wk.algo, &assh_sign_none.algo_wk.algo,
     &assh_cipher_none.algo, &assh_mac_none.algo, &assh_compress_none.algo,
     NULL
   };

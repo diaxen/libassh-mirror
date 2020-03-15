@@ -221,10 +221,10 @@ test_algo_lookup(enum assh_algo_class_e cl, const char *name,
       switch (cl)
 	{
 	case ASSH_ALGO_KEX:
-	  *algo = &assh_kex_none.algo;
+	  *algo = &assh_kex_none.algo_wk.algo;
 	  return ASSH_OK;
 	case ASSH_ALGO_SIGN:
-	  *algo = &assh_sign_none.algo;
+	  *algo = &assh_sign_none.algo_wk.algo;
 	  return ASSH_OK;
 	case ASSH_ALGO_CIPHER:
 	  *algo = &assh_cipher_none.algo;

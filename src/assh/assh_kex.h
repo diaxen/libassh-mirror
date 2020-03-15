@@ -336,12 +336,15 @@ union assh_event_kex_u
     @xsee{coremod} */
 struct assh_algo_kex_s
 {
-  struct assh_algo_s algo;
+  struct assh_algo_with_key_s algo_wk;
+
   assh_kex_init_t *f_init;
   assh_kex_cleanup_t *f_cleanup;
   assh_kex_process_t *f_process;
   assh_bool_t implicit_auth;
 };
+
+ASSH_FIRST_FIELD_ASSERT(assh_algo_kex_s, algo_wk);
 
 /** @internal Set of @em none algortihm contexts used at startup */
 extern const struct assh_kex_keys_s assh_keys_none;

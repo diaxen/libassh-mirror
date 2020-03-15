@@ -321,11 +321,14 @@ assh_load_pub_openssh(struct assh_context_s *c, FILE *file,
               if (algo && !*algo)
                 {
                   const struct assh_algo_s *a;
-                  if (assh_algo_by_name(c, ASSH_ALGO_SIGN,
+                  if (!assh_algo_by_name(c, ASSH_ALGO_SIGN,
                                         algo_name, alen, &a, NULL))
-                    *algo = NULL;
-                  else
-                    *algo = a->key_algo;
+		    {
+		      const struct assh_algo_with_key_s *ak
+			= assh_algo_with_key(a);
+		      ASSH_RET_IF_TRUE(!ak, ASSH_ERR_MISSING_ALGO);
+		      *algo = ak->key_algo;
+		    }
                 }
               state = 1;
             }

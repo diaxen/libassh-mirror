@@ -385,11 +385,13 @@ static ASSH_KEX_INIT_FCN(assh_kex_curve25519_init)
 
 const struct assh_algo_kex_s assh_kex_sodium_curve25519_sha256 =
 {
-  ASSH_ALGO_BASE(KEX, "assh-sodium", 50, 90,
-    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,
-                      "curve25519-sha256@libssh.org" }),
-    .nondeterministic = 1,
-  ),
+  .algo_wk = {
+    ASSH_ALGO_BASE(KEX, "assh-sodium", 50, 90,
+      ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,
+                        "curve25519-sha256@libssh.org" }),
+      .nondeterministic = 1,
+    ),
+  },
   .f_init = assh_kex_curve25519_init,
   .f_cleanup = assh_kex_curve25519_cleanup,
   .f_process = assh_kex_curve25519_process,

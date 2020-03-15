@@ -65,8 +65,8 @@ void test_sign(unsigned int max_size, enum action_e action)
 				    algos[i].algo, strlen(algos[i].algo)))
 	    continue;
 
-	  if (algos[i].variant && (!sa->algo.variant ||
-		   strcmp(algos[i].variant, sa->algo.variant)))
+	  if (algos[i].variant && (!sa->algo_wk.algo.variant ||
+		   strcmp(algos[i].variant, sa->algo_wk.algo.variant)))
 	    continue;
 
 	  done = 1;
@@ -74,8 +74,8 @@ void test_sign(unsigned int max_size, enum action_e action)
 	  struct assh_key_s *key, *key2;
 
 	  fprintf(stderr, "\n%s (%s) (%s) sign/verify: ",
-		  assh_algo_name(&sa->algo), sa->algo.implem,
-		  sa->algo.variant ? sa->algo.variant : "");
+		  assh_algo_name(&sa->algo_wk.algo), sa->algo_wk.algo.implem,
+		  sa->algo_wk.algo.variant ? sa->algo_wk.algo.variant : "");
 
 	  struct assh_context_s *context;
 
@@ -91,7 +91,7 @@ void test_sign(unsigned int max_size, enum action_e action)
 
 	  fprintf(stderr, "L");
 	  const uint8_t *kb = key_blob + 1;
-	  if (assh_key_load(context, &key2, sa->algo.key_algo, ASSH_ALGO_SIGN,
+	  if (assh_key_load(context, &key2, sa->algo_wk.key_algo, ASSH_ALGO_SIGN,
 			    key_blob[0], &kb, sizeof(key_blob) - 1))
 	    TEST_FAIL("key load");
 
@@ -120,7 +120,7 @@ void test_sign(unsigned int max_size, enum action_e action)
 		    % (algos[i].kbits_max - algos[i].kbits_min + 1);
 		  fprintf(stderr, "N");
 		  if (assh_key_create(context, &key, kbits,
-				      sa->algo.key_algo, ASSH_ALGO_SIGN))
+				      sa->algo_wk.key_algo, ASSH_ALGO_SIGN))
 		    TEST_FAIL("key create");
 
 # ifdef CONFIG_ASSH_KEY_VALIDATE
@@ -177,7 +177,7 @@ void test_sign(unsigned int max_size, enum action_e action)
 	      assh_status_t err = assh_sign_check(context, sa, key, c, d, sign, sign_len, &sign_safety);
 	      TEST_ASSERT(err == ASSH_OK);
 
-	      TEST_ASSERT(sign_safety <= sa->algo.safety &&
+	      TEST_ASSERT(sign_safety <= sa->algo_wk.algo.safety &&
 			  sign_safety <= key->safety);
 
 	      if (action & ACTION_FUZZ_CHECK)

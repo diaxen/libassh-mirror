@@ -395,18 +395,18 @@ assh_algo_by_name(struct assh_context_s *c,
 
 assh_status_t assh_algo_by_key(struct assh_context_s *c,
 			      const struct assh_key_s *key, uint16_t *pos,
-			      const struct assh_algo_s **algo)
+			      const struct assh_algo_with_key_s **algo)
 {
   uint_fast16_t i = pos == NULL ? 0 : *pos;
-  const struct assh_algo_s *a;
+  const struct assh_algo_with_key_s *awk;
 
   for (; i < c->algo_cnt; i++)
     {
-      a = c->algos[i];
+      awk = assh_algo_with_key(c->algos[i]);
 
-      if (a->class_ == key->role &&
-          a->f_suitable_key != NULL &&
-	  a->f_suitable_key(c, a, key))
+      if (awk && awk->algo.class_ == key->role &&
+	  awk->f_suitable_key != NULL &&
+	  awk->f_suitable_key(c, awk, key))
 	break;
     }
 
@@ -415,19 +415,19 @@ assh_status_t assh_algo_by_key(struct assh_context_s *c,
 
   if (pos != NULL)
     *pos = i;
-  *algo = a;
+  *algo = awk;
   return ASSH_OK;
 }
 
 assh_bool_t
 assh_algo_suitable_key(struct assh_context_s *c,
-                       const struct assh_algo_s *algo,
+                       const struct assh_algo_with_key_s *algo,
                        const struct assh_key_s *key)
 {
   if (algo->f_suitable_key == NULL)
     return 0;
   if (key != NULL &&
-      key->role != algo->class_)
+      key->role != algo->algo.class_)
     return 0;
   return algo->f_suitable_key(c, algo, key);
 }

@@ -194,8 +194,8 @@ void bench(const struct kex_bench_s *t,
     TEST_FAIL("ctx init\n");
 
   fprintf(stderr, "%-36s %-13s %3u-bit   ",
-	  assh_algo_name(&kex->algo),
-	  kex->algo.implem,
+	  assh_algo_name(&kex->algo_wk.algo),
+	  kex->algo_wk.algo.implem,
 	  t->cipher->key_size * 8);
 
   for (i = 0; i < 2; i++)
@@ -203,7 +203,7 @@ void bench(const struct kex_bench_s *t,
       struct assh_context_s *c = &context[i];
 
       if (assh_algo_register_va(c, 0, 0, 0,
-				&kex->algo, &assh_sign_none.algo, t->cipher,
+				&kex->algo_wk.algo, &assh_sign_none.algo_wk.algo, t->cipher,
 				&assh_mac_none.algo, &assh_compress_none.algo,
 				NULL))
 	TEST_FAIL("algo register\n");
@@ -216,7 +216,7 @@ void bench(const struct kex_bench_s *t,
 	TEST_FAIL("host key\n");
 
       if (t->key_bits && assh_key_create(context, assh_context_keys(context),
-				 t->key_bits, kex->algo.key_algo, ASSH_ALGO_KEX))
+				 t->key_bits, kex->algo_wk.key_algo, ASSH_ALGO_KEX))
 	TEST_FAIL("kex key\n");
     }
 
@@ -307,8 +307,8 @@ void bench(const struct kex_bench_s *t,
   while (l-- > 0)
     fputc(' ', stderr);
 
-  if (kex->algo.variant)
-    fprintf(stderr, "   (%s)\n", kex->algo.variant);
+  if (kex->algo_wk.algo.variant)
+    fprintf(stderr, "   (%s)\n", kex->algo_wk.algo.variant);
   else
     fputc('\n', stderr);
 }

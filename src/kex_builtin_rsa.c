@@ -353,7 +353,7 @@ static assh_status_t assh_kex_rsa_server_send_pubkey(struct assh_session_s *s)
   /* look for an host key pair which can be used with the selected algorithm. */
 
   struct assh_key_s *hk;
-  ASSH_RET_IF_TRUE(assh_key_lookup(c, &hk, &s->host_sign_algo->algo) != ASSH_OK,
+  ASSH_RET_IF_TRUE(assh_key_lookup(c, &hk, &s->host_sign_algo->algo_wk) != ASSH_OK,
                ASSH_ERR_MISSING_KEY);
   pv->host_key = hk;
 
@@ -589,7 +589,7 @@ static ASSH_KEX_PROCESS_FCN(assh_kex_rsa_process)
 
 static assh_status_t assh_kex_rsa_init(struct assh_session_s *s,
 				      size_t cipher_key_size, size_t minklen,
-				      const struct assh_algo_s *algo,
+				      const struct assh_algo_with_key_s *algo,
 				      const struct assh_hash_algo_s *hash,
 				      const uint8_t *lhash)
 {
@@ -691,7 +691,7 @@ static ASSH_KEX_CLEANUP_FCN(assh_kex_rsa_cleanup)
 static ASSH_KEX_INIT_FCN(assh_kex_rsa1024_sha1_init)
 {
   return assh_kex_rsa_init(s, cipher_key_size, 1024,
-    &assh_kex_builtin_rsa1024_sha1.algo, &assh_hash_sha1,
+    &assh_kex_builtin_rsa1024_sha1.algo_wk, &assh_hash_sha1,
     (const uint8_t*)"\xda\x39\xa3\xee\x5e\x6b\x4b\x0d\x32\x55"
 		    "\xbf\xef\x95\x60\x18\x90\xaf\xd8\x07\x09");
 }
@@ -712,12 +712,14 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_kex_rsa1024_suitable_key)
 
 const struct assh_algo_kex_s assh_kex_builtin_rsa1024_sha1 =
 {
-  ASSH_ALGO_BASE(KEX, "assh-builtin", 10, 30,
-    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF, "rsa1024-sha1" }),
+  .algo_wk = {
+    ASSH_ALGO_BASE(KEX, "assh-builtin", 10, 30,
+      ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF, "rsa1024-sha1" }),
+      .nondeterministic = 1
+    ),
     .f_suitable_key = assh_kex_rsa1024_suitable_key,
     .key_algo = &assh_key_builtin_rsa,
-    .nondeterministic = 1
-  ),
+  },
   .f_init = assh_kex_rsa1024_sha1_init,
   .f_cleanup = assh_kex_rsa_cleanup,
   .f_process = assh_kex_rsa_process,
@@ -726,7 +728,7 @@ const struct assh_algo_kex_s assh_kex_builtin_rsa1024_sha1 =
 static ASSH_KEX_INIT_FCN(assh_kex_rsa2048_sha256_init)
 {
   return assh_kex_rsa_init(s, cipher_key_size, 2048,
-    &assh_kex_builtin_rsa2048_sha256.algo, &assh_hash_sha256,
+    &assh_kex_builtin_rsa2048_sha256.algo_wk, &assh_hash_sha256,
     (const uint8_t*)"\xe3\xb0\xc4\x42\x98\xfc\x1c\x14\x9a\xfb\xf4\xc8"
 		    "\x99\x6f\xb9\x24\x27\xae\x41\xe4\x64\x9b\x93\x4c"
 		    "\xa4\x95\x99\x1b\x78\x52\xb8\x55");
@@ -748,12 +750,14 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_kex_rsa2048_suitable_key)
 
 const struct assh_algo_kex_s assh_kex_builtin_rsa2048_sha256 =
 {
-  ASSH_ALGO_BASE(KEX, "assh-builtin", 20, 20,
-    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF, "rsa2048-sha256"}),
+  .algo_wk = {
+    ASSH_ALGO_BASE(KEX, "assh-builtin", 20, 20,
+      ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF, "rsa2048-sha256"}),
+      .nondeterministic = 1
+    ),
     .f_suitable_key = assh_kex_rsa2048_suitable_key,
     .key_algo = &assh_key_builtin_rsa,
-    .nondeterministic = 1
-  ),
+  },
   .f_init = assh_kex_rsa2048_sha256_init,
   .f_cleanup = assh_kex_rsa_cleanup,
   .f_process = assh_kex_rsa_process,

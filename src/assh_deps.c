@@ -116,58 +116,58 @@ __attribute__((weak))
 const struct assh_algo_s *assh_algo_table[] = {
 
   /* kex */
-  // &assh_kex_none.algo,
+  // &assh_kex_none.algo_wk.algo,
 
 #ifdef CONFIG_ASSH_USE_BUILTIN_KEX
-  &assh_kex_builtin_curve25519_sha256.algo,
-  &assh_kex_builtin_m383_sha384.algo,
-  &assh_kex_builtin_m511_sha512.algo,
-  &assh_kex_builtin_dh_group1_sha1.algo,
-  &assh_kex_builtin_dh_group14_sha1.algo,
-  &assh_kex_builtin_dh_group14_sha256.algo,
-  &assh_kex_builtin_dh_group15_sha512.algo,
-  &assh_kex_builtin_dh_group16_sha512.algo,
-  &assh_kex_builtin_dh_group17_sha512.algo,
-  &assh_kex_builtin_dh_group18_sha512.algo,
-  &assh_kex_builtin_dh_gex_sha1.algo,
-  &assh_kex_builtin_dh_gex_sha256_12.algo,
-  &assh_kex_builtin_dh_gex_sha256_8.algo,
-  &assh_kex_builtin_dh_gex_sha256_4.algo,
-  &assh_kex_builtin_rsa1024_sha1.algo,
-  &assh_kex_builtin_rsa2048_sha256.algo,
-  &assh_kex_builtin_sha2_nistp256.algo,
-  &assh_kex_builtin_sha2_nistp384.algo,
-  &assh_kex_builtin_sha2_nistp521.algo,
+  &assh_kex_builtin_curve25519_sha256.algo_wk.algo,
+  &assh_kex_builtin_m383_sha384.algo_wk.algo,
+  &assh_kex_builtin_m511_sha512.algo_wk.algo,
+  &assh_kex_builtin_dh_group1_sha1.algo_wk.algo,
+  &assh_kex_builtin_dh_group14_sha1.algo_wk.algo,
+  &assh_kex_builtin_dh_group14_sha256.algo_wk.algo,
+  &assh_kex_builtin_dh_group15_sha512.algo_wk.algo,
+  &assh_kex_builtin_dh_group16_sha512.algo_wk.algo,
+  &assh_kex_builtin_dh_group17_sha512.algo_wk.algo,
+  &assh_kex_builtin_dh_group18_sha512.algo_wk.algo,
+  &assh_kex_builtin_dh_gex_sha1.algo_wk.algo,
+  &assh_kex_builtin_dh_gex_sha256_12.algo_wk.algo,
+  &assh_kex_builtin_dh_gex_sha256_8.algo_wk.algo,
+  &assh_kex_builtin_dh_gex_sha256_4.algo_wk.algo,
+  &assh_kex_builtin_rsa1024_sha1.algo_wk.algo,
+  &assh_kex_builtin_rsa2048_sha256.algo_wk.algo,
+  &assh_kex_builtin_sha2_nistp256.algo_wk.algo,
+  &assh_kex_builtin_sha2_nistp384.algo_wk.algo,
+  &assh_kex_builtin_sha2_nistp521.algo_wk.algo,
 #endif
 
 #ifdef CONFIG_ASSH_USE_SODIUM_KEX
-  &assh_kex_sodium_curve25519_sha256.algo,
+  &assh_kex_sodium_curve25519_sha256.algo_wk.algo,
 #endif
 
 #ifdef CONFIG_ASSH_USE_SODIUM_SIGN
-  &assh_sign_sodium_ed25519.algo,
+  &assh_sign_sodium_ed25519.algo_wk.algo,
 #endif
 
   /* sign */
-  // &assh_sign_none.algo,
+  // &assh_sign_none.algo_wk.algo,
 
 #ifdef CONFIG_ASSH_USE_BUILTIN_SIGN
-  &assh_sign_builtin_dsa768.algo,
-  &assh_sign_builtin_dsa1024.algo,
-  &assh_sign_builtin_dsa2048_sha224.algo,
-  &assh_sign_builtin_dsa2048_sha256.algo,
-  &assh_sign_builtin_dsa3072_sha256.algo,
-  &assh_sign_builtin_rsa_sha1_md5.algo,
-  &assh_sign_builtin_rsa_sha1.algo,
-  &assh_sign_builtin_rsa_sha1_2048.algo,
-  &assh_sign_builtin_rsa_sha256.algo,
-  &assh_sign_builtin_rsa_sha512.algo,
-  &assh_sign_builtin_ed25519.algo,
-  &assh_sign_builtin_eddsa_e382.algo,
-  &assh_sign_builtin_eddsa_e521.algo,
-  &assh_sign_builtin_nistp256.algo,
-  &assh_sign_builtin_nistp384.algo,
-  &assh_sign_builtin_nistp521.algo,
+  &assh_sign_builtin_dsa768.algo_wk.algo,
+  &assh_sign_builtin_dsa1024.algo_wk.algo,
+  &assh_sign_builtin_dsa2048_sha224.algo_wk.algo,
+  &assh_sign_builtin_dsa2048_sha256.algo_wk.algo,
+  &assh_sign_builtin_dsa3072_sha256.algo_wk.algo,
+  &assh_sign_builtin_rsa_sha1_md5.algo_wk.algo,
+  &assh_sign_builtin_rsa_sha1.algo_wk.algo,
+  &assh_sign_builtin_rsa_sha1_2048.algo_wk.algo,
+  &assh_sign_builtin_rsa_sha256.algo_wk.algo,
+  &assh_sign_builtin_rsa_sha512.algo_wk.algo,
+  &assh_sign_builtin_ed25519.algo_wk.algo,
+  &assh_sign_builtin_eddsa_e382.algo_wk.algo,
+  &assh_sign_builtin_eddsa_e521.algo_wk.algo,
+  &assh_sign_builtin_nistp256.algo_wk.algo,
+  &assh_sign_builtin_nistp384.algo_wk.algo,
+  &assh_sign_builtin_nistp521.algo_wk.algo,
 #endif
 
   /* ciphers */

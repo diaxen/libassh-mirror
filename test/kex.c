@@ -335,7 +335,7 @@ void test(const struct assh_algo_kex_s *kex,
 	  unsigned seed, unsigned cycles)
 {
   const struct assh_algo_s *algos[] = {
-    &kex->algo, &sign->algo, &cipher->algo, &mac->algo, &comp->algo,
+    &kex->algo_wk.algo, &sign->algo_wk.algo, &cipher->algo, &mac->algo, &comp->algo,
     NULL
   };
 
@@ -353,7 +353,8 @@ void test(const struct assh_algo_kex_s *kex,
   struct assh_channel_s *ch[2];
 
   fprintf(stderr, "%u: %s (%s), %s, %s, %s, %s\n", seed,
-	  assh_algo_name(&kex->algo), kex->algo.implem, assh_algo_name(&sign->algo),
+	  assh_algo_name(&kex->algo_wk.algo), kex->algo_wk.algo.implem,
+	  assh_algo_name(&sign->algo_wk.algo),
 	  assh_algo_name(&cipher->algo), assh_algo_name(&mac->algo),
 	  assh_algo_name(&comp->algo));
 
@@ -633,8 +634,8 @@ void test_loop(unsigned int seed,
 	      if (kex_filter && !strstr(kex->algo, kex_filter))
 		continue;
 
-	      if (kex->variant && (!kex_a->algo.variant ||
-				   strcmp(kex->variant, kex_a->algo.variant)))
+	      if (kex->variant && (!kex_a->algo_wk.algo.variant ||
+				   strcmp(kex->variant, kex_a->algo_wk.algo.variant)))
 		continue;
 
 	      kex_done |= test_loop_2(seed, kex_a, kex, sign, cipher, mac, comp, cycles);

@@ -179,9 +179,9 @@ asshh_print_kex_details(struct assh_session_s *s, FILE *out,
 
   fprintf(out, "\n"
 	  "  key exchange      : %-38s safety %u%% (%s)\n",
-	  assh_algo_name(&kex->algo),
-	  assh_algo_safety(&kex->algo),
-	  assh_algo_safety_name(&kex->algo)
+	  assh_algo_name(&kex->algo_wk.algo),
+	  assh_algo_safety(&kex->algo_wk.algo),
+	  assh_algo_safety_name(&kex->algo_wk.algo)
 	  );
 
   if (ev->host_key)

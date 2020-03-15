@@ -548,7 +548,7 @@ test_userauth_client_pubkey(struct assh_session_s *s, struct assh_key_s *key,
 
   struct assh_packet_s *pout;
 
-  size_t algo_name_len = strlen(assh_algo_name(&sign_algo->algo));
+  size_t algo_name_len = strlen(assh_algo_name(&sign_algo->algo_wk.algo));
 
   size_t blob_len;
   if (assh_key_output(s->ctx, key,
@@ -567,7 +567,7 @@ test_userauth_client_pubkey(struct assh_session_s *s, struct assh_key_s *key,
   /* add signature algorithm name */
   uint8_t *algo_name;
   ASSH_ASSERT(assh_packet_add_string(pout, algo_name_len, &algo_name));
-  memcpy(algo_name, assh_algo_name(&sign_algo->algo), algo_name_len);
+  memcpy(algo_name, assh_algo_name(&sign_algo->algo_wk.algo), algo_name_len);
 
   /* add public key blob */
   uint8_t *blob;
@@ -599,7 +599,7 @@ test_userauth_client_hostbased(struct assh_session_s *s, struct assh_key_s *key,
 
   struct assh_packet_s *pout;
 
-  size_t algo_name_len = strlen(assh_algo_name(&sign_algo->algo));
+  size_t algo_name_len = strlen(assh_algo_name(&sign_algo->algo_wk.algo));
   size_t hostname_len = strlen(hostname);
   size_t husername_len = strlen(husername);
 
@@ -617,7 +617,7 @@ test_userauth_client_hostbased(struct assh_session_s *s, struct assh_key_s *key,
   /* add signature algorithm name */
   uint8_t *str;
   ASSH_ASSERT(assh_packet_add_string(pout, algo_name_len, &str));
-  memcpy(str, assh_algo_name(&sign_algo->algo), algo_name_len);
+  memcpy(str, assh_algo_name(&sign_algo->algo_wk.algo), algo_name_len);
 
   /* add public key blob */
   uint8_t *blob;
@@ -2279,7 +2279,8 @@ static void test()
 
 static int algo_register(struct assh_context_s *c)
 {
-  return assh_algo_register_va(c, 0, 0, 0, &assh_kex_none.algo, &assh_sign_none.algo,
+  return assh_algo_register_va(c, 0, 0, 0, &assh_kex_none.algo_wk.algo,
+			       &assh_sign_none.algo_wk.algo,
 			       &assh_mac_none.algo, &assh_cipher_none.algo,
 			       &assh_compress_none.algo, NULL) ||
     assh_algo_register_names_va(c, 0, 0, 0, ASSH_ALGO_SIGN,

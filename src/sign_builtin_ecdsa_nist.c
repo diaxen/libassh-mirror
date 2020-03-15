@@ -369,12 +369,14 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_nistp256_suitable_key)
 
 const struct assh_algo_sign_s assh_sign_builtin_nistp256 =
 {
-  ASSH_ALGO_BASE(SIGN, "assh-builtin", ASSH_NISTP256_SAFETY, 90,
-    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
-	              "ecdsa-sha2-nistp256" }),
-    .f_suitable_key = assh_sign_nistp256_suitable_key,
-    .key_algo = &assh_key_builtin_ecdsa_nist,
-  ),
+  .algo_wk = {
+     ASSH_ALGO_BASE(SIGN, "assh-builtin", ASSH_NISTP256_SAFETY, 90,
+       ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
+   	              "ecdsa-sha2-nistp256" }),
+     ),
+     .f_suitable_key = assh_sign_nistp256_suitable_key,
+     .key_algo = &assh_key_builtin_ecdsa_nist,
+  },
   .f_generate = assh_sign_ecdsa_generate,
   .f_check = assh_sign_ecdsa_check,
 };
@@ -392,12 +394,14 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_nistp384_suitable_key)
 
 const struct assh_algo_sign_s assh_sign_builtin_nistp384 =
 {
-  ASSH_ALGO_BASE(SIGN, "assh-builtin", ASSH_NISTP384_SAFETY, 80,
-    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
-	              "ecdsa-sha2-nistp384" }),
-    .f_suitable_key = assh_sign_nistp384_suitable_key,
-    .key_algo = &assh_key_builtin_ecdsa_nist,
-  ),
+  .algo_wk = {
+     ASSH_ALGO_BASE(SIGN, "assh-builtin", ASSH_NISTP384_SAFETY, 80,
+       ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
+   	              "ecdsa-sha2-nistp384" }),
+     ),
+     .f_suitable_key = assh_sign_nistp384_suitable_key,
+     .key_algo = &assh_key_builtin_ecdsa_nist,
+  },
   .f_generate = assh_sign_ecdsa_generate,
   .f_check = assh_sign_ecdsa_check,
 };
@@ -415,12 +419,14 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_nistp521_suitable_key)
 
 const struct assh_algo_sign_s assh_sign_builtin_nistp521 =
 {
-  ASSH_ALGO_BASE(SIGN, "assh-builtin", ASSH_NISTP521_SAFETY, 70,
-    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
-                      "ecdsa-sha2-nistp521" }),
+  .algo_wk = {
+    ASSH_ALGO_BASE(SIGN, "assh-builtin", ASSH_NISTP521_SAFETY, 70,
+      ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
+                        "ecdsa-sha2-nistp521" }),
+    ),
     .f_suitable_key = assh_sign_nistp521_suitable_key,
     .key_algo = &assh_key_builtin_ecdsa_nist,
-  ),
+  },
   .f_generate = assh_sign_ecdsa_generate,
   .f_check = assh_sign_ecdsa_check,
 };

@@ -47,7 +47,7 @@
 /** @internal @see assh_algo_suitable_key_t */
 #define ASSH_ALGO_SUITABLE_KEY_FCN(n) assh_bool_t (n)    \
   (struct assh_context_s *c,                             \
-   const struct assh_algo_s *algo,                       \
+   const struct assh_algo_with_key_s *algo,		 \
    const struct assh_key_s *key)
 
 /** @internal @This defines the function type for the key
@@ -162,12 +162,25 @@ struct assh_algo_s
 
   /** Implementation identification string.  Format is @em {vendor-library}. */
   const char *implem;
+};
+
+/** @internal @This extends the @ref assh_algo_s @hl
+    algorithm descriptor structure for algorithms that may requires an
+    @ref assh_key_s object to work. This are @ref ASSH_ALGO_KEX and
+    @ref ASSH_ALGO_SIGN algorithms. @see assh_algo_with_key */
+struct assh_algo_with_key_s
+{
+  struct assh_algo_s algo;
 
   /** Pointer to associated key operations, may be @tt NULL. */
   const struct assh_key_algo_s *key_algo;
-  /** Test if a key can be used with the algorithm, may be @tt NULL. */
+
+  /** @internal Test if a key can be used with the algorithm,
+      may be @tt NULL. */
   assh_algo_suitable_key_t *f_suitable_key;
 };
+
+ASSH_FIRST_FIELD_ASSERT(assh_algo_with_key_s, algo);
 
 /**
    @This registers the specified array of @hl algorithms for use by
@@ -361,7 +374,7 @@ assh_algo_by_name(struct assh_context_s *c,
 ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_by_key(struct assh_context_s *c,
                  const struct assh_key_s *key, uint16_t *pos,
-                 const struct assh_algo_s **algo);
+                 const struct assh_algo_with_key_s **algo);
 
 /** @internal @This returns true if the provided key can be used with
     the @hl algorithm and has been loaded or created for that purpose.
@@ -372,8 +385,24 @@ assh_algo_by_key(struct assh_context_s *c,
     assh_key_validate function is provided for that purpose. */
 assh_bool_t
 assh_algo_suitable_key(struct assh_context_s *c,
-                       const struct assh_algo_s *algo,
+                       const struct assh_algo_with_key_s *algo,
                        const struct assh_key_s *key);
+
+/** @This casts and returns the passed pointer if the
+    algorithm class is @ref ASSH_ALGO_KEX or @ref ASSH_ALGO_SIGN. In
+    other cases, @tt NULL is returned. */
+ASSH_INLINE const struct assh_algo_with_key_s *
+assh_algo_with_key(const struct assh_algo_s *algo)
+{
+  switch (algo->class_)
+    {
+    case ASSH_ALGO_SIGN:
+    case ASSH_ALGO_KEX:
+      return (const struct assh_algo_with_key_s *)algo;
+    default:
+      return NULL;
+    }
+}
 
 #endif
 
