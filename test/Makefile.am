@@ -142,6 +142,11 @@ key_io_SOURCES = key_io.c
 key_io_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
 key_io_CFLAGS = -I$(top_srcdir)/src
 
+noinst_PROGRAMS += sign_bench
+sign_bench_SOURCES = sign_bench.c
+sign_bench_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
+sign_bench_CFLAGS = -I$(top_srcdir)/src
+
 if COND_key_validate
 noinst_PROGRAMS += signature
 TESTS += signature
