@@ -70,11 +70,11 @@ assh_kex_list(struct assh_session_s *s, struct assh_packet_s *p,
       if (a->class_ != class_)
         break;
 
-      const struct assh_algo_with_key_s *ak =
+      const struct assh_algo_with_key_s *awk =
 	assh_algo_with_key(a);
       /* check host key availability for this algorithm */
-      if (ak && assh_algo_suitable_key(c, ak, NULL) &&
-          assh_key_lookup(c, NULL, ak) != ASSH_OK)
+      if (awk && assh_algo_suitable_key(c, awk, NULL) &&
+          assh_key_lookup(c, NULL, awk) != ASSH_OK)
         continue;
 
       const struct assh_algo_name_s *name;
@@ -179,8 +179,8 @@ assh_kex_server_algos(struct assh_session_s *s, const uint8_t *lists[9],
       switch (i)
         {
         case 1: {
-          struct assh_algo_kex_s *kex = (void*)algos[i - 1];
-          if (kex->implicit_auth)
+          struct assh_algo_kex_s *ka = (void*)algos[i - 1];
+          if (ka->implicit_auth)
             {
               /* ignore host key algorithm */
               s->kex_preferred[i] = algos[i] = &assh_sign_none.algo_wk.algo;
@@ -190,8 +190,8 @@ assh_kex_server_algos(struct assh_session_s *s, const uint8_t *lists[9],
         }
         case 4:
         case 5: {
-          struct assh_algo_cipher_s *cipher = (void*)algos[i - 2];
-          if (cipher->auth_size)
+          struct assh_algo_cipher_s *ca = (void*)algos[i - 2];
+          if (ca->auth_size)
             {
               /* ignore MAC algorithm */
               algos[i] = &assh_mac_none.algo;
@@ -223,10 +223,10 @@ assh_kex_server_algos(struct assh_session_s *s, const uint8_t *lists[9],
             goto next;
 
           /* check algorithm key availability */
-	  const struct assh_algo_with_key_s *ak =
+	  const struct assh_algo_with_key_s *awk =
 	    assh_algo_with_key(a);
-          if (ak && assh_algo_suitable_key(c, ak, NULL) &&
-              assh_key_lookup(c, NULL, ak) != ASSH_OK)
+          if (awk && assh_algo_suitable_key(c, awk, NULL) &&
+              assh_key_lookup(c, NULL, awk) != ASSH_OK)
             goto next;
 
           algos[i] = a;
@@ -265,8 +265,8 @@ assh_kex_client_algos(struct assh_session_s *s, const uint8_t *lists[9],
           break;
         case 1: {
           j = k;
-          struct assh_algo_kex_s *kex = (void*)algos[i - 1];
-          if (kex->implicit_auth)
+          struct assh_algo_kex_s *ka = (void*)algos[i - 1];
+          if (ka->implicit_auth)
             {
               /* ignore host key algorithm */
               s->kex_preferred[i] = algos[i] = &assh_sign_none.algo_wk.algo;
@@ -277,8 +277,8 @@ assh_kex_client_algos(struct assh_session_s *s, const uint8_t *lists[9],
         case 4:
           j = k;
         case 5: {
-          struct assh_algo_cipher_s *cipher = (void*)algos[(i ^ 1) - 2];
-          if (cipher->auth_size)
+          struct assh_algo_cipher_s *ca = (void*)algos[(i ^ 1) - 2];
+          if (ca->auth_size)
             {
               /* ignore MAC algorithm */
               algos[i ^ 1] = &assh_mac_none.algo;
@@ -384,19 +384,19 @@ assh_status_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *
   assh_bool_t good_guess = s->kex_preferred[0] == algos[0] &&
                            s->kex_preferred[1] == algos[1];
 
-  const struct assh_algo_kex_s *kex           = (const void *)algos[0];
-  const struct assh_algo_sign_s *sign         = (const void *)algos[1];
-  const struct assh_algo_cipher_s *cipher_in  = (const void *)algos[2];
-  const struct assh_algo_cipher_s *cipher_out = (const void *)algos[3];
-  const struct assh_algo_mac_s *mac_in        = (const void *)algos[4];
-  const struct assh_algo_mac_s *mac_out       = (const void *)algos[5];
-  const struct assh_algo_compress_s *cmp_in   = (const void *)algos[6];
-  const struct assh_algo_compress_s *cmp_out  = (const void *)algos[7];
+  const struct assh_algo_kex_s      *ka       = (const void *)algos[0];
+  const struct assh_algo_sign_s     *sa       = (const void *)algos[1];
+  const struct assh_algo_cipher_s   *ca_in    = (const void *)algos[2];
+  const struct assh_algo_cipher_s   *ca_out   = (const void *)algos[3];
+  const struct assh_algo_mac_s      *ma_in    = (const void *)algos[4];
+  const struct assh_algo_mac_s      *ma_out   = (const void *)algos[5];
+  const struct assh_algo_compress_s *cpa_in   = (const void *)algos[6];
+  const struct assh_algo_compress_s *cpa_out  = (const void *)algos[7];
 
-  assh_safety_t kin_safety = kex->algo_wk.algo.safety;
+  assh_safety_t kin_safety = ka->algo_wk.algo.safety;
 
-  if (!kex->implicit_auth)
-    kin_safety = assh_min_uint(kin_safety, sign->algo_wk.algo.safety);
+  if (!ka->implicit_auth)
+    kin_safety = assh_min_uint(kin_safety, sa->algo_wk.algo.safety);
 
   assh_safety_t kout_safety = kin_safety;
 
@@ -407,11 +407,11 @@ assh_status_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *
              "  cipher in: %s\n  cipher out: %s\n"
              "  mac in: %s\n  mac out: %s\n  comp in: %s\n  comp out: %s\n"
              "  guess: follows=%x good=%x\n",
-             kex->algo.names[0].name, kex->algo.variant,
-             sign->algo.names[0].name, sign->algo.variant,
-             cipher_in->algo.names[0].name, cipher_out->algo.names[0].name,
-             mac_in->algo.names[0].name, mac_out->algo.names[0].name,
-             cmp_in->algo.names[0].name, cmp_out->algo.names[0].name,
+             ka->algo_wk.algo.names[0].name, ka->algo_wk.algo.variant,
+             sa->algo_wk.algo.names[0].name, sa->algo_wk.algo.variant,
+             ca_in->algo.names[0].name, ca_out->algo.names[0].name,
+             ma_in->algo.names[0].name, ma_out->algo.names[0].name,
+             cpa_in->algo.names[0].name, cpa_out->algo.names[0].name,
              guess_follows, good_guess);
 #endif
 
@@ -422,52 +422,52 @@ assh_status_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *
 
   /* alloacte input and output keys and associated cipher/mac/compress contexts */
   struct assh_kex_keys_s *kin;
-  size_t kin_size = sizeof(*kin) + cipher_in->ctx_size + cmp_in->ctx_size
-    + mac_in->ctx_size;
+  size_t kin_size = sizeof(*kin) + ca_in->ctx_size + cpa_in->ctx_size
+    + ma_in->ctx_size;
   ASSH_RET_ON_ERR(assh_alloc(s->ctx, kin_size, ASSH_ALLOC_SECUR, (void**)&kin));
 
-  kin_safety = assh_min_uint(kin_safety, cipher_in->algo.safety);
-  if (!cipher_in->auth_size)
-    kin_safety = assh_min_uint(kin_safety, mac_in->algo.safety);
+  kin_safety = assh_min_uint(kin_safety, ca_in->algo.safety);
+  if (!ca_in->auth_size)
+    kin_safety = assh_min_uint(kin_safety, ma_in->algo.safety);
 
   struct assh_kex_keys_s *kout;
-  size_t kout_size = sizeof(*kout) + cipher_out->ctx_size + cmp_out->ctx_size
-    + mac_out->ctx_size;
+  size_t kout_size = sizeof(*kout) + ca_out->ctx_size + cpa_out->ctx_size
+    + ma_out->ctx_size;
   ASSH_JMP_ON_ERR(assh_alloc(s->ctx, kout_size, ASSH_ALLOC_SECUR, (void**)&kout),
 	       err_kin);
 
-  kout_safety = assh_min_uint(kout_safety, cipher_out->algo.safety);
-  if (!cipher_out->auth_size)
-    kout_safety = assh_min_uint(kout_safety, mac_out->algo.safety);
+  kout_safety = assh_min_uint(kout_safety, ca_out->algo.safety);
+  if (!ca_out->auth_size)
+    kout_safety = assh_min_uint(kout_safety, ma_out->algo.safety);
 
-  size_t key_size = assh_max_uint(cipher_in->key_size, cipher_out->key_size) * 8;
+  size_t key_size = assh_max_uint(ca_in->key_size, ca_out->key_size) * 8;
 
   /* initialize input keys structure */
   kin->cmp_ctx = kin->mac_ctx = kin->cipher_ctx = NULL;
-  kin->cipher = cipher_in;
-  kin->mac = mac_in;
-  kin->cmp = cmp_in;
+  kin->cipher_algo = ca_in;
+  kin->mac_algo = ma_in;
+  kin->cmp_algo = cpa_in;
   kin->safety = kin_safety;
   assh_kex_keys_cleanup(s, s->new_keys_in);
   s->new_keys_in = kin;
 
   /* initialize output keys structure */
   kout->cmp_ctx = kout->mac_ctx = kout->cipher_ctx = NULL;
-  kout->cipher = cipher_out;
-  kout->mac = mac_out;
-  kout->cmp = cmp_out;
+  kout->cipher_algo = ca_out;
+  kout->mac_algo = ma_out;
+  kout->cmp_algo = cpa_out;
   kout->safety = kout_safety;
   assh_kex_keys_cleanup(s, s->new_keys_out);
   s->new_keys_out = kout;
 
-  assert(kin->cipher->block_size >= ASSH_MIN_BLOCK_SIZE);
-  assert(kout->cipher->block_size >= ASSH_MIN_BLOCK_SIZE);
+  assert(kin->cipher_algo->block_size >= ASSH_MIN_BLOCK_SIZE);
+  assert(kout->cipher_algo->block_size >= ASSH_MIN_BLOCK_SIZE);
 
   /* initialize key exchange algorithm */
-  ASSH_JMP_ON_ERR(kex->f_init(s, key_size), err);
+  ASSH_JMP_ON_ERR(ka->f_init(s, key_size), err);
 
-  s->kex = kex;
-  s->host_sign_algo = sign;
+  s->kex_algo = ka;
+  s->host_sign_algo = sa;
 
   /* switch to key exchange running state */
   if (guess_follows && !good_guess)
@@ -582,107 +582,107 @@ assh_kex_new_keys(struct assh_session_s *s,
   uint8_t *next_out_ctx = (void*)(kout + 1);
 
   /* get input cipher iv/key and init cipher */
-  if (kin->cipher->iv_size)
+  if (kin->cipher_algo->iv_size)
     ASSH_JMP_ON_ERR(assh_kex_new_key(s, hash_ctx, hash_algo, ex_hash,
                                   secret_str, *c,
-                                  iv, kin->cipher->iv_size), err_scratch);
+                                  iv, kin->cipher_algo->iv_size), err_scratch);
   c++;
 
-  if (kin->cipher->key_size)
+  if (kin->cipher_algo->key_size)
     ASSH_JMP_ON_ERR(assh_kex_new_key(s, hash_ctx, hash_algo, ex_hash,
                                   secret_str, *c,
-                                  key, kin->cipher->key_size), err_scratch);
+                                  key, kin->cipher_algo->key_size), err_scratch);
   c++;
 
   kin->cipher_ctx = (void*)next_in_ctx;
-  next_in_ctx += kin->cipher->ctx_size;
+  next_in_ctx += kin->cipher_algo->ctx_size;
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
-  ASSH_DEBUG_HEXDUMP("in iv", iv, kin->cipher->iv_size);
-  ASSH_DEBUG_HEXDUMP("in ekey", key, kin->cipher->key_size);
+  ASSH_DEBUG_HEXDUMP("in iv", iv, kin->cipher_algo->iv_size);
+  ASSH_DEBUG_HEXDUMP("in ekey", key, kin->cipher_algo->key_size);
 #endif
 
-  ASSH_JMP_ON_ERR(kin->cipher->f_init(s->ctx, kin->cipher_ctx, key, iv, 0), err_cipher_in);
+  ASSH_JMP_ON_ERR(kin->cipher_algo->f_init(s->ctx, kin->cipher_ctx, key, iv, 0), err_cipher_in);
 
   /* get output cipher iv/key and init cipher */
-  if (kout->cipher->iv_size)
+  if (kout->cipher_algo->iv_size)
     ASSH_JMP_ON_ERR(assh_kex_new_key(s, hash_ctx, hash_algo, ex_hash,
                                   secret_str, *c,
-                                  iv, kout->cipher->iv_size), err_scratch);
+                                  iv, kout->cipher_algo->iv_size), err_scratch);
   c++;
 
-  if (kout->cipher->key_size)
+  if (kout->cipher_algo->key_size)
     ASSH_JMP_ON_ERR(assh_kex_new_key(s, hash_ctx, hash_algo, ex_hash,
                                   secret_str, *c,
-                                  key, kout->cipher->key_size), err_cipher_out);
+                                  key, kout->cipher_algo->key_size), err_cipher_out);
   c++;
 
   kout->cipher_ctx = (void*)next_out_ctx;
-  next_out_ctx += kout->cipher->ctx_size;
+  next_out_ctx += kout->cipher_algo->ctx_size;
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
-  ASSH_DEBUG_HEXDUMP("out iv", iv, kout->cipher->iv_size);
-  ASSH_DEBUG_HEXDUMP("out ekey", key, kout->cipher->key_size);
+  ASSH_DEBUG_HEXDUMP("out iv", iv, kout->cipher_algo->iv_size);
+  ASSH_DEBUG_HEXDUMP("out ekey", key, kout->cipher_algo->key_size);
 #endif
 
-  ASSH_JMP_ON_ERR(kout->cipher->f_init(s->ctx, kout->cipher_ctx, key, iv, 1), err_cipher_out);
+  ASSH_JMP_ON_ERR(kout->cipher_algo->f_init(s->ctx, kout->cipher_ctx, key, iv, 1), err_cipher_out);
 
-  if (kin->mac->key_size)
+  if (kin->mac_algo->key_size)
     {
       /* get input integrity key and init mac */
       ASSH_JMP_ON_ERR(assh_kex_new_key(s, hash_ctx, hash_algo, ex_hash,
                                     secret_str, *c,
-                                    key, kin->mac->key_size), err_mac_in);
+                                    key, kin->mac_algo->key_size), err_mac_in);
 #ifdef CONFIG_ASSH_DEBUG_KEX
-      ASSH_DEBUG_HEXDUMP("in ikey", key, kin->mac->key_size);
+      ASSH_DEBUG_HEXDUMP("in ikey", key, kin->mac_algo->key_size);
 #endif
     }
   kin->mac_ctx = (void*)next_in_ctx;
-  next_in_ctx += kin->mac->ctx_size;
-  ASSH_JMP_ON_ERR(kin->mac->f_init(s->ctx, kin->mac_ctx, key, 0), err_mac_in);
+  next_in_ctx += kin->mac_algo->ctx_size;
+  ASSH_JMP_ON_ERR(kin->mac_algo->f_init(s->ctx, kin->mac_ctx, key, 0), err_mac_in);
   c++;
 
-  if (kout->mac->key_size)
+  if (kout->mac_algo->key_size)
     {
       /* get output integrity key and init mac */
       ASSH_JMP_ON_ERR(assh_kex_new_key(s, hash_ctx, hash_algo, ex_hash,
                                     secret_str, *c,
-                                    key, kout->mac->key_size), err_mac_out);
+                                    key, kout->mac_algo->key_size), err_mac_out);
 #ifdef CONFIG_ASSH_DEBUG_KEX
-      ASSH_DEBUG_HEXDUMP("out ikey", key, kout->mac->key_size);
+      ASSH_DEBUG_HEXDUMP("out ikey", key, kout->mac_algo->key_size);
 #endif
     }
   kout->mac_ctx = (void*)next_out_ctx;
-  next_out_ctx += kout->mac->ctx_size;
-  ASSH_JMP_ON_ERR(kout->mac->f_init(s->ctx, kout->mac_ctx, key, 1), err_mac_out);
+  next_out_ctx += kout->mac_algo->ctx_size;
+  ASSH_JMP_ON_ERR(kout->mac_algo->f_init(s->ctx, kout->mac_ctx, key, 1), err_mac_out);
   c++;
 
   /* init input compression */
   kin->cmp_ctx = (void*)next_in_ctx;
-  ASSH_JMP_ON_ERR(kin->cmp->f_init(s->ctx, kin->cmp_ctx, 0), err_cmp_in);
+  ASSH_JMP_ON_ERR(kin->cmp_algo->f_init(s->ctx, kin->cmp_ctx, 0), err_cmp_in);
 
   /* init output compression */
   kout->cmp_ctx = (void*)next_out_ctx;
-  ASSH_JMP_ON_ERR(kout->cmp->f_init(s->ctx, kout->cmp_ctx, 1), err_cmp_out);
+  ASSH_JMP_ON_ERR(kout->cmp_algo->f_init(s->ctx, kout->cmp_ctx, 1), err_cmp_out);
 
   ASSH_SCRATCH_FREE(s->ctx, scratch);
   return ASSH_OK;
 
  err_cmp_out:
   kout->cmp_ctx = NULL;
-  kin->cmp->f_cleanup(s->ctx, kin->cmp_ctx);
+  kin->cmp_algo->f_cleanup(s->ctx, kin->cmp_ctx);
  err_cmp_in:
   kin->cmp_ctx = NULL;
-  kout->mac->f_cleanup(s->ctx, kout->mac_ctx);
+  kout->mac_algo->f_cleanup(s->ctx, kout->mac_ctx);
  err_mac_out:
   kout->mac_ctx = NULL;
-  kin->mac->f_cleanup(s->ctx, kin->mac_ctx);
+  kin->mac_algo->f_cleanup(s->ctx, kin->mac_ctx);
  err_mac_in:
   kin->mac_ctx = NULL;
-  kout->cipher->f_cleanup(s->ctx, kout->cipher_ctx);
+  kout->cipher_algo->f_cleanup(s->ctx, kout->cipher_ctx);
  err_cipher_out:
   kout->cipher_ctx = NULL;
-  kin->cipher->f_cleanup(s->ctx, kin->cipher_ctx);
+  kin->cipher_algo->f_cleanup(s->ctx, kin->cipher_ctx);
  err_cipher_in:
   kin->cipher_ctx = NULL;
  err_scratch:
@@ -701,16 +701,16 @@ assh_kex_client_get_key(struct assh_session_s *s,
   assh_status_t err;
 
   /* load key */
-  const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
+  const struct assh_algo_sign_s *sa = s->host_sign_algo;
   struct assh_key_s *host_key = NULL;
 
   const uint8_t *key_blob = ks_str + 4;
-  ASSH_RET_ON_ERR(assh_key_load(s->ctx, &host_key, sign_algo->algo_wk.key_algo,
+  ASSH_RET_ON_ERR(assh_key_load(s->ctx, &host_key, sa->algo_wk.key_algo,
 				ASSH_ALGO_SIGN, ASSH_KEY_FMT_PUB_RFC4253, &key_blob,
 				assh_load_u32(ks_str)));
 
   /* check if the key can be used by the algorithm */
-  ASSH_JMP_IF_TRUE(!assh_algo_suitable_key(s->ctx, &sign_algo->algo_wk, host_key),
+  ASSH_JMP_IF_TRUE(!assh_algo_suitable_key(s->ctx, &sa->algo_wk, host_key),
                ASSH_ERR_WEAK_ALGORITHM, err_hk);
 
   /* Return an host key lookup event */
@@ -769,10 +769,10 @@ assh_kex_client_hash2(struct assh_session_s *s,
     .data = ex_hash, .size = hash_size
   };
 
-  const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
+  const struct assh_algo_sign_s *sa = s->host_sign_algo;
   assh_safety_t sign_safety;
 
-  ASSH_RET_IF_TRUE(assh_sign_check(c, sign_algo, s->kex_host_key, 1, &data,
+  ASSH_RET_IF_TRUE(assh_sign_check(c, sa, s->kex_host_key, 1, &data,
                 h_str + 4, assh_load_u32(h_str), &sign_safety) != ASSH_OK,
                ASSH_ERR_HOSTKEY_SIGNATURE);
 
@@ -795,7 +795,7 @@ assh_kex_server_hash1(struct assh_session_s *s, size_t kex_len,
   struct assh_context_s *c = s->ctx;
 
   /* look for an host key pair which can be used with the selected algorithm. */
-  const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
+  const struct assh_algo_sign_s *sa = s->host_sign_algo;
 
   ASSH_RET_IF_TRUE(assh_key_lookup(c, host_key, &s->host_sign_algo->algo_wk) != ASSH_OK,
                ASSH_ERR_MISSING_KEY);
@@ -812,7 +812,7 @@ assh_kex_server_hash1(struct assh_session_s *s, size_t kex_len,
   ASSH_RET_ON_ERR(assh_key_output(c, hk, NULL, &ks_len,
 	         ASSH_KEY_FMT_PUB_RFC4253));
 
-  ASSH_RET_ON_ERR(assh_sign_generate(c, sign_algo, hk, 0, NULL, NULL, sign_len));
+  ASSH_RET_ON_ERR(assh_sign_generate(c, sa, hk, 0, NULL, NULL, sign_len));
 
   ASSH_RET_ON_ERR(assh_packet_alloc(c, msg,
 		(4 + ks_len) + kex_len + (4 + *sign_len), pout));
@@ -847,7 +847,7 @@ assh_kex_server_hash2(struct assh_session_s *s,
 {
   assh_status_t err;
   struct assh_context_s *c = s->ctx;
-  const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
+  const struct assh_algo_sign_s *sa = s->host_sign_algo;
 
   assh_hash_string(hash_ctx, secret_str);
 
@@ -867,7 +867,7 @@ assh_kex_server_hash2(struct assh_session_s *s,
   uint8_t *sign;
   ASSH_ASSERT(assh_packet_add_string(pout, sign_len, &sign));
 
-  ASSH_RET_ON_ERR(assh_sign_generate(c, sign_algo, host_key, 1,
+  ASSH_RET_ON_ERR(assh_sign_generate(c, sa, host_key, 1,
 		 &data, sign, &sign_len));
   assh_packet_shrink_string(pout, sign, sign_len);
 
@@ -878,9 +878,9 @@ assh_kex_server_hash2(struct assh_session_s *s,
 
 const struct assh_kex_keys_s assh_keys_none =
 {
-  .cipher = &assh_cipher_none,
-  .mac = &assh_mac_none,
-  .cmp = &assh_compress_none,
+  .cipher_algo = &assh_cipher_none,
+  .mac_algo = &assh_mac_none,
+  .cmp_algo = &assh_compress_none,
 };
 
 void assh_kex_keys_cleanup(struct assh_session_s *s, struct assh_kex_keys_s *keys)
@@ -889,11 +889,11 @@ void assh_kex_keys_cleanup(struct assh_session_s *s, struct assh_kex_keys_s *key
     return;
 
   if (keys->cipher_ctx != NULL)
-    keys->cipher->f_cleanup(s->ctx, keys->cipher_ctx);
+    keys->cipher_algo->f_cleanup(s->ctx, keys->cipher_ctx);
   if (keys->mac_ctx != NULL)
-    keys->mac->f_cleanup(s->ctx, keys->mac_ctx);
+    keys->mac_algo->f_cleanup(s->ctx, keys->mac_ctx);
   if (keys->cmp_ctx != NULL)
-    keys->cmp->f_cleanup(s->ctx, keys->cmp_ctx);
+    keys->cmp_algo->f_cleanup(s->ctx, keys->cmp_ctx);
 
   assh_free(s->ctx, keys);
 }
@@ -903,7 +903,7 @@ assh_status_t assh_kex_end(struct assh_session_s *s, assh_bool_t accept)
   assh_status_t err;
 
   if (s->kex_pv != NULL)
-    s->kex->f_cleanup(s);
+    s->kex_algo->f_cleanup(s);
   assert(s->kex_pv == NULL);
 
   /* release KEX init packets */
@@ -948,7 +948,7 @@ void assh_kex_done(struct assh_session_s *s,
   e->kex.done.ident.size = s->ident_len;
   e->kex.done.safety = assh_min_uint(in->safety, out->safety);
   e->kex.done.initial = !s->kex_done;
-  e->kex.done.algo_kex = s->kex;
+  e->kex.done.algo_kex = s->kex_algo;
   e->kex.done.algos_in = in;
   e->kex.done.algos_out = out;
 }

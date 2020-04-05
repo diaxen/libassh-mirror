@@ -244,7 +244,7 @@ assh_status_t
 assh_userauth_server_get_key(struct assh_session_s *s,
                              const uint8_t *algo_name,
                              const uint8_t *pub_blob,
-                             const struct assh_algo_sign_s **algo,
+                             const struct assh_algo_sign_s **sa,
                              struct assh_key_s **pub_key,
                              const struct assh_algo_name_s **namep)
 {
@@ -253,17 +253,17 @@ assh_userauth_server_get_key(struct assh_session_s *s,
   /* check if we support the requested signature algorithm */
   if (assh_algo_by_name(s->ctx, ASSH_ALGO_SIGN, (char*)algo_name + 4,
 			assh_load_u32(algo_name),
-			(const struct assh_algo_s **)algo, namep) != ASSH_OK)
+			(const struct assh_algo_s **)sa, namep) != ASSH_OK)
     return ASSH_NO_DATA;
 
   /* load the public key from the client provided blob */
   const uint8_t *key_blob = pub_blob + 4;
-  ASSH_RET_ON_ERR(assh_key_load(s->ctx, pub_key, (*algo)->algo_wk.key_algo, ASSH_ALGO_SIGN,
+  ASSH_RET_ON_ERR(assh_key_load(s->ctx, pub_key, (*sa)->algo_wk.key_algo, ASSH_ALGO_SIGN,
                  ASSH_KEY_FMT_PUB_RFC4253, &key_blob,
                  assh_load_u32(pub_blob)));
 
   /* check if the key can be used by the algorithm */
-  if (!assh_algo_suitable_key(s->ctx, &(*algo)->algo_wk, *pub_key))
+  if (!assh_algo_suitable_key(s->ctx, &(*sa)->algo_wk, *pub_key))
     {
       assh_key_drop(s->ctx, pub_key);
       return ASSH_NO_DATA;
@@ -293,7 +293,7 @@ assh_userauth_server_sign_check(struct assh_session_s *s,
   assh_safety_t sign_safety;
 
   /* check the signature */
-  ASSH_RET_ON_ERR(assh_sign_check(s->ctx, pv->algo, pv->pub_key, 3,
+  ASSH_RET_ON_ERR(assh_sign_check(s->ctx, pv->sign_algo, pv->pub_key, 3,
                  data, sign_str + 4, assh_load_u32(sign_str), &sign_safety));
 
   pv->safety = assh_min_uint(sign_safety, pv->safety);

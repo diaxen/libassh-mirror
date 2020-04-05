@@ -37,8 +37,8 @@ struct assh_key_ed25519_s
   union {
     uint8_t keypair[ASSH_ED25519_KSIZE * 2];
     struct {
-      uint8_t pvkey[ASSH_ED25519_KSIZE];
-      uint8_t pubkey[ASSH_ED25519_KSIZE];
+      uint8_t pv_key[ASSH_ED25519_KSIZE];
+      uint8_t pub_key[ASSH_ED25519_KSIZE];
     };
   };
 };

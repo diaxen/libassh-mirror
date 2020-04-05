@@ -93,25 +93,25 @@ ASSH_FIRST_FIELD_ASSERT(assh_algo_sign_s, algo_wk);
     to what is needed to hold the signature blob. In this case, the
     @tt data_* parameters are not used and the key need not be private. */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
-assh_sign_generate(struct assh_context_s *c, const struct assh_algo_sign_s *algo,
+assh_sign_generate(struct assh_context_s *c, const struct assh_algo_sign_s *sa,
                    const struct assh_key_s *key, size_t data_count,
                    const struct assh_cbuffer_s data[],
                    uint8_t *sign, size_t *sign_len)
 {
-  return algo->f_generate(c, key, data_count, data, sign, sign_len);
+  return sa->f_generate(c, key, data_count, data, sign, sign_len);
 }
 
 /** @internal @This checks the signature of the passed data using the
     provided key. The data can be split into multiple buffers. The @tt
     data_count parameter must specify the number of data buffers used. */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
-assh_sign_check(struct assh_context_s *c, const struct assh_algo_sign_s *algo,
+assh_sign_check(struct assh_context_s *c, const struct assh_algo_sign_s *sa,
                 const struct assh_key_s *key, size_t data_count,
                 const struct assh_cbuffer_s data[],
                 const uint8_t *sign, size_t sign_len, assh_safety_t *safety)
 {
-  *safety = assh_min_uint(algo->algo_wk.algo.safety, key->safety);
-  return algo->f_check(c, key, data_count, data, sign, sign_len, safety);
+  *safety = assh_min_uint(sa->algo_wk.algo.safety, key->safety);
+  return sa->f_check(c, key, data_count, data, sign, sign_len, safety);
 }
 
 /** Dummy signature algorithm */

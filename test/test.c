@@ -78,11 +78,11 @@ void assh_cipher_fuzz_initreg(struct assh_context_s *c,
   while (assh_alloc(c, sizeof(*keys), ASSH_ALLOC_INTERNAL, (void**)&keys))
     /* retry due to alloc fuzz */;
 
-  keys->cipher = &assh_cipher_fuzz;
+  keys->cipher_algo = &assh_cipher_fuzz;
   keys->cipher_ctx = NULL;
-  keys->mac = &assh_mac_none;
+  keys->mac_algo = &assh_mac_none;
   keys->mac_ctx = NULL;
-  keys->cmp = &assh_compress_none;
+  keys->cmp_algo = &assh_compress_none;
   keys->cmp_ctx = NULL;
   s->cur_keys_out = keys;
 }

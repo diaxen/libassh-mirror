@@ -265,7 +265,7 @@ const struct mac_test_s vectors[] =
 };
 
 void test_mac(const struct mac_test_s *t,
-	      const struct assh_algo_mac_s *am)
+	      const struct assh_algo_mac_s *ma)
 {
   struct assh_context_s context;
 
@@ -274,9 +274,9 @@ void test_mac(const struct mac_test_s *t,
 			NULL, NULL, NULL))
     TEST_FAIL("context init");
 
-  if (t->key_size != am->key_size)
+  if (t->key_size != ma->key_size)
     TEST_FAIL("key size");
-  if (t->mac_size != am->mac_size)
+  if (t->mac_size != ma->mac_size)
     TEST_FAIL("mac size");
 
   size_t in_size = t->in_size;
@@ -304,20 +304,20 @@ void test_mac(const struct mac_test_s *t,
   uint8_t out[out_size];
   memset(out, 0, out_size);
 
-  void *ectx = malloc(am->ctx_size);
-  void *dctx = malloc(am->ctx_size);
+  void *ectx = malloc(ma->ctx_size);
+  void *dctx = malloc(ma->ctx_size);
 
   fprintf(stderr, "testing %s, %s (%zu bytes): ",
-	  t->algo, am->algo.implem, in_size);
+	  t->algo, ma->algo.implem, in_size);
 
-  if (am->f_init(&context, ectx, (const uint8_t*)t->key, 1))
+  if (ma->f_init(&context, ectx, (const uint8_t*)t->key, 1))
     TEST_FAIL("process init");
 
-  if (am->f_init(&context, dctx, (const uint8_t*)t->key, 0))
+  if (ma->f_init(&context, dctx, (const uint8_t*)t->key, 0))
     TEST_FAIL("process init");
 
   fprintf(stderr, "C");
-  if (am->f_process(ectx, in, in_size, out, seq))
+  if (ma->f_process(ectx, in, in_size, out, seq))
     TEST_FAIL("process");
 
   if (memcmp(out, t->out, out_size))
@@ -328,14 +328,14 @@ void test_mac(const struct mac_test_s *t,
     }
 
   fprintf(stderr, "1");
-  if (am->f_process(dctx, in, in_size, out, seq))
+  if (ma->f_process(dctx, in, in_size, out, seq))
     TEST_FAIL("check good");
 
   fprintf(stderr, "t");
   out[rand() % out_size] ^= 1 << (rand() % 8);
 
   fprintf(stderr, "2");
-  if (!am->f_process(dctx, in, in_size, out, seq))
+  if (!ma->f_process(dctx, in, in_size, out, seq))
     TEST_FAIL("check wrong");
 
   if (t->in == NULL)
@@ -344,11 +344,11 @@ void test_mac(const struct mac_test_s *t,
       in[rand() % in_size] ^= 1 << (rand() % 8);
 
       fprintf(stderr, "3");
-      if (!am->f_process(dctx, in, in_size, (uint8_t*)t->out, seq))
+      if (!ma->f_process(dctx, in, in_size, (uint8_t*)t->out, seq))
 	TEST_FAIL("check wrong");
 
       fprintf(stderr, "c");
-      if (am->f_process(ectx, in, in_size, out, seq))
+      if (ma->f_process(ectx, in, in_size, out, seq))
 	TEST_FAIL("process");
 
       if (!memcmp(out, t->out, out_size))
@@ -364,8 +364,8 @@ void test_mac(const struct mac_test_s *t,
   if (t->in == NULL)
     free(in);
 
-  am->f_cleanup(&context, ectx);
-  am->f_cleanup(&context, dctx);
+  ma->f_cleanup(&context, ectx);
+  ma->f_cleanup(&context, dctx);
   free(ectx);
   free(dctx);
 

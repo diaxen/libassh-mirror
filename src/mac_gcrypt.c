@@ -29,7 +29,7 @@
 
 struct assh_hmac_gcrypt_context_s
 {
-  const struct assh_algo_mac_s *mac;
+  const struct assh_algo_mac_s *ma;
   gcry_mac_hd_t hd;
   assh_bool_t generate;
 };
@@ -55,23 +55,23 @@ static ASSH_MAC_PROCESS_FCN(assh_hmac_gcrypt_process)
 
   if (ctx->generate)
     {
-      size_t s = ctx->mac->mac_size;
+      size_t s = ctx->ma->mac_size;
       ASSH_RET_IF_TRUE(gcry_mac_read(ctx->hd, mac, &s), ASSH_ERR_CRYPTO);
     }
   else
     {
-      ASSH_RET_IF_TRUE(gcry_mac_verify(ctx->hd, mac, ctx->mac->mac_size), ASSH_ERR_CRYPTO);
+      ASSH_RET_IF_TRUE(gcry_mac_verify(ctx->hd, mac, ctx->ma->mac_size), ASSH_ERR_CRYPTO);
     }
 
   return ASSH_OK;
 }
 
-static assh_status_t assh_hmac_gcrypt_init(const struct assh_algo_mac_s *mac,
+static assh_status_t assh_hmac_gcrypt_init(const struct assh_algo_mac_s *ma,
 				   struct assh_hmac_gcrypt_context_s *ctx,
 				   const uint8_t *key, int algo, assh_bool_t generate)
 {
   assh_status_t err;
-  ctx->mac = mac;
+  ctx->ma = ma;
   ctx->generate = generate;
 
   ASSH_RET_IF_TRUE(!gcry_control(GCRYCTL_INITIALIZATION_FINISHED_P),
@@ -79,7 +79,7 @@ static assh_status_t assh_hmac_gcrypt_init(const struct assh_algo_mac_s *mac,
 
   ASSH_RET_IF_TRUE(gcry_mac_open(&ctx->hd, algo, GCRY_MAC_FLAG_SECURE,
 			     NULL), ASSH_ERR_CRYPTO);
-  ASSH_JMP_IF_TRUE(gcry_mac_setkey(ctx->hd, key, mac->key_size),
+  ASSH_JMP_IF_TRUE(gcry_mac_setkey(ctx->hd, key, ma->key_size),
 	       ASSH_ERR_CRYPTO, err_hd);
 
   return ASSH_OK;

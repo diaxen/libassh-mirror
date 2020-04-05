@@ -325,17 +325,17 @@ static unsigned long kex_server_done_count = 0;
 static unsigned long kex_hostkey_lookup_count = 0;
 static unsigned long kex_rekex_count = 0;
 
-void test(const struct assh_algo_kex_s *kex,
-	  const struct assh_algo_sign_s *sign,
-	  const struct assh_algo_cipher_s *cipher,
-	  const struct assh_algo_mac_s *mac,
-	  const struct assh_algo_compress_s *comp,
+void test(const struct assh_algo_kex_s *ka,
+	  const struct assh_algo_sign_s *sa,
+	  const struct assh_algo_cipher_s *ca,
+	  const struct assh_algo_mac_s *ma,
+	  const struct assh_algo_compress_s *cpa,
 	  const struct algo_with_key_s *kex_key,
 	  const struct algo_with_key_s *sign_key,
 	  unsigned seed, unsigned cycles)
 {
   const struct assh_algo_s *algos[] = {
-    &kex->algo_wk.algo, &sign->algo_wk.algo, &cipher->algo, &mac->algo, &comp->algo,
+    &ka->algo_wk.algo, &sa->algo_wk.algo, &ca->algo, &ma->algo, &cpa->algo,
     NULL
   };
 
@@ -353,10 +353,10 @@ void test(const struct assh_algo_kex_s *kex,
   struct assh_channel_s *ch[2];
 
   fprintf(stderr, "%u: %s (%s), %s, %s, %s, %s\n", seed,
-	  assh_algo_name(&kex->algo_wk.algo), kex->algo_wk.algo.implem,
-	  assh_algo_name(&sign->algo_wk.algo),
-	  assh_algo_name(&cipher->algo), assh_algo_name(&mac->algo),
-	  assh_algo_name(&comp->algo));
+	  assh_algo_name(&ka->algo_wk.algo), ka->algo_wk.algo.implem,
+	  assh_algo_name(&sa->algo_wk.algo),
+	  assh_algo_name(&ca->algo), assh_algo_name(&ma->algo),
+	  assh_algo_name(&cpa->algo));
 
   for (i = 0; i < 2; i++)
     {
@@ -538,7 +538,7 @@ algo_lookup(enum assh_algo_class_e cl, const char *name,
 }
 
 static assh_bool_t test_loop_2(unsigned int seed,
-			       const struct assh_algo_kex_s *kex_a,
+			       const struct assh_algo_kex_s *ka,
 			       const struct algo_with_key_s *kex,
 			       const struct algo_with_key_s *sign,
 			       const char **cipher,
@@ -553,38 +553,38 @@ static assh_bool_t test_loop_2(unsigned int seed,
 
   while (*comp)
     {
-      const struct assh_algo_compress_s *comp_a;
+      const struct assh_algo_compress_s *cpa;
 
       if ((!comp_filter || strstr(*comp, comp_filter)) &&
 	  !algo_lookup(ASSH_ALGO_COMPRESS, *comp, NULL,
-		       (const struct assh_algo_s **)&comp_a))
+		       (const struct assh_algo_s **)&cpa))
 
 	while (*mac)
 	  {
-	    const struct assh_algo_mac_s *mac_a;
+	    const struct assh_algo_mac_s *ma;
 
 	    if ((!mac_filter || strstr(*mac, mac_filter)) &&
 		!algo_lookup(ASSH_ALGO_MAC, *mac, NULL,
-			     (const struct assh_algo_s **)&mac_a))
+			     (const struct assh_algo_s **)&ma))
 	      while (*cipher)
 		{
-		  const struct assh_algo_cipher_s *cipher_a;
+		  const struct assh_algo_cipher_s *ca;
 
 		  if ((!cipher_filter || strstr(*cipher, cipher_filter)) &&
 		      !algo_lookup(ASSH_ALGO_CIPHER, *cipher, NULL,
-				   (const struct assh_algo_s **)&cipher_a))
+				   (const struct assh_algo_s **)&ca))
 
 		    while (sign->algo)
 		      {
-			const struct assh_algo_sign_s *sign_a;
+			const struct assh_algo_sign_s *sa;
 
 			if ((!sign_filter || strstr(sign->algo, sign_filter)) &&
 			    !algo_lookup(ASSH_ALGO_SIGN, sign->algo, sign->variant,
-					 (const struct assh_algo_s **)&sign_a))
+					 (const struct assh_algo_s **)&sa))
 			  {
 			    assh_prng_seed(seed);
 			    kex_done = 1;
-			    test(kex_a, sign_a, cipher_a, mac_a, comp_a,
+			    test(ka, sa, ca, ma, cpa,
 				 kex, sign, seed, cycles);
 			  }
 			sign++;
@@ -610,12 +610,10 @@ void test_loop(unsigned int seed,
 	       const char **comp,
 	       unsigned cycles)
 {
-  const struct assh_algo_kex_s *kex_a;
+  const struct assh_algo_kex_s *ka;
 
   while (kex->algo)
     {
-      const struct assh_algo_s **ka;
-
       if (!strcmp(kex->algo, "none@libassh.org"))
 	{
 	  test_loop_2(seed, &assh_kex_none, kex, sign, cipher, mac, comp, cycles);
@@ -623,22 +621,23 @@ void test_loop(unsigned int seed,
       else
 	{
 	  assh_bool_t kex_done = 0;
+	  const struct assh_algo_s **a;
 
-	  for (ka = assh_algo_table; *ka; ka++)
+	  for (a = assh_algo_table; *a; a++)
 	    {
-	      if (!assh_algo_name_match(*ka, ASSH_ALGO_KEX,
+	      if (!assh_algo_name_match(*a, ASSH_ALGO_KEX,
 					kex->algo, strlen(kex->algo)))
 		continue;
-	      kex_a = (const void*)*ka;
+	      ka = (const void*)*a;
 
 	      if (kex_filter && !strstr(kex->algo, kex_filter))
 		continue;
 
-	      if (kex->variant && (!kex_a->algo_wk.algo.variant ||
-				   strcmp(kex->variant, kex_a->algo_wk.algo.variant)))
+	      if (kex->variant && (!ka->algo_wk.algo.variant ||
+				   strcmp(kex->variant, ka->algo_wk.algo.variant)))
 		continue;
 
-	      kex_done |= test_loop_2(seed, kex_a, kex, sign, cipher, mac, comp, cycles);
+	      kex_done |= test_loop_2(seed, ka, kex, sign, cipher, mac, comp, cycles);
 	    }
 
 	  if (!kex_done)

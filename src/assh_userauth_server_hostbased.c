@@ -76,16 +76,16 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_hostbased)
   ASSH_RET_ON_ERR(assh_packet_check_string(p, husername, &sign));
   ASSH_RET_ON_ERR(assh_packet_check_string(p, sign, NULL));
 
-  const struct assh_algo_sign_s *algo;
+  const struct assh_algo_sign_s *sa;
   struct assh_key_s *pub_key = NULL;
 
   ASSH_RET_ON_ERR(assh_userauth_server_get_key(s, algo_name, pub_blob,
-                 &algo, &pub_key, NULL));
+                 &sa, &pub_key, NULL));
 
   if (ASSH_STATUS(err) == ASSH_NO_DATA)
     ASSH_RETURN(assh_userauth_server_failure(s, e));
 
-  pv->algo = algo;
+  pv->sign_algo = sa;
   pv->pub_key = pub_key;
   pv->pck = assh_packet_refinc(p);
   pv->sign = sign;

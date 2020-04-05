@@ -32,14 +32,14 @@
 
 struct assh_cipher_gcrypt_context_s
 {
-  const struct assh_algo_cipher_s *cipher;
+  const struct assh_algo_cipher_s *ca;
   gcry_cipher_hd_t hd;
   assh_bool_t encrypt;
   uint8_t iv[12];
 };
 
 static assh_status_t
-assh_cipher_gcrypt_init(const struct assh_algo_cipher_s *cipher,
+assh_cipher_gcrypt_init(const struct assh_algo_cipher_s *ca,
 			struct assh_cipher_gcrypt_context_s *ctx,
 			const uint8_t *key, const uint8_t *iv,
 			int algo, int mode, assh_bool_t encrypt)
@@ -52,32 +52,32 @@ assh_cipher_gcrypt_init(const struct assh_algo_cipher_s *cipher,
   ASSH_RET_IF_TRUE(gcry_cipher_open(&ctx->hd, algo, mode, 0),
 	       ASSH_ERR_CRYPTO);
 
-  ASSH_JMP_IF_TRUE(gcry_cipher_setkey(ctx->hd, key, cipher->key_size),
+  ASSH_JMP_IF_TRUE(gcry_cipher_setkey(ctx->hd, key, ca->key_size),
 	       ASSH_ERR_CRYPTO, err_open);
 
-  ctx->cipher = cipher;
+  ctx->ca = ca;
   ctx->encrypt = encrypt;
 
   switch (mode)
     {
     case GCRY_CIPHER_MODE_GCM:
-      memcpy(ctx->iv, iv, cipher->iv_size);
+      memcpy(ctx->iv, iv, ca->iv_size);
       break;
 
     case GCRY_CIPHER_MODE_CBC:
-      ASSH_JMP_IF_TRUE(gcry_cipher_setiv(ctx->hd, iv, cipher->block_size),
+      ASSH_JMP_IF_TRUE(gcry_cipher_setiv(ctx->hd, iv, ca->block_size),
 		   ASSH_ERR_CRYPTO, err_open);
       break;
 
     case GCRY_CIPHER_MODE_CTR:
-      ASSH_JMP_IF_TRUE(gcry_cipher_setctr(ctx->hd, iv, cipher->block_size),
+      ASSH_JMP_IF_TRUE(gcry_cipher_setctr(ctx->hd, iv, ca->block_size),
 		   ASSH_ERR_CRYPTO, err_open);
       break;
 
     case GCRY_CIPHER_MODE_STREAM:
 
-      if (cipher == &assh_cipher_gcrypt_arc4_128 ||
-	  cipher == &assh_cipher_gcrypt_arc4_256)
+      if (ca == &assh_cipher_gcrypt_arc4_128 ||
+	  ca == &assh_cipher_gcrypt_arc4_256)
 	{
 	  uint8_t dummy[128];
 	  uint_fast16_t i;
@@ -108,8 +108,8 @@ static ASSH_CIPHER_PROCESS_FCN(assh_cipher_gcrypt_process_GCM)
 {
   assh_status_t err;
   struct assh_cipher_gcrypt_context_s *ctx = ctx_;
-  size_t auth_size = ctx->cipher->auth_size;
-  size_t block_size = ctx->cipher->block_size;
+  size_t auth_size = ctx->ca->auth_size;
+  size_t block_size = ctx->ca->block_size;
   size_t csize = len - 4 - auth_size;
 
   if (op == ASSH_CIPHER_PCK_HEAD)
@@ -148,7 +148,7 @@ static ASSH_CIPHER_PROCESS_FCN(assh_cipher_gcrypt_process)
 {
   assh_status_t err;
   struct assh_cipher_gcrypt_context_s *ctx = ctx_;
-  size_t block_size = ctx->cipher->block_size;
+  size_t block_size = ctx->ca->block_size;
 
   ASSH_RET_IF_TRUE(len & (block_size - 1),
 	       ASSH_ERR_INPUT_OVERFLOW);

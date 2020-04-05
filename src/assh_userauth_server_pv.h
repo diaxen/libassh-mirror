@@ -106,7 +106,7 @@ struct assh_userauth_context_s
 
 #if defined(CONFIG_ASSH_SERVER_AUTH_HOSTBASED) || \
   defined(CONFIG_ASSH_SERVER_AUTH_PUBLICKEY)
-  const struct assh_algo_sign_s *algo;
+  const struct assh_algo_sign_s *sign_algo;
   struct assh_key_s *pub_key;
   const uint8_t *sign;
 #endif
@@ -124,7 +124,7 @@ ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_userauth_server_get_key(struct assh_session_s *s,
                              const uint8_t *algo_name,
                              const uint8_t *pub_blob,
-                             const struct assh_algo_sign_s **algo,
+                             const struct assh_algo_sign_s **sa,
                              struct assh_key_s **pub_key,
                              const struct assh_algo_name_s **namep);
 

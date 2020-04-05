@@ -31,7 +31,7 @@
 
 struct assh_hmac_openssl_context_s
 {
-  const struct assh_algo_mac_s *mac;
+  const struct assh_algo_mac_s *ma;
   HMAC_CTX *octx;
   assh_bool_t generate;
 };
@@ -58,25 +58,25 @@ static ASSH_MAC_PROCESS_FCN(assh_hmac_openssl_process)
   uint8_t rmac[64];
   ASSH_RET_IF_TRUE(!HMAC_Final(ctx->octx, rmac, NULL), ASSH_ERR_CRYPTO);
   if (ctx->generate)
-    memcpy(mac, rmac, ctx->mac->mac_size);
+    memcpy(mac, rmac, ctx->ma->mac_size);
   else
-    ASSH_RET_IF_TRUE(assh_memcmp(mac, rmac, ctx->mac->mac_size), ASSH_ERR_CRYPTO);
+    ASSH_RET_IF_TRUE(assh_memcmp(mac, rmac, ctx->ma->mac_size), ASSH_ERR_CRYPTO);
 
   return ASSH_OK;
 }
 
-static assh_status_t assh_hmac_openssl_init(const struct assh_algo_mac_s *mac,
+static assh_status_t assh_hmac_openssl_init(const struct assh_algo_mac_s *ma,
 					    struct assh_hmac_openssl_context_s *ctx,
 					    const uint8_t *key, const EVP_MD *md,
 					    assh_bool_t generate)
 {
   assh_status_t err;
-  ctx->mac = mac;
+  ctx->ma = ma;
   ctx->octx = HMAC_CTX_new();
   ctx->generate = generate;
 
   ASSH_RET_IF_TRUE(ctx->octx == NULL, ASSH_ERR_CRYPTO);
-  ASSH_JMP_IF_TRUE(!HMAC_Init_ex(ctx->octx, key, mac->key_size, md, NULL),
+  ASSH_JMP_IF_TRUE(!HMAC_Init_ex(ctx->octx, key, ma->key_size, md, NULL),
                    ASSH_ERR_CRYPTO, err_octx);
 
   return ASSH_OK;

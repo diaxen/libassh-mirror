@@ -45,10 +45,10 @@ static ASSH_KEY_CMP_FCN(assh_key_ed25519_cmp)
   struct assh_key_ed25519_s *l = (void*)b;
 
   if (!pub && (!k->key.private || !l->key.private ||
-       (k->key.private && assh_memcmp(k->pvkey, l->pvkey, ASSH_ED25519_KSIZE))))
+       (k->key.private && assh_memcmp(k->pv_key, l->pv_key, ASSH_ED25519_KSIZE))))
     return 0;
 
-  return !assh_memcmp(k->pubkey, l->pubkey, ASSH_ED25519_KSIZE);
+  return !assh_memcmp(k->pub_key, l->pub_key, ASSH_ED25519_KSIZE);
 }
 
 #ifdef CONFIG_ASSH_KEY_VALIDATE
@@ -80,15 +80,15 @@ static ASSH_KEY_OUTPUT_FCN(assh_key_ed25519_output)
     {
     case ASSH_KEY_FMT_PUB_RFC4253:
       ASSH_RETURN(assh_blob_write("Zs Ds", blob, blob_len,
-                                  algo_name, k->pubkey, n));
+                                  algo_name, k->pub_key, n));
 
     case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY:
       ASSH_RET_IF_TRUE(!k->key.private, ASSH_ERR_MISSING_KEY);
 
       ASSH_RETURN(assh_blob_write("Zs Ds (Db Db)s", blob, blob_len, algo_name,
-				  k->pubkey, n,
-				  k->pvkey, n,
-				  k->pubkey, n));
+				  k->pub_key, n,
+				  k->pv_key, n,
+				  k->pub_key, n));
 
     default:
       ASSH_RETURN(ASSH_ERR_NOTSUP);
@@ -125,7 +125,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_ed25519_load)
                                 /*  name pub */
                                      "sz stD $",
                                      &blob, &blob_len,
-                                     algo->name, n, k->pubkey), err_);
+                                     algo->name, n, k->pub_key), err_);
       break;
 
     case ASSH_KEY_FMT_PV_OPENSSH_V1_KEY:
@@ -136,7 +136,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_ed25519_load)
                                      "sz st st(bD bD $)",
                                      &blob, &blob_len,
                                      algo->name, n, 2 * n,
-                                     n, k->pvkey, n, k->pubkey), err_);
+                                     n, k->pv_key, n, k->pub_key), err_);
       break;
 
     default:
@@ -175,7 +175,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_ed25519_create)
   ASSH_JMP_ON_ERR(c->prng->f_get(c, seed, ASSH_ED25519_KSIZE,
                  ASSH_PRNG_QUALITY_LONGTERM_KEY), err_sc);
 
-  crypto_sign_ed25519_seed_keypair(k->pubkey, k->keypair, seed);
+  crypto_sign_ed25519_seed_keypair(k->pub_key, k->keypair, seed);
   ASSH_SCRATCH_FREE(c, seed);
 
   *key = &k->key;

@@ -84,7 +84,7 @@ struct assh_session_s
 
   /** Key exchange algorithm. This pointer is setup when the @ref
       assh_kex_got_init function select a new key exchange algorithm. */
-  const struct assh_algo_kex_s *kex;
+  const struct assh_algo_kex_s *kex_algo;
   /** Key exchange private context used during key exchange only. */
   void *kex_pv;
 

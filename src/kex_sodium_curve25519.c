@@ -67,8 +67,8 @@ struct assh_kex_curve25519_private_s
 #endif
 
   enum assh_kex_curve25519_state_e state:8;
-  uint8_t pubkey[ASSH_CURVE25519_KSIZE];
-  uint8_t pvkey[ASSH_CURVE25519_KSIZE];
+  uint8_t pub_key[ASSH_CURVE25519_KSIZE];
+  uint8_t pv_key[ASSH_CURVE25519_KSIZE];
 };
 
 static assh_status_t ASSH_WARN_UNUSED_RESULT
@@ -107,9 +107,9 @@ static assh_status_t assh_kex_curve25519_client_send_pubkey(struct assh_session_
   assh_status_t err;
 
   /* generate ephemeral key pair */
-  ASSH_RET_ON_ERR(assh_kex_curve25519_private_gen(s, pv->pvkey));
+  ASSH_RET_ON_ERR(assh_kex_curve25519_private_gen(s, pv->pv_key));
 
-  ASSH_RET_IF_TRUE(crypto_scalarmult_curve25519_base(pv->pubkey, pv->pvkey),
+  ASSH_RET_IF_TRUE(crypto_scalarmult_curve25519_base(pv->pub_key, pv->pv_key),
 		   ASSH_ERR_CRYPTO | ASSH_ERRSV_DISCONNECT);
 
   /* send a packet containing the public key */
@@ -119,7 +119,7 @@ static assh_status_t assh_kex_curve25519_client_send_pubkey(struct assh_session_
 
   uint8_t *qc_str;
   ASSH_ASSERT(assh_packet_add_string(p, ASSH_CURVE25519_KSIZE, &qc_str));
-  memcpy(qc_str, pv->pubkey, ASSH_CURVE25519_KSIZE);
+  memcpy(qc_str, pv->pub_key, ASSH_CURVE25519_KSIZE);
 
   assh_transport_push(s, p);
 
@@ -161,7 +161,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_curve25519_host_key_lookup_done)
   uint8_t *secret_end = secret + 5 + ASSH_CURVE25519_KSIZE;
 
   ASSH_JMP_IF_TRUE(crypto_scalarmult_curve25519(secret + 5,
-		     pv->pvkey, qs_str + 4),
+		     pv->pv_key, qs_str + 4),
 		   ASSH_ERR_CRYPTO | ASSH_ERRSV_DISCONNECT, err_sc);
 
   secret = assh_kex_curve25519_to_mpint(secret, secret_end);
@@ -173,7 +173,7 @@ static ASSH_EVENT_DONE_FCN(assh_kex_curve25519_host_key_lookup_done)
   ASSH_JMP_ON_ERR(assh_kex_client_hash1(s, hash_ctx, ks_str)
                | ASSH_ERRSV_DISCONNECT, err_sc);
 
-  assh_hash_bytes_as_string(hash_ctx, pv->pubkey, ASSH_CURVE25519_KSIZE);
+  assh_hash_bytes_as_string(hash_ctx, pv->pub_key, ASSH_CURVE25519_KSIZE);
   assh_hash_string(hash_ctx, qs_str);
 
   ASSH_JMP_ON_ERR(assh_kex_client_hash2(s, hash_ctx, secret, h_str)
@@ -242,7 +242,7 @@ static assh_status_t assh_kex_curve25519_server_wait_pubkey(struct assh_session_
                ASSH_ERR_BAD_DATA);
 
   /* generate ephemeral key pair */
-  ASSH_RET_ON_ERR(assh_kex_curve25519_private_gen(s, pv->pvkey));
+  ASSH_RET_ON_ERR(assh_kex_curve25519_private_gen(s, pv->pv_key));
 
   /* compute shared secret */
   ASSH_SCRATCH_ALLOC(s->ctx, uint8_t, scratch,
@@ -253,11 +253,11 @@ static assh_status_t assh_kex_curve25519_server_wait_pubkey(struct assh_session_
   uint8_t *secret = scratch + assh_hash_sha256.ctx_size;
   uint8_t *secret_end = secret + 5 + ASSH_CURVE25519_KSIZE;
 
-  ASSH_JMP_IF_TRUE(crypto_scalarmult_curve25519_base(pv->pubkey, pv->pvkey),
+  ASSH_JMP_IF_TRUE(crypto_scalarmult_curve25519_base(pv->pub_key, pv->pv_key),
 		   ASSH_ERR_CRYPTO | ASSH_ERRSV_DISCONNECT, err_sc);
 
   ASSH_JMP_IF_TRUE(crypto_scalarmult_curve25519(secret + 5,
-		     pv->pvkey, qc_str + 4),
+		     pv->pv_key, qc_str + 4),
 		   ASSH_ERR_CRYPTO | ASSH_ERRSV_DISCONNECT, err_sc);
 
   secret = assh_kex_curve25519_to_mpint(secret, secret_end);
@@ -277,7 +277,7 @@ static assh_status_t assh_kex_curve25519_server_wait_pubkey(struct assh_session_
 
   uint8_t *qs_str;
   ASSH_ASSERT(assh_packet_add_string(pout, ASSH_CURVE25519_KSIZE, &qs_str));
-  memcpy(qs_str, pv->pubkey, ASSH_CURVE25519_KSIZE);
+  memcpy(qs_str, pv->pub_key, ASSH_CURVE25519_KSIZE);
 
   /* hash both ephemeral public keys */
   assh_hash_string(hash_ctx, qc_str);

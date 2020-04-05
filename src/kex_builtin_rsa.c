@@ -527,8 +527,8 @@ static assh_status_t assh_kex_rsa_server_wait_secret(struct assh_session_s *s,
   struct assh_key_s *hk = pv->host_key;
 
   size_t sign_len;
-  const struct assh_algo_sign_s *sign_algo = s->host_sign_algo;
-  ASSH_RET_ON_ERR(assh_sign_generate(c, sign_algo, hk, 0, NULL, NULL, &sign_len));
+  const struct assh_algo_sign_s *sa = s->host_sign_algo;
+  ASSH_RET_ON_ERR(assh_sign_generate(c, sa, hk, 0, NULL, NULL, &sign_len));
 
   struct assh_packet_s *pout;
   ASSH_RET_ON_ERR(assh_packet_alloc(c, SSH_MSG_KEXRSA_DONE, (4 + sign_len), &pout));
@@ -589,7 +589,7 @@ static ASSH_KEX_PROCESS_FCN(assh_kex_rsa_process)
 
 static assh_status_t assh_kex_rsa_init(struct assh_session_s *s,
 				      size_t cipher_key_size, size_t minklen,
-				      const struct assh_algo_with_key_s *algo,
+				      const struct assh_algo_with_key_s *awk,
 				      const struct assh_hash_algo_s *hash,
 				      const uint8_t *lhash)
 {
@@ -609,7 +609,7 @@ static assh_status_t assh_kex_rsa_init(struct assh_session_s *s,
 #endif
 #ifdef CONFIG_ASSH_SERVER
     case ASSH_SERVER:
-      if (assh_key_lookup(c, &pv->t_key, algo))
+      if (assh_key_lookup(c, &pv->t_key, awk))
 	{
 #ifdef CONFIG_ASSH_KEY_CREATE
 	  ASSH_JMP_ON_ERR(assh_key_create(c, &c->keys, minklen, &assh_key_builtin_rsa,

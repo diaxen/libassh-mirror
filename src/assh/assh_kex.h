@@ -258,11 +258,11 @@ typedef ASSH_KEX_PROCESS_FCN(assh_kex_process_t);
     used by the transport layer code to process the ssh packet stream. */
 struct assh_kex_keys_s
 {
-  const struct assh_algo_cipher_s *cipher;
+  const struct assh_algo_cipher_s *cipher_algo;
   void *cipher_ctx;
-  const struct assh_algo_mac_s *mac;
+  const struct assh_algo_mac_s *mac_algo;
   void *mac_ctx;
-  const struct assh_algo_compress_s *cmp;
+  const struct assh_algo_compress_s *cmp_algo;
   void *cmp_ctx;
   assh_safety_t safety;
 };

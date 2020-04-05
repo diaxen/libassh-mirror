@@ -84,7 +84,7 @@ struct assh_userauth_keys_s
 {
   uint16_t algo_idx;
   uint16_t algo_groups;
-  const struct assh_algo_sign_s *algo;
+  const struct assh_algo_sign_s *sign_algo;
   struct assh_key_s *keys;
   uint8_t *auth_data;
 };
@@ -102,7 +102,7 @@ struct assh_userauth_context_s
   enum assh_userauth_methods_e methods:8;
   enum assh_userauth_state_e state:8;
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY
-  struct assh_userauth_keys_s pubkey;
+  struct assh_userauth_keys_s pub_key;
 #endif
 
 #ifdef CONFIG_ASSH_CLIENT_AUTH_HOSTBASED

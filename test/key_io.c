@@ -43,23 +43,23 @@ struct tests_s
 
 static void
 test_sign(struct assh_context_s *c,
-	  struct assh_key_s *pvkey, struct assh_key_s *pubkey)
+	  struct assh_key_s *pv_key, struct assh_key_s *pub_key)
 {
-  const struct assh_algo_sign_s *salgo;
-  TEST_ASSERT(!assh_algo_by_key(c, pvkey, NULL,
-	         (const struct assh_algo_s **)&salgo));
+  const struct assh_algo_sign_s *sa;
+  TEST_ASSERT(!assh_algo_by_key(c, pv_key, NULL,
+	         (const struct assh_algo_with_key_s **)&sa));
 
   struct assh_cbuffer_s buf;
   buf.str = "test";
   buf.len = 4;
 
   size_t slen;
-  TEST_ASSERT(!assh_sign_generate(c, salgo, pvkey, 1, &buf, NULL, &slen));
+  TEST_ASSERT(!assh_sign_generate(c, sa, pv_key, 1, &buf, NULL, &slen));
   uint8_t sign[slen];
-  TEST_ASSERT(!assh_sign_generate(c, salgo, pvkey, 1, &buf, sign, &slen));
+  TEST_ASSERT(!assh_sign_generate(c, sa, pv_key, 1, &buf, sign, &slen));
 
   assh_safety_t safety;
-  TEST_ASSERT(!assh_sign_check(c, salgo, pubkey, 1, &buf, sign, slen, &safety));
+  TEST_ASSERT(!assh_sign_check(c, sa, pub_key, 1, &buf, sign, slen, &safety));
 }
 
 /* test key blob load/store functions implemented in key modules */

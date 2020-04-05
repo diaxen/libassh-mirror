@@ -418,7 +418,7 @@ const struct cipher_test_s vectors[] =
 };
 
 void test_cipher(const struct cipher_test_s *t,
-		 const struct assh_algo_cipher_s *ac)
+		 const struct assh_algo_cipher_s *ca)
 {
   struct assh_context_s context;
 
@@ -426,9 +426,9 @@ void test_cipher(const struct cipher_test_s *t,
 			NULL, NULL, NULL))
     TEST_FAIL("context init");
 
-  if (t->iv_size != ac->iv_size)
+  if (t->iv_size != ca->iv_size)
     TEST_FAIL("iv size");
-  if (t->key_size != ac->key_size)
+  if (t->key_size != ca->key_size)
     TEST_FAIL("key size");
 
   if (!t->out_count)
@@ -439,16 +439,16 @@ void test_cipher(const struct cipher_test_s *t,
   uint8_t buf[size];
   memset(buf, 42, size);
 
-  void *ctx = malloc(ac->ctx_size);
-  void *ctx2 = malloc(ac->ctx_size);
+  void *ctx = malloc(ca->ctx_size);
+  void *ctx2 = malloc(ca->ctx_size);
 
   fprintf(stderr, "testing %s, %s: ",
-	  t->algo, ac->algo.implem);
+	  t->algo, ca->algo.implem);
 
-  if (ac->f_init(&context, ctx, (const uint8_t*)t->key,
+  if (ca->f_init(&context, ctx, (const uint8_t*)t->key,
 		 t->iv_size ? (const uint8_t*)t->iv : NULL, 1))
     TEST_FAIL("encrypt init");
-  if (ac->f_init(&context, ctx2, (const uint8_t*)t->key,
+  if (ca->f_init(&context, ctx2, (const uint8_t*)t->key,
 		 t->iv_size ? (const uint8_t*)t->iv : NULL, 0))
     TEST_FAIL("decrypt init");
 
@@ -459,11 +459,11 @@ void test_cipher(const struct cipher_test_s *t,
   for (i = 0; i < count; i++, seq++)
     {
       assh_bool_t check_output = (i < t->out_count);
-      assh_bool_t tamper = ac->auth_size && (i == count - 1);
+      assh_bool_t tamper = ca->auth_size && (i == count - 1);
 
       /* encrypt */
       fprintf(stderr, "E");
-      if (ac->f_process(ctx, buf, size, ASSH_CIPHER_PCK_TAIL, seq))
+      if (ca->f_process(ctx, buf, size, ASSH_CIPHER_PCK_TAIL, seq))
 	TEST_FAIL("encrypt %u", i);
 
       if (check_output)
@@ -485,18 +485,18 @@ void test_cipher(const struct cipher_test_s *t,
 
       /* decrypt */
       fprintf(stderr, "d");
-      if (ac->f_process(ctx2, buf, t->head_size, ASSH_CIPHER_PCK_HEAD, seq))
+      if (ca->f_process(ctx2, buf, t->head_size, ASSH_CIPHER_PCK_HEAD, seq))
 	TEST_FAIL("decrypt head %u", i);
 
       fprintf(stderr, "D");
-      if (ac->auth_size)
+      if (ca->auth_size)
 	{
-	  if (tamper == !ac->f_process(ctx2, buf, size, ASSH_CIPHER_PCK_TAIL, seq))
+	  if (tamper == !ca->f_process(ctx2, buf, size, ASSH_CIPHER_PCK_TAIL, seq))
 	    TEST_FAIL("decrypt tail %u", i);
 	}
       else
 	{
-	  if (ac->f_process(ctx2, buf + t->head_size, t->tail_size,
+	  if (ca->f_process(ctx2, buf + t->head_size, t->tail_size,
 			    ASSH_CIPHER_PCK_TAIL, seq))
 	    TEST_FAIL("decrypt tail %u", i);
 	}
@@ -506,7 +506,7 @@ void test_cipher(const struct cipher_test_s *t,
 	  size_t j;
 
 	  fprintf(stderr, "q");
-	  for (j = 0; j < size - ac->auth_size; j++)
+	  for (j = 0; j < size - ca->auth_size; j++)
 	    if (buf[j] != 42)
 	      {
 		assh_hexdump("output", buf, size);
@@ -517,10 +517,10 @@ void test_cipher(const struct cipher_test_s *t,
 
   fprintf(stderr, "\n");
 
-  ac->f_cleanup(&context, ctx);
+  ca->f_cleanup(&context, ctx);
   free(ctx);
 
-  ac->f_cleanup(&context, ctx2);
+  ca->f_cleanup(&context, ctx2);
   free(ctx2);
 
   assh_context_cleanup(&context);

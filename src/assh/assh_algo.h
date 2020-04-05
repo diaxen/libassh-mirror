@@ -47,7 +47,7 @@
 /** @internal @see assh_algo_suitable_key_t */
 #define ASSH_ALGO_SUITABLE_KEY_FCN(n) assh_bool_t (n)    \
   (struct assh_context_s *c,                             \
-   const struct assh_algo_with_key_s *algo,		 \
+   const struct assh_algo_with_key_s *awk,		 \
    const struct assh_key_s *key)
 
 /** @internal @This defines the function type for the key
@@ -374,7 +374,7 @@ assh_algo_by_name(struct assh_context_s *c,
 ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_by_key(struct assh_context_s *c,
                  const struct assh_key_s *key, uint16_t *pos,
-                 const struct assh_algo_with_key_s **algo);
+                 const struct assh_algo_with_key_s **awk);
 
 /** @internal @This returns true if the provided key can be used with
     the @hl algorithm and has been loaded or created for that purpose.
@@ -385,7 +385,7 @@ assh_algo_by_key(struct assh_context_s *c,
     assh_key_validate function is provided for that purpose. */
 assh_bool_t
 assh_algo_suitable_key(struct assh_context_s *c,
-                       const struct assh_algo_with_key_s *algo,
+                       const struct assh_algo_with_key_s *awk,
                        const struct assh_key_s *key);
 
 /** @This casts and returns the passed pointer if the

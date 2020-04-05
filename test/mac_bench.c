@@ -38,11 +38,11 @@ static void *data;
 static size_t data_size = 1 << 20;
 static size_t cycles = 10;
 
-static void bench(const struct assh_algo_mac_s *mac)
+static void bench(const struct assh_algo_mac_s *ma)
 {
   fprintf(stderr, "%-30s %-13s  ",
-	  assh_algo_name(&mac->algo),
-	  mac->algo.implem);
+	  assh_algo_name(&ma->algo),
+	  ma->algo.implem);
 
   struct assh_context_s context;
 
@@ -50,11 +50,11 @@ static void bench(const struct assh_algo_mac_s *mac)
 			NULL, NULL, NULL, NULL))
     TEST_FAIL("context init");
 
-  if (assh_algo_register_va(&context, 0, 0, 0, &mac->algo, NULL))
+  if (assh_algo_register_va(&context, 0, 0, 0, &ma->algo, NULL))
     TEST_FAIL("algo register");
 
-  void *ectx = malloc(mac->ctx_size);
-  void *dctx = malloc(mac->ctx_size);
+  void *ectx = malloc(ma->ctx_size);
+  void *dctx = malloc(ma->ctx_size);
   if (!ectx || !dctx)
     TEST_FAIL("mac ctx alloc");
 
@@ -72,12 +72,12 @@ static void bench(const struct assh_algo_mac_s *mac)
   {
     size_t c = cycles;
 
-    if (mac->f_init(&context, ectx, key, 1))
+    if (ma->f_init(&context, ectx, key, 1))
       TEST_FAIL("encrypt init");
 
     gettimeofday(&tp_start, NULL);
     while (c--)
-      if (mac->f_process(ectx, data, data_size, code, c))
+      if (ma->f_process(ectx, data, data_size, code, c))
 	TEST_FAIL("generate");
     gettimeofday(&tp_end, NULL);
 
@@ -89,25 +89,25 @@ static void bench(const struct assh_algo_mac_s *mac)
     while (l-- > 0)
       fputc(' ', stderr);
 
-    mac->f_cleanup(&context, ectx);
+    ma->f_cleanup(&context, ectx);
   }
 
   /* mac verify */
   {
     size_t c = cycles;
 
-    if (mac->f_init(&context, ectx, key, 1))
+    if (ma->f_init(&context, ectx, key, 1))
       TEST_FAIL("generate init");
 
-    if (mac->f_init(&context, dctx, key, 0))
+    if (ma->f_init(&context, dctx, key, 0))
       TEST_FAIL("verify init");
 
     gettimeofday(&tp_start, NULL);
     while (c--)
       {
-	if (mac->f_process(ectx, data, data_size, code, c))
+	if (ma->f_process(ectx, data, data_size, code, c))
 	  TEST_FAIL("generate");
-	if (mac->f_process(dctx, data, data_size, code, c))
+	if (ma->f_process(dctx, data, data_size, code, c))
 	  TEST_FAIL("verify");
       }
     gettimeofday(&tp_end, NULL);
@@ -118,8 +118,8 @@ static void bench(const struct assh_algo_mac_s *mac)
     fprintf(stderr, " %.2f MB/s\n",
 	    ((double)data_size * cycles) / dtd);
 
-    mac->f_cleanup(&context, ectx);
-    mac->f_cleanup(&context, dctx);
+    ma->f_cleanup(&context, ectx);
+    ma->f_cleanup(&context, dctx);
   }
 
   free(ectx);

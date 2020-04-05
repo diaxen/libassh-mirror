@@ -122,11 +122,11 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_pubkey)
   ASSH_RET_ON_ERR(assh_packet_check_string(p, algo_name, &pub_blob));
   ASSH_RET_ON_ERR(assh_packet_check_string(p, pub_blob, &sign));
 
-  const struct assh_algo_sign_s *algo;
+  const struct assh_algo_sign_s *sa;
   struct assh_key_s *pub_key = NULL;
 
   ASSH_RET_ON_ERR(assh_userauth_server_get_key(s, algo_name, pub_blob,
-                 &algo, &pub_key, &pv->algo_name));
+                 &sa, &pub_key, &pv->algo_name));
 
   if (ASSH_STATUS(err) == ASSH_NO_DATA)
     ASSH_RETURN(assh_userauth_server_failure(s, e));
@@ -139,7 +139,7 @@ static ASSH_USERAUTH_SERVER_REQ(assh_userauth_server_req_pubkey)
     {
       assh_key_flush(s->ctx, &pv->pub_key);
       pv->pub_key = pub_key;
-      pv->algo = algo;
+      pv->sign_algo = sa;
       ASSH_SET_STATE(pv, pubkey_state, ASSH_USERAUTH_PUBKEY_NEW);
     }
   else

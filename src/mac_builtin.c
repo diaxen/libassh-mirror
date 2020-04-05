@@ -33,7 +33,7 @@
 struct assh_hmac_context_s
 {
   const struct assh_hash_algo_s *hash;
-  const struct assh_algo_mac_s *mac;
+  const struct assh_algo_mac_s *ma;
   void *hash_co;
   void *hash_ci;
   void *hash_co_t;
@@ -43,7 +43,7 @@ struct assh_hmac_context_s
 };
 
 static assh_status_t
-assh_hmac_init(struct assh_context_s *c, const struct assh_algo_mac_s *mac,
+assh_hmac_init(struct assh_context_s *c, const struct assh_algo_mac_s *ma,
                struct assh_hmac_context_s *ctx, assh_bool_t generate,
                const uint8_t *key, const struct assh_hash_algo_s *hash)
 {
@@ -51,15 +51,15 @@ assh_hmac_init(struct assh_context_s *c, const struct assh_algo_mac_s *mac,
   uint_fast16_t i;
 
   assert(hash->hash_size != 0);
-  assert(mac->mac_size <= hash->hash_size);
-  assert(mac->key_size <= hash->block_size);
+  assert(ma->mac_size <= hash->hash_size);
+  assert(ma->key_size <= hash->block_size);
 
   ASSH_RET_ON_ERR(assh_alloc(c, sizeof(struct assh_hmac_context_s)
                           + hash->ctx_size * 4 + /* buf */ hash->hash_size,
                           ASSH_ALLOC_SECUR, &ctx->hash_co));
 
   ctx->hash = hash;
-  ctx->mac = mac;
+  ctx->ma = ma;
   ctx->generate = generate;
 
   ctx->hash_ci = (uint8_t*)ctx->hash_co + hash->ctx_size;
@@ -69,14 +69,14 @@ assh_hmac_init(struct assh_context_s *c, const struct assh_algo_mac_s *mac,
 
   ASSH_SCRATCH_ALLOC(c, uint8_t, kx, hash->block_size, ASSH_ERRSV_CONTINUE, err_ctx);
 
-  for (i = 0; i < mac->key_size; i++)
+  for (i = 0; i < ma->key_size; i++)
     kx[i] = key[i] ^ 0x36;
   for (; i < hash->block_size; i++)
     kx[i] = 0x36;
   ASSH_JMP_ON_ERR(assh_hash_init(c, ctx->hash_ci, hash), err_sc);
   assh_hash_update(ctx->hash_ci, kx, hash->block_size);
 
-  for (i = 0; i < mac->key_size; i++)
+  for (i = 0; i < ma->key_size; i++)
     kx[i] = key[i] ^ 0x5c;
   for (; i < hash->block_size; i++)
     kx[i] = 0x5c;
@@ -124,10 +124,10 @@ static ASSH_MAC_PROCESS_FCN(assh_hmac_process)
 
   if (ctx->generate)
     {
-      if (ctx->mac->mac_size < ctx->hash->hash_size)
+      if (ctx->ma->mac_size < ctx->hash->hash_size)
 	{
 	  assh_hash_final(ctx->hash_co_t, ctx->buf, ctx->hash->hash_size);
-	  memcpy(mac, ctx->buf, ctx->mac->mac_size);
+	  memcpy(mac, ctx->buf, ctx->ma->mac_size);
 	}
       else
 	{
@@ -140,7 +140,7 @@ static ASSH_MAC_PROCESS_FCN(assh_hmac_process)
       uint8_t buf[ctx->hash->hash_size];
       assh_hash_final(ctx->hash_co_t, buf, ctx->hash->hash_size);
       assh_hash_cleanup(ctx->hash_co_t);
-      ASSH_RET_IF_TRUE(assh_memcmp(mac, buf, ctx->mac->mac_size), ASSH_ERR_MAC);
+      ASSH_RET_IF_TRUE(assh_memcmp(mac, buf, ctx->ma->mac_size), ASSH_ERR_MAC);
     }
 
   return ASSH_OK;

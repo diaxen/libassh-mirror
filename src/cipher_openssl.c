@@ -39,7 +39,7 @@
 
 struct assh_cipher_openssl_context_s
 {
-  const struct assh_algo_cipher_s *cipher;
+  const struct assh_algo_cipher_s *ca;
   EVP_CIPHER_CTX *octx;
   const EVP_CIPHER *evp;
 #ifndef CONFIG_ASSH_OPENSSL_CIPHER_OVERLAP
@@ -50,7 +50,7 @@ struct assh_cipher_openssl_context_s
 
 static assh_status_t
 assh_cipher_openssl_init(struct assh_context_s *c,
-                         const struct assh_algo_cipher_s *cipher,
+                         const struct assh_algo_cipher_s *ca,
                          struct assh_cipher_openssl_context_s *ctx,
                          const uint8_t *key, const uint8_t *iv,
                          const EVP_CIPHER *evp, assh_bool_t encrypt)
@@ -62,7 +62,7 @@ assh_cipher_openssl_init(struct assh_context_s *c,
   ASSH_RET_IF_TRUE(ctx->octx == NULL, ASSH_ERR_CRYPTO);
 
   ctx->evp = evp;
-  ctx->cipher = cipher;
+  ctx->ca = ca;
 
 #ifndef CONFIG_ASSH_OPENSSL_CIPHER_OVERLAP
   ASSH_RET_ON_ERR(assh_alloc(c, ASSH_PACKET_MAX_OVERHEAD + CONFIG_ASSH_MAX_PAYLOAD,
@@ -72,7 +72,7 @@ assh_cipher_openssl_init(struct assh_context_s *c,
   switch (EVP_CIPHER_flags(evp) & EVP_CIPH_MODE)
     {
     case EVP_CIPH_GCM_MODE:
-      memcpy(ctx->iv, iv, cipher->iv_size);
+      memcpy(ctx->iv, iv, ca->iv_size);
       ASSH_JMP_IF_TRUE(!EVP_CipherInit_ex(ctx->octx, evp, NULL, key, NULL, encrypt) ||
                        !EVP_CIPHER_CTX_set_padding(ctx->octx, 0),
                        ASSH_ERR_CRYPTO, err_open);
@@ -87,12 +87,12 @@ assh_cipher_openssl_init(struct assh_context_s *c,
 
     case EVP_CIPH_STREAM_CIPHER:
       ASSH_JMP_IF_TRUE(!EVP_CipherInit_ex(ctx->octx, evp, NULL, NULL, NULL, encrypt) ||
-                       !EVP_CIPHER_CTX_set_key_length(ctx->octx, cipher->key_size) ||
+                       !EVP_CIPHER_CTX_set_key_length(ctx->octx, ca->key_size) ||
                        !EVP_CipherInit_ex(ctx->octx, NULL, NULL, key, NULL, encrypt),
                        ASSH_ERR_CRYPTO, err_open);
 
-      if (cipher == &assh_cipher_openssl_arc4_128 ||
-	  cipher == &assh_cipher_openssl_arc4_256)
+      if (ca == &assh_cipher_openssl_arc4_128 ||
+	  ca == &assh_cipher_openssl_arc4_256)
 	{
 	  uint8_t dummy[128];
 	  uint_fast16_t i;
@@ -126,8 +126,8 @@ static ASSH_CIPHER_PROCESS_FCN(assh_cipher_openssl_process_GCM)
 {
   assh_status_t err;
   struct assh_cipher_openssl_context_s *ctx = ctx_;
-  size_t block_size = ctx->cipher->block_size;
-  size_t csize = len - 4 - ctx->cipher->auth_size;
+  size_t block_size = ctx->ca->block_size;
+  size_t csize = len - 4 - ctx->ca->auth_size;
 
   if (op == ASSH_CIPHER_PCK_HEAD)
     return ASSH_OK;
@@ -173,7 +173,7 @@ static ASSH_CIPHER_PROCESS_FCN(assh_cipher_openssl_process)
 {
   assh_status_t err;
   struct assh_cipher_openssl_context_s *ctx = ctx_;
-  size_t block_size = ctx->cipher->block_size;
+  size_t block_size = ctx->ca->block_size;
 
   ASSH_RET_IF_TRUE(len & (block_size - 1),
 	       ASSH_ERR_INPUT_OVERFLOW);

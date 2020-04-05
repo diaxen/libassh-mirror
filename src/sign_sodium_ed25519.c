@@ -121,11 +121,11 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_ed25519_check)
   switch (data_count)
     {
     case 0:
-      result = crypto_sign_ed25519_verify_detached(sig, sig, 0, k->pubkey);
+      result = crypto_sign_ed25519_verify_detached(sig, sig, 0, k->pub_key);
       break;
 
     case 1:
-      result = crypto_sign_ed25519_verify_detached(sig, data[0].data, data[0].len, k->pubkey);
+      result = crypto_sign_ed25519_verify_detached(sig, data[0].data, data[0].len, k->pub_key);
       break;
 
     default: {
@@ -145,7 +145,7 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_ed25519_check)
 	  s += len;
 	}
 
-      result = crypto_sign_ed25519_verify_detached(sig, sc, mlen, k->pubkey);
+      result = crypto_sign_ed25519_verify_detached(sig, sc, mlen, k->pub_key);
       ASSH_SCRATCH_FREE(c, sc);
     }
     }

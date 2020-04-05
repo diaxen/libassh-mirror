@@ -128,7 +128,7 @@ assh_load_rfc4716_rfc1421(struct assh_context_s *c, FILE *file,
   assh_status_t err = ASSH_OK;
   char in[80], *l;
   uint_fast8_t state = 0;
-  const struct assh_algo_cipher_s *cipher = NULL;
+  const struct assh_algo_cipher_s *ca = NULL;
   uint8_t iv[16];
 
   asshh_base64_init(&ctx, kdata, *klen);
@@ -198,12 +198,12 @@ assh_load_rfc4716_rfc1421(struct assh_context_s *c, FILE *file,
 
 	      const char *cn = assh_rfc1421_ciphers[i].cipher_name;
 	      ASSH_JMP_IF_TRUE(assh_algo_by_name_static(assh_algo_table, ASSH_ALGO_CIPHER,
-				 cn, strlen(cn), (const struct assh_algo_s**)&cipher, NULL),
+				 cn, strlen(cn), (const struct assh_algo_s**)&ca, NULL),
 			       ASSH_ERR_MISSING_ALGO, err_);
 
               /* get iv */
-              assert(cipher->iv_size <= sizeof(iv) * 8);
-              for (i = 0; i < cipher->iv_size; i++)
+              assert(ca->iv_size <= sizeof(iv) * 8);
+              for (i = 0; i < ca->iv_size; i++)
                 {
                   char z = dek[2];
                   dek[2] = 0;
@@ -243,37 +243,37 @@ assh_load_rfc4716_rfc1421(struct assh_context_s *c, FILE *file,
   *klen = asshh_base64_outsize(&ctx);
 
   /* decipher key blob */
-  if (cipher != NULL)
+  if (ca != NULL)
     {
       size_t i, len = *klen;
 
       /* check padding length */
-      ASSH_JMP_IF_TRUE(len % cipher->block_size || len == 0, ASSH_ERR_BAD_DATA, err_);
+      ASSH_JMP_IF_TRUE(len % ca->block_size || len == 0, ASSH_ERR_BAD_DATA, err_);
 
       /* compute cipher key from passphrase */
-      ASSH_SCRATCH_ALLOC(c, uint8_t, sc, cipher->ctx_size +
-                         cipher->key_size,
+      ASSH_SCRATCH_ALLOC(c, uint8_t, sc, ca->ctx_size +
+                         ca->key_size,
                          ASSH_ERRSV_CONTINUE, err_);
 
       uint8_t *cipher_ctx = sc;
-      uint8_t *key = sc + cipher->ctx_size;
+      uint8_t *key = sc + ca->ctx_size;
 
       ASSH_JMP_ON_ERR(assh_evp_bytes_to_key(c, &assh_hash_md5,
                                          passphrase, strlen(passphrase), iv, 8,
-                                         key, cipher->key_size, 1), err_sc);
+                                         key, ca->key_size, 1), err_sc);
 
       /* decipher */
-      ASSH_JMP_ON_ERR(cipher->f_init(c, cipher_ctx, key, iv, 0), err_sc);
-      ASSH_JMP_ON_ERR(cipher->f_process(cipher_ctx, kdata, len, ASSH_CIPHER_KEY, 0), err_cipher);
+      ASSH_JMP_ON_ERR(ca->f_init(c, cipher_ctx, key, iv, 0), err_sc);
+      ASSH_JMP_ON_ERR(ca->f_process(cipher_ctx, kdata, len, ASSH_CIPHER_KEY, 0), err_cipher);
 
       /* check padding content */
       uint8_t j = kdata[len - 1];
-      ASSH_JMP_IF_TRUE(j < 1 || j > cipher->block_size, ASSH_ERR_WRONG_KEY, err_cipher);
+      ASSH_JMP_IF_TRUE(j < 1 || j > ca->block_size, ASSH_ERR_WRONG_KEY, err_cipher);
       for (i = len - j; i < len; i++)
         ASSH_JMP_IF_TRUE(kdata[i] != j, ASSH_ERR_WRONG_KEY, err_cipher);
 
     err_cipher:
-      cipher->f_cleanup(c, cipher_ctx);
+      ca->f_cleanup(c, cipher_ctx);
     err_sc:
       ASSH_SCRATCH_FREE(c, sc);
     }
@@ -324,10 +324,10 @@ assh_load_pub_openssh(struct assh_context_s *c, FILE *file,
                   if (!assh_algo_by_name(c, ASSH_ALGO_SIGN,
                                         algo_name, alen, &a, NULL))
 		    {
-		      const struct assh_algo_with_key_s *ak
+		      const struct assh_algo_with_key_s *awk
 			= assh_algo_with_key(a);
-		      ASSH_RET_IF_TRUE(!ak, ASSH_ERR_MISSING_ALGO);
-		      *algo = ak->key_algo;
+		      ASSH_RET_IF_TRUE(!awk, ASSH_ERR_MISSING_ALGO);
+		      *algo = awk->key_algo;
 		    }
                 }
               state = 1;
@@ -441,14 +441,14 @@ assh_load_openssh_v1_blob(struct assh_context_s *c,
       ASSH_RET_IF_TRUE(assh_ssh_string_compare(kdf_name, "bcrypt"), ASSH_ERR_NOTSUP);
 
       /* lookup cipher */
-      const struct assh_algo_cipher_s *cipher;
+      const struct assh_algo_cipher_s *ca;
       ASSH_RET_IF_TRUE(assh_algo_by_name_static(assh_algo_table, ASSH_ALGO_CIPHER,
                      (const char*)cipher_name + 4, assh_load_u32(cipher_name),
-                     (const struct assh_algo_s **)&cipher, NULL) != ASSH_OK,
+                     (const struct assh_algo_s **)&ca, NULL) != ASSH_OK,
                    ASSH_ERR_MISSING_ALGO);
 
       /* check padding length */
-      ASSH_RET_IF_TRUE(enc_len % cipher->block_size, ASSH_ERR_BAD_DATA);
+      ASSH_RET_IF_TRUE(enc_len % ca->block_size, ASSH_ERR_BAD_DATA);
 
       /* derive key and iv from passphrase */
       ASSH_RET_IF_TRUE(passphrase == NULL, ASSH_ERR_MISSING_KEY);
@@ -460,25 +460,25 @@ assh_load_openssh_v1_blob(struct assh_context_s *c,
       ASSH_RET_ON_ERR(assh_check_string(salt_str, kdf_opts_len, salt_str, &rounds_u32));
       ASSH_RET_ON_ERR(assh_check_array(salt_str, kdf_opts_len, rounds_u32, 4, NULL));
 
-      ASSH_SCRATCH_ALLOC(c, uint8_t, sc, cipher->ctx_size +
-			 cipher->key_size + cipher->iv_size,
+      ASSH_SCRATCH_ALLOC(c, uint8_t, sc, ca->ctx_size +
+			 ca->key_size + ca->iv_size,
 			 ASSH_ERRSV_CONTINUE, err_);
 
       uint8_t *cipher_ctx = sc;
-      uint8_t *key = sc + cipher->ctx_size;
-      uint8_t *iv = key + cipher->key_size;
+      uint8_t *key = sc + ca->ctx_size;
+      uint8_t *iv = key + ca->key_size;
 
       ASSH_JMP_ON_ERR(asshh_bcrypt_pbkdf(c, passphrase, strlen(passphrase),
                                      salt_str + 4, assh_load_u32(salt_str),
-                                     key, cipher->key_size + cipher->iv_size,
+                                     key, ca->key_size + ca->iv_size,
                                      assh_load_u32(rounds_u32)), err_sc);
 
       /* decipher */
-      ASSH_JMP_ON_ERR(cipher->f_init(c, cipher_ctx, key, iv, 0), err_sc);
-      ASSH_JMP_ON_ERR(cipher->f_process(cipher_ctx, enc, enc_len, ASSH_CIPHER_KEY, 0), err_cipher);
+      ASSH_JMP_ON_ERR(ca->f_init(c, cipher_ctx, key, iv, 0), err_sc);
+      ASSH_JMP_ON_ERR(ca->f_process(cipher_ctx, enc, enc_len, ASSH_CIPHER_KEY, 0), err_cipher);
 
     err_cipher:
-      cipher->f_cleanup(c, cipher_ctx);
+      ca->f_cleanup(c, cipher_ctx);
     err_sc:
       ASSH_SCRATCH_FREE(c, sc);
       if (ASSH_STATUS(err) != ASSH_OK)
@@ -794,7 +794,7 @@ assh_save_openssh_v1_blob(struct assh_context_s *c,
   size_t pad_len = 16;
   size_t pub_len, pv_len;
 
-  const struct assh_algo_cipher_s *cipher;
+  const struct assh_algo_cipher_s *ca;
 
   size_t kdf_opt_len = 0;
   if (passphrase != NULL)
@@ -803,7 +803,7 @@ assh_save_openssh_v1_blob(struct assh_context_s *c,
       kdf_opt_len = 4 + salt_size + 4;
       ASSH_RET_IF_TRUE(assh_algo_by_name_static(assh_algo_table, ASSH_ALGO_CIPHER,
 			cipher_name, strlen(cipher_name),
-			(const struct assh_algo_s**)&cipher, NULL),
+			(const struct assh_algo_s**)&ca, NULL),
 		       ASSH_ERR_MISSING_ALGO);
     }
   else
@@ -908,24 +908,24 @@ assh_save_openssh_v1_blob(struct assh_context_s *c,
 
       if (passphrase != NULL)
         {
-          ASSH_SCRATCH_ALLOC(c, uint8_t, sc, cipher->ctx_size +
-                             cipher->key_size + cipher->iv_size,
+          ASSH_SCRATCH_ALLOC(c, uint8_t, sc, ca->ctx_size +
+                             ca->key_size + ca->iv_size,
                              ASSH_ERRSV_CONTINUE, err_);
 
           uint8_t *cipher_ctx = sc;
-          uint8_t *key = sc + cipher->ctx_size;
-          uint8_t *iv = key + cipher->key_size;
+          uint8_t *key = sc + ca->ctx_size;
+          uint8_t *iv = key + ca->key_size;
 
           ASSH_JMP_ON_ERR(asshh_bcrypt_pbkdf(c, passphrase, strlen(passphrase),
                                          salt, salt_size, key,
-                                         cipher->key_size + cipher->iv_size,
+                                         ca->key_size + ca->iv_size,
                                          rounds), err_sc);
 
-          ASSH_JMP_ON_ERR(cipher->f_init(c, cipher_ctx, key, iv, 1), err_sc);
-          ASSH_JMP_ON_ERR(cipher->f_process(cipher_ctx, enc + 4, enc_len, ASSH_CIPHER_KEY, 0), err_cipher);
+          ASSH_JMP_ON_ERR(ca->f_init(c, cipher_ctx, key, iv, 1), err_sc);
+          ASSH_JMP_ON_ERR(ca->f_process(cipher_ctx, enc + 4, enc_len, ASSH_CIPHER_KEY, 0), err_cipher);
 
         err_cipher:
-          cipher->f_cleanup(c, cipher_ctx);
+          ca->f_cleanup(c, cipher_ctx);
         err_sc:
           ASSH_SCRATCH_FREE(c, sc);
           if (ASSH_STATUS(err) != ASSH_OK)
@@ -1013,48 +1013,48 @@ assh_save_rfc1421(struct assh_context_s *c,
 
   if (passphrase != NULL)
     {
-      const struct assh_algo_cipher_s *cipher;
+      const struct assh_algo_cipher_s *ca;
       uint8_t iv[16];
       uint_fast8_t i, j;
 
       const char *cn = "aes128-cbc";
       ASSH_RET_IF_TRUE(assh_algo_by_name_static(assh_algo_table, ASSH_ALGO_CIPHER,
-			 cn, strlen(cn), (const struct assh_algo_s**)&cipher, NULL),
+			 cn, strlen(cn), (const struct assh_algo_s**)&ca, NULL),
 		       ASSH_ERR_MISSING_ALGO);
 
       fputs("Proc-Type: 4,ENCRYPTED\n"
             "DEK-Info: AES-128-CBC,", file);
 
       /* generate iv/salt */
-      ASSH_RET_ON_ERR(assh_prng_get(c, iv, cipher->iv_size, ASSH_PRNG_QUALITY_NONCE));
+      ASSH_RET_ON_ERR(assh_prng_get(c, iv, ca->iv_size, ASSH_PRNG_QUALITY_NONCE));
 
-      for (i = 0; i < cipher->iv_size; i++)
+      for (i = 0; i < ca->iv_size; i++)
         fprintf(file, "%02X", iv[i]);
       fputs("\n\n", file);
 
       /* append padding bytes */
-      j = cipher->block_size - blob_len % cipher->block_size;
+      j = ca->block_size - blob_len % ca->block_size;
       for (i = 0; i < j; i++)
         blob[blob_len + i] = j;
       blob_len += i;
 
       /* compute cipher key from passphrase */
-      ASSH_SCRATCH_ALLOC(c, uint8_t, sc, cipher->ctx_size +
-                         cipher->key_size,
+      ASSH_SCRATCH_ALLOC(c, uint8_t, sc, ca->ctx_size +
+                         ca->key_size,
                          ASSH_ERRSV_CONTINUE, err_);
 
       uint8_t *cipher_ctx = sc;
-      uint8_t *key = sc + cipher->ctx_size;
+      uint8_t *key = sc + ca->ctx_size;
 
       ASSH_JMP_ON_ERR(assh_evp_bytes_to_key(c, &assh_hash_md5,
                      passphrase, strlen(passphrase), iv, 8,
-                     key, cipher->key_size, 1), err_sc);
+                     key, ca->key_size, 1), err_sc);
 
       /* encipher */
-      ASSH_JMP_ON_ERR(cipher->f_init(c, cipher_ctx, key, iv, 1), err_sc);
-      ASSH_JMP_ON_ERR(cipher->f_process(cipher_ctx, blob, blob_len, ASSH_CIPHER_KEY, 0), err_cipher);
+      ASSH_JMP_ON_ERR(ca->f_init(c, cipher_ctx, key, iv, 1), err_sc);
+      ASSH_JMP_ON_ERR(ca->f_process(cipher_ctx, blob, blob_len, ASSH_CIPHER_KEY, 0), err_cipher);
     err_cipher:
-      cipher->f_cleanup(c, cipher_ctx);
+      ca->f_cleanup(c, cipher_ctx);
     err_sc:
       ASSH_SCRATCH_FREE(c, sc);
       if (ASSH_STATUS(err) != ASSH_OK)

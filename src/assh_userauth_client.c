@@ -73,8 +73,8 @@ static ASSH_SERVICE_INIT_FCN(assh_userauth_client_init)
   s->srv_pv = pv;
 
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY
-  pv->pubkey.keys = NULL;
-  pv->pubkey.auth_data = NULL;
+  pv->pub_key.keys = NULL;
+  pv->pub_key.auth_data = NULL;
 #endif
 
 #ifdef CONFIG_ASSH_CLIENT_AUTH_HOSTBASED
@@ -101,8 +101,8 @@ static ASSH_SERVICE_CLEANUP_FCN(assh_userauth_client_cleanup)
   struct assh_context_s *c = s->ctx;
 
 #ifdef CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY
-  assh_key_flush(c, &pv->pubkey.keys);
-  assh_free(c, pv->pubkey.auth_data);
+  assh_key_flush(c, &pv->pub_key.keys);
+  assh_free(c, pv->pub_key.auth_data);
 #endif
 
 #ifdef CONFIG_ASSH_CLIENT_AUTH_HOSTBASED
@@ -162,10 +162,10 @@ assh_userauth_client_key_next(struct assh_session_s *s,
 {
   while (k->keys != NULL)
     {
-      const struct assh_algo_with_key_s *algo;
+      const struct assh_algo_with_key_s *awk;
 
       if (assh_algo_by_key(s->ctx, k->keys,
-                           &k->algo_idx, &algo) != ASSH_OK)
+                           &k->algo_idx, &awk) != ASSH_OK)
         {
           /* drop used key */
           assh_key_drop(s->ctx, &k->keys);
@@ -174,15 +174,17 @@ assh_userauth_client_key_next(struct assh_session_s *s,
           continue;
         }
 
-      assert(algo->algo.class_ == ASSH_ALGO_SIGN);
-      k->algo = (void*)algo;
+      assert(awk->algo.class_ == ASSH_ALGO_SIGN);
+      const struct assh_algo_sign_s *sa = (void*)awk;
+
+      k->sign_algo = sa;
 
       k->algo_idx++;
 
       /* only try one algorithm per group */
-      if (!(k->algo_groups & k->algo->groups))
+      if (!(k->algo_groups & sa->groups))
         {
-          k->algo_groups |= k->algo->groups;
+          k->algo_groups |= sa->groups;
           break;
         }
     }
@@ -201,15 +203,18 @@ assh_userauth_client_key_get(struct assh_session_s *s,
       struct assh_key_s *next = keys->next;
 
       /* insert provided keys in internal list */
-      const struct assh_algo_with_key_s *algo;
+      const struct assh_algo_with_key_s *awk;
+
       if (keys->role == ASSH_ALGO_SIGN &&
-          assh_algo_by_key(s->ctx, keys, &k->algo_idx, &algo) == ASSH_OK)
+          assh_algo_by_key(s->ctx, keys, &k->algo_idx, &awk) == ASSH_OK)
         {
           assh_key_insert(&k->keys, keys);
 
-          assert(algo->algo.class_ == ASSH_ALGO_SIGN);
-          k->algo = (void*)algo;
-          k->algo_groups = k->algo->groups;
+          assert(awk->algo.class_ == ASSH_ALGO_SIGN);
+	  const struct assh_algo_sign_s *sa = (void*)awk;
+
+          k->sign_algo = sa;
+          k->algo_groups = k->sign_algo->groups;
 
           k->algo_idx++;
         }
@@ -245,7 +250,7 @@ assh_userauth_client_send_sign(struct assh_session_s *s,
 
   /* append the signature */
   ASSH_ASSERT(assh_packet_add_string(pout, sign_len, &sign));
-  ASSH_RET_ON_ERR(assh_sign_generate(s->ctx, k->algo, k->keys,
+  ASSH_RET_ON_ERR(assh_sign_generate(s->ctx, k->sign_algo, k->keys,
                                   3, data, sign, &sign_len));
   assh_packet_shrink_string(pout, sign, sign_len);
 
@@ -285,7 +290,7 @@ assh_userauth_client_get_sign(struct assh_session_s *s,
   ASSH_ASSERT(assh_packet_add_string(pout, sign_len, &sign));
 
   ev->pub_key = k->keys;
-  ev->algo = k->algo;
+  ev->algo = k->sign_algo;
   ev->auth_data.data = data;
   ev->auth_data.len = data_len;
   ev->sign.data = sign;
