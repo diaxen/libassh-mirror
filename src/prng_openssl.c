@@ -42,13 +42,13 @@ static ASSH_PRNG_GET_FCN(assh_prng_openssl_get)
     case ASSH_PRNG_QUALITY_WEAK:
     case ASSH_PRNG_QUALITY_PUBLIC:
     case ASSH_PRNG_QUALITY_PADDING:
-      ASSH_RET_IF_TRUE(!RAND_pseudo_bytes(rdata, rdata_len),
+      ASSH_RET_IF_TRUE(!RAND_bytes(rdata, rdata_len),
 		       ASSH_ERR_CRYPTO);
       break;
     case ASSH_PRNG_QUALITY_NONCE:
     case ASSH_PRNG_QUALITY_EPHEMERAL_KEY:
     case ASSH_PRNG_QUALITY_LONGTERM_KEY:
-      ASSH_RET_IF_TRUE(!RAND_bytes(rdata, rdata_len),
+      ASSH_RET_IF_TRUE(!RAND_priv_bytes(rdata, rdata_len),
 		       ASSH_ERR_CRYPTO);
       break;
     }
