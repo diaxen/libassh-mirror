@@ -54,7 +54,7 @@ static int assh_algo_qsort_cmp(const void *a, const void *b, void *arg)
 
 static void assh_algo_filter_variants(struct assh_context_s *c,
                                       assh_safety_t min_safety,
-                                      uint_fast8_t min_speed)
+                                      assh_speed_t min_speed)
 {
   /* remove duplicated names in the same class */
   int_fast16_t i, j, k;
@@ -92,7 +92,7 @@ static void assh_algo_filter_variants(struct assh_context_s *c,
 static void assh_algo_sort(struct assh_context_s *c,
                            assh_safety_t safety,
                            assh_safety_t min_safety,
-                           uint_fast8_t min_speed)
+                           assh_speed_t min_speed)
 {
   assh_algo_filter_variants(c, min_safety, min_speed);
 
@@ -204,7 +204,7 @@ assh_status_t assh_algo_register_static(struct assh_context_s *c,
 }
 
 assh_status_t assh_algo_register(struct assh_context_s *c, assh_safety_t safety,
-				assh_safety_t min_safety, uint8_t min_speed,
+				assh_safety_t min_safety, assh_speed_t min_speed,
                                 const struct assh_algo_s *table[])
 {
   assh_status_t err = ASSH_OK;
@@ -240,7 +240,7 @@ assh_algo_registered(struct assh_context_s *c, uint_fast16_t i)
 }
 
 assh_status_t assh_algo_register_va(struct assh_context_s *c, assh_safety_t safety,
-				   assh_safety_t min_safety, uint8_t min_speed, ...)
+				   assh_safety_t min_safety, assh_speed_t min_speed, ...)
 {
   assh_status_t err = ASSH_OK;
   va_list ap;
@@ -275,7 +275,7 @@ assh_status_t assh_algo_register_va(struct assh_context_s *c, assh_safety_t safe
 }
 
 assh_status_t assh_algo_register_names_va(struct assh_context_s *c, assh_safety_t safety,
-					  assh_safety_t min_safety, uint8_t min_speed,
+					  assh_safety_t min_safety, assh_speed_t min_speed,
 					  enum assh_algo_class_e class_, ...)
 {
   assh_status_t err = ASSH_OK;

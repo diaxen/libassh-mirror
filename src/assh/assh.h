@@ -139,6 +139,7 @@ typedef int_fast16_t assh_status_t;
    @see assh_safety_name
 */
 typedef uint8_t assh_safety_t;
+typedef uint_fast32_t assh_speed_t;
 
 /** @This returns the name associated to an
     @hl algorithm safety factor value. */
