@@ -439,6 +439,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_ecdsa_nistp_create)
 const struct assh_key_algo_s assh_key_builtin_ecdsa_nist =
 {
   .name = "ecdsa-sha2-nist",
+  .implem = "assh-builtin",
   .min_bits = 256,
   .bits = 256,
   .max_bits = 521,

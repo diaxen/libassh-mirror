@@ -176,6 +176,7 @@ typedef ASSH_KEY_CLEANUP_FCN(assh_key_cleanup_t);
 struct assh_key_algo_s
 {
   const char *name;
+  const char *implem;
 
   assh_key_load_t *f_load;
 #ifdef CONFIG_ASSH_KEY_CREATE

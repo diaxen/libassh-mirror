@@ -491,6 +491,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
 const struct assh_key_algo_s assh_key_builtin_rsa =
 {
   .name = "ssh-rsa",
+  .implem = "assh-builtin",
   .min_bits = 1024,
   .bits = 2048,
   .max_bits = 8192,

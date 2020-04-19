@@ -436,6 +436,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
 const struct assh_key_algo_s assh_key_builtin_dsa =
 {
   .name = "ssh-dss",
+  .implem = "assh-builtin",
   .min_bits = 1024,
   .bits = 2048,
   .max_bits = 4096,

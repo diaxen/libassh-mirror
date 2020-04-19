@@ -193,6 +193,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_ed25519_create)
 const struct assh_key_algo_s assh_key_sodium_ed25519 =
 {
   .name = "ssh-ed25519",
+  .implem = "assh-sodium",
   .min_bits = 255,
   .bits = 255,
   .max_bits = 255,
