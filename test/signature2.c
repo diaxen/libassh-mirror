@@ -311,7 +311,7 @@ int main(int argc, char **argv)
   while (count--)
     test_sign(max_size, action);
 
-  printf("\nDone.\n");
+  puts("\n\nTest passed");
   return 0;
 }
 

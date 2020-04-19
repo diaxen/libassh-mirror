@@ -1595,8 +1595,8 @@ static int replay_directory(int argc, char **argv)
   if (!done)
     TEST_FAIL("no .ssh stream file found in the directory `%s'\n", dname);
 
-  printf("Done.\n");
-
+  if (!result)
+    puts("\nTest passed");
   return result;
 }
 
@@ -1638,8 +1638,8 @@ static int replay(int argc, char **argv)
   if (save_raw)
     close_raw_files();
 
-  printf("Done.\n");
-
+  if (!result)
+    puts("\nTest passed");
   return result;
 }
 
@@ -2009,8 +2009,8 @@ static int record(int argc, char **argv)
   if (alloc_size != 0)
     TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
 
-  printf("Done.\n");
-
+  if (!result)
+    puts("\nDone");
   return result;
 }
 

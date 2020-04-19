@@ -564,5 +564,7 @@ main(int argc, char **argv)
       if (!done)
 	printf("skipping %s, no implementation\n", t->algo);
     }
+
+  puts("\nTest passed");
   return 0;
 }

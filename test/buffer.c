@@ -936,5 +936,6 @@ main(int argc, char **argv)
   test_scan_ok();
   test_scan_error();
 
+  puts("Test passed");
   return 0;
 }

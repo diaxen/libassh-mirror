@@ -959,6 +959,7 @@ int main(int argc, char **argv)
 	    packet_fuzz_bits, alloc_fuzz_fails, ev_err_count
 	    );
 
+  puts("\nTest passed");
   return 0;
 }
 

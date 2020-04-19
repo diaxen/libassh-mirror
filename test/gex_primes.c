@@ -105,7 +105,7 @@ int main(int argc, char **argv)
 
   assh_context_cleanup(&context);
 
-  printf("\nDone\n");
+  puts("\nTest passed");
   return 0;
 }
 

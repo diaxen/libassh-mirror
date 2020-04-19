@@ -2552,9 +2552,7 @@ int main()
   if (test_state != TEST28_ST_DONE)
     TEST_FAIL("");
 
-
-  printf("Done.\n");
-
+  puts("\n\nTest passed");
   return 0;
 }
 

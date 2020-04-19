@@ -262,7 +262,7 @@ int main(int argc, char **argv)
 
   test_load(16);
 
-  printf("\nDone.\n");
+  puts("\n\nTest passed");
   return 0;
 }
 

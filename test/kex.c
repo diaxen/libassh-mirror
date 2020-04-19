@@ -842,6 +842,7 @@ int main(int argc, char **argv)
 	      alloc_fuzz_fails
 	  );
 
+  puts("\nTest passed");
   return 0;
 }
 

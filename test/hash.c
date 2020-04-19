@@ -174,6 +174,7 @@ main(int argc, char **argv)
 	TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
     }
 
+  puts("\nTest passed");
   return 0;
 }
 

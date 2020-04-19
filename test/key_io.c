@@ -380,6 +380,6 @@ int main(int argc, char **argv)
   if (alloc_size != 0)
     TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
 
-  printf("\nDone.\n");
+  puts("\n\nTest passed");
   return 0;
 }

@@ -1160,6 +1160,7 @@ int main(int argc, char **argv)
 	  ch_eof_count, ch_event_eof_count, rekex_count, ev_err_count
 	  );
 
+  puts("\nTest passed");
   return 0;
 }
 

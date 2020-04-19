@@ -887,6 +887,7 @@ int main(int argc, char **argv)
 	    auth_client_err_count
 	    );
 
+  puts("\nTest passed");
   return 0;
 }
 
