@@ -55,14 +55,14 @@ static void list_formats(assh_bool_t internal)
   const struct assh_key_format_desc_s *f;
   unsigned i;
 
-  fprintf(stderr, "Supported key formats:\n");
+  printf("Supported key formats:\n");
   for (i = 0; i <= ASSH_KEY_FMT_LAST; i++)
     {
       f = assh_key_format_desc(i);
 #ifndef CONFIG_ASSH_DEBUG
       if (f->name && (internal || !f->internal))
 #endif
-        fprintf(stderr, "  %-20s (%s)\n", f->name, f->desc);
+        printf("  %-20s (%s)\n", f->name, f->desc);
     }
 }
 
@@ -90,10 +90,7 @@ static FILE * get_file(const char *file, int mode)
 {
   int fd = open(file, mode, 0600);
   if (fd < 0)
-    {
-      fprintf(stderr, "Can not open `%s' key file.\n", file);
-      exit(1);
-    }
+    ERROR("Can not open `%s' key file.\n", file);
   return fdopen(fd, mode & O_WRONLY ? "wb" : "rb");
 }
 
@@ -102,9 +99,9 @@ static void list_types()
   const struct assh_key_algo_s **types = key_algo_table;
   unsigned i;
 
-  fprintf(stderr, "Supported key types:\n");
+  printf("Supported key types:\n");
   for (i = 0; i < key_algo_table_size; i++)
-    fprintf(stderr, "  %s\n", types[i]->name);
+    printf("  %s\n", types[i]->name);
 }
 
 static const struct assh_key_algo_s * get_type(const char *type)
@@ -126,23 +123,24 @@ static const struct assh_key_algo_s * get_type(const char *type)
 static const char *
 get_passphrase(const char *prompt, struct assh_context_s *context)
 {
-  fputs(prompt, stderr);
+  fputs(prompt, stdout);
+  fflush(stdout);
 
   const char *p;
   if (asshh_fd_get_password(context, &p, 80, 0, 0))
     ERROR("Unable to read passphrase expected\n");
 
-  putc('\n', stderr);
+  putc('\n', stdout);
 
   return p;
 }
 
 static void usage(const char *program, assh_bool_t opts)
 {
-  fprintf(stderr, "usage: %s [-h | options] create|validate|convert|fingerprint\n", program);
+  printf("usage: %s [-h | options] create|validate|convert|fingerprint\n", program);
 
   if (opts)
-    fprintf(stderr, "List of available options:\n\n"
+    printf("List of available options:\n\n"
           "    -t algo    specify the type of the key\n"
           "    -b bits    specify the size of the key\n\n"
           "    -o file    specify the output file name\n"
@@ -228,7 +226,7 @@ int main(int argc, char *argv[])
           break;
 	case 'l':
 	  list_types();
-	  putc('\n', stderr);
+	  putc('\n', stdout);
 	  list_formats(0);
 	  return 0;
 	case 'L':
@@ -281,11 +279,11 @@ int main(int argc, char *argv[])
       if (ofile == NULL)
         ERROR("Missing -o option\n");
 
-      fprintf(stderr, "Generating key...\n");
+      printf("Generating key...\n");
       if (assh_key_create(context, &key, bits, type, ASSH_ALGO_ANY))
         ERROR("unable to create %zu bits key of type %s\n", bits, type->name);
 
-      fprintf(stderr, "Key algorithmic safety: %s (%u%%)\n",
+      printf("Key algorithmic safety: %s (%u%%)\n",
               assh_key_safety_name(key), assh_key_safety(key));
     }
 
@@ -297,7 +295,7 @@ int main(int argc, char *argv[])
       if (ifile == NULL)
         ERROR("Missing -i option\n");
 
-      fprintf(stderr, "Loading key...\n");
+      printf("Loading key...\n");
 
       while (1)                 /* retry passphrase prompt */
         {
@@ -308,7 +306,7 @@ int main(int argc, char *argv[])
               break;
 
             case ASSH_ERR_WRONG_KEY:
-              fprintf(stderr, "bad passphrase\n");
+              printf("bad passphrase\n");
               if (passphrase != NULL)
                 ERROR("Unable to load key\n"); /* do not retry when -p is used */
             case ASSH_ERR_MISSING_KEY:
@@ -325,14 +323,14 @@ int main(int argc, char *argv[])
         }
 
       if (type == NULL)
-        fprintf(stderr, "Key type: %s (%s)\n", assh_key_type_name(key),
+        printf("Key type: %s (%s)\n", assh_key_type_name(key),
                 key->private ? "private" : "public");
 
-      fprintf(stderr, "Key algorithmic safety: %s (%u%%)\n",
+      printf("Key algorithmic safety: %s (%u%%)\n",
               assh_key_safety_name(key), assh_key_safety(key));
 
       if (key->comment != NULL)
-        fprintf(stderr, "Key comment: %s\n", key->comment);
+        printf("Key comment: %s\n", key->comment);
     }
 
   /* start key validation as needed */
@@ -340,7 +338,7 @@ int main(int argc, char *argv[])
   if (action_mask & ASSH_KEYGEN_VALIDATE)
     {
 #ifdef CONFIG_ASSH_KEY_VALIDATE
-      fprintf(stderr, "Validating key...\n");
+      printf("Validating key...\n");
 
       enum assh_key_validate_result_e r;
       if (assh_key_validate(context, key, &r))
@@ -355,12 +353,12 @@ int main(int argc, char *argv[])
 
           case ASSH_KEY_NOT_CHECKED:
 #endif
-            fprintf(stderr, "warning: Checking of this key is not supported.\n");
+            printf("warning: Checking of this key is not supported.\n");
 #ifdef CONFIG_ASSH_KEY_VALIDATE
             break;
 
           case ASSH_KEY_PARTIALLY_CHECKED:
-            fprintf(stderr, "warning: This key can not be fully validated.\n");
+            printf("warning: This key can not be fully validated.\n");
             break;
 
           case ASSH_KEY_GOOD:
@@ -378,7 +376,7 @@ int main(int argc, char *argv[])
       if (ofmt == ASSH_KEY_FMT_NONE)
         ERROR("Missing -f option\n");
 
-      fprintf(stderr, "Saving key in %s format...\n", ofmt_desc->name);
+      printf("Saving key in %s format...\n", ofmt_desc->name);
 
       if (no_outpass || !ofmt_desc->encrypted)
         passphrase = NULL;
@@ -427,7 +425,7 @@ int main(int argc, char *argv[])
             break;
 
           if (err == ASSH_OK)
-            fprintf(stderr, "%-16s: %s\n", fpf_name, fp);
+            printf("%-16s: %s\n", fpf_name, fp);
 
           fpf++;
         }
@@ -440,7 +438,7 @@ int main(int argc, char *argv[])
   if (ofile != NULL)
     fclose(ofile);
 
-  fprintf(stderr, "Done.\n");
+  printf("Done.\n");
 
   return 0;
 }

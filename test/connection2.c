@@ -781,10 +781,9 @@ static int end_early_cleanup(int j, int n)
 
 static void usage()
 {
-  fprintf(stderr, "usage: connection2 [options]\n");
+  printf("usage: connection2 [options]\n");
 
-  fprintf(stderr,
-	  "Options:\n\n"
+  printf(	  "Options:\n\n"
 
 	  "    -h         show help\n"
 	  "    -e         test pass with early end\n"
@@ -799,6 +798,8 @@ static void usage()
 
 int main(int argc, char **argv)
 {
+  setvbuf(stdout, NULL, _IONBF, 0);
+
   if (assh_deps_init())
     return -1;
 
@@ -859,14 +860,14 @@ int main(int argc, char **argv)
 
       if (action & ACTION_EARLY_END)
 	{
-	  putc('e', stderr);
+	  putc('e', stdout);
 	  l++;
 	  test(&end_early_cleanup, 10000, 0, 0, 0);
 	}
 
       if (action & ACTION_DISCONNECT)
 	{
-	  putc('d', stderr);
+	  putc('d', stdout);
 	  l++;
 	  test(&end_disconnect, 1000000, 0, 0, 1);
 	}
@@ -874,7 +875,7 @@ int main(int argc, char **argv)
       if (action & ACTION_PACKET_FUZZ)
 	{
 	  packet_fuzz = 10 + assh_prng_rand() % 1024;
-	  putc('f', stderr);
+	  putc('f', stdout);
 	  l++;
 	  test(&end_wait_error, 10000, 0, 0, 0);
 	}
@@ -882,14 +883,14 @@ int main(int argc, char **argv)
       if (action & ACTION_ALLOC_FUZZ)
 	{
 	  packet_fuzz = 0;
-	  putc('a', stderr);
+	  putc('a', stdout);
 	  l++;
 	  test(&end_wait_error, 10000, 0, 4 + assh_prng_rand() % 32, 0);
 	}
 
       if (action & ACTION_ALL_FUZZ)
 	{
-	  putc('v', stderr);
+	  putc('v', stdout);
 	  l++;
 	  packet_fuzz = 10 + assh_prng_rand() % 1024;
 	  test(&end_disconnect, 10000,
@@ -901,15 +902,15 @@ int main(int argc, char **argv)
 
       if (l > 40)
 	{
-	  fprintf(stderr, " seed=%u\n", seed);
+	  printf(" seed=%u\n", seed);
 	  l = 0;
 	}
     }
 
   if (l)
-    fputc('\n', stderr);
+    putchar('\n');
 
-  fprintf(stderr, "\nSummary:\n"
+  printf("\nSummary:\n"
 	  "  %8lu request calls\n"
 	  "  %8lu request replies (success)\n"
 	  "  %8lu request replies (failed)\n"
@@ -950,7 +951,7 @@ int main(int argc, char **argv)
 	  );
 
   if (action & (ACTION_PACKET_FUZZ | ACTION_ALLOC_FUZZ | ACTION_ALL_FUZZ))
-    fprintf(stderr, "\nFuzzing:\n"
+    printf("\nFuzzing:\n"
 	    "  %8lu fuzz packet bit errors\n"
 	    "  %8lu fuzz memory allocation fails\n"
 	    "  %8lu event error\n"

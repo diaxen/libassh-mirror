@@ -442,7 +442,7 @@ void test_cipher(const struct cipher_test_s *t,
   void *ctx = malloc(ca->ctx_size);
   void *ctx2 = malloc(ca->ctx_size);
 
-  fprintf(stderr, "testing %s, %s: ",
+  printf("testing %s, %s: ",
 	  t->algo, ca->algo.implem);
 
   if (ca->f_init(&context, ctx, (const uint8_t*)t->key,
@@ -462,33 +462,33 @@ void test_cipher(const struct cipher_test_s *t,
       assh_bool_t tamper = ca->auth_size && (i == count - 1);
 
       /* encrypt */
-      fprintf(stderr, "E");
+      putchar('E');
       if (ca->f_process(ctx, buf, size, ASSH_CIPHER_PCK_TAIL, seq))
 	TEST_FAIL("encrypt %u", i);
 
       if (check_output)
 	{
-	  fprintf(stderr, "Q");
+	  putchar('Q');
 	  if (memcmp(buf, t->out + size * i, size))
 	    {
-	      assh_hexdump("output", buf, size);
-	      assh_hexdump("expected   ", t->out + size * i, size);
+	      assh_hexdump(stderr, "output", buf, size);
+	      assh_hexdump(stderr, "expected   ", t->out + size * i, size);
 	      TEST_FAIL("encrypt output %u", i);
 	    }
 	}
 
       if (tamper)
 	{
-	  fprintf(stderr, "t");
+	  putchar('t');
 	  buf[rand() % size] ^= 1 << (rand() % 8);
 	}
 
       /* decrypt */
-      fprintf(stderr, "d");
+      putchar('d');
       if (ca->f_process(ctx2, buf, t->head_size, ASSH_CIPHER_PCK_HEAD, seq))
 	TEST_FAIL("decrypt head %u", i);
 
-      fprintf(stderr, "D");
+      putchar('D');
       if (ca->auth_size)
 	{
 	  if (tamper == !ca->f_process(ctx2, buf, size, ASSH_CIPHER_PCK_TAIL, seq))
@@ -505,17 +505,17 @@ void test_cipher(const struct cipher_test_s *t,
 	{
 	  size_t j;
 
-	  fprintf(stderr, "q");
+	  putchar('q');
 	  for (j = 0; j < size - ca->auth_size; j++)
 	    if (buf[j] != 42)
 	      {
-		assh_hexdump("output", buf, size);
+		assh_hexdump(stderr, "output", buf, size);
 		TEST_FAIL("decrypt output %u", i);
 	      }
 	}
     }
 
-  fprintf(stderr, "\n");
+  printf("\n");
 
   ca->f_cleanup(&context, ctx);
   free(ctx);
@@ -529,6 +529,8 @@ void test_cipher(const struct cipher_test_s *t,
 int
 main(int argc, char **argv)
 {
+  setvbuf(stdout, NULL, _IONBF, 0);
+
   if (assh_deps_init())
     return -1;
 
@@ -560,7 +562,7 @@ main(int argc, char **argv)
 	}
 
       if (!done)
-	fprintf(stderr, "skipping %s, no implementation\n", t->algo);
+	printf("skipping %s, no implementation\n", t->algo);
     }
   return 0;
 }

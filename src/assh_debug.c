@@ -24,32 +24,39 @@
 
 #include <assh/assh.h>
 
-#include <stdio.h>
+#ifdef HAVE_STDIO_H
+# include <stdio.h>
+#endif
 
-void assh_hexdump(const char *name, const void *data, size_t len)
+void assh_hexdump(void *stream, const char *name,
+		  const void *data, size_t len)
 {
+#ifdef HAVE_STDIO_H
+  FILE *out = stream;
   size_t i, j;
   const uint8_t *data_ = data;
   const size_t width = 32;
 
-  fprintf(stderr, "--- %s (%zu bytes) ---\n", name, len);
+  fprintf(out, "--- %s (%zu bytes) ---\n", name, len);
   for (i = 0; i < len; i += width)
     {
 #if 1
       for (j = 0; j < width && i + j < len; j++)
-        fprintf(stderr, "%02x ", data_[i + j]);
+        fprintf(out, "%02x ", data_[i + j]);
       for (; j < width; j++)
-        fputs("   ", stderr);
+        fputs("   ", out);
       for (j = 0; j < width && i + j < len; j++)
-        fprintf(stderr, "%c", (unsigned)data_[i + j] - 32 < 96 ? data_[i + j] : '.');
-      fputc('\n', stderr);
+        fprintf(out, "%c", (unsigned)data_[i + j] - 32 < 96 ? data_[i + j] : '.');
+      fputc('\n', out);
 #else
-      fputc('"', stderr);
+      /* C string style output */
+      fputc('"', out);
       for (j = 0; j < width && i + j < len; j++)
-        fprintf(stderr, "\\x%02x", data_[i + j]);
-      fputc('"', stderr);
-      fputc('\n', stderr);
+        fprintf(out, "\\x%02x", data_[i + j]);
+      fputc('"', out);
+      fputc('\n', out);
 #endif
     }
-  fputc('\n', stderr);
+  fputc('\n', out);
+#endif
 }

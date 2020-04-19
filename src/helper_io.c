@@ -24,6 +24,7 @@
 #include <assh/helper_io.h>
 
 #include <unistd.h>
+#include <stdio.h>
 #include <errno.h>
 #include <sys/fcntl.h>
 #include <poll.h>

@@ -193,7 +193,7 @@ void bench(const struct kex_bench_s *t,
 			&assh_leaks_allocator, NULL, &assh_prng_dummy, NULL))
     TEST_FAIL("ctx init\n");
 
-  fprintf(stderr, "%-36s %-13s %3u-bit   ",
+  printf("%-36s %-13s %3u-bit   ",
 	  assh_algo_name(&ka->algo_wk.algo),
 	  ka->algo_wk.algo.implem,
 	  t->cipher_algo->key_size * 8);
@@ -300,18 +300,18 @@ void bench(const struct kex_bench_s *t,
   if (alloc_size != 0)
     TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
 
-  ssize_t l = 9 - fprintf(stderr, "%.1f", 1000000. * c / dt[0]);
+  ssize_t l = 9 - printf("%.1f", 1000000. * c / dt[0]);
   while (l-- > 0)
-    fputc(' ', stderr);
+    putchar(' ');
 
-  l = 9 - fprintf(stderr, "%.1f", 1000000. * c / dt[1]);
+  l = 9 - printf("%.1f", 1000000. * c / dt[1]);
   while (l-- > 0)
-    fputc(' ', stderr);
+    putchar(' ');
 
   if (ka->algo_wk.algo.variant)
-    fprintf(stderr, "   (%s)\n", ka->algo_wk.algo.variant);
+    printf("   (%s)\n", ka->algo_wk.algo.variant);
   else
-    fputc('\n', stderr);
+    putchar('\n');
 }
 
 int main(int argc, char **argv)
@@ -319,8 +319,7 @@ int main(int argc, char **argv)
   if (assh_deps_init())
     return -1;
 
-  fprintf(stderr,
-	  "  Kex algorithm                      Implem       Cipher     Sv.Kex/s  Cl.Kex/s\n"
+  printf(	  "  Kex algorithm                      Implem        Cipher    Sv.Kex/s Cl.Kex/s\n"
 	  "----------------------------------------------------------------------------------\n");
 
   uint_fast16_t i;

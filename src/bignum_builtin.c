@@ -28,7 +28,6 @@
 #include <assh/assh_alloc.h>
 
 #include <string.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 #ifdef CONFIG_ASSH_DEBUG
@@ -36,10 +35,10 @@ void
 assh_bignum_dump(const assh_bnword_t *x, size_t l)
 {
   size_t i;
-  fprintf(stderr, "0x");  
+  ASSH_DEBUG_("0x");  
   for (i = l; i-- > 0; )
-    fprintf(stderr, ASSH_BN_FMT, x[i]);
-  fprintf(stderr, "\n");  
+    ASSH_DEBUG_(ASSH_BN_FMT, x[i]);
+  ASSH_DEBUG_("\n");  
 }
 #endif
 

@@ -59,7 +59,7 @@ void test_const()
 
 	  struct assh_key_s *key;
 
-	  fprintf(stderr, "\n%s (%s) (%s) const sign/verify: ",
+	  printf("\n%s (%s) (%s) const sign/verify: ",
 		  assh_algo_name(&sa->algo_wk.algo), sa->algo_wk.algo.implem,
 		  sa->algo_wk.algo.variant ? sa->algo_wk.algo.variant : "");
 
@@ -75,7 +75,7 @@ void test_const()
 	  uint8_t key_blob[algos[i].key_len];
 	  memcpy(key_blob, algos[i].key, sizeof(key_blob));
 
-	  fprintf(stderr, "L");
+	  putchar('L');
 	  const uint8_t *kb = key_blob + 1;
 	  if (assh_key_load(context, &key, sa->algo_wk.key_algo, ASSH_ALGO_SIGN,
 			    key_blob[0], &kb, sizeof(key_blob) - 1))
@@ -92,18 +92,18 @@ void test_const()
 	  for (j = 0; j < sizeof(data); j++)
 	    data[j] = j;
 
-	  fprintf(stderr, "g");
+	  putchar('g');
 	  if (assh_sign_generate(context, sa, key, 3, d, NULL, &sign_len))
 	    TEST_FAIL("sign generate\n");
 
 	  if (algos[i].sign) {
-	    fprintf(stderr, "c");
+	    putchar('c');
 
 	    if (sign_len != algos[i].sign_len)
 	      {
 		fprintf(stderr, "expected len %zu\n", algos[i].sign_len);
 		fprintf(stderr, "wrong %zu\n", sign_len);
-		abort();
+		TEST_FAIL("wrong sign len");
 	      }
 	  }
 
@@ -115,12 +115,12 @@ void test_const()
 				!strcmp(algos[i].implem, sa->algo_wk.algo.implem)))
 	    if (memcmp(algos[i].sign, sign, sign_len))
 	      {
-		assh_hexdump("expected", algos[i].sign, sign_len);
-		assh_hexdump("wrong", sign, sign_len);
+		assh_hexdump(stderr, "expected", algos[i].sign, sign_len);
+		assh_hexdump(stderr, "wrong", sign, sign_len);
 		TEST_FAIL("unexpected signature\n");
 	      }
 
-	  fprintf(stderr, "v");
+	  putchar('v');
 	  assh_safety_t sign_safety;
 	  if (assh_sign_check(context, sa, key, 3, d, sign, sign_len, &sign_safety))
 	    TEST_FAIL("sign check\n");
@@ -130,7 +130,7 @@ void test_const()
 
 	  data[assh_prng_rand() % sizeof(data)]++;
 
-	  fprintf(stderr, "V");
+	  putchar('V');
 	  if (!assh_sign_check(context, sa, key, 3, d, sign, sign_len, &sign_safety))
 	    TEST_FAIL("sign check\n");
 
@@ -142,7 +142,7 @@ void test_const()
 	}
 
       if (!done)
-	fprintf(stderr, "skipping %s, no implementation\n", algos[i].algo);
+	printf("skipping %s, no implementation\n", algos[i].algo);
     }
 }
 
@@ -171,7 +171,7 @@ void test_load(unsigned int max_size)
 
 	  struct assh_key_s *key;
 
-	  fprintf(stderr, "\n%s (%s) (%s) const load/validate: ",
+	  printf("\n%s (%s) (%s) const load/validate: ",
 		  assh_algo_name(&sa->algo_wk.algo), sa->algo_wk.algo.implem,
 		  sa->algo_wk.algo.variant ? sa->algo_wk.algo.variant : "");
 
@@ -200,18 +200,18 @@ void test_load(unsigned int max_size)
 		  if (!r2)
 		    r2++;
 #ifdef CONFIG_ASSH_DEBUG_SIGN
-		  fprintf(stderr, "Mangling key byte %u, previous=0x%02x, new=0x%02x\n",
-			  r1, key_blob[r1], key_blob[r1] ^ r2);
+		  ASSH_DEBUG("Mangling key byte %u, previous=0x%02x, new=0x%02x\n",
+			     r1, key_blob[r1], key_blob[r1] ^ r2);
 #endif
 		  key_blob[r1] ^= r2;
-		  fprintf(stderr, "B");
+		  putchar('B');
 		}
 	      else
 		{
-		  fprintf(stderr, "G");
+		  putchar('G');
 		}
 
-	      fprintf(stderr, "l");
+	      putchar('l');
 	      const uint8_t *kb = key_blob + 1;
 	      assh_status_t err = assh_key_load(context, &key, sa->algo_wk.key_algo, ASSH_ALGO_SIGN,
 						key_blob[0], &kb, sizeof(key_blob) - 1);
@@ -222,7 +222,7 @@ void test_load(unsigned int max_size)
 		}
 	      else if (err == ASSH_OK)
 		{
-		  fprintf(stderr, "C");
+		  putchar('C');
 
 		  enum assh_key_validate_result_e r;
 		  if (assh_key_validate(context, key, &r))
@@ -242,25 +242,27 @@ void test_load(unsigned int max_size)
 	}
 
       if (!done)
-	fprintf(stderr, "skipping %s, no implementation\n", algos[i].algo);
+	printf("skipping %s, no implementation\n", algos[i].algo);
     }
 }
 
 int main(int argc, char **argv)
 {
+  setvbuf(stdout, NULL, _IONBF, 0);
+
   unsigned int s = argc > 1 ? atoi(argv[1]) : time(0);
 
   if (assh_deps_init())
     TEST_FAIL("deps init");
 
   assh_prng_seed(s);
-  fprintf(stderr, "Seed: %u", s);
+  printf("Seed: %u", s);
 
   test_const();
 
   test_load(16);
 
-  fprintf(stderr, "\nDone.\n");
+  printf("\nDone.\n");
   return 0;
 }
 

@@ -69,6 +69,8 @@ static int is_safe_prime(size_t bits, intptr_t offset, const uint8_t *base)
 
 int main(int argc, char **argv)
 {
+  setvbuf(stdout, NULL, _IONBF, 0);
+
   if (assh_deps_init())
     return -1;
 
@@ -84,9 +86,9 @@ int main(int argc, char **argv)
       intptr_t offset;
 
       if ((bits + 8) % 256)
-	fputc('.', stderr);
+	putchar('.');
       else
-	fprintf(stderr, " %tu / %u\n", bits, DH_MAX_GRSIZE);
+	printf(" %tu / %u\n", bits, DH_MAX_GRSIZE);
 
       assh_safeprime_get(&assh_safeprimes, bits, base, &offset);
 
@@ -103,7 +105,7 @@ int main(int argc, char **argv)
 
   assh_context_cleanup(&context);
 
-  fprintf(stderr, "\nDone\n");
+  printf("\nDone\n");
   return 0;
 }
 

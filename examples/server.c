@@ -159,7 +159,7 @@ its_open(struct assh_channel_s *ch)
       its->poll_index = -1;
       its_table[its_table_count++] = its;
 
-      fprintf(stderr, "[%u] Interactive session %p open\n",
+      printf("[%u] Interactive session %p open\n",
 	      getpid(), its);
     }
 
@@ -476,7 +476,7 @@ its_eof(struct its_s *its,
       abort();
     }
 
-  fprintf(stderr, "[%u] Interactive session %p eof\n",
+  printf("[%u] Interactive session %p eof\n",
 	  getpid(), its);
 
   close(its->child_stdin_fd);
@@ -504,7 +504,7 @@ its_close(struct its_s *its,
     ;
   its_table[i] = its_table[--its_table_count];
 
-  fprintf(stderr, "[%u] Interactive session %p closed\n",
+  printf("[%u] Interactive session %p closed\n",
 	  getpid(), its);
 
   free(its);
@@ -561,7 +561,7 @@ ssh_loop(struct assh_session_s *session,
 	case ASSH_EVENT_SESSION_ERROR:
           /* Any error reported to the assh_event_done function will
              end up here. */
-	  fprintf(stderr, "[%u] SSH error: %s\n", getpid(),
+	  printf("[%u] SSH error: %s\n", getpid(),
 		  assh_error_str(event.session.error.code));
 	  assh_event_done(session, &event, ASSH_OK);
 	  break;
@@ -727,7 +727,7 @@ static int
 server_connected(struct assh_context_s *context,
 		 int conn, const struct sockaddr_in *con_addr)
 {
-  fprintf(stderr, "[%u] Client connected\n", getpid());
+  printf("[%u] Client connected\n", getpid());
 
   /* init a session for the incoming connection */
   struct assh_session_s *session;
@@ -767,7 +767,7 @@ server_connected(struct assh_context_s *context,
        input events and any other ssh related events. */
   } while (ssh_loop(session, p));
 
-  fprintf(stderr, "[%u] Client disconnected\n", getpid());
+  printf("[%u] Client disconnected\n", getpid());
 
   assh_session_release(session);
   close(conn);
@@ -777,10 +777,10 @@ server_connected(struct assh_context_s *context,
                                                         /* anchor usage */
 static void usage(const char *program, assh_bool_t opts)
 {
-  fprintf(stderr, "usage: %s [-h | options]\n", program);
+  printf("usage: %s [-h | options]\n", program);
 
   if (opts)
-    fprintf(stderr, "List of available options:\n\n"
+    printf("List of available options:\n\n"
           "    -p port    specify the TCP port number\n"
 
           "    -h         show help\n");
@@ -852,7 +852,7 @@ int main(int argc, char **argv)
   signal(SIGPIPE, SIG_IGN);
   signal(SIGCHLD, SIG_IGN);
 
-  fprintf(stderr, "Listening on port %s\n", port);
+  printf("Listening on port %s\n", port);
 
                                                         /* anchor mainloop */
   while (1)

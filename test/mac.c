@@ -307,7 +307,7 @@ void test_mac(const struct mac_test_s *t,
   void *ectx = malloc(ma->ctx_size);
   void *dctx = malloc(ma->ctx_size);
 
-  fprintf(stderr, "testing %s, %s (%zu bytes): ",
+  printf("testing %s, %s (%zu bytes): ",
 	  t->algo, ma->algo.implem, in_size);
 
   if (ma->f_init(&context, ectx, (const uint8_t*)t->key, 1))
@@ -316,50 +316,50 @@ void test_mac(const struct mac_test_s *t,
   if (ma->f_init(&context, dctx, (const uint8_t*)t->key, 0))
     TEST_FAIL("process init");
 
-  fprintf(stderr, "C");
+  putchar('C');
   if (ma->f_process(ectx, in, in_size, out, seq))
     TEST_FAIL("process");
 
   if (memcmp(out, t->out, out_size))
     {
-      assh_hexdump("output", out, out_size);
-      assh_hexdump("expected", t->out, out_size);
+      assh_hexdump(stderr, "output", out, out_size);
+      assh_hexdump(stderr, "expected", t->out, out_size);
       TEST_FAIL("mac wrong output");
     }
 
-  fprintf(stderr, "1");
+  putchar('1');
   if (ma->f_process(dctx, in, in_size, out, seq))
     TEST_FAIL("check good");
 
-  fprintf(stderr, "t");
+  putchar('t');
   out[rand() % out_size] ^= 1 << (rand() % 8);
 
-  fprintf(stderr, "2");
+  putchar('2');
   if (!ma->f_process(dctx, in, in_size, out, seq))
     TEST_FAIL("check wrong");
 
   if (t->in == NULL)
     {
-      fprintf(stderr, "T");
+      putchar('T');
       in[rand() % in_size] ^= 1 << (rand() % 8);
 
-      fprintf(stderr, "3");
+      putchar('3');
       if (!ma->f_process(dctx, in, in_size, (uint8_t*)t->out, seq))
 	TEST_FAIL("check wrong");
 
-      fprintf(stderr, "c");
+      putchar('c');
       if (ma->f_process(ectx, in, in_size, out, seq))
 	TEST_FAIL("process");
 
       if (!memcmp(out, t->out, out_size))
 	{
-	  assh_hexdump("output", out, out_size);
-	  assh_hexdump("expected", t->out, out_size);
+	  assh_hexdump(stderr, "output", out, out_size);
+	  assh_hexdump(stderr, "expected", t->out, out_size);
 	  TEST_FAIL("mac good output");
 	}
     }
 
-  fprintf(stderr, "\n");
+  printf("\n");
 
   if (t->in == NULL)
     free(in);
@@ -375,6 +375,8 @@ void test_mac(const struct mac_test_s *t,
 int
 main(int argc, char **argv)
 {
+  setvbuf(stdout, NULL, _IONBF, 0);
+
   if (assh_deps_init())
     return -1;
 
@@ -406,7 +408,7 @@ main(int argc, char **argv)
 	}
 
       if (!done)
-	fprintf(stderr, "skipping %s, no implementation\n", t->algo);
+	printf("skipping %s, no implementation\n", t->algo);
     }
 
   return 0;

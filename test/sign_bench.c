@@ -72,7 +72,7 @@ static const struct sign_bench_s vectors[] =
 static void bench(const struct assh_algo_sign_s *sa,
 		  const struct assh_key_algo_s *ka, unsigned kbits)
 {
-  fprintf(stderr, "%-32s %-13s %4u-bit  ",
+  printf("%-32s %-13s %4u-bit  ",
 	  assh_algo_name(&sa->algo_wk.algo),
 	  sa->algo_wk.algo.implem, kbits);
 
@@ -120,9 +120,9 @@ static void bench(const struct assh_algo_sign_s *sa,
 
   } while (dt < 500000 && cycles < 1000);
 
-  ssize_t l = 9 - fprintf(stderr, "%.1f", 1000000. * cycles / dt);
+  ssize_t l = 9 - printf("%.1f", 1000000. * cycles / dt);
   while (l-- > 0)
-    fputc(' ', stderr);
+    putchar(' ');
 
   /* check */
   cycles = 0;
@@ -139,14 +139,14 @@ static void bench(const struct assh_algo_sign_s *sa,
 
   } while (dt < 500000 && cycles < 1000);
 
-  l = 9 - fprintf(stderr, "%.1f", 1000000. * cycles / dt);
+  l = 9 - printf("%.1f", 1000000. * cycles / dt);
   while (l-- > 0)
-    fputc(' ', stderr);
+    putchar(' ');
 
   if (sa->algo_wk.algo.variant)
-    fprintf(stderr, "   (%s)\n", sa->algo_wk.algo.variant);
+    printf("   (%s)\n", sa->algo_wk.algo.variant);
   else
-    fputc('\n', stderr);
+    putchar('\n');
 
   assh_key_drop(&context, &key);
   assh_context_cleanup(&context);
@@ -157,8 +157,7 @@ int main()
   if (assh_deps_init())
     return -1;
 
-  fprintf(stderr,
-	  "  Algorithm                      Implem         Key      Sign/s   Verify/s\n"
+  printf(	  "  Algorithm                      Implem         Key      Sign/s   Verify/s\n"
 	  "--------------------------------------------------------------------------\n");
 
   uint_fast16_t i;

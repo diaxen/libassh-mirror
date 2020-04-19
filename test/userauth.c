@@ -589,10 +589,9 @@ static int test()
 
 static void usage()
 {
-  fprintf(stderr, "usage: userauth [options]\n");
+  printf("usage: userauth [options]\n");
 
-  fprintf(stderr,
-	  "Options:\n\n"
+  printf(	  "Options:\n\n"
 
 	  "    -h         show help\n"
 	  "    -t         run non-fuzzing tests\n"
@@ -617,6 +616,8 @@ static int algo_register(struct assh_context_s *c)
 
 int main(int argc, char **argv)
 {
+  setvbuf(stdout, NULL, _IONBF, 0);
+
   if (assh_deps_init())
     return -1;
 
@@ -700,7 +701,7 @@ int main(int argc, char **argv)
       if (assh_key_algo_by_name(&context[1], ASSH_ALGO_SIGN,
 				kn, strlen(kn), &ka))
 	{
-	  fprintf(stderr, "skipping %s key type, not supported\n", kn);
+	  printf("skipping %s key type, not supported\n", kn);
 	  continue;
 	}
 
@@ -752,7 +753,7 @@ int main(int argc, char **argv)
 	{
 	  alloc_fuzz = 0;
 	  packet_fuzz = 0;
-	  putc('t', stderr);
+	  putc('t', stdout);
 	  l++;
 	  if (test())
 	    return 1;
@@ -763,7 +764,7 @@ int main(int argc, char **argv)
 	{
 	  alloc_fuzz = 0;
 	  packet_fuzz = 10 + assh_prng_rand() % 1024;
-	  putc('p', stderr);
+	  putc('p', stdout);
 	  l++;
 	  test();
 	}
@@ -773,7 +774,7 @@ int main(int argc, char **argv)
 	{
 	  alloc_fuzz = 4 + assh_prng_rand() % 32;
 	  packet_fuzz = 0;
-	  putc('a', stderr);
+	  putc('a', stdout);
 	  l++;
 	  test();
 	}
@@ -782,20 +783,20 @@ int main(int argc, char **argv)
 	{
 	  alloc_fuzz = 4 + assh_prng_rand() % 32;
 	  packet_fuzz = 10 + assh_prng_rand() % 1024;
-	  putc('f', stderr);
+	  putc('f', stdout);
 	  l++;
 	  test();
 	}
 
       if (l > 40)
 	{
-	  fprintf(stderr, " seed=%u\n", seed + k);
+	  printf(" seed=%u\n", seed + k);
 	  l = 0;
 	}
     }
 
   if (l)
-    fputc('\n', stderr);
+    putchar('\n');
 
   /* release user keys */
   for (i = 0; i < TEST_KEYS_COUNT; i++)
@@ -813,7 +814,7 @@ int main(int argc, char **argv)
   if (alloc_size != 0)
     TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
 
-  fprintf(stderr, "\nSummary:\n"
+  printf("\nSummary:\n"
 	  "  %8lu authentication completion count\n"
 	  "  %8lu server public key found count\n"
 	  "  %8lu server public key wrong count\n"
@@ -872,8 +873,7 @@ int main(int argc, char **argv)
 	  );
 
   if (action & (ACTION_PACKET_FUZZ | ACTION_ALLOC_FUZZ | ACTION_ALL_FUZZ))
-    fprintf(stderr,
-	    "\nFuzzing:\n"
+    printf(	    "\nFuzzing:\n"
 	    "  %8lu memory allocation fails\n"
 	    "  %8lu packet bit errors\n"
 	    "  %8lu protocol stall count\n"

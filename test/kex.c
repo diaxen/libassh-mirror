@@ -352,7 +352,7 @@ void test(const struct assh_algo_kex_s *ka,
   uint_fast8_t started = 0;
   struct assh_channel_s *ch[2];
 
-  fprintf(stderr, "%u: %s (%s), %s, %s, %s, %s\n", seed,
+  printf("%u: %s (%s), %s, %s, %s, %s\n", seed,
 	  assh_algo_name(&ka->algo_wk.algo), ka->algo_wk.algo.implem,
 	  assh_algo_name(&sa->algo_wk.algo),
 	  assh_algo_name(&ca->algo), assh_algo_name(&ma->algo),
@@ -529,9 +529,9 @@ algo_lookup(enum assh_algo_class_e cl, const char *name,
   if (r)
     {
       if (variant)
-	fprintf(stderr, "  %s (%s) not supported\n", name, variant);
+	printf("  %s (%s) not supported\n", name, variant);
       else
-	fprintf(stderr, "  %s not supported\n", name);
+	printf("  %s not supported\n", name);
     }
 
   return r;
@@ -641,7 +641,7 @@ void test_loop(unsigned int seed,
 	    }
 
 	  if (!kex_done)
-	    fprintf(stderr, "  %s skipped, not supported\n", kex->algo);
+	    printf("  %s skipped, not supported\n", kex->algo);
 	}
 
       kex++;
@@ -650,10 +650,9 @@ void test_loop(unsigned int seed,
 
 static void usage()
 {
-  fprintf(stderr, "usage: kex [options]\n");
+  printf("usage: kex [options]\n");
 
-  fprintf(stderr,
-	  "Options:\n\n"
+  printf(	  "Options:\n\n"
 
 	  "    -h         show help\n"
 	  "    -t         run non-fuzzing tests\n"
@@ -673,6 +672,8 @@ static void usage()
 
 int main(int argc, char **argv)
 {
+  setvbuf(stdout, NULL, _IONBF, 0);
+
   if (assh_deps_init())
     return -1;
 
@@ -820,7 +821,7 @@ int main(int argc, char **argv)
 	}
     }
 
-  fprintf(stderr, "\nSummary:\n"
+  printf("\nSummary:\n"
 	      "  %8lu client kex done\n"
 	      "  %8lu server kex done\n"
 	      "  %8lu client host key lookup\n"
@@ -833,7 +834,7 @@ int main(int argc, char **argv)
 	  );
 
   if (action & (ACTION_PACKET_FUZZ | ACTION_ALLOC_FUZZ | ACTION_ALL_FUZZ))
-    fprintf(stderr, "\nFuzzing:\n"
+    printf("\nFuzzing:\n"
 	      "  %8lu fuzz packet bit errors\n"
 	      "  %8lu fuzz memory allocation fails\n"
 	      ,

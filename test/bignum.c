@@ -262,11 +262,7 @@ void test_convert()
 
   /********************/
 
-  fprintf(stderr, "v");
-  return;
-
-  fprintf(stderr, "Convert error\n");
-  TEST_FAIL();
+  putchar('v');
 }
 
 #undef ASSH_BOP_PRINT
@@ -983,8 +979,8 @@ void test_ops()
 		size_t s = 4 + assh_load_u32((const uint8_t*)t->r);
 		if (memcmp(buf, t->r, s))
 		  {
-		    assh_hexdump("result", buf, s);
-		    assh_hexdump("expected", t->r, s);
+		    assh_hexdump(stderr, "result", buf, s);
+		    assh_hexdump(stderr, "expected", t->r, s);
 		    TEST_FAIL();
 		  }
 	      }
@@ -997,7 +993,7 @@ void test_ops()
 
   }
 
-  fprintf(stderr, "o");
+  putchar('o');
 }
 
 void test_add_sub(unsigned int count)
@@ -1070,7 +1066,7 @@ void test_add_sub(unsigned int count)
         TEST_FAIL();
     }
 
-  fprintf(stderr, "a");
+  putchar('a');
 }
 
 void test_div(unsigned int count)
@@ -1174,7 +1170,7 @@ void test_div(unsigned int count)
         TEST_FAIL();
     }
 
-  fprintf(stderr, "d");
+  putchar('d');
 }
 
 assh_status_t test_move(unsigned int count)
@@ -1221,7 +1217,7 @@ assh_status_t test_move(unsigned int count)
       ASSH_RET_IF_TRUE(memcmp(mpa, mpb, s+4), ASSH_ERR_BAD_DATA);
     }
 
-  fprintf(stderr, "c");
+  putchar('c');
   return ASSH_OK;
 }
 
@@ -1268,7 +1264,7 @@ void test_modinv(unsigned int count)
         TEST_FAIL();
     }
 
-  fprintf(stderr, "i");
+  putchar('i');
 }
 
 
@@ -1320,7 +1316,7 @@ void test_mt(unsigned int count)
         TEST_FAIL();
     }
 
-  fprintf(stderr, "m");
+  putchar('m');
 }
 
 /* test expmod. uses div, mul, modinv */
@@ -1390,11 +1386,13 @@ void test_expmod(unsigned int count)
                                         "TTTTTTTTTTMm", prime1));
     }
 
-  fprintf(stderr, "e");
+  putchar('e');
 }
 
 int main(int argc, char **argv)
 {
+  setvbuf(stdout, NULL, _IONBF, 0);
+
   if (assh_deps_init())
     return -1;
 
@@ -1421,7 +1419,7 @@ int main(int argc, char **argv)
 
   assh_context_cleanup(&context);
 
-  fprintf(stderr, "\nDone\n");
+  printf("\nDone\n");
   return 0;
 }
 

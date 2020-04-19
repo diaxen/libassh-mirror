@@ -114,7 +114,7 @@ static void test_algo(struct assh_context_s *c, size_t count)
       if (assh_key_algo_by_name(c, ASSH_ALGO_ANY, t->key_algo,
 				strlen(t->key_algo), &ka))
 	{
-	  fprintf(stderr, "skipping %s, no implementation\n", t->key_algo);
+	  printf("skipping %s, no implementation\n", t->key_algo);
 	  continue;
 	}
 
@@ -123,7 +123,7 @@ static void test_algo(struct assh_context_s *c, size_t count)
 	  if (!key_algo || format != t->format || strcmp(key_algo, t->key_algo))
 	    {
 	      format = t->format;
-	      fprintf(stderr, "\n%s, %s format: ",
+	      printf("\n%s, %s format: ",
 		      t->key_algo, assh_key_format_desc(t->format)->name);
 	    }
 
@@ -133,11 +133,12 @@ static void test_algo(struct assh_context_s *c, size_t count)
 	      /* create new key */
 	      size_t bits = t->bits_min + assh_prng_rand() % (t->bits_max - t->bits_min + 1);
 	      assh_key_drop(c, &key1);
+	      putchar('N');
 	      TEST_ASSERT(!assh_key_create(c, &key1, bits, ka, ASSH_ALGO_SIGN));
 	    }
 
 	  /* get estimated size of key blob */
-	  fprintf(stderr, "o");
+	  putchar('o');
 	  size_t blob_len1 = 0, blob_len2 = 0;
 	  TEST_ASSERT(!assh_key_output(c, key1, NULL, &blob_len1, t->format));
 	  TEST_ASSERT(blob_len1 > 0 && blob_len1 < (1 << 20));
@@ -147,7 +148,7 @@ static void test_algo(struct assh_context_s *c, size_t count)
 	  TEST_ASSERT(blob1 != NULL);
 
 	  /* store key blob to memory */
-	  fprintf(stderr, "O");
+	  putchar('O');
 	  blob_len2 = blob_len1;
 	  TEST_ASSERT(!assh_key_output(c, key1, blob1, &blob_len2, t->format));
 
@@ -158,7 +159,7 @@ static void test_algo(struct assh_context_s *c, size_t count)
 	  const uint8_t *blob2 = blob1;
 	  size_t padding = assh_prng_rand() % 32;	/* may load from large buffer */
 
-	  fprintf(stderr, "l");
+	  putchar('l');
 	  TEST_ASSERT(!assh_key_load(c, &key2, ka, ASSH_ALGO_SIGN, t->format,
 				     &blob2, blob_len2 + padding));
 
@@ -278,7 +279,7 @@ static void test_helper(struct assh_context_s *c, size_t count)
 
       if (assh_key_algo_by_name(c, ASSH_ALGO_ANY, t->key_algo, strlen(t->key_algo), &ka))
 	{
-	  fprintf(stderr, "skipping %s, no implementation\n", t->key_algo);
+	  printf("skipping %s, no implementation\n", t->key_algo);
 	  continue;
 	}
 
@@ -287,7 +288,7 @@ static void test_helper(struct assh_context_s *c, size_t count)
 	  if (!key_algo || format != t->format || strcmp(key_algo, t->key_algo))
 	    {
 	      format = t->format;
-	      fprintf(stderr, "\n%s, %s format: ",
+	      printf("\n%s, %s format: ",
 		      t->key_algo, assh_key_format_desc(t->format)->name);
 	    }
 
@@ -295,8 +296,9 @@ static void test_helper(struct assh_context_s *c, size_t count)
 	      t->bits_min != bits_min || t->bits_max != bits_max)
 	    {
 	      /* create new key */
-	      assh_key_drop(c, &key1);
 	      size_t bits = t->bits_min + assh_prng_rand() % (t->bits_max - t->bits_min + 1);
+	      assh_key_drop(c, &key1);
+	      putchar('N');
 	      TEST_ASSERT(!assh_key_create(c, &key1, bits, ka, ASSH_ALGO_SIGN));
 	    }
 
@@ -304,11 +306,11 @@ static void test_helper(struct assh_context_s *c, size_t count)
 	    TEST_ASSERT(!assh_key_comment(c, key1, t->comment));
 
 	  /* save key to file */
-	  fprintf(stderr, "s");
+	  putchar('s');
 	  TEST_ASSERT(!asshh_key_save_filename(c, key1, "test.key", t->format, t->pass));
 
 	  /* reload key from file */
-	  fprintf(stderr, "l");
+	  putchar('l');
 	  TEST_ASSERT(!asshh_key_load_filename(c, &key2, t->key_algo,
 		       ASSH_ALGO_SIGN, "test.key", t->format, t->pass, 0));
 
@@ -345,6 +347,8 @@ static void test_helper(struct assh_context_s *c, size_t count)
 
 int main(int argc, char **argv)
 {
+  setvbuf(stdout, NULL, _IONBF, 0);
+
   struct assh_context_s *context;
 
   if (assh_deps_init())
@@ -362,7 +366,7 @@ int main(int argc, char **argv)
 
   int t = time(0);
   assh_prng_seed(t);
-  fprintf(stderr, "Seed: %u", t);
+  printf("Seed: %u", t);
 
   test_algo(context, acount);
 
@@ -376,6 +380,6 @@ int main(int argc, char **argv)
   if (alloc_size != 0)
     TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
 
-  fprintf(stderr, "\nDone.\n");
+  printf("\nDone.\n");
   return 0;
 }

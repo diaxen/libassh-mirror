@@ -32,8 +32,8 @@
 int
 main(int argc, char **argv)
 {
-//  if (assh_deps_init())
-//    return -1;
+  if (assh_deps_init())
+    return -1;
 
   struct assh_context_s context;
 
@@ -53,7 +53,7 @@ main(int argc, char **argv)
       uint8_t buf[len];
       if (assh_prng_get(&context, buf, len, ASSH_PRNG_QUALITY_LONGTERM_KEY))
 	TEST_FAIL("prng get");
-      assh_hexdump("ltk", buf, sizeof(buf));
+      assh_hexdump(stdout, "ltk", buf, sizeof(buf));
     }
 
   assh_context_cleanup(&context);

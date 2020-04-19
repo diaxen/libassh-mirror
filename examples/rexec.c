@@ -229,7 +229,7 @@ int main(int argc, char **argv)
     }
 
                                                         /* anchor cleanup */
-  fprintf(stderr, "Connection closed\n");
+  printf("Connection closed\n");
 
   assh_session_release(session);
   assh_context_release(context);

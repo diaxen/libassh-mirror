@@ -40,7 +40,7 @@ static size_t cycles = 10;
 
 static void bench(const struct assh_algo_cipher_s *ca)
 {
-  fprintf(stderr, "%-30s %-13s  ",
+  printf("%-30s %-13s  ",
 	  assh_algo_name(&ca->algo),
 	  ca->algo.implem);
 
@@ -86,10 +86,10 @@ static void bench(const struct assh_algo_cipher_s *ca)
     dte = ((uint64_t)tp_end.tv_sec * 1000000 + tp_end.tv_usec) -
       ((uint64_t)tp_start.tv_sec * 1000000 + tp_start.tv_usec);
 
-    ssize_t l = 15 - fprintf(stderr, "%.2f MB/s",
+    ssize_t l = 15 - printf("%.2f MB/s",
 			     ((double)s * cycles) / dte);
     while (l-- > 0)
-      fputc(' ', stderr);
+      putchar(' ');
 
     ca->f_cleanup(&context, ectx);
   }
@@ -143,7 +143,7 @@ static void bench(const struct assh_algo_cipher_s *ca)
     if (ca->auth_size)
       dtd -= dte;
 
-    fprintf(stderr, " %.2f MB/s\n",
+    printf(" %.2f MB/s\n",
 	    ((double)s * cycles) / dtd);
 
     ca->f_cleanup(&context, ectx);
@@ -161,8 +161,7 @@ int main()
   if (assh_deps_init())
     return -1;
 
-  fprintf(stderr,
-	  "  Algorithm                      Implem       Encrypt         Decrypt\n"
+  printf(	  "  Algorithm                      Implem       Encrypt         Decrypt\n"
 	  "--------------------------------------------------------------------------\n");
 
   if (data_size < 1024)

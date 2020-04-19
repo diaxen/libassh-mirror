@@ -290,7 +290,8 @@ const char * assh_error_str(assh_status_t err);
 #define ASSH_REKEX_THRESHOLD (1 << 31)
 
 /** @internal */
-void assh_hexdump(const char *name, const void *data, size_t len);
+void assh_hexdump(void *stream, const char *name,
+		  const void *data, size_t len);
 
 /** @internal @This takes an @ref assh_status_t value returned by a
     function and asserts that the error code is @ref ASSH_OK. */
@@ -361,14 +362,14 @@ void assh_hexdump(const char *name, const void *data, size_t len);
     return (expr);                              \
   } while (0)
 
-#else
+#elif defined(HAVE_STDIO_H)
 
 #include <stdio.h>
 
 /** @internal @multiple */
 # define ASSH_DEBUG(...) fprintf(stderr, "assh_debug: " __VA_ARGS__)
 # define ASSH_DEBUG_(...) fprintf(stderr, __VA_ARGS__)
-# define ASSH_DEBUG_HEXDUMP(...) assh_hexdump(__VA_ARGS__)
+# define ASSH_DEBUG_HEXDUMP(...) assh_hexdump(stderr, __VA_ARGS__)
 
 # ifndef CONFIG_ASSH_CALLTRACE
 

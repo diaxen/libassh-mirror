@@ -535,20 +535,16 @@ void test(int (*fend)(int, int), int n, int evrate)
 
 		  if (rqe->type_len != e->type.len)
 		    {
-#ifdef CONFIG_ASSH_DEBUG
-		      assh_hexdump("rq", rqe->type, rqe->type_len);
-		      assh_hexdump("ev", e->type.str, e->type.len);
-#endif
+		      ASSH_DEBUG_HEXDUMP("rq", rqe->type, rqe->type_len);
+		      ASSH_DEBUG_HEXDUMP("ev", e->type.str, e->type.len);
 		      TEST_FAIL("(ctx %u seed %u) request.type_len: rq:%u ev:%zu\n",
 				i, seed, rqe->type_len, e->type.len);
 		    }
 
 		  if (e->type.len && memcmp(rqe->type, e->type.str, e->type.len))
 		    {
-#ifdef CONFIG_ASSH_DEBUG
-		      assh_hexdump("rq", rqe->type, rqe->type_len);
-		      assh_hexdump("ev", e->type.str, e->type.len);
-#endif
+		      ASSH_DEBUG_HEXDUMP("rq", rqe->type, rqe->type_len);
+		      ASSH_DEBUG_HEXDUMP("ev", e->type.str, e->type.len);
 		      TEST_FAIL("(ctx %u seed %u) request.type\n", i, seed);
 		    }
 
@@ -558,10 +554,8 @@ void test(int (*fend)(int, int), int n, int evrate)
 
 		  if (e->rq_data.size && memcmp(rqe->rq_data, e->rq_data.data, e->rq_data.size))
 		    {
-#ifdef CONFIG_ASSH_DEBUG
-		      assh_hexdump("rq", rqe->rq_data, rqe->data_len);
-		      assh_hexdump("ev", e->rq_data.data, e->rq_data.size);
-#endif
+		      ASSH_DEBUG_HEXDUMP("rq", rqe->rq_data, rqe->data_len);
+		      ASSH_DEBUG_HEXDUMP("ev", e->rq_data.data, e->rq_data.size);
 		      TEST_FAIL("(ctx %u seed %u) request.data\n", i, seed);
 		    }
 
@@ -689,10 +683,8 @@ void test(int (*fend)(int, int), int n, int evrate)
 
 		  if (e->rsp_data.size && memcmp(rqe->rsp_data, e->rsp_data.data, e->rsp_data.size))
 		    {
-#ifdef CONFIG_ASSH_DEBUG
-		      assh_hexdump("rq", rqe->rsp_data, rqe->data_len);
-		      assh_hexdump("ev", e->rsp_data.data, e->rsp_data.size);
-#endif
+		      ASSH_DEBUG_HEXDUMP("rq", rqe->rsp_data, rqe->data_len);
+		      ASSH_DEBUG_HEXDUMP("ev", e->rsp_data.data, e->rsp_data.size);
 		      TEST_FAIL("(ctx %u seed %u) request_reply.rsp_data.data\n", i, seed);
 		    }
 		}
@@ -794,10 +786,8 @@ void test(int (*fend)(int, int), int n, int evrate)
 
 		  if (e->type.len && memcmp(che->type, e->type.str, e->type.len))
 		    {
-#ifdef CONFIG_ASSH_DEBUG
-		      assh_hexdump("ch", che->type, che->type_len);
-		      assh_hexdump("ev", e->type.str, e->type.len);
-#endif
+		      ASSH_DEBUG_HEXDUMP("ch", che->type, che->type_len);
+		      ASSH_DEBUG_HEXDUMP("ev", e->type.str, e->type.len);
 		      TEST_FAIL("(ctx %u seed %u) channel_open.type\n", i, seed);
 		    }
 
@@ -807,10 +797,8 @@ void test(int (*fend)(int, int), int n, int evrate)
 
 		  if (e->rq_data.size && memcmp(che->data, e->rq_data.data, e->rq_data.size))
 		    {
-#ifdef CONFIG_ASSH_DEBUG
-		      assh_hexdump("ch", che->data, che->data_len);
-		      assh_hexdump("ev", e->rq_data.data, e->rq_data.size);
-#endif
+		      ASSH_DEBUG_HEXDUMP("ch", che->data, che->data_len);
+		      ASSH_DEBUG_HEXDUMP("ev", e->rq_data.data, e->rq_data.size);
 		      TEST_FAIL("(ctx %u seed %u) channel_open.data\n", i, seed);
 		    }
 		}
@@ -879,10 +867,8 @@ void test(int (*fend)(int, int), int n, int evrate)
 
 		  if (e->rsp_data.size && memcmp(che->data, e->rsp_data.data, e->rsp_data.size))
 		    {
-#ifdef CONFIG_ASSH_DEBUG
-		      assh_hexdump("ch", che->data, che->data_len);
-		      assh_hexdump("ev", e->rsp_data.data, e->rsp_data.size);
-#endif
+		      ASSH_DEBUG_HEXDUMP("ch", che->data, che->data_len);
+		      ASSH_DEBUG_HEXDUMP("ev", e->rsp_data.data, e->rsp_data.size);
 		      TEST_FAIL("(ctx %u seed %u) channel_open_reply.data\n", i, seed);
 		    }
 		}
@@ -1044,10 +1030,9 @@ static int end_early_cleanup(int j, int n)
 
 static void usage()
 {
-  fprintf(stderr, "usage: connection [options]\n");
+  printf("usage: connection [options]\n");
 
-  fprintf(stderr,
-	  "Options:\n\n"
+  printf(	  "Options:\n\n"
 
 	  "    -h         show help\n"
 	  "    -r         pass end when there is no more request/channel\n"
@@ -1060,6 +1045,8 @@ static void usage()
 
 int main(int argc, char **argv)
 {
+  setvbuf(stdout, NULL, _IONBF, 0);
+
   if (assh_deps_init())
     return -1;
 
@@ -1111,21 +1098,21 @@ int main(int argc, char **argv)
 
       if (action & ACTION_NO_MORE_RQ)
 	{
-	  putc('r', stderr);
+	  putc('r', stdout);
 	  l++;
 	  test(&end_no_more_requests, 10000, 0);
 	}
 
       if (action & ACTION_EARLY_END)
 	{
-	  putc('e', stderr);
+	  putc('e', stdout);
 	  l++;
 	  test(&end_early_cleanup, 10000, 0);
 	}
 
       if (action & ACTION_WAIT_ERROR)
 	{
-	  putc('w', stderr);
+	  putc('w', stdout);
 	  l++;
 	  test(&end_wait_error, 10000, assh_prng_rand() % 256 + 16);
 	}
@@ -1134,15 +1121,15 @@ int main(int argc, char **argv)
 
       if (l > 40)
 	{
-	  fprintf(stderr, " seed=%u\n", seed + k);
+	  printf(" seed=%u\n", seed + k);
 	  l = 0;
 	}
     }
 
   if (l)
-    fputc('\n', stderr);
+    putchar('\n');
 
-  fprintf(stderr, "Summary:\n"
+  printf("Summary:\n"
 	  "  %8lu request calls\n"
 	  "  %8lu request replies (success)\n"
 	  "  %8lu request replies (failed)\n"

@@ -73,7 +73,7 @@ void test_sign(unsigned int max_size, enum action_e action)
 
 	  struct assh_key_s *key, *key2;
 
-	  fprintf(stderr, "\n%s (%s) (%s) sign/verify: ",
+	  printf("\n%s (%s) (%s) sign/verify: ",
 		  assh_algo_name(&sa->algo_wk.algo), sa->algo_wk.algo.implem,
 		  sa->algo_wk.algo.variant ? sa->algo_wk.algo.variant : "");
 
@@ -89,7 +89,7 @@ void test_sign(unsigned int max_size, enum action_e action)
 	  uint8_t key_blob[algos[i].key_len];
 	  memcpy(key_blob, algos[i].key, sizeof(key_blob));
 
-	  fprintf(stderr, "L");
+	  putchar('L');
 	  const uint8_t *kb = key_blob + 1;
 	  if (assh_key_load(context, &key2, sa->algo_wk.key_algo, ASSH_ALGO_SIGN,
 			    key_blob[0], &kb, sizeof(key_blob) - 1))
@@ -118,13 +118,13 @@ void test_sign(unsigned int max_size, enum action_e action)
 		{
 		  size_t kbits = algos[i].kbits_min + assh_prng_rand()
 		    % (algos[i].kbits_max - algos[i].kbits_min + 1);
-		  fprintf(stderr, "N");
+		  putchar('N');
 		  if (assh_key_create(context, &key, kbits,
 				      sa->algo_wk.key_algo, ASSH_ALGO_SIGN))
 		    TEST_FAIL("key create");
 
 # ifdef CONFIG_ASSH_KEY_VALIDATE
-		  fprintf(stderr, "C");
+		  putchar('C');
 		  enum assh_key_validate_result_e r;
 		  if (assh_key_validate(context, key, &r))
 		    TEST_FAIL("key validate");
@@ -160,7 +160,7 @@ void test_sign(unsigned int max_size, enum action_e action)
 
 	      size_t sign_len;
 
-	      fprintf(stderr, "g");
+	      putchar('g');
 
 	      if (assh_sign_generate(context, sa, key, c, d, NULL, &sign_len))
 		TEST_FAIL("sign generate");
@@ -170,7 +170,7 @@ void test_sign(unsigned int max_size, enum action_e action)
 	      if (assh_sign_generate(context, sa, key, c, d, sign, &sign_len))
 		TEST_FAIL("sign generate");
 
-	      fprintf(stderr, "v");
+	      putchar('v');
 
 	      assh_safety_t sign_safety;
 
@@ -193,7 +193,7 @@ void test_sign(unsigned int max_size, enum action_e action)
 			mc = aash_fuzz_mangle(sign2, sign_len, 10 + assh_prng_rand() % 1024);
 		      } while (!mc);
 
-		      fprintf(stderr, "V");
+		      putchar('V');
 
 		      err = assh_sign_check(context, sa, key, c, d, sign2, sign_len, &sign_safety);
 
@@ -209,7 +209,7 @@ void test_sign(unsigned int max_size, enum action_e action)
 		  r2 += !r2;
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
-		  fprintf(stderr, "Mangling data byte %u, previous=0x%02x, new=0x%02x\n",
+		  ASSH_DEBUG("Mangling data byte %u, previous=0x%02x, new=0x%02x\n",
 			  r1, data[r1], data[r1] ^ r2);
 #endif
 		  data[r1] ^= r2;
@@ -232,16 +232,15 @@ void test_sign(unsigned int max_size, enum action_e action)
 	}
 
       if (!done)
-	fprintf(stderr, "skipping %s, no implementation\n", algos[i].algo);
+	printf("skipping %s, no implementation\n", algos[i].algo);
     }
 }
 
 static void usage()
 {
-  fprintf(stderr, "usage: signature2 [options]\n");
+  printf("usage: signature2 [options]\n");
 
-  fprintf(stderr,
-	  "Options:\n\n"
+  printf(	  "Options:\n\n"
 
 	  "    -h         show help\n"
 #ifdef CONFIG_ASSH_KEY_CREATE
@@ -259,6 +258,8 @@ static void usage()
 
 int main(int argc, char **argv)
 {
+  setvbuf(stdout, NULL, _IONBF, 0);
+
   if (assh_deps_init())
     TEST_FAIL("deps init");
 
@@ -305,12 +306,12 @@ int main(int argc, char **argv)
     action = ACTION_NEW_KEYS | ACTION_VALIDATE_KEYS;
 
   assh_prng_seed(seed);
-  fprintf(stderr, "Seed: %u", seed);
+  printf("Seed: %u", seed);
 
   while (count--)
     test_sign(max_size, action);
 
-  fprintf(stderr, "\nDone.\n");
+  printf("\nDone.\n");
   return 0;
 }
 

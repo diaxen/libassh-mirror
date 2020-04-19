@@ -95,7 +95,7 @@ int main(int argc, char **argv)
 
   signal(SIGPIPE, SIG_IGN);
 
-  fprintf(stderr, "Listening on port 22222\n");
+  printf("Listening on port 22222\n");
 
 							/* anchor initc */
   /* init an assh server context */
@@ -130,7 +130,7 @@ int main(int argc, char **argv)
       if (conn < 0)
 	continue;
 
-      fprintf(stderr, "Incoming connection\n");
+      printf("Incoming connection\n");
 
       /** init a session for the incoming connection */
       struct assh_session_s *session;

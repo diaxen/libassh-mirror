@@ -162,18 +162,18 @@ assh_bignum_builtin_print(void *arg, enum assh_bignum_fmt_e fmt,
 
   idstr[4] = 0;
   assh_store_u32le((uint8_t*)idstr, id);
-  fprintf(stderr, "[pc=%u, id=%s, type=%c] ", pc, idstr, fmt);
+  ASSH_DEBUG_("[pc=%u, id=%s, type=%c] ", pc, idstr, fmt);
   switch (fmt)
     {
     case ASSH_BIGNUM_NATIVE:
     case ASSH_BIGNUM_TEMP:
     case ASSH_BIGNUM_MT:
-      fprintf(stderr, "[bits=%zu] ", src->bits);
+      ASSH_DEBUG_("[bits=%zu] ", src->bits);
       if (src->secret)
-        fprintf(stderr, "secret ");
+        ASSH_DEBUG_("secret ");
       if (src->n == NULL)
         {
-          fprintf(stderr, "NULL\n");
+          ASSH_DEBUG_("NULL\n");
           break;
         }
       size_t l = assh_bignum_words(src->bits);
@@ -189,7 +189,7 @@ assh_bignum_builtin_print(void *arg, enum assh_bignum_fmt_e fmt,
         }
       break;
     case ASSH_BIGNUM_SIZE:
-      fprintf(stderr, "%u\n", (unsigned)(uintptr_t)arg);
+      ASSH_DEBUG_("%u\n", (unsigned)(uintptr_t)arg);
       break;
     }
 #endif

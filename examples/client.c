@@ -288,10 +288,10 @@ ssh_loop(struct assh_session_s *session,
 
 static void usage(const char *program, assh_bool_t opts)
 {
-  fprintf(stderr, "usage: %s [-h | options] [user@]host [command]\n", program);
+  printf("usage: %s [-h | options] [user@]host [command]\n", program);
 
   if (opts)
-    fprintf(stderr, "List of available options:\n\n"
+    printf("List of available options:\n\n"
           "    -p port    specify the TCP port number\n"
           "    -l user    specify the user login name\n"
           "    -C         enable compression\n\n"

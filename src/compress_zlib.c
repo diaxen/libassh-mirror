@@ -26,7 +26,7 @@
 #include <assh/assh_alloc.h>
 
 #include <zlib.h>
-#include <stdio.h>
+
 struct assh_zlib_ctx_s
 {
   z_stream stream;

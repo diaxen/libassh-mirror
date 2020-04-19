@@ -132,25 +132,9 @@ main(int argc, char **argv)
       void *ctx = malloc(algo->ctx_size);
       void *ctx2 = malloc(algo->ctx_size);
 
-      fprintf(stderr, "testing %s\n", algo->name);
+      printf("testing %s\n", algo->name);
 
       size_t hash_size = tests[i].out_len;
-#if 0
-      assh_hash_init(&context, ctx, algo);
-      assh_hash_final(ctx, buf, hash_size);
-# ifdef CONFIG_ASSH_DEBUG
-      assh_hexdump("empty", buf, hash_size);
-# endif
-      assh_hash_cleanup(ctx);
-
-      assh_hash_init(&context, ctx, algo);
-      assh_hash_update(ctx, "abc", 3);
-      assh_hash_final(ctx, buf, hash_size);
-# ifdef CONFIG_ASSH_DEBUG
-      assh_hexdump("abc", buf, hash_size);
-# endif
-      assh_hash_cleanup(ctx);
-#endif
 
       uint_fast16_t j;
       for (j = 0; j <= BUFSIZE; j++)
@@ -179,8 +163,8 @@ main(int argc, char **argv)
 
       if (memcmp(buf, tests[i].out, hash_size))
 	{
-	  assh_hexdump("hash result", buf, hash_size);
-	  assh_hexdump("expected   ", tests[i].out, hash_size);
+	  assh_hexdump(stderr, "hash result", buf, hash_size);
+	  assh_hexdump(stderr, "expected   ", tests[i].out, hash_size);
 	  TEST_FAIL("hash result");
 	}
 

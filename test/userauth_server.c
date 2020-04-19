@@ -342,13 +342,13 @@ static void test_state_set(enum test_state_e s)
   test_state = s;
   ASSH_DEBUG("============ TEST STATE = %u\n", s);
 
-  fprintf(stderr, "%03u.", s);
+  printf("%03u.", s);
 
   if (s != seq_state++)
     TEST_FAIL("missing state %03u\n", seq_state);
 
   if (seq_state % 20 == 0)
-    fprintf(stderr, "\n");
+    printf("\n");
 }
 
 /**************************************************** client test service */
@@ -2290,6 +2290,8 @@ static int algo_register(struct assh_context_s *c)
 
 int main()
 {
+  setvbuf(stdout, NULL, _IONBF, 0);
+
   if (assh_deps_init())
     TEST_FAIL("deps init");
 
@@ -2551,7 +2553,7 @@ int main()
     TEST_FAIL("");
 
 
-  fprintf(stderr, "Done.\n");
+  printf("Done.\n");
 
   return 0;
 }

@@ -47,7 +47,7 @@ static const char *class_names[] = ASSH_ALGO_CLASS_NAMES;
 
 static void show_table()
 {
-  fprintf(stderr, "  Class      Name                                 Implem    Std Speed Safety\n"
+  printf("  Class      Name                                 Implem    Std Speed Safety\n"
 	          "----------------------------------------------------------------------------");
 
   uint_fast16_t i;
@@ -60,19 +60,19 @@ static void show_table()
 
       if (cl != a->class_)
 	{
-	  fputc('\n', stderr);
+	  putchar('\n');
 	  cl = a->class_;
 	}
 
-      fprintf(stderr, "  %-10s %s%-36s%s %-12s %c  %3u   %3u\n",
+      printf("  %-10s %s%-36s%s %-12s %c  %3u   %3u\n",
 	      class_names[a->class_], "\x1b[1m",
 	      n->name, "\x1b[m", a->implem, std(n->spec), a->speed, a->safety);
 
       if (a->variant != NULL)
-	fprintf(stderr, "    Variant:   %-40s\n", a->variant);
+	printf("    Variant:   %-40s\n", a->variant);
 
       for (n++; n->spec; n++)
-	fprintf(stderr, "    Alias :  %-40s %c\n", n->name, std(n->spec));
+	printf("    Alias :  %-40s %c\n", n->name, std(n->spec));
     }
 }
 
@@ -87,7 +87,7 @@ static void show_order(assh_safety_t safety, assh_safety_t min_safety, unsigned 
   if (assh_algo_register_default(c, safety, min_safety, min_speed) != ASSH_OK)
     return;
 
-  fprintf(stderr, "  Spd Saf Score Algorithm                                Implem        Variant\n"
+  printf("  Spd Saf Score Algorithm                                Implem        Variant\n"
 	          "-------------------------------------------------------------------------------\n");
 
   uint_fast16_t i;
@@ -102,10 +102,10 @@ static void show_order(assh_safety_t safety, assh_safety_t min_safety, unsigned 
       if (cl != a->class_)
 	{
 	  cl = a->class_;
-	  fprintf(stderr, "%s:\n", class_names[cl]);
+	  printf("%s:\n", class_names[cl]);
 	}
 
-      fprintf(stderr, "  %3u %3u %5u %-40s %-13s %s\n",
+      printf("  %3u %3u %5u %-40s %-13s %s\n",
               a->speed, a->safety, ASSH_ALGO_SCORE(a, safety),
               n->name, a->implem, a->variant ? a->variant : "");
     }

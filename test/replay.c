@@ -164,10 +164,9 @@ enum chunk_type_e
 
 static int usage()
 {
-  fprintf(stderr, "usage: replay record|replay|replay_all [-h | options]\n");
+  printf("usage: replay record|replay|replay_all [-h | options]\n");
 
-  fprintf(stderr,
-	  "Options:\n\n"
+  printf(	  "Options:\n\n"
 
 	  "    -h         show help\n"
 	  "    -v         increase verbosity\n"
@@ -284,7 +283,7 @@ static void term_handler(int sig)
   if (action == RECORD_CLIENT_SERVER ||
       action == RECORD_SERVER_CONNECT ||
       action == RECORD_CLIENT_CONNECT)
-    fprintf(stderr, "iterations: %u\n", iter);
+    printf("iterations: %u\n", iter);
 
   if (action == RECORD_CLIENT_SERVER)
     exit(1);
@@ -377,7 +376,7 @@ static int fget_dir(FILE *f, int dir)
 /*************************************************** main loop */
 
 #define REPLAY_FAIL(...) do {						\
-    fprintf(stderr, "  \033[0;91mFailed\033[;m : " TEST_LOC_(__LINE__) __VA_ARGS__);	\
+    fprintf(stderr, "  \033[0;91mFailed\033[;m : " TEST_LOC_(__LINE__) __VA_ARGS__); \
     result = 1;								\
     goto cleanup;							\
   } while (0)								\
@@ -484,8 +483,9 @@ static int test()
 		    {
 		      if (verbose > 2)
 			{
-			  fprintf(stderr, "[%s] iterations: %u\n", side, iter);
-			  assh_hexdump(i ? "remote client -> server"
+			  printf("[%s] iterations: %u\n", side, iter);
+			  assh_hexdump(stdout, i
+				       ? "remote client -> server"
 				       : "remote server -> client"
 				       , buf, r);
 			}
@@ -498,7 +498,7 @@ static int test()
 			running &= ~(1 << i);
 			r = 0;
 			if (verbose > 2)
-			  fprintf(stderr, "[%s] EOF\n", side);
+			  printf("[%s] EOF\n", side);
 		    }
 
 		  fputc(i | CHUNK_PKT_REMOTE2CLI, f_out);
@@ -556,7 +556,7 @@ static int test()
 		  {
 		    running &= ~(1 << i);
 		    if (verbose > 2)
-		      fprintf(stderr, "[%s] EOF\n", side);
+		      printf("[%s] EOF\n", side);
 		  }
 		else
 		  {
@@ -567,9 +567,10 @@ static int test()
 		    raw_write(i ^ 1, st, s);
 		    if (verbose > 2)
 		      {
-			fprintf(stderr, "[%s] iterations: %u\n", side, iter);
-			assh_hexdump(i ? "replay client -> server"
-				       : "replay server -> client", st, s);
+			printf("[%s] iterations: %u\n", side, iter);
+			assh_hexdump(stdout, i
+				     ? "replay client -> server"
+				     : "replay server -> client", st, s);
 		      }
 		  }
 
@@ -600,25 +601,25 @@ static int test()
 	  if (!assh_event_get(&session[i], &event, 0))
 	    {
 	      if (verbose > 0)
-		fprintf(stderr, "[%s] No more event\n", side);
+		printf("[%s] No more event\n", side);
 	      running &= ~(1 << i);
 	      continue;
 	    }
 
 	  if (verbose > 2)
-	    fprintf(stderr, "[%s] event %u\n", side, event.id);
+	    printf("[%s] event %u\n", side, event.id);
 
 	  switch (event.id)
 	    {
 	    case ASSH_EVENT_SESSION_ERROR:
 	      if (verbose > 0)
-		fprintf(stderr, "[%s] Error event: %s\n", side,
+		printf("[%s] Error event: %s\n", side,
 			assh_error_str(event.session.error.code));
 	      break;
 
 	    case ASSH_EVENT_DISCONNECT:
 	      if (verbose > 0)
-		fprintf(stderr, "[%s] Disconnect event: 0x%x, %.*s\n", side,
+		printf("[%s] Disconnect event: 0x%x, %.*s\n", side,
 			event.transport.disconnect.reason,
 			(int)event.transport.disconnect.desc.len,
 			event.transport.disconnect.desc.str
@@ -627,7 +628,7 @@ static int test()
 
 	    case ASSH_EVENT_DEBUG:
 	      if (verbose > 0)
-		fprintf(stderr, "[%s] Debug event: %u, %.*s\n", side,
+		printf("[%s] Debug event: %u, %.*s\n", side,
 			event.transport.debug.display,
 			(int)event.transport.debug.msg.len,
 			event.transport.debug.msg.str
@@ -637,7 +638,7 @@ static int test()
 #if defined(CONFIG_ASSH_CLIENT)
 	    case ASSH_EVENT_KEX_HOSTKEY_LOOKUP:
 	      if (verbose > 0)
-		fprintf(stderr, "[%s] Host key lookup.\n", side);
+		printf("[%s] Host key lookup.\n", side);
 	      assert(i == 1);
 	      event.kex.hostkey_lookup.accept = hostkey_accept;
 	      break;
@@ -645,14 +646,14 @@ static int test()
 
 	    case ASSH_EVENT_KEX_DONE:
 	      if (verbose > 0)
-		fprintf(stderr, "[%s] Kex done.\n", side);
+		printf("[%s] Kex done.\n", side);
 	      if (verbose > 1)
 		asshh_print_kex_details(&session[i], stderr, &event);
 	      break;
 
 	    case ASSH_EVENT_SERVICE_START:
 	      if (verbose > 0)
-		fprintf(stderr, "[%s] Service start: %s\n", side, event.service.start.srv->name);
+		printf("[%s] Service start: %s\n", side, event.service.start.srv->name);
 	      if (event.service.start.srv == &assh_service_connection &&
 		  /* client */ i == 1)
 		{
@@ -667,7 +668,7 @@ static int test()
 	      break;
 	    case ASSH_EVENT_USERAUTH_CLIENT_METHODS:
 	      if (verbose > 0)
-		fprintf(stderr, "[client] Userauth methods: ");
+		printf("[client] Userauth methods: ");
 
 	      if ((event.userauth_client.methods.methods &
 		   ASSH_USERAUTH_METHOD_PASSWORD) && password_p && *password_p)
@@ -680,7 +681,7 @@ static int test()
 
 		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_PASSWORD;
 		  if (verbose > 0)
-		    fprintf(stderr, "Password %s\n", p);
+		    printf("Password %s\n", p);
 		}
 
 	      else if ((event.userauth_client.methods.methods &
@@ -691,7 +692,7 @@ static int test()
 
 		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_PUBKEY;
 		  if (verbose > 0)
-		    fprintf(stderr, "User key\n");
+		    printf("User key\n");
 		}
 
 	      else if ((event.userauth_client.methods.methods &
@@ -701,7 +702,7 @@ static int test()
 		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_KEYBOARD;
 		  assh_buffer_strset(&event.userauth_client.methods.keyboard_sub, "pam");
 		  if (verbose > 0)
-		    fprintf(stderr, "Keyboard\n");
+		    printf("Keyboard\n");
 		}
 
 	      else if ((event.userauth_client.methods.methods &
@@ -717,28 +718,28 @@ static int test()
 
 		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_HOSTBASED;
 		  if (verbose > 0)
-		    fprintf(stderr, "Host based\n");
+		    printf("Host based\n");
 		}
 
 	      else
 		{
 		  if (verbose > 0)
-		    fprintf(stderr, "Void\n");
+		    printf("Void\n");
 		}
 	      break;
 	    case ASSH_EVENT_USERAUTH_CLIENT_BANNER:
 	      if (verbose > 0)
-		fprintf(stderr, "[client] Userauth banner.\n");
+		printf("[client] Userauth banner.\n");
 	      break;
 	    case ASSH_EVENT_USERAUTH_CLIENT_PWCHANGE:
 	      if (verbose > 0)
-		fprintf(stderr, "[client] Userauth password change.\n");
+		printf("[client] Userauth password change.\n");
 	      break;
 
 	    case ASSH_EVENT_USERAUTH_CLIENT_KEYBOARD: {
 	      uint_fast8_t i;
 	      if (verbose > 0)
-		fprintf(stderr, "[client] Userauth keyboard: ");
+		printf("[client] Userauth keyboard: ");
 	      for (i = 0; i < event.userauth_client.keyboard.count; i++)
 		{
 		  char *p = kbrps_p;
@@ -750,21 +751,21 @@ static int test()
 		    }
 		  assh_buffer_strset(&event.userauth_client.keyboard.responses[i], p);
 		  if (verbose > 0)
-		    fprintf(stderr, "`%s'", p);
+		    printf("`%s'", p);
 		}
 	      if (verbose > 0)
-		fprintf(stderr, "\n");
+		printf("\n");
 	      break;
 	    }
 
 	    case ASSH_EVENT_USERAUTH_CLIENT_SUCCESS:
 	      if (verbose > 0)
-		fprintf(stderr, "[client] Userauth success.\n");
+		printf("[client] Userauth success.\n");
 	      break;
 
 	    case ASSH_EVENT_USERAUTH_CLIENT_SIGN:
 	      if (verbose > 0)
-		fprintf(stderr, "[client] Userauth sign.\n");
+		printf("[client] Userauth sign.\n");
 	      break;
 #endif
 
@@ -772,7 +773,7 @@ static int test()
 	    case ASSH_EVENT_USERAUTH_SERVER_METHODS:
 	      event.userauth_server.methods.methods = userauth_server;
 	      if (verbose > 0)
-		fprintf(stderr, "[server] Userauth methods: %x\n",
+		printf("[server] Userauth methods: %x\n",
 			userauth_server);
 	      break;
 
@@ -780,14 +781,14 @@ static int test()
 	      event.userauth_server.none.accept = none_accepts & 1;
 	      none_accepts >>= 1;
 	      if (verbose > 0)
-		fprintf(stderr, "[server] Userauth none.\n");
+		printf("[server] Userauth none.\n");
 	      break;
 
 	    case ASSH_EVENT_USERAUTH_SERVER_USERKEY:
 	      event.userauth_server.userkey.found = userkey_accepts & 1;
 	      userkey_accepts >>= 1;
 	      if (verbose > 0)
-		fprintf(stderr, "[server] Userauth public key: %u\n",
+		printf("[server] Userauth public key: %u\n",
 			event.userauth_server.userkey.found);
 	      break;
 
@@ -795,7 +796,7 @@ static int test()
 	      event.userauth_server.password.result = password_accepts & 3;
 	      password_accepts >>= 2;
 	      if (verbose > 0)
-		fprintf(stderr, "[server] Userauth password: %u\n",
+		printf("[server] Userauth password: %u\n",
 			event.userauth_server.password.result);
 	      break;
 
@@ -809,7 +810,7 @@ static int test()
 				 "instruction");
 
 	      if (verbose > 0)
-		fprintf(stderr, "[server] Userauth kbinfo: ");
+		printf("[server] Userauth kbinfo: ");
 
 	      while (*kbinfo_p && i < 8)
 		{
@@ -817,7 +818,7 @@ static int test()
 		  bufs[i].str = kbinfo_p;
 		  bufs[i].len = n - kbinfo_p;
 		  if (verbose > 0)
-		    fprintf(stderr, "`%.*s' ", (int)(n - kbinfo_p), kbinfo_p);
+		    printf("`%.*s' ", (int)(n - kbinfo_p), kbinfo_p);
 		  i++;
 		  kbinfo_p = n;
 		  if (*n)
@@ -832,7 +833,7 @@ static int test()
 	      event.userauth_server.kbinfo.prompts = bufs;
 
 	      if (verbose > 0)
-		fprintf(stderr, "\n");
+		printf("\n");
 	      break;
 	    }
 
@@ -840,7 +841,7 @@ static int test()
 	      event.userauth_server.kbresponse.result = keyboard_accepts & 3;
 	      keyboard_accepts >>= 2;
 	      if (verbose > 0)
-		fprintf(stderr, "[server] Userauth kbresponse: %u\n",
+		printf("[server] Userauth kbresponse: %u\n",
 			event.userauth_server.kbresponse.result);
 	      break;
 
@@ -848,13 +849,13 @@ static int test()
 	      event.userauth_server.hostbased.found = hostbased_accepts & 1;
 	      hostbased_accepts >>= 1;
 	      if (verbose > 0)
-		fprintf(stderr, "[server] Userauth hostbased: %u\n",
+		printf("[server] Userauth hostbased: %u\n",
 			event.userauth_server.hostbased.found);
 	      break;
 
 	    case ASSH_EVENT_USERAUTH_SERVER_SUCCESS:
 	      if (verbose > 0)
-		fprintf(stderr, "[server] Userauth success.\n");
+		printf("[server] Userauth success.\n");
 
 	      if (multi_auth)
 		{
@@ -948,7 +949,7 @@ static int test()
 		  if (everr)
 		    {
 		      if (verbose > 2)
-			fprintf(stderr, "[%s] iterations: %u : %s broken pipe\n",
+			printf("[%s] iterations: %u : %s broken pipe\n",
 				side, iter, dir);
 		      fputc(i | CHUNK_PKT_SRV2CLI, f_out);
 		      fput_u16(4, f_out); /* no data */
@@ -962,8 +963,8 @@ static int test()
 		      fwrite(te->buf.data, te->buf.size, 1, f_out);
 		      if (verbose > 2)
 			{
-			  fprintf(stderr, "[%s] iterations: %u\n", side, iter);
-			  assh_hexdump(dir, te->buf.data, te->buf.size);
+			  printf("[%s] iterations: %u\n", side, iter);
+			  assh_hexdump(stdout, dir, te->buf.data, te->buf.size);
 			}
 		    }
 		  break;
@@ -974,8 +975,8 @@ static int test()
 		case REPLAY_CLIENT_SERVER: {
 		  if (verbose > 2)
 		    {
-		      fprintf(stderr, "[%s] iterations: %u\n", side, iter);
-		      assh_hexdump(dir, te->buf.data, te->buf.size);
+		      printf("[%s] iterations: %u\n", side, iter);
+		      assh_hexdump(stdout, dir, te->buf.data, te->buf.size);
 		    }
 		  int d = fget_dir(f_in[i], i);
 		  if (d < 0)
@@ -991,7 +992,7 @@ static int test()
 		  if (s == 0)
 		    {
 		      if (verbose > 2)
-			fprintf(stderr, "[%s] iterations: %u : %s broken pipe\n",
+			printf("[%s] iterations: %u : %s broken pipe\n",
 				side, iter, dir);
 		      everr = ASSH_ERR_IO;
 		    }
@@ -1002,8 +1003,8 @@ static int test()
 			REPLAY_FAIL("unexpected end of stream\n");
 		      if (s != te->buf.size || memcmp(st, te->buf.data, s))
 			{
-			  assh_hexdump("expected", st, s);
-			  assh_hexdump("unexpected", te->buf.data, s);
+			  assh_hexdump(stderr, "expected", st, s);
+			  assh_hexdump(stderr, "unexpected", te->buf.data, s);
 			  REPLAY_FAIL("stream chunk with unexpected content\n");
 			}
 		    }
@@ -1027,7 +1028,7 @@ static int test()
 	  if (max_iter[i] && iter >= max_iter[i])
 	    {
 	      if (verbose > 0)
-		fprintf(stderr, "[%s] max iterations reached, disconnecting\n", side);
+		printf("[%s] max iterations reached, disconnecting\n", side);
 	      assh_session_disconnect(&session[i], SSH_DISCONNECT_BY_APPLICATION, NULL);
 	    }
 
@@ -1127,7 +1128,7 @@ context_load_key(struct assh_context_s *ctx, FILE *in, struct assh_key_s **key)
     return 1;
 
   if (verbose > 0)
-    fprintf(stderr, "`%s'\n", name);
+    printf("`%s'\n", name);
   free(name);
 
   int s = fget_u16(in);
@@ -1172,7 +1173,7 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 	  char *variant = context_load_str(in);
 	  const struct assh_algo_s *a;
 	  if (verbose > 0)
-	      fprintf(stderr, "[%s] Loading algorithm: `%s'.\n", side, name);
+	      printf("[%s] Loading algorithm: `%s'.\n", side, name);
 	  assh_bool_t mismatch = test_algo_lookup(cl, name, variant, implem, &a);
 	  if (!mismatch && assh_algo_register_va(ctx, 50, 0, 0, a, NULL))
 	    TEST_FAIL("unable to register algorithm\n");
@@ -1190,7 +1191,7 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 	  if (i != (o & 1))
 	    goto skip;
 	  if (verbose > 0)
-	    fprintf(stderr, "[%s] Loading kex/host keys: ", side);
+	    printf("[%s] Loading kex/host keys: ", side);
 	  if (context_load_key(ctx, in, &ctx->keys))
 	    return 1;
 	  break;
@@ -1200,7 +1201,7 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 	  if (i == 0)
 	    goto skip;
 	  if (verbose > 0)
-	    fprintf(stderr, "[client] Loading user key: ");
+	    printf("[client] Loading user key: ");
 	  if (context_load_key(ctx, in, &userauth_keys))
 	    return 1;
 	  break;
@@ -1210,7 +1211,7 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 	    TEST_FAIL("bad input");
 	  kex_th = fget_u16(in);
 	  if (verbose > 0)
-	    fprintf(stderr, "[%s] Loading kex threshold: %u bytes.\n", side, kex_th);
+	    printf("[%s] Loading kex threshold: %u bytes.\n", side, kex_th);
 	  break;
 
 	case CHUNK_AUTH:
@@ -1229,7 +1230,7 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 	  password_accepts = fget_u16(in);
 	  keyboard_accepts = fget_u16(in);
 	  if (verbose > 0)
-	    fprintf(stderr, "[server] Loading user auth params.\n");
+	    printf("[server] Loading user auth params.\n");
 	  goto skip;
 
 	case CHUNK_USERNAME:		/* username */
@@ -1238,7 +1239,7 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 	  free(username);
 	  username = context_load_str(in);
 	  if (verbose > 0)
-	    fprintf(stderr, "[client] Loading userauth login: `%s'.\n", username);
+	    printf("[client] Loading userauth login: `%s'.\n", username);
 	  break;
 
 	case CHUNK_PASSWORDS:		/* password */
@@ -1247,7 +1248,7 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 	  free(password);
 	  password = context_load_str(in);
 	  if (verbose > 0)
-	    fprintf(stderr, "[client] Loading password list: `%s'.\n", password);
+	    printf("[client] Loading password list: `%s'.\n", password);
 	  break;
 
 	case CHUNK_KEYBOARD_REPLIES:		/* keyboard interactive */
@@ -1256,7 +1257,7 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 	  free(keyboard_replies);
 	  keyboard_replies = context_load_str(in);
 	  if (verbose > 0)
-	    fprintf(stderr, "[client] Loading keyboard replies: `%s'.\n", keyboard_replies);
+	    printf("[client] Loading keyboard replies: `%s'.\n", keyboard_replies);
 	  break;
 
 	case CHUNK_KEYBOARD_INFOS:		/* keyboard interactive */
@@ -1265,7 +1266,7 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 	  free(keyboard_infos);
 	  keyboard_infos = context_load_str(in);
 	  if (verbose > 0)
-	    fprintf(stderr, "[server] Loading keyboard prompts: `%s'.\n", keyboard_infos);
+	    printf("[server] Loading keyboard prompts: `%s'.\n", keyboard_infos);
 	  break;
 
 	case CHUNK_HOSTBASED_HOST:
@@ -1274,7 +1275,7 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 	  free(hostbased_host);
 	  hostbased_host = context_load_str(in);
 	  if (verbose > 0)
-	    fprintf(stderr, "[server] Loading hostbased host: `%s'.\n", hostbased_host);
+	    printf("[server] Loading hostbased host: `%s'.\n", hostbased_host);
 	  break;
 
 	case CHUNK_HOSTBASED_KEY:
@@ -1282,7 +1283,7 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 	  if (i == 0)
 	    goto skip;
 	  if (verbose > 0)
-	    fprintf(stderr, "[client] Loading hostbased keys.");
+	    printf("[client] Loading hostbased keys.");
 	  if (context_load_key(ctx, in, &hostbased_keys))
 	    return 1;
 	  break;
@@ -1297,13 +1298,13 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 	  free(command);
 	  command = context_load_str(in);
 	  if (verbose > 0)
-	    fprintf(stderr, "[%s] command line: %s\n", side, command);
+	    printf("[%s] command line: %s\n", side, command);
 	  break;
 	}
 
 	default:
 	  if (verbose > 0)
-	    fprintf(stderr, "[%s] Skipping unknown chunk %u.\n", side, o);
+	    printf("[%s] Skipping unknown chunk %u.\n", side, o);
 	skip_s:
 	  s = fget_u16(in);
 	skip:
@@ -1451,7 +1452,7 @@ context_store(struct assh_context_s *ctx, unsigned i)
 
 static int replay_file(const char *fname)
 {
-  fprintf(stderr, "Replaying `%s' ...\n", fname);
+  printf("Replaying `%s' ...\n", fname);
 
   f_in[0] = fopen(fname, "rb");
   f_in_iter[0] = 0;
@@ -1472,7 +1473,7 @@ static int replay_file(const char *fname)
   if (action & REPLAY_SERVER)
     {
 #if !defined(CONFIG_ASSH_SERVER)
-      fprintf(stderr, "  Skipped: Server support not available\n");
+      printf("  Skipped: Server support not available\n");
       goto skip_1;
 #else
       if (assh_context_init(&context[0], ASSH_SERVER,
@@ -1482,7 +1483,7 @@ static int replay_file(const char *fname)
 
       if (context_load(&context[0], f_in[0], 0))
 	{
-	  fprintf(stderr, "  Skipped: Missing algorithm\n");
+	  printf("  Skipped: Missing algorithm\n");
 	  goto skip_1;
 	}
 #endif
@@ -1491,7 +1492,7 @@ static int replay_file(const char *fname)
   if (action & REPLAY_CLIENT)
     {
 #if !defined(CONFIG_ASSH_CLIENT)
-      fprintf(stderr, "  Skipped: Client support not available\n");
+      printf("  Skipped: Client support not available\n");
       goto skip_2;
 #else
       if (assh_context_init(&context[1], ASSH_CLIENT,
@@ -1501,7 +1502,7 @@ static int replay_file(const char *fname)
 
       if (context_load(&context[1], f_in[1], 1))
 	{
-	  fprintf(stderr, "  Skipped: Missing algorithm\n");
+	  printf("  Skipped: Missing algorithm\n");
 	  goto skip_2;
 	}
 #endif
@@ -1510,7 +1511,7 @@ static int replay_file(const char *fname)
   result = test();
 
   if (result)
-    fprintf(stderr, "  Command line: %s\n", command);
+    printf("  Command line: %s\n", command);
 
  skip_2:
 #if defined(CONFIG_ASSH_CLIENT)
@@ -1594,7 +1595,7 @@ static int replay_directory(int argc, char **argv)
   if (!done)
     TEST_FAIL("no .ssh stream file found in the directory `%s'\n", dname);
 
-  fprintf(stderr, "Done.\n");
+  printf("Done.\n");
 
   return result;
 }
@@ -1637,7 +1638,7 @@ static int replay(int argc, char **argv)
   if (save_raw)
     close_raw_files();
 
-  fprintf(stderr, "Done.\n");
+  printf("Done.\n");
 
   return result;
 }
@@ -1891,7 +1892,7 @@ static int record(int argc, char **argv)
 
   verbose += !verbose;
 
-  fprintf(stderr, "Recording `%s' ...\n", fname);
+  printf("Recording `%s' ...\n", fname);
 
   f_out = fopen(fname, "wb");
   if (!f_out)
@@ -1967,7 +1968,7 @@ static int record(int argc, char **argv)
       struct sockaddr_in con_addr;
       socklen_t addr_size = sizeof(con_addr);
 
-      fprintf(stderr, "Waiting for connection on port %s\n", port);
+      printf("Waiting for connection on port %s\n", port);
 
       sock = accept(s, (struct sockaddr*)&con_addr, &addr_size);
       if (sock < 0)
@@ -2008,7 +2009,7 @@ static int record(int argc, char **argv)
   if (alloc_size != 0)
     TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
 
-  fprintf(stderr, "Done.\n");
+  printf("Done.\n");
 
   return result;
 }
