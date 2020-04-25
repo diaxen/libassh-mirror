@@ -52,39 +52,49 @@ test_algo_lookup(enum assh_algo_class_e cl, const char *name,
 /** This swaps some bits with the given probability.
     The number of bits swpped is returned. */
 unsigned
-aash_fuzz_mangle(uint8_t *data, size_t len, uint32_t ratio);
+test_fuzz_mangle(uint8_t *data, size_t len, uint32_t ratio);
 
 /* byte period of random bit error,
    no error is introduced when 0 */
-extern uint32_t packet_fuzz;
-extern unsigned long packet_fuzz_bits;
+extern uint32_t test_packet_fuzz;
+extern unsigned long test_packet_fuzz_bits;
 
-extern const struct assh_algo_cipher_s assh_cipher_fuzz;
+extern const struct assh_algo_cipher_s test_cipher_fuzz;
 
 /* make a session use the fuzz cipher from start
    (before end of first key exchange) */
-void assh_cipher_fuzz_initreg(struct assh_context_s *c,
+void test_cipher_fuzz_initreg(struct assh_context_s *c,
                               struct assh_session_s *s);
 
 
 
-uint32_t assh_prng_rand_seed(uint64_t *seed);
+uint32_t test_prng_rand_seed(uint64_t *seed);
 
-extern const uint32_t prng_rand_max;
-extern uint64_t prng_seed;
+extern const uint32_t test_prng_rand_max;
+extern uint64_t test_prng_seed;
 
-static inline uint32_t assh_prng_rand()
+static inline uint32_t test_prng_rand()
 {
-  return assh_prng_rand_seed(&prng_seed);
+  return test_prng_rand_seed(&test_prng_seed);
 }
 
-static inline void assh_prng_seed(uint64_t seed)
+static inline void test_prng_set_seed(uint64_t seed)
 {
   if (!seed)
     seed++;
-  prng_seed = seed;
+  test_prng_seed = seed;
 }
 
-extern const struct assh_prng_s assh_prng_dummy;
+extern const struct assh_prng_s test_prng_dummy;
+
+#include <assh/assh_alloc.h>
+
+extern size_t test_alloc_size;
+extern uint32_t test_alloc_fuzz;
+extern unsigned long test_alloc_fuzz_fails;
+
+#define TEST_ALLOC_ALIGN 32
+
+ASSH_ALLOCATOR(test_leaks_allocator);
 
 #endif

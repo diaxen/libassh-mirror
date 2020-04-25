@@ -31,10 +31,7 @@
 #include <getopt.h>
 
 #include "sign.h"
-#include "prng_weak.h"
 #include "test.h"
-#include "fuzz.h"
-#include "leaks_check.h"
 
 #define TEST_STEP 4
 
@@ -80,7 +77,7 @@ void test_sign(unsigned int max_size, enum action_e action)
 	  struct assh_context_s *context;
 
 	  if (assh_context_create(&context, ASSH_CLIENT_SERVER,
-				  assh_leaks_allocator, NULL, &assh_prng_dummy, NULL))
+				  test_leaks_allocator, NULL, &test_prng_dummy, NULL))
 	    TEST_FAIL("context create\n");
 
 	  if (assh_algo_register_va(context, 0, 0, 0, sa, NULL))
@@ -116,7 +113,7 @@ void test_sign(unsigned int max_size, enum action_e action)
 #ifdef CONFIG_ASSH_KEY_CREATE
 	      if (algos[i].gen_key && (action & ACTION_NEW_KEYS))
 		{
-		  size_t kbits = algos[i].kbits_min + assh_prng_rand()
+		  size_t kbits = algos[i].kbits_min + test_prng_rand()
 		    % (algos[i].kbits_max - algos[i].kbits_min + 1);
 		  putchar('N');
 		  if (assh_key_create(context, &key, kbits,
@@ -149,7 +146,7 @@ void test_sign(unsigned int max_size, enum action_e action)
 	      int s = 0;
 	      while (s < size)
 		{
-		  int r = assh_prng_rand() % 128 + 128;
+		  int r = test_prng_rand() % 128 + 128;
 		  if (s + r > size)
 		    r = size - s;
 		  d[c].data = data + s;
@@ -190,7 +187,7 @@ void test_sign(unsigned int max_size, enum action_e action)
 		      memcpy(sign2, sign, sign_len);
 
 		      do {
-			mc = aash_fuzz_mangle(sign2, sign_len, 10 + assh_prng_rand() % 1024);
+			mc = test_fuzz_mangle(sign2, sign_len, 10 + test_prng_rand() % 1024);
 		      } while (!mc);
 
 		      putchar('V');
@@ -204,8 +201,8 @@ void test_sign(unsigned int max_size, enum action_e action)
 
 	      if (size)
 		{
-		  unsigned int r1 = assh_prng_rand() % size;
-		  unsigned char r2 = assh_prng_rand();
+		  unsigned int r1 = test_prng_rand() % size;
+		  unsigned char r2 = test_prng_rand();
 		  r2 += !r2;
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
@@ -227,8 +224,8 @@ void test_sign(unsigned int max_size, enum action_e action)
 	  assh_key_drop(context, &key2);
 	  assh_context_release(context);
 
-	  if (alloc_size != 0)
-	    TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
+	  if (test_alloc_size != 0)
+	    TEST_FAIL("memory leak detected, %zu bytes allocated\n", test_alloc_size);
 	}
 
       if (!done)
@@ -305,7 +302,7 @@ int main(int argc, char **argv)
   if (!action)
     action = ACTION_NEW_KEYS | ACTION_VALIDATE_KEYS;
 
-  assh_prng_seed(seed);
+  test_prng_set_seed(seed);
   printf("Seed: %u", seed);
 
   while (count--)

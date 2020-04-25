@@ -28,8 +28,6 @@
 
 #include <time.h>
 
-#include "prng_weak.h"
-#include "leaks_check.h"
 #include "test.h"
 
 struct tests_s
@@ -131,7 +129,7 @@ static void test_algo(struct assh_context_s *c, size_t count)
 	      t->bits_min != bits_min || t->bits_max != bits_max)
 	    {
 	      /* create new key */
-	      size_t bits = t->bits_min + assh_prng_rand() % (t->bits_max - t->bits_min + 1);
+	      size_t bits = t->bits_min + test_prng_rand() % (t->bits_max - t->bits_min + 1);
 	      assh_key_drop(c, &key1);
 	      putchar('N');
 	      TEST_ASSERT(!assh_key_create(c, &key1, bits, ka, ASSH_ALGO_SIGN));
@@ -157,7 +155,7 @@ static void test_algo(struct assh_context_s *c, size_t count)
 
 	  /* reload key from blob */
 	  const uint8_t *blob2 = blob1;
-	  size_t padding = assh_prng_rand() % 32;	/* may load from large buffer */
+	  size_t padding = test_prng_rand() % 32;	/* may load from large buffer */
 
 	  putchar('l');
 	  TEST_ASSERT(!assh_key_load(c, &key2, ka, ASSH_ALGO_SIGN, t->format,
@@ -296,7 +294,7 @@ static void test_helper(struct assh_context_s *c, size_t count)
 	      t->bits_min != bits_min || t->bits_max != bits_max)
 	    {
 	      /* create new key */
-	      size_t bits = t->bits_min + assh_prng_rand() % (t->bits_max - t->bits_min + 1);
+	      size_t bits = t->bits_min + test_prng_rand() % (t->bits_max - t->bits_min + 1);
 	      assh_key_drop(c, &key1);
 	      putchar('N');
 	      TEST_ASSERT(!assh_key_create(c, &key1, bits, ka, ASSH_ALGO_SIGN));
@@ -355,7 +353,7 @@ int main(int argc, char **argv)
     TEST_FAIL("deps init");
 
   if (assh_context_create(&context, ASSH_CLIENT_SERVER,
-			  assh_leaks_allocator, NULL, &assh_prng_dummy, NULL))
+			  test_leaks_allocator, NULL, &test_prng_dummy, NULL))
     TEST_FAIL("context create");
 
   if (assh_algo_register(context, 0, 0, 0, assh_algo_table))
@@ -365,20 +363,20 @@ int main(int argc, char **argv)
   size_t hcount = argc > 2 ? atoi(argv[2]) : 2;
 
   int t = time(0);
-  assh_prng_seed(t);
+  test_prng_set_seed(t);
   printf("Seed: %u", t);
 
   test_algo(context, acount);
 
   test_helper(context, hcount);
 
-  if (alloc_size == 0)
+  if (test_alloc_size == 0)
     TEST_FAIL("leak checking not working\n");
 
   assh_context_release(context);
 
-  if (alloc_size != 0)
-    TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
+  if (test_alloc_size != 0)
+    TEST_FAIL("memory leak detected, %zu bytes allocated\n", test_alloc_size);
 
   puts("\n\nTest passed");
   return 0;

@@ -31,7 +31,6 @@
 #include <string.h>
 
 #include "test.h"
-#include "leaks_check.h"
 
 #define BUFSIZE 4096
 
@@ -120,7 +119,7 @@ main(int argc, char **argv)
   uint_fast8_t i;
   for (i = 0; tests[i].algo != NULL; i++)
     {
-      if (assh_context_init(&context, ASSH_CLIENT_SERVER, assh_leaks_allocator,
+      if (assh_context_init(&context, ASSH_CLIENT_SERVER, test_leaks_allocator,
 			    NULL, NULL, NULL))
 	TEST_FAIL("context init");
 
@@ -170,8 +169,8 @@ main(int argc, char **argv)
 
       assh_context_cleanup(&context);
 
-      if (alloc_size != 0)
-	TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
+      if (test_alloc_size != 0)
+	TEST_FAIL("memory leak detected, %zu bytes allocated\n", test_alloc_size);
     }
 
   puts("\nTest passed");

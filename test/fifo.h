@@ -24,9 +24,9 @@
 #ifndef ASSH_TEST_FIFO_H_
 #define ASSH_TEST_FIFO_H_
 
-#include "prng_weak.h"
-
 #include <stdint.h>
+
+#include "test.h"
 
 #ifndef FIFO_BUF_SIZE
 # define FIFO_BUF_SIZE 128
@@ -80,7 +80,7 @@ fifo_rw_event(struct fifo_s fifo[2], struct assh_event_s *e, uint8_t i)
       struct assh_event_transport_read_s *te = &e->transport.read;
       assh_bool_t stalled = (fifo[i].size == 0);
       te->transferred = fifo_read(&fifo[i], te->buf.data,
-				  te->buf.size % (assh_prng_rand() % FIFO_BUF_SIZE + 1));
+				  te->buf.size % (test_prng_rand() % FIFO_BUF_SIZE + 1));
       return stalled;
     }
 
@@ -88,7 +88,7 @@ fifo_rw_event(struct fifo_s fifo[2], struct assh_event_s *e, uint8_t i)
       struct assh_event_transport_write_s *te = &e->transport.write;
       assh_bool_t stalled = (te->buf.size == 0) || (fifo[i ^ 1].size == FIFO_BUF_SIZE);
       te->transferred = fifo_write(&fifo[i ^ 1], te->buf.data,
-				   te->buf.size % (assh_prng_rand() % FIFO_BUF_SIZE + 1));
+				   te->buf.size % (test_prng_rand() % FIFO_BUF_SIZE + 1));
       return stalled;
     }
 

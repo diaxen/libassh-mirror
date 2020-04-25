@@ -41,7 +41,6 @@
 #include "fifo.h"
 #include "keys.h"
 #include "test.h"
-#include "leaks_check.h"
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -188,9 +187,9 @@ void bench(const struct kex_bench_s *t,
   unsigned i;
 
   if (assh_context_init(&context[0], ASSH_SERVER,
-			&assh_leaks_allocator, NULL, &assh_prng_dummy, NULL) ||
+			&test_leaks_allocator, NULL, &test_prng_dummy, NULL) ||
       assh_context_init(&context[1], ASSH_CLIENT,
-			&assh_leaks_allocator, NULL, &assh_prng_dummy, NULL))
+			&test_leaks_allocator, NULL, &test_prng_dummy, NULL))
     TEST_FAIL("ctx init\n");
 
   printf("%-36s %-13s %3u-bit   ",
@@ -297,8 +296,8 @@ void bench(const struct kex_bench_s *t,
   assh_context_cleanup(&context[0]);
   assh_context_cleanup(&context[1]);
 
-  if (alloc_size != 0)
-    TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
+  if (test_alloc_size != 0)
+    TEST_FAIL("memory leak detected, %zu bytes allocated\n", test_alloc_size);
 
   ssize_t l = 9 - printf("%.1f", 1000000. * c / dt[0]);
   while (l-- > 0)

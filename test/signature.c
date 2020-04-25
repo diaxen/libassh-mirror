@@ -30,9 +30,7 @@
 #include <time.h>
 
 #include "sign.h"
-#include "prng_weak.h"
 #include "test.h"
-#include "leaks_check.h"
 
 void test_const()
 {
@@ -66,7 +64,7 @@ void test_const()
 	  struct assh_context_s *context;
 
 	  if (assh_context_create(&context, ASSH_CLIENT_SERVER,
-				  assh_leaks_allocator, NULL, &assh_prng_dummy, NULL))
+				  test_leaks_allocator, NULL, &test_prng_dummy, NULL))
 	    TEST_FAIL("context create\n");
 
 	  if (assh_algo_register_va(context, 0, 0, 0, sa, NULL))
@@ -128,7 +126,7 @@ void test_const()
 	  if (sign_safety > sa->algo_wk.algo.safety || sign_safety > key->safety)
 	    TEST_FAIL("sign safety\n");
 
-	  data[assh_prng_rand() % sizeof(data)]++;
+	  data[test_prng_rand() % sizeof(data)]++;
 
 	  putchar('V');
 	  if (!assh_sign_check(context, sa, key, 3, d, sign, sign_len, &sign_safety))
@@ -137,8 +135,8 @@ void test_const()
 	  assh_key_drop(context, &key);
 	  assh_context_release(context);
 
-	  if (alloc_size != 0)
-	    TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
+	  if (test_alloc_size != 0)
+	    TEST_FAIL("memory leak detected, %zu bytes allocated\n", test_alloc_size);
 	}
 
       if (!done)
@@ -178,7 +176,7 @@ void test_load(unsigned int max_size)
 	  struct assh_context_s *context;
 
 	  if (assh_context_create(&context, ASSH_CLIENT_SERVER,
-				  assh_leaks_allocator, NULL, &assh_prng_dummy, NULL))
+				  test_leaks_allocator, NULL, &test_prng_dummy, NULL))
 	    TEST_FAIL("context create\n");
 
 	  if (assh_algo_register_va(context, 0, 0, 0, sa, NULL))
@@ -195,8 +193,8 @@ void test_load(unsigned int max_size)
 
 	      if (bad)
 		{
-		  unsigned int r1 = assh_prng_rand() % sizeof(key_blob);
-		  unsigned char r2 = assh_prng_rand();
+		  unsigned int r1 = test_prng_rand() % sizeof(key_blob);
+		  unsigned char r2 = test_prng_rand();
 		  if (!r2)
 		    r2++;
 #ifdef CONFIG_ASSH_DEBUG_SIGN
@@ -237,8 +235,8 @@ void test_load(unsigned int max_size)
 
 	  assh_context_release(context);
 
-	  if (alloc_size != 0)
-	    TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
+	  if (test_alloc_size != 0)
+	    TEST_FAIL("memory leak detected, %zu bytes allocated\n", test_alloc_size);
 	}
 
       if (!done)
@@ -255,7 +253,7 @@ int main(int argc, char **argv)
   if (assh_deps_init())
     TEST_FAIL("deps init");
 
-  assh_prng_seed(s);
+  test_prng_set_seed(s);
   printf("Seed: %u", s);
 
   test_const();

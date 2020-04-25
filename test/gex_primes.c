@@ -26,7 +26,6 @@
 #include <assh/assh_context.h>
 #include <assh/safe_primes.h>
 
-#include "prng_weak.h"
 #include "test.h"
 #include <stdio.h>
 
@@ -75,7 +74,7 @@ int main(int argc, char **argv)
     return -1;
 
   if (assh_context_init(&context, ASSH_CLIENT_SERVER,
-                        NULL, NULL, &assh_prng_dummy, NULL))
+                        NULL, NULL, &test_prng_dummy, NULL))
     return -1;
 
   size_t bits;

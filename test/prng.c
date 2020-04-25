@@ -27,7 +27,6 @@
 #include <assh/assh_context.h>
 
 #include "test.h"
-#include "leaks_check.h"
 
 int
 main(int argc, char **argv)
@@ -41,7 +40,7 @@ main(int argc, char **argv)
   seed.str = "aaaaaaaaaaaaaaab";
   seed.len = 16;
 
-  if (assh_context_init(&context, ASSH_CLIENT_SERVER, assh_leaks_allocator,
+  if (assh_context_init(&context, ASSH_CLIENT_SERVER, test_leaks_allocator,
 			NULL, NULL, &seed))
     TEST_FAIL("context init");
 

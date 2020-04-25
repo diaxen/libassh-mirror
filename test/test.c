@@ -35,10 +35,14 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#ifdef CONFIG_ASSH_VALGRIND
+# include <valgrind/memcheck.h>
+#endif
+
 /**************************************************************/
 
-uint32_t packet_fuzz = 0;
-unsigned long packet_fuzz_bits = 0;
+uint32_t test_packet_fuzz = 0;
+unsigned long test_packet_fuzz_bits = 0;
 
 static ASSH_CIPHER_INIT_FCN(assh_fuzz_init)
 {
@@ -47,8 +51,8 @@ static ASSH_CIPHER_INIT_FCN(assh_fuzz_init)
 
 static ASSH_CIPHER_PROCESS_FCN(assh_fuzz_process)
 {
-  if (packet_fuzz)
-    packet_fuzz_bits += aash_fuzz_mangle(data, len, packet_fuzz);
+  if (test_packet_fuzz)
+    test_packet_fuzz_bits += test_fuzz_mangle(data, len, test_packet_fuzz);
   return ASSH_OK;
 }
 
@@ -56,7 +60,7 @@ static ASSH_CIPHER_CLEANUP_FCN(assh_fuzz_cleanup)
 {
 }
 
-const struct assh_algo_cipher_s assh_cipher_fuzz =
+const struct assh_algo_cipher_s test_cipher_fuzz =
 {
   ASSH_ALGO_BASE(CIPHER, "assh-test", 0, 99,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
@@ -70,7 +74,7 @@ const struct assh_algo_cipher_s assh_cipher_fuzz =
   .f_cleanup = assh_fuzz_cleanup,
 };
 
-void assh_cipher_fuzz_initreg(struct assh_context_s *c,
+void test_cipher_fuzz_initreg(struct assh_context_s *c,
                               struct assh_session_s *s)
 {
   struct assh_kex_keys_s *keys;
@@ -78,7 +82,7 @@ void assh_cipher_fuzz_initreg(struct assh_context_s *c,
   while (assh_alloc(c, sizeof(*keys), ASSH_ALLOC_INTERNAL, (void**)&keys))
     /* retry due to alloc fuzz */;
 
-  keys->cipher_algo = &assh_cipher_fuzz;
+  keys->cipher_algo = &test_cipher_fuzz;
   keys->cipher_ctx = NULL;
   keys->mac_algo = &assh_mac_none;
   keys->mac_ctx = NULL;
@@ -88,13 +92,13 @@ void assh_cipher_fuzz_initreg(struct assh_context_s *c,
 }
 
 unsigned
-aash_fuzz_mangle(uint8_t *data, size_t len, uint32_t ratio)
+test_fuzz_mangle(uint8_t *data, size_t len, uint32_t ratio)
 {
-  uint64_t r = prng_rand_max / ratio;
+  uint64_t r = test_prng_rand_max / ratio;
   uint32_t i, j;
 
   for (i = j = 0; i < len * 8; i++)
-    if (r > assh_prng_rand() * 8ULL)
+    if (r > test_prng_rand() * 8ULL)
       {
 	data[i / 8] ^= 1 << (i % 8);
 	j++;
@@ -105,10 +109,10 @@ aash_fuzz_mangle(uint8_t *data, size_t len, uint32_t ratio)
 
 /**************************************************************/
 
-const uint32_t prng_rand_max = 0xffffffffULL;
-uint64_t prng_seed = 1;
+const uint32_t test_prng_rand_max = 0xffffffffULL;
+uint64_t test_prng_seed = 1;
 
-uint32_t assh_prng_rand_seed(uint64_t *seed)
+uint32_t test_prng_rand_seed(uint64_t *seed)
 {
   /* 64 bits lfsr */
   *seed = (-(*seed & 1) & 0x81ec82f69eb5a9d3ULL)
@@ -123,7 +127,7 @@ uint32_t assh_prng_rand_seed(uint64_t *seed)
   return r;
 }
 
-static ASSH_PRNG_INIT_FCN(assh_prng_dummy_init)
+static ASSH_PRNG_INIT_FCN(test_prng_dummy_init)
 {
   uint8_t *p = malloc(8);
   uint64_t s;
@@ -150,7 +154,7 @@ static ASSH_PRNG_INIT_FCN(assh_prng_dummy_init)
   return ASSH_OK;
 }
 
-static ASSH_PRNG_GET_FCN(assh_prng_dummy_get)
+static ASSH_PRNG_GET_FCN(test_prng_dummy_get)
 {
   uint64_t s = assh_load_u64le(c->prng_pv);
   size_t i;
@@ -171,11 +175,11 @@ static ASSH_PRNG_GET_FCN(assh_prng_dummy_get)
       unsigned x = e.u8[0] ? 0 : m;
 
       for (i = 0; i < rdata_len; i++)
-	rdata[i ^ x] = assh_prng_rand_seed(&s);
+	rdata[i ^ x] = test_prng_rand_seed(&s);
 
       /* align to next bignum large word boundary */
       while (i++ & 7)
-	assh_prng_rand_seed(&s);
+	test_prng_rand_seed(&s);
 #else
       TEST_FAIL("prng bignum");
 #endif
@@ -183,7 +187,7 @@ static ASSH_PRNG_GET_FCN(assh_prng_dummy_get)
   else
     {
       for (i = 0; i < rdata_len; i++)
-	rdata[i] = assh_prng_rand_seed(&s);
+	rdata[i] = test_prng_rand_seed(&s);
     }
 
   assh_store_u64le(c->prng_pv, s);
@@ -191,16 +195,16 @@ static ASSH_PRNG_GET_FCN(assh_prng_dummy_get)
   return ASSH_OK;
 }
 
-static ASSH_PRNG_CLEANUP_FCN(assh_prng_dummy_cleanup)
+static ASSH_PRNG_CLEANUP_FCN(test_prng_dummy_cleanup)
 {
   free(c->prng_pv);
 }
 
-const struct assh_prng_s assh_prng_dummy =
+const struct assh_prng_s test_prng_dummy =
 {
-  .f_init = assh_prng_dummy_init,
-  .f_get = assh_prng_dummy_get,
-  .f_cleanup = assh_prng_dummy_cleanup,
+  .f_init = test_prng_dummy_init,
+  .f_get = test_prng_dummy_get,
+  .f_cleanup = test_prng_dummy_cleanup,
 };
 
 /**************************************************************/
@@ -212,7 +216,7 @@ test_algo_lookup(enum assh_algo_class_e cl, const char *name,
 {
   if (!strcmp(name, "fuzz") && cl == ASSH_ALGO_CIPHER)
     {
-      *algo = &assh_cipher_fuzz.algo;
+      *algo = &test_cipher_fuzz.algo;
       return ASSH_OK;
     }
 
@@ -268,3 +272,62 @@ test_algo_lookup(enum assh_algo_class_e cl, const char *name,
 
   return ASSH_NOT_FOUND;
 }
+
+/**************************************************************/
+
+size_t test_alloc_size = 0;
+uint32_t test_alloc_fuzz = 0;
+unsigned long test_alloc_fuzz_fails = 0;
+
+ASSH_ALLOCATOR(test_leaks_allocator)
+{
+  if (*ptr == NULL)
+    {
+      if (test_alloc_fuzz && test_prng_rand() % test_alloc_fuzz == 0)
+	{
+	  test_alloc_fuzz_fails++;
+	  return ASSH_ERR_MEM;
+	}
+      size_t *bsize = malloc(TEST_ALLOC_ALIGN + size);
+      if (bsize != NULL)
+	{
+	  *ptr = (uint8_t*)bsize + TEST_ALLOC_ALIGN;
+	  *bsize = size;
+	  test_alloc_size += size;
+	  memset(*ptr, 0xa5, size);
+#ifdef CONFIG_ASSH_VALGRIND
+	  VALGRIND_MAKE_MEM_UNDEFINED(*ptr, size);
+#endif
+	  return ASSH_OK;
+	}
+      return ASSH_ERR_MEM;
+    }
+  else if (size == 0)
+    {
+      size_t *bsize = (void*)((uint8_t*)*ptr - TEST_ALLOC_ALIGN);
+      test_alloc_size -= *bsize;
+      memset((void*)bsize, 0x5a, *bsize);
+      free((void*)bsize);
+      return ASSH_OK;
+    }
+  else
+    {
+      if (test_alloc_fuzz && test_prng_rand() % test_alloc_fuzz == 0)
+	{
+	  test_alloc_fuzz_fails++;
+	  return ASSH_ERR_MEM;
+	}
+      size_t *bsize = (void*)((uint8_t*)*ptr - TEST_ALLOC_ALIGN);
+      bsize = realloc(bsize, TEST_ALLOC_ALIGN + size);
+      if (bsize != NULL)
+	{
+	  test_alloc_size -= *bsize;
+	  test_alloc_size += size;
+	  *ptr = (uint8_t*)bsize + TEST_ALLOC_ALIGN;
+	  *bsize = size;
+	  return ASSH_OK;
+	}
+      return ASSH_ERR_MEM;
+    }
+}
+

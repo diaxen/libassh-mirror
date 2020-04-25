@@ -50,7 +50,7 @@
 #include <assh/helper_server.h>
 #include <assh/helper_io.h>
 
-#include "prng_weak.h"
+#include "test.h"
 #include "keys.h"
 
 #define ERROR(...) do { fprintf(stderr, __VA_ARGS__); exit(1); } while (0)
@@ -65,7 +65,7 @@ int LLVMFuzzerInitialize(int *argc, char ***argv)
 
 int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 {
-  prng_seed = 1;
+  test_prng_seed = 1;
 
   if (Size < 3)
     return 0;
@@ -77,7 +77,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
   struct assh_context_s context;
 
   if (assh_context_init(&context, flags[0] & 1 ? ASSH_SERVER : ASSH_CLIENT,
-			  NULL, NULL, &assh_prng_dummy, NULL) != ASSH_OK ||
+			  NULL, NULL, &test_prng_dummy, NULL) != ASSH_OK ||
       assh_service_register_default(&context) != ASSH_OK ||
       assh_algo_register_va(&context, 0, 0, 0, &assh_kex_none.algo_wk.algo,
 			    &assh_sign_none.algo_wk.algo,
@@ -315,7 +315,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 	  struct assh_event_request_s *ev =
 	    &event.connection.request;
 
-	  if (assh_prng_rand() & 1)
+	  if (test_prng_rand() & 1)
 	    ev->reply = ASSH_CONNECTION_REPLY_SUCCESS;
 
 	  assh_event_done(&session, &event, ASSH_OK);

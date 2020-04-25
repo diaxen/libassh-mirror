@@ -31,7 +31,6 @@
 #include <string.h>
 
 #include "test.h"
-#include "leaks_check.h"
 
 struct cipher_test_s
 {
@@ -422,7 +421,7 @@ void test_cipher(const struct cipher_test_s *t,
 {
   struct assh_context_s context;
 
-  if (assh_context_init(&context, ASSH_CLIENT_SERVER, assh_leaks_allocator,
+  if (assh_context_init(&context, ASSH_CLIENT_SERVER, test_leaks_allocator,
 			NULL, NULL, NULL))
     TEST_FAIL("context init");
 
@@ -557,8 +556,8 @@ main(int argc, char **argv)
 	  done = 1;
 	  test_cipher(t, (void*)*a);
 
-	  if (alloc_size != 0)
-	    TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
+	  if (test_alloc_size != 0)
+	    TEST_FAIL("memory leak detected, %zu bytes allocated\n", test_alloc_size);
 	}
 
       if (!done)

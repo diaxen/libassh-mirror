@@ -189,10 +189,6 @@ fifo.h \
 keys.h \
 sign.h \
 test.h \
-leaks_check.h \
-prng_weak.h \
-cipher_fuzz.h \
-fuzz.h \
 cl_OpenSSH_4_7_rsa_dsa_aes128cbc_sha1.ssh \
 cl_OpenSSH_8_3_c25519_ed25519_aes128ctr_sha256_pwbad.ssh \
 cl_OpenSSH_8_3_c25519_ed25519_aes128ctr_sha256_pwok.ssh \

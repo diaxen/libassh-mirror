@@ -36,12 +36,9 @@
 #include <assh/assh_userauth.h>
 #include <assh/helper_key.h>
 
-#include "prng_weak.h"
-#include "leaks_check.h"
 #include "fifo.h"
 #include "keys.h"
 #include "test.h"
-#include "cipher_fuzz.h"
 
 #include <stdio.h>
 #include <getopt.h>
@@ -340,10 +337,10 @@ void test(const struct assh_algo_kex_s *ka,
   };
 
   if (assh_context_init(&context[0], ASSH_SERVER,
-			assh_leaks_allocator, NULL, &assh_prng_dummy, NULL) ||
+			test_leaks_allocator, NULL, &test_prng_dummy, NULL) ||
       assh_algo_register_static(&context[0], algos) ||
       assh_context_init(&context[1], ASSH_CLIENT,
-			assh_leaks_allocator, NULL, &assh_prng_dummy, NULL) ||
+			test_leaks_allocator, NULL, &test_prng_dummy, NULL) ||
       assh_algo_register_static(&context[1], algos))
     TEST_FAIL("ctx init\n");
 
@@ -375,7 +372,7 @@ void test(const struct assh_algo_kex_s *ka,
 			    sign_key->key_algo, ASSH_ALGO_SIGN, sign_key->key_blob[0],
 			    &key_blob, sign_key->key_size))
 	    {
-	      if (alloc_fuzz)
+	      if (test_alloc_fuzz)
 		continue;
 	      TEST_FAIL("sign key load\n");
 	    }
@@ -390,7 +387,7 @@ void test(const struct assh_algo_kex_s *ka,
 			    kex_key->key_algo, ASSH_ALGO_KEX, kex_key->key_blob[0],
 			    &key_blob, kex_key->key_size))
 	    {
-	      if (alloc_fuzz)
+	      if (test_alloc_fuzz)
 		continue;
 	      TEST_FAIL("kex key load\n");
 	    }
@@ -398,18 +395,18 @@ void test(const struct assh_algo_kex_s *ka,
 	}
 
       if (assh_session_init(c, &session[i]) ||
-	  assh_kex_set_threshold(&session[i], 1024 + assh_prng_rand() % 1024))
+	  assh_kex_set_threshold(&session[i], 1024 + test_prng_rand() % 1024))
 	TEST_FAIL("sessions init");
 
       assh_userauth_done(&session[i]);
-      assh_cipher_fuzz_initreg(c, &session[i]);
+      test_cipher_fuzz_initreg(c, &session[i]);
     }
 
   uint_fast8_t stall = 0;
 
   char data[256];
   for (i = 0; i < sizeof(data); i++)
-    data[i] = assh_prng_rand();
+    data[i] = test_prng_rand();
 
   while (done_count[0] < cycles &&
 	 done_count[1] < cycles)
@@ -422,13 +419,13 @@ void test(const struct assh_algo_kex_s *ka,
 
 	  if ((started >> i) & 1)
 	    {
-	      size_t size = assh_prng_rand() % sizeof(data);
+	      size_t size = test_prng_rand() % sizeof(data);
 	      assh_channel_data(ch[i], (const uint8_t*)data, &size);
 	    }
 
 	  if (!assh_event_get(&session[i], &event, 0))
 	    {
-	      if (!packet_fuzz)
+	      if (!test_packet_fuzz)
 		TEST_FAIL("seed %u, event_get %u terminated\n", seed, i);
 	      else
 		goto done;
@@ -438,7 +435,7 @@ void test(const struct assh_algo_kex_s *ka,
 	    {
 	    case ASSH_EVENT_CHANNEL_FAILURE:
 	    case ASSH_EVENT_SESSION_ERROR:
-	      if (packet_fuzz || alloc_fuzz)
+	      if (test_packet_fuzz || test_alloc_fuzz)
 		goto done;
 	      TEST_FAIL("seed %u, error %u %lx\n", seed, i,
 			event.session.error.code);
@@ -502,7 +499,7 @@ void test(const struct assh_algo_kex_s *ka,
 	  if (stall >= 100)
 	    {
 	      /* packet exchange is stalled, hopefully due to a fuzzing error */
-	      if (!packet_fuzz)
+	      if (!test_packet_fuzz)
 		TEST_FAIL("seed %u, stalled %u\n", seed, i);
 	      ASSH_DEBUG("=== stall ===");
 	      goto done;
@@ -516,8 +513,8 @@ void test(const struct assh_algo_kex_s *ka,
   assh_session_cleanup(&session[1]);
   assh_context_cleanup(&context[1]);
 
-  if (alloc_size != 0)
-    TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
+  if (test_alloc_size != 0)
+    TEST_FAIL("memory leak detected, %zu bytes allocated\n", test_alloc_size);
 }
 
 static assh_status_t
@@ -582,7 +579,7 @@ static assh_bool_t test_loop_2(unsigned int seed,
 			    !algo_lookup(ASSH_ALGO_SIGN, sign->algo, sign->variant,
 					 (const struct assh_algo_s **)&sa))
 			  {
-			    assh_prng_seed(seed);
+			    test_prng_set_seed(seed);
 			    kex_done = 1;
 			    test(ka, sa, ca, ma, cpa,
 				 kex, sign, seed, cycles);
@@ -757,8 +754,8 @@ int main(int argc, char **argv)
       /* run some sessions, use various algorithms */
       if (action & ACTION_NOFUZZING)
 	{
-	  alloc_fuzz = 0;
-	  packet_fuzz = 0;
+	  test_alloc_fuzz = 0;
+	  test_packet_fuzz = 0;
 
 	  /* test cipher and mac */
 	  test_loop(s, kex_list_short, sign_list_short, cipher_list_long, mac_list_long, comp_list_short, 2);
@@ -776,8 +773,8 @@ int main(int argc, char **argv)
       /* run some more sessions with some packet error */
       if (action & ACTION_PACKET_FUZZ)
 	{
-	  alloc_fuzz = 0;
-	  packet_fuzz = 10 + assh_prng_rand() % 1024;
+	  test_alloc_fuzz = 0;
+	  test_packet_fuzz = 10 + test_prng_rand() % 1024;
 
 	  /* fuzz compression parsing */
 	  test_loop(s, kex_list_short, sign_list_short, cipher_list_fuzz, mac_list_fuzz, comp_list_long, 4);
@@ -793,8 +790,8 @@ int main(int argc, char **argv)
       /* run some more sessions with some allocation fails */
       if (action & ACTION_ALLOC_FUZZ)
 	{
-	  alloc_fuzz = 4 + assh_prng_rand() % 128;
-	  packet_fuzz = 0;
+	  test_alloc_fuzz = 4 + test_prng_rand() % 128;
+	  test_packet_fuzz = 0;
 
 	  /* fuzz cipher and mac allocation */
 	  test_loop(s, kex_list_short, sign_list_short, cipher_list_long, mac_list_long, comp_list_short, 4);
@@ -806,8 +803,8 @@ int main(int argc, char **argv)
 
       if (action & ACTION_ALL_FUZZ)
 	{
-	  alloc_fuzz = 64 + assh_prng_rand() % 64;
-	  packet_fuzz = 512 + assh_prng_rand() % 512;
+	  test_alloc_fuzz = 64 + test_prng_rand() % 64;
+	  test_packet_fuzz = 512 + test_prng_rand() % 512;
 
 	  /* fuzz compression parsing */
 	  test_loop(s, kex_list_short, sign_list_short, cipher_list_fuzz, mac_list_fuzz, comp_list_long, 4);
@@ -838,8 +835,8 @@ int main(int argc, char **argv)
 	      "  %8lu fuzz packet bit errors\n"
 	      "  %8lu fuzz memory allocation fails\n"
 	      ,
-	      packet_fuzz_bits,
-	      alloc_fuzz_fails
+	      test_packet_fuzz_bits,
+	      test_alloc_fuzz_fails
 	  );
 
   puts("\nTest passed");

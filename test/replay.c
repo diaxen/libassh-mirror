@@ -109,11 +109,9 @@
 
 #define FIFO_BUF_SIZE CONFIG_ASSH_MAX_PAYLOAD
 
-#include "leaks_check.h"
 #include "fifo.h"
 #include "test.h"
 #include "keys.h"
-#include "prng_weak.h"
 
 #include <stdio.h>
 #include <getopt.h>
@@ -1477,8 +1475,8 @@ static int replay_file(const char *fname)
       goto skip_1;
 #else
       if (assh_context_init(&context[0], ASSH_SERVER,
-			    assh_leaks_allocator, NULL,
-			    &assh_prng_dummy, NULL))
+			    test_leaks_allocator, NULL,
+			    &test_prng_dummy, NULL))
 	TEST_FAIL("server ctx init\n");
 
       if (context_load(&context[0], f_in[0], 0))
@@ -1496,8 +1494,8 @@ static int replay_file(const char *fname)
       goto skip_2;
 #else
       if (assh_context_init(&context[1], ASSH_CLIENT,
-			    assh_leaks_allocator, NULL,
-			    &assh_prng_dummy, NULL))
+			    test_leaks_allocator, NULL,
+			    &test_prng_dummy, NULL))
 	TEST_FAIL("client ctx init\n");
 
       if (context_load(&context[1], f_in[1], 1))
@@ -1532,8 +1530,8 @@ static int replay_file(const char *fname)
   fclose(f_in[0]);
   fclose(f_in[1]);
 
-  if (alloc_size != 0)
-    TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
+  if (test_alloc_size != 0)
+    TEST_FAIL("memory leak detected, %zu bytes allocated\n", test_alloc_size);
   return result;
 }
 
@@ -1653,15 +1651,15 @@ static int record(int argc, char **argv)
 
 #if defined(CONFIG_ASSH_SERVER)
   if (assh_context_init(&context[0], ASSH_SERVER,
-			assh_leaks_allocator, NULL,
-			&assh_prng_dummy, NULL))
+			test_leaks_allocator, NULL,
+			&test_prng_dummy, NULL))
     TEST_FAIL("server ctx init\n");
 #endif
 
 #if defined(CONFIG_ASSH_CLIENT)
   if (assh_context_init(&context[1], ASSH_CLIENT,
-			assh_leaks_allocator, NULL,
-			&assh_prng_dummy, NULL))
+			test_leaks_allocator, NULL,
+			&test_prng_dummy, NULL))
     TEST_FAIL("client ctx init\n");
 #endif
 
@@ -2006,8 +2004,8 @@ static int record(int argc, char **argv)
   assh_key_flush(&context[1], &hostbased_keys);
   assh_context_cleanup(&context[1]);
 
-  if (alloc_size != 0)
-    TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
+  if (test_alloc_size != 0)
+    TEST_FAIL("memory leak detected, %zu bytes allocated\n", test_alloc_size);
 
   if (!result)
     puts("\nDone");

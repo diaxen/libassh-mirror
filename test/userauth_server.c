@@ -37,8 +37,6 @@
 #include <assh/assh_event.h>
 
 #include "fifo.h"
-#include "prng_weak.h"
-#include "leaks_check.h"
 #include "test.h"
 
 static struct fifo_s fifo[2];
@@ -1261,7 +1259,7 @@ static void test()
 {
   uint_fast8_t i;
   uint_fast8_t stall = 0;
-  size_t alloc_size_init = alloc_size;
+  size_t alloc_size_init = test_alloc_size;
 
   for (i = 0; i < 2; i++)
     {
@@ -2262,7 +2260,7 @@ static void test()
 
   ASSH_DEBUG("=== done ===\n");
 
-  if (alloc_size == alloc_size_init)
+  if (test_alloc_size == alloc_size_init)
     TEST_FAIL("leak checking not working\n");
 
   for (i = 0; i < 2; i++)
@@ -2271,8 +2269,8 @@ static void test()
   assh_packet_collect(&context[0]);
   assh_packet_collect(&context[1]);
 
-  if (alloc_size != alloc_size_init)
-    TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
+  if (test_alloc_size != alloc_size_init)
+    TEST_FAIL("memory leak detected, %zu bytes allocated\n", test_alloc_size);
 }
 
 /************************************************************** main */
@@ -2297,7 +2295,7 @@ int main()
 
   /* init server context */
   if (assh_context_init(&context[0], ASSH_SERVER,
-			assh_leaks_allocator, NULL, &assh_prng_dummy, NULL) ||
+			test_leaks_allocator, NULL, &test_prng_dummy, NULL) ||
       assh_service_register_va(&context[0], &assh_service_userauth_server,
 			       &assh_service_connection, NULL) ||
       algo_register(&context[0]))
@@ -2310,7 +2308,7 @@ int main()
 
   /* init client context */
   if (assh_context_init(&context[1], ASSH_CLIENT,
-			assh_leaks_allocator, NULL, &assh_prng_dummy, NULL) ||
+			test_leaks_allocator, NULL, &test_prng_dummy, NULL) ||
       assh_service_register_va(&context[1], &test_service_userauth_client,
 			       &assh_service_connection, NULL) ||
       algo_register(&context[1]))

@@ -27,10 +27,10 @@
 #include <assh/assh_context.h>
 #include <assh/assh_prng.h>
 
-#include "prng_weak.h"
-#include "test.h"
 #include <stdlib.h>
 #include <stdio.h>
+
+#include "test.h"
 
  /* 1024 bits prime number */
 static const uint8_t *prime1 = (const uint8_t*)"\x00\x00\x00\x81"
@@ -1007,8 +1007,8 @@ void test_add_sub(unsigned int count)
         A, B, C, D, S, L
       };
 
-      size_t s = 27 + assh_prng_rand() % 100;
-      size_t l = 3 + assh_prng_rand() % 12;
+      size_t s = 27 + test_prng_rand() % 100;
+      size_t l = 3 + test_prng_rand() % 12;
 
       static const assh_bignum_op_t bytecode[] = {
         ASSH_BOP_SIZE(  A,      S                       ),
@@ -1186,12 +1186,12 @@ assh_status_t test_move(unsigned int count)
         A_mpint, B_mpint
       };
 
-      size_t s = 1 + assh_prng_rand() % 64;
+      size_t s = 1 + test_prng_rand() % 64;
 
       uint8_t mpa[s+4];
       uint8_t mpb[s+4];
 
-      memset(mpa + 4, assh_prng_rand() & 127, s);
+      memset(mpa + 4, test_prng_rand() & 127, s);
 
       if (mpa[4] == 0)
         s = 0;
@@ -1259,7 +1259,7 @@ void test_modinv(unsigned int count)
       };
 
       if (assh_bignum_bytecode(&context, 0, bytecode, "TTTTsM",
-                               (size_t)(assh_prng_rand() % 900 + 100),
+                               (size_t)(test_prng_rand() % 900 + 100),
                                i % 2 ? prime1 : prime2))
         TEST_FAIL();
     }
@@ -1311,7 +1311,7 @@ void test_mt(unsigned int count)
       };
 
       if (assh_bignum_bytecode(&context, 0, bytecode, "TTTTTmsM",
-                               (size_t)1024 /*(assh_prng_rand() % 900 + 100)*/,
+                               (size_t)1024 /*(test_prng_rand() % 900 + 100)*/,
                                i % 2 ? prime1 : prime2))
         TEST_FAIL();
     }
@@ -1397,7 +1397,7 @@ int main(int argc, char **argv)
     return -1;
 
   if (assh_context_init(&context, ASSH_CLIENT_SERVER,
-                        NULL, NULL, &assh_prng_dummy, NULL))
+                        NULL, NULL, &test_prng_dummy, NULL))
     return -1;
 
   test_convert();

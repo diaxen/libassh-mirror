@@ -31,7 +31,6 @@
 #include <string.h>
 
 #include "test.h"
-#include "leaks_check.h"
 
 struct mac_test_s
 {
@@ -270,7 +269,7 @@ void test_mac(const struct mac_test_s *t,
   struct assh_context_s context;
 
   if (assh_context_init(&context, ASSH_CLIENT_SERVER,
-			assh_leaks_allocator,
+			test_leaks_allocator,
 			NULL, NULL, NULL))
     TEST_FAIL("context init");
 
@@ -298,7 +297,7 @@ void test_mac(const struct mac_test_s *t,
       unsigned i;
 
       for (i = 0; i < in_size; i++)
-	in[i] = assh_prng_rand_seed(&seed);
+	in[i] = test_prng_rand_seed(&seed);
     }
 
   uint8_t out[out_size];
@@ -403,8 +402,8 @@ main(int argc, char **argv)
 	  done = 1;
 	  test_mac(t, (void*)*a);
 
-	  if (alloc_size != 0)
-	    TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
+	  if (test_alloc_size != 0)
+	    TEST_FAIL("memory leak detected, %zu bytes allocated\n", test_alloc_size);
 	}
 
       if (!done)

@@ -39,10 +39,7 @@
 #include <getopt.h>
 
 #include "fifo.h"
-#include "prng_weak.h"
-#include "leaks_check.h"
 #include "test.h"
-#include "cipher_fuzz.h"
 
 static struct fifo_s fifo[2];
 static struct assh_context_s context[2];
@@ -117,7 +114,7 @@ static assh_bool_t use_keys(struct assh_key_s **k)
   assh_bool_t done = 0;
 
   for (i = 0; i < TEST_KEYS_COUNT; i++)
-    switch (assh_prng_rand() & 3)
+    switch (test_prng_rand() & 3)
       {
       case 0:
       case 1:
@@ -148,7 +145,7 @@ static int test()
   uint_fast8_t i;
   uint_fast8_t done = 0;
   uint_fast8_t stall = 0;
-  size_t alloc_size_init = alloc_size;
+  size_t alloc_size_init = test_alloc_size;
 
   ASSH_DEBUG("%u allocated before sessions\n", alloc_size_init);
 
@@ -190,12 +187,12 @@ static int test()
 
 	case ASSH_EVENT_SESSION_ERROR:
 	  auth_server_err_count++;
-	  if (packet_fuzz || alloc_fuzz)
+	  if (test_packet_fuzz || test_alloc_fuzz)
 	    goto done;
 	  TEST_FAIL("error event");
 
 	case ASSH_EVENT_DISCONNECT:
-	  if (packet_fuzz)
+	  if (test_packet_fuzz)
 	    goto done;
 	  TEST_FAIL("disconnect event");
 
@@ -205,13 +202,13 @@ static int test()
 	  break;
 
 	case ASSH_EVENT_USERAUTH_SERVER_METHODS:
-	  event.userauth_server.methods.banner.size = 4 - assh_prng_rand() % 5;
+	  event.userauth_server.methods.banner.size = 4 - test_prng_rand() % 5;
 	  event.userauth_server.methods.banner.str = "test";
 
 	  do {
 	    /* randomly choose some initial allowed methods */
 	    event.userauth_server.methods.methods =
-	      assh_prng_rand() & ASSH_USERAUTH_METHOD_SERVER_IMPLEMENTED;
+	      test_prng_rand() & ASSH_USERAUTH_METHOD_SERVER_IMPLEMENTED;
 	  } while (!event.userauth_server.methods.methods);
 
 	  /* unlimited retries */
@@ -228,14 +225,14 @@ static int test()
 
 	case ASSH_EVENT_USERAUTH_SERVER_USERKEY: {
 	  stall = 0;
-	  assh_bool_t found = assh_prng_rand() & 1;
+	  assh_bool_t found = test_prng_rand() & 1;
 	  /* randomly report userkey found */
 	  event.userauth_server.userkey.found = found;
 	  if (found)
 	    auth_server_pubkey_found_count++;
 	  else
 	    auth_server_pubkey_wrong_count++;
-	  if (!packet_fuzz)
+	  if (!test_packet_fuzz)
 	    {
 	      if (assh_buffer_strcmp(&event.userauth_server.userkey.username, username))
 		TEST_FAIL("");
@@ -254,23 +251,23 @@ static int test()
 
 	case ASSH_EVENT_USERAUTH_SERVER_KBINFO: {
 	  assh_buffer_strset(&event.userauth_server.kbinfo.name,
-			     (const char*)"nametest" + assh_prng_rand() % 8);
+			     (const char*)"nametest" + test_prng_rand() % 8);
 	  assh_buffer_strset(&event.userauth_server.kbinfo.instruction,
-			     (const char*)"insttest" + assh_prng_rand() % 8);
+			     (const char*)"insttest" + test_prng_rand() % 8);
 	  static const struct assh_cbuffer_s p[] = {
 	    { .str = "password: ", .len = 10 },
 	    { .str = "token: ", .len = 7 },
 	    { .str = "foo: ", .len = 5 },
 	    { .str = "bar: ", .len = 5 },
 	  };
-	  event.userauth_server.kbinfo.count = assh_prng_rand() % 4;
+	  event.userauth_server.kbinfo.count = test_prng_rand() % 4;
 	  event.userauth_server.kbinfo.prompts = p;
 	  auth_server_keyboard_info_count++;
 	  break;
 	}
 
 	case ASSH_EVENT_USERAUTH_SERVER_KBRESPONSE: {
-	  switch (assh_prng_rand() % 8)
+	  switch (test_prng_rand() % 8)
 	    {
 	    case 0:
 	      break;
@@ -297,7 +294,7 @@ static int test()
 	case ASSH_EVENT_USERAUTH_SERVER_PASSWORD:
 	  stall = 0;
 	  /* randomly report password success */
-	  if (!packet_fuzz)
+	  if (!test_packet_fuzz)
 	    {
 	      if (assh_buffer_strcmp(&event.userauth_server.password.username, username) ||
 		  assh_buffer_strcmp(&event.userauth_server.password.password, password))
@@ -311,7 +308,7 @@ static int test()
 	  if (event.userauth_server.password.new_password.len)
 	    auth_server_password_new_count++;
 
-	  switch (assh_prng_rand() % 8)
+	  switch (test_prng_rand() % 8)
 	    {
 	    case 0:
 	      break;
@@ -328,9 +325,9 @@ static int test()
 	      break;
 	    case 6:
 	      assh_buffer_strset(&event.userauth_server.password.change_prompt,
-				 (const char*)"expired" + assh_prng_rand() % 7);
+				 (const char*)"expired" + test_prng_rand() % 7);
 	      assh_buffer_strset(&event.userauth_server.password.change_lang,
-				 (const char*)"en" + assh_prng_rand() % 2);
+				 (const char*)"en" + test_prng_rand() % 2);
 	    case 7:
 	      auth_server_password_change_count++;
 	      event.userauth_server.password.result = ASSH_SERVER_PWSTATUS_CHANGE;
@@ -339,7 +336,7 @@ static int test()
 	  break;
 
 	case ASSH_EVENT_USERAUTH_SERVER_HOSTBASED:
-	  event.userauth_server.hostbased.found = assh_prng_rand() & 1;
+	  event.userauth_server.hostbased.found = test_prng_rand() & 1;
 	  break;
 
 	case ASSH_EVENT_USERAUTH_SERVER_SUCCESS:
@@ -349,7 +346,7 @@ static int test()
 
 	  /* randomly request multi factors authentication */
 	  event.userauth_server.success.methods =
-	    assh_prng_rand() & ASSH_USERAUTH_METHOD_SERVER_IMPLEMENTED;
+	    test_prng_rand() & ASSH_USERAUTH_METHOD_SERVER_IMPLEMENTED;
 
 	  if (event.userauth_server.success.methods)
 	    auth_server_partial_success_count++;
@@ -392,12 +389,12 @@ static int test()
 
 	case ASSH_EVENT_SESSION_ERROR:
 	  auth_client_err_count++;
-	  if (packet_fuzz || alloc_fuzz)
+	  if (test_packet_fuzz || test_alloc_fuzz)
 	    goto done;
 	  TEST_FAIL("error event");
 
 	case ASSH_EVENT_DISCONNECT:
-	  if (packet_fuzz)
+	  if (test_packet_fuzz)
 	    goto done;
 	  TEST_FAIL("disconnect event");
 
@@ -408,7 +405,7 @@ static int test()
 
         case ASSH_EVENT_USERAUTH_CLIENT_USER:
 	  /* use a username of random len */
-	  username = (const char*)"testtest" + assh_prng_rand() % 4;
+	  username = (const char*)"testtest" + test_prng_rand() % 4;
           assh_buffer_strset(&event.userauth_client.user.username, username);
           break;
 
@@ -420,7 +417,7 @@ static int test()
 	  /* randomly try available authentication methods */
 	  while (!event.userauth_client.methods.select)
 	    {
-	      switch (assh_prng_rand() % 8)
+	      switch (test_prng_rand() % 8)
 		{
 		case 0:
 		  if (!(event.userauth_client.methods.methods &
@@ -436,7 +433,7 @@ static int test()
 			ASSH_USERAUTH_METHOD_PASSWORD))
 		    break;
 		  /* randomly pick a password */
-		  i = assh_prng_rand() % TEST_PASS_COUNT;
+		  i = test_prng_rand() % TEST_PASS_COUNT;
 		  password = pass[i];
 		  assh_buffer_strset(&event.userauth_client.methods.password, password);
 		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_PASSWORD;
@@ -449,7 +446,7 @@ static int test()
 		    break;
 		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_KEYBOARD;
 		  assh_buffer_strset(&event.userauth_client.methods.keyboard_sub,
-				     (const char*)"method" + assh_prng_rand() % 6);
+				     (const char*)"method" + test_prng_rand() % 6);
 		  auth_client_keyboard_count++;
 		  break;
 
@@ -473,9 +470,9 @@ static int test()
 		    break;
 		  event.userauth_client.methods.select = ASSH_USERAUTH_METHOD_HOSTBASED;
 		  assh_buffer_strset(&event.userauth_client.methods.host_name,
-				     (const char*)"localhost" + assh_prng_rand() % 9);
+				     (const char*)"localhost" + test_prng_rand() % 9);
 		  assh_buffer_strset(&event.userauth_client.methods.host_username,
-				     (const char*)"test" + assh_prng_rand() % 4);
+				     (const char*)"test" + test_prng_rand() % 4);
 
 		  if (!use_keys(&event.userauth_client.methods.keys))
 		    event.userauth_client.methods.select = 0;
@@ -494,7 +491,7 @@ static int test()
 	      {
 		if (assh_sign_generate(&context[1], e->algo, keys[i].key_c,
 				       1, &e->auth_data, e->sign.data, &e->sign.len)
-		    && !alloc_fuzz)
+		    && !test_alloc_fuzz)
 		  TEST_FAIL("sign");
 		break;
 	      }
@@ -502,12 +499,12 @@ static int test()
 	}
 
 	case ASSH_EVENT_USERAUTH_CLIENT_PWCHANGE: {
-	  if (assh_prng_rand() & 1)
+	  if (test_prng_rand() & 1)
 	    {
 	      auth_client_password_skip_change_count++;
 	      break;
 	    }
-	  i = assh_prng_rand() % TEST_PASS_COUNT;
+	  i = test_prng_rand() % TEST_PASS_COUNT;
 	  password = pass[i];
 	  assh_buffer_strset(&event.userauth_client.pwchange.old_password,
 			     password);
@@ -523,7 +520,7 @@ static int test()
           for (i = 0; i < event.userauth_client.keyboard.count; i++)
             {
               assh_buffer_strset(&event.userauth_client.keyboard.responses[i],
-				 (const char*)"azertyui" + assh_prng_rand() % 8);
+				 (const char*)"azertyui" + test_prng_rand() % 8);
 	      auth_client_keyboard_resp_count++;
             }
 	  break;
@@ -558,7 +555,7 @@ static int test()
 	  /* packet exchange is stalled, hopefully due to a fuzzing error */
 	  auth_stall_count++;
 	  ASSH_DEBUG("=== stall ===");
-	  if (!packet_fuzz)
+	  if (!test_packet_fuzz)
 	    TEST_FAIL("stalled");
 	  break;
 	}
@@ -569,10 +566,10 @@ static int test()
 
   /* unlimited retries should lead to authentication completion when
      no error is introduced */
-  assert(packet_fuzz || alloc_fuzz ||
+  assert(test_packet_fuzz || test_alloc_fuzz ||
 	 (session[0].user_auth_done && session[1].user_auth_done));
 
-  if (!packet_fuzz && !alloc_fuzz && alloc_size == alloc_size_init)
+  if (!test_packet_fuzz && !test_alloc_fuzz && test_alloc_size == alloc_size_init)
     TEST_FAIL("leak checking not working\n");
 
   for (i = 0; i < 2; i++)
@@ -581,8 +578,8 @@ static int test()
   assh_packet_collect(&context[0]);
   assh_packet_collect(&context[1]);
 
-  if (alloc_size != alloc_size_init)
-    TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
+  if (test_alloc_size != alloc_size_init)
+    TEST_FAIL("memory leak detected, %zu bytes allocated\n", test_alloc_size);
 
   return 0;
 }
@@ -606,7 +603,7 @@ static void usage()
 static int algo_register(struct assh_context_s *c)
 {
   return assh_algo_register_va(c, 0, 0, 0, &assh_kex_none.algo_wk.algo,
-			       &assh_sign_none.algo_wk.algo, &assh_cipher_fuzz.algo,
+			       &assh_sign_none.algo_wk.algo, &test_cipher_fuzz.algo,
 			       &assh_mac_none.algo, &assh_compress_none.algo, NULL) ||
     assh_algo_register_names_va(c, 0, 0, 0, ASSH_ALGO_SIGN,
 				"ssh-rsa", "ssh-dss", "ssh-ed25519",
@@ -668,7 +665,7 @@ int main(int argc, char **argv)
   uint_fast8_t i;
   /* init server context */
   if (assh_context_init(&context[0], ASSH_SERVER,
-			assh_leaks_allocator, NULL, &assh_prng_dummy, NULL) ||
+			test_leaks_allocator, NULL, &test_prng_dummy, NULL) ||
       assh_service_register_va(&context[0], &assh_service_userauth_server,
 			       &assh_service_connection, NULL) ||
       algo_register(&context[0]))
@@ -681,7 +678,7 @@ int main(int argc, char **argv)
 
   /* init client context */
   if (assh_context_init(&context[1], ASSH_CLIENT,
-			assh_leaks_allocator, NULL, &assh_prng_dummy, NULL) ||
+			test_leaks_allocator, NULL, &test_prng_dummy, NULL) ||
       assh_service_register_va(&context[1], &assh_service_userauth_client,
 			       &assh_service_connection, NULL) ||
       algo_register(&context[1]))
@@ -738,7 +735,7 @@ int main(int argc, char **argv)
   if (!keys_done)
     TEST_FAIL("unable to create a single key");
 
-  if (alloc_size == 0)
+  if (test_alloc_size == 0)
     TEST_FAIL("leak checking not working\n");
 
   unsigned int k, l;
@@ -746,13 +743,13 @@ int main(int argc, char **argv)
   /* run some ssh sessions */
   for (l = k = 0; k < count; k++)
     {
-      assh_prng_seed(seed + k);
+      test_prng_set_seed(seed + k);
 
       /* run a session */
       if (action & ACTION_NOFUZZING)
 	{
-	  alloc_fuzz = 0;
-	  packet_fuzz = 0;
+	  test_alloc_fuzz = 0;
+	  test_packet_fuzz = 0;
 	  putc('t', stdout);
 	  l++;
 	  if (test())
@@ -762,8 +759,8 @@ int main(int argc, char **argv)
       /* run a session with some packet error */
       if (action & ACTION_PACKET_FUZZ)
 	{
-	  alloc_fuzz = 0;
-	  packet_fuzz = 10 + assh_prng_rand() % 1024;
+	  test_alloc_fuzz = 0;
+	  test_packet_fuzz = 10 + test_prng_rand() % 1024;
 	  putc('p', stdout);
 	  l++;
 	  test();
@@ -772,8 +769,8 @@ int main(int argc, char **argv)
       /* run a session with some allocation fails */
       if (action & ACTION_ALLOC_FUZZ)
 	{
-	  alloc_fuzz = 4 + assh_prng_rand() % 32;
-	  packet_fuzz = 0;
+	  test_alloc_fuzz = 4 + test_prng_rand() % 32;
+	  test_packet_fuzz = 0;
 	  putc('a', stdout);
 	  l++;
 	  test();
@@ -781,8 +778,8 @@ int main(int argc, char **argv)
 
       if (action & ACTION_ALL_FUZZ)
 	{
-	  alloc_fuzz = 4 + assh_prng_rand() % 32;
-	  packet_fuzz = 10 + assh_prng_rand() % 1024;
+	  test_alloc_fuzz = 4 + test_prng_rand() % 32;
+	  test_packet_fuzz = 10 + test_prng_rand() % 1024;
 	  putc('f', stdout);
 	  l++;
 	  test();
@@ -811,8 +808,8 @@ int main(int argc, char **argv)
   for (i = 0; i < 2; i++)
     assh_context_cleanup(&context[i]);
 
-  if (alloc_size != 0)
-    TEST_FAIL("memory leak detected, %zu bytes allocated\n", alloc_size);
+  if (test_alloc_size != 0)
+    TEST_FAIL("memory leak detected, %zu bytes allocated\n", test_alloc_size);
 
   printf("\nSummary:\n"
 	  "  %8lu authentication completion count\n"
@@ -880,8 +877,8 @@ int main(int argc, char **argv)
 	    "  %8lu server session error count\n"
 	    "  %8lu client session error count\n"
 	    ,
-	    alloc_fuzz_fails,
-	    packet_fuzz_bits,
+	    test_alloc_fuzz_fails,
+	    test_packet_fuzz_bits,
 	    auth_stall_count,
 	    auth_server_err_count,
 	    auth_client_err_count
