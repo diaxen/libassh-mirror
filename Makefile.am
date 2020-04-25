@@ -14,8 +14,12 @@
 # License along with this program.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-SUBDIRS = src examples test doc
+SUBDIRS = src test doc
 ACLOCAL_AMFLAGS=-Im4
+
+if COND_examples
+SUBDIRS += examples
+endif
 
 pkgconfig_DATA = libassh.pc
 pkgconfigdir = $(libdir)/pkgconfig

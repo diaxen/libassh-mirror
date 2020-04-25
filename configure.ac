@@ -90,6 +90,9 @@ AC_ARG_ENABLE(server, AC_HELP_STRING(--disable-server, [Disable SSH server suppo
 AC_ARG_ENABLE(client, AC_HELP_STRING(--disable-client, [Disable SSH client support]),
 		       enable_client=$enableval, enable_client=yes)
 
+AC_ARG_ENABLE(examples, AC_HELP_STRING(--disable-examples, [Disable building of example applications]),
+		       enable_examples=$enableval, enable_examples=yes)
+
 AC_ARG_ENABLE(none_userauth, AC_HELP_STRING(--disable-none-userauth, [Disable none authentication]),
 		       enable_none_userauth=$enableval, enable_none_userauth=yes)
 
@@ -457,6 +460,7 @@ AM_CONDITIONAL(COND_key_validate, [test x$enable_key_validate = xyes])
 AM_CONDITIONAL(COND_key_create, [test x$enable_key_create = xyes])
 
 AM_CONDITIONAL(COND_libfuzzer, [test x$enable_libfuzzer = xyes])
+AM_CONDITIONAL(COND_examples, [test x$enable_examples = xyes])
 
 if test x$enable_server = xyes ; then
    AC_DEFINE([CONFIG_ASSH_SERVER], [], [Enable support for the server side of the SSH protocol when defined.])
