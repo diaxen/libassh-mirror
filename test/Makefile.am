@@ -224,4 +224,10 @@ sv_libssh2_1_9_0_nistp256_rsa_aes128ctr_sha256_pwok.ssh \
 sv_libssh_0_9_5_nistp256_rsa_3descbc_sha1_pubok.ssh \
 sv_libssh_0_9_5_nistp256_rsa_aes128ctr_sha256_pwok.ssh \
 sv_wolfSSH_1_4_5_gex256_nistp256_aes128gcm_sha256_pw.ssh \
-sv_wolfSSH_1_4_5_nistp256_rsa_aes128ctr_sha256_pw.ssh
+sv_wolfSSH_1_4_5_nistp256_rsa_aes128ctr_sha256_pw.ssh \
+cl_OpenSSH_8_3_sodium_aes128ctr_sha256_pwok.ssh \
+cl_OpenSSH_8_3_zlib_pwok.ssh \
+cl_OpenSSH_8_3_zlibopenssh_pwok.ssh \
+sv_OpenSSH_8_3_sodium_chachapoly_sha256_pubok.ssh \
+sv_OpenSSH_8_3_zlib.ssh \
+sv_OpenSSH_8_3_zlibopenssh.ssh
