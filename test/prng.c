@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_ABI_UNSAFE  /* do not warn */
+
 #include <assh/assh.h>
 #include <assh/assh_buffer.h>
 #include <assh/assh_cipher.h>

@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_ABI_UNSAFE  /* do not warn */
+
 #include "test.h"
 
 #include <assh/assh_alloc.h>

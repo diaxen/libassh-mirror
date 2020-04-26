@@ -166,7 +166,7 @@ its_open(struct assh_channel_s *ch)
   return its;
 }
 
-#ifdef CONFIG_ASSH_POSIX_OPENPT
+#ifdef HAVE_POSIX_OPENPT
 /* allocate pty for a session */
 static int
 its_pty(struct its_s *its)
@@ -260,7 +260,7 @@ its_exec(struct its_s *its,
       return -1;
     }
 
-#ifdef CONFIG_ASSH_POSIX_OPENPT
+#ifdef HAVE_POSIX_OPENPT
     case ITS_PTY:
       /* fork child process */
       child_pid = fork();
@@ -634,7 +634,7 @@ ssh_loop(struct assh_session_s *session,
 	      /* PTY request from the remote client */
 	      if (!assh_buffer_strcmp(&ev->type, "pty-req"))
 		{
-#ifdef CONFIG_ASSH_POSIX_OPENPT
+#ifdef HAVE_POSIX_OPENPT
 		  struct asshh_inter_pty_req_s rqi;
 		  err = asshh_inter_decode_pty_req(&rqi, ev->rq_data.data,
 						  ev->rq_data.size);

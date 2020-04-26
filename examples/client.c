@@ -69,7 +69,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <termios.h>
-#ifdef CONFIG_ASSH_TIOCGWINSZ
+#ifdef HAVE_TIOCGWINSZ
 # include <sys/ioctl.h>
 #endif
 
@@ -229,7 +229,7 @@ ssh_loop(struct assh_session_s *session,
               cfmakeraw(&t);
               tcsetattr(0, 0, &t);
 
-#ifdef CONFIG_ASSH_TIOCGWINSZ
+#ifdef HAVE_TIOCGWINSZ
 	      /* get terminal size */
 	      struct winsize ws;
 	      if (!ioctl(STDIN_FILENO, TIOCGWINSZ, &ws))

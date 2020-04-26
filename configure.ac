@@ -37,15 +37,7 @@ AM_PROG_LIBTOOL
 AC_LANG(C)
 
 AC_GNU_SOURCE
-AC_DEFINE(_XOPEN_SOURCE, 600, [_XOPEN_SOURCE])
-AC_DEFINE(_DEFAULT_SOURCE, 1, [_DEFAULT_SOURCE])
-AC_DEFINE(_BSD_SOURCE, 1, [_BSD_SOURCE])
-AC_DEFINE(_POSIX_C_SOURCE, 201410L, [_POSIX_C_SOURCE])
-AC_DEFINE(_DARWIN_C_SOURCE, 1, [_DARWIN_C_SOURCE])
-
 AC_STDC_HEADERS
-AC_CHECK_HEADERS(assert.h, AC_DEFINE([HAVE_ASSERT_H]))
-AC_CHECK_HEADERS(stdio.h, AC_DEFINE([HAVE_STDIO_H]))
 
 AC_C_CONST
 AC_C_INLINE
@@ -66,10 +58,10 @@ AC_COMPILE_IFELSE([
   #include <sys/ioctl.h>
   struct winsize ws;
   int i = TIOCGWINSZ;
-], AC_DEFINE(CONFIG_ASSH_TIOCGWINSZ, 1, [Use GNU TIOCGWINSZ ioctl]) )
+], AC_DEFINE(HAVE_TIOCGWINSZ, 1, [Use GNU TIOCGWINSZ ioctl]) )
 
 AC_CHECK_LIB(c, posix_openpt,
-  AC_DEFINE(CONFIG_ASSH_POSIX_OPENPT, 1, [Use posix_openpt when defined.])
+  AC_DEFINE(HAVE_POSIX_OPENPT, 1, [Use posix_openpt when defined.])
 )
 
 AC_CHECK_LIB(c, setgroups,
@@ -82,6 +74,11 @@ AC_CHECK_LIB(c, getspnam_r, AC_DEFINE(CONFIG_ASSH_GETSPNAM_R, 1, [Use getspnam_r
 AC_CHECK_LIB(crypt, crypt_r,
   LIBS="$LIBS -lcrypt"
   AC_DEFINE(CONFIG_ASSH_CRYPT_R, 1, [Use crypt_r when defined.])
+)
+
+AC_CHECK_HEADERS(stdio.h,
+  AC_DEFINE([CONFIG_ASSH_STDIO], 1, [Use POSIX standard buffered streams])
+  CONFIG_ASSH_STDIO=yes
 )
 
 AC_ARG_ENABLE(server, AC_HELP_STRING(--disable-server, [Disable SSH server support]),

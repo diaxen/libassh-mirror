@@ -41,7 +41,7 @@
 
 #ifdef __GNUC__
 # define ASSH_WARN_UNUSED_RESULT __attribute__((warn_unused_result))
-# ifdef CONFIG_ASSH_ABI_WARN
+# if defined(CONFIG_ASSH_ABI_WARN) && !defined(ASSH_ABI_UNSAFE)
 #  define ASSH_ABI_UNSAFE __attribute__((deprecated("ABI")))
 # endif
 # define ASSH_UNUSED __attribute__((unused))

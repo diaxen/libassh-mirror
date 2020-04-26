@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_ABI_UNSAFE  /* do not warn */
+
 #include <assh/assh_sign.h>
 #include <assh/assh_context.h>
 #include <assh/assh_prng.h>

@@ -91,6 +91,10 @@
 
 */
 
+#define ASSH_ABI_UNSAFE  /* do not warn */
+
+#include "config.h"
+
 #include <assh/assh_session.h>
 #include <assh/assh_context.h>
 #include <assh/assh_kex.h>

@@ -140,9 +140,6 @@
 /** @This specifies the maximum byte amount of spare packets in the pool. */
 #define CONFIG_ASSH_PACKET_POOL_SIZE 1048576
 
-/** When defined, @this enables code which relies on the @tt posix_openpt. */
-#define CONFIG_ASSH_POSIX_OPENPT
-
 /** When defined, @this enables code which relies on the @tt qsort_r
     function from the C library. */
 #define CONFIG_ASSH_GNU_QSORTR

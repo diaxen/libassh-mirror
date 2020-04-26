@@ -24,14 +24,14 @@
 
 #include <assh/assh.h>
 
-#ifdef HAVE_STDIO_H
+#ifdef CONFIG_ASSH_STDIO
 # include <stdio.h>
 #endif
 
 void assh_hexdump(void *stream, const char *name,
 		  const void *data, size_t len)
 {
-#ifdef HAVE_STDIO_H
+#ifdef CONFIG_ASSH_STDIO
   FILE *out = stream;
   size_t i, j;
   const uint8_t *data_ = data;

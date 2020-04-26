@@ -27,6 +27,8 @@
   allocation failure.
 */
 
+#define ASSH_ABI_UNSAFE  /* do not warn */
+
 #include <assh/assh_session.h>
 #include <assh/assh_context.h>
 #include <assh/assh_service.h>

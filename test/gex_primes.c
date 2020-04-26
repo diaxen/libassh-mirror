@@ -21,6 +21,7 @@
 
 */
 
+#define ASSH_ABI_UNSAFE  /* do not warn */
 
 #include <assh/assh_bignum.h>
 #include <assh/assh_context.h>
