@@ -126,7 +126,7 @@ AC_ARG_WITH(ciphers, AC_HELP_STRING(--with-ciphers, [Specifies backend to use fo
 AC_ARG_WITH(macs, AC_HELP_STRING(--with-macs, [Specifies backend to use for MAC algorithms (builtin, external, gcrypt, openssl, all)]),
 		       [with_macs=$withval], with_macs=all)
 
-AC_ARG_WITH(prng, AC_HELP_STRING(--with-prng, [Specifies backend to use for random source (builtin, external, devrandom, gcrypt, openssl, all)]),
+AC_ARG_WITH(prng, AC_HELP_STRING(--with-prng, [Specifies backend to use for random source (builtin, external, devrandom, gcrypt, openssl, sodium, all)]),
 		       [with_prng=$withval], with_prng=all)
 
 AC_ARG_WITH(alloc, AC_HELP_STRING(--with-alloc, [Specifies backend to use for secure memory allocation (none, libc, external, gcrypt, openssl)]),
@@ -366,8 +366,21 @@ if test x$with_sodium = xyes ; then
    ])
   ])
 
+  AC_CHECK_LIB(sodium, randombytes_buf, [
+    AC_CHECK_HEADERS(sodium/randombytes.h, [
+      case "$with_prng" in
+        *external*)
+          with_prng=sodium ;&
+        *sodium*|*all*)
+	  AC_DEFINE([CONFIG_ASSH_USE_SODIUM_PRNG], [], [Enable libsodium based prng when defined.])
+	  CONFIG_ASSH_USE_SODIUM_PRNG=yes
+      esac
+   ])
+  ])
+
   if test x$CONFIG_ASSH_USE_SODIUM_KEX = xyes ||
-     test x$CONFIG_ASSH_USE_SODIUM_SIGN = xyes; then
+     test x$CONFIG_ASSH_USE_SODIUM_KEX = xyes ||
+     test x$CONFIG_ASSH_USE_SODIUM_PRNG = xyes; then
         LIBS="$LIBS -lsodium"
         AC_DEFINE([CONFIG_ASSH_USE_SODIUM], [], [Enable the libsodium support when defined.])
 	CONFIG_ASSH_USE_SODIUM=yes
@@ -444,6 +457,7 @@ AM_CONDITIONAL(COND_prng_openssl,    [test x$CONFIG_ASSH_USE_OPENSSL_PRNG = xyes
 
 AM_CONDITIONAL(COND_kex_sodium,      [test x$CONFIG_ASSH_USE_SODIUM_KEX = xyes])
 AM_CONDITIONAL(COND_sign_sodium,     [test x$CONFIG_ASSH_USE_SODIUM_SIGN = xyes])
+AM_CONDITIONAL(COND_prng_sodium,     [test x$CONFIG_ASSH_USE_SODIUM_PRNG = xyes])
 
 AM_CONDITIONAL(COND_zlib,            [test x$CONFIG_ASSH_USE_ZLIB = xyes])
 

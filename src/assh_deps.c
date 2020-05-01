@@ -95,6 +95,9 @@ assh_default_prng(void)
 #elif defined(CONFIG_ASSH_USE_OPENSSL_PRNG)
   return &assh_prng_openssl;
 
+#elif defined(CONFIG_ASSH_USE_SODIUM_PRNG)
+  return &assh_prng_sodium;
+
 #elif defined(CONFIG_ASSH_USE_BUILTIN_PRNG)
   return &assh_prng_xswap;
 

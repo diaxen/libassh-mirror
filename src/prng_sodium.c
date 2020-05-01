@@ -21,27 +21,31 @@
 
 */
 
-/**
-   @file
-   @short Descriptors for algorithms and modules based on libsodium
-*/
+#include <assh/assh_prng.h>
+#include <assh/mod_sodium.h>
 
-#ifndef ASSH_MOD_SODIUM_H_
-#define ASSH_MOD_SODIUM_H_
+#include <sodium/randombytes.h>
 
-#include <assh/assh_kex.h>
+static ASSH_PRNG_INIT_FCN(assh_prng_sodium_init)
+{
+  return ASSH_OK;
+}
 
-# ifdef CONFIG_ASSH_USE_SODIUM_KEX
-extern const struct assh_algo_kex_s assh_kex_sodium_curve25519_sha256;
-# endif
+static ASSH_PRNG_GET_FCN(assh_prng_sodium_get)
+{
+  randombytes_buf(rdata, rdata_len);
 
-# ifdef CONFIG_ASSH_USE_SODIUM_SIGN
-extern const struct assh_algo_sign_s assh_sign_sodium_ed25519;
-extern const struct assh_key_algo_s assh_key_sodium_ed25519;
-# endif
+  return ASSH_OK;
+}
 
-# ifdef CONFIG_ASSH_USE_SODIUM_PRNG
-extern const struct assh_prng_s assh_prng_sodium;
-# endif
+static ASSH_PRNG_CLEANUP_FCN(assh_prng_sodium_cleanup)
+{
+}
 
-#endif
+const struct assh_prng_s assh_prng_sodium =
+{
+  .f_init = assh_prng_sodium_init,
+  .f_get = assh_prng_sodium_get,
+  .f_cleanup = assh_prng_sodium_cleanup,
+};
+
