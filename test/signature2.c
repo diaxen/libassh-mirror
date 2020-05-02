@@ -139,8 +139,8 @@ void test_sign(unsigned int max_size, enum action_e action)
 
 	      size -= TEST_STEP;
 	      uint8_t data[size];
-	      if (context->prng->f_get(context, data, size,
-				       ASSH_PRNG_QUALITY_WEAK))
+	      if (assh_prng_get(context, data, size,
+				 ASSH_PRNG_QUALITY_WEAK))
 		TEST_FAIL("prng get");
 
 	      struct assh_cbuffer_s d[8];

@@ -80,7 +80,7 @@ assh_key_eddsa_create(struct assh_context_s *c,
   uint8_t *kp = k->data;
   uint8_t *ks = k->data + n;
 
-  ASSH_JMP_ON_ERR(c->prng->f_get(c, ks, n,
+  ASSH_JMP_ON_ERR(assh_prng_get(c, ks, n,
                  ASSH_PRNG_QUALITY_LONGTERM_KEY), err_key);
 
   ASSH_SCRATCH_ALLOC(c, uint8_t, sc,

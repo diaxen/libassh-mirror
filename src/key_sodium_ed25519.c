@@ -172,7 +172,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_ed25519_create)
   ASSH_SCRATCH_ALLOC(c, uint8_t, seed, ASSH_ED25519_KSIZE,
 		     ASSH_ERRSV_CONTINUE, err_key);
 
-  ASSH_JMP_ON_ERR(c->prng->f_get(c, seed, ASSH_ED25519_KSIZE,
+  ASSH_JMP_ON_ERR(assh_prng_get(c, seed, ASSH_ED25519_KSIZE,
                  ASSH_PRNG_QUALITY_LONGTERM_KEY), err_sc);
 
   crypto_sign_ed25519_seed_keypair(k->pub_key, k->keypair, seed);
