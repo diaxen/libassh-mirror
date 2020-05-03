@@ -107,7 +107,7 @@ assh_userauth_client_send_pubkey(struct assh_session_s *s,
   struct assh_userauth_context_s *pv = s->srv_pv;
   assh_status_t err;
 
-  const struct assh_algo_sign_s *sa = (const void *)pv->pub_key.sign_algo;
+  const struct assh_algo_sign_s *sa = pv->pub_key.sign_algo;
 
   size_t sign_len;
   ASSH_RET_ON_ERR(assh_sign_generate(s->ctx, sa, pv->pub_key.keys, 0,

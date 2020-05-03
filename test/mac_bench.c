@@ -146,15 +146,12 @@ int main()
     TEST_FAIL("mac data alloc");
   memset(data, 0xaa, data_size);
 
-  const struct assh_algo_s **table = assh_algo_table;
-  const struct assh_algo_s *a;
-
-  while ((a = *table++) != NULL)
+  const struct assh_algo_s **a;
+  for (a = assh_algo_table; *a; a++)
     {
-      if (a->class_ != ASSH_ALGO_MAC)
-	continue;
-
-      bench((const struct assh_algo_mac_s *)a);
+      const struct assh_algo_mac_s *ma = assh_algo_mac(*a);
+      if (ma)
+	bench(ma);
     }
 
   free(data);

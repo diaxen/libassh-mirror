@@ -179,18 +179,21 @@ assh_kex_server_algos(struct assh_session_s *s, const uint8_t *lists[9],
       switch (i)
         {
         case 1: {
-          struct assh_algo_kex_s *ka = (void*)algos[i - 1];
+          const struct assh_algo_kex_s *ka =
+	    assh_algo_kex(algos[i - 1]);
           if (ka->implicit_auth)
             {
               /* ignore host key algorithm */
-              s->kex_preferred[i] = algos[i] = &assh_sign_none.algo_wk.algo;
+              s->kex_preferred[i] = algos[i] =
+		&assh_sign_none.algo_wk.algo;
               continue;
             }
           break;
         }
         case 4:
         case 5: {
-          struct assh_algo_cipher_s *ca = (void*)algos[i - 2];
+          const struct assh_algo_cipher_s *ca =
+	    assh_algo_cipher(algos[i - 2]);
           if (ca->auth_size)
             {
               /* ignore MAC algorithm */
@@ -265,11 +268,13 @@ assh_kex_client_algos(struct assh_session_s *s, const uint8_t *lists[9],
           break;
         case 1: {
           j = k;
-          struct assh_algo_kex_s *ka = (void*)algos[i - 1];
+          const struct assh_algo_kex_s *ka =
+	    assh_algo_kex(algos[i - 1]);
           if (ka->implicit_auth)
             {
               /* ignore host key algorithm */
-              s->kex_preferred[i] = algos[i] = &assh_sign_none.algo_wk.algo;
+              s->kex_preferred[i] = algos[i] =
+		&assh_sign_none.algo_wk.algo;
               continue;
             }
           break;
@@ -277,7 +282,8 @@ assh_kex_client_algos(struct assh_session_s *s, const uint8_t *lists[9],
         case 4:
           j = k;
         case 5: {
-          struct assh_algo_cipher_s *ca = (void*)algos[(i ^ 1) - 2];
+          const struct assh_algo_cipher_s *ca =
+	    assh_algo_cipher(algos[(i ^ 1) - 2]);
           if (ca->auth_size)
             {
               /* ignore MAC algorithm */
@@ -384,14 +390,14 @@ assh_status_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *
   assh_bool_t good_guess = s->kex_preferred[0] == algos[0] &&
                            s->kex_preferred[1] == algos[1];
 
-  const struct assh_algo_kex_s      *ka       = (const void *)algos[0];
-  const struct assh_algo_sign_s     *sa       = (const void *)algos[1];
-  const struct assh_algo_cipher_s   *ca_in    = (const void *)algos[2];
-  const struct assh_algo_cipher_s   *ca_out   = (const void *)algos[3];
-  const struct assh_algo_mac_s      *ma_in    = (const void *)algos[4];
-  const struct assh_algo_mac_s      *ma_out   = (const void *)algos[5];
-  const struct assh_algo_compress_s *cpa_in   = (const void *)algos[6];
-  const struct assh_algo_compress_s *cpa_out  = (const void *)algos[7];
+  const struct assh_algo_kex_s      *ka      = assh_algo_kex(algos[0]);
+  const struct assh_algo_sign_s     *sa      = assh_algo_sign(algos[1]);
+  const struct assh_algo_cipher_s   *ca_in   = assh_algo_cipher(algos[2]);
+  const struct assh_algo_cipher_s   *ca_out  = assh_algo_cipher(algos[3]);
+  const struct assh_algo_mac_s      *ma_in   = assh_algo_mac(algos[4]);
+  const struct assh_algo_mac_s      *ma_out  = assh_algo_mac(algos[5]);
+  const struct assh_algo_compress_s *cpa_in  = assh_algo_compress(algos[6]);
+  const struct assh_algo_compress_s *cpa_out = assh_algo_compress(algos[7]);
 
   assh_safety_t kin_safety = ka->algo_wk.algo.safety;
 

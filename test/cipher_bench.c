@@ -174,15 +174,12 @@ int main()
     TEST_FAIL("cipher data alloc");
   memset(data, 0xaa, data_size);
 
-  const struct assh_algo_s **table = assh_algo_table;
-  const struct assh_algo_s *a;
-
-  while ((a = *table++) != NULL)
+  const struct assh_algo_s **a;
+  for (a = assh_algo_table; *a; a++)
     {
-      if (a->class_ != ASSH_ALGO_CIPHER)
-	continue;
-
-      bench((const struct assh_algo_cipher_s *)a);
+      const struct assh_algo_cipher_s *ca = assh_algo_cipher(*a);
+      if (ca)
+	bench(ca);
     }
 
   free(data);

@@ -251,9 +251,8 @@ assh_userauth_server_get_key(struct assh_session_s *s,
   assh_status_t err;
 
   /* check if we support the requested signature algorithm */
-  if (assh_algo_by_name(s->ctx, ASSH_ALGO_SIGN, (char*)algo_name + 4,
-			assh_load_u32(algo_name),
-			(const struct assh_algo_s **)sa, namep) != ASSH_OK)
+  if (assh_algo_sign_by_name(s->ctx, (char*)algo_name + 4,
+			assh_load_u32(algo_name), sa, namep) != ASSH_OK)
     return ASSH_NO_DATA;
 
   /* load the public key from the client provided blob */

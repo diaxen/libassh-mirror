@@ -335,7 +335,7 @@ int main(int argc, char **argv)
 				    t->kex_name, strlen(t->kex_name)))
 	    continue;
 
-	  bench(t, (void*)*a);
+	  bench(t, assh_algo_kex(*a));
 	}
     }
 

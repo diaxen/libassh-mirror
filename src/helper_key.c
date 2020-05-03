@@ -197,8 +197,8 @@ assh_load_rfc4716_rfc1421(struct assh_context_s *c, FILE *file,
               dek += j + 1;
 
 	      const char *cn = assh_rfc1421_ciphers[i].cipher_name;
-	      ASSH_JMP_IF_TRUE(assh_algo_by_name_static(assh_algo_table, ASSH_ALGO_CIPHER,
-				 cn, strlen(cn), (const struct assh_algo_s**)&ca, NULL),
+	      ASSH_JMP_IF_TRUE(assh_algo_cipher_by_name_static(assh_algo_table,
+				 cn, strlen(cn), &ca, NULL),
 			       ASSH_ERR_MISSING_ALGO, err_);
 
               /* get iv */
@@ -442,9 +442,9 @@ assh_load_openssh_v1_blob(struct assh_context_s *c,
 
       /* lookup cipher */
       const struct assh_algo_cipher_s *ca;
-      ASSH_RET_IF_TRUE(assh_algo_by_name_static(assh_algo_table, ASSH_ALGO_CIPHER,
+      ASSH_RET_IF_TRUE(assh_algo_cipher_by_name_static(assh_algo_table,
                      (const char*)cipher_name + 4, assh_load_u32(cipher_name),
-                     (const struct assh_algo_s **)&ca, NULL) != ASSH_OK,
+                     &ca, NULL) != ASSH_OK,
                    ASSH_ERR_MISSING_ALGO);
 
       /* check padding length */
@@ -801,9 +801,8 @@ assh_save_openssh_v1_blob(struct assh_context_s *c,
     {
       kdfname = "bcrypt";
       kdf_opt_len = 4 + salt_size + 4;
-      ASSH_RET_IF_TRUE(assh_algo_by_name_static(assh_algo_table, ASSH_ALGO_CIPHER,
-			cipher_name, strlen(cipher_name),
-			(const struct assh_algo_s**)&ca, NULL),
+      ASSH_RET_IF_TRUE(assh_algo_cipher_by_name_static(assh_algo_table,
+			cipher_name, strlen(cipher_name), &ca, NULL),
 		       ASSH_ERR_MISSING_ALGO);
     }
   else
@@ -1018,8 +1017,8 @@ assh_save_rfc1421(struct assh_context_s *c,
       uint_fast8_t i, j;
 
       const char *cn = "aes128-cbc";
-      ASSH_RET_IF_TRUE(assh_algo_by_name_static(assh_algo_table, ASSH_ALGO_CIPHER,
-			 cn, strlen(cn), (const struct assh_algo_s**)&ca, NULL),
+      ASSH_RET_IF_TRUE(assh_algo_cipher_by_name_static(assh_algo_table,
+			 cn, strlen(cn), &ca, NULL),
 		       ASSH_ERR_MISSING_ALGO);
 
       fputs("Proc-Type: 4,ENCRYPTED\n"

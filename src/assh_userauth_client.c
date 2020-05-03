@@ -162,10 +162,10 @@ assh_userauth_client_key_next(struct assh_session_s *s,
 {
   while (k->keys != NULL)
     {
-      const struct assh_algo_with_key_s *awk;
+      const struct assh_algo_sign_s *sa;
 
-      if (assh_algo_by_key(s->ctx, k->keys,
-                           &k->algo_idx, &awk) != ASSH_OK)
+      if (assh_algo_sign_by_key(s->ctx, k->keys,
+				&k->algo_idx, &sa) != ASSH_OK)
         {
           /* drop used key */
           assh_key_drop(s->ctx, &k->keys);
@@ -174,11 +174,7 @@ assh_userauth_client_key_next(struct assh_session_s *s,
           continue;
         }
 
-      assert(awk->algo.class_ == ASSH_ALGO_SIGN);
-      const struct assh_algo_sign_s *sa = (void*)awk;
-
       k->sign_algo = sa;
-
       k->algo_idx++;
 
       /* only try one algorithm per group */
@@ -203,15 +199,11 @@ assh_userauth_client_key_get(struct assh_session_s *s,
       struct assh_key_s *next = keys->next;
 
       /* insert provided keys in internal list */
-      const struct assh_algo_with_key_s *awk;
+      const struct assh_algo_sign_s *sa;
 
-      if (keys->role == ASSH_ALGO_SIGN &&
-          assh_algo_by_key(s->ctx, keys, &k->algo_idx, &awk) == ASSH_OK)
+      if (assh_algo_sign_by_key(s->ctx, keys, &k->algo_idx, &sa) == ASSH_OK)
         {
           assh_key_insert(&k->keys, keys);
-
-          assert(awk->algo.class_ == ASSH_ALGO_SIGN);
-	  const struct assh_algo_sign_s *sa = (void*)awk;
 
           k->sign_algo = sa;
           k->algo_groups = k->sign_algo->groups;

@@ -71,9 +71,10 @@ static const struct sign_bench_s vectors[] =
   { NULL }
 };
 
-static void bench(const struct assh_algo_sign_s *sa,
-		  const struct assh_key_algo_s *ka, unsigned kbits)
+static void bench(const struct assh_algo_sign_s *sa, unsigned kbits)
 {
+  const struct assh_key_algo_s *ka = sa->algo_wk.key_algo;
+
   printf("%-32s %-13s %4u-bit  ",
 	  assh_algo_name(&sa->algo_wk.algo),
 	  sa->algo_wk.algo.implem, kbits);
@@ -174,11 +175,7 @@ int main()
 				    t->name, strlen(t->name)))
 	    continue;
 
-
-	  const struct assh_algo_sign_s *sa = (void*)*a;
-	  const struct assh_key_algo_s *ka = sa->algo_wk.key_algo;
-
-	  bench(sa, ka, t->key_bits);
+	  bench(assh_algo_sign(*a), t->key_bits);
 	}
     }
 }

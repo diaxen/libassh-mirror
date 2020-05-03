@@ -98,6 +98,9 @@ assh_sign_generate(struct assh_context_s *c, const struct assh_algo_sign_s *sa,
                    const struct assh_cbuffer_s data[],
                    uint8_t *sign, size_t *sign_len)
 {
+  assh_status_t err;
+  if (key->algo != sa->algo_wk.key_algo)
+    ASSH_RETURN(ASSH_ERR_BAD_ARG);
   return sa->f_generate(c, key, data_count, data, sign, sign_len);
 }
 
@@ -110,8 +113,60 @@ assh_sign_check(struct assh_context_s *c, const struct assh_algo_sign_s *sa,
                 const struct assh_cbuffer_s data[],
                 const uint8_t *sign, size_t sign_len, assh_safety_t *safety)
 {
+  assh_status_t err;
+  if (key->algo != sa->algo_wk.key_algo)
+    ASSH_RETURN(ASSH_ERR_BAD_ARG);
   *safety = assh_min_uint(sa->algo_wk.algo.safety, key->safety);
   return sa->f_check(c, key, data_count, data, sign, sign_len, safety);
+}
+
+/** @This casts and returns the passed pointer if the
+    algorithm class is @ref ASSH_ALGO_SIGN. In
+    other cases, @tt NULL is returned. */
+ASSH_INLINE const struct assh_algo_sign_s *
+assh_algo_sign(const struct assh_algo_s *algo)
+{
+  return algo->class_ == ASSH_ALGO_SIGN
+    ? (const struct assh_algo_sign_s *)algo
+    : NULL;
+}
+
+/** @This finds a signature @hl algorithm in a @tt NULL terminated
+    array of pointers to algorithm descriptors. @see
+    assh_algo_by_name_static */
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
+assh_algo_sign_by_name_static(const struct assh_algo_s **table,
+			      const char *name, size_t name_len,
+			      const struct assh_algo_sign_s **sa,
+			      const struct assh_algo_name_s **namep)
+{
+ return assh_algo_by_name_static(table, ASSH_ALGO_SIGN, name, name_len,
+				 (const struct assh_algo_s **)sa, namep);
+}
+
+/** @internal @This finds a registered signature @hl algorithm.
+    @see assh_algo_by_name */
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
+assh_algo_sign_by_name(struct assh_context_s *c, const char *name,
+		       size_t name_len, const struct assh_algo_sign_s **sa,
+		       const struct assh_algo_name_s **namep)
+{
+  return assh_algo_by_name(c, ASSH_ALGO_SIGN, name, name_len,
+			   (const struct assh_algo_s **)sa, namep);
+}
+
+/** @internal @This finds a registered signature @hl algorithm which can be
+    used with the given key. @see assh_algo_by_key */
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
+assh_algo_sign_by_key(struct assh_context_s *c,
+		      const struct assh_key_s *key, uint16_t *pos,
+		      const struct assh_algo_sign_s **sa)
+{
+  assh_status_t err;
+  if (key->role != ASSH_ALGO_SIGN)
+    ASSH_RETURN(ASSH_ERR_MISSING_KEY);
+  return assh_algo_by_key(c, key, pos,
+    (const struct assh_algo_with_key_s **)sa);
 }
 
 /** Dummy signature algorithm */

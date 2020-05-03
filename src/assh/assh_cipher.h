@@ -103,6 +103,41 @@ struct assh_algo_cipher_s
 
 ASSH_FIRST_FIELD_ASSERT(assh_algo_cipher_s, algo);
 
+/** @This casts and returns the passed pointer if the
+    algorithm class is @ref ASSH_ALGO_CIPHER. In
+    other cases, @tt NULL is returned. */
+ASSH_INLINE const struct assh_algo_cipher_s *
+assh_algo_cipher(const struct assh_algo_s *algo)
+{
+  return algo->class_ == ASSH_ALGO_CIPHER
+    ? (const struct assh_algo_cipher_s *)algo
+    : NULL;
+}
+
+/** @This finds a cipher @hl algorithm in a @tt NULL terminated array of
+    pointers to algorithm descriptors. @see assh_algo_by_name_static */
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
+assh_algo_cipher_by_name_static(const struct assh_algo_s **table,
+				const char *name, size_t name_len,
+				const struct assh_algo_cipher_s **ca,
+				const struct assh_algo_name_s **namep)
+{
+ return assh_algo_by_name_static(table, ASSH_ALGO_CIPHER, name, name_len,
+				 (const struct assh_algo_s **)ca, namep);
+}
+
+/** @internal @This finds a registered cipher @hl algorithm.
+    @see assh_algo_by_name */
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
+assh_algo_cipher_by_name(struct assh_context_s *c, const char *name,
+			 size_t name_len, const struct assh_algo_cipher_s **ca,
+			 const struct assh_algo_name_s **namep)
+{
+  return assh_algo_by_name(c, ASSH_ALGO_CIPHER, name, name_len,
+			   (const struct assh_algo_s **)ca, namep);
+}
+
+
 /** @multiple @This is a cipher algorithm implementation descriptor
     for the dummy @tt none algorithm. */
 extern const struct assh_algo_cipher_s assh_cipher_none;

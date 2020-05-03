@@ -58,11 +58,11 @@ void test_sign(unsigned int max_size, enum action_e action)
 
       for (a = assh_algo_table; *a; a++)
 	{
-	  const struct assh_algo_sign_s *sa = (void*)*a;
-
 	  if (!assh_algo_name_match(*a, ASSH_ALGO_SIGN,
 				    algos[i].algo, strlen(algos[i].algo)))
 	    continue;
+
+	  const struct assh_algo_sign_s *sa = assh_algo_sign(*a);
 
 	  if (algos[i].variant && (!sa->algo_wk.algo.variant ||
 		   strcmp(algos[i].variant, sa->algo_wk.algo.variant)))

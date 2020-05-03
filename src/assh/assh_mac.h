@@ -86,6 +86,40 @@ struct assh_algo_mac_s
   uint8_t mac_size;
 };
 
+/** @This casts and returns the passed pointer if the
+    algorithm class is @ref ASSH_ALGO_MAC. In
+    other cases, @tt NULL is returned. */
+ASSH_INLINE const struct assh_algo_mac_s *
+assh_algo_mac(const struct assh_algo_s *algo)
+{
+  return algo->class_ == ASSH_ALGO_MAC
+    ? (const struct assh_algo_mac_s *)algo
+    : NULL;
+}
+
+/** @This finds a mac @hl algorithm in a @tt NULL terminated array of
+    pointers to algorithm descriptors. @see assh_algo_by_name_static */
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
+assh_algo_mac_by_name_static(const struct assh_algo_s **table,
+			     const char *name, size_t name_len,
+			     const struct assh_algo_mac_s **ma,
+			     const struct assh_algo_name_s **namep)
+{
+ return assh_algo_by_name_static(table, ASSH_ALGO_MAC, name, name_len,
+				 (const struct assh_algo_s **)ma, namep);
+}
+
+/** @internal @This finds a registered mac @hl algorithm.
+    @see assh_algo_by_name */
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
+assh_algo_mac_by_name(struct assh_context_s *c, const char *name,
+		      size_t name_len, const struct assh_algo_mac_s **ma,
+		      const struct assh_algo_name_s **namep)
+{
+  return assh_algo_by_name(c, ASSH_ALGO_MAC, name, name_len,
+			   (const struct assh_algo_s **)ma, namep);
+}
+
 /** @multiple @This is a mac algorithm implementation descriptor.
     @xsee {macalgos} */
 extern const struct assh_algo_mac_s assh_mac_none;

@@ -402,7 +402,7 @@ main(int argc, char **argv)
 	    continue;
 
 	  done = 1;
-	  test_mac(t, (void*)*a);
+	  test_mac(t, assh_algo_mac(*a));
 
 	  if (test_alloc_size != 0)
 	    TEST_FAIL("memory leak detected, %zu bytes allocated\n", test_alloc_size);

@@ -46,8 +46,7 @@ test_sign(struct assh_context_s *c,
 	  struct assh_key_s *pv_key, struct assh_key_s *pub_key)
 {
   const struct assh_algo_sign_s *sa;
-  TEST_ASSERT(!assh_algo_by_key(c, pv_key, NULL,
-	         (const struct assh_algo_with_key_s **)&sa));
+  TEST_ASSERT(!assh_algo_sign_by_key(c, pv_key, NULL, &sa));
 
   struct assh_cbuffer_s buf;
   buf.str = "test";

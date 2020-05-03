@@ -2331,7 +2331,7 @@ int main()
 
   key_algo = key_cbad->algo;
 
-  if (assh_algo_by_key(&context[1], key_cbad, NULL, (void*)&sign_algo))
+  if (assh_algo_sign_by_key(&context[1], key_cbad, NULL, &sign_algo))
     TEST_FAIL("assh_algo_by_key");
 
   if (assh_key_create(&context[1], &key_c, 0,

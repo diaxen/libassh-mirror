@@ -609,8 +609,6 @@ void test_loop(unsigned int seed,
 	       const char **comp,
 	       unsigned cycles)
 {
-  const struct assh_algo_kex_s *ka;
-
   while (kex->algo)
     {
       if (!strcmp(kex->algo, "none@libassh.org"))
@@ -624,13 +622,14 @@ void test_loop(unsigned int seed,
 
 	  for (a = assh_algo_table; *a; a++)
 	    {
+	      if (kex_filter && !strstr(kex->algo, kex_filter))
+		continue;
+
 	      if (!assh_algo_name_match(*a, ASSH_ALGO_KEX,
 					kex->algo, strlen(kex->algo)))
 		continue;
-	      ka = (const void*)*a;
 
-	      if (kex_filter && !strstr(kex->algo, kex_filter))
-		continue;
+	      const struct assh_algo_kex_s *ka = assh_algo_kex(*a);
 
 	      if (kex->variant && (!ka->algo_wk.algo.variant ||
 				   strcmp(kex->variant, ka->algo_wk.algo.variant)))

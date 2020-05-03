@@ -72,6 +72,7 @@
 #endif
 
 #include "assh_algo.h"
+#include "assh_key.h"
 #include "assh_buffer.h"
 
 /** This function changes the amount of ssh stream that is allowed to
@@ -345,6 +346,56 @@ struct assh_algo_kex_s
 };
 
 ASSH_FIRST_FIELD_ASSERT(assh_algo_kex_s, algo_wk);
+
+/** @This casts and returns the passed pointer if the
+    algorithm class is @ref ASSH_ALGO_KEX. In
+    other cases, @tt NULL is returned. */
+ASSH_INLINE const struct assh_algo_kex_s *
+assh_algo_kex(const struct assh_algo_s *algo)
+{
+  return algo->class_ == ASSH_ALGO_KEX
+    ? (const struct assh_algo_kex_s *)algo
+    : NULL;
+}
+
+/** @This finds a key-exchange @hl algorithm in a @tt NULL terminated
+    array of pointers to algorithm descriptors. @see
+    assh_algo_by_name_static */
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
+assh_algo_kex_by_name_static(const struct assh_algo_s **table,
+			     const char *name, size_t name_len,
+			     const struct assh_algo_kex_s **ka,
+			     const struct assh_algo_name_s **namep)
+{
+ return assh_algo_by_name_static(table, ASSH_ALGO_KEX, name, name_len,
+				 (const struct assh_algo_s **)ka, namep);
+}
+
+/** @internal @This finds a registered key-exchange @hl algorithm.
+    @see assh_algo_by_name */
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
+assh_algo_kex_by_name(struct assh_context_s *c, const char *name,
+		      size_t name_len, const struct assh_algo_kex_s **ka,
+		      const struct assh_algo_name_s **namep)
+{
+  return assh_algo_by_name(c, ASSH_ALGO_KEX, name, name_len,
+			   (const struct assh_algo_s **)ka, namep);
+}
+
+/** @internal @This finds a registered key-exchange @hl algorithm
+    which can be used with the given key. @see assh_algo_by_key */
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
+assh_algo_kex_by_key(struct assh_context_s *c,
+		      const struct assh_key_s *key, uint16_t *pos,
+		      const struct assh_algo_kex_s **ka)
+{
+  assh_status_t err;
+  if (key->role != ASSH_ALGO_KEX)
+    ASSH_RETURN(ASSH_ERR_MISSING_KEY);
+  return assh_algo_by_key(c, key, pos,
+    (const struct assh_algo_with_key_s **)ka);
+}
+
 
 /** @internal Set of @em none algortihm contexts used at startup */
 extern const struct assh_kex_keys_s assh_keys_none;

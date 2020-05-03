@@ -78,6 +78,42 @@ struct assh_algo_compress_s
   assh_compress_cleanup_t *f_cleanup;
 };
 
+/** @This casts and returns the passed pointer if the
+    algorithm class is @ref ASSH_ALGO_COMPRESS. In
+    other cases, @tt NULL is returned. */
+ASSH_INLINE const struct assh_algo_compress_s *
+assh_algo_compress(const struct assh_algo_s *algo)
+{
+  return algo->class_ == ASSH_ALGO_COMPRESS
+    ? (const struct assh_algo_compress_s *)algo
+    : NULL;
+}
+
+/** @This finds a compression @hl algorithm in a @tt NULL terminated
+    array of pointers to algorithm descriptors. @see
+    assh_algo_by_name_static */
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
+assh_algo_compress_by_name_static(const struct assh_algo_s **table,
+				  const char *name, size_t name_len,
+				  const struct assh_algo_compress_s **cpa,
+				  const struct assh_algo_name_s **namep)
+{
+ return assh_algo_by_name_static(table, ASSH_ALGO_COMPRESS, name, name_len,
+				 (const struct assh_algo_s **)cpa, namep);
+}
+
+/** @internal @This finds a registered compression @hl algorithm.
+    @see assh_algo_by_name */
+ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
+assh_algo_compress_by_name(struct assh_context_s *c, const char *name,
+			   size_t name_len, const struct assh_algo_compress_s **cpa,
+			   const struct assh_algo_name_s **namep)
+{
+  return assh_algo_by_name(c, ASSH_ALGO_COMPRESS, name, name_len,
+			   (const struct assh_algo_s **)cpa, namep);
+}
+
+
 ASSH_FIRST_FIELD_ASSERT(assh_algo_compress_s, algo);
 
 extern const struct assh_algo_compress_s assh_compress_none;

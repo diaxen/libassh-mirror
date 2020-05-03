@@ -42,7 +42,7 @@ assh_userauth_client_pck_hostbased(struct assh_session_s *s,
   struct assh_key_s *pub_key = pv->hostkey.keys;
   assh_status_t err;
 
-  const struct assh_algo_sign_s *sa = (const void *)pv->hostkey.sign_algo;
+  const struct assh_algo_sign_s *sa = pv->hostkey.sign_algo;
 
   size_t algo_name_len = strlen(assh_algo_name(&sa->algo_wk.algo));
 

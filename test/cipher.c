@@ -556,7 +556,7 @@ main(int argc, char **argv)
 	    continue;
 
 	  done = 1;
-	  test_cipher(t, (void*)*a);
+	  test_cipher(t, assh_algo_cipher(*a));
 
 	  if (test_alloc_size != 0)
 	    TEST_FAIL("memory leak detected, %zu bytes allocated\n", test_alloc_size);
