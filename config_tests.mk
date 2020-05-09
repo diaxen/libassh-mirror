@@ -23,22 +23,21 @@ MAKE_TARGET=check
 ASSH_PATH=.
 TEST_PATH=test/
 
-.PHONY: all auth.cfgtest gcrypt.cfgtest openssl.cfgtest builtin.cfgtest
-#       basic noserver noclient nozlib nopacketpool alloca \
-#        nopubkeyauth nopasswordauth nohostbasedauth nokeyboardauth \
-#        nogcrypt gcrypthash gcryptalloc gcryptcipher gcryptprng \
-#	noopenssl opensslhash opensslalloc opensslcipher opensslprng \
-#	builtinhash builtinalloc builtincipher builtinprng \
-#	nokeycreate nokeyvalidate ndebug
+.PHONY: all auth.cfgtest gcrypt.cfgtest openssl.cfgtest builtin.cfgtest sodium.cfgtest
 
-all: basic.cfgtest noserver.cfgtest noclient.cfgtest auth.cfgtest gcrypt.cfgtest openssl.cfgtest builtin.cfgtest nozlib.cfgtest	\
+all: basic.cfgtest noserver.cfgtest noclient.cfgtest auth.cfgtest libfuzzer.cfgtest \
+	gcrypt.cfgtest openssl.cfgtest builtin.cfgtest sodium.cfgtest nozlib.cfgtest \
 	nopacketpool.cfgtest alloca.cfgtest nokeyvalidate.cfgtest nokeycreate.cfgtest
+
+clean:
+	rm *.cfgtest
 
 auth.cfgtest: nopubkeyauth.cfgtest nopasswordauth.cfgtest nohostbasedauth.cfgtest nokeyboardauth.cfgtest nononeauth.cfgtest
 
 gcrypt.cfgtest: nogcrypt.cfgtest gcrypthash.cfgtest gcryptalloc.cfgtest gcryptcipher.cfgtest gcryptprng.cfgtest
 openssl.cfgtest: noopenssl.cfgtest opensslhash.cfgtest opensslalloc.cfgtest opensslcipher.cfgtest opensslprng.cfgtest
 builtin.cfgtest: builtinhash.cfgtest builtinalloc.cfgtest builtincipher.cfgtest builtinprng.cfgtest
+sodium.cfgtest: nosodium.cfgtest sodiumkexsign.cfgtest
 
 basic.cfgtest:
 	$(ASSH_PATH)/configure
@@ -46,9 +45,21 @@ basic.cfgtest:
 	grep -q "define CONFIG_ASSH_CLIENT" config.h
 	grep -q "define CONFIG_ASSH_PACKET_POOL" config.h
 	grep -q "undef CONFIG_ASSH_ALLOCA" config.h
+	grep -q "define CONFIG_ASSH_USE_BUILTIN_KEX" config.h
+	grep -q "define CONFIG_ASSH_USE_BUILTIN_SIGN" config.h
+	grep -q "define CONFIG_ASSH_USE_BUILTIN_CIPHERS" config.h
+	grep -q "define CONFIG_ASSH_USE_LIBC_ALLOC" config.h
+	grep -q "define CONFIG_ASSH_USE_BUILTIN_PRNG" config.h
+	grep -q "define CONFIG_ASSH_BUILTIN_MD5" config.h
+	grep -q "define CONFIG_ASSH_BUILTIN_SHA1" config.h
+	grep -q "define CONFIG_ASSH_BUILTIN_SHA2" config.h
+	grep -q "define CONFIG_ASSH_BUILTIN_SHA3" config.h
+	grep -q "define CONFIG_ASSH_USE_SODIUM_KEX" config.h
+	grep -q "define CONFIG_ASSH_USE_SODIUM_SIGN" config.h
+	grep -q "define CONFIG_ASSH_USE_SODIUM_PRNG" config.h
 	grep -q "define CONFIG_ASSH_USE_ZLIB" config.h
 	grep -q "define CONFIG_ASSH_USE_GCRYPT" config.h
-	grep -q "define CONFIG_ASSH_USE_GCRYPT_HASH" config.h
+	grep -q "undef CONFIG_ASSH_USE_GCRYPT_HASH" config.h
 	grep -q "define CONFIG_ASSH_USE_GCRYPT_CIPHERS" config.h
 	grep -q "define CONFIG_ASSH_USE_GCRYPT_ALLOC" config.h
 	grep -q "define CONFIG_ASSH_USE_GCRYPT_PRNG" config.h
@@ -87,15 +98,13 @@ noclient.cfgtest:
 nokeycreate.cfgtest:
 	$(ASSH_PATH)/configure --disable-key-create
 	grep -q "undef CONFIG_ASSH_KEY_CREATE" config.h
-	$(MAKE)
-	$(TEST_PATH)/kex
+	$(MAKE) $(MAKE_TARGET)
 	touch $@
 
 nokeyvalidate.cfgtest:
 	$(ASSH_PATH)/configure --disable-key-validate
 	grep -q "undef CONFIG_ASSH_KEY_VALIDATE" config.h
-	$(MAKE)
-	$(TEST_PATH)/kex
+	$(MAKE) $(MAKE_TARGET)
 	touch $@
 
 nopacketpool.cfgtest:
@@ -106,6 +115,7 @@ nopacketpool.cfgtest:
 	$(TEST_PATH)/userauth
 	$(TEST_PATH)/userauth_server
 	$(TEST_PATH)/kex
+	$(TEST_PATH)/replay
 	touch $@
 
 alloca.cfgtest:
@@ -120,11 +130,36 @@ ndebug.cfgtest:
 	$(MAKE) $(MAKE_TARGET)
 	touch $@
 
+libfuzzer.cfgtest:
+	$(ASSH_PATH)/configure --enable-libfuzzer
+	$(MAKE) $(MAKE_TARGET)
+	touch $@
+
 nozlib.cfgtest:
 	$(ASSH_PATH)/configure --without-zlib
 	grep -q "undef CONFIG_ASSH_USE_ZLIB" config.h
 	$(MAKE)
 	$(TEST_PATH)/kex
+	$(TEST_PATH)/replay
+	touch $@
+
+nosodium.cfgtest:
+	$(ASSH_PATH)/configure --without-sodium
+	grep -q "undef CONFIG_ASSH_USE_SODIUM" config.h
+	grep -q "undef CONFIG_ASSH_USE_SODIUM_SIGN" config.h
+	grep -q "undef CONFIG_ASSH_USE_SODIUM_KEX" config.h
+	grep -q "undef CONFIG_ASSH_USE_SODIUM_PRNG" config.h
+	$(MAKE) $(MAKE_TARGET)
+	touch $@
+
+sodiumkexsign.cfgtest:
+	$(ASSH_PATH)/configure --with-kex=sodium --with-sign=sodium
+	grep -q "define CONFIG_ASSH_USE_SODIUM" config.h
+	grep -q "define CONFIG_ASSH_USE_SODIUM_SIGN" config.h
+	grep -q "define CONFIG_ASSH_USE_SODIUM_KEX" config.h
+	grep -q "undef CONFIG_ASSH_USE_BUILTIN_SIGN" config.h
+	grep -q "undef CONFIG_ASSH_USE_BUILTIN_KEX" config.h
+	$(MAKE) $(MAKE_TARGET)
 	touch $@
 
 nogcrypt.cfgtest:
@@ -134,18 +169,21 @@ nogcrypt.cfgtest:
 	grep -q "undef CONFIG_ASSH_USE_GCRYPT_CIPHERS" config.h
 	grep -q "undef CONFIG_ASSH_USE_GCRYPT_ALLOC" config.h
 	grep -q "undef CONFIG_ASSH_USE_GCRYPT_PRNG" config.h
-	$(MAKE)
-	$(TEST_PATH)/hash
-	$(TEST_PATH)/cipher
-	$(TEST_PATH)/kex
+	$(MAKE) $(MAKE_TARGET)
 	touch $@
 
 gcrypthash.cfgtest:
 	$(ASSH_PATH)/configure --with-hashes=gcrypt
 	grep -q "define CONFIG_ASSH_USE_GCRYPT_HASH" config.h
+	grep -q "undef CONFIG_ASSH_USE_OPENSSL_HASH" config.h
+	grep -q "undef CONFIG_ASSH_BUILTIN_MD5" config.h
+	grep -q "undef CONFIG_ASSH_BUILTIN_SHA1" config.h
+	grep -q "undef CONFIG_ASSH_BUILTIN_SHA2" config.h
 	$(MAKE)
 	$(TEST_PATH)/hash
+	$(TEST_PATH)/mac
 	$(TEST_PATH)/signature
+	$(TEST_PATH)/signature2
 	touch $@
 
 gcryptcipher.cfgtest:
@@ -168,6 +206,7 @@ gcryptprng.cfgtest:
 	grep -q "define CONFIG_ASSH_USE_GCRYPT_PRNG" config.h
 	$(MAKE)
 	$(TEST_PATH)/bignum
+	$(TEST_PATH)/prng
 	touch $@
 
 noopenssl.cfgtest:
@@ -177,18 +216,21 @@ noopenssl.cfgtest:
 	grep -q "undef CONFIG_ASSH_USE_OPENSSL_CIPHERS" config.h
 	grep -q "undef CONFIG_ASSH_USE_OPENSSL_ALLOC" config.h
 	grep -q "undef CONFIG_ASSH_USE_OPENSSL_PRNG" config.h
-	$(MAKE)
-	$(TEST_PATH)/hash
-	$(TEST_PATH)/cipher
-	$(TEST_PATH)/kex
+	$(MAKE) $(MAKE_TARGET)
 	touch $@
 
 opensslhash.cfgtest:
 	$(ASSH_PATH)/configure --with-hashes=openssl
 	grep -q "define CONFIG_ASSH_USE_OPENSSL_HASH" config.h
+	grep -q "undef CONFIG_ASSH_USE_GCRYPT_HASH" config.h
+	grep -q "undef CONFIG_ASSH_BUILTIN_MD5" config.h
+	grep -q "undef CONFIG_ASSH_BUILTIN_SHA1" config.h
+	grep -q "undef CONFIG_ASSH_BUILTIN_SHA2" config.h
 	$(MAKE)
 	$(TEST_PATH)/hash
+	$(TEST_PATH)/mac
 	$(TEST_PATH)/signature
+	$(TEST_PATH)/signature2
 	touch $@
 
 opensslcipher.cfgtest:
@@ -211,6 +253,7 @@ opensslprng.cfgtest:
 	grep -q "define CONFIG_ASSH_USE_OPENSSL_PRNG" config.h
 	$(MAKE)
 	$(TEST_PATH)/bignum
+	$(TEST_PATH)/prng
 	touch $@
 
 builtinhash.cfgtest:
@@ -219,11 +262,14 @@ builtinhash.cfgtest:
 	grep -q "undef CONFIG_ASSH_USE_OPENSSL_HASH" config.h
 	$(MAKE)
 	$(TEST_PATH)/hash
+	$(TEST_PATH)/mac
 	$(TEST_PATH)/signature
+	$(TEST_PATH)/signature2
 	touch $@
 
 builtincipher.cfgtest:
 	$(ASSH_PATH)/configure --with-ciphers=builtin
+	grep -q "define CONFIG_ASSH_USE_BUILTIN_CIPHERS" config.h
 	grep -q "undef CONFIG_ASSH_USE_GCRYPT_CIPHERS" config.h
 	grep -q "undef CONFIG_ASSH_USE_OPENSSL_CIPHERS" config.h
 	$(MAKE)
@@ -233,7 +279,8 @@ builtincipher.cfgtest:
 	touch $@
 
 builtinalloc.cfgtest:
-	$(ASSH_PATH)/configure --with-alloc=builtin
+	$(ASSH_PATH)/configure --with-alloc=libc
+	grep -q "define CONFIG_ASSH_USE_LIBC_ALLOC" config.h
 	grep -q "undef CONFIG_ASSH_USE_GCRYPT_ALLOC" config.h
 	grep -q "undef CONFIG_ASSH_USE_OPENSSL_ALLOC" config.h
 	$(MAKE)
@@ -241,10 +288,12 @@ builtinalloc.cfgtest:
 
 builtinprng.cfgtest:
 	$(ASSH_PATH)/configure --with-prng=builtin
+	grep -q "define CONFIG_ASSH_USE_BUILTIN_PRNG" config.h
 	grep -q "undef CONFIG_ASSH_USE_GCRYPT_PRNG" config.h
 	grep -q "undef CONFIG_ASSH_USE_OPENSSL_PRNG" config.h
 	$(MAKE)
 	$(TEST_PATH)/bignum
+	$(TEST_PATH)/prng
 	touch $@
 
 nononeauth.cfgtest:

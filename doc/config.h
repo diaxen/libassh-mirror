@@ -89,19 +89,19 @@
 #define CONFIG_ASSH_GETSPNAM_R
 
 /** When defined, @this enables the MD5 message digest. */
-#define CONFIG_ASSH_HASH_MD5
+#define CONFIG_ASSH_BUILTIN_MD5
 
 /** When defined, @this enables the RIPE-MD-160 MAC algorithm. */
-#define CONFIG_ASSH_HASH_RIPEMD160
+#define CONFIG_ASSH_BUILTIN_RIPEMD160
 
 /** When defined, @this enables the SHA1 message digest. */
-#define CONFIG_ASSH_HASH_SHA1
+#define CONFIG_ASSH_BUILTIN_SHA1
 
 /** When defined, @this enables the SHA2 message digest. */
-#define CONFIG_ASSH_HASH_SHA2
+#define CONFIG_ASSH_BUILTIN_SHA2
 
 /** When defined, @this enables the SHA3 message digest. */
-#define CONFIG_ASSH_HASH_SHA3
+#define CONFIG_ASSH_BUILTIN_SHA3
 
 /** @This specifies the maximum length of the remote software
     identification string.  rfc4253 section 4.2 requires 255 bytes

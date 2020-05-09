@@ -146,8 +146,6 @@ static ASSH_MAC_PROCESS_FCN(assh_hmac_process)
   return ASSH_OK;
 }
 
-#ifdef CONFIG_ASSH_HASH_MD5
-
 static ASSH_MAC_INIT_FCN(assh_hmac_md5_init)
 {
   return assh_hmac_init(c, &assh_mac_builtin_md5, ctx_,
@@ -218,10 +216,6 @@ const struct assh_algo_mac_s assh_mac_builtin_md5_96_etm =
   .f_process = assh_hmac_process,
   .f_cleanup = assh_hmac_cleanup,
 };
-
-#endif
-
-#ifdef CONFIG_ASSH_HASH_SHA1
 
 static ASSH_MAC_INIT_FCN(assh_hmac_sha1_init)
 {
@@ -294,10 +288,6 @@ const struct assh_algo_mac_s assh_mac_builtin_sha1_96_etm =
   .f_cleanup = assh_hmac_cleanup,
 };
 
-#endif
-
-#ifdef CONFIG_ASSH_HASH_SHA2
-
 static ASSH_MAC_INIT_FCN(assh_hmac_sha256_init)
 {
   return assh_hmac_init(c, &assh_mac_builtin_sha256, ctx_,
@@ -368,6 +358,3 @@ const struct assh_algo_mac_s assh_mac_builtin_sha512_etm =
   .f_process = assh_hmac_process,
   .f_cleanup = assh_hmac_cleanup,
 };
-
-#endif
-

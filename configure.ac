@@ -112,12 +112,12 @@ AC_ARG_ENABLE(key_create, AC_HELP_STRING(--disable-key-create, [Disable key crea
 		       enable_key_create=$enableval, enable_key_create=yes)
 
 AC_ARG_WITH(hashes, AC_HELP_STRING(--with-hashes, [Specifies backend to use for hash algorithms (builtin, external, gcrypt, openssl)]),
-		       [with_hashes=$withval], with_hashes=external)
+		       [with_hashes=$withval], with_hashes=builtin)
 
-AC_ARG_WITH(kex, AC_HELP_STRING(--with-kex, [Specifies backend to use for key-exchange algorithms (builtin, all)]),
+AC_ARG_WITH(kex, AC_HELP_STRING(--with-kex, [Specifies backend to use for key-exchange algorithms (builtin, sodium, all)]),
 		       [with_kex=$withval], with_kex=all)
 
-AC_ARG_WITH(sign, AC_HELP_STRING(--with-sign, [Specifies backend to use for signature algorithms (builtin, all)]),
+AC_ARG_WITH(sign, AC_HELP_STRING(--with-sign, [Specifies backend to use for signature algorithms (builtin, sodium, all)]),
 		       [with_sign=$withval], with_sign=all)
 
 AC_ARG_WITH(ciphers, AC_HELP_STRING(--with-ciphers, [Specifies backend to use for cipher algorithms (builtin, external, gcrypt, openssl, all)]),
@@ -153,13 +153,9 @@ AC_ARG_ENABLE(alloca, AC_HELP_STRING(--enable-alloca, [Store key related materia
 AC_ARG_ENABLE(assert, AC_HELP_STRING(--disable-assert, [Disable assert() by defining the NDEBUG macro]),
 		       enable_assert=$enableval, enable_assert=yes)
 
-AC_DEFINE([CONFIG_ASSH_HASH_MD5], [], [Enable MD5 hash])
 CONFIG_ASSH_USE_BUILTIN_MD5=yes
-AC_DEFINE([CONFIG_ASSH_HASH_SHA1], [], [Enable SHA1 hash])
 CONFIG_ASSH_USE_BUILTIN_SHA1=yes
-AC_DEFINE([CONFIG_ASSH_HASH_SHA2], [], [Enable SHA2 hash])
 CONFIG_ASSH_USE_BUILTIN_SHA2=yes
-AC_DEFINE([CONFIG_ASSH_HASH_SHA3], [], [Enable SHA3 hash])
 CONFIG_ASSH_USE_BUILTIN_SHA3=yes
 
 if test -e /dev/random ; then
@@ -223,8 +219,6 @@ if test x$with_gcrypt = xyes ; then
           CONFIG_ASSH_USE_BUILTIN_SHA2=no
           AC_TRY_COMPILE([#include <gcrypt.h>], [return GCRY_MD_SHA3_256;], [
             CONFIG_ASSH_USE_BUILTIN_SHA3=no
-            AC_DEFINE([CONFIG_ASSH_GCRYPT_HAS_SHA3], [], [Enable gcrypt implementation of SHA3])
-	    CONFIG_ASSH_GCRYPT_HAS_SHA3=yes
           ])
       esac
 
@@ -286,7 +280,9 @@ if test x$with_openssl = xyes ; then
             with_hashes=openssl
 	    AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_HASH], [], [Use openssl hash algorithms implementations when defined.])
 	    CONFIG_ASSH_USE_OPENSSL_HASH=yes
-            CONFIG_ASSH_USE_BUILTIN_MD5=no
+            AC_TRY_COMPILE([#include <openssl/evp.h>], [return (int)EVP_md5();], [
+              CONFIG_ASSH_USE_BUILTIN_MD5=no
+            ])
             CONFIG_ASSH_USE_BUILTIN_SHA1=no
             CONFIG_ASSH_USE_BUILTIN_SHA2=no
 	  ])
@@ -421,6 +417,22 @@ if test x$CONFIG_ASSH_USE_BUILTIN_KEX = xyes ||
        ;;
    esac
 
+fi
+
+if test x$CONFIG_ASSH_USE_BUILTIN_MD5 = xyes ; then
+  AC_DEFINE([CONFIG_ASSH_BUILTIN_MD5], [], [Enable MD5 hash])
+fi
+
+if test x$CONFIG_ASSH_USE_BUILTIN_SHA1 = xyes ; then
+  AC_DEFINE([CONFIG_ASSH_BUILTIN_SHA1], [], [Enable SHA1 hash])
+fi
+
+if test x$CONFIG_ASSH_USE_BUILTIN_SHA2 = xyes ; then
+  AC_DEFINE([CONFIG_ASSH_BUILTIN_SHA2], [], [Enable SHA2 hash])
+fi
+
+if test x$CONFIG_ASSH_USE_BUILTIN_SHA3 = xyes ; then
+  AC_DEFINE([CONFIG_ASSH_BUILTIN_SHA3], [], [Enable SHA3 hash])
 fi
 
 AM_CONDITIONAL(COND_server,  [test x$enable_server = xyes])
