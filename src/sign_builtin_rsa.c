@@ -99,8 +99,7 @@ assh_sign_rsa_generate(struct assh_context_s *c,
       return ASSH_OK;
     }
 
-  /* check availability of the private key */
-  ASSH_RET_IF_TRUE(assh_bignum_isempty(&k->dn), ASSH_ERR_MISSING_KEY);
+  assert(!assh_bignum_isempty(&k->dn));
 
   ASSH_RET_IF_TRUE(*sign_len < len, ASSH_ERR_OUTPUT_OVERFLOW);
   *sign_len = len;

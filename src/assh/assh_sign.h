@@ -99,8 +99,8 @@ assh_sign_generate(struct assh_context_s *c, const struct assh_algo_sign_s *sa,
                    uint8_t *sign, size_t *sign_len)
 {
   assh_status_t err;
-  if (key->algo != sa->algo_wk.key_algo)
-    ASSH_RETURN(ASSH_ERR_BAD_ARG);
+  ASSH_RET_IF_TRUE(key->algo != sa->algo_wk.key_algo, ASSH_ERR_BAD_ARG);
+  ASSH_RET_IF_TRUE(sign && !key->private, ASSH_ERR_MISSING_KEY);
   return sa->f_generate(c, key, data_count, data, sign, sign_len);
 }
 
@@ -114,8 +114,7 @@ assh_sign_check(struct assh_context_s *c, const struct assh_algo_sign_s *sa,
                 const uint8_t *sign, size_t sign_len, assh_safety_t *safety)
 {
   assh_status_t err;
-  if (key->algo != sa->algo_wk.key_algo)
-    ASSH_RETURN(ASSH_ERR_BAD_ARG);
+  ASSH_RET_IF_TRUE(key->algo != sa->algo_wk.key_algo, ASSH_ERR_BAD_ARG);
   *safety = assh_min_uint(sa->algo_wk.algo.safety, key->safety);
   return sa->f_check(c, key, data_count, data, sign, sign_len, safety);
 }

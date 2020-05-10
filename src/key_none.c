@@ -57,13 +57,28 @@ static ASSH_KEY_LOAD_FCN(assh_key_none_load)
 {
   assh_status_t err;
 
-  ASSH_RET_ON_ERR(assh_alloc(c, sizeof(**key), ASSH_ALLOC_SECUR, (void**)key));
   struct assh_key_s *k = *key;
 
-  k->algo = &assh_key_none;
-  k->type = "none";
-  k->safety = 0;
+  if (k == NULL)
+    {
+      ASSH_RET_ON_ERR(assh_alloc(c, sizeof(**key), ASSH_ALLOC_SECUR, (void**)&k));
+      k->algo = &assh_key_none;
+      k->type = "none";
+      k->safety = 0;
+      k->private = 0;
+    }
 
+  switch (format)
+    {
+    case ASSH_KEY_FMT_PUB_RFC4253:
+    case ASSH_KEY_FMT_PUB_PEM_ASN1:
+      break;
+
+    default:
+      k->private = 1;
+    }
+
+  *key = k;
   return ASSH_OK;
 }
 
@@ -78,6 +93,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_none_create)
   k->algo = &assh_key_none;
   k->type = "none";
   k->safety = 0;
+  k->private = 1;
 
   return ASSH_OK;
 }

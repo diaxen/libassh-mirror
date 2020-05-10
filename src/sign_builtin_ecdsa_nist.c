@@ -53,8 +53,7 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_ecdsa_generate)
       return ASSH_OK;
     }
 
-  /* check availability of the private key */
-  ASSH_RET_IF_TRUE(assh_bignum_isempty(&k->sn), ASSH_ERR_MISSING_KEY);
+  assert(!assh_bignum_isempty(&k->sn));
 
   ASSH_RET_IF_TRUE(*sign_len < maxlen, ASSH_ERR_OUTPUT_OVERFLOW);
 

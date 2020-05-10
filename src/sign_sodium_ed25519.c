@@ -48,9 +48,6 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_ed25519_generate)
       return ASSH_OK;
     }
 
-  /* check availability of the private key */
-  ASSH_RET_IF_TRUE(!k->key.private, ASSH_ERR_MISSING_KEY);
-
   ASSH_RET_IF_TRUE(*sign_len < len, ASSH_ERR_OUTPUT_OVERFLOW);
   *sign_len = len;
 
