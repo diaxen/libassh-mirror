@@ -22,6 +22,7 @@
 */
 
 #include <assh/assh_prng.h>
+#include <assh/assh_buffer.h>
 #include <assh/mod_openssl.h>
 
 #include <openssl/rand.h>
@@ -29,7 +30,10 @@
 static ASSH_PRNG_INIT_FCN(assh_prng_openssl_init)
 {
   assh_status_t err;
-  ASSH_RET_IF_TRUE(!RAND_poll(), ASSH_ERR_CRYPTO);
+  if (seed && seed->data && seed->len)
+    RAND_seed(seed->data, seed->len);
+  if (!RAND_status())
+    ASSH_RET_IF_TRUE(!RAND_poll(), ASSH_ERR_CRYPTO);
   return ASSH_OK;
 }
 
