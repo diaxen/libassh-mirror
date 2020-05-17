@@ -351,7 +351,16 @@ assh_blob_scan_va(struct assh_context_s *c, const char *format,
 	case 'F': {
 	  assh_blob_scan_fcn_t *fcn = va_arg(ap, assh_blob_scan_fcn_t*);
 	  void *pv = va_arg(ap, void*);
-	  ASSH_RET_ON_ERR(fcn(c, r, st->next - r, pv));
+	  ASSH_RET_ON_ERR(fcn(c, r, st->next - r, pv, NULL));
+	  break;
+	}
+
+	case 'R': {
+	  assh_blob_scan_fcn_t *fcn = va_arg(ap, assh_blob_scan_fcn_t*);
+	  void *pv = va_arg(ap, void*);
+	  uintptr_t res;
+	  ASSH_RET_ON_ERR(fcn(c, r, st->next - r, pv, &res));
+	  *va_arg(ap, uintptr_t*) = res;
 	  break;
 	}
 
@@ -466,6 +475,16 @@ assh_blob_write_va(const char *format, uint8_t *blob, size_t *blob_len, va_list 
 	  continue;
 	}
 #endif
+
+	case 'F': {
+	  assh_blob_write_fcn_t *fcn = va_arg(ap, assh_blob_write_fcn_t*);
+	  void *value = va_arg(ap, void*);
+	  ASSH_RET_ON_ERR(fcn(NULL, &len, NULL, value));
+	  if (blob)
+	    ASSH_RET_ON_ERR(fcn(b, &len, NULL, value));
+	  b += len;
+	  continue;
+	};
 
 	case 'Z': {
 	  const char *s = va_arg(ap, void*);

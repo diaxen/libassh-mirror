@@ -151,10 +151,10 @@ assh_memcmp(const uint8_t *nula, const uint8_t *nulb, size_t len)
 /** @see assh_blob_scan_fcn_t */
 #define ASSH_BLOB_SCAN_FCN(n) assh_status_t (n)                          \
     (struct assh_context_s *c, const uint8_t *content,                  \
-     size_t len, void *pv)
+     size_t len, void *pv, uintptr_t *result)
 
-/** @This is called when the @tt{F} character is used in the format
-    string passed to the @ref assh_blob_scan_va function. */
+/** @This is called when the @tt{F} or @tt{R} characters are used in
+    the format string passed to the @ref assh_blob_scan_va function. */
 typedef ASSH_BLOB_SCAN_FCN(assh_blob_scan_fcn_t);
 
 /** @This scans a blob as a sequence of ASN1 objects, @em ssh2
@@ -210,6 +210,8 @@ typedef ASSH_BLOB_SCAN_FCN(assh_blob_scan_fcn_t);
      @item @tt Lr      @item Interpret the content as an LSB number and store a @tt {long long int}.
      @item @tt F       @item Call an @ref assh_blob_scan_fcn_t function. The function pointer along with
                              its private pointer must be passed as arguments.
+     @item @tt R       @item Call an @ref assh_blob_scan_fcn_t function. An additional pointer to an
+                             uintptr_t must be passed to store the result provided by the function.
     @ifnopt hide_internal
      @item @tt J       @item Store the bits size of the big number value of the field as a size_t.
      @item @tt K       @item Initializes a @ref assh_bignum_s object with the bits size
@@ -249,6 +251,17 @@ ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_blob_scan_va(struct assh_context_s *c, const char *format,
                     const uint8_t **blob, size_t *blob_len, va_list ap);
 
+/** @see assh_blob_write_fcn_t */
+#define ASSH_BLOB_WRITE_FCN(n) assh_status_t (n)                        \
+    (uint8_t *content, size_t *len, void *pv, void *value)
+
+/** @This is called when the @tt{F} character is used in the format
+    string passed to the @ref assh_blob_write_va function. When the
+    @tt content parameter is @tt {NULL}, the @tt len must be stored.
+    In this case, the returned length can be slightly greater than
+    actually needed. */
+typedef ASSH_BLOB_WRITE_FCN(assh_blob_write_fcn_t);
+
 /** @This writes a blob as a sequence of @em ssh2
     strings, ASN1 objects, arrays and numbers.
 
@@ -284,6 +297,8 @@ assh_blob_scan_va(struct assh_context_s *c, const char *format,
      @item @tt G       @item Get data from a pointer to an @ref assh_bignum_s object passed as argument.
      @item @tt Gr      @item Same as @tt{G} but store LSB first. Can only be used with @tt{b}.
     @end if
+     @item @tt F       @item Call an @ref assh_blob_write_fcn_t function. The function pointer along with
+                             a value pointer must be passed as argument.
      @item @tt (       @item Use nested content as field data.
      @item @tt )       @item End of nested content,
 
