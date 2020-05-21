@@ -267,7 +267,7 @@ int main(int argc, char *argv[])
   const struct assh_key_format_desc_s *ofmt_desc
     = assh_key_format_desc(ofmt);
 
-  struct assh_key_s *key;
+  struct assh_key_s *key = NULL;
 
   /* handle generation of a new key as needed */
 
@@ -433,6 +433,7 @@ int main(int argc, char *argv[])
         }
     }
 
+  assh_key_drop(context, &key);
   assh_context_release(context);
 
   if (ifile != NULL)
