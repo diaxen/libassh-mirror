@@ -182,33 +182,46 @@ assh_key_lookup(struct assh_context_s *c,
 }
 
 assh_status_t
-assh_key_algo_enumerate(struct assh_context_s *c,
-			enum assh_algo_class_e cl, size_t *count,
-			const struct assh_key_algo_s **table)
+assh_key_algo_enumerate_static(const struct assh_algo_s **atable,
+			       enum assh_algo_class_e cl, size_t *count,
+			       const struct assh_key_algo_s **ktable,
+			       assh_bool_t dup)
 {
-  uint_fast16_t i, j;
+  const struct assh_algo_s *a;
   size_t max = *count;
   size_t cnt = 0;
 
-  for (i = 0; i < c->algo_cnt; i++)
+  while ((a = *atable++) != NULL)
     {
+      if (cl != ASSH_ALGO_ANY && cl != a->class_)
+	continue;
+
       const struct assh_algo_with_key_s *awk =
-	assh_algo_with_key(c->algos[i]);
-
-      if (!awk || !awk->key_algo)
+	assh_algo_with_key(a);
+      if (!awk)
 	continue;
 
-      if (cl != ASSH_ALGO_ANY && cl != awk->algo.class_)
+      const struct assh_key_algo_s *kya = awk->key_algo;
+      if (!kya)
 	continue;
 
+      uint_fast16_t j;
       for (j = 0; j < cnt; j++)
-	if (table[j] == awk->key_algo)
-	  goto next;
+	if (dup)
+	  {
+	    /* discard duplicate pointers only */
+	    if (ktable[j] == kya)
+	      goto next;
+	  }
+	else if (!strcmp(ktable[j]->name, kya->name))
+	  {
+	    goto next;
+	  }
 
       if (cnt == max)
 	return ASSH_NO_DATA;
 
-      table[cnt++] = awk->key_algo;
+      ktable[cnt++] = kya;
 
     next:
       ;
@@ -216,6 +229,24 @@ assh_key_algo_enumerate(struct assh_context_s *c,
 
   *count = cnt;
   return ASSH_OK;
+}
+
+assh_status_t
+assh_key_algo_enumerate_implems(struct assh_context_s *c,
+				enum assh_algo_class_e cl, size_t *count,
+				const struct assh_key_algo_s **table)
+{
+  assh_status_t err;
+  ASSH_RETURN(assh_key_algo_enumerate_static(c->algos, cl, count, table, 1));
+}
+
+assh_status_t
+assh_key_algo_enumerate_names(struct assh_context_s *c,
+			      enum assh_algo_class_e cl, size_t *count,
+			      const struct assh_key_algo_s **table)
+{
+  assh_status_t err;
+  ASSH_RETURN(assh_key_algo_enumerate_static(c->algos, cl, count, table, 0));
 }
 
 assh_status_t

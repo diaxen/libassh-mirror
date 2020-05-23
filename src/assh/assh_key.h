@@ -416,9 +416,14 @@ assh_key_algo_by_name(const struct assh_context_s *c,
     store all the entries.
 */
 assh_status_t
-assh_key_algo_enumerate(struct assh_context_s *c,
-			enum assh_algo_class_e cl, size_t *count,
-			const struct assh_key_algo_s **table);
+assh_key_algo_enumerate_implems(struct assh_context_s *c,
+				enum assh_algo_class_e cl, size_t *count,
+				const struct assh_key_algo_s **table);
+
+assh_status_t
+assh_key_algo_enumerate_names(struct assh_context_s *c,
+			      enum assh_algo_class_e cl, size_t *count,
+			      const struct assh_key_algo_s **table);
 
 /** Dummy key algorithm */
 extern const struct assh_key_algo_s assh_key_none;

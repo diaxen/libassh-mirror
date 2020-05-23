@@ -184,12 +184,12 @@ int main(int argc, char *argv[])
                           NULL, NULL, NULL, NULL))
     ERROR("Unable to create context.\n");
 
-  if (assh_algo_register_default(context, 0, 0, 0))
+  if (assh_algo_register_static(context, assh_algo_table))
     ERROR("Unable to register algorithms.\n");
 
   key_algo_table_size = KEY_ALGO_TABLE_MAXSIZE;
-  assh_key_algo_enumerate(context, ASSH_ALGO_ANY,
-			  &key_algo_table_size, key_algo_table);
+  assh_key_algo_enumerate_names(context, ASSH_ALGO_ANY,
+				&key_algo_table_size, key_algo_table);
 
   /* parse command list arguments */
 
