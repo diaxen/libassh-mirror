@@ -160,7 +160,7 @@ void test(int (*fend)(int, int), int cnt, int evrate,
     }
 
   if (assh_key_load(&context[0], &context[0].keys, &assh_key_none, ASSH_ALGO_SIGN,
-		    ASSH_KEY_FMT_PUB_RFC4253, NULL, 0) != ASSH_OK)
+		    ASSH_KEY_FMT_PV_PEM_ASN1, NULL, 0) != ASSH_OK)
     TEST_FAIL("init");
 
   /********************* sessions test loop */

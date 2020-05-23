@@ -164,20 +164,21 @@ void assh_key_drop(struct assh_context_s *c,
 
 assh_status_t
 assh_key_lookup(struct assh_context_s *c,
-                struct assh_key_s **key,
+                struct assh_key_s **key, assh_bool_t private,
                 const struct assh_algo_with_key_s *awk)
 {
-  struct assh_key_s *k = c->keys;
+  struct assh_key_s *k;
 
-  while (k != NULL && !assh_algo_suitable_key(c, awk, k))
-    k = k->next;
-  if (k == NULL)
-    return ASSH_NOT_FOUND;
+  for (k = c->keys; k; k = k->next)
+    if ((!private || k->private) &&
+	assh_algo_suitable_key(c, awk, k))
+      {
+	if (key != NULL)
+	  *key = k;
+	return ASSH_OK;
+      }
 
-  if (key != NULL)
-    *key = k;
-
-  return ASSH_OK;
+  return ASSH_NOT_FOUND;
 }
 
 assh_status_t

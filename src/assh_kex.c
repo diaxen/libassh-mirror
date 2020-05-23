@@ -48,6 +48,20 @@ static const enum assh_algo_class_e assh_kex_algos_classes[8] = {
   ASSH_ALGO_COMPRESS, ASSH_ALGO_COMPRESS
 };
 
+/* check algorithm key availability */
+static assh_status_t
+assh_kex_key_available(struct assh_context_s *c, const struct assh_algo_s *a)
+{
+  const struct assh_algo_with_key_s *awk = assh_algo_with_key(a);
+  if (!awk)
+    return ASSH_OK;
+
+  if (!assh_algo_suitable_key(c, awk, NULL))
+    return ASSH_OK;
+
+  return assh_key_lookup(c, NULL, c->type == ASSH_SERVER, awk);
+}
+
 static assh_status_t
 assh_kex_list(struct assh_session_s *s, struct assh_packet_s *p,
               uint_fast16_t *algoidx, enum assh_algo_class_e class_,
@@ -70,11 +84,7 @@ assh_kex_list(struct assh_session_s *s, struct assh_packet_s *p,
       if (a->class_ != class_)
         break;
 
-      const struct assh_algo_with_key_s *awk =
-	assh_algo_with_key(a);
-      /* check host key availability for this algorithm */
-      if (awk && assh_algo_suitable_key(c, awk, NULL) &&
-          assh_key_lookup(c, NULL, awk) != ASSH_OK)
+      if (assh_kex_key_available(c, a) == ASSH_NOT_FOUND)
         continue;
 
       const struct assh_algo_name_s *name;
@@ -225,11 +235,7 @@ assh_kex_server_algos(struct assh_session_s *s, const uint8_t *lists[9],
           if (!s->kex_filter(s, a, na, 1 & i))
             goto next;
 
-          /* check algorithm key availability */
-	  const struct assh_algo_with_key_s *awk =
-	    assh_algo_with_key(a);
-          if (awk && assh_algo_suitable_key(c, awk, NULL) &&
-              assh_key_lookup(c, NULL, awk) != ASSH_OK)
+	  if (assh_kex_key_available(c, a) == ASSH_NOT_FOUND)
             goto next;
 
           algos[i] = a;
@@ -803,7 +809,7 @@ assh_kex_server_hash1(struct assh_session_s *s, size_t kex_len,
   /* look for an host key pair which can be used with the selected algorithm. */
   const struct assh_algo_sign_s *sa = s->host_sign_algo;
 
-  ASSH_RET_IF_TRUE(assh_key_lookup(c, host_key, &s->host_sign_algo->algo_wk) != ASSH_OK,
+  ASSH_RET_IF_TRUE(assh_key_lookup(c, host_key, 1, &s->host_sign_algo->algo_wk) != ASSH_OK,
                ASSH_ERR_MISSING_KEY);
   struct assh_key_s *hk = *host_key;
 

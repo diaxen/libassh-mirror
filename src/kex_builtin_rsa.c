@@ -353,7 +353,8 @@ static assh_status_t assh_kex_rsa_server_send_pubkey(struct assh_session_s *s)
   /* look for an host key pair which can be used with the selected algorithm. */
 
   struct assh_key_s *hk;
-  ASSH_RET_IF_TRUE(assh_key_lookup(c, &hk, &s->host_sign_algo->algo_wk) != ASSH_OK,
+  ASSH_RET_IF_TRUE(assh_key_lookup(c, &hk, 1,
+		     &s->host_sign_algo->algo_wk) != ASSH_OK,
                ASSH_ERR_MISSING_KEY);
   pv->host_key = hk;
 
@@ -609,7 +610,7 @@ static assh_status_t assh_kex_rsa_init(struct assh_session_s *s,
 #endif
 #ifdef CONFIG_ASSH_SERVER
     case ASSH_SERVER:
-      if (assh_key_lookup(c, &pv->t_key, awk))
+      if (assh_key_lookup(c, &pv->t_key, 1, awk))
 	{
 #ifdef CONFIG_ASSH_KEY_CREATE
 	  ASSH_JMP_ON_ERR(assh_key_create(c, &c->keys, minklen, &assh_key_builtin_rsa,

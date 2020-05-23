@@ -372,7 +372,7 @@ assh_key_validate(struct assh_context_s *c,
     among keys registered on the context. */
 ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_key_lookup(struct assh_context_s *c,
-                struct assh_key_s **key,
+                struct assh_key_s **key, assh_bool_t private,
                 const struct assh_algo_with_key_s *awk);
 
 /** @This returns the type name of the key. */
