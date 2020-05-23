@@ -164,7 +164,7 @@ static assh_status_t assh_algo_extend(struct assh_context_s *c)
   ASSH_RET_IF_TRUE(!c->algo_realloc && c->algos, ASSH_ERR_NOTSUP);
   size_t count = c->algo_max + 16;
   ASSH_RET_ON_ERR(assh_realloc(c, (void**)&c->algos,
-                    sizeof(void*) * count, ASSH_ALLOC_INTERNAL));
+                    sizeof(void*) * (count + 1), ASSH_ALLOC_INTERNAL));
   c->algo_max = count;
   c->algo_realloc = 1;
 
@@ -216,11 +216,11 @@ assh_status_t assh_algo_register(struct assh_context_s *c, assh_safety_t safety,
   for (i = 0; table[i] != NULL; i++)
     {
       const struct assh_algo_s *algo = table[i];
-      ASSH_RET_IF_TRUE(algo->api != ASSH_ALGO_API_VERSION, ASSH_ERR_BAD_ARG);
+      ASSH_JMP_IF_TRUE(algo->api != ASSH_ALGO_API_VERSION, ASSH_ERR_BAD_ARG, err_);
       if (algo->safety < min_safety || algo->speed < min_speed)
 	continue;
       if (count == c->algo_max)
-        ASSH_RET_ON_ERR(assh_algo_extend(c));
+        ASSH_JMP_ON_ERR(assh_algo_extend(c), err_);
       c->algos[count++] = algo;
     }
 
@@ -228,7 +228,9 @@ assh_status_t assh_algo_register(struct assh_context_s *c, assh_safety_t safety,
   assh_algo_sort(c, safety, min_safety, min_speed);
   assh_algo_kex_init_size(c);
 
-  return ASSH_OK;
+ err_:
+  c->algos[c->algo_cnt] = NULL;
+  return err;
 }
 
 const struct assh_algo_s *
@@ -270,6 +272,7 @@ assh_status_t assh_algo_register_va(struct assh_context_s *c, assh_safety_t safe
   assh_algo_kex_init_size(c);
 
  err_:
+  c->algos[c->algo_cnt] = NULL;
   va_end(ap);
   return err;
 }
@@ -311,6 +314,7 @@ assh_status_t assh_algo_register_names_va(struct assh_context_s *c, assh_safety_
   assh_algo_kex_init_size(c);
 
  err_:
+  c->algos[c->algo_cnt] = NULL;
   va_end(ap);
   return err;
 }
@@ -375,22 +379,9 @@ assh_algo_by_name(struct assh_context_s *c,
                   size_t name_len, const struct assh_algo_s **algo,
                   const struct assh_algo_name_s **namep)
 {
-  uint_fast16_t i;
-
-  for (i = 0; i < c->algo_cnt; i++)
-    {
-      const struct assh_algo_s *a = c->algos[i];
-      const struct assh_algo_name_s *n
-        = assh_algo_name_match(a, class_, name, name_len);
-      if (n != NULL)
-        {
-          *algo = a;
-          if (namep != NULL)
-            *namep = n;
-          return ASSH_OK;
-        }
-    }
-  return ASSH_NOT_FOUND;
+  assh_status_t err;
+  ASSH_RETURN(assh_algo_by_name_static(c->algos, class_, name,
+				       name_len, algo, namep));
 }
 
 assh_status_t assh_algo_by_key(struct assh_context_s *c,
