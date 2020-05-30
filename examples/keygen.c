@@ -103,7 +103,7 @@ static void list_types()
 
   printf("Supported key types:\n");
   for (i = 0; i < key_algo_table_size; i++)
-    printf("  %s\n", types[i]->name);
+    printf("  %-32s (%s)\n", types[i]->name, types[i]->implem);
 }
 
 static const struct assh_key_algo_s * get_type(const char *type)

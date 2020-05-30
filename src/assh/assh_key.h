@@ -201,6 +201,9 @@ struct assh_key_algo_s
   uint16_t bits;
   /** maximuu number of bits for @ref assh_key_create */
   uint16_t max_bits;
+  /** used when we need to choose between multiple implementations of
+      the same key management algorithm. */
+  int8_t priority;
 };
 
 /** @This describes a key format.

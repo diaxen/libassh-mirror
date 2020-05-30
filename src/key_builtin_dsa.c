@@ -440,6 +440,7 @@ const struct assh_key_algo_s assh_key_builtin_dsa =
   .min_bits = 1024,
   .bits = 2048,
   .max_bits = 4096,
+  .priority = 1,
 
   .formats = (enum assh_key_format_e[]){
     ASSH_KEY_FMT_PV_PEM,

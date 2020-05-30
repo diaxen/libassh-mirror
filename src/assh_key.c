@@ -215,6 +215,8 @@ assh_key_algo_enumerate_static(const struct assh_algo_s **atable,
 	  }
 	else if (!strcmp(ktable[j]->name, kya->name))
 	  {
+	    if (ktable[j]->priority < kya->priority)
+	      ktable[j] = kya;
 	    goto next;
 	  }
 

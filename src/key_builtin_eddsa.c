@@ -352,6 +352,7 @@ const struct assh_key_algo_s assh_key_builtin_ed25519 =
   .min_bits = 255,
   .bits = 255,
   .max_bits = 255,
+  .priority = 1,
 
   .formats = (enum assh_key_format_e[]){
     ASSH_KEY_FMT_PV_OPENSSH_V1,
@@ -422,6 +423,7 @@ const struct assh_key_algo_s assh_key_builtin_eddsa_e382 =
   .min_bits = 382,
   .bits = 382,
   .max_bits = 382,
+  .priority = 1,
 
   .formats = (enum assh_key_format_e[]){
     ASSH_KEY_FMT_PV_OPENSSH_V1,
@@ -500,6 +502,7 @@ const struct assh_key_algo_s assh_key_builtin_eddsa_e521 =
   .min_bits = 521,
   .bits = 521,
   .max_bits = 521,
+  .priority = 1,
 
   .formats = (enum assh_key_format_e[]){
     ASSH_KEY_FMT_PV_OPENSSH_V1,
