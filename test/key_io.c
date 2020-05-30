@@ -32,6 +32,10 @@
 
 #include "test.h"
 
+#define KEY_ALGO_TABLE_MAXSIZE 32
+static const struct assh_key_algo_s *key_algo_table[KEY_ALGO_TABLE_MAXSIZE];
+static size_t key_algo_table_size;
+
 struct tests_s
 {
   const char *key_algo;
@@ -100,85 +104,91 @@ static void test_algo(struct assh_context_s *c, size_t count)
     };
 
   const struct tests_s *t;
-  const char *key_algo = NULL;
+  const struct assh_key_algo_s *key_algo = NULL;
   size_t bits_min = 0, bits_max = 0;
   enum assh_key_format_e format = ASSH_KEY_FMT_NONE;
   struct assh_key_s *key1 = NULL, *key2;
-  size_t i;
+  size_t i, j;
 
   for (t = algo_tests; t->key_algo != NULL; t++)
     {
-      const struct assh_key_algo_s *ka;
+      assh_bool_t done = 0;
 
-      if (assh_key_algo_by_name(c, ASSH_ALGO_ANY, t->key_algo,
-				strlen(t->key_algo), &ka))
+      for (j = 0; j < key_algo_table_size; j++)
 	{
-	  printf("skipping %s, no implementation\n", t->key_algo);
-	  continue;
+	  const struct assh_key_algo_s *ka = key_algo_table[j];
+
+	  if (strcmp(t->key_algo, ka->name))
+	    continue;
+
+	  done = 1;
+	  for (i = 0; i < count; i++)
+	    {
+	      if (!key_algo || format != t->format || key_algo != ka)
+		{
+		  format = t->format;
+		  printf("\n%s (%s), %s format: ",
+			 ka->name, ka->implem,
+			 assh_key_format_desc(t->format)->name);
+		}
+
+	      if (!key_algo || key_algo != ka ||
+		  t->bits_min != bits_min || t->bits_max != bits_max)
+		{
+		  /* create new key */
+		  size_t bits = t->bits_min + test_prng_rand() % (t->bits_max - t->bits_min + 1);
+		  assh_key_drop(c, &key1);
+		  putchar('N');
+		  TEST_ASSERT(!assh_key_create(c, &key1, bits, ka, ASSH_ALGO_SIGN));
+		}
+
+	      /* get estimated size of key blob */
+	      putchar('o');
+	      size_t blob_len1 = 0, blob_len2 = 0;
+	      TEST_ASSERT(!assh_key_output(c, key1, NULL, &blob_len1, t->format));
+	      TEST_ASSERT(blob_len1 > 0 && blob_len1 < (1 << 20));
+
+	      /* allocate space for key blob */
+	      uint8_t *blob1 = malloc(blob_len1);
+	      TEST_ASSERT(blob1 != NULL);
+
+	      /* store key blob to memory */
+	      putchar('O');
+	      blob_len2 = blob_len1;
+	      TEST_ASSERT(!assh_key_output(c, key1, blob1, &blob_len2, t->format));
+
+	      /* check estimated size against actual size */
+	      TEST_ASSERT(blob_len2 > 0 && blob_len2 <= blob_len1);
+
+	      /* reload key from blob */
+	      const uint8_t *blob2 = blob1;
+	      size_t padding = test_prng_rand() % 32;	/* may load from large buffer */
+
+	      putchar('l');
+	      TEST_ASSERT(!assh_key_load(c, &key2, ka, ASSH_ALGO_SIGN, t->format,
+					 &blob2, blob_len2 + padding));
+
+	      /* check loaded blob end pointer */
+	      TEST_ASSERT(blob1 + blob_len2 == blob2);
+
+	      TEST_ASSERT(assh_key_cmp(c, key1, key2, !t->private));
+	      TEST_ASSERT(assh_key_cmp(c, key2, key1, !t->private));
+
+	      test_sign(c, key1, key2);
+	      if (t->private)
+		test_sign(c, key2, key1);
+
+	      key_algo = ka;
+	      bits_min = t->bits_min;
+	      bits_max = t->bits_max;
+
+	      free(blob1);
+	      assh_key_drop(c, &key2);
+	    }
 	}
 
-      for (i = 0; i < count; i++)
-	{
-	  if (!key_algo || format != t->format || strcmp(key_algo, t->key_algo))
-	    {
-	      format = t->format;
-	      printf("\n%s, %s format: ",
-		      t->key_algo, assh_key_format_desc(t->format)->name);
-	    }
-
-	  if (!key_algo || strcmp(key_algo, t->key_algo) ||
-	      t->bits_min != bits_min || t->bits_max != bits_max)
-	    {
-	      /* create new key */
-	      size_t bits = t->bits_min + test_prng_rand() % (t->bits_max - t->bits_min + 1);
-	      assh_key_drop(c, &key1);
-	      putchar('N');
-	      TEST_ASSERT(!assh_key_create(c, &key1, bits, ka, ASSH_ALGO_SIGN));
-	    }
-
-	  /* get estimated size of key blob */
-	  putchar('o');
-	  size_t blob_len1 = 0, blob_len2 = 0;
-	  TEST_ASSERT(!assh_key_output(c, key1, NULL, &blob_len1, t->format));
-	  TEST_ASSERT(blob_len1 > 0 && blob_len1 < (1 << 20));
-
-	  /* allocate space for key blob */
-	  uint8_t *blob1 = malloc(blob_len1);
-	  TEST_ASSERT(blob1 != NULL);
-
-	  /* store key blob to memory */
-	  putchar('O');
-	  blob_len2 = blob_len1;
-	  TEST_ASSERT(!assh_key_output(c, key1, blob1, &blob_len2, t->format));
-
-	  /* check estimated size against actual size */
-	  TEST_ASSERT(blob_len2 > 0 && blob_len2 <= blob_len1);
-
-	  /* reload key from blob */
-	  const uint8_t *blob2 = blob1;
-	  size_t padding = test_prng_rand() % 32;	/* may load from large buffer */
-
-	  putchar('l');
-	  TEST_ASSERT(!assh_key_load(c, &key2, ka, ASSH_ALGO_SIGN, t->format,
-				     &blob2, blob_len2 + padding));
-
-	  /* check loaded blob end pointer */
-	  TEST_ASSERT(blob1 + blob_len2 == blob2);
-
-	  TEST_ASSERT(assh_key_cmp(c, key1, key2, !t->private));
-	  TEST_ASSERT(assh_key_cmp(c, key2, key1, !t->private));
-
-	  test_sign(c, key1, key2);
-	  if (t->private)
-	    test_sign(c, key2, key1);
-
-	  key_algo = t->key_algo;
-	  bits_min = t->bits_min;
-	  bits_max = t->bits_max;
-
-	  free(blob1);
-	  assh_key_drop(c, &key2);
-	}
+      if (!done)
+	printf("\nskipping %s, no implementation\n", t->key_algo);
     }
 
   assh_key_drop(c, &key1);
@@ -276,7 +286,8 @@ static void test_helper(struct assh_context_s *c, size_t count)
     {
       const struct assh_key_algo_s *ka;
 
-      if (assh_key_algo_by_name(c, ASSH_ALGO_ANY, t->key_algo, strlen(t->key_algo), &ka))
+      if (assh_key_algo_by_name(c, ASSH_ALGO_ANY, t->key_algo,
+				strlen(t->key_algo), &ka))
 	{
 	  printf("skipping %s, no implementation\n", t->key_algo);
 	  continue;
@@ -288,7 +299,7 @@ static void test_helper(struct assh_context_s *c, size_t count)
 	    {
 	      format = t->format;
 	      printf("\n%s, %s format: ",
-		      t->key_algo, assh_key_format_desc(t->format)->name);
+		     t->key_algo, assh_key_format_desc(t->format)->name);
 	    }
 
 	  if (!key_algo || strcmp(key_algo, t->key_algo) ||
@@ -311,7 +322,7 @@ static void test_helper(struct assh_context_s *c, size_t count)
 	  /* reload key from file */
 	  putchar('l');
 	  TEST_ASSERT(!asshh_key_load_filename(c, &key2, t->key_algo,
-		       ASSH_ALGO_SIGN, "test.key", t->format, t->pass, 0));
+					       ASSH_ALGO_SIGN, "test.key", t->format, t->pass, 0));
 
 	  /* compare loaded key to original */
 	  TEST_ASSERT(assh_key_cmp(c, key1, key2, !t->private));
@@ -357,8 +368,13 @@ int main(int argc, char **argv)
 			  test_leaks_allocator, NULL, &test_prng_dummy, NULL))
     TEST_FAIL("context create");
 
-  if (assh_algo_register(context, 0, 0, 0, assh_algo_table))
+  if (assh_algo_register_static(context, assh_algo_table))
     TEST_FAIL("algo register");
+
+  key_algo_table_size = KEY_ALGO_TABLE_MAXSIZE;
+  if (assh_key_algo_enumerate_implems(context, ASSH_ALGO_ANY,
+				      &key_algo_table_size, key_algo_table))
+    TEST_FAIL("algo enum");
 
   size_t acount = argc > 1 ? atoi(argv[1]) : 10;
   size_t hcount = argc > 2 ? atoi(argv[2]) : 2;
