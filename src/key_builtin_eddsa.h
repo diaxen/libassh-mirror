@@ -21,21 +21,8 @@
 
 */
 
-/**
-   @file
-   @short Key support for the EdDSA signature algorithm
-
-   This header file contains the API descriptor for the EdDSA key
-   support module.
-
-   @xsee{keysalgos}
-   @xsee{EdDSA signature}
-   @xsee{coremod}
-   @see{@assh/assh_key.h}
-*/
-
-#ifndef ASSH_KEY_EDDSA_H_
-#define ASSH_KEY_EDDSA_H_
+#ifndef ASSH_KEY_BUILTIN_EDDSA_H_
+#define ASSH_KEY_BUILTIN_EDDSA_H_
 
 #include <assh/assh_key.h>
 #include <assh/assh_bignum.h>
