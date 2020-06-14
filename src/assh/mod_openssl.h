@@ -33,6 +33,7 @@
 #include <assh/assh_prng.h>
 #include <assh/assh_cipher.h>
 #include <assh/assh_mac.h>
+#include <assh/assh_sign.h>
 
 #ifdef CONFIG_ASSH_USE_OPENSSL
 # include <openssl/opensslconf.h>
@@ -120,6 +121,30 @@ extern const struct assh_algo_mac_s assh_mac_openssl_sha512_etm;
 #  ifndef OPENSSL_NO_RMD160
 extern const struct assh_algo_mac_s assh_mac_openssl_ripemd160;
 extern const struct assh_algo_mac_s assh_mac_openssl_ripemd160_etm;
+#  endif
+# endif
+
+# ifdef CONFIG_ASSH_USE_OPENSSL_SIGN
+#  ifndef OPENSSL_NO_RSA
+/** Accept sha* and md5 RSA signatures, generate sha1 signatures.
+    Reject keys with modulus size less than 768 bits. */
+extern const struct assh_algo_sign_s assh_sign_openssl_rsa_sha1_md5;
+
+/** Accept sha* RSA signatures, generate sha1 signatures,
+    Reject keys with modulus size less than 1024 bits. */
+extern const struct assh_algo_sign_s assh_sign_openssl_rsa_sha1;
+
+/** Accept sha* RSA signatures, generate sha1 signatures. 
+    Reject keys with modulus size less than 2048 bits. */
+extern const struct assh_algo_sign_s assh_sign_openssl_rsa_sha1_2048;
+
+/** Accept sha2, RSA signatures, generate sha256 signatures. 
+    Reject keys with modulus size less than 2048 bits. */
+extern const struct assh_algo_sign_s assh_sign_openssl_rsa_sha256;
+
+/** Accept sha2 RSA signatures, generate sha512 signatures. 
+    Reject keys with modulus size less than 2048 bits. */
+extern const struct assh_algo_sign_s assh_sign_openssl_rsa_sha512;
 #  endif
 # endif
 

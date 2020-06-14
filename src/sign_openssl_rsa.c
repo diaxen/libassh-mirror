@@ -24,12 +24,12 @@
 #include <assh/assh_buffer.h>
 #include <assh/assh_bignum.h>
 #include <assh/assh_sign.h>
-#include <assh/mod_builtin.h>
+#include <assh/mod_openssl.h>
 #include <assh/assh_hash.h>
 #include <assh/assh_prng.h>
 #include <assh/assh_alloc.h>
 
-#include "key_builtin_rsa.h"
+#include "key_openssl_rsa.h"
 #include "sign_rsa.h"
 
 #include <string.h>
@@ -46,9 +46,7 @@ assh_sign_rsa_generate(struct assh_context_s *c,
   const struct assh_key_rsa_s *k = (const void*)key;
   assh_status_t err;
 
-  assert(key->algo == &assh_key_builtin_rsa);
-
-  size_t n = ASSH_ALIGN8(assh_bignum_bits(&k->nn)) / 8;
+  size_t n = RSA_size(k->rsa);
 
   /* check/return signature length */
   size_t id_len = 4 + assh_load_u32((const uint8_t*)algo_id);
@@ -60,7 +58,7 @@ assh_sign_rsa_generate(struct assh_context_s *c,
       return ASSH_OK;
     }
 
-  assert(!assh_bignum_isempty(&k->dn));
+  assert(key->algo == &assh_key_openssl_rsa);
 
   ASSH_RET_IF_TRUE(*sign_len < len, ASSH_ERR_OUTPUT_OVERFLOW);
   *sign_len = len;
@@ -68,100 +66,30 @@ assh_sign_rsa_generate(struct assh_context_s *c,
   const struct assh_rsa_digest_s *digest = assh_rsa_digests + digest_id;
   ASSH_RET_IF_TRUE(digest->algo == NULL, ASSH_ERR_NOTSUP);
 
-  /* build encoded message buffer */
-  size_t ps_len = n - 3 - digest->oid_len - digest->algo->hash_size;
-
-  ASSH_RET_IF_TRUE(ps_len < 8, ASSH_ERR_BAD_DATA);
-
   ASSH_SCRATCH_ALLOC(c, uint8_t, scratch,
-                     digest->algo->ctx_size + n,
+                     digest->algo->ctx_size +
+		     digest->oid_len + digest->algo->hash_size,
                      ASSH_ERRSV_CONTINUE, err_);
 
-  uint8_t *em_buf = scratch + digest->algo->ctx_size;
-  uint8_t *em = em_buf;
-
-  *em++ = 0x00;
-  *em++ = 0x01;
-  memset(em, 0xff, ps_len);
-  em += ps_len;
-  *em++ = 0x00;
-  memcpy(em, digest->oid, digest->oid_len);
-  em += digest->oid_len;
-
-  uint_fast16_t i;
   void *hash_ctx = scratch;
+  uint8_t *em = scratch + digest->algo->ctx_size;
+
+  memcpy(em, digest->oid, digest->oid_len);
 
   ASSH_JMP_ON_ERR(assh_hash_init(c, hash_ctx, digest->algo), err_scratch);
+
+  uint_fast8_t i;
   for (i = 0; i < data_count; i++)
     assh_hash_update(hash_ctx, data[i].data, data[i].len);
-  assh_hash_final(hash_ctx, em, digest->algo->hash_size);
-
+  assh_hash_final(hash_ctx, em + digest->oid_len, digest->algo->hash_size);
   assh_hash_cleanup(hash_ctx);
 
-  /* build signature blob */
   memcpy(sign, algo_id, id_len);
   assh_store_u32(sign + id_len, n);
-  uint8_t *c_str = sign + id_len + 4;
+  uint8_t *to = sign + id_len + 4;
 
-#ifdef CONFIG_ASSH_DEBUG_SIGN
-  ASSH_DEBUG_HEXDUMP("rsa generate em", em_buf, n);
-#endif
-
-  /* use Chinese Remainder */
-  enum bytecode_args_e
-  {
-    C_data, EM_data,            /* data buffers */
-    Q, P, DP, DQ, I, N,         /* big number inputs */
-    M2, EM, T3, T0, T1, T2,     /* big number temporaries */
-    MT, PQ_size
-  };
-
-  static const assh_bignum_op_t bytecode[] = {
-    ASSH_BOP_SIZER(     M2,     EM,     N		),
-    ASSH_BOP_SIZER(     T0,     MT,     PQ_size		),
-    ASSH_BOP_SIZEM(     T3,     PQ_size, 0, 1		),
-
-    ASSH_BOP_MOVE(      EM,     EM_data			),
-
-    /* m2 = em^dq % q */
-    ASSH_BOP_MOVE(      T2,     Q			),
-    ASSH_BOP_MOD(       T0,     EM,     T2              ),
-    ASSH_BOP_MTINIT(    MT,     T2                      ),
-    ASSH_BOP_MTTO(      T0,     T0,     T0,     MT      ),
-    ASSH_BOP_EXPM(      T0,     T0,     DQ,	MT	),
-    ASSH_BOP_MTFROM(    T0,     T0,     T0,     MT      ),
-    ASSH_BOP_MOVE(      M2,     T0			),
-
-    /* m1 = em^dp % p */
-    ASSH_BOP_MOVE(      T2,     P			),
-    ASSH_BOP_MOD(       T1,     EM,     T2              ),
-    ASSH_BOP_MTINIT(    MT,     T2                      ),
-    ASSH_BOP_MTTO(      T1,     T1,     T1,     MT      ),
-    ASSH_BOP_EXPM(      T1,     T1,     DP,	MT	),
-
-    /* h = i * (m1 - m2) */
-    ASSH_BOP_MTTO(      T0,     T0,     T0,     MT      ),
-    ASSH_BOP_SUBM(      T1,     T1,     T0,     MT      ),
-    ASSH_BOP_MOVE(      T2,     I			),
-    ASSH_BOP_MTTO(      T2,     T2,     T2,     MT      ),
-    ASSH_BOP_MULM(      T0,     T1,     T2,     MT      ),
-    ASSH_BOP_MTFROM(    T1,     T1,     T0,     MT      ),
-
-    /* m = m2 + h * q */
-    ASSH_BOP_MUL(       T3,     T1,     Q               ),
-    ASSH_BOP_ADD(       M2,     M2,     T3              ),
-
-    ASSH_BOP_MOVE(      C_data, M2			),
-    ASSH_BOP_END(),
-  };
-
-  intptr_t pqsize = assh_max_uint(assh_bignum_bits(&k->pn),
-				  assh_bignum_bits(&k->qn));
-
-  ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "DDNNNNNNTTTTTTms",
-                   /* Data */ c_str, em_buf,
-                   /* Num  */ &k->qn, &k->pn, &k->dpn, &k->dqn,
-                              &k->in, &k->nn, pqsize), err_scratch);
+  ASSH_JMP_IF_TRUE(RSA_private_encrypt(digest->oid_len + digest->algo->hash_size,
+		     em, to, k->rsa, RSA_PKCS1_PADDING) != n, ASSH_ERR_CRYPTO, err_scratch);
 
   err = ASSH_OK;
 
@@ -181,10 +109,10 @@ assh_sign_rsa_check(struct assh_context_s *c,
   const struct assh_key_rsa_s *k = (const void*)key;
   assh_status_t err;
 
-  assert(key->algo == &assh_key_builtin_rsa);
+  assert(key->algo == &assh_key_openssl_rsa);
 
   size_t id_len = 4 + assh_load_u32((const uint8_t*)algo_id);
-  size_t n = ASSH_ALIGN8(assh_bignum_bits(&k->nn)) / 8;
+  size_t n = RSA_size(k->rsa);
 
   ASSH_RET_IF_TRUE(sign_len != id_len + 4 + n, ASSH_ERR_INPUT_OVERFLOW);
 
@@ -193,57 +121,24 @@ assh_sign_rsa_check(struct assh_context_s *c,
   uint8_t *c_str = (uint8_t*)sign + id_len;
   ASSH_RET_IF_TRUE(assh_load_u32(c_str) != n, ASSH_ERR_INPUT_OVERFLOW);
 
-  ASSH_SCRATCH_ALLOC(c, uint8_t, em_buf, n, ASSH_ERRSV_CONTINUE, err_);
-  uint8_t *em = em_buf;
+  ASSH_SCRATCH_ALLOC(c, uint8_t, em, n, ASSH_ERRSV_CONTINUE, err_);
 
-  enum bytecode_args_e
-  {
-    C_data, EM_data,            /* data buffers */
-    N, E,                       /* big number inputs */
-    C, EM,                      /* big number temporaries */
-    MT
-  };
-
-  static const assh_bignum_op_t bytecode[] = {
-    ASSH_BOP_SIZER(     C,      MT,     N		),
-    ASSH_BOP_MTINIT(    MT,     N                       ),
-
-    ASSH_BOP_MOVE(      C,      C_data                  ),
-    ASSH_BOP_MTTO(      C,      C,      C,      MT      ),
-    ASSH_BOP_EXPM(      EM,     C,      E,	MT	),
-    ASSH_BOP_MTFROM(    EM,     EM,     EM,     MT      ),
-
-    ASSH_BOP_MOVE(      EM_data, EM                     ),
-    ASSH_BOP_END(),
-  };
-
-  ASSH_JMP_ON_ERR(assh_bignum_bytecode(c, 0, bytecode, "DDNNTTm",
-                   /* Data */ c_str + 4, em,
-                   /* Nun  */ &k->nn, &k->en), err_em);
+  int r = RSA_public_decrypt(n, c_str + 4, em, k->rsa, RSA_PKCS1_PADDING);
+  ASSH_JMP_IF_TRUE(r < 0, ASSH_ERR_CRYPTO, err_em);
 
 #ifdef CONFIG_ASSH_DEBUG_SIGN
   ASSH_DEBUG_HEXDUMP("rsa check em", em, n);
 #endif
 
-  uint8_t *em_end = em + n;
-  uint_fast16_t i;
-
-  /* check padding */
-  ASSH_JMP_IF_TRUE(*em++ != 0x00, ASSH_ERR_BAD_DATA, err_em);
-  ASSH_JMP_IF_TRUE(*em++ != 0x01, ASSH_ERR_BAD_DATA, err_em);
-  for (i = 0; em + 1 < em_end && *em == 0xff; em++)
-    i++;
-  ASSH_JMP_IF_TRUE(i < 8, ASSH_ERR_BAD_DATA, err_em);
-  ASSH_JMP_IF_TRUE(*em++ != 0x00, ASSH_ERR_BAD_DATA, err_em);
-
   /* lookup digest algorithm in use */
   const struct assh_rsa_digest_s *digest;
+  uint_fast8_t i;
   for (i = 0; i < RSA_DIGEST_count; i++)
     {
       digest = assh_rsa_digests + i;
       if (digest->algo == NULL)
         continue;
-      if (digest->oid_len + digest->algo->hash_size != em_end - em)
+      if (digest->oid_len + digest->algo->hash_size != r)
         continue;
       if (!memcmp(digest->oid, em, digest->oid_len))
         break;
@@ -253,7 +148,6 @@ assh_sign_rsa_check(struct assh_context_s *c,
   ASSH_JMP_IF_TRUE(!((digest_mask >> i) & 1), ASSH_ERR_WEAK_ALGORITHM, err_em);
 
   /* compute message hash */
-  em += digest->oid_len;
   ASSH_SCRATCH_ALLOC(c, void, hash_ctx, digest->algo->ctx_size +
                      digest->algo->hash_size,
                      ASSH_ERRSV_CONTINUE, err_em);
@@ -266,13 +160,10 @@ assh_sign_rsa_check(struct assh_context_s *c,
   assh_hash_final(hash_ctx, hash, digest->algo->hash_size);
   assh_hash_cleanup(hash_ctx);
 
-#ifdef CONFIG_ASSH_DEBUG_SIGN
-  ASSH_DEBUG_HEXDUMP("rsa check hash", hash, digest->algo->hash_size);
-#endif
-
   *safety = assh_min_uint(*safety, digest->algo->safety);
 
-  ASSH_JMP_IF_TRUE(assh_memcmp(hash, em, digest->algo->hash_size),
+  ASSH_JMP_IF_TRUE(assh_memcmp(hash, em + digest->oid_len,
+			       digest->algo->hash_size),
                ASSH_ERR_NUM_COMPARE_FAILED, err_hash);
 
   err = ASSH_OK;
@@ -280,7 +171,7 @@ assh_sign_rsa_check(struct assh_context_s *c,
  err_hash:
   ASSH_SCRATCH_FREE(c, hash_ctx);
  err_em:
-  ASSH_SCRATCH_FREE(c, em_buf);
+  ASSH_SCRATCH_FREE(c, em);
  err_:
   return err;
 }
@@ -289,10 +180,10 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_768)
 {
   if (key == NULL)
     return c->type == ASSH_SERVER;
-  if (key->algo != &assh_key_builtin_rsa || key->role != ASSH_ALGO_SIGN)
+  if (key->algo != &assh_key_openssl_rsa || key->role != ASSH_ALGO_SIGN)
     return 0;
   const struct assh_key_rsa_s *k = (const void*)key;
-  return assh_bignum_bits(&k->nn) >= 768;
+  return RSA_bits(k->rsa) >= 768;
 }
 
 static ASSH_SIGN_CHECK_FCN(assh_sign_rsa_check_sha1_md5)
@@ -312,14 +203,14 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate_sha1)
                       sign, sign_len, RSA_DIGEST_SHA1, ASSH_RSA_ID);
 }
 
-const struct assh_algo_sign_s assh_sign_builtin_rsa_sha1_md5 =
+const struct assh_algo_sign_s assh_sign_openssl_rsa_sha1_md5 =
 {
   .algo_wk = {
-    ASSH_ALGO_BASE(SIGN, "assh-builtin", 15, 40,
+    ASSH_ALGO_BASE(SIGN, "assh-openssl", 15, 40,
       ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "ssh-rsa" }),
       ASSH_ALGO_VARIANT( 2, "sha*, md5, key >= 768" ),
     ),
-    .key_algo = &assh_key_builtin_rsa,
+    .key_algo = &assh_key_openssl_rsa,
     .f_suitable_key = assh_sign_rsa_suitable_key_768,
   },
   .f_generate = assh_sign_rsa_generate_sha1,
@@ -332,10 +223,10 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_1024)
 {
   if (key == NULL)
     return c->type == ASSH_SERVER;
-  if (key->algo != &assh_key_builtin_rsa || key->role != ASSH_ALGO_SIGN)
+  if (key->algo != &assh_key_openssl_rsa || key->role != ASSH_ALGO_SIGN)
     return 0;
   const struct assh_key_rsa_s *k = (const void*)key;
-  return assh_bignum_bits(&k->nn) >= 1024;
+  return RSA_bits(k->rsa) >= 1024;
 }
 
 static ASSH_SIGN_CHECK_FCN(assh_sign_rsa_check_sha1)
@@ -348,15 +239,15 @@ static ASSH_SIGN_CHECK_FCN(assh_sign_rsa_check_sha1)
                               | (1 << RSA_DIGEST_SHA512), ASSH_RSA_ID);
 }
 
-const struct assh_algo_sign_s assh_sign_builtin_rsa_sha1 =
+const struct assh_algo_sign_s assh_sign_openssl_rsa_sha1 =
 {
   .algo_wk = {
-    ASSH_ALGO_BASE(SIGN, "assh-builtin", 20, 40,
+    ASSH_ALGO_BASE(SIGN, "assh-openssl", 20, 40,
       ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "ssh-rsa" }),
       ASSH_ALGO_VARIANT( 1, "sha*, key >= 1024" ),
     ),
     .f_suitable_key = assh_sign_rsa_suitable_key_1024,
-    .key_algo = &assh_key_builtin_rsa,
+    .key_algo = &assh_key_openssl_rsa,
   },
   .f_generate = assh_sign_rsa_generate_sha1,
   .f_check = assh_sign_rsa_check_sha1,
@@ -368,21 +259,21 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_rsa_suitable_key_2048)
 {
   if (key == NULL)
     return c->type == ASSH_SERVER;
-  if (key->algo != &assh_key_builtin_rsa || key->role != ASSH_ALGO_SIGN)
+  if (key->algo != &assh_key_openssl_rsa || key->role != ASSH_ALGO_SIGN)
     return 0;
   const struct assh_key_rsa_s *k = (const void*)key;
-  return assh_bignum_bits(&k->nn) >= 2048;
+  return RSA_bits(k->rsa) >= 2048;
 }
 
-const struct assh_algo_sign_s assh_sign_builtin_rsa_sha1_2048 =
+const struct assh_algo_sign_s assh_sign_openssl_rsa_sha1_2048 =
 {
   .algo_wk = {
-    ASSH_ALGO_BASE(SIGN, "assh-builtin", 25, 30,
+    ASSH_ALGO_BASE(SIGN, "assh-openssl", 25, 30,
       ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "ssh-rsa" }),
       ASSH_ALGO_VARIANT( 0, "sha*, key >= 2048" ),
     ),
     .f_suitable_key = assh_sign_rsa_suitable_key_2048,
-    .key_algo = &assh_key_builtin_rsa,
+    .key_algo = &assh_key_openssl_rsa,
   },
   .f_generate = assh_sign_rsa_generate_sha1,
   .f_check = assh_sign_rsa_check_sha1,
@@ -405,15 +296,15 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate_sha256)
                                 ASSH_RSA_SHA256_ID);
 }
 
-const struct assh_algo_sign_s assh_sign_builtin_rsa_sha256 =
+const struct assh_algo_sign_s assh_sign_openssl_rsa_sha256 =
 {
   .algo_wk = {
-    ASSH_ALGO_BASE(SIGN, "assh-builtin", 40, 30,
+    ASSH_ALGO_BASE(SIGN, "assh-openssl", 40, 30,
       ASSH_ALGO_NAMES({ ASSH_ALGO_STD_DRAFT | ASSH_ALGO_ASSH,
                         "rsa-sha2-256" }),
     ),
     .f_suitable_key = assh_sign_rsa_suitable_key_2048,
-    .key_algo = &assh_key_builtin_rsa,
+    .key_algo = &assh_key_openssl_rsa,
   },
   .groups = 1,
   .f_generate = assh_sign_rsa_generate_sha256,
@@ -436,18 +327,17 @@ static ASSH_SIGN_GENERATE_FCN(assh_sign_rsa_generate_sha512)
                                 ASSH_RSA_SHA512_ID);
 }
 
-const struct assh_algo_sign_s assh_sign_builtin_rsa_sha512 =
+const struct assh_algo_sign_s assh_sign_openssl_rsa_sha512 =
 {
   .algo_wk = {
-    ASSH_ALGO_BASE(SIGN, "assh-builtin", 45, 30,
+    ASSH_ALGO_BASE(SIGN, "assh-openssl", 45, 30,
       ASSH_ALGO_NAMES({ ASSH_ALGO_STD_DRAFT | ASSH_ALGO_ASSH,
                         "rsa-sha2-512" }),
     ),
     .f_suitable_key = assh_sign_rsa_suitable_key_2048,
-    .key_algo = &assh_key_builtin_rsa,
+    .key_algo = &assh_key_openssl_rsa,
   },
   .groups = 1,
   .f_generate = assh_sign_rsa_generate_sha512,
   .f_check = assh_sign_rsa_check_sha512,
 };
-

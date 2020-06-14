@@ -314,6 +314,14 @@ if test x$with_openssl = xyes ; then
 	  CONFIG_ASSH_USE_OPENSSL_CIPHERS=yes
       esac
 
+      case "$with_sign" in
+        *external*)
+          with_signs=openssl ;&
+        *openssl*|*all*)
+	  AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_SIGN], [], [Enable openssl signature algorithms when defined.])
+	  CONFIG_ASSH_USE_OPENSSL_SIGN=yes
+      esac
+
       case "$with_macs" in
         *external*)
           with_macs=openssl ;&
@@ -326,6 +334,7 @@ if test x$with_openssl = xyes ; then
       	 test x$CONFIG_ASSH_USE_OPENSSL_CIPHERS = xyes ||
       	 test x$CONFIG_ASSH_USE_OPENSSL_ALLOC = xyes ||
       	 test x$CONFIG_ASSH_USE_OPENSSL_MACS = xyes ||
+      	 test x$CONFIG_ASSH_USE_OPENSSL_SIGN = xyes ||
       	 test x$CONFIG_ASSH_USE_OPENSSL_PRNG = xyes ; then
         LIBS="$LIBS -lcrypto"
         AC_DEFINE([CONFIG_ASSH_USE_OPENSSL], [], [Enable the openssl support when defined.])
@@ -465,6 +474,7 @@ AM_CONDITIONAL(COND_hash_openssl,    [test x$CONFIG_ASSH_USE_OPENSSL_HASH = xyes
 AM_CONDITIONAL(COND_alloc_openssl,   [test x$CONFIG_ASSH_USE_OPENSSL_ALLOC = xyes])
 AM_CONDITIONAL(COND_ciphers_openssl, [test x$CONFIG_ASSH_USE_OPENSSL_CIPHERS = xyes])
 AM_CONDITIONAL(COND_macs_openssl,    [test x$CONFIG_ASSH_USE_OPENSSL_MACS = xyes])
+AM_CONDITIONAL(COND_sign_openssl,    [test x$CONFIG_ASSH_USE_OPENSSL_SIGN = xyes])
 AM_CONDITIONAL(COND_prng_openssl,    [test x$CONFIG_ASSH_USE_OPENSSL_PRNG = xyes])
 
 AM_CONDITIONAL(COND_kex_sodium,      [test x$CONFIG_ASSH_USE_SODIUM_KEX = xyes])

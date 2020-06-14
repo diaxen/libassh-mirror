@@ -173,6 +173,16 @@ const struct assh_algo_s *assh_algo_table[] = {
   &assh_sign_builtin_nistp521.algo_wk.algo,
 #endif
 
+#ifdef CONFIG_ASSH_USE_OPENSSL_SIGN
+# ifndef OPENSSL_NO_RSA
+  &assh_sign_openssl_rsa_sha1_md5.algo_wk.algo,
+  &assh_sign_openssl_rsa_sha1.algo_wk.algo,
+  &assh_sign_openssl_rsa_sha1_2048.algo_wk.algo,
+  &assh_sign_openssl_rsa_sha256.algo_wk.algo,
+  &assh_sign_openssl_rsa_sha512.algo_wk.algo,
+# endif
+#endif
+
   /* ciphers */
   // &assh_cipher_none.algo,
 

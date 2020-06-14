@@ -25,7 +25,7 @@ libassh_la_SOURCES = assh_deps.c assh_context.c assh_session.c assh_packet.c	\
 	assh_connection.c assh_debug.c assh_buffer.c			\
 	kex_none.c sign_none.c cipher_none.c mac_none.c key_none.c compress_none.c \
 	helper_key.c helper_io.c helper_base64.c helper_bcrypt.c	\
-	helper_interactive.c helper_portfwd.c
+	helper_interactive.c helper_portfwd.c sign_rsa.h
 
 if COND_prng_devrandom
 libassh_la_SOURCES += prng_dev_random.c
@@ -111,6 +111,9 @@ libassh_la_SOURCES +=	cipher_openssl.c
 endif
 if COND_macs_openssl
 libassh_la_SOURCES +=	mac_openssl.c
+endif
+if COND_sign_openssl
+libassh_la_SOURCES +=	sign_openssl_rsa.c key_openssl_rsa.c key_openssl_rsa.h
 endif
 if COND_prng_openssl
 libassh_la_SOURCES +=	prng_openssl.c
