@@ -50,4 +50,4 @@ internals/html/index.html: $(DOTS:.dot=.png) $(MKDOC_SRC) internals.conf
 
 EXTRA_DIST = Makefile.am assh_config.h internals.conf		\
 	manual.conf  $(MKDOC_SRC) $(DOTS:.dot=.png) $(DOTS)	\
-	manual/html/* internals/html/*
+	manual/html/ internals/html/

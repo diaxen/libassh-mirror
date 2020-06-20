@@ -26,6 +26,8 @@ libasshtest_a_CFLAGS = -I$(top_srcdir)/src
 noinst_PROGRAMS =
 TESTS =
 
+CLEANFILES = test.key
+
 noinst_PROGRAMS += buffer
 TESTS += buffer
 buffer_SOURCES = buffer.c
