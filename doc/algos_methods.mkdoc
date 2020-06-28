@@ -160,6 +160,9 @@ methods and key formats.
       @item @tt {m383-sha384@libassh.org},
       @item @tt {m511-sha512@libassh.org}.
     @end list
+
+    In addition to the builtin implementation, a @em libsodium based
+    implementation of @tt {curve25519-sha256@libssh.org} is also provided.
   @end section
 
   @section {Weierstrass curves Diffie-Hellman}
@@ -245,6 +248,9 @@ methods and key formats.
 
     The retained variant depends of the safety value passed to the
     @ref assh_algo_register_va function.
+
+    In addition to the builtin implementation, an @em OpenSSL based
+    implementation of @tt {ssh-rsa} is also provided.
   @end section
 
   @section {EdDSA signature}
@@ -265,6 +271,9 @@ methods and key formats.
       @item @tt {eddsa-e382-shake256@libassh.org},
       @item @tt {eddsa-e521-shake256@libassh.org}.
     @end list
+
+    In addition to the builtin implementation, a @em libsodium based
+    implementation of @tt {ssh-ed25519} is also provided.
   @end section
 
   @section {ECDSA signature}
