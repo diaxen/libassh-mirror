@@ -119,7 +119,7 @@ static void assh_algo_sort(struct assh_context_s *c,
 #endif
 }
 
-static void assh_algo_kex_init_size(struct assh_context_s *c)
+void assh_algo_kex_init_size(struct assh_context_s *c)
 {
   int_fast16_t i;
   size_t kex_init_size = /* random cookie */ 16;
@@ -163,10 +163,52 @@ static assh_status_t assh_algo_extend(struct assh_context_s *c)
 
   ASSH_RET_IF_TRUE(!c->algo_realloc && c->algos, ASSH_ERR_NOTSUP);
   size_t count = c->algo_max + 16;
-  ASSH_RET_ON_ERR(assh_realloc(c, (void**)&c->algos,
+
+  const struct assh_algo_s **algos = c->algos;
+  ASSH_RET_ON_ERR(assh_realloc(c, (void**)&algos,
                     sizeof(void*) * (count + 1), ASSH_ALLOC_INTERNAL));
+
+  c->algos = algos;
   c->algo_max = count;
   c->algo_realloc = 1;
+
+  return ASSH_OK;
+}
+
+assh_status_t
+assh_algo_check_table(struct assh_context_s *c)
+{
+  assh_status_t err;
+  uint_fast8_t m = 0;
+  size_t i, j;
+
+  /* check class order */
+  for (i = 0; i < c->algo_cnt; i++)
+    {
+      const struct assh_algo_s *a = c->algos[i];
+      const struct assh_algo_s *b = c->algos[i + 1];
+      m |= 1 << a->class_;
+      ASSH_RET_IF_TRUE(b && a->class_ > b->class_, ASSH_ERR_BAD_ARG);
+    }
+
+  /* check that all classes are represented */
+  ASSH_RET_IF_TRUE(m != 0x1f, ASSH_ERR_BAD_ARG);
+
+  if (!c->algo_realloc)
+    {
+      /* check for duplicated names */
+      for (i = 0; i < c->algo_cnt; i++)
+	for (j = 0; j < i; j++)
+	  {
+	    const struct assh_algo_s *a = c->algos[i];
+	    const struct assh_algo_s *b = c->algos[j];
+	    const struct assh_algo_name_s *na, *nb;
+	    if (a->class_ == b->class_)
+	      for (na = a->names; na->spec; na++)
+		for (nb = b->names; nb->spec; nb++)
+		  ASSH_RET_IF_TRUE(!strcmp(na->name, nb->name), ASSH_ERR_BAD_ARG);
+	  }
+    }
 
   return ASSH_OK;
 }
@@ -174,31 +216,18 @@ static assh_status_t assh_algo_extend(struct assh_context_s *c)
 assh_status_t assh_algo_register_static(struct assh_context_s *c,
                                        const struct assh_algo_s *table[])
 {
-  size_t i = 0;
-  uint_fast8_t m = 0;
   assh_status_t err;
-  const struct assh_algo_s *l, *a = table[0];
 
   ASSH_RET_IF_TRUE(c->session_count, ASSH_ERR_BUSY);
   ASSH_RET_IF_TRUE(c->algo_realloc && c->algos, ASSH_ERR_BUSY);
 
-  while ((l = table[i]))
-    {
-      /* check class order */
-      m |= 1 << l->class_;
-      ASSH_RET_IF_TRUE(a->class_ > l->class_, ASSH_ERR_BAD_ARG);
-      i++;
-      a = l;
-    }
-
-  /* check that all classes are represented */
-  ASSH_RET_IF_TRUE(m != 0x1f, ASSH_ERR_BAD_ARG);
+  size_t i = 0;
+  while (table[i])
+    i++;
 
   c->algo_cnt = c->algo_max = i;
   c->algo_realloc = 0;
   c->algos = table;
-
-  assh_algo_kex_init_size(c);
 
   return ASSH_OK;
 }
@@ -226,10 +255,10 @@ assh_status_t assh_algo_register(struct assh_context_s *c, assh_safety_t safety,
 
   c->algo_cnt = count;
   assh_algo_sort(c, safety, min_safety, min_speed);
-  assh_algo_kex_init_size(c);
 
  err_:
-  c->algos[c->algo_cnt] = NULL;
+  if (c->algos)
+    c->algos[c->algo_cnt] = NULL;
   return err;
 }
 
@@ -269,10 +298,10 @@ assh_status_t assh_algo_register_va(struct assh_context_s *c, assh_safety_t safe
 
   c->algo_cnt = count;
   assh_algo_sort(c, safety, min_safety, min_speed);
-  assh_algo_kex_init_size(c);
 
  err_:
-  c->algos[c->algo_cnt] = NULL;
+  if (c->algos)
+    c->algos[c->algo_cnt] = NULL;
   va_end(ap);
   return err;
 }
@@ -311,10 +340,10 @@ assh_status_t assh_algo_register_names_va(struct assh_context_s *c, assh_safety_
 
   c->algo_cnt = count;
   assh_algo_sort(c, safety, min_safety, min_speed);
-  assh_algo_kex_init_size(c);
 
  err_:
-  c->algos[c->algo_cnt] = NULL;
+  if (c->algos)
+    c->algos[c->algo_cnt] = NULL;
   va_end(ap);
   return err;
 }

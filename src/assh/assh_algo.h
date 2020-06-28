@@ -256,10 +256,12 @@ assh_algo_register(struct assh_context_s *c, assh_safety_t safety,
 
 /**
    @This registers the specified array of @hl algorithms for use by
-   the given library context. The last entry must be @tt NULL.
+   the given library context. The last entry must be @tt NULL.  The
+   array is not copied and must remain valid.
 
-   The algorithms must be sorted in ascending class order. The array
-   is not copied and must remain valid.
+   In order to initialize some @ref assh_session_s objects associated
+   to the context, the table of algorithms must be sorted in ascending
+   class order and all classes must be represented.
 
    If this function is called more than once, the array of algorithms
    is replaced.
@@ -403,6 +405,15 @@ assh_algo_with_key(const struct assh_algo_s *algo)
       return NULL;
     }
 }
+
+/** @internal @This checks that the list of registered algorithms is
+    valid for use by a session. */
+ASSH_WARN_UNUSED_RESULT assh_status_t
+assh_algo_check_table(struct assh_context_s *c);
+
+/** @internal @This computes the size of the @ref SSH_MSG_KEXINIT
+    packet based on the current list of registered algorithms. */
+void assh_algo_kex_init_size(struct assh_context_s *c);
 
 #endif
 

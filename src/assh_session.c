@@ -46,6 +46,12 @@ assh_status_t assh_session_init(struct assh_context_s *c,
 
   ASSH_RET_IF_TRUE(c->algo_cnt == 0, ASSH_ERR_BUSY);
 
+  if (c->session_count == 0)
+    {
+      ASSH_RET_ON_ERR(assh_algo_check_table(c));
+      assh_algo_kex_init_size(c);
+    }
+
   s->ctx = c;
 
   ASSH_SET_STATE(s, tr_st, ASSH_TR_INIT);
