@@ -1177,7 +1177,7 @@ context_load(struct assh_context_s *ctx, FILE *in, unsigned i)
 	  if (verbose > 0)
 	      printf("[%s] Loading algorithm: `%s'.\n", side, name);
 	  assh_bool_t mismatch = test_algo_lookup(cl, name, variant, implem, &a);
-	  if (!mismatch && assh_algo_register_va(ctx, 50, 0, 0, a, NULL))
+	  if (!mismatch && assh_algo_register_va(ctx, 0, 0, a, NULL))
 	    TEST_FAIL("unable to register algorithm\n");
 	  free(name);
 	  free(implem);
@@ -1771,12 +1771,12 @@ static int record(int argc, char **argv)
 
 #if defined(CONFIG_ASSH_SERVER)
 	  if (opt == 'A' || opt == 'b')
-	    if (assh_algo_register_va(&context[0], 50, 0, 0, a, NULL))
+	    if (assh_algo_register_va(&context[0], 0, 0, a, NULL))
 	      TEST_FAIL("unable to register algorithm\n");
 #endif
 #if defined(CONFIG_ASSH_CLIENT)
 	  if (opt == 'a' || opt == 'b')
-	    if (assh_algo_register_va(&context[1], 50, 0, 0, a, NULL))
+	    if (assh_algo_register_va(&context[1], 0, 0, a, NULL))
 	      TEST_FAIL("unable to register algorithm\n");
 #endif
 	  break;

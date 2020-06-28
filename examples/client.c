@@ -81,7 +81,7 @@ static const char *port = "22";
 static const char *hostname;
 static const char *user = NULL;
 
-static assh_safety_t algo_safety = 50;
+static assh_safety_t safety_weight = 50;
 static assh_safety_t algo_min_safety = 20;
 static assh_safety_t kex_warn_safety = 25;
 
@@ -329,8 +329,8 @@ int main(int argc, char **argv)
           port = optarg;
           break;
         case 'o':
-          algo_safety = atoi(optarg);
-          if (algo_safety > 99)
+          safety_weight = atoi(optarg);
+          if (safety_weight > 99)
             usage(argv[0], 1);
           break;
         case 'm':
@@ -436,7 +436,8 @@ int main(int argc, char **argv)
   if (assh_context_create(&context, ASSH_CLIENT,
                           NULL, NULL, NULL, NULL) != ASSH_OK ||
       assh_service_register_default(context) != ASSH_OK ||
-      assh_algo_register_default(context, algo_safety, algo_min_safety, 0) != ASSH_OK)
+      assh_kex_set_order(context, safety_weight) != ASSH_OK ||
+      assh_algo_register_default(context, algo_min_safety, 0) != ASSH_OK)
     ERROR("Unable to create an assh context.\n");
 
   /* initializes an assh session object */

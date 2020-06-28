@@ -52,7 +52,7 @@ static void bench(const struct assh_algo_cipher_s *ca)
 			NULL, NULL, NULL, NULL))
     TEST_FAIL("context init");
 
-  if (assh_algo_register_va(&context, 0, 0, 0, &ca->algo, NULL))
+  if (assh_algo_register_va(&context, 0, 0, &ca->algo, NULL))
     TEST_FAIL("algo register");
 
   void *ectx = malloc(ca->ctx_size);

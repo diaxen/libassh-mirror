@@ -130,6 +130,8 @@ struct assh_context_s
 
   /** Number of initialized sessions attached to this context. */
   size_t session_count:8;
+  /** Indicates how algorithms safety must be favored over speed. */
+  uint8_t safety_weight;
 
   /** Timeout waiting for reply to the version string and service
       start requests. Expressed in seconds minus 1. */

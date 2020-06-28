@@ -977,3 +977,15 @@ assh_kex_set_threshold(struct assh_session_s *s, uint32_t bytes)
   return ASSH_OK;
 }
 
+assh_status_t
+assh_kex_set_order(struct assh_context_s *c, uint_fast8_t safety_weight)
+{
+  assh_status_t err;
+
+  ASSH_RET_IF_TRUE(c->session_count, ASSH_ERR_BUSY);
+  ASSH_RET_IF_TRUE(safety_weight > 99, ASSH_ERR_BAD_ARG);
+
+  c->safety_weight = safety_weight;
+
+  return ASSH_OK;
+}

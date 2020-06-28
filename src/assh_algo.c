@@ -35,71 +35,61 @@
 
 static int_fast16_t assh_algo_order(const struct assh_algo_s *a,
                                     const struct assh_algo_s *b,
-                                    assh_safety_t safety)
+                                    uint_fast8_t safety_weight)
 {
   if (a->class_ != b->class_)
     return a->class_ - b->class_;
-  return ASSH_ALGO_SCORE(b, safety) - ASSH_ALGO_SCORE(a, safety);
+  return ASSH_ALGO_SCORE(b, safety_weight) -
+         ASSH_ALGO_SCORE(a, safety_weight);
 }
 
-#ifdef CONFIG_ASSH_GNU_QSORTR
-static int assh_algo_qsort_cmp(const void *a, const void *b, void *arg)
+static assh_bool_t assh_algo_conflicting(const struct assh_algo_s *a,
+				       const struct assh_algo_s *b)
 {
-  struct assh_algo_s * const *a_ = a;
-  struct assh_algo_s * const *b_ = b;
-  uint_fast8_t *s = arg;
-  return assh_algo_order(*a_, *b_, *s);
-}
-#endif
+  if (a->class_ != b->class_)
+    return 0;
 
-static void assh_algo_filter_variants(struct assh_context_s *c,
-                                      assh_safety_t min_safety,
-                                      assh_speed_t min_speed)
+  const struct assh_algo_name_s *na, *nb;
+
+  for (na = a->names; na->spec; na++)
+    for (nb = b->names; nb->spec; nb++)
+      if (!strcmp(na->name, nb->name))
+	return 1;
+  return 0;
+}
+
+static void assh_algo_filter_variants(struct assh_context_s *c)
 {
   /* remove duplicated names in the same class */
-  int_fast16_t i, j, k;
-  for (i = 0; i < c->algo_cnt; i++)
+  uint_fast16_t i, j, k = c->algo_cnt;
+
+  for (i = 0; i < k; i++)
     {
-      for (k = j = i + 1; j < c->algo_cnt; j++)
+      for (j = i + 1; j < k; j++)
 	{
 	  const struct assh_algo_s *a = c->algos[i];
 	  const struct assh_algo_s *b = c->algos[j];
 
-	  assh_bool_t d = a->class_ != b->class_;
-	  if (k < j)
-	    c->algos[k] = b;
-	  else if (d)
-	    goto next;
-          const struct assh_algo_name_s *na, *nb;
-          if (!d++)
-            for (na = a->names; d && na->spec; na++)
-              for (nb = b->names; d && nb->spec; nb++)
-                if (!strcmp(na->name, nb->name))
-                  d = 0;
-          if (d)
-            k++;
-	  else if (a->priority < b->priority ||
-                   a->safety < min_safety ||
-                   a->speed < min_speed)
-	    ASSH_SWAP(const struct assh_algo_s *,
-		      c->algos[k], c->algos[i]);
+	  if (assh_algo_conflicting(a, b))
+	    {
+	      if (a->priority < b->priority ||
+		  (a->priority == b->priority &&
+		   assh_algo_order(a, b, c->safety_weight) > 0))
+		c->algos[i] = b; 	    /* discard a */
+
+	      /* replace b by the last entry  */
+	      c->algos[j--] = c->algos[--k];
+	    }
 	}
-      c->algo_cnt = k;
-    next:;
     }
+
+  c->algo_cnt = k;
+  c->algos[k] = NULL;
 }
 
-static void assh_algo_sort(struct assh_context_s *c,
-                           assh_safety_t safety,
-                           assh_safety_t min_safety,
-                           assh_speed_t min_speed)
+static void assh_algo_sort(struct assh_context_s *c)
 {
-  assh_algo_filter_variants(c, min_safety, min_speed);
-
   /* sort algorithms by class and safety/speed factor */
-#ifdef CONFIG_ASSH_GNU_QSORTR
-  qsort_r(c->algos, c->algo_cnt, sizeof(void*), assh_algo_qsort_cmp, &safety);
-#else
   int_fast16_t i;
 
   for (i = 0; i < c->algo_cnt; i++)
@@ -110,13 +100,12 @@ static void assh_algo_sort(struct assh_context_s *c,
       for (j = i - 1; j >= 0; j--)
 	{
 	  const struct assh_algo_s *b = c->algos[j];
-	  if (assh_algo_order(a, b, safety) > 0)
+	  if (assh_algo_order(a, b, c->safety_weight) > 0)
 	    break;
 	  c->algos[j + 1] = b;
 	}
       c->algos[j + 1] = a;
     }
-#endif
 }
 
 void assh_algo_kex_init_size(struct assh_context_s *c)
@@ -179,42 +168,39 @@ assh_status_t
 assh_algo_check_table(struct assh_context_s *c)
 {
   assh_status_t err;
-  uint_fast8_t m = 0;
   size_t i, j;
 
-  /* check class order */
-  for (i = 0; i < c->algo_cnt; i++)
-    {
-      const struct assh_algo_s *a = c->algos[i];
-      const struct assh_algo_s *b = c->algos[i + 1];
-      m |= 1 << a->class_;
-      ASSH_RET_IF_TRUE(b && a->class_ > b->class_, ASSH_ERR_BAD_ARG);
-    }
-
   /* check that all classes are represented */
+  uint_fast8_t m = 0;
+
+  for (i = 0; i < c->algo_cnt; i++)
+    m |= 1 << c->algos[i]->class_;
   ASSH_RET_IF_TRUE(m != 0x1f, ASSH_ERR_BAD_ARG);
 
-  if (!c->algo_realloc)
+  if (c->algo_realloc)
+    {
+      assh_algo_filter_variants(c);
+      assh_algo_sort(c);
+    }
+  else
     {
       /* check for duplicated names */
       for (i = 0; i < c->algo_cnt; i++)
 	for (j = 0; j < i; j++)
-	  {
-	    const struct assh_algo_s *a = c->algos[i];
-	    const struct assh_algo_s *b = c->algos[j];
-	    const struct assh_algo_name_s *na, *nb;
-	    if (a->class_ == b->class_)
-	      for (na = a->names; na->spec; na++)
-		for (nb = b->names; nb->spec; nb++)
-		  ASSH_RET_IF_TRUE(!strcmp(na->name, nb->name), ASSH_ERR_BAD_ARG);
-	  }
+	  ASSH_RET_IF_TRUE(assh_algo_conflicting(c->algos[i], c->algos[j]),
+			   ASSH_ERR_BAD_ARG);
+
+      /* check class order */
+      for (i = 0; i + 1 < c->algo_cnt; i++)
+	ASSH_RET_IF_TRUE(c->algos[i]->class_ > c->algos[i + 1]->class_,
+			 ASSH_ERR_BAD_ARG);
     }
 
   return ASSH_OK;
 }
 
 assh_status_t assh_algo_register_static(struct assh_context_s *c,
-                                       const struct assh_algo_s *table[])
+					const struct assh_algo_s *table[])
 {
   assh_status_t err;
 
@@ -232,15 +218,15 @@ assh_status_t assh_algo_register_static(struct assh_context_s *c,
   return ASSH_OK;
 }
 
-assh_status_t assh_algo_register(struct assh_context_s *c, assh_safety_t safety,
-				assh_safety_t min_safety, assh_speed_t min_speed,
-                                const struct assh_algo_s *table[])
+assh_status_t
+assh_algo_register(struct assh_context_s *c,
+		   assh_safety_t min_safety, assh_speed_t min_speed,
+		   const struct assh_algo_s *table[])
 {
   assh_status_t err = ASSH_OK;
   size_t i, count = c->algo_cnt;
 
   ASSH_RET_IF_TRUE(c->session_count, ASSH_ERR_BUSY);
-  ASSH_RET_IF_TRUE(safety > 99, ASSH_ERR_BAD_ARG);
 
   for (i = 0; table[i] != NULL; i++)
     {
@@ -254,7 +240,6 @@ assh_status_t assh_algo_register(struct assh_context_s *c, assh_safety_t safety,
     }
 
   c->algo_cnt = count;
-  assh_algo_sort(c, safety, min_safety, min_speed);
 
  err_:
   if (c->algos)
@@ -270,15 +255,15 @@ assh_algo_registered(struct assh_context_s *c, uint_fast16_t i)
   return c->algos[i];
 }
 
-assh_status_t assh_algo_register_va(struct assh_context_s *c, assh_safety_t safety,
-				   assh_safety_t min_safety, assh_speed_t min_speed, ...)
+assh_status_t assh_algo_register_va(struct assh_context_s *c,
+				    assh_safety_t min_safety,
+				    assh_speed_t min_speed, ...)
 {
   assh_status_t err = ASSH_OK;
   va_list ap;
   size_t count = c->algo_cnt;
 
   ASSH_RET_IF_TRUE(c->session_count, ASSH_ERR_BUSY);
-  ASSH_RET_IF_TRUE(safety > 99, ASSH_ERR_BAD_ARG);
 
   va_start(ap, min_speed);
 
@@ -297,7 +282,6 @@ assh_status_t assh_algo_register_va(struct assh_context_s *c, assh_safety_t safe
     }
 
   c->algo_cnt = count;
-  assh_algo_sort(c, safety, min_safety, min_speed);
 
  err_:
   if (c->algos)
@@ -306,8 +290,9 @@ assh_status_t assh_algo_register_va(struct assh_context_s *c, assh_safety_t safe
   return err;
 }
 
-assh_status_t assh_algo_register_names_va(struct assh_context_s *c, assh_safety_t safety,
-					  assh_safety_t min_safety, assh_speed_t min_speed,
+assh_status_t assh_algo_register_names_va(struct assh_context_s *c,
+					  assh_safety_t min_safety,
+					  assh_speed_t min_speed,
 					  enum assh_algo_class_e class_, ...)
 {
   assh_status_t err = ASSH_OK;
@@ -316,7 +301,6 @@ assh_status_t assh_algo_register_names_va(struct assh_context_s *c, assh_safety_
   const char *name;
 
   ASSH_RET_IF_TRUE(c->session_count, ASSH_ERR_BUSY);
-  ASSH_RET_IF_TRUE(safety > 99, ASSH_ERR_BAD_ARG);
 
   va_start(ap, class_);
 
@@ -339,7 +323,6 @@ assh_status_t assh_algo_register_names_va(struct assh_context_s *c, assh_safety_
   ASSH_JMP_IF_TRUE(c->algo_cnt == count, ASSH_ERR_MISSING_ALGO, err_);
 
   c->algo_cnt = count;
-  assh_algo_sort(c, safety, min_safety, min_speed);
 
  err_:
   if (c->algos)

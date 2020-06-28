@@ -112,7 +112,7 @@ assh_context_init(struct assh_context_s *c,
 #endif
 
   c->srvs_count = 0;
-
+  c->safety_weight = 50;
   c->timeout_transport = 10 - 1;
   c->timeout_kex = 30 - 1;
   c->timeout_userauth = 60 - 1;

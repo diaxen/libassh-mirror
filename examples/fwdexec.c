@@ -405,7 +405,7 @@ int main(int argc, char **argv)
   if (assh_context_create(&context, ASSH_CLIENT,
                           NULL, NULL, NULL, NULL) != ASSH_OK ||
       assh_service_register_default(context) != ASSH_OK ||
-      assh_algo_register_default(context, 50, 20, 0) != ASSH_OK)
+      assh_algo_register_default(context, 20, 0) != ASSH_OK)
     ERROR("Unable to create an assh context.\n");
 
   /* initialize the 2 client sessions */

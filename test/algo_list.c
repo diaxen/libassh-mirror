@@ -23,9 +23,12 @@
 
 #define ASSH_ABI_UNSAFE  /* do not warn */
 
+#include "test.h"
+
 #include <assh/assh_session.h>
 #include <assh/assh_context.h>
 #include <assh/assh_algo.h>
+#include <assh/assh_kex.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -81,13 +84,18 @@ static void show_table()
 static void show_order(assh_safety_t safety, assh_safety_t min_safety, unsigned min_speed)
 {
   struct assh_context_s *c;
+  struct assh_session_s *s;
 
   if (assh_context_create(&c, ASSH_SERVER,
                           NULL, NULL, NULL, NULL))
-    return;
+    TEST_FAIL("context init");
 
-  if (assh_algo_register_default(c, safety, min_safety, min_speed) != ASSH_OK)
-    return;
+  if (assh_kex_set_order(c, safety) ||
+      assh_algo_register_default(c, min_safety, min_speed) != ASSH_OK)
+    TEST_FAIL("algo regiter");
+
+  if (assh_session_create(c, &s))
+    TEST_FAIL("session init");
 
   printf("  Spd Saf Score Algorithm                                Implem        Variant\n"
 	          "-------------------------------------------------------------------------------\n");
@@ -112,6 +120,7 @@ static void show_order(assh_safety_t safety, assh_safety_t min_safety, unsigned 
               n->name, a->implem, a->variant ? a->variant : "");
     }
 
+  assh_session_release(s);
   assh_context_release(c);
 }
 

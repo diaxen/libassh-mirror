@@ -81,6 +81,12 @@
 ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_kex_set_threshold(struct assh_session_s *s, uint32_t bytes);
 
+/** @This sets the algorithm order by defining the weight of the
+   safety factor. This changes how algorithms safety must be favored
+   over speed. Valid range for this parameter is [0, 99]. */
+ASSH_WARN_UNUSED_RESULT assh_status_t
+assh_kex_set_order(struct assh_context_s *c, uint_fast8_t safety_weight);
+
 /** @internal This function is called internally by the transport layer
     when a key-exchange must be performed.
 

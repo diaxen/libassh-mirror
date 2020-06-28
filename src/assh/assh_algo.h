@@ -200,8 +200,9 @@ ASSH_FIRST_FIELD_ASSERT(assh_algo_with_key_s, algo);
    @xcsee {algoreg}
 */
 ASSH_WARN_UNUSED_RESULT assh_status_t
-assh_algo_register_va(struct assh_context_s *c, assh_safety_t safety,
-		      assh_safety_t min_safety, assh_speed_t min_speed, ...);
+assh_algo_register_va(struct assh_context_s *c,
+		      assh_safety_t min_safety,
+		      assh_speed_t min_speed, ...);
 
 /**
    @This registers the algorithms with the given names for specified
@@ -225,7 +226,7 @@ assh_algo_register_va(struct assh_context_s *c, assh_safety_t safety,
    @xcsee {algoreg}
 */
 ASSH_WARN_UNUSED_RESULT assh_status_t
-assh_algo_register_names_va(struct assh_context_s *c, assh_safety_t safety,
+assh_algo_register_names_va(struct assh_context_s *c,
 			    assh_safety_t min_safety, assh_speed_t min_speed,
 			    enum assh_algo_class_e class_, ...);
 
@@ -234,9 +235,7 @@ assh_algo_register_names_va(struct assh_context_s *c, assh_safety_t safety,
    the given library context. The last entry must be @tt NULL.
 
    The array is copied and the algorithms are sorted depending on
-   their safety factor and speed factor. The @tt safety weight
-   parameter indicates how algorithms safety must be favored over
-   speed. Valid range for this parameter is [0, 99]. Algorithms with a
+   their safety factor and speed factor. Algorithms with a
    safety factor or speed factor less than @tt min_safety and @tt
    min_speed are discarded.
 
@@ -250,7 +249,7 @@ assh_algo_register_names_va(struct assh_context_s *c, assh_safety_t safety,
    @xcsee {algoreg}
 */
 ASSH_WARN_UNUSED_RESULT assh_status_t
-assh_algo_register(struct assh_context_s *c, assh_safety_t safety,
+assh_algo_register(struct assh_context_s *c,
 		   assh_safety_t min_safety, assh_speed_t min_speed,
                    const struct assh_algo_s *table[]);
 
@@ -300,11 +299,10 @@ assh_algo_registered(struct assh_context_s *c, uint_fast16_t i);
 */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_register_default(struct assh_context_s *c,
-                           assh_safety_t safety,
 			   assh_safety_t min_safety,
                            assh_speed_t min_speed)
 {
-  return assh_algo_register(c, safety, min_safety, min_speed, assh_algo_table);
+  return assh_algo_register(c, min_safety, min_speed, assh_algo_table);
 }
 
 /** Unregister all @hl algorithms.
