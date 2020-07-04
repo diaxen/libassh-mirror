@@ -90,6 +90,9 @@ struct assh_context_s
     intptr_t prng_pvl;
   };
 
+  /** Number of initialized sessions attached to this context. */
+  size_t session_count;
+
   /** Head of loaded keys list */
   struct assh_key_s *keys;
 
@@ -128,8 +131,6 @@ struct assh_context_s
   /** Number of registered services */
   size_t srvs_count:6;
 
-  /** Number of initialized sessions attached to this context. */
-  size_t session_count:8;
   /** Indicates how algorithms safety must be favored over speed. */
   uint8_t safety_weight;
 
