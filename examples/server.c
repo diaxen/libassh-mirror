@@ -363,8 +363,7 @@ its_child2channel(struct its_s *its,
 	{
 	  size_t s = 256;
 
-	  if (ASSH_STATUS(assh_channel_data_alloc(its->channel,
-					     &buf, &s, 1)) == ASSH_OK)
+	  if (!assh_channel_data_alloc(its->channel, &buf, &s, 1))
 	    {
 	      /* read data from the child directly in the
 		 buffer of the outgoing packet then send it. */
@@ -383,8 +382,8 @@ its_child2channel(struct its_s *its,
 	    {
 	      size_t s = 256;
 
-	      if (ASSH_STATUS(assh_channel_data_alloc_ext(its->channel,
-					  1, &buf, &s, 1)) == ASSH_OK)
+	      if (!assh_channel_data_alloc_ext(its->channel,
+					       1, &buf, &s, 1))
 		{
 		  ssize_t r = read(its->child_stderr_fd, buf, s);
 		  if (r > 0)
@@ -639,7 +638,7 @@ ssh_loop(struct assh_session_s *session,
 		  err = asshh_inter_decode_pty_req(&rqi, ev->rq_data.data,
 						  ev->rq_data.size);
 
-		  if (ASSH_STATUS(err) == ASSH_OK && !its_pty(its))
+		  if (!err && !its_pty(its))
 		    ev->reply = ASSH_CONNECTION_REPLY_SUCCESS;
 #endif
 		}
@@ -658,7 +657,7 @@ ssh_loop(struct assh_session_s *session,
 		  err = asshh_inter_decode_exec(&rqi, ev->rq_data.data,
 					       ev->rq_data.size);
 
-		  if (ASSH_STATUS(err) == ASSH_OK)
+		  if (!err)
 		    {
 		      /* we need a null terminated string */
 		      char *cmd = assh_buffer_strdup(&rqi.command);
@@ -732,8 +731,8 @@ server_connected(struct assh_context_s *context,
   /* init a session for the incoming connection */
   struct assh_session_s *session;
 
-  if (assh_session_create(context, &session) != ASSH_OK ||
-      assh_session_algo_filter(session, &algo_filter) != ASSH_OK)
+  if (assh_session_create(context, &session) ||
+      assh_session_algo_filter(session, &algo_filter))
     ERROR("Unable to create assh session.\n");
                                                         /* anchor pollloop */
   struct pollfd p[MAX_POLL_ENTRIES];
@@ -833,9 +832,9 @@ int main(int argc, char **argv)
   struct assh_context_s *context;
 
   if (assh_context_create(&context, ASSH_SERVER,
-			  NULL, NULL, NULL, NULL) != ASSH_OK ||
-      assh_service_register_default(context) != ASSH_OK ||
-      assh_algo_register_default(context, 20, 0) != ASSH_OK)
+			  NULL, NULL, NULL, NULL) ||
+      assh_service_register_default(context) ||
+      assh_algo_register_default(context, 20, 0))
     ERROR("Unable to create an assh context.\n");
 
   /* load or create host key(s) */

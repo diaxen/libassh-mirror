@@ -358,3 +358,23 @@ switch (ev.id)
   The @ref assh_context_timeouts and @ref assh_context_keepalive
   functions can be used to change the protocol delays.
 @end section
+
+@section TP {Error handling}
+
+  Most functions of the library that may fail have @ref assh_status_t
+  as return type. The function return value is used exclusively for
+  error reporting. Any other value that need to be returned is passed
+  using pointer parameters.
+
+  When a function call is successful, it returns the @ref ASSH_OK
+  value which is defined as @tt{0}. Additionally the @ref ASSH_NO_DATA
+  and @ref ASSH_NOT_FOUND values can be reported by some specific
+  functions of the API and are not considered as errors.
+
+  Any other non zero status indicates an error. This can be tested
+  using the @ref #ASSH_SUCCESS macro. In case of error, the returned
+  status is composed of two parts: the error code and the error
+  severity that can be extracted by using the @ref #ASSH_STATUS and
+  @ref #ASSH_SEVERITY macros respectively.
+
+@end section

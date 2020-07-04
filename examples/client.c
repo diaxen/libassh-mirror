@@ -434,16 +434,16 @@ int main(int argc, char **argv)
   struct assh_context_s *context;
 
   if (assh_context_create(&context, ASSH_CLIENT,
-                          NULL, NULL, NULL, NULL) != ASSH_OK ||
-      assh_service_register_default(context) != ASSH_OK ||
-      assh_kex_set_order(context, safety_weight) != ASSH_OK ||
-      assh_algo_register_default(context, algo_min_safety, 0) != ASSH_OK)
+                          NULL, NULL, NULL, NULL) ||
+      assh_service_register_default(context) ||
+      assh_kex_set_order(context, safety_weight) ||
+      assh_algo_register_default(context, algo_min_safety, 0))
     ERROR("Unable to create an assh context.\n");
 
   /* initializes an assh session object */
   struct assh_session_s *session;
 
-  if (assh_session_create(context, &session) != ASSH_OK ||
+  if (assh_session_create(context, &session) ||
       assh_session_algo_filter(session, &algo_filter))
     ERROR("Unable to create an assh session.\n");
 
@@ -502,7 +502,7 @@ int main(int argc, char **argv)
             /* let the library allocate an output buffer for us */
             uint8_t *buf;
             size_t s = 256;
-            if (assh_channel_data_alloc(inter.channel, &buf, &s, 1) == ASSH_OK)
+            if (!assh_channel_data_alloc(inter.channel, &buf, &s, 1))
               {
                 /* read data from the terminal directly in the
                    buffer of the outgoing packet then send it. */

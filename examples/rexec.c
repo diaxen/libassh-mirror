@@ -123,16 +123,16 @@ int main(int argc, char **argv)
   struct assh_context_s *context;
 
   if (assh_context_create(&context, ASSH_CLIENT,
-                          NULL, NULL, NULL, NULL) != ASSH_OK ||
-      assh_service_register_default(context) != ASSH_OK ||
-      assh_algo_register_default(context, 20, 0) != ASSH_OK)
+                          NULL, NULL, NULL, NULL) ||
+      assh_service_register_default(context) ||
+      assh_algo_register_default(context, 20, 0))
     ERROR("Unable to create an assh context.\n");
 
                                                         /* anchor inits */
   /* initialize an assh session object */
   struct assh_session_s *session;
 
-  if (assh_session_create(context, &session) != ASSH_OK)
+  if (assh_session_create(context, &session))
     ERROR("Unable to create an assh session.\n");
 
                                                         /* anchor inita */

@@ -267,7 +267,7 @@ ssh_loop_rexec(void)
 
           if (fwd_channel != NULL &&
               assh_channel_state(fwd_channel) >= ASSH_CHANNEL_ST_OPEN &&
-              assh_channel_data_alloc(fwd_channel, &d, &s, 0) == ASSH_OK)
+              !assh_channel_data_alloc(fwd_channel, &d, &s, 0))
             {
               /* write our ssh stream to the port forwarding channel of
                  the other session */
@@ -403,14 +403,14 @@ int main(int argc, char **argv)
   struct assh_context_s *context;
 
   if (assh_context_create(&context, ASSH_CLIENT,
-                          NULL, NULL, NULL, NULL) != ASSH_OK ||
-      assh_service_register_default(context) != ASSH_OK ||
-      assh_algo_register_default(context, 20, 0) != ASSH_OK)
+                          NULL, NULL, NULL, NULL) ||
+      assh_service_register_default(context) ||
+      assh_algo_register_default(context, 20, 0))
     ERROR("Unable to create an assh context.\n");
 
   /* initialize the 2 client sessions */
-  if (assh_session_create(context, &fwd_session) != ASSH_OK ||
-      assh_session_create(context, &rexec_session) != ASSH_OK)
+  if (assh_session_create(context, &fwd_session) ||
+      assh_session_create(context, &rexec_session))
     ERROR("Unable to create an sessions.\n");
 
   /* initializes an interactive session state machine object for the

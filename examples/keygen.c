@@ -421,8 +421,8 @@ int main(int argc, char *argv[])
           char fp[128];
           size_t fps = sizeof(fp);
 
-          assh_status_t err = asshh_key_fingerprint(context, key,
-                                         fpf, fp, &fps, &fpf_name);
+          assh_status_t err = ASSH_STATUS(asshh_key_fingerprint(context, key,
+                                         fpf, fp, &fps, &fpf_name));
           if (err == ASSH_NO_DATA)
             break;
 
