@@ -114,6 +114,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
   k->key.algo = &assh_key_openssl_rsa;
   k->key.type = "ssh-rsa";
   k->key.safety = ASSH_SAFETY_PRIMEFIELD(bits);
+  k->key.bits = bits;
   k->key.private = 1;
   k->rsa = RSA_new();
 
@@ -366,7 +367,8 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
       ASSH_JMP_ON_ERR(ASSH_ERR_NOTSUP, err_);
     }
 
-  k->key.safety = ASSH_SAFETY_PRIMEFIELD(RSA_bits(k->rsa));
+  k->key.bits = RSA_bits(k->rsa);
+  k->key.safety = ASSH_SAFETY_PRIMEFIELD(k->key.bits);
 
   *key = &k->key;
   *blob_ = blob;

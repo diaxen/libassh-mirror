@@ -133,7 +133,8 @@ assh_key_ecdsa_create(struct assh_context_s *c,
 
   k->key.type = id->name;
   k->key.algo = algo;
-  k->key.safety = id->curve->safety;
+  k->key.safety = curve->safety;
+  k->key.bits = curve->bits;
   k->key.private = 1;
   k->id = id;
 
@@ -267,6 +268,7 @@ static ASSH_BLOB_SCAN_FCN(assh_key_ecdsa_scan_name)
 
   k->id = id;
   k->key.type = id->name;
+  k->key.bits = bits;
   k->key.safety = id->curve->safety;
 
   assh_bignum_init(c, &k->xn, bits);
@@ -289,6 +291,7 @@ static ASSH_BLOB_SCAN_FCN(assh_key_ecdsa_scan_oid)
 
   k->id = id;
   k->key.type = id->name;
+  k->key.bits = bits;
   k->key.safety = id->curve->safety;
 
   assh_bignum_init(c, &k->xn, bits);

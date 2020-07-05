@@ -251,6 +251,8 @@ struct assh_key_s
 
   uint32_t ref_count;
 
+  uint16_t bits;
+
   /** Class of algorithm the key is intended to be used with */
   enum assh_algo_class_e role:3;
 
@@ -385,12 +387,20 @@ assh_key_type_name(struct assh_key_s *key)
   return key->type ? key->type : key->algo->name;
 }
 
-/** @This returns the estimated algorithm safety.
+/** @This returns the estimated algorithmic safety of the key.
     @xsee {suppalgos} */
 ASSH_INLINE assh_safety_t
 assh_key_safety(struct assh_key_s *key)
 {
   return key->safety;
+}
+
+/** @This returns the number of bits of the key.
+    @xsee {suppalgos} */
+ASSH_INLINE size_t
+assh_key_bits(struct assh_key_s *key)
+{
+  return key->bits;
 }
 
 /** @This combines @ref assh_safety_name and @ref assh_key_safety. */

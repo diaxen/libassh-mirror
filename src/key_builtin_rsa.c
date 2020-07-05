@@ -102,6 +102,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_rsa_create)
   k->key.algo = &assh_key_builtin_rsa;
   k->key.type = "ssh-rsa";
   k->key.safety = ASSH_SAFETY_PRIMEFIELD(bits);
+  k->key.bits = bits;
   k->key.private = 1;
 
   /* init numbers */
@@ -429,7 +430,8 @@ static ASSH_KEY_LOAD_FCN(assh_key_rsa_load)
       ASSH_JMP_IF_TRUE(assh_bignum_bits(&k->en) < 1 ||
                        assh_bignum_bits(&k->en) > 32, ASSH_ERR_NOTSUP, err_);
 
-      k->key.safety = ASSH_SAFETY_PRIMEFIELD(assh_bignum_bits(&k->nn));
+      k->key.bits = assh_bignum_bits(&k->nn);
+      k->key.safety = ASSH_SAFETY_PRIMEFIELD(k->key.bits);
     }
 
   if (private)

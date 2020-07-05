@@ -111,6 +111,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_ed25519_load)
       k->key.algo = algo;
       k->key.type = algo->name;
       k->key.safety = ASSH_ED25519_SAFETY;
+      k->key.bits = 255;
       k->key.private = 0;
     }
 
@@ -164,6 +165,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_ed25519_create)
   k->key.algo = algo;
   k->key.type = algo->name;
   k->key.safety = ASSH_ED25519_SAFETY;
+  k->key.bits = 255;
   k->key.private = 1;
 
   /* XXX the seed and the private key are the same thing, however the

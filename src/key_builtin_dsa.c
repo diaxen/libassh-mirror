@@ -120,6 +120,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_dsa_create)
   k->key.algo = &assh_key_builtin_dsa;
   k->key.type = "ssh-dss";
   k->key.safety = ASSH_DSA_SAFETY(l, n);
+  k->key.bits = bits;
   k->key.private = 1;
 
   /* init numbers */
@@ -420,6 +421,7 @@ static ASSH_KEY_LOAD_FCN(assh_key_dsa_load)
       ASSH_JMP_IF_TRUE(assh_bignum_bits(&k->pn) > 4096 ||
                        assh_bignum_bits(&k->qn) > 256, ASSH_ERR_NOTSUP, err_);
 
+      k->key.bits = assh_bignum_bits(&k->pn);
       k->key.safety = ASSH_DSA_SAFETY(assh_bignum_bits(&k->pn),
                                       assh_bignum_bits(&k->qn));
     }

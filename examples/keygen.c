@@ -284,9 +284,6 @@ int main(int argc, char *argv[])
       printf("Generating key...\n");
       if (assh_key_create(context, &key, bits, type, ASSH_ALGO_ANY))
         ERROR("unable to create %zu bits key of type %s\n", bits, type->name);
-
-      printf("Key algorithmic safety: %s (%u%%)\n",
-              assh_key_safety_name(key), assh_key_safety(key));
     }
 
   /* load an existing key from file as needed */
@@ -328,11 +325,17 @@ int main(int argc, char *argv[])
         printf("Key type: %s (%s)\n", assh_key_type_name(key),
                 key->private ? "private" : "public");
 
-      printf("Key algorithmic safety: %s (%u%%)\n",
-              assh_key_safety_name(key), assh_key_safety(key));
-
       if (key->comment != NULL)
         printf("Key comment: %s\n", key->comment);
+    }
+
+  if (action_mask & (ASSH_KEYGEN_LOAD | ASSH_KEYGEN_CREATE))
+    {
+      printf("Key algorithmic safety: %s (%u)\n",
+              assh_key_safety_name(key), assh_key_safety(key));
+
+      printf("Key bits: %zu\n",
+              assh_key_bits(key));
     }
 
   /* start key validation as needed */
@@ -355,7 +358,7 @@ int main(int argc, char *argv[])
 
           case ASSH_KEY_NOT_CHECKED:
 #endif
-            printf("warning: Checking of this key is not supported.\n");
+            printf("warning: Validation of this type of key is not supported.\n");
 #ifdef CONFIG_ASSH_KEY_VALIDATE
             break;
 
