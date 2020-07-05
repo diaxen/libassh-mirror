@@ -38,6 +38,7 @@ static size_t key_algo_table_size;
 
 struct tests_s
 {
+  enum assh_algo_class_e role;
   const char *key_algo;
   size_t bits_min, bits_max;
   enum assh_key_format_e format;
@@ -45,12 +46,16 @@ struct tests_s
   const char *pass, *comment;
 };
 
-static void
+static assh_bool_t
 test_sign(struct assh_context_s *c,
 	  struct assh_key_s *pv_key, struct assh_key_s *pub_key)
 {
   const struct assh_algo_sign_s *sa;
-  TEST_ASSERT(!assh_algo_sign_by_key(c, pv_key, NULL, &sa));
+  if (assh_algo_sign_by_key(c, pv_key, NULL, &sa))
+    {
+      printf(" ... no signature implem ... ");
+      return 1;
+    }
 
   struct assh_cbuffer_s buf;
   buf.str = "test";
@@ -63,6 +68,7 @@ test_sign(struct assh_context_s *c,
 
   assh_safety_t safety;
   TEST_ASSERT(!assh_sign_check(c, sa, pub_key, 1, &buf, sign, slen, &safety));
+  return 0;
 }
 
 /* test key blob load/store functions implemented in key modules */
@@ -70,37 +76,37 @@ static void test_algo(struct assh_context_s *c, size_t count)
 {
   static const struct tests_s algo_tests[] =
     {
-     { "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PUB_RFC4253, 0 },
-     { "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PUB_PEM_ASN1, 0 },
-     { "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
-     { "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PV_PEM_ASN1, 1 },
+     { ASSH_ALGO_SIGN, "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+     { ASSH_ALGO_SIGN, "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PUB_PEM_ASN1, 0 },
+     { ASSH_ALGO_SIGN, "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
+     { ASSH_ALGO_SIGN, "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PV_PEM_ASN1, 1 },
 
-     { "ssh-dss", 1024, 1536, ASSH_KEY_FMT_PUB_RFC4253, 0 },
-     { "ssh-dss", 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
-     { "ssh-dss", 1024, 1536, ASSH_KEY_FMT_PV_PEM_ASN1, 1 },
+     { ASSH_ALGO_SIGN, "ssh-dss", 1024, 1536, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+     { ASSH_ALGO_SIGN, "ssh-dss", 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
+     { ASSH_ALGO_SIGN, "ssh-dss", 1024, 1536, ASSH_KEY_FMT_PV_PEM_ASN1, 1 },
 
-     { "ecdsa-sha2-nist", 256, 256, ASSH_KEY_FMT_PUB_RFC4253, 0 },
-     { "ecdsa-sha2-nist", 256, 256, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
-     { "ecdsa-sha2-nist", 256, 256, ASSH_KEY_FMT_PV_PEM_ASN1, 1 },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 256, 256, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 256, 256, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 256, 256, ASSH_KEY_FMT_PV_PEM_ASN1, 1 },
 
-     { "ecdsa-sha2-nist", 384, 384, ASSH_KEY_FMT_PUB_RFC4253, 0 },
-     { "ecdsa-sha2-nist", 384, 384, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
-     { "ecdsa-sha2-nist", 384, 384, ASSH_KEY_FMT_PV_PEM_ASN1, 1 },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 384, 384, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 384, 384, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 384, 384, ASSH_KEY_FMT_PV_PEM_ASN1, 1 },
 
-     { "ecdsa-sha2-nist", 521, 521, ASSH_KEY_FMT_PUB_RFC4253, 0 },
-     { "ecdsa-sha2-nist", 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
-     { "ecdsa-sha2-nist", 521, 521, ASSH_KEY_FMT_PV_PEM_ASN1, 1 },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 521, 521, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 521, 521, ASSH_KEY_FMT_PV_PEM_ASN1, 1 },
 
-     { "ssh-ed25519", 255, 255, ASSH_KEY_FMT_PUB_RFC4253, 0 },
-     { "ssh-ed25519", 255, 255, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
+     { ASSH_ALGO_SIGN, "ssh-ed25519", 255, 255, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+     { ASSH_ALGO_SIGN, "ssh-ed25519", 255, 255, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
 
-     { "eddsa-e382-shake256@libassh.org", 382, 382, ASSH_KEY_FMT_PUB_RFC4253, 0 },
-     { "eddsa-e382-shake256@libassh.org", 382, 382, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
+     { ASSH_ALGO_SIGN, "eddsa-e382-shake256@libassh.org", 382, 382, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+     { ASSH_ALGO_SIGN, "eddsa-e382-shake256@libassh.org", 382, 382, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
 
-     { "eddsa-e521-shake256@libassh.org", 521, 521, ASSH_KEY_FMT_PUB_RFC4253, 0 },
-     { "eddsa-e521-shake256@libassh.org", 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
+     { ASSH_ALGO_SIGN, "eddsa-e521-shake256@libassh.org", 521, 521, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+     { ASSH_ALGO_SIGN, "eddsa-e521-shake256@libassh.org", 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
 
-     { NULL }
+     { }
     };
 
   const struct tests_s *t;
@@ -117,6 +123,7 @@ static void test_algo(struct assh_context_s *c, size_t count)
       for (j = 0; j < key_algo_table_size; j++)
 	{
 	  const struct assh_key_algo_s *ka = key_algo_table[j];
+	  assh_bool_t skip_sign = 0;
 
 	  if (strcmp(t->key_algo, ka->name))
 	    continue;
@@ -139,7 +146,7 @@ static void test_algo(struct assh_context_s *c, size_t count)
 		  size_t bits = t->bits_min + test_prng_rand() % (t->bits_max - t->bits_min + 1);
 		  assh_key_drop(c, &key1);
 		  putchar('N');
-		  TEST_ASSERT(!assh_key_create(c, &key1, bits, ka, ASSH_ALGO_SIGN));
+		  TEST_ASSERT(!assh_key_create(c, &key1, bits, ka, t->role));
 		}
 
 	      /* get estimated size of key blob */
@@ -165,7 +172,7 @@ static void test_algo(struct assh_context_s *c, size_t count)
 	      size_t padding = test_prng_rand() % 32;	/* may load from large buffer */
 
 	      putchar('l');
-	      TEST_ASSERT(!assh_key_load(c, &key2, ka, ASSH_ALGO_SIGN, t->format,
+	      TEST_ASSERT(!assh_key_load(c, &key2, ka, t->role, t->format,
 					 &blob2, blob_len2 + padding));
 
 	      /* check loaded blob end pointer */
@@ -174,9 +181,13 @@ static void test_algo(struct assh_context_s *c, size_t count)
 	      TEST_ASSERT(assh_key_cmp(c, key1, key2, !t->private));
 	      TEST_ASSERT(assh_key_cmp(c, key2, key1, !t->private));
 
-	      test_sign(c, key1, key2);
-	      if (t->private)
-		test_sign(c, key2, key1);
+	      if (!skip_sign)
+		{
+		  putchar('S');
+		  skip_sign = test_sign(c, key1, key2);
+		  if (t->private)
+		    skip_sign = test_sign(c, key2, key1);
+		}
 
 	      key_algo = ka;
 	      bits_min = t->bits_min;
@@ -188,7 +199,7 @@ static void test_algo(struct assh_context_s *c, size_t count)
 	}
 
       if (!done)
-	printf("\nskipping %s, no implementation\n", t->key_algo);
+	printf("  skipping %s, no key implementation\n", t->key_algo);
     }
 
   assh_key_drop(c, &key1);
@@ -199,80 +210,80 @@ static void test_helper(struct assh_context_s *c, size_t count)
 {
   static const struct tests_s helper_tests[] =
     {
-     { "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PUB_RFC4253, 0 },
-     { "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PUB_RFC4716, 0 },
-     { "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PUB_RFC4716, 0, NULL, "com ent" },
-     { "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PUB_OPENSSH, 0 },
-     { "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PUB_OPENSSH, 0, NULL, "com ent" },
-     { "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PUB_PEM_ASN1, 0 },
-     { "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PUB_PEM, 0 },
-     { "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
-     { "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB, 1 },
-     { "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1, 1 },
-     { "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1, 1, NULL, "com ent" },
-     { "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1, 1, "passphrase" },
-     { "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1, 1, "passphrase", "com ent" },
-     { "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PV_PEM_ASN1, 1 },
-     { "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PV_PEM, 1 },
-     { "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PV_PEM, 1, "passphrase" },
+     { ASSH_ALGO_SIGN, "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+     { ASSH_ALGO_SIGN, "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PUB_RFC4716, 0 },
+     { ASSH_ALGO_SIGN, "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PUB_RFC4716, 0, NULL, "com ent" },
+     { ASSH_ALGO_SIGN, "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PUB_OPENSSH, 0 },
+     { ASSH_ALGO_SIGN, "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PUB_OPENSSH, 0, NULL, "com ent" },
+     { ASSH_ALGO_SIGN, "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PUB_PEM_ASN1, 0 },
+     { ASSH_ALGO_SIGN, "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PUB_PEM, 0 },
+     { ASSH_ALGO_SIGN, "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
+     { ASSH_ALGO_SIGN, "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB, 1 },
+     { ASSH_ALGO_SIGN, "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1, 1 },
+     { ASSH_ALGO_SIGN, "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1, 1, NULL, "com ent" },
+     { ASSH_ALGO_SIGN, "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1, 1, "passphrase" },
+     { ASSH_ALGO_SIGN, "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1, 1, "passphrase", "com ent" },
+     { ASSH_ALGO_SIGN, "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PV_PEM_ASN1, 1 },
+     { ASSH_ALGO_SIGN, "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PV_PEM, 1 },
+     { ASSH_ALGO_SIGN, "ssh-rsa", 1024, 1536, ASSH_KEY_FMT_PV_PEM, 1, "passphrase" },
 
-     { "ssh-dss", 1024, 1536, ASSH_KEY_FMT_PUB_RFC4253, 0 },
-     { "ssh-dss", 1024, 1536, ASSH_KEY_FMT_PUB_RFC4716, 0 },
-     { "ssh-dss", 1024, 1536, ASSH_KEY_FMT_PUB_OPENSSH, 0 },
-     { "ssh-dss", 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
-     { "ssh-dss", 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB, 1 },
-     { "ssh-dss", 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1, 1 },
-     { "ssh-dss", 1024, 1536, ASSH_KEY_FMT_PV_PEM_ASN1, 1 },
-     { "ssh-dss", 1024, 1536, ASSH_KEY_FMT_PV_PEM, 1 },
-     { "ssh-dss", 1024, 1536, ASSH_KEY_FMT_PV_PEM, 1, "passphrase" },
+     { ASSH_ALGO_SIGN, "ssh-dss", 1024, 1536, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+     { ASSH_ALGO_SIGN, "ssh-dss", 1024, 1536, ASSH_KEY_FMT_PUB_RFC4716, 0 },
+     { ASSH_ALGO_SIGN, "ssh-dss", 1024, 1536, ASSH_KEY_FMT_PUB_OPENSSH, 0 },
+     { ASSH_ALGO_SIGN, "ssh-dss", 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
+     { ASSH_ALGO_SIGN, "ssh-dss", 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB, 1 },
+     { ASSH_ALGO_SIGN, "ssh-dss", 1024, 1536, ASSH_KEY_FMT_PV_OPENSSH_V1, 1 },
+     { ASSH_ALGO_SIGN, "ssh-dss", 1024, 1536, ASSH_KEY_FMT_PV_PEM_ASN1, 1 },
+     { ASSH_ALGO_SIGN, "ssh-dss", 1024, 1536, ASSH_KEY_FMT_PV_PEM, 1 },
+     { ASSH_ALGO_SIGN, "ssh-dss", 1024, 1536, ASSH_KEY_FMT_PV_PEM, 1, "passphrase" },
 
-     { "ecdsa-sha2-nist", 256, 256, ASSH_KEY_FMT_PUB_RFC4253, 0 },
-     { "ecdsa-sha2-nist", 256, 256, ASSH_KEY_FMT_PUB_RFC4716, 0 },
-     { "ecdsa-sha2-nist", 256, 256, ASSH_KEY_FMT_PUB_OPENSSH, 0 },
-     { "ecdsa-sha2-nist", 256, 256, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
-     { "ecdsa-sha2-nist", 256, 256, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB, 1 },
-     { "ecdsa-sha2-nist", 256, 256, ASSH_KEY_FMT_PV_OPENSSH_V1, 1 },
-     { "ecdsa-sha2-nist", 256, 256, ASSH_KEY_FMT_PV_OPENSSH_V1, 1, "passphrase" },
-     { "ecdsa-sha2-nist", 256, 256, ASSH_KEY_FMT_PV_PEM_ASN1, 1 },
-     { "ecdsa-sha2-nist", 256, 256, ASSH_KEY_FMT_PV_PEM, 1 },
-     { "ecdsa-sha2-nist", 256, 256, ASSH_KEY_FMT_PV_PEM, 1, "passphrase" },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 256, 256, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 256, 256, ASSH_KEY_FMT_PUB_RFC4716, 0 },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 256, 256, ASSH_KEY_FMT_PUB_OPENSSH, 0 },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 256, 256, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 256, 256, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB, 1 },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 256, 256, ASSH_KEY_FMT_PV_OPENSSH_V1, 1 },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 256, 256, ASSH_KEY_FMT_PV_OPENSSH_V1, 1, "passphrase" },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 256, 256, ASSH_KEY_FMT_PV_PEM_ASN1, 1 },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 256, 256, ASSH_KEY_FMT_PV_PEM, 1 },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 256, 256, ASSH_KEY_FMT_PV_PEM, 1, "passphrase" },
 
-     { "ecdsa-sha2-nist", 521, 521, ASSH_KEY_FMT_PUB_RFC4253, 0 },
-     { "ecdsa-sha2-nist", 521, 521, ASSH_KEY_FMT_PUB_RFC4716, 0 },
-     { "ecdsa-sha2-nist", 521, 521, ASSH_KEY_FMT_PUB_OPENSSH, 0 },
-     { "ecdsa-sha2-nist", 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
-     { "ecdsa-sha2-nist", 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB, 1 },
-     { "ecdsa-sha2-nist", 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1, 1 },
-     { "ecdsa-sha2-nist", 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1, 1, "passphrase" },
-     { "ecdsa-sha2-nist", 521, 521, ASSH_KEY_FMT_PV_PEM_ASN1, 1 },
-     { "ecdsa-sha2-nist", 521, 521, ASSH_KEY_FMT_PV_PEM, 1 },
-     { "ecdsa-sha2-nist", 521, 521, ASSH_KEY_FMT_PV_PEM, 1, "passphrase" },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 521, 521, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 521, 521, ASSH_KEY_FMT_PUB_RFC4716, 0 },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 521, 521, ASSH_KEY_FMT_PUB_OPENSSH, 0 },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB, 1 },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1, 1 },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1, 1, "passphrase" },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 521, 521, ASSH_KEY_FMT_PV_PEM_ASN1, 1 },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 521, 521, ASSH_KEY_FMT_PV_PEM, 1 },
+     { ASSH_ALGO_SIGN, "ecdsa-sha2-nist", 521, 521, ASSH_KEY_FMT_PV_PEM, 1, "passphrase" },
 
-     { "ssh-ed25519", 255, 255, ASSH_KEY_FMT_PUB_RFC4253, 0 },
-     { "ssh-ed25519", 255, 255, ASSH_KEY_FMT_PUB_RFC4716, 0 },
-     { "ssh-ed25519", 255, 255, ASSH_KEY_FMT_PUB_OPENSSH, 0 },
-     { "ssh-ed25519", 255, 255, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
-     { "ssh-ed25519", 255, 255, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB, 1 },
-     { "ssh-ed25519", 255, 255, ASSH_KEY_FMT_PV_OPENSSH_V1, 1 },
-     { "ssh-ed25519", 255, 255, ASSH_KEY_FMT_PV_OPENSSH_V1, 1, "passphrase" },
+     { ASSH_ALGO_SIGN, "ssh-ed25519", 255, 255, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+     { ASSH_ALGO_SIGN, "ssh-ed25519", 255, 255, ASSH_KEY_FMT_PUB_RFC4716, 0 },
+     { ASSH_ALGO_SIGN, "ssh-ed25519", 255, 255, ASSH_KEY_FMT_PUB_OPENSSH, 0 },
+     { ASSH_ALGO_SIGN, "ssh-ed25519", 255, 255, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
+     { ASSH_ALGO_SIGN, "ssh-ed25519", 255, 255, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB, 1 },
+     { ASSH_ALGO_SIGN, "ssh-ed25519", 255, 255, ASSH_KEY_FMT_PV_OPENSSH_V1, 1 },
+     { ASSH_ALGO_SIGN, "ssh-ed25519", 255, 255, ASSH_KEY_FMT_PV_OPENSSH_V1, 1, "passphrase" },
 
-     { "eddsa-e382-shake256@libassh.org", 382, 382, ASSH_KEY_FMT_PUB_RFC4253, 0 },
-     { "eddsa-e382-shake256@libassh.org", 382, 382, ASSH_KEY_FMT_PUB_RFC4716, 0 },
-     { "eddsa-e382-shake256@libassh.org", 382, 382, ASSH_KEY_FMT_PUB_OPENSSH, 0 },
-     { "eddsa-e382-shake256@libassh.org", 382, 382, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
-     { "eddsa-e382-shake256@libassh.org", 382, 382, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB, 1 },
-     { "eddsa-e382-shake256@libassh.org", 382, 382, ASSH_KEY_FMT_PV_OPENSSH_V1, 1 },
-     { "eddsa-e382-shake256@libassh.org", 382, 382, ASSH_KEY_FMT_PV_OPENSSH_V1, 1, "passphrase" },
+     { ASSH_ALGO_SIGN, "eddsa-e382-shake256@libassh.org", 382, 382, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+     { ASSH_ALGO_SIGN, "eddsa-e382-shake256@libassh.org", 382, 382, ASSH_KEY_FMT_PUB_RFC4716, 0 },
+     { ASSH_ALGO_SIGN, "eddsa-e382-shake256@libassh.org", 382, 382, ASSH_KEY_FMT_PUB_OPENSSH, 0 },
+     { ASSH_ALGO_SIGN, "eddsa-e382-shake256@libassh.org", 382, 382, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
+     { ASSH_ALGO_SIGN, "eddsa-e382-shake256@libassh.org", 382, 382, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB, 1 },
+     { ASSH_ALGO_SIGN, "eddsa-e382-shake256@libassh.org", 382, 382, ASSH_KEY_FMT_PV_OPENSSH_V1, 1 },
+     { ASSH_ALGO_SIGN, "eddsa-e382-shake256@libassh.org", 382, 382, ASSH_KEY_FMT_PV_OPENSSH_V1, 1, "passphrase" },
 
-     { "eddsa-e521-shake256@libassh.org", 521, 521, ASSH_KEY_FMT_PUB_RFC4253, 0 },
-     { "eddsa-e521-shake256@libassh.org", 521, 521, ASSH_KEY_FMT_PUB_RFC4716, 0 },
-     { "eddsa-e521-shake256@libassh.org", 521, 521, ASSH_KEY_FMT_PUB_OPENSSH, 0 },
-     { "eddsa-e521-shake256@libassh.org", 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
-     { "eddsa-e521-shake256@libassh.org", 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB, 1 },
-     { "eddsa-e521-shake256@libassh.org", 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1, 1 },
-     { "eddsa-e521-shake256@libassh.org", 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1, 1, "passphrase" },
+     { ASSH_ALGO_SIGN, "eddsa-e521-shake256@libassh.org", 521, 521, ASSH_KEY_FMT_PUB_RFC4253, 0 },
+     { ASSH_ALGO_SIGN, "eddsa-e521-shake256@libassh.org", 521, 521, ASSH_KEY_FMT_PUB_RFC4716, 0 },
+     { ASSH_ALGO_SIGN, "eddsa-e521-shake256@libassh.org", 521, 521, ASSH_KEY_FMT_PUB_OPENSSH, 0 },
+     { ASSH_ALGO_SIGN, "eddsa-e521-shake256@libassh.org", 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1_KEY, 1 },
+     { ASSH_ALGO_SIGN, "eddsa-e521-shake256@libassh.org", 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB, 1 },
+     { ASSH_ALGO_SIGN, "eddsa-e521-shake256@libassh.org", 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1, 1 },
+     { ASSH_ALGO_SIGN, "eddsa-e521-shake256@libassh.org", 521, 521, ASSH_KEY_FMT_PV_OPENSSH_V1, 1, "passphrase" },
 
-     { NULL }
+     { }
     };
 
   const struct tests_s *t;
@@ -285,11 +296,12 @@ static void test_helper(struct assh_context_s *c, size_t count)
   for (t = helper_tests; t->key_algo != NULL; t++)
     {
       const struct assh_key_algo_s *ka;
+      assh_bool_t skip_sign = 0;
 
-      if (assh_key_algo_by_name(c, ASSH_ALGO_ANY, t->key_algo,
+      if (assh_key_algo_by_name(c, t->role, t->key_algo,
 				strlen(t->key_algo), &ka))
 	{
-	  printf("skipping %s, no implementation\n", t->key_algo);
+	  printf("  skipping %s, no key implementation\n", t->key_algo);
 	  continue;
 	}
 
@@ -298,8 +310,8 @@ static void test_helper(struct assh_context_s *c, size_t count)
 	  if (!key_algo || format != t->format || strcmp(key_algo, t->key_algo))
 	    {
 	      format = t->format;
-	      printf("\n%s, %s format: ",
-		     t->key_algo, assh_key_format_desc(t->format)->name);
+	      printf("\n%s (%s), %s format: ", t->key_algo, ka->implem,
+		     assh_key_format_desc(t->format)->name);
 	    }
 
 	  if (!key_algo || strcmp(key_algo, t->key_algo) ||
@@ -309,7 +321,7 @@ static void test_helper(struct assh_context_s *c, size_t count)
 	      size_t bits = t->bits_min + test_prng_rand() % (t->bits_max - t->bits_min + 1);
 	      assh_key_drop(c, &key1);
 	      putchar('N');
-	      TEST_ASSERT(!assh_key_create(c, &key1, bits, ka, ASSH_ALGO_SIGN));
+	      TEST_ASSERT(!assh_key_create(c, &key1, bits, ka, t->role));
 	    }
 
 	  if (t->comment != NULL)
@@ -322,15 +334,19 @@ static void test_helper(struct assh_context_s *c, size_t count)
 	  /* reload key from file */
 	  putchar('l');
 	  TEST_ASSERT(!asshh_key_load_filename(c, &key2, t->key_algo,
-					       ASSH_ALGO_SIGN, "test.key", t->format, t->pass, 0));
+					       t->role, "test.key", t->format, t->pass, 0));
 
 	  /* compare loaded key to original */
 	  TEST_ASSERT(assh_key_cmp(c, key1, key2, !t->private));
 	  TEST_ASSERT(assh_key_cmp(c, key2, key1, !t->private));
 
-	  test_sign(c, key1, key2);
-	  if (t->private)
-	    test_sign(c, key2, key1);
+	  if (!skip_sign)
+	    {
+	      putchar('S');
+	      skip_sign = test_sign(c, key1, key2);
+	      if (t->private)
+		skip_sign = test_sign(c, key2, key1);
+	    }
 
 #ifdef CONFIG_ASSH_KEY_VALIDATE
 	  /* validate loaded key */
