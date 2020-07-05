@@ -75,7 +75,7 @@
 #include "assh_key.h"
 #include "assh_buffer.h"
 
-/** This function changes the amount of ssh stream that is allowed to
+/** @This changes the amount of ssh stream that is allowed to
     flow between the client and server before starting a new
     key-exchange process. */
 ASSH_WARN_UNUSED_RESULT assh_status_t
@@ -87,27 +87,27 @@ assh_kex_set_threshold(struct assh_session_s *s, uint32_t bytes);
 ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_kex_set_order(struct assh_context_s *c, uint_fast8_t safety_weight);
 
-/** @internal This function is called internally by the transport layer
+/** @internal @This is called internally by the transport layer
     when a key-exchange must be performed.
 
-    This function send the kex exchange init packet.  A copy of the
+    @This send the kex exchange init packet.  A copy of the
     packet is kept in @ref assh_session_s::kex_init_local for hashing
     by the kex-exchange algorithm. */
 ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_kex_send_init(struct assh_session_s *s);
 
-/** @internal This function is called internally by the transport layer
+/** @internal @This is called internally by the transport layer
     when a key exchange init packet is received from the remote host. A
     copy of the packet is kept in @ref assh_session_s::kex_init_remote
     for hashing by the kex-exchange algorithm.
 
-    This function selects the various algorithms from the client and
+    @This selects the various algorithms from the client and
     server advertised lists and then initialize the pluggable key
     exchange module by calling its @ref assh_kex_init_t function. */
 ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p);
 
-/** @internal This helper function can be used during the key exchange
+/** @internal @This function can be used during the key exchange
     to lower the safety factor of the current session. This is used
     when algorithm parameters are further negotiated after the
     algorithm selection phase. */
@@ -176,7 +176,7 @@ assh_kex_server_hash2(struct assh_session_s *s,
 
 #endif
 
-/** @internal This function is called by the pluggable key exchange
+/** @internal @This is called by the pluggable key exchange
     module when the exchange hash and the shared secret are
     available. It will use the provided hash algorithm to derive the
     various symmetric cipher keys from these values and then
@@ -192,7 +192,7 @@ assh_kex_new_keys(struct assh_session_s *s,
                   const uint8_t *secret_str);
 
 /**
-   @internal This function is called by the pluggable key exchange
+   @internal @This is called by the pluggable key exchange
    module when the exchange is over. It will call the @ref
    assh_kex_cleanup_t function of the module and release init packets.
 
@@ -204,7 +204,7 @@ ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_kex_end(struct assh_session_s *s, assh_bool_t accept);
 
 /**
-   @internal This function is called internally when a @ref
+   @internal @This is called internally when a @ref
    assh_kex_keys_s object and its associated resources have to be
    released.
 */
@@ -212,7 +212,7 @@ void assh_kex_keys_cleanup(struct assh_session_s *s,
                            struct assh_kex_keys_s *keys);
 
 /**
-   @internal This function is called internally by the transport layer
+   @internal @This is called internally by the transport layer
    in order to report the ASSH_EVENT_KEX_DONE event.
 */
 void assh_kex_done(struct assh_session_s *s,

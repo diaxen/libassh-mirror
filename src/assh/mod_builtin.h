@@ -184,14 +184,14 @@ extern const struct assh_algo_sign_s assh_sign_builtin_rsa_sha512;
     See @url {http://safecurves.cr.yp.to/} */
 extern const struct assh_algo_sign_s assh_sign_builtin_ed25519;
 
-/** Same algorithm as @ref assh_sign_ed25519 with the stronger E382
-    edward curve and the shake256 hash function.
+/** Same algorithm as @ref assh_sign_builtin_ed25519 with the stronger
+    E382 edward curve and the shake256 hash function.
 
     See @url {http://safecurves.cr.yp.to/} */
 extern const struct assh_algo_sign_s assh_sign_builtin_eddsa_e382;
 
-/** Same algorithm as @ref assh_sign_ed25519 with the stronger E521
-    edward curve and the shake256 hash function.
+/** Same algorithm as @ref assh_sign_builtin_ed25519 with the stronger
+    E521 edward curve and the shake256 hash function.
 
     See @url {http://safecurves.cr.yp.to/} */
 extern const struct assh_algo_sign_s assh_sign_builtin_eddsa_e521;

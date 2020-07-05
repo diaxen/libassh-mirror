@@ -50,7 +50,7 @@ asshh_fd_event(struct assh_session_s *s,
 
 /** @This read characters on the file descriptor until a new line is
     found. The terminal echo is disabled. Characters beyond the
-    specified length are read but ignored. This function fails if the
+    specified length are read but ignored. @This fails if the
     file descriptor is not a tty. */
 ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_fd_get_password(struct assh_context_s *c, const char **pass,

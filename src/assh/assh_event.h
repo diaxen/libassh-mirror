@@ -202,7 +202,7 @@ struct assh_event_s
      [(sizeof(union assh_event_##name##_u)				\
        <= sizeof(((struct assh_event_s*)0)->params)) - 1];
 
-/** This function runs the various state machines which implement the
+/** @This runs the various state machines which implement the
     @em ssh2 protocol, including the currently running @hl service
     and @hl{key-exchange}. It then reports the next available
     @hl event to the caller.
@@ -210,7 +210,7 @@ struct assh_event_s
     The @ref assh_event_done function must be called after each
     successful call to this function, before requesting the next event.
 
-    This function can be called again unless @tt 0 is returned
+    @This can be called again unless @tt 0 is returned
     eventually. This occurs when the session terminates.
 
     When the function returns @tt 1, the passed object event is

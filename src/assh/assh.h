@@ -119,7 +119,7 @@ enum assh_ssh_msg_e;
 enum assh_algo_class_e;
 enum assh_userauth_methods_e;
 
-/** A simple boolean type used in @em {assh}. */
+/** A simple boolean type used in @em {libassh}. */
 typedef uint8_t assh_bool_t;
 
 /** The error code integer type returned by @em assh functions. It is
@@ -127,6 +127,7 @@ typedef uint8_t assh_bool_t;
     assh_severity_e enums.
     @see #ASSH_STATUS
     @see #ASSH_SEVERITY
+    @xsee {Error handling}
 */
 typedef int_fast16_t assh_status_t;
 
@@ -143,6 +144,7 @@ typedef int_fast16_t assh_status_t;
    @see assh_safety_name
 */
 typedef uint8_t assh_safety_t;
+
 typedef uint_fast32_t assh_speed_t;
 
 /** @This returns the name associated to an
@@ -167,7 +169,10 @@ assh_safety_name(assh_safety_t safety)
 
     Multiple error severity bits may be ored together; in this case
     the highest bit set prevails. This allows increasing the error
-    severity returned by a callee from the caller function. */
+    severity returned by a callee from the caller function.
+
+    @xsee {Error handling}
+*/
 enum assh_severity_e
 {
   /** The error is not critical and the connection may continue. This
@@ -179,7 +184,9 @@ enum assh_severity_e
 };
 
 /** @This specifies the possible errors returned by the @em libassh
-    functions and passed to the @ref assh_event_done function. */
+    functions and passed to the @ref assh_event_done function.
+    @xsee {Error handling}
+*/
 enum assh_status_e
 {
   /** Success. */
@@ -248,16 +255,17 @@ const char * assh_error_str(assh_status_t err);
 
 /** @This extracts the @ref assh_status_e part of an status code
     returned by a function.
-    @see assh_status_t @see assh_status_e @see #ASSH_ERR_SUCESS */
+    @see assh_status_t @see assh_status_e @see #ASSH_SUCCESS
+    @xsee {Error handling} */
 #define ASSH_STATUS(code) ((enum assh_status_e)((code) & 0xfff))
 
 /** @This evaluate to true when the status code is not an error.
-    @see #ASSH_STATUS */
+    @see #ASSH_STATUS @xsee {Error handling} */
 #define ASSH_SUCCESS(code) (ASSH_STATUS(code) < 0x100)
 
 /** @This extracts the @ref assh_severity_e part of an status
     code returned by a function.
-    @see assh_status_t @see assh_severity_e */
+    @see assh_status_t @see assh_severity_e @xsee {Error handling} */
 #define ASSH_SEVERITY(code) ((enum assh_severity_e)((code) & 0xf000))
 
 /** @internal Log2 of smallest packet size bucket in the packet

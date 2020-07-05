@@ -220,8 +220,8 @@ struct assh_key_format_desc_s
   assh_bool_t internal:1;
   /** True when the format supports encryption. */
   assh_bool_t encrypted:1;
-  /** True when this format is a public subset of a private format.
-      Only loading feature is provided in this case. */
+  /** True when this contains the public part of a private format.
+      May only be used during loading. */
   assh_bool_t pub_part:1;
   /** True when this format only contains the private key data. The
       loading function will complete an exisiting public key. */
@@ -264,7 +264,7 @@ struct assh_key_s
     the passed key blob data. The @tt blob pointer is updated so that
     the key blob is skipped.
 
-    This function will only support some binary key formats specific
+    @This will only support some binary key formats specific
     to a given key algorithm. More formats are handled by helper
     functions provided by @ref @assh/helper_key.h
 
@@ -302,7 +302,7 @@ assh_key_comment(struct assh_context_s *c,
     case, the size of the available buffer must be passed and the
     function updates it with the actual number of bytes written.
 
-    This function will only support some binary key formats specific
+    @This will only support some binary key formats specific
     to a given key algorithm. More formats are handled by helper
     functions provided by @ref @assh/helper_key.h */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
@@ -401,7 +401,7 @@ assh_key_safety_name(struct assh_key_s *key)
 }
 
 /** @This finds a key algorithm with matching name.
-    @see assh_key_algo_enumerate */
+    @see assh_key_algo_enumerate_names */
 ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_key_algo_by_name(const struct assh_context_s *c,
 		      enum assh_algo_class_e cl,
@@ -423,6 +423,8 @@ assh_key_algo_enumerate_implems(struct assh_context_s *c,
 				enum assh_algo_class_e cl, size_t *count,
 				const struct assh_key_algo_s **table);
 
+/** @This is similar to the @ref assh_key_algo_enumerate_implems
+    function but implementations with duplicate names are filtered out. */
 assh_status_t
 assh_key_algo_enumerate_names(struct assh_context_s *c,
 			      enum assh_algo_class_e cl, size_t *count,

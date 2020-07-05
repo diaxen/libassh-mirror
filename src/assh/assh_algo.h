@@ -90,12 +90,12 @@ enum assh_algo_spec_e
   ASSH_ALGO_OLDNAME = 0x20,
 };
 
-/** @internal @see assh_algo_s */
+/** @see assh_algo_s */
 struct assh_algo_name_s
 {
   /** Specification status flags */
   enum assh_algo_spec_e spec:8;
-  /** algorithm name */
+  /** Algorithm name */
   const char *name;
 };
 

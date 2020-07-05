@@ -278,14 +278,14 @@ assh_session_cleanup(struct assh_session_s *s);
     resources. */
 void assh_session_release(struct assh_session_s *s);
 
-/** @internal This changes the session state according to the provided
-    error code and associated severity level.
+/** @internal @This changes the session state according to the
+    provided error code and associated severity level.
 
-    This function returns the original error code but the error
+    @This returns the original error code but the error
     severity level may be increased. This function is responsible for
     sending the session close message to the remote hsot.
 
-    This function is called from the @ref assh_event_get, @ref
+    @This is called from the @ref assh_event_get, @ref
     assh_event_done function. It is also called from other functions
     of the public API which can modify the session state.
 
