@@ -420,7 +420,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_eddsa_e382_create)
 
 const struct assh_key_algo_s assh_key_builtin_eddsa_e382 =
 {
-  .name = "eddsa-e382-shake256@libassh.org",
+  .name = "eddsa-e382-shake256",
   .implem = "assh-builtin",
   .min_bits = 382,
   .bits = 382,
@@ -499,7 +499,7 @@ static ASSH_KEY_CREATE_FCN(assh_key_eddsa_e521_create)
 
 const struct assh_key_algo_s assh_key_builtin_eddsa_e521 =
 {
-  .name = "eddsa-e521-shake256@libassh.org",
+  .name = "eddsa-e521-shake256",
   .implem = "assh-builtin",
   .min_bits = 521,
   .bits = 521,

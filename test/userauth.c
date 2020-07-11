@@ -64,7 +64,7 @@ struct {
   { "ssh-rsa", 1024 },
   { "ssh-dss", 1024 },
   { "ssh-ed25519", 255 },
-  { "eddsa-e521-shake256@libassh.org", 521 },
+  { "eddsa-e521-shake256", 521 },
   { "ecdsa-sha2-nist", 256 },
   { "ecdsa-sha2-nist", 521 },
 };

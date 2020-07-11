@@ -173,7 +173,7 @@ static const struct algo_with_key_s sign_list_long[] =
     rsa3072_key, sizeof(rsa3072_key) - 1 },
   { "ssh-ed25519",                 NULL,                    "ssh-ed25519",
     ed25519_key, sizeof(ed25519_key) - 1 },
-  { "eddsa-e382-shake256@libassh.org", NULL, "eddsa-e382-shake256@libassh.org",
+  { "eddsa-e382-shake256@libassh.org", NULL, "eddsa-e382-shake256",
     eddsa_e382_key, sizeof(eddsa_e382_key) - 1 },
   { NULL }
 };
