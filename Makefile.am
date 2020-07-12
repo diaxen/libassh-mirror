@@ -31,3 +31,6 @@ manual:
 
 internals:
 	make -C $(top_srcdir)/doc internals
+
+EXTRA_DIST=build/compile build/config.guess build/config.sub \
+  build/depcomp build/install-sh build/ltmain.sh build/missing
