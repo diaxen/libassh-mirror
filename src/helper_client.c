@@ -120,7 +120,7 @@ asshh_client_get_known_hosts(struct assh_context_s *c, struct assh_key_s **keys,
 	      char comment[256];
 	      if (snprintf(comment, sizeof(comment), "%s:%u", filename, (unsigned)l)
 		  < sizeof(comment))
-		assh_key_comment(c, *keys, comment);
+		assh_key_set_comment(c, *keys, comment);
 	    }
 
 	  state = 3;

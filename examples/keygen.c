@@ -404,7 +404,7 @@ int main(int argc, char *argv[])
               cmt[sizeof(cmt) - 1] = 0;
               comment = cmt;
             }
-          if (assh_key_comment(context, key, comment))
+          if (assh_key_set_comment(context, key, comment))
             ERROR("Unable to set key comment.\n");
         }
 

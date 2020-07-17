@@ -325,7 +325,7 @@ static void test_helper(struct assh_context_s *c, size_t count)
 	    }
 
 	  if (t->comment != NULL)
-	    TEST_ASSERT(!assh_key_comment(c, key1, t->comment));
+	    TEST_ASSERT(!assh_key_set_comment(c, key1, t->comment));
 
 	  /* save key to file */
 	  putchar('s');

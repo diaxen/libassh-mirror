@@ -138,7 +138,7 @@ assh_key_create(struct assh_context_s *c,
 #endif
 
 assh_status_t
-assh_key_comment(struct assh_context_s *c,
+assh_key_set_comment(struct assh_context_s *c,
                  struct assh_key_s *key,
                  const char *comment)
 {
