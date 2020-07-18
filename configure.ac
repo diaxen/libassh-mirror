@@ -161,11 +161,15 @@ CONFIG_ASSH_USE_BUILTIN_SHA3=yes
 if test -e /dev/random ; then
   case "$with_prng" in
     *external*)
-      with_prng=devrandom ;&
+      with_prng=devrandom
+      CONFIG_ASSH_USE_DEV_RANDOM=yes
+      ;;
     *devrandom*|*all*)
-    AC_DEFINE([CONFIG_ASSH_USE_DEV_RANDOM], [], [Enable support for unix @tt {/dev/u?random} random generator when defined.])
-    CONFIG_ASSH_USE_DEV_RANDOM=yes
+      CONFIG_ASSH_USE_DEV_RANDOM=yes
   esac
+  if test x$CONFIG_ASSH_USE_DEV_RANDOM = xyes ; then
+    AC_DEFINE([CONFIG_ASSH_USE_DEV_RANDOM], [], [Enable support for unix @tt {/dev/u?random} random generator when defined.])
+  fi
 fi
 
 case "$with_kex" in
@@ -224,35 +228,51 @@ if test x$with_gcrypt = xyes ; then
 
       case "$with_prng" in
         *external*)
-          with_prng=gcrypt ;&
+          with_prng=gcrypt
+	  CONFIG_ASSH_USE_GCRYPT_PRNG=yes
+	  ;;
         *gcrypt*|*all*)
-	  AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_PRNG], [], [Enable Libgcrypt random number generator when defined.])
 	  CONFIG_ASSH_USE_GCRYPT_PRNG=yes
       esac
+      if test x$CONFIG_ASSH_USE_GCRYPT_PRNG = xyes ; then
+	  AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_PRNG], [], [Enable Libgcrypt random number generator when defined.])
+      fi
 
       case "$with_alloc" in
         *external*)
-          with_alloc=gcrypt ;&
+          with_alloc=gcrypt
+	  CONFIG_ASSH_USE_GCRYPT_ALLOC=yes
+	  ;;
         *gcrypt*|*all*)
-	  AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_ALLOC], [], [Enable Libgcrypt secur memory allocator when defined.])
 	  CONFIG_ASSH_USE_GCRYPT_ALLOC=yes
       esac
+      if test x$CONFIG_ASSH_USE_GCRYPT_ALLOC = xyes ; then
+	  AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_ALLOC], [], [Enable Libgcrypt secur memory allocator when defined.])
+      fi
 
       case "$with_ciphers" in
         *external*)
-          with_ciphers=gcrypt ;&
+          with_ciphers=gcrypt
+	  CONFIG_ASSH_USE_GCRYPT_CIPHERS=yes
+	  ;;
         *gcrypt*|*all*)
-	  AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_CIPHERS], [], [Enable Libgcrypt cipher algorithms when defined.])
 	  CONFIG_ASSH_USE_GCRYPT_CIPHERS=yes
       esac
+      if test x$CONFIG_ASSH_USE_GCRYPT_CIPHERS = xyes ; then
+	  AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_CIPHERS], [], [Enable Libgcrypt cipher algorithms when defined.])
+      fi
 
       case "$with_macs" in
         *external*)
-          with_macs=gcrypt ;&
+          with_macs=gcrypt
+	  CONFIG_ASSH_USE_GCRYPT_MACS=yes
+	  ;;
         *gcrypt*|*all*)
-	  AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_MACS], [], [Enable Libgcrypt MAC algorithms when defined.])
 	  CONFIG_ASSH_USE_GCRYPT_MACS=yes
       esac
+      if test x$CONFIG_ASSH_USE_GCRYPT_MACS = xyes ; then
+	  AC_DEFINE([CONFIG_ASSH_USE_GCRYPT_MACS], [], [Enable Libgcrypt MAC algorithms when defined.])
+      fi
 
       if test x$CONFIG_ASSH_USE_GCRYPT_HASH = xyes ||
       	 test x$CONFIG_ASSH_USE_GCRYPT_CIPHERS = xyes ||
@@ -291,44 +311,64 @@ if test x$with_openssl = xyes ; then
 
       case "$with_prng" in
         *external*)
-          with_prng=openssl ;&
+          with_prng=openssl
+	  CONFIG_ASSH_USE_OPENSSL_PRNG=yes
+	  ;;
         *openssl*|*all*)
-	  AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_PRNG], [], [Enable openssl random number generator when defined.])
 	  CONFIG_ASSH_USE_OPENSSL_PRNG=yes
       esac
+      if test x$CONFIG_ASSH_USE_OPENSSL_PRNG = xyes ; then
+	  AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_PRNG], [], [Enable openssl random number generator when defined.])
+      fi
 
       case "$with_alloc" in
         *external*)
-          with_alloc=openssl ;&
+          with_alloc=openssl
+	  CONFIG_ASSH_USE_OPENSSL_ALLOC=yes
+	  ;;
         *openssl*|*all*)
-	  AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_HEAP_SIZE], [0x10000], [Value passed to the CRYPTO_secure_malloc_init function.])
-	  AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_ALLOC], [], [Enable openssl secur memory allocator when defined.])
 	  CONFIG_ASSH_USE_OPENSSL_ALLOC=yes
       esac
+      if test x$CONFIG_ASSH_USE_OPENSSL_ALLOC = xyes ; then
+	  AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_HEAP_SIZE], [0x10000], [Value passed to the CRYPTO_secure_malloc_init function.])
+	  AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_ALLOC], [], [Enable openssl secur memory allocator when defined.])
+      fi
 
       case "$with_ciphers" in
         *external*)
-          with_ciphers=openssl ;&
+          with_ciphers=openssl
+	  CONFIG_ASSH_USE_OPENSSL_CIPHERS=yes
+	  ;;
         *openssl*|*all*)
-	  AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_CIPHERS], [], [Enable openssl cipher algorithms when defined.])
 	  CONFIG_ASSH_USE_OPENSSL_CIPHERS=yes
       esac
+      if test x$CONFIG_ASSH_USE_OPENSSL_CIPHERS = xyes ; then
+	  AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_CIPHERS], [], [Enable openssl cipher algorithms when defined.])
+      fi
 
       case "$with_sign" in
         *external*)
-          with_signs=openssl ;&
+          with_signs=openssl
+	  CONFIG_ASSH_USE_OPENSSL_SIGN=yes
+	  ;;
         *openssl*|*all*)
-	  AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_SIGN], [], [Enable openssl signature algorithms when defined.])
 	  CONFIG_ASSH_USE_OPENSSL_SIGN=yes
       esac
+      if test x$CONFIG_ASSH_USE_OPENSSL_SIGN = xyes ; then
+	  AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_SIGN], [], [Enable openssl signature algorithms when defined.])
+      fi
 
       case "$with_macs" in
         *external*)
-          with_macs=openssl ;&
+          with_macs=openssl
+	  CONFIG_ASSH_USE_OPENSSL_MACS=yes
+	  ;;
         *openssl*|*all*)
-	  AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_MACS], [], [Enable openssl MAC algorithms when defined.])
 	  CONFIG_ASSH_USE_OPENSSL_MACS=yes
       esac
+      if test x$CONFIG_ASSH_USE_OPENSSL_MACS = xyes ; then
+	  AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_MACS], [], [Enable openssl MAC algorithms when defined.])
+      fi
 
       if test x$CONFIG_ASSH_USE_OPENSSL_HASH = xyes ||
       	 test x$CONFIG_ASSH_USE_OPENSSL_CIPHERS = xyes ||
@@ -351,11 +391,15 @@ if test x$with_sodium = xyes ; then
     AC_CHECK_HEADERS(sodium/crypto_scalarmult_curve25519.h, [
       case "$with_kex" in
         *external*)
-          with_kex=sodium ;&
+          with_kex=sodium
+	  CONFIG_ASSH_USE_SODIUM_KEX=yes
+	  ;;
         *sodium*|*all*)
-	  AC_DEFINE([CONFIG_ASSH_USE_SODIUM_KEX], [], [Enable libsodium key-exchange algorithms when defined.])
 	  CONFIG_ASSH_USE_SODIUM_KEX=yes
       esac
+      if test x$CONFIG_ASSH_USE_SODIUM_KEX = xyes ; then
+	  AC_DEFINE([CONFIG_ASSH_USE_SODIUM_KEX], [], [Enable libsodium key-exchange algorithms when defined.])
+      fi
    ])
   ])
 
@@ -363,11 +407,15 @@ if test x$with_sodium = xyes ; then
     AC_CHECK_HEADERS(sodium/crypto_sign_ed25519.h, [
       case "$with_sign" in
         *external*)
-          with_sign=sodium ;&
+          with_sign=sodium
+	  CONFIG_ASSH_USE_SODIUM_SIGN=yes
+	  ;;
         *sodium*|*all*)
-	  AC_DEFINE([CONFIG_ASSH_USE_SODIUM_SIGN], [], [Enable libsodium signature algorithms when defined.])
 	  CONFIG_ASSH_USE_SODIUM_SIGN=yes
       esac
+      if test x$CONFIG_ASSH_USE_SODIUM_SIGN = xyes ; then
+	  AC_DEFINE([CONFIG_ASSH_USE_SODIUM_SIGN], [], [Enable libsodium signature algorithms when defined.])
+      fi
    ])
   ])
 
@@ -375,11 +423,15 @@ if test x$with_sodium = xyes ; then
     AC_CHECK_HEADERS(sodium/randombytes.h, [
       case "$with_prng" in
         *external*)
-          with_prng=sodium ;&
+          with_prng=sodium
+	  CONFIG_ASSH_USE_SODIUM_PRNG=yes
+	  ;;
         *sodium*|*all*)
-	  AC_DEFINE([CONFIG_ASSH_USE_SODIUM_PRNG], [], [Enable libsodium based prng when defined.])
 	  CONFIG_ASSH_USE_SODIUM_PRNG=yes
       esac
+      if test x$CONFIG_ASSH_USE_SODIUM_PRNG = xyes ; then
+	  AC_DEFINE([CONFIG_ASSH_USE_SODIUM_PRNG], [], [Enable libsodium based prng when defined.])
+      fi
    ])
   ])
 
