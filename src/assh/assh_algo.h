@@ -44,6 +44,8 @@
 
 #include "assh.h"
 
+typedef uint_fast16_t assh_algo_id_t;
+
 /** @internal @see assh_algo_suitable_key_t */
 #define ASSH_ALGO_SUITABLE_KEY_FCN(n) assh_bool_t (n)    \
   (struct assh_context_s *c,                             \
@@ -289,7 +291,7 @@ extern const struct assh_algo_s *assh_algo_table[];
     @hl algorithm at specified index. The first valid index is
     0. @tt NULL is returned when out of range. */
 const struct assh_algo_s *
-assh_algo_registered(struct assh_context_s *c, uint_fast16_t i);
+assh_algo_registered(struct assh_context_s *c, assh_algo_id_t i);
 
 /** @This registers the default set of available @hl algorithms
     depending on the library configuration. It relies on the @ref
@@ -373,7 +375,7 @@ assh_algo_by_name(struct assh_context_s *c,
     updated with the index of the matching entry. */
 ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_by_key(struct assh_context_s *c,
-                 const struct assh_key_s *key, uint16_t *pos,
+                 const struct assh_key_s *key, assh_algo_id_t *pos,
                  const struct assh_algo_with_key_s **awk);
 
 /** @internal @This returns true if the provided key can be used with

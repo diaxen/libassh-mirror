@@ -158,7 +158,7 @@ assh_algo_sign_by_name(struct assh_context_s *c, const char *name,
     used with the given key. @see assh_algo_by_key */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_sign_by_key(struct assh_context_s *c,
-		      const struct assh_key_s *key, uint16_t *pos,
+		      const struct assh_key_s *key, assh_algo_id_t *pos,
 		      const struct assh_algo_sign_s **sa)
 {
   assh_status_t err;

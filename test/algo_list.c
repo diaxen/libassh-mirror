@@ -55,7 +55,7 @@ static void show_table()
   printf("  Class      Name                                 Implem    Std Speed Safety\n"
 	          "----------------------------------------------------------------------------");
 
-  uint_fast16_t i;
+  assh_algo_id_t i;
   const struct assh_algo_s *a;
   enum assh_algo_class_e cl = ASSH_ALGO_ANY;
 
@@ -100,7 +100,7 @@ static void show_order(assh_safety_t safety, assh_safety_t min_safety, unsigned 
   printf("  Spd Saf Score Algorithm                                Implem        Variant\n"
 	          "-------------------------------------------------------------------------------\n");
 
-  uint_fast16_t i;
+  assh_algo_id_t i;
   const struct assh_algo_s *a;
   enum assh_algo_class_e cl = ASSH_ALGO_ANY;
 

@@ -25,6 +25,7 @@
 #define ASSH_SRV_USERAUTH_CLIENT_PV_H_
 
 #include <assh/assh_userauth_client.h>
+#include <assh/assh_algo.h>
 
 enum assh_userauth_state_e
 {
@@ -82,11 +83,11 @@ struct assh_userauth_client_method_s
 
 struct assh_userauth_keys_s
 {
-  uint16_t algo_idx;
-  uint16_t algo_groups;
   const struct assh_algo_sign_s *sign_algo;
   struct assh_key_s *keys;
   uint8_t *auth_data;
+  assh_algo_id_t algo_idx;
+  uint16_t algo_groups;
 };
 
 struct assh_userauth_context_s
