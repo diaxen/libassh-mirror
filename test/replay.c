@@ -1547,8 +1547,8 @@ static int replay_directory(int argc, char **argv)
 
   int opt;
 
-  while ((opt = getopt(argc, argv, "vhd:R")) != -1)
-    {
+  if (argc)
+    while ((opt = getopt(argc, argv, "vhd:R")) != -1)
       switch (opt)
 	{
 	case 'd':
@@ -1566,7 +1566,6 @@ static int replay_directory(int argc, char **argv)
 	default:
 	  exit(1);
 	}
-    }
 
   DIR *d = opendir(dname);
   if (!d)
