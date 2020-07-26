@@ -83,22 +83,23 @@ typedef ASSH_CIPHER_CLEANUP_FCN(assh_cipher_cleanup_t);
 struct assh_algo_cipher_s
 {
   struct assh_algo_s algo;
-  assh_cipher_init_t *f_init;
-  assh_cipher_process_t *f_process;
-  assh_cipher_cleanup_t *f_cleanup;
+
+  ASSH_PV assh_cipher_init_t *f_init;
+  ASSH_PV assh_cipher_process_t *f_process;
+  ASSH_PV assh_cipher_cleanup_t *f_cleanup;
   /** Size of the context structure needed to initialize the algorithm. */
-  uint16_t ctx_size;
+  ASSH_PV uint16_t ctx_size;
   /** Cipher block size in bytes, not less than 8. */
-  uint8_t block_size;
+  ASSH_PV uint8_t block_size;
   /** Cipher IV size, may be 0. */
-  uint8_t iv_size;
+  ASSH_PV uint8_t iv_size;
   /** Cipher key size in bytes. */
-  uint8_t key_size;
+  ASSH_PV uint8_t key_size;
   /** Cipher authentication tag size in bytes, may be 0. */
-  uint8_t auth_size;
+  ASSH_PV uint8_t auth_size;
   /** Number of packet bytes which must be fetched in order to
       decipher the packet length word. greater or equal to 4. */
-  uint8_t head_size;
+  ASSH_PV uint8_t head_size;
 };
 
 ASSH_FIRST_FIELD_ASSERT(assh_algo_cipher_s, algo);
@@ -126,7 +127,7 @@ assh_algo_cipher_by_name_static(const struct assh_algo_s **table,
 				 (const struct assh_algo_s **)ca, namep);
 }
 
-/** @internal @This finds a registered cipher @hl algorithm.
+/** @This finds a registered cipher @hl algorithm.
     @see assh_algo_by_name */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_cipher_by_name(struct assh_context_s *c, const char *name,

@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_PV
+
 #include <assh/assh_key.h>
 #include <assh/assh_sign.h>
 #include <assh/assh_algo.h>
@@ -145,6 +147,42 @@ assh_key_set_comment(struct assh_context_s *c,
   assh_status_t err;
   assh_free(c, key->comment);
   ASSH_RETURN(assh_strdup(c, &key->comment, comment, ASSH_ALLOC_INTERNAL));
+}
+
+const char *
+assh_key_get_comment(const struct assh_key_s *key)
+{
+  return key->comment;
+}
+
+const struct assh_key_algo_s *
+assh_key_algo(const struct assh_key_s *key)
+{
+  return key->algo;
+}
+
+const char *
+assh_key_algo_name(const struct assh_key_algo_s *kya)
+{
+  return kya->name;
+}
+
+const char *
+assh_key_algo_implem(const struct assh_key_algo_s *kya)
+{
+  return kya->implem;
+}
+
+const enum assh_key_format_e *
+assh_key_algo_formats(const struct assh_key_algo_s *kya)
+{
+  return kya->formats;
+}
+
+assh_bool_t
+assh_key_private(const struct assh_key_s *key)
+{
+  return key->private;
 }
 
 void assh_key_drop(struct assh_context_s *c,
@@ -278,6 +316,79 @@ assh_key_algo_by_name(const struct assh_context_s *c,
     }
 
   return ASSH_NOT_FOUND;
+}
+
+assh_status_t
+assh_key_output(struct assh_context_s *c,
+                const struct assh_key_s *key,
+                uint8_t *blob, size_t *blob_len,
+                enum assh_key_format_e format)
+{
+  return key->algo->f_output(c, key, blob, blob_len, format);
+}
+
+assh_bool_t
+assh_key_cmp(struct assh_context_s *c, const struct assh_key_s *key,
+	     const struct assh_key_s *b, assh_bool_t pub)
+{
+  return key->algo->f_cmp(c, key, b, pub);
+}
+
+void
+assh_key_flush(struct assh_context_s *c,
+               struct assh_key_s **head)
+{
+  while (*head != NULL)
+    assh_key_drop(c, head);
+}
+
+void
+assh_key_insert(struct assh_key_s **head,
+                struct assh_key_s *key)
+{
+  key->next = *head;
+  *head = key;
+}
+
+void
+assh_key_refinc(struct assh_key_s *key)
+{
+  key->ref_count++;
+}
+
+#ifdef CONFIG_ASSH_KEY_VALIDATE
+assh_status_t
+assh_key_validate(struct assh_context_s *c,
+                  const struct assh_key_s *key,
+                  enum assh_key_validate_result_e *result)
+{
+  *result = ASSH_KEY_BAD;
+  return key->algo->f_validate(c, key, result);
+}
+#endif
+
+const char *
+assh_key_type_name(struct assh_key_s *key)
+{
+  return key->type ? key->type : key->algo->name;
+}
+
+assh_safety_t
+assh_key_safety(struct assh_key_s *key)
+{
+  return key->safety;
+}
+
+size_t
+assh_key_bits(struct assh_key_s *key)
+{
+  return key->bits;
+}
+
+const char *
+assh_key_safety_name(struct assh_key_s *key)
+{
+  return assh_safety_name(key->safety);
 }
 
 static const struct assh_key_format_desc_s

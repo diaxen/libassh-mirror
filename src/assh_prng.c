@@ -23,30 +23,12 @@
 
 #define ASSH_PV
 
-#include <assh/assh_compress.h>
+#include <assh/assh_prng.h>
 
-static ASSH_COMPRESS_INIT_FCN(assh_compress_none_init)
+ASSH_WARN_UNUSED_RESULT assh_status_t
+assh_prng_get(struct assh_context_s *c,
+              uint8_t *rdata, size_t rdata_len,
+              enum assh_prng_quality_e quality)
 {
-  return ASSH_OK;
+  return c->prng->f_get(c, rdata, rdata_len, quality);
 }
-
-static ASSH_COMPRESS_PROCESS_FCN(assh_compress_none_process)
-{
-  return ASSH_OK;
-}
-
-static ASSH_COMPRESS_CLEANUP_FCN(assh_compress_none_cleanup)
-{
-}
-
-const struct assh_algo_compress_s assh_compress_none =
-{
-  ASSH_ALGO_BASE(COMPRESS, "assh-builtin", 99, 99,
-    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "none" })
-  ),
-  .ctx_size = 0,
-  .f_init = assh_compress_none_init,
-  .f_process = assh_compress_none_process,
-  .f_cleanup = assh_compress_none_cleanup,
-};
-

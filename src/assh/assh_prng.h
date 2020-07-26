@@ -93,19 +93,16 @@ typedef ASSH_PRNG_CLEANUP_FCN(assh_prng_cleanup_t);
     structure. @xsee{coremod} */
 struct assh_prng_s
 {
-  assh_prng_init_t    *f_init;
-  assh_prng_get_t     *f_get;
-  assh_prng_cleanup_t *f_cleanup;
+  ASSH_PV assh_prng_init_t *f_init;
+  ASSH_PV assh_prng_get_t *f_get;
+  ASSH_PV assh_prng_cleanup_t *f_cleanup;
 };
 
-/** @internal @This fills the buffer with random data. */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
+/** @This fills the buffer with random data. */
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_prng_get(struct assh_context_s *c,
               uint8_t *rdata, size_t rdata_len,
-              enum assh_prng_quality_e quality)
-{
-  return c->prng->f_get(c, rdata, rdata_len, quality);
-}
+              enum assh_prng_quality_e quality);
 
 /** @This returns the default prng. This depends on the
     platform and build configuration. This may return @tt NULL. */

@@ -38,6 +38,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#define ASSH_PV
+
 #include <assh/assh_context.h>
 #include <assh/assh_alloc.h>
 #include <assh/assh_hash.h>

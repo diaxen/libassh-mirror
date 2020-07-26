@@ -31,6 +31,8 @@
     - curve25519-sha256_libssh.org.txt
 */
 
+#define ASSH_PV
+
 #include <assh/assh_kex.h>
 #include <assh/assh_context.h>
 #include <assh/assh_prng.h>

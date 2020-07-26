@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_PV
+
 #include "bignum_builtin.h"
 
 #include <assh/assh_context.h>
@@ -358,4 +360,46 @@ uint_fast32_t assh_bignum_bitlen(const struct assh_bignum_s *a)
     j--;
 
   return j ? j * ASSH_BIGNUM_W - assh_bn_clz(t) : 0;
+}
+
+assh_status_t
+assh_bignum_bytecode(struct assh_context_s *c, uint8_t cond,
+                     const assh_bignum_op_t *ops,
+                     const char *format, ...)
+{
+  va_list ap;
+  assh_status_t err;
+  va_start(ap, format);
+  err = assh_bignum_bytecode_valist(c, cond, ops, format, ap);
+  va_end(ap);
+  return err;
+}
+
+size_t
+assh_bignum_size_of_num(enum assh_bignum_fmt_e dst_fmt,
+                        const struct assh_bignum_s *bn)
+{
+  return assh_bignum_size_of_bits(dst_fmt, bn->bits);
+}
+
+void
+assh_bignum_init(struct assh_context_s *c,
+                 struct assh_bignum_s  *bn,
+                 size_t bits)
+{
+  memset(bn, 0, sizeof(*bn));
+  bn->bits = bits;
+  bn->n = NULL;
+}
+
+size_t
+assh_bignum_bits(const struct assh_bignum_s  *bn)
+{
+  return bn->bits;
+}
+
+assh_bool_t
+assh_bignum_isempty(const struct assh_bignum_s  *bn)
+{
+  return bn->n == NULL;
 }

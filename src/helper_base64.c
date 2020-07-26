@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_PV
+
 #include <assh/helper_base64.h>
 
 void asshh_base64_init(struct asshh_base64_ctx_s *ctx, uint8_t *out,

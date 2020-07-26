@@ -21,6 +21,7 @@
 
 */
 
+#define ASSH_PV
 #define ASSH_EV_CONST /* write access to event const fields */
 
 #include <assh/assh_context.h>
@@ -988,4 +989,16 @@ assh_kex_set_order(struct assh_context_s *c, uint_fast8_t safety_weight)
   c->safety_weight = safety_weight;
 
   return ASSH_OK;
+}
+
+assh_status_t
+assh_algo_kex_by_key(struct assh_context_s *c,
+		      const struct assh_key_s *key, assh_algo_id_t *pos,
+		      const struct assh_algo_kex_s **ka)
+{
+  assh_status_t err;
+  if (key->role != ASSH_ALGO_KEX)
+    ASSH_RETURN(ASSH_ERR_MISSING_KEY);
+  return assh_algo_by_key(c, key, pos,
+    (const struct assh_algo_with_key_s **)ka);
 }

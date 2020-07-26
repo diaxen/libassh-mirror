@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_PV
+
 #include <assh/assh_buffer.h>
 #include <assh/assh_bignum.h>
 #include <assh/assh_sign.h>

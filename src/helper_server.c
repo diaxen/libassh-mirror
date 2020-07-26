@@ -26,6 +26,8 @@
 
 */
 
+#define ASSH_PV
+
 #include "config.h"
 
 #include <assh/helper_key.h>

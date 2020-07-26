@@ -25,6 +25,8 @@
   Implement ECDH using weierstrass elliptic curves has defined in rfc5656
 */
 
+#define ASSH_PV
+
 #include <assh/assh_kex.h>
 #include <assh/assh_context.h>
 #include <assh/assh_prng.h>

@@ -72,10 +72,10 @@ struct assh_algo_compress_s
 {
   struct assh_algo_s algo;
   /** Size of the context structure needed to initialize the algorithm. */
-  size_t ctx_size;
-  assh_compress_init_t *f_init;
-  assh_compress_process_t *f_process;
-  assh_compress_cleanup_t *f_cleanup;
+  ASSH_PV size_t ctx_size;
+  ASSH_PV assh_compress_init_t *f_init;
+  ASSH_PV assh_compress_process_t *f_process;
+  ASSH_PV assh_compress_cleanup_t *f_cleanup;
 };
 
 /** @This casts and returns the passed pointer if the
@@ -104,7 +104,7 @@ assh_algo_compress_by_name_static(const struct assh_algo_s **table,
 
 /** @internal @This finds a registered compression @hl algorithm.
     @see assh_algo_by_name */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_PV ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_compress_by_name(struct assh_context_s *c, const char *name,
 			   size_t name_len, const struct assh_algo_compress_s **cpa,
 			   const struct assh_algo_name_s **namep)

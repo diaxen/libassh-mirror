@@ -63,7 +63,7 @@
 
 #define CONFIG_ASSH_NONALIGNED_ACCESS
 
-/** @internal @This stores a 32 bits value in network byte
+/** @This stores a 32 bits value in network byte
     order into a non-aligned location. */
 ASSH_INLINE void assh_store_u32(uint8_t *s, uint32_t x)
 {
@@ -77,7 +77,7 @@ ASSH_INLINE void assh_store_u32(uint8_t *s, uint32_t x)
 #endif
 }
 
-/** @internal @This stores a 32 bits value in little endian byte
+/** @This stores a 32 bits value in little endian byte
     order into a non-aligned location. */
 ASSH_INLINE void assh_store_u32le(uint8_t *s, uint32_t x)
 {
@@ -87,7 +87,7 @@ ASSH_INLINE void assh_store_u32le(uint8_t *s, uint32_t x)
   s[0] = x;
 }
 
-/** @internal @This stores a 64 bits value in network byte
+/** @This stores a 64 bits value in network byte
     order into a non-aligned location. */
 ASSH_INLINE void assh_store_u64(uint8_t *s, uint64_t x)
 {
@@ -106,7 +106,7 @@ ASSH_INLINE void assh_store_u64(uint8_t *s, uint64_t x)
 #endif
 }
 
-/** @internal @This stores a 64 bits value in little endian byte
+/** @This stores a 64 bits value in little endian byte
     order into a non-aligned location. */
 ASSH_INLINE void assh_store_u64le(uint8_t *s, uint64_t x)
 {
@@ -120,7 +120,7 @@ ASSH_INLINE void assh_store_u64le(uint8_t *s, uint64_t x)
   s[0] = x;
 }
 
-/** @internal @This loads a 32 bits value in network byte
+/** @This loads a 32 bits value in network byte
     order from a non-aligned location. */
 ASSH_INLINE uint32_t assh_load_u32(const uint8_t *s)
 {
@@ -131,14 +131,14 @@ ASSH_INLINE uint32_t assh_load_u32(const uint8_t *s)
 #endif
 }
 
-/** @internal @This loads a 32 bits value in little endian
+/** @This loads a 32 bits value in little endian
     byte order from a non-aligned location. */
 ASSH_INLINE uint32_t assh_load_u32le(const uint8_t *s)
 {
   return s[0] | (s[1] << 8) | (s[2] << 16) | (s[3] << 24);
 }
 
-/** @internal @This loads a 64 bits value in network byte
+/** @This loads a 64 bits value in network byte
     order from a non-aligned location. */
 ASSH_INLINE uint64_t assh_load_u64(const uint8_t *s)
 {
@@ -148,7 +148,7 @@ ASSH_INLINE uint64_t assh_load_u64(const uint8_t *s)
          ((uint64_t)s[1] << 48) | ((uint64_t)s[0] << 56);
 }
 
-/** @internal @This loads a 64 bits value in little endian
+/** @This loads a 64 bits value in little endian
     byte order from a non-aligned location. */
 ASSH_INLINE uint64_t assh_load_u64le(const uint8_t *s)
 {
@@ -158,7 +158,7 @@ ASSH_INLINE uint64_t assh_load_u64le(const uint8_t *s)
          ((uint64_t)s[6] << 48) | ((uint64_t)s[7] << 56);
 }
 
-/** @internal @This performs a byte swap of a 32 bits value. */
+/** @This performs a byte swap of a 32 bits value. */
 ASSH_INLINE uint32_t assh_swap_u32(uint32_t x)
 {
   x = (x << 16) | (x >> 16);
@@ -166,6 +166,7 @@ ASSH_INLINE uint32_t assh_swap_u32(uint32_t x)
   return x;
 }
 
+/** @This wipes the content of a memory buffer. */
 ASSH_INLINE void assh_clear(void *data, size_t len)
 {
 #ifdef __GNUC__

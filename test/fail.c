@@ -21,8 +21,42 @@
 
 */
 
-#include <assh/assh_session.h>
+#undef ASSH_PV  /* must not warn */
+
+#include <assh/assh.h>
+#include <assh/assh_platform.h>
+#include <assh/assh_algo.h>
+#include <assh/assh_alloc.h>
+#include <assh/assh_bignum.h>
+#include <assh/assh_cipher.h>
+#include <assh/assh_compress.h>
+#include <assh/assh_connection.h>
 #include <assh/assh_context.h>
+#include <assh/assh_hash.h>
+#include <assh/assh_kex.h>
+#include <assh/assh_key.h>
+#include <assh/assh_mac.h>
+#include <assh/assh_packet.h>
+#include <assh/assh_buffer.h>
+#include <assh/assh_prng.h>
+#include <assh/assh_service.h>
+#include <assh/assh_session.h>
+#include <assh/assh_sign.h>
+#include <assh/assh_transport.h>
+#include <assh/assh_userauth_client.h>
+#include <assh/assh_userauth_server.h>
+#include <assh/assh_userauth.h>
+#include <assh/helper_io.h>
+#include <assh/helper_key.h>
+#include <assh/helper_client.h>
+#include <assh/helper_server.h>
+#include <assh/helper_interactive.h>
+#include <assh/helper_portfwd.h>
+#include <assh/mod_builtin.h>
+#include <assh/mod_gcrypt.h>
+#include <assh/mod_openssl.h>
+#include <assh/mod_zlib.h>
+#include <assh/assh_event.h>
 
 #include "test.h"
 

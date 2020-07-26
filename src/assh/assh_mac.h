@@ -73,17 +73,17 @@ typedef ASSH_MAC_CLEANUP_FCN(assh_mac_cleanup_t);
 struct assh_algo_mac_s
 {
   struct assh_algo_s algo;
-  assh_mac_init_t    *f_init;
-  assh_mac_process_t *f_process;
-  assh_mac_cleanup_t *f_cleanup;
+  ASSH_PV assh_mac_init_t *f_init;
+  ASSH_PV assh_mac_process_t *f_process;
+  ASSH_PV assh_mac_cleanup_t *f_cleanup;
   /** Size of the context structure needed to initialize the algorithm. */
-  uint16_t ctx_size;
+  ASSH_PV uint16_t ctx_size;
   /** Mac key size in bytes. */
-  uint8_t key_size:7;
+  ASSH_PV uint8_t key_size:7;
   /** This is set if encrypt must be performed before mac */
-  assh_bool_t etm:1;
+  ASSH_PV assh_bool_t etm:1;
   /** Authentication tag size. */
-  uint8_t mac_size;
+  ASSH_PV uint8_t mac_size;
 };
 
 /** @This casts and returns the passed pointer if the
@@ -109,7 +109,7 @@ assh_algo_mac_by_name_static(const struct assh_algo_s **table,
 				 (const struct assh_algo_s **)ma, namep);
 }
 
-/** @internal @This finds a registered mac @hl algorithm.
+/** @This finds a registered mac @hl algorithm.
     @see assh_algo_by_name */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_mac_by_name(struct assh_context_s *c, const char *name,

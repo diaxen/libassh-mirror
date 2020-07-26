@@ -52,9 +52,9 @@ enum assh_context_type_e
     bucket associated with their size. */
 struct assh_packet_pool_s
 {
-  struct assh_packet_s *pck;
-  size_t count;
-  size_t size;
+  ASSH_PV struct assh_packet_s *pck;
+  ASSH_PV size_t count;
+  ASSH_PV size_t size;
 };
 
 /** @internalmembers @This is the library main context structure. It
@@ -73,85 +73,85 @@ struct assh_packet_pool_s
 struct assh_context_s
 {
   /** User private data */
-  void *user_pv;
+  ASSH_PV void *user_pv;
 
   /** Memory allocator function */
-  assh_allocator_t *f_alloc;
+  ASSH_PV assh_allocator_t *f_alloc;
   /** Memory allocator private data */
-  void *alloc_pv;
+  ASSH_PV void *alloc_pv;
 
   /** Pseudo random number generator */
-  const struct assh_prng_s *prng;
+  ASSH_PV const struct assh_prng_s *prng;
   /** Pseudo random number generator private data, allocated by the
       @ref assh_prng_init_t function and freed by @ref
       assh_prng_cleanup_t. */
   union {
-    void *prng_pv;
-    intptr_t prng_pvl;
+    ASSH_PV void *prng_pv;
+    ASSH_PV intptr_t prng_pvl;
   };
 
   /** Number of initialized sessions attached to this context. */
-  size_t session_count;
+  ASSH_PV size_t session_count;
 
   /** Head of loaded keys list */
-  struct assh_key_s *keys;
+  ASSH_PV struct assh_key_s *keys;
 
   /** Registered algorithms */
-  const struct assh_algo_s **algos;
+  ASSH_PV const struct assh_algo_s **algos;
 
   /** Set if @tt algos is not a static array */
-  size_t algo_realloc:1;
+  ASSH_PV size_t algo_realloc:1;
 
   /** Number of algorithm slots */
-  size_t algo_max:15;
+  ASSH_PV size_t algo_max:15;
 
   /** Number of registered algorithms */
-  size_t algo_cnt:16;
+  ASSH_PV size_t algo_cnt:16;
 
 #ifdef CONFIG_ASSH_PACKET_POOL
   /** Packet pool: maximum allocated size in a single bucket. */
-  uint32_t pck_pool_max_bsize;
+  ASSH_PV uint32_t pck_pool_max_bsize;
   /** Packet pool: maximum byte amount of spare packets before
       releasing to the memory allocator. */
-  uint32_t pck_pool_max_size;
+  ASSH_PV uint32_t pck_pool_max_size;
   /** Packet pool: current byte amount of spare packets not yet
       released to the memory allocator. */
-  uint32_t pck_pool_size;
+  ASSH_PV uint32_t pck_pool_size;
 
   /** Packet pool buckets of spare packets by size. */
-  struct assh_packet_pool_s pool[ASSH_PCK_POOL_SIZE];
+  ASSH_PV struct assh_packet_pool_s pool[ASSH_PCK_POOL_SIZE];
 #endif
 
   /** Registered services. */
-  const struct assh_service_s *srvs[CONFIG_ASSH_MAX_SERVICES];
+  ASSH_PV const struct assh_service_s *srvs[CONFIG_ASSH_MAX_SERVICES];
 
   /** Client/server context type. */
-  enum assh_context_type_e type:2;
+  ASSH_PV enum assh_context_type_e type:2;
 
   /** Number of registered services */
-  size_t srvs_count:6;
+  ASSH_PV size_t srvs_count:6;
 
   /** Indicates how algorithms safety must be favored over speed. */
-  uint8_t safety_weight;
+  ASSH_PV uint8_t safety_weight;
 
   /** Timeout waiting for reply to the version string and service
       start requests. Expressed in seconds minus 1. */
-  uint8_t timeout_transport;
+  ASSH_PV uint8_t timeout_transport;
   /** Maximum duration of a key exchange, in seconds minus 1. */
-  uint8_t timeout_kex;
+  ASSH_PV uint8_t timeout_kex;
   /** Duration before initiating a new key exchanges, in seconds minus 1. */
-  uint16_t timeout_rekex;
+  ASSH_PV uint16_t timeout_rekex;
   /** Maximum duration of the user authentication process, in
       seconds minus 1. */
-  uint16_t timeout_userauth;
+  ASSH_PV uint16_t timeout_userauth;
   /** Delay between transmission of the @ref SSH_MSG_IGNORE packets by
       the running service for keepalive purpose, in seconds. Disabled
       when 0. */
-  uint16_t timeout_keepalive;
+  ASSH_PV uint16_t timeout_keepalive;
 
   /** Estimated size of the kex init packet, computed when new
       algorithms are registered. */
-  size_t kex_init_size:16;
+  ASSH_PV size_t kex_init_size:16;
 };
 
 /** @This sets various timeout delays related to the transport
@@ -238,7 +238,7 @@ void assh_context_set_pv(struct assh_context_s *ctx,
 
 /** @This retrieves the user private pointer attached to the context.
     @see assh_context_set_pv */
-void * assh_context_get_pv(struct assh_context_s *ctx);
+void * assh_context_get_pv(const struct assh_context_s *ctx);
 
 /** @This returns the list head of keys attached to the context.  It
     can be used to attach more keys. The @ref assh_key_flush

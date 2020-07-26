@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_PV
+
 #include "key_builtin_ecdsa_nist.h"
 
 #include <assh/mod_builtin.h>

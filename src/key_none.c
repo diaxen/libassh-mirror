@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_PV
+
 #include <assh/assh_key.h>
 #include <assh/assh_context.h>
 #include <assh/assh_alloc.h>

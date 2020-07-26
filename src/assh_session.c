@@ -21,6 +21,7 @@
 
 */
 
+#define ASSH_PV
 #define ASSH_ABI_UNSAFE  /* do not warn */
 
 #include <assh/assh_session.h>
@@ -308,7 +309,7 @@ void assh_session_error(struct assh_session_s *s, assh_status_t inerr)
   assh_session_send_disconnect(s, reason, desc);
 }
 
-uint_fast8_t assh_session_safety(struct assh_session_s *s)
+uint_fast8_t assh_session_safety(const struct assh_session_s *s)
 {
   return assh_min_uint(s->cur_keys_out->safety,
 		       s->cur_keys_in->safety);
@@ -366,7 +367,7 @@ assh_session_algo_filter(struct assh_session_s *s,
 }
 
 assh_time_t
-assh_session_deadline(struct assh_session_s *s)
+assh_session_deadline(const struct assh_session_s *s)
 {
   ASSH_DEBUG("deadlines: tr=%lu rekex=%lu srv=%lu\n",
              s->tr_deadline - s->time,
@@ -386,13 +387,33 @@ assh_session_deadline(struct assh_session_s *s)
   return d;
 }
 
+assh_time_t
+assh_session_delay(const struct assh_session_s *s, assh_time_t time)
+{
+  assh_time_t d = assh_session_deadline(s);
+  return time < d ? d - time : 0;
+}
+
+assh_bool_t
+assh_session_closed(const struct assh_session_s *s)
+{
+  return s->tr_st == ASSH_TR_CLOSED;
+}
+
+void
+assh_userauth_done(struct assh_session_s *s)
+{
+  s->user_auth_done = 1;
+}
+
 void assh_session_set_pv(struct assh_session_s *ctx,
                          void *private)
 {
   ctx->user_pv = private;
 }
 
-void * assh_session_get_pv(struct assh_session_s *ctx)
+void * assh_session_get_pv(const struct assh_session_s *ctx)
 {
   return ctx->user_pv;
 }
+

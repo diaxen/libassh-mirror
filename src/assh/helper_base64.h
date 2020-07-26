@@ -34,38 +34,46 @@
 
 #include <stdint.h>
 
+/** @internal */
 struct asshh_base64_ctx_s
 {
-  uint8_t *out, *out_start, *out_end;
-  size_t in, pad;
-  uint32_t x;
+  ASSH_PV uint8_t *out, *out_start, *out_end;
+  ASSH_PV size_t in, pad;
+  ASSH_PV uint32_t x;
 };
 
-void
+/** @internal */
+ASSH_PV void
 asshh_base64_init(struct asshh_base64_ctx_s *ctx,
 			uint8_t *out, size_t out_len);
 
-ASSH_WARN_UNUSED_RESULT assh_status_t
+/** @internal */
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_base64_decode_update(struct asshh_base64_ctx_s *ctx,
 			  const uint8_t *b64, size_t b64_len);
 
-ASSH_WARN_UNUSED_RESULT assh_status_t
+/** @internal */
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_base64_decode_final(struct asshh_base64_ctx_s *ctx);
 
-ASSH_WARN_UNUSED_RESULT assh_status_t
+/** @internal */
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_base64_encode_update(struct asshh_base64_ctx_s *ctx,
 			  const uint8_t *bin, size_t bin_len);
 
+/** @internal */
 ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_base64_encode_final(struct asshh_base64_ctx_s *ctx);
 
-ASSH_INLINE size_t
+/** @internal */
+ASSH_PV ASSH_INLINE size_t
 asshh_base64_outsize(struct asshh_base64_ctx_s *ctx)
 {
   return ctx->out - ctx->out_start;
 }
 
-ASSH_INLINE size_t
+/** @internal */
+ASSH_PV ASSH_INLINE size_t
 asshh_base64_encoded_size(size_t t)
 {
   return t * 4 / 3 + 5;

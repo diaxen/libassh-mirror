@@ -21,6 +21,7 @@
 
 */
 
+#define ASSH_PV
 
 #include <assh/assh_mac.h>
 #include <assh/mod_builtin.h>

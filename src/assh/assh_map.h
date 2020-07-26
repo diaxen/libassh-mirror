@@ -38,42 +38,35 @@ typedef uint32_t assh_map_id_t;
 /** @internal Associative container entry */
 struct assh_map_entry_s
 {
-  struct assh_map_entry_s *link[2];
-  assh_map_id_t id;
+  ASSH_PV struct assh_map_entry_s *link[2];
+  ASSH_PV assh_map_id_t id;
 };
 
 /* @internal @This inserts an item in the container, @tt item->id must
    be initialized. */
-struct assh_map_entry_s *
+ASSH_PV struct assh_map_entry_s *
 assh_map_insert(struct assh_map_entry_s **root,
                 struct assh_map_entry_s *item);
 
 /* @internal @This finds a node in the container. */
-struct assh_map_entry_s *
+ASSH_PV struct assh_map_entry_s *
 assh_map_lookup(struct assh_map_entry_s **root,
                 assh_map_id_t id, struct assh_map_entry_s ***parent);
 
 /* @internal @This removes an item from the container. */
-void assh_map_remove(struct assh_map_entry_s **parent,
-                     struct assh_map_entry_s *item);
+ASSH_PV void
+assh_map_remove(struct assh_map_entry_s **parent,
+		struct assh_map_entry_s *item);
 
 /* @internal @This finds and removes an item from the container. */
-ASSH_INLINE assh_status_t
+assh_status_t
 assh_map_remove_id(struct assh_map_entry_s **root,
-                   assh_map_id_t id)
-{
-  struct assh_map_entry_s *x = assh_map_lookup(root, id, &root);
-  if (x)
-    {
-      assh_map_remove(root, x);
-      return ASSH_OK;
-    }
-  return ASSH_NOT_FOUND;
-}
+                   assh_map_id_t id);
 
 /* @internal @This iterates over items in the container. */
-void assh_map_iter(struct assh_map_entry_s *root, void *ctx,
-                   void (*iter)(struct assh_map_entry_s *, void *));
+ASSH_PV void
+assh_map_iter(struct assh_map_entry_s *root, void *ctx,
+	      void (*iter)(struct assh_map_entry_s *, void *));
 
 #endif
 

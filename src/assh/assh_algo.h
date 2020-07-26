@@ -140,30 +140,30 @@ struct assh_algo_name_s
 struct assh_algo_s
 {
   /** module API version */
-  uint8_t api;
+  ASSH_PV uint8_t api;
 
   /** Class of algorithm */
   enum assh_algo_class_e class_:3;
   /** used to choose between entries with the same name */
-  uint8_t priority:5;
+  ASSH_PV uint8_t priority:5;
 
   /** safety factor in range [0, 99] */
-  uint8_t safety:7;
+  ASSH_PV uint8_t safety:7;
   /** speed factor in range [0, 99] */
-  uint8_t speed:7;
+  ASSH_PV uint8_t speed:7;
 
   /** Must be set when a different implementation may yield a
       different result due to use of random data. */
-  uint8_t nondeterministic:1;
+  ASSH_PV uint8_t nondeterministic:1;
 
   /** List of SSH algorithm identifiers, used during key exchange */
-  const struct assh_algo_name_s *names;
+  ASSH_PV const struct assh_algo_name_s *names;
 
   /** Variant description string. */
-  const char *variant;
+  ASSH_PV const char *variant;
 
   /** Implementation identification string.  Format is @em {vendor-library}. */
-  const char *implem;
+  ASSH_PV const char *implem;
 };
 
 /** @internal @This extends the @ref assh_algo_s @hl
@@ -175,11 +175,11 @@ struct assh_algo_with_key_s
   struct assh_algo_s algo;
 
   /** Pointer to associated key operations, may be @tt NULL. */
-  const struct assh_key_algo_s *key_algo;
+  ASSH_PV const struct assh_key_algo_s *key_algo;
 
   /** @internal Test if a key can be used with the algorithm,
       may be @tt NULL. */
-  assh_algo_suitable_key_t *f_suitable_key;
+  ASSH_PV assh_algo_suitable_key_t *f_suitable_key;
 };
 
 ASSH_FIRST_FIELD_ASSERT(assh_algo_with_key_s, algo);
@@ -316,33 +316,29 @@ ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_unregister(struct assh_context_s *c);
 
 /** @This returns the @hl algorithm default name from its descriptor. */
-ASSH_INLINE const char * assh_algo_name(const struct assh_algo_s *algo)
-{
-  return algo->names[0].name;
-}
+const char * assh_algo_name(const struct assh_algo_s *algo);
 
 /** @This returns the name of the @hl algorithm variant from its
     descriptor. */
-ASSH_INLINE const char *
-assh_algo_variant(const struct assh_algo_s *algo)
-{
-  return algo->variant ? algo->variant : "default";
-}
+const char *
+assh_algo_variant(const struct assh_algo_s *algo);
+
+/** @This returns the name of the @hl algorithm implementationvariant
+    from its descriptor. */
+const char *
+assh_algo_implem(const struct assh_algo_s *algo);
 
 /** @This returns the estimated @hl algorithm safety factor value
     from its descriptor.
     @see assh_algo_register */
-ASSH_INLINE assh_safety_t
-assh_algo_safety(const struct assh_algo_s *algo)
-{
-  return algo->safety;
-}
+assh_safety_t
+assh_algo_safety(const struct assh_algo_s *algo);
 
 /* @see assh_safety_name @see assh_algo_safety. */
 ASSH_INLINE const char *
 assh_algo_safety_name(const struct assh_algo_s *algo)
 {
-  return assh_safety_name(algo->safety);
+  return assh_safety_name(assh_algo_safety(algo));
 }
 
 /** @This finds an @hl algorithm with matching class and name in a
@@ -355,12 +351,12 @@ assh_algo_by_name_static(const struct assh_algo_s **table,
                          const struct assh_algo_name_s **namep);
 
 /** @internal */
-const struct assh_algo_name_s *
+ASSH_PV const struct assh_algo_name_s *
 assh_algo_name_match(const struct assh_algo_s *a,
                      enum assh_algo_class_e class_,
                      const char *name, size_t name_len);
 
-/** @internal @This finds a registered @hl algorithm with matching
+/** @This finds a registered @hl algorithm with matching
     class and name. If the @tt namep parameter is not @tt NULL, the
     matched algorithm name is returned. */
 ASSH_WARN_UNUSED_RESULT assh_status_t
@@ -369,7 +365,7 @@ assh_algo_by_name(struct assh_context_s *c,
                   size_t name_len, const struct assh_algo_s **algo,
                   const struct assh_algo_name_s **namep);
 
-/** @internal @This finds a registered @hl algorithm which can be
+/** @This finds a registered @hl algorithm which can be
     used with the given key. If the @tt pos parameter is not @tt NULL,
     it specifies the starting index of the search and it will be
     updated with the index of the matching entry. */
@@ -385,7 +381,7 @@ assh_algo_by_key(struct assh_context_s *c,
 
     This does not check the validity of the key, the @ref
     assh_key_validate function is provided for that purpose. */
-assh_bool_t
+ASSH_PV assh_bool_t
 assh_algo_suitable_key(struct assh_context_s *c,
                        const struct assh_algo_with_key_s *awk,
                        const struct assh_key_s *key);
@@ -408,12 +404,12 @@ assh_algo_with_key(const struct assh_algo_s *algo)
 
 /** @internal @This checks that the list of registered algorithms is
     valid for use by a session. */
-ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_check_table(struct assh_context_s *c);
 
 /** @internal @This computes the size of the @ref SSH_MSG_KEXINIT
     packet based on the current list of registered algorithms. */
-void assh_algo_kex_init_size(struct assh_context_s *c);
+ASSH_PV void assh_algo_kex_init_size(struct assh_context_s *c);
 
 #endif
 

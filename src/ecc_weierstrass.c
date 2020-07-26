@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_PV
+
 #include "ecc_weierstrass.h"
 
 #include <assh/assh_bignum.h>

@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_PV
+
 #include <assh/helper_interactive.h>
 #include <assh/assh_packet.h>
 #include <assh/assh_connection.h>

@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_PV
+
 #include <assh/helper_io.h>
 
 #include <unistd.h>

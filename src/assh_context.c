@@ -21,6 +21,7 @@
 
 */
 
+#define ASSH_PV
 #define ASSH_ABI_UNSAFE  /* do not warn */
 
 #include <assh/assh_context.h>
@@ -181,7 +182,7 @@ void assh_context_set_pv(struct assh_context_s *ctx,
   ctx->user_pv = private;
 }
 
-void * assh_context_get_pv(struct assh_context_s *ctx)
+void * assh_context_get_pv(const struct assh_context_s *ctx)
 {
   return ctx->user_pv;
 }

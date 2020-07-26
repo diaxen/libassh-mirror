@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_PV
+
 #include "config.h"
 
 #include <assh/assh_context.h>
@@ -434,3 +436,26 @@ assh_algo_suitable_key(struct assh_context_s *c,
   return awk->f_suitable_key(c, awk, key);
 }
 
+const char *
+assh_algo_name(const struct assh_algo_s *algo)
+{
+  return algo->names[0].name;
+}
+
+const char *
+assh_algo_variant(const struct assh_algo_s *algo)
+{
+  return algo->variant ? algo->variant : "default";
+}
+
+const char *
+assh_algo_implem(const struct assh_algo_s *algo)
+{
+  return algo->implem;
+}
+
+assh_safety_t
+assh_algo_safety(const struct assh_algo_s *algo)
+{
+  return algo->safety;
+}

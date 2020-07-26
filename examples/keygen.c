@@ -103,7 +103,9 @@ static void list_types()
 
   printf("Supported key types:\n");
   for (i = 0; i < key_algo_table_size; i++)
-    printf("  %-32s (%s)\n", types[i]->name, types[i]->implem);
+    printf("  %-32s (%s)\n",
+	   assh_key_algo_name(types[i]),
+	   assh_key_algo_implem(types[i]));
 }
 
 static const struct assh_key_algo_s * get_type(const char *type)
@@ -112,7 +114,7 @@ static const struct assh_key_algo_s * get_type(const char *type)
   unsigned i;
   if (type)
     for (i = 0; i < key_algo_table_size; i++)
-      if (!strcmp(types[i]->name, type))
+      if (!strcmp(assh_key_algo_name(types[i]), type))
         return types[i];
 
   list_types();
@@ -215,7 +217,7 @@ int main(int argc, char *argv[])
         case 't':
           type = get_type(optarg);
           if (ofmt == ASSH_KEY_FMT_NONE)
-            ofmt = type->formats[0];
+            ofmt = assh_key_algo_formats(type)[0];
           break;
         case 'p':
           passphrase = optarg;
@@ -283,7 +285,8 @@ int main(int argc, char *argv[])
 
       printf("Generating key...\n");
       if (assh_key_create(context, &key, bits, type, ASSH_ALGO_ANY))
-        ERROR("unable to create %zu bits key of type %s\n", bits, type->name);
+        ERROR("unable to create %zu bits key of type %s\n", bits,
+	      assh_key_algo_name(type));
     }
 
   /* load an existing key from file as needed */
@@ -299,7 +302,8 @@ int main(int argc, char *argv[])
       while (1)                 /* retry passphrase prompt */
         {
           switch (ASSH_STATUS(asshh_key_load_file(context, &key,
-		   type ? type->name : NULL, ASSH_ALGO_ANY, ifile, ifmt, p, 0)))
+	            type ? assh_key_algo_name(type) : NULL,
+		    ASSH_ALGO_ANY, ifile, ifmt, p, 0)))
             {
             case ASSH_OK:
               break;
@@ -323,10 +327,11 @@ int main(int argc, char *argv[])
 
       if (type == NULL)
         printf("Key type: %s (%s)\n", assh_key_type_name(key),
-                key->private ? "private" : "public");
+                assh_key_private(key) ? "private" : "public");
 
-      if (key->comment != NULL)
-        printf("Key comment: %s\n", key->comment);
+      const char *key_comment = assh_key_get_comment(key);
+      if (key_comment)
+        printf("Key comment: %s\n", key_comment);
     }
 
   if (action_mask & (ASSH_KEYGEN_LOAD | ASSH_KEYGEN_CREATE))
@@ -392,7 +397,9 @@ int main(int argc, char *argv[])
             passphrase = NULL;
         }
 
-      if (key->comment == NULL)
+      const char *key_comment = assh_key_get_comment(key);
+
+      if (key_comment == NULL)
         {
           char hostname[32], cmt[64];
           if (comment == NULL)

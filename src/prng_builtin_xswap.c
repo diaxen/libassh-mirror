@@ -21,6 +21,7 @@
 
 */
 
+#define ASSH_PV
 
 #include <assh/assh_prng.h>
 #include <assh/assh_context.h>

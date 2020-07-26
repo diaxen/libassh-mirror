@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_PV
+
 #include "bignum_builtin.h"
 
 

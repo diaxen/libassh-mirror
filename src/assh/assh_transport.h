@@ -183,12 +183,13 @@ union assh_event_transport_u
 
 /** @internal @This puts a packet in the output queue. The
     packet will be released once it has been enciphered and sent. */
-void assh_transport_push(struct assh_session_s *s,
-			 struct assh_packet_s *p);
+ASSH_PV void
+assh_transport_push(struct assh_session_s *s,
+		    struct assh_packet_s *p);
 
 /** @internal @This sends an @ref SSH_MSG_UNIMPLEMENTED packet
     in response to the @tt pin packet. */
-ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_transport_unimp(struct assh_session_s *s,
                      struct assh_packet_s *pin);
 
@@ -196,7 +197,7 @@ assh_transport_unimp(struct assh_session_s *s,
     which enciphers packets and builds the output stream. It may
     report the @ref ASSH_EVENT_READ event. It is called from the @ref
     assh_event_get function. */
-ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_transport_write(struct assh_session_s *s,
                      struct assh_event_s *e);
 
@@ -204,14 +205,14 @@ assh_transport_write(struct assh_session_s *s,
     which extracts packets from the stream and decipher them. It may
     report the @ref ASSH_EVENT_WRITE event. It is called from the @ref
     assh_event_get function. */
-ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_transport_read(struct assh_session_s *s,
                     struct assh_event_s *e);
 
 /** @internal @This dispatches an incoming packets to the
     appropriate state machine (tranport, kex or service). It is called
     from the @ref assh_event_get function. */
-ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_transport_dispatch(struct assh_session_s *s,
 			struct assh_event_s *e);
 

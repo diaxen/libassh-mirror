@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_PV
+
 #include "bignum_builtin.h"
 
 #include <assh/assh_alloc.h>
@@ -61,7 +63,7 @@ assh_bignum_realloc(struct assh_context_s *c,
 }
 
 assh_status_t
-assh_bignum_builtin_convert(struct assh_context_s *c,
+assh_bignum_convert(struct assh_context_s *c,
                             enum assh_bignum_fmt_e srcfmt,
                             enum assh_bignum_fmt_e dstfmt,
                             const void *src, void *dst, uint8_t **next,
@@ -196,7 +198,7 @@ assh_bignum_builtin_print(void *arg, enum assh_bignum_fmt_e fmt,
 }
 
 assh_status_t
-assh_bignum_builtin_bytecode(struct assh_context_s *c, uint8_t cond,
+assh_bignum_bytecode_valist(struct assh_context_s *c, uint8_t cond,
                              const assh_bignum_op_t *ops,
                              const char *format, va_list ap)
 {
@@ -497,7 +499,7 @@ assh_bignum_builtin_bytecode(struct assh_context_s *c, uint8_t cond,
         case ASSH_BIGNUM_OP_MOVE: {
           void *dst = args[oc];
           uint8_t *next;
-          ASSH_JMP_ON_ERR(assh_bignum_builtin_convert(c,
+          ASSH_JMP_ON_ERR(assh_bignum_convert(c,
                     format[od], format[oc], args[od], dst, &next, ob), err_sc);
 
           if (op == ASSH_BIGNUM_OP_MOVEA)
@@ -1104,7 +1106,7 @@ assh_bignum_builtin_bytecode(struct assh_context_s *c, uint8_t cond,
 }
 
 void
-assh_bignum_builtin_release(struct assh_context_s *ctx,
+assh_bignum_release(struct assh_context_s *ctx,
                             struct assh_bignum_s *bn)
 {
   assh_free(ctx, bn->n);

@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_PV
+
 #include <assh/assh_cipher.h>
 #include <assh/mod_builtin.h>
 

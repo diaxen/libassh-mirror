@@ -108,46 +108,33 @@ enum assh_bignum_fmt_e
 struct assh_bignum_s
 {
   /** Bits size */
-  uint16_t bits;
+  ASSH_PV uint16_t bits;
   /** The value must be stored in secure memory and can only be
       used with constant time operations. This flag is updated when a
       new value is stored. */
-  volatile uint16_t secret:1;
+  ASSH_PV volatile uint16_t secret:1;
   /** Any new value stored in this big number object must use secure
       memory even if the value is not secret. */
-  volatile uint16_t secure:1;
+  ASSH_PV volatile uint16_t secure:1;
   /** The current storage is allocated in secure memory. */
-  volatile uint16_t storage:1;
+  ASSH_PV volatile uint16_t storage:1;
   /** Whether the number is a montgomery modulus */
-  uint16_t mt_mod:1;
+  ASSH_PV uint16_t mt_mod:1;
   /** Whether the number is in montgomery representation */
-  uint16_t mt_num:1;
+  ASSH_PV uint16_t mt_num:1;
   /** Associated montgomery context id */
-  uint16_t mt_id:6;
+  ASSH_PV uint16_t mt_id:6;
   /** This is a temporary number stored in vm scratch buffer */
-  uint16_t tmp:1;
+  ASSH_PV uint16_t tmp:1;
   /** Number data */
-  void *n;
+  ASSH_PV void *n;
 };
 
 /** @internal @see assh_bignum_bytecode_t */
-ASSH_WARN_UNUSED_RESULT assh_status_t
-assh_bignum_builtin_bytecode(struct assh_context_s *c, uint8_t cond,
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
+assh_bignum_bytecode_valist(struct assh_context_s *c, uint8_t cond,
                              const assh_bignum_op_t *ops,
                              const char *format, va_list ap);
-
-/** @internal @see assh_bignum_convert_t */
-ASSH_WARN_UNUSED_RESULT assh_status_t
-assh_bignum_builtin_convert(struct assh_context_s *c,
-                            enum assh_bignum_fmt_e srcfmt,
-                            enum assh_bignum_fmt_e dstfmt,
-                            const void *src, void *dst, uint8_t **next,
-                            assh_bool_t secret);
-
-/** @internal @see assh_bignum_release_t */
-void
-assh_bignum_builtin_release(struct assh_context_s *ctx,
-                            struct assh_bignum_s *bn);
 
 /** @internal @This executes big number operations specified by the
     given bytecode. Operations are performed on arguments and
@@ -179,18 +166,10 @@ assh_bignum_builtin_release(struct assh_context_s *ctx,
 
     Resources used by temporary numbers are automatically released when
     the function returns. */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_bignum_bytecode(struct assh_context_s *c, uint8_t cond,
                      const assh_bignum_op_t *ops,
-                     const char *format, ...)
-{
-  va_list ap;
-  assh_status_t err;
-  va_start(ap, format);
-  err = assh_bignum_builtin_bytecode(c, cond, ops, format, ap);
-  va_end(ap);
-  return err;
-}
+                     const char *format, ...);
 
 /** @internal @This converts between a big number in @ref
     ASSH_BIGNUM_NATIVE format and a number in an alternate format. The
@@ -212,28 +191,23 @@ assh_bignum_bytecode(struct assh_context_s *c, uint8_t cond,
     When converting between two native big numbers, the current bits
     size of the source might be larger than the size of the destination
     provided that the actual value fits in the destination. */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_bignum_convert(struct assh_context_s *c,
                     enum assh_bignum_fmt_e src_fmt,
                     enum assh_bignum_fmt_e dst_fmt,
                     const void *src, void *dst, uint8_t **next,
-                    assh_bool_t dst_secret)
-{
-  return assh_bignum_builtin_convert(c, src_fmt, dst_fmt, src, dst, next, dst_secret);
-}
+                    assh_bool_t dst_secret);
 
 /** @internal @This returns the byte size needed to store a big number
     of given bit size using the specified format. */
-size_t assh_bignum_size_of_bits(enum assh_bignum_fmt_e dst_fmt, size_t bits);
+ASSH_PV size_t
+assh_bignum_size_of_bits(enum assh_bignum_fmt_e dst_fmt, size_t bits);
 
 /** @internal @This returns the byte size needed to store the given
     big number object. */
-ASSH_INLINE size_t
+ASSH_PV size_t
 assh_bignum_size_of_num(enum assh_bignum_fmt_e dst_fmt,
-                        const struct assh_bignum_s *bn)
-{
-  return assh_bignum_size_of_bits(dst_fmt, bn->bits);
-}
+                        const struct assh_bignum_s *bn);
 
 /** @internal @This evaluates the storage size in bytes, the actual
     embedded value size in bytes and the bit size of the big number
@@ -246,47 +220,33 @@ assh_bignum_size_of_num(enum assh_bignum_fmt_e dst_fmt,
     the input format is either @ref ASSH_BIGNUM_MSB_RAW or
     @ref ASSH_BIGNUM_LSB_RAW, the @tt size parameter must be used to
     pass the bytes size of the buffer. */
-assh_status_t ASSH_WARN_UNUSED_RESULT
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_bignum_size_of_data(enum assh_bignum_fmt_e fmt,
                          const void *data, size_t *size,
                          size_t *val_size, size_t *bits);
 
 /** @internal @This initializes a big number object. No buffer is
     allocated, the big number is left empty. */
-ASSH_INLINE void
+ASSH_PV void
 assh_bignum_init(struct assh_context_s *c,
                  struct assh_bignum_s  *bn,
-                 size_t bits)
-{
-  memset(bn, 0, sizeof(*bn));
-  bn->bits = bits;
-  bn->n = NULL;
-}
+                 size_t bits);
 
 /** @internal @This returns the number of bits of a big number. */
-ASSH_INLINE size_t
-assh_bignum_bits(const struct assh_bignum_s  *bn)
-{
-  return bn->bits;
-}
+ASSH_PV size_t
+assh_bignum_bits(const struct assh_bignum_s  *bn);
 
 /** @internal @This test if a big number is actually stored in the
     object or if it's empty. */
-ASSH_INLINE assh_bool_t
-assh_bignum_isempty(const struct assh_bignum_s  *bn)
-{
-  return bn->n == NULL;
-}
+ASSH_PV assh_bool_t
+assh_bignum_isempty(const struct assh_bignum_s  *bn);
 
 /** @internal @This releases the internal storage of a bignum. The big
     number object become empty as if the @ref assh_bignum_init
     function has just been called. */
-ASSH_INLINE void
+ASSH_PV void
 assh_bignum_release(struct assh_context_s *ctx,
-                    struct assh_bignum_s  *bn)
-{
-  assh_bignum_builtin_release(ctx, bn);
-}
+                    struct assh_bignum_s  *bn);
 
 /** @internal */
 enum assh_bignum_opcode_e

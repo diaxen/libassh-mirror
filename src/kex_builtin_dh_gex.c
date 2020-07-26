@@ -25,6 +25,8 @@
   This file implements rfc4419
 */
 
+#define ASSH_PV
+
 #include <assh/assh_kex.h>
 #include <assh/assh_session.h>
 #include <assh/assh_packet.h>

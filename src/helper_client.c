@@ -26,6 +26,8 @@
 
 */
 
+#define ASSH_PV
+
 #include <assh/helper_client.h>
 #include <assh/helper_key.h>
 #include <assh/helper_io.h>

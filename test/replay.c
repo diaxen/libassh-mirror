@@ -91,6 +91,7 @@
 
 */
 
+#define ASSH_PV
 #define ASSH_ABI_UNSAFE  /* do not warn */
 
 #include "config.h"

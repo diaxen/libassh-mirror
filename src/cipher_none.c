@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_PV
+
 #include <assh/assh_cipher.h>
 
 static ASSH_CIPHER_INIT_FCN(assh_none_init)

@@ -93,7 +93,7 @@ assh_kex_set_order(struct assh_context_s *c, uint_fast8_t safety_weight);
     @This send the kex exchange init packet.  A copy of the
     packet is kept in @ref assh_session_s::kex_init_local for hashing
     by the kex-exchange algorithm. */
-ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_kex_send_init(struct assh_session_s *s);
 
 /** @internal @This is called internally by the transport layer
@@ -104,21 +104,22 @@ assh_kex_send_init(struct assh_session_s *s);
     @This selects the various algorithms from the client and
     server advertised lists and then initialize the pluggable key
     exchange module by calling its @ref assh_kex_init_t function. */
-ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *p);
 
 /** @internal @This function can be used during the key exchange
     to lower the safety factor of the current session. This is used
     when algorithm parameters are further negotiated after the
     algorithm selection phase. */
-void assh_kex_lower_safety(struct assh_session_s *s, assh_safety_t safety);
+ASSH_PV void
+assh_kex_lower_safety(struct assh_session_s *s, assh_safety_t safety);
 
 #ifdef CONFIG_ASSH_CLIENT
 
 /** @internal This client side helper function can be used in
     key-exchange modules to perform some hashing needed for computing
     the exchange hash. @see assh_kex_client_hash2 */
-ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_kex_client_hash1(struct assh_session_s *s,
                       struct assh_hash_ctx_s *hash_ctx,
                       const uint8_t *k_str);
@@ -127,7 +128,7 @@ assh_kex_client_hash1(struct assh_session_s *s,
     key-exchange modules to the generate exchange hash, check the
     associated signature and setup the resulting symmetric keys.
     @see assh_kex_client_hash2 */
-ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_kex_client_hash2(struct assh_session_s *s, struct assh_hash_ctx_s *hash_ctx,
                       const uint8_t *secret_str, const uint8_t *h_str);
 
@@ -135,7 +136,7 @@ assh_kex_client_hash2(struct assh_session_s *s, struct assh_hash_ctx_s *hash_ctx
     key-exchange modules to load the host key in @ref
     assh_session_s::kex_host_key and initialize an host key lookup
     event. */
-ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_kex_client_get_key(struct assh_session_s *s,
                         const uint8_t *ks_str, struct assh_event_s *e,
                         assh_status_t (*done)(struct assh_session_s *s,
@@ -153,7 +154,7 @@ assh_kex_client_get_key(struct assh_session_s *s,
     More fields may be added hashed or added to the packet before
     calling the @ref assh_kex_server_hash2 function.
 */
-ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_kex_server_hash1(struct assh_session_s *s, size_t kex_len,
                       struct assh_hash_ctx_s *hash_ctx,
                       struct assh_packet_s **pout, size_t *sign_len,
@@ -167,7 +168,7 @@ assh_kex_server_hash1(struct assh_session_s *s, size_t kex_len,
 
     @see assh_kex_server_hash1
 */
-ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_kex_server_hash2(struct assh_session_s *s,
                       struct assh_hash_ctx_s *hash_ctx,
                       struct assh_packet_s *pout, size_t sign_len,
@@ -185,7 +186,7 @@ assh_kex_server_hash2(struct assh_session_s *s,
     Two new @ref assh_kex_keys_s objects will bed ready for use and will
     replace the old keys when the next @ref SSH_MSG_NEWKEYS packets
     are processed by the transport layer in each direction. */
-ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_kex_new_keys(struct assh_session_s *s,
                   const struct assh_hash_algo_s *hash_algo,
                   const uint8_t *ex_hash,
@@ -200,7 +201,7 @@ assh_kex_new_keys(struct assh_session_s *s,
    packet is sent. If the @tt accept parameter is zero, the key
    exchange fails.
 */
-ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_kex_end(struct assh_session_s *s, assh_bool_t accept);
 
 /**
@@ -208,15 +209,17 @@ assh_kex_end(struct assh_session_s *s, assh_bool_t accept);
    assh_kex_keys_s object and its associated resources have to be
    released.
 */
-void assh_kex_keys_cleanup(struct assh_session_s *s,
-                           struct assh_kex_keys_s *keys);
+ASSH_PV void
+assh_kex_keys_cleanup(struct assh_session_s *s,
+		      struct assh_kex_keys_s *keys);
 
 /**
    @internal @This is called internally by the transport layer
    in order to report the ASSH_EVENT_KEX_DONE event.
 */
-void assh_kex_done(struct assh_session_s *s,
-                   struct assh_event_s *e);
+ASSH_PV void
+assh_kex_done(struct assh_session_s *s,
+	      struct assh_event_s *e);
 
 /** @internal @see assh_kex_init_t */
 #define ASSH_KEX_INIT_FCN(n) assh_status_t (n)(struct assh_session_s *s, \
@@ -265,13 +268,13 @@ typedef ASSH_KEX_PROCESS_FCN(assh_kex_process_t);
     used by the transport layer code to process the ssh packet stream. */
 struct assh_kex_keys_s
 {
-  const struct assh_algo_cipher_s *cipher_algo;
-  void *cipher_ctx;
-  const struct assh_algo_mac_s *mac_algo;
-  void *mac_ctx;
-  const struct assh_algo_compress_s *cmp_algo;
-  void *cmp_ctx;
-  assh_safety_t safety;
+  ASSH_PV const struct assh_algo_cipher_s *cipher_algo;
+  ASSH_PV void *cipher_ctx;
+  ASSH_PV const struct assh_algo_mac_s *mac_algo;
+  ASSH_PV void *mac_ctx;
+  ASSH_PV const struct assh_algo_compress_s *cmp_algo;
+  ASSH_PV void *cmp_ctx;
+  ASSH_PV assh_safety_t safety;
 };
 
 /**
@@ -345,10 +348,10 @@ struct assh_algo_kex_s
 {
   struct assh_algo_with_key_s algo_wk;
 
-  assh_kex_init_t *f_init;
-  assh_kex_cleanup_t *f_cleanup;
-  assh_kex_process_t *f_process;
-  assh_bool_t implicit_auth;
+  ASSH_PV assh_kex_init_t *f_init;
+  ASSH_PV assh_kex_cleanup_t *f_cleanup;
+  ASSH_PV assh_kex_process_t *f_process;
+  ASSH_PV assh_bool_t implicit_auth;
 };
 
 ASSH_FIRST_FIELD_ASSERT(assh_algo_kex_s, algo_wk);
@@ -377,7 +380,7 @@ assh_algo_kex_by_name_static(const struct assh_algo_s **table,
 				 (const struct assh_algo_s **)ka, namep);
 }
 
-/** @internal @This finds a registered key-exchange @hl algorithm.
+/** @This finds a registered key-exchange @hl algorithm.
     @see assh_algo_by_name */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_kex_by_name(struct assh_context_s *c, const char *name,
@@ -388,23 +391,15 @@ assh_algo_kex_by_name(struct assh_context_s *c, const char *name,
 			   (const struct assh_algo_s **)ka, namep);
 }
 
-/** @internal @This finds a registered key-exchange @hl algorithm
+/** @This finds a registered key-exchange @hl algorithm
     which can be used with the given key. @see assh_algo_by_key */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_kex_by_key(struct assh_context_s *c,
-		      const struct assh_key_s *key, assh_algo_id_t *pos,
-		      const struct assh_algo_kex_s **ka)
-{
-  assh_status_t err;
-  if (key->role != ASSH_ALGO_KEX)
-    ASSH_RETURN(ASSH_ERR_MISSING_KEY);
-  return assh_algo_by_key(c, key, pos,
-    (const struct assh_algo_with_key_s **)ka);
-}
-
+		     const struct assh_key_s *key, assh_algo_id_t *pos,
+		     const struct assh_algo_kex_s **ka);
 
 /** @internal Set of @em none algortihm contexts used at startup */
-extern const struct assh_kex_keys_s assh_keys_none;
+ASSH_PV extern const struct assh_kex_keys_s assh_keys_none;
 
 /** Dummy key-exchange algorithm using a not so secret value.
     @xsee {kexalgos} */

@@ -116,12 +116,12 @@ typedef ASSH_SERVICE_PROCESS_FCN(assh_service_process_t);
     @xsee{coremod} @see assh_service_register */
 struct assh_service_s
 {
-  const char *name;
-  assh_service_init_t *f_init;
-  assh_service_cleanup_t *f_cleanup;
-  assh_service_process_t *f_process;
-  enum assh_context_type_e side:2;
-  assh_bool_t no_user_auth:1;
+  ASSH_PV const char *name;
+  ASSH_PV assh_service_init_t *f_init;
+  ASSH_PV assh_service_cleanup_t *f_cleanup;
+  ASSH_PV assh_service_process_t *f_process;
+  ASSH_PV enum assh_context_type_e side:2;
+  ASSH_PV assh_bool_t no_user_auth:1;
 };
 
 /**
@@ -162,7 +162,7 @@ ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_service_register_default(struct assh_context_s *c);
 
 /** @internal */
-ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_service_loop(struct assh_session_s *s,
                   struct assh_packet_s *p,
                   struct assh_event_s *e);
@@ -176,7 +176,7 @@ assh_service_by_name(struct assh_context_s *c,
 /** @internal @This returns the next @hl service which must be started
     for the current client session. Designed for use by @hl service
     implementations. */
-ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_service_next(struct assh_session_s *s,
                   const struct assh_service_s **srv);
 
@@ -184,12 +184,12 @@ assh_service_next(struct assh_session_s *s,
     Designed for use by client service implementations. This will make
     assh send a @ref SSH_MSG_SERVICE_REQUEST message to the server in
     order to start the next service. */
-void assh_service_stop(struct assh_session_s *s);
+ASSH_PV void assh_service_stop(struct assh_session_s *s);
 
 /** @internal @This stops the currently running @hl service and
     schedules execution of the specified service. Designed for use by
     service implementations. */
-void assh_service_start(struct assh_session_s *s,
+ASSH_PV void assh_service_start(struct assh_session_s *s,
                         const struct assh_service_s *next);
 
 #endif

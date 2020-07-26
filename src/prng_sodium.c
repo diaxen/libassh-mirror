@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_PV
+
 #include <assh/assh_prng.h>
 #include <assh/mod_sodium.h>
 

@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_PV
+
 #include "key_sodium_ed25519.h"
 
 #include <assh/assh_bignum.h>

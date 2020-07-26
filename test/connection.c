@@ -28,6 +28,7 @@
   consistency of operation on both sides.
 */
 
+#define ASSH_PV
 #define ASSH_ABI_UNSAFE  /* do not warn */
 
 #include <assh/assh_session.h>

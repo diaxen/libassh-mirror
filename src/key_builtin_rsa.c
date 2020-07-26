@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_PV
+
 #include "key_builtin_rsa.h"
 
 #include <assh/mod_builtin.h>

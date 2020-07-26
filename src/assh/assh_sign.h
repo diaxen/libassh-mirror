@@ -72,10 +72,10 @@ struct assh_algo_sign_s
   /** Bit mask used to define groups in a set of algorithms which can
       use the same type of key. This used to reduce the number of
       authentication retries with the same key. */
-  uint16_t groups;
+  ASSH_PV uint16_t groups;
 
-  assh_sign_generate_t *f_generate;
-  assh_sign_check_t *f_check;
+  ASSH_PV assh_sign_generate_t *f_generate;
+  ASSH_PV assh_sign_check_t *f_check;
 };
 
 ASSH_FIRST_FIELD_ASSERT(assh_algo_sign_s, algo_wk);
@@ -92,32 +92,20 @@ ASSH_FIRST_FIELD_ASSERT(assh_algo_sign_s, algo_wk);
     @tt sign_len parmeter with a size value which is greater or equal
     to what is needed to hold the signature blob. In this case, the
     @tt data_* parameters are not used and the key need not be private. */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_sign_generate(struct assh_context_s *c, const struct assh_algo_sign_s *sa,
                    const struct assh_key_s *key, size_t data_count,
                    const struct assh_cbuffer_s data[],
-                   uint8_t *sign, size_t *sign_len)
-{
-  assh_status_t err;
-  ASSH_RET_IF_TRUE(key->algo != sa->algo_wk.key_algo, ASSH_ERR_BAD_ARG);
-  ASSH_RET_IF_TRUE(sign && !key->private, ASSH_ERR_MISSING_KEY);
-  return sa->f_generate(c, key, data_count, data, sign, sign_len);
-}
+                   uint8_t *sign, size_t *sign_len);
 
 /** @internal @This checks the signature of the passed data using the
     provided key. The data can be split into multiple buffers. The @tt
     data_count parameter must specify the number of data buffers used. */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_sign_check(struct assh_context_s *c, const struct assh_algo_sign_s *sa,
                 const struct assh_key_s *key, size_t data_count,
                 const struct assh_cbuffer_s data[],
-                const uint8_t *sign, size_t sign_len, assh_safety_t *safety)
-{
-  assh_status_t err;
-  ASSH_RET_IF_TRUE(key->algo != sa->algo_wk.key_algo, ASSH_ERR_BAD_ARG);
-  *safety = assh_min_uint(sa->algo_wk.algo.safety, key->safety);
-  return sa->f_check(c, key, data_count, data, sign, sign_len, safety);
-}
+                const uint8_t *sign, size_t sign_len, assh_safety_t *safety);
 
 /** @This casts and returns the passed pointer if the
     algorithm class is @ref ASSH_ALGO_SIGN. In
@@ -143,7 +131,7 @@ assh_algo_sign_by_name_static(const struct assh_algo_s **table,
 				 (const struct assh_algo_s **)sa, namep);
 }
 
-/** @internal @This finds a registered signature @hl algorithm.
+/** @This finds a registered signature @hl algorithm.
     @see assh_algo_by_name */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_sign_by_name(struct assh_context_s *c, const char *name,
@@ -154,19 +142,12 @@ assh_algo_sign_by_name(struct assh_context_s *c, const char *name,
 			   (const struct assh_algo_s **)sa, namep);
 }
 
-/** @internal @This finds a registered signature @hl algorithm which can be
+/** @This finds a registered signature @hl algorithm which can be
     used with the given key. @see assh_algo_by_key */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_sign_by_key(struct assh_context_s *c,
 		      const struct assh_key_s *key, assh_algo_id_t *pos,
-		      const struct assh_algo_sign_s **sa)
-{
-  assh_status_t err;
-  if (key->role != ASSH_ALGO_SIGN)
-    ASSH_RETURN(ASSH_ERR_MISSING_KEY);
-  return assh_algo_by_key(c, key, pos,
-    (const struct assh_algo_with_key_s **)sa);
-}
+		      const struct assh_algo_sign_s **sa);
 
 /** Dummy signature algorithm */
 extern const struct assh_algo_sign_s assh_sign_none;

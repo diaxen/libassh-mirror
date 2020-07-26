@@ -175,35 +175,35 @@ typedef ASSH_KEY_CLEANUP_FCN(assh_key_cleanup_t);
     described in @hl keysalgos. @xsee{coremod} */
 struct assh_key_algo_s
 {
-  const char *name;
-  const char *implem;
+  ASSH_PV const char *name;
+  ASSH_PV const char *implem;
 
-  assh_key_load_t *f_load;
+  ASSH_PV assh_key_load_t *f_load;
 #ifdef CONFIG_ASSH_KEY_CREATE
-  assh_key_create_t *f_create;
+  ASSH_PV assh_key_create_t *f_create;
 #endif
-  assh_key_output_t *f_output;
+  ASSH_PV assh_key_output_t *f_output;
 #ifdef CONFIG_ASSH_KEY_VALIDATE
-  assh_key_validate_t *f_validate;
+  ASSH_PV assh_key_validate_t *f_validate;
 #endif
-  assh_key_cmp_t *f_cmp;
-  assh_key_cleanup_t *f_cleanup;
+  ASSH_PV assh_key_cmp_t *f_cmp;
+  ASSH_PV assh_key_cleanup_t *f_cleanup;
 
   /** Supported storage formats, zero terminated. This includes
       container formats supported by helper functions. The preferred
       storage formats for private and public keys are the first and
       second entries respectively. */
-  const enum assh_key_format_e *formats;
+  ASSH_PV const enum assh_key_format_e *formats;
 
   /** minimum number of bits for @ref assh_key_create */
-  uint16_t min_bits;
+  ASSH_PV uint16_t min_bits;
   /** suggested number of bits for @ref assh_key_create */
-  uint16_t bits;
+  ASSH_PV uint16_t bits;
   /** maximuu number of bits for @ref assh_key_create */
-  uint16_t max_bits;
+  ASSH_PV uint16_t max_bits;
   /** used when we need to choose between multiple implementations of
       the same key management algorithm. */
-  int8_t priority;
+  ASSH_PV int8_t priority;
 };
 
 /** @This describes a key format.
@@ -240,26 +240,26 @@ assh_key_format_desc(enum assh_key_format_e fmt);
     structure. Actual key structures inherit from this type. */
 struct assh_key_s
 {
-  const char *type;
-  char *comment;
+  ASSH_PV const char *type;
+  ASSH_PV char *comment;
 
   /** Next key in the list */
-  struct assh_key_s *next;
+  ASSH_PV struct assh_key_s *next;
 
   /** Key algorithm */
-  const struct assh_key_algo_s *algo;
+  ASSH_PV const struct assh_key_algo_s *algo;
 
-  uint32_t ref_count;
+  ASSH_PV uint32_t ref_count;
 
-  uint16_t bits;
+  ASSH_PV uint16_t bits;
 
   /** Class of algorithm the key is intended to be used with */
-  enum assh_algo_class_e role:3;
+  ASSH_PV enum assh_algo_class_e role:3;
 
-  assh_bool_t private:1;
-  assh_bool_t stored:1;
+  ASSH_PV assh_bool_t private:1;
+  ASSH_PV assh_bool_t stored:1;
 
-  assh_safety_t safety;
+  ASSH_PV assh_safety_t safety;
 };
 
 /** @This allocates and intiailizes the key structure from
@@ -295,6 +295,28 @@ assh_key_set_comment(struct assh_context_s *c,
                  struct assh_key_s *key,
                  const char *comment);
 
+/** @This returns the key comment string or @tt {NULL}. */
+const char *
+assh_key_get_comment(const struct assh_key_s *key);
+
+/** @This returns a pointer to the key algorithm
+    descritor associated to a key. */
+const struct assh_key_algo_s *
+assh_key_algo(const struct assh_key_s *key);
+
+/** @This returns the name of a key algorithm. */
+const char *
+assh_key_algo_name(const struct assh_key_algo_s *kya);
+
+/** @This returns the implementation name of a key algorithm. */
+const char *
+assh_key_algo_implem(const struct assh_key_algo_s *kya);
+
+/** @This returns a zero terminated array of pointers to key formats
+    supported by the key algorithm. */
+const enum assh_key_format_e *
+assh_key_algo_formats(const struct assh_key_algo_s *kya);
+
 /** @This writes the key in blob representation to
     the @tt blob buffer.
 
@@ -307,24 +329,18 @@ assh_key_set_comment(struct assh_context_s *c,
     @This will only support some binary key formats specific
     to a given key algorithm. More formats are handled by helper
     functions provided by @ref @assh/helper_key.h */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_key_output(struct assh_context_s *c,
                 const struct assh_key_s *key,
                 uint8_t *blob, size_t *blob_len,
-                enum assh_key_format_e format)
-{
-  return key->algo->f_output(c, key, blob, blob_len, format);
-}
+                enum assh_key_format_e format);
 
 /** @This returns true if both keys are equals. If the @tt
     pub parameter is set, only the public parts of the key are taken
     into account. */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_bool_t
+ASSH_WARN_UNUSED_RESULT assh_bool_t
 assh_key_cmp(struct assh_context_s *c, const struct assh_key_s *key,
-	     const struct assh_key_s *b, assh_bool_t pub)
-{
-  return key->algo->f_cmp(c, key, b, pub);
-}
+	     const struct assh_key_s *b, assh_bool_t pub);
 
 /** @This removes the first key from the singly linked list. The key is
     also released unless @ref assh_key_refinc has been called.
@@ -334,43 +350,28 @@ void assh_key_drop(struct assh_context_s *c,
 
 /** @This releases all the keys on the linked list by calling @ref
     assh_key_drop and set the list head to @tt NULL. */
-ASSH_INLINE void
+void
 assh_key_flush(struct assh_context_s *c,
-               struct assh_key_s **head)
-{
-  while (*head != NULL)
-    assh_key_drop(c, head);
-}
+               struct assh_key_s **head);
 
 /** @This inserts a key in the linked list.
     @csee assh_key_drop
     @csee assh_key_flush */
-ASSH_INLINE void
+void
 assh_key_insert(struct assh_key_s **head,
-                struct assh_key_s *key)
-{
-  key->next = *head;
-  *head = key;
-}
+                struct assh_key_s *key);
 
 /** @This increases the reference counter of the key so that it is not
     released by the next call to @ref assh_key_drop. */
-ASSH_INLINE void
-assh_key_refinc(struct assh_key_s *key)
-{
-  key->ref_count++;
-}
+void
+assh_key_refinc(struct assh_key_s *key);
 
 #ifdef CONFIG_ASSH_KEY_VALIDATE
 /** @This checks the validity of the key. */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_key_validate(struct assh_context_s *c,
                   const struct assh_key_s *key,
-                  enum assh_key_validate_result_e *result)
-{
-  *result = ASSH_KEY_BAD;
-  return key->algo->f_validate(c, key, result);
-}
+                  enum assh_key_validate_result_e *result);
 #endif
 
 /** @This looks for a key usable with the given algorithm
@@ -380,35 +381,27 @@ assh_key_lookup(struct assh_context_s *c,
                 struct assh_key_s **key, assh_bool_t private,
                 const struct assh_algo_with_key_s *awk);
 
+/** @This returns @tt 1 if the object contains a private key. */
+assh_bool_t
+assh_key_private(const struct assh_key_s *key);
+
 /** @This returns the type name of the key. */
-ASSH_INLINE const char *
-assh_key_type_name(struct assh_key_s *key)
-{
-  return key->type ? key->type : key->algo->name;
-}
+const char *
+assh_key_type_name(struct assh_key_s *key);
 
 /** @This returns the estimated algorithmic safety of the key.
     @xsee {suppalgos} */
-ASSH_INLINE assh_safety_t
-assh_key_safety(struct assh_key_s *key)
-{
-  return key->safety;
-}
+assh_safety_t
+assh_key_safety(struct assh_key_s *key);
 
 /** @This returns the number of bits of the key.
     @xsee {suppalgos} */
-ASSH_INLINE size_t
-assh_key_bits(struct assh_key_s *key)
-{
-  return key->bits;
-}
+size_t
+assh_key_bits(struct assh_key_s *key);
 
 /** @This combines @ref assh_safety_name and @ref assh_key_safety. */
-ASSH_INLINE const char *
-assh_key_safety_name(struct assh_key_s *key)
-{
-  return assh_safety_name(key->safety);
-}
+const char *
+assh_key_safety_name(struct assh_key_s *key);
 
 /** @This finds a key algorithm with matching name.
     @see assh_key_algo_enumerate_names */

@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_PV
+
 #include "key_openssl_rsa.h"
 
 #include <assh/mod_openssl.h>

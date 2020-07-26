@@ -54,6 +54,21 @@
 # define ASSH_EV_CONST const
 #endif
 
+/* Prevent access to internal functions and internals structure
+   fields from the application user code. */
+#ifndef ASSH_PV
+# if __GNUC__ > 4
+/** @internal */
+#  define ASSH_PV __attribute__((deprecated("internal use only")))
+# elif __GNUC__
+/** @internal */
+#  define ASSH_PV __attribute__((deprecated))
+# else
+/** @internal */
+#  define ASSH_PV
+# endif
+#endif
+
 struct assh_context_s;
 struct assh_session_s;
 struct assh_packet_s;
@@ -302,8 +317,8 @@ const char * assh_error_str(assh_status_t err);
 #define ASSH_REKEX_THRESHOLD (1 << 31)
 
 /** @internal */
-void assh_hexdump(void *stream, const char *name,
-		  const void *data, size_t len);
+ASSH_PV void assh_hexdump(void *stream, const char *name,
+			  const void *data, size_t len);
 
 /** @internal @This takes an @ref assh_status_t value returned by a
     function and asserts that the error code is @ref ASSH_OK. */
@@ -578,7 +593,7 @@ ASSH_INLINE intptr_t assh_min_int(intptr_t a, intptr_t b)
 #define ASSH_CT_CTLZ_GEN(n, l)                                        \
 /** @internal @This computes the number of trailing zero bits of a    \
      n bits value in constant time */                                 \
-ASSH_INLINE uint_fast8_t assh_ct_ctz##n(uint##n##_t x)                \
+ASSH_PV ASSH_INLINE uint_fast8_t assh_ct_ctz##n(uint##n##_t x)        \
 {                                                                     \
   x &= -x;                                                            \
   uint##n##_t c = (x & (uint##n##_t)0x5555555555555555ULL) - 1;       \
@@ -595,7 +610,7 @@ ASSH_INLINE uint_fast8_t assh_ct_ctz##n(uint##n##_t x)                \
                                                                       \
 /** @internal @This computes the number of leading zero bits of a     \
     n bits value in constant time */                                  \
-ASSH_INLINE uint_fast8_t assh_ct_clz##n(uint##n##_t x)                \
+ASSH_PV ASSH_INLINE uint_fast8_t assh_ct_clz##n(uint##n##_t x)        \
 {                                                                     \
   uint##n##_t a0, a1, a2, a3, a4, j = 0;                              \
   a0 = x  | (( x & (uint##n##_t)0xaaaaaaaaaaaaaaaaULL) >> 1);         \

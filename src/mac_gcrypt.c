@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_PV
+
 #include <assh/assh_mac.h>
 #include <assh/mod_gcrypt.h>
 #include <assh/assh_packet.h>

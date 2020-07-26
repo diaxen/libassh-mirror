@@ -147,10 +147,10 @@ struct assh_event_s
   enum assh_event_id_e id;
 
   /** @internal Pointer to the event acknowledge function, if any. */
-  assh_event_done_t *f_done;
+  ASSH_PV assh_event_done_t *f_done;
 
   /** @internal Private data for the event acknowledge function. */
-  void *done_pv;
+  ASSH_PV void *done_pv;
 
   union {
 

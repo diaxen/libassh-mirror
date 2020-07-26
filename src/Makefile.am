@@ -20,9 +20,9 @@ SUBDIRS = assh
 lib_LTLIBRARIES = libassh.la
 
 libassh_la_SOURCES = assh_deps.c assh_context.c assh_session.c assh_packet.c	\
-	assh_event.c assh_transport.c assh_kex.c assh_hash.c		\
+	assh_event.c assh_transport.c assh_kex.c assh_sign.c assh_hash.c	\
 	assh_algo.c assh_key.c assh_service.c assh_map.c assh_bignum.c	\
-	assh_connection.c assh_debug.c assh_buffer.c			\
+	assh_connection.c assh_debug.c assh_buffer.c assh_alloc.c assh_prng.c	\
 	kex_none.c sign_none.c cipher_none.c mac_none.c key_none.c compress_none.c \
 	helper_key.c helper_io.c helper_base64.c helper_bcrypt.c	\
 	helper_interactive.c helper_portfwd.c sign_rsa.h

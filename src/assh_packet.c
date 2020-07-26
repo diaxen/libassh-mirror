@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_PV
+
 #include <assh/assh_packet.h>
 #include <assh/assh_buffer.h>
 #include <assh/assh_queue.h>
@@ -193,6 +195,13 @@ void assh_packet_release(struct assh_packet_s *p)
 #endif
 }
 
+struct assh_packet_s *
+assh_packet_refinc(struct assh_packet_s *p)
+{
+  p->ref_count++;
+  return p;
+}
+
 void assh_packet_queue_cleanup(struct assh_queue_s *q)
 {
   while (!assh_queue_isempty(q))
@@ -233,6 +242,16 @@ assh_packet_add_array(struct assh_packet_s *p, size_t len, uint8_t **result)
   p->data_size += len;
   *result = d;
   return ASSH_OK;
+}
+
+assh_status_t
+assh_packet_add_u32(struct assh_packet_s *p, uint32_t value)
+{
+  uint8_t *be;
+  assh_status_t err = assh_packet_add_array(p, 4, &be);
+  if (ASSH_STATUS(err) == ASSH_OK)
+    assh_store_u32(be, value);
+  return err;
 }
 
 assh_status_t
@@ -279,3 +298,26 @@ assh_packet_string_resized(struct assh_packet_s *p, uint8_t *str)
   p->data_size = str - p->data + len;
 }
 
+assh_status_t
+assh_packet_check_string(const struct assh_packet_s *p, const uint8_t *str,
+                         const uint8_t **next)
+{
+  return assh_check_string(p->data, p->data_size, str, next);
+}
+
+assh_status_t
+assh_packet_check_array(const struct assh_packet_s *p, const uint8_t *array,
+                        size_t array_len, const uint8_t **next)
+{
+  return assh_check_array(p->data, p->data_size, array, array_len, next);
+}
+
+assh_status_t
+assh_packet_check_u32(const struct assh_packet_s *p, uint32_t *u32,
+		      const uint8_t *data, const uint8_t **next)
+{
+  assh_status_t err = assh_packet_check_array(p, data, 4, next);
+  if (ASSH_STATUS(err) == ASSH_OK)
+    *u32 = assh_load_u32(data);
+  return err;
+}

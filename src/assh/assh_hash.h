@@ -91,36 +91,36 @@ typedef ASSH_HASH_CLEANUP_FCN(assh_hash_cleanup_t);
 /** @internal @This is the hashing module interface structure. */
 struct assh_hash_algo_s
 {
-  const char *name;
+  ASSH_PV const char *name;
   assh_hash_init_t *f_init;
   assh_hash_copy_t *f_copy;
   assh_hash_update_t *f_update;
   assh_hash_final_t *f_final;
   assh_hash_cleanup_t *f_cleanup;
   /** Size of the context structure needed to initialize the algorithm. */
-  uint16_t ctx_size;
+  ASSH_PV uint16_t ctx_size;
   /** Hash function output size, 0 for variable size output. */
-  uint8_t hash_size;
+  ASSH_PV uint8_t hash_size;
   /** Hash algorithm block size. */
-  uint8_t block_size;
-  assh_safety_t safety;
+  ASSH_PV uint8_t block_size;
+  ASSH_PV assh_safety_t safety;
 };
 
 /** @internal @This hashes a ssh string. The string must contain a
     valid 32 bits size header. No bound checking is performed by this
     function. */
-void assh_hash_string(struct assh_hash_ctx_s *hctx, const uint8_t *str);
+ASSH_PV void assh_hash_string(struct assh_hash_ctx_s *hctx, const uint8_t *str);
 
 /** @internal @This hashes an array of bytes as if it was stored as a
     ssh string. This means that a 32 bits headers with the array
     length is first generated and hashed. */
-void assh_hash_bytes_as_string(struct assh_hash_ctx_s *hctx,
-                               const uint8_t *bytes, size_t len);
+ASSH_PV void assh_hash_bytes_as_string(struct assh_hash_ctx_s *hctx,
+				       const uint8_t *bytes, size_t len);
 
 #ifdef CONFIG_ASSH_BIGNUM_BUILTIN
 /** @internal @This convert the big number to the ssh mpint
     representation and hash the resulting buffer. */
-ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_hash_bignum(struct assh_context_s *ctx,
                  struct assh_hash_ctx_s *hctx,
                  const struct assh_bignum_s *bn);
@@ -129,13 +129,14 @@ assh_hash_bignum(struct assh_context_s *ctx,
 /** @internal @This hash the packet payload. The packet must contain a
     valid 32 bits size header; not check is performed by this
     function. */
-void assh_hash_payload_as_string(struct assh_hash_ctx_s *hctx,
-                                 const struct assh_packet_s *p);
+ASSH_PV void
+assh_hash_payload_as_string(struct assh_hash_ctx_s *hctx,
+			    const struct assh_packet_s *p);
 
 /** @internal @This initializes an hash algorithm context. The @tt
     hctx argument must points to a buffer allocated in secure memory
     of size given by @ref assh_hash_algo_s::ctx_size. */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_PV ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_hash_init(struct assh_context_s *c,
                struct assh_hash_ctx_s *hctx,
                const struct assh_hash_algo_s *algo)
@@ -147,7 +148,7 @@ assh_hash_init(struct assh_context_s *c,
 /** @internal @This creates a copy of the hash algorithm context. The
     new context must be released as if it was created by @ref
     assh_hash_init. */
-ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_PV ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_hash_copy(struct assh_hash_ctx_s *hctx_dst,
                struct assh_hash_ctx_s *hctx_src)
 {
@@ -155,7 +156,7 @@ assh_hash_copy(struct assh_hash_ctx_s *hctx_dst,
 }
 
 /** @internal @This updates the hash context with new input data. */
-ASSH_INLINE void
+ASSH_PV ASSH_INLINE void
 assh_hash_update(struct assh_hash_ctx_s *hctx, const void *data, size_t len)
 {
   hctx->algo->f_update(hctx, data, len);
@@ -163,7 +164,7 @@ assh_hash_update(struct assh_hash_ctx_s *hctx, const void *data, size_t len)
 
 /** @internal @This produce the hash output. It can be called multiple
     times when the hash algorithm has a variable length output. */
-ASSH_INLINE void
+ASSH_PV ASSH_INLINE void
 assh_hash_final(struct assh_hash_ctx_s *hctx, uint8_t *hash, size_t len)
 {
   hctx->algo->f_final(hctx, hash, len);
@@ -172,7 +173,7 @@ assh_hash_final(struct assh_hash_ctx_s *hctx, uint8_t *hash, size_t len)
 /** @internal @This releases resources allocated by the @ref
     assh_hash_init and @ref assh_hash_copy functions.  @see
     assh_hash_cleanup. */
-ASSH_INLINE void
+ASSH_PV ASSH_INLINE void
 assh_hash_cleanup(struct assh_hash_ctx_s *hctx)
 {
   hctx->algo->f_cleanup(hctx);
@@ -194,27 +195,27 @@ assh_hash_cleanup(struct assh_hash_ctx_s *hctx)
 
 /** @internal @This is the md5 hash algorithm implementation
     descriptor. */
-extern const struct assh_hash_algo_s assh_hash_md5;
+ASSH_PV extern const struct assh_hash_algo_s assh_hash_md5;
 
 /** @internal @This is the sha1 hash algorithm implementation
     descriptor. */
-extern const struct assh_hash_algo_s assh_hash_sha1;
+ASSH_PV extern const struct assh_hash_algo_s assh_hash_sha1;
 
 /** @multiple @internal @This is a sha2 hash algorithm implementation
     descriptor. */
-extern const struct assh_hash_algo_s assh_hash_sha224;
-extern const struct assh_hash_algo_s assh_hash_sha256;
-extern const struct assh_hash_algo_s assh_hash_sha384;
-extern const struct assh_hash_algo_s assh_hash_sha512;
+ASSH_PV extern const struct assh_hash_algo_s assh_hash_sha224;
+ASSH_PV extern const struct assh_hash_algo_s assh_hash_sha256;
+ASSH_PV extern const struct assh_hash_algo_s assh_hash_sha384;
+ASSH_PV extern const struct assh_hash_algo_s assh_hash_sha512;
 
 /** @multiple @internal @This is a sha3 hash algorithm implementation
     descriptor. */
-extern const struct assh_hash_algo_s assh_hash_sha3_224;
-extern const struct assh_hash_algo_s assh_hash_sha3_256;
-extern const struct assh_hash_algo_s assh_hash_sha3_384;
-extern const struct assh_hash_algo_s assh_hash_sha3_512;
-extern const struct assh_hash_algo_s assh_hash_shake_128;
-extern const struct assh_hash_algo_s assh_hash_shake_256;
+ASSH_PV extern const struct assh_hash_algo_s assh_hash_sha3_224;
+ASSH_PV extern const struct assh_hash_algo_s assh_hash_sha3_256;
+ASSH_PV extern const struct assh_hash_algo_s assh_hash_sha3_384;
+ASSH_PV extern const struct assh_hash_algo_s assh_hash_sha3_512;
+ASSH_PV extern const struct assh_hash_algo_s assh_hash_shake_128;
+ASSH_PV extern const struct assh_hash_algo_s assh_hash_shake_256;
 
 #endif
 

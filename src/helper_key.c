@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_PV
+
 #include <assh/helper_key.h>
 #include <assh/helper_base64.h>
 #include <assh/helper_bcrypt.h>

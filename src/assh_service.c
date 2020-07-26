@@ -21,6 +21,7 @@
 
 */
 
+#define ASSH_PV
 #define ASSH_EV_CONST /* write access to event const fields */
 
 #include <assh/assh_context.h>

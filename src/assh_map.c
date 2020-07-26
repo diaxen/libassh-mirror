@@ -21,6 +21,8 @@
 
 */
 
+#define ASSH_PV
+
 #include <assh/assh.h>
 #include <assh/assh_map.h>
 
@@ -123,3 +125,17 @@ void assh_map_iter(struct assh_map_entry_s *root, void *ctx,
     }
 }
 
+assh_status_t
+assh_map_remove_id(struct assh_map_entry_s **root,
+                   assh_map_id_t id)
+{
+  struct assh_map_entry_s *x = assh_map_lookup(root, id, &root);
+
+  if (x)
+    {
+      assh_map_remove(root, x);
+      return ASSH_OK;
+    }
+
+  return ASSH_NOT_FOUND;
+}

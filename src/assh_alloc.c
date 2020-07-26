@@ -23,30 +23,27 @@
 
 #define ASSH_PV
 
-#include <assh/assh_compress.h>
+#include <assh/assh_alloc.h>
 
-static ASSH_COMPRESS_INIT_FCN(assh_compress_none_init)
+assh_status_t
+assh_alloc(struct assh_context_s *c, size_t size,
+	   enum assh_alloc_type_e type, void **result)
 {
-  return ASSH_OK;
+  *result = NULL;
+  return size != 0
+    ? c->f_alloc(c->alloc_pv, result, size, type)
+    : ASSH_OK;
 }
 
-static ASSH_COMPRESS_PROCESS_FCN(assh_compress_none_process)
+assh_status_t
+assh_realloc(struct assh_context_s *c, void **ptr, size_t size,
+	     enum assh_alloc_type_e type)
 {
-  return ASSH_OK;
+  return c->f_alloc(c->alloc_pv, ptr, size, type);
 }
 
-static ASSH_COMPRESS_CLEANUP_FCN(assh_compress_none_cleanup)
+void assh_free(struct assh_context_s *c, void *ptr)
 {
+  if (ptr != NULL)
+    (void)c->f_alloc(c->alloc_pv, &ptr, 0, ASSH_ALLOC_NONE);
 }
-
-const struct assh_algo_compress_s assh_compress_none =
-{
-  ASSH_ALGO_BASE(COMPRESS, "assh-builtin", 99, 99,
-    ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "none" })
-  ),
-  .ctx_size = 0,
-  .f_init = assh_compress_none_init,
-  .f_process = assh_compress_none_process,
-  .f_cleanup = assh_compress_none_cleanup,
-};
-
