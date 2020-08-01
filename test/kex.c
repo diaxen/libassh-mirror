@@ -401,7 +401,7 @@ void test(const struct assh_algo_kex_s *ka,
 	  assh_kex_set_threshold(&session[i], 1024 + test_prng_rand() % 1024))
 	TEST_FAIL("sessions init");
 
-      assh_userauth_done(&session[i]);
+      assh_session_userauth_done(&session[i]);
       test_cipher_fuzz_initreg(c, &session[i]);
     }
 

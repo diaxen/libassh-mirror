@@ -355,7 +355,7 @@ switch (ev.id)
   after the right amount of time in order to let the library
   handle the timeout.
 
-  The @ref assh_context_timeouts and @ref assh_context_keepalive
+  The @ref assh_context_set_timeouts and @ref assh_context_set_keepalive
   functions can be used to change the protocol delays.
 @end section
 

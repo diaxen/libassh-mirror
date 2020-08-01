@@ -149,7 +149,7 @@ void test(int (*fend)(int, int), int cnt, int evrate,
 	TEST_FAIL("init");
       test_cipher_fuzz_initreg(&context[i], &session[i]);
 
-      assh_userauth_done(&session[i]);
+      assh_session_userauth_done(&session[i]);
       if (assh_kex_set_threshold(&session[i], 1 + test_prng_rand() % 16384))
 	TEST_FAIL("init");
 

@@ -210,7 +210,7 @@ static ASSH_EVENT_DONE_FCN(assh_userauth_server_success_done)
 	       | ASSH_ERRSV_DISCONNECT);
   assh_transport_push(s, pout);
 
-  assh_userauth_done(s);
+  assh_session_userauth_done(s);
   assh_service_start(s, pv->srv);
 
   return ASSH_OK;

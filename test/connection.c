@@ -224,7 +224,7 @@ void test(int (*fend)(int, int), int n, int evrate)
       if (assh_session_init(&context[i], &session[i]) != ASSH_OK)
 	TEST_FAIL("init");
 
-      assh_userauth_done(&session[i]);
+      assh_session_userauth_done(&session[i]);
       if (assh_kex_set_threshold(&session[i], 1 + test_prng_rand() % 4096))
 	TEST_FAIL("init");
     }

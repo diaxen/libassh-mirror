@@ -158,7 +158,7 @@ struct assh_context_s
     layer. Values are expressed in second unit. When passing 0, the
     delay is not changed. */
 void
-assh_context_timeouts(struct assh_context_s *c,
+assh_context_set_timeouts(struct assh_context_s *c,
                       uint_fast8_t transport, uint_fast8_t kex,
                       uint_fast16_t rekex, uint_fast16_t userauth);
 
@@ -166,7 +166,7 @@ assh_context_timeouts(struct assh_context_s *c,
     message by the running service. No keep-alive messages are
     transmitted when 0. */
 void
-assh_context_keepalive(struct assh_context_s *c, uint_fast16_t keepalive);
+assh_context_set_keepalive(struct assh_context_s *c, uint_fast16_t keepalive);
 
 /** @This takes care of performing the external libraries global
     initialization.

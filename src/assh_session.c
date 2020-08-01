@@ -401,7 +401,7 @@ assh_session_closed(const struct assh_session_s *s)
 }
 
 void
-assh_userauth_done(struct assh_session_s *s)
+assh_session_userauth_done(struct assh_session_s *s)
 {
   s->user_auth_done = 1;
 }

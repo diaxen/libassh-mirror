@@ -89,10 +89,4 @@ enum assh_userauth_methods_e
 #endif
 };
 
-/** @This marks the user as authenticated. This is usually called by
-    the user authentication services. On rare cases when one of these
-    services is not used, it may be called directly by the application. */
-void
-assh_userauth_done(struct assh_session_s *s);
-
 #endif

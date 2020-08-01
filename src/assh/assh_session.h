@@ -342,5 +342,11 @@ assh_session_delay(const struct assh_session_s *s, assh_time_t time);
 assh_bool_t
 assh_session_closed(const struct assh_session_s *s);
 
+/** @This marks the user as authenticated. This is usually called by
+    the user authentication services. On rare cases when one of these
+    services is not used, it may be called directly by the application. */
+void
+assh_session_userauth_done(struct assh_session_s *s);
+
 #endif
 

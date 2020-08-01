@@ -235,7 +235,7 @@ void bench(const struct kex_bench_s *t,
 	  TEST_FAIL("sessions init");
 	fifo_init(&fifo[i]);
 
-	assh_userauth_done(&session[i]);
+	assh_session_userauth_done(&session[i]);
       }
 
     uint_fast8_t done = 0;

@@ -194,7 +194,7 @@ assh_context_keys(struct assh_context_s *ctx)
 }
 
 void
-assh_context_timeouts(struct assh_context_s *c,
+assh_context_set_timeouts(struct assh_context_s *c,
                       uint_fast8_t transport, uint_fast8_t kex,
                       uint_fast16_t rekex, uint_fast16_t userauth)
 {
@@ -209,7 +209,7 @@ assh_context_timeouts(struct assh_context_s *c,
 }
 
 void
-assh_context_keepalive(struct assh_context_s *c, uint_fast16_t keepalive)
+assh_context_set_keepalive(struct assh_context_s *c, uint_fast16_t keepalive)
 {
   c->timeout_keepalive = keepalive;
 }
