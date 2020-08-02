@@ -31,23 +31,23 @@ methods and key formats.
 @section TP {Algorithms registration}
   @label{algoreg}
 
-  When initiating the library context, the application has to register
+  When initializing a library context, the application has to register
   some algorithm descriptors on the @ref assh_context_s object.
 
-  Algorithm descriptors include speed factor and a safety factor
+  Algorithm descriptors include speed factor and safety factor
   values that give a rough estimate of the performances and
   cryptographic safety of each algorithm. These values have multiple
   purposes:
   @list
     @item They can be used to filter algorithms on registration.
-    @item They are used along with application provided weight values
+    @item They are used along with the application provided weight values
       to compute a score for the retained algorithms. This allows the
       application to favor speed or safety. The score is then used to
-      advertise lists of algorithms during the @hl key-exchange
-      process, sorted according to the application requirements.
+      sort lists of algorithms advertised during the @hl key-exchange.
     @item They are used to compute an overall score of the safety of
-      the session. This score depends on keys and algorithms negotiated
-      with the remote host during the last @hl key-exchange process.
+      the session. This score depends on keys and algorithms
+      negotiated with the remote host during the last @hl key-exchange
+      process. It is provided for use by the application.
   @end list
 
   The library offers multiple ways to shape the set of
@@ -58,14 +58,14 @@ methods and key formats.
       object}. Depending on the library function used for that
       purpose, a specific list of @hl algorithms is provided by
       the application, or the library is instructed to filter among
-      the supported @hl algorithms based on the safety requirement
-      provided by the application.
+      the supported @hl algorithms based on the safety and performance
+      requirements provided by the application.
     @item When multiple variants of the same @hl algorithm are
-      available, the one with the lowest safety that matches the
+      available, the one with the highest score that fulfills the
       requirement is retained. The application is free to use a low
       safety factor in order to favor acceptance of weak keys and weak
       parameters in order to maximize compatibility. It may also use a
-      higher safety factor, which will prevent connecting with older
+      high safety requirement, which will prevent connecting with older
       unsafe implementations and reject weak @hl{user keys} and
       @hl{host keys}.
     @item An additional filter callback function can be attached to
@@ -75,6 +75,13 @@ methods and key formats.
       allows filtering based on the specification status and
       popularity of a name. It can also be used to enable some of the
       @hl algorithms in a single direction.
+    @item The signature algorithms used during the @hl{user
+      authentication} process have to be registered as well. If you
+      want to allow use of a specific signature algorithm for @hl
+      {user authentication} while excluding it from the
+      @hl{key-exchange}, you may rely on the filter callback function
+      mentioned above. On server contexts, you can also avoid loading
+      a @hl{host key} that can be used by that algorithm.
   @end list
 
   The @tt {test/algo_list} application can be used to display a list
