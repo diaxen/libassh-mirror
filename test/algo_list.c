@@ -33,6 +33,18 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <getopt.h>
+
+enum action_e {
+  ACTION_NO_FILTER = 2,
+  ACTION_ORDER = 4,
+  ACTION_TABLE = 8,
+};
+
+static enum action_e action = 0;
+static uint_fast8_t safety_weight = 50;
+static assh_safety_t min_safety = 0;
+static assh_speed_t min_speed = 0;
 
 static char std(enum assh_algo_spec_e s)
 {
@@ -82,21 +94,22 @@ static void show_table()
     }
 }
 
-static void show_order(assh_safety_t safety, assh_safety_t min_safety, unsigned min_speed)
+static void show_order()
 {
   struct assh_context_s *c;
-  struct assh_session_s *s;
 
   if (assh_context_create(&c, ASSH_SERVER,
                           NULL, NULL, NULL, NULL))
     TEST_FAIL("context init");
 
-  if (assh_kex_set_order(c, safety) ||
+  if (assh_kex_set_order(c, safety_weight) ||
       assh_algo_register_default(c, min_safety, min_speed) != ASSH_OK)
     TEST_FAIL("algo regiter");
 
-  if (assh_session_create(c, &s))
-    TEST_FAIL("session init");
+  if (!(action & ACTION_NO_FILTER))
+    assh_algo_filter_variants(c);
+
+  assh_algo_sort(c);
 
   printf("  Spd Saf Score Algorithm                                Implem        Variant\n"
 	          "-------------------------------------------------------------------------------\n");
@@ -117,12 +130,29 @@ static void show_order(assh_safety_t safety, assh_safety_t min_safety, unsigned 
 	}
 
       printf("  %3u %3u %5u %-40s %-13s %s\n",
-              a->speed, a->safety, ASSH_ALGO_SCORE(a, safety),
+              a->speed, a->safety, ASSH_ALGO_SCORE(a, safety_weight),
               n->name, a->implem, a->variant ? a->variant : "");
     }
 
-  assh_session_release(s);
   assh_context_release(c);
+}
+
+static void usage()
+{
+  printf("usage: algo_list [options]\n");
+
+  printf(	  "Options:\n\n"
+
+	  "    -t         show table of supported algorithms\n\n"
+
+	  "    -w 0-99    set safety weight (50), filter and reorder algorithms\n"
+	  "    -a 0-99    set minimum safety (0)\n"
+	  "    -p 0-99    set minimum speed (0)\n"
+	  "    -V         do not remove variant duplicates\n\n"
+	  "    -h         show help\n\n"
+	  );
+
+  exit(1);
 }
 
 int main(int argc, char **argv)
@@ -130,18 +160,51 @@ int main(int argc, char **argv)
   if (assh_deps_init())
     return -1;
 
-  if (argc < 2)
-    {
-      show_table();
-    }
-  else
-    {
-      assh_safety_t safety = atoi(argv[1]);
-      assh_safety_t min_safety = argc > 2 ? atoi(argv[2]) : 0;
-      unsigned min_speed = argc > 3 ? atoi(argv[3]) : 0;
+  int opt;
 
-      show_order(safety, min_safety, min_speed);
+  while ((opt = getopt(argc, argv, "w:a:p:Vth")) != -1)
+    {
+      switch (opt)
+	{
+	case 't':
+	  if (action & ACTION_ORDER)
+	    usage();
+	  action = ACTION_TABLE;
+	  break;
+	case 'w':
+	  if (action & ACTION_TABLE)
+	    usage();
+	  safety_weight = atoi(optarg);
+	  action |= ACTION_ORDER;
+	  break;
+	case 'a':
+	  if (action & ACTION_TABLE)
+	    usage();
+	  min_safety = atoi(optarg);
+	  action |= ACTION_ORDER;
+	  break;
+	case 'p':
+	  if (action & ACTION_TABLE)
+	    usage();
+	  min_speed = atoi(optarg);
+	  action |= ACTION_ORDER;
+	  break;
+	case 'V':
+	  if (action & ACTION_TABLE)
+	    usage();
+	  action |= ACTION_NO_FILTER | ACTION_ORDER;
+	  break;
+	case 'h':
+	  usage();
+	default:
+	  return 1;
+	}
     }
+
+  if (action & ACTION_ORDER)
+    show_order();
+  else
+    show_table();
 
   return 0;
 }

@@ -60,7 +60,7 @@ static assh_bool_t assh_algo_conflicting(const struct assh_algo_s *a,
   return 0;
 }
 
-static void assh_algo_filter_variants(struct assh_context_s *c)
+void assh_algo_filter_variants(struct assh_context_s *c)
 {
   /* remove duplicated names in the same class */
   assh_algo_id_t i, j, k = c->algo_cnt;
@@ -89,7 +89,7 @@ static void assh_algo_filter_variants(struct assh_context_s *c)
   c->algos[k] = NULL;
 }
 
-static void assh_algo_sort(struct assh_context_s *c)
+void assh_algo_sort(struct assh_context_s *c)
 {
   /* sort algorithms by class and safety/speed factor */
   assh_algo_id_t i, j;

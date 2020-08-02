@@ -407,6 +407,14 @@ assh_algo_with_key(const struct assh_algo_s *algo)
 ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_check_table(struct assh_context_s *c);
 
+/** @internal */
+ASSH_PV void
+assh_algo_filter_variants(struct assh_context_s *c);
+
+/** @internal */
+ASSH_PV void
+assh_algo_sort(struct assh_context_s *c);
+
 /** @internal @This computes the size of the @ref SSH_MSG_KEXINIT
     packet based on the current list of registered algorithms. */
 ASSH_PV void assh_algo_kex_init_size(struct assh_context_s *c);
