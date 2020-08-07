@@ -63,11 +63,9 @@ static const struct sign_bench_s vectors[] =
   { "ssh-dss", 1024 },
   { "ssh-dss", 2048 },
   { "ssh-dss", 4096 },
-  { "dsa2048-sha224@libassh.org", 1024 },
   { "dsa2048-sha224@libassh.org", 2048 },
   { "dsa2048-sha224@libassh.org", 4096 },
-  { "dsa3072-sha256@libassh.org", 1024 },
-  { "dsa3072-sha256@libassh.org", 2048 },
+  { "dsa3072-sha256@libassh.org", 3072 },
   { "dsa3072-sha256@libassh.org", 4096 },
   { NULL }
 };
