@@ -41,7 +41,7 @@ static ASSH_CIPHER_CLEANUP_FCN(assh_none_cleanup)
 
 const struct assh_algo_cipher_s assh_cipher_none =
 {
-  ASSH_ALGO_BASE(CIPHER, "assh-builtin", 0, 99,
+  ASSH_ALGO_BASE(CIPHER, "assh-builtin", 0, 255,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
                       "none" })
   ),

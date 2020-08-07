@@ -43,7 +43,7 @@ static ASSH_MAC_PROCESS_FCN(assh_hmac_none_process)
 
 const struct assh_algo_mac_s assh_mac_none =
 {
-  ASSH_ALGO_BASE(MAC, "assh-builtin", 0, 99,
+  ASSH_ALGO_BASE(MAC, "assh-builtin", 0, 255,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
                       "none" })
   ),

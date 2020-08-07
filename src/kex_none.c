@@ -66,7 +66,7 @@ static ASSH_KEX_INIT_FCN(assh_kex_none_init)
 const struct assh_algo_kex_s assh_kex_none =
 {
  .algo_wk = {
-    ASSH_ALGO_BASE(KEX, "assh-builtin", 0, 99,
+    ASSH_ALGO_BASE(KEX, "assh-builtin", 0, 255,
       ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
                         "none@libassh.org" })
     ),

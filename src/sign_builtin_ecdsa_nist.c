@@ -371,7 +371,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_nistp256_suitable_key)
 const struct assh_algo_sign_s assh_sign_builtin_nistp256 =
 {
   .algo_wk = {
-     ASSH_ALGO_BASE(SIGN, "assh-builtin", ASSH_NISTP256_SAFETY, 90,
+     ASSH_ALGO_BASE(SIGN, "assh-builtin", ASSH_NISTP256_SAFETY, 26,
        ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
    	              "ecdsa-sha2-nistp256" }),
      ),
@@ -396,7 +396,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_nistp384_suitable_key)
 const struct assh_algo_sign_s assh_sign_builtin_nistp384 =
 {
   .algo_wk = {
-     ASSH_ALGO_BASE(SIGN, "assh-builtin", ASSH_NISTP384_SAFETY, 80,
+     ASSH_ALGO_BASE(SIGN, "assh-builtin", ASSH_NISTP384_SAFETY, 11,
        ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
    	              "ecdsa-sha2-nistp384" }),
      ),
@@ -421,7 +421,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_nistp521_suitable_key)
 const struct assh_algo_sign_s assh_sign_builtin_nistp521 =
 {
   .algo_wk = {
-    ASSH_ALGO_BASE(SIGN, "assh-builtin", ASSH_NISTP521_SAFETY, 70,
+    ASSH_ALGO_BASE(SIGN, "assh-builtin", ASSH_NISTP521_SAFETY, 4,
       ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                         "ecdsa-sha2-nistp521" }),
     ),

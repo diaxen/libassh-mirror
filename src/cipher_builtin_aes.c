@@ -377,7 +377,7 @@ static ASSH_CIPHER_CLEANUP_FCN(assh_aes_cleanup)
 
 const struct assh_algo_cipher_s assh_cipher_builtin_aes128_cbc =
 {
-  ASSH_ALGO_BASE(CIPHER, "assh-builtin", 40, 70,
+  ASSH_ALGO_BASE(CIPHER, "assh-builtin", 40, 3,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                       "aes128-cbc" })
   ),
@@ -393,7 +393,7 @@ const struct assh_algo_cipher_s assh_cipher_builtin_aes128_cbc =
 
 const struct assh_algo_cipher_s assh_cipher_builtin_aes192_cbc =
 {
-  ASSH_ALGO_BASE(CIPHER, "assh-builtin", 50, 65,
+  ASSH_ALGO_BASE(CIPHER, "assh-builtin", 50, 2,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                       "aes192-cbc" })
   ),
@@ -409,7 +409,7 @@ const struct assh_algo_cipher_s assh_cipher_builtin_aes192_cbc =
 
 const struct assh_algo_cipher_s assh_cipher_builtin_aes256_cbc =
 {
-  ASSH_ALGO_BASE(CIPHER, "assh-builtin", 60, 60,
+  ASSH_ALGO_BASE(CIPHER, "assh-builtin", 60, 1,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                       "aes256-cbc" },
                    { ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_OLDNAME,
@@ -427,7 +427,7 @@ const struct assh_algo_cipher_s assh_cipher_builtin_aes256_cbc =
 
 const struct assh_algo_cipher_s assh_cipher_builtin_aes128_ctr =
 {
-  ASSH_ALGO_BASE(CIPHER, "assh-builtin", 41, 70,
+  ASSH_ALGO_BASE(CIPHER, "assh-builtin", 41, 3,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                       "aes128-ctr" })
   ),
@@ -443,7 +443,7 @@ const struct assh_algo_cipher_s assh_cipher_builtin_aes128_ctr =
 
 const struct assh_algo_cipher_s assh_cipher_builtin_aes192_ctr =
 {
-  ASSH_ALGO_BASE(CIPHER, "assh-builtin", 51, 65,
+  ASSH_ALGO_BASE(CIPHER, "assh-builtin", 51, 2,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                       "aes192-ctr" })
   ),
@@ -459,7 +459,7 @@ const struct assh_algo_cipher_s assh_cipher_builtin_aes192_ctr =
 
 const struct assh_algo_cipher_s assh_cipher_builtin_aes256_ctr =
 {
-  ASSH_ALGO_BASE(CIPHER, "assh-builtin", 61, 60,
+  ASSH_ALGO_BASE(CIPHER, "assh-builtin", 61, 2,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                       "aes256-ctr" })
   ),

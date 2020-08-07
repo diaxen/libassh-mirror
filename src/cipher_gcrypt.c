@@ -202,167 +202,167 @@ const struct assh_algo_cipher_s assh_cipher_gcrypt_##id_ =		\
 };
 
 ASSH_GCRYPT_CIPHER(arc4, ARCFOUR, STREAM,
-                   8,  8,  0, 16,  0,  5, 80,
+                   8,  8,  0, 16,  0,  5, 34,
                    { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "arcfour" } );
 ASSH_GCRYPT_CIPHER(arc4_128, ARCFOUR, STREAM,
-                   8,  8,  0, 16,  0, 10, 80,
+                   8,  8,  0, 16,  0, 10, 34,
                    { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "arcfour128" } );
 ASSH_GCRYPT_CIPHER(arc4_256, ARCFOUR, STREAM,
-                   8,  8,  0, 32,  0, 15, 80,
+                   8,  8,  0, 32,  0, 15, 34,
                    { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "arcfour256" } );
 
 ASSH_GCRYPT_CIPHER(tdes_cbc, 3DES, CBC,
-                   8,  8,  8,  24, 0, 20, 30,
+                   8,  8,  8,  24, 0, 20, 0,
                    { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "3des-cbc" } );
 
 ASSH_GCRYPT_CIPHER(tdes_ctr, 3DES, CTR,
-                   8,  8,  8,  24, 0, 21, 30,
+                   8,  8,  8,  24, 0, 21, 0,
                    { ASSH_ALGO_STD_IETF, "3des-ctr" } );
 
 ASSH_GCRYPT_CIPHER(cast128_cbc, CAST5, CBC,
-                   8, 8, 8, 16, 0, 25, 50,
+                   8, 8, 8, 16, 0, 25, 5,
                    { ASSH_ALGO_STD_IETF, "cast128-cbc" } );
 
 ASSH_GCRYPT_CIPHER(cast128_ctr, CAST5, CTR,
-                   8, 8, 8, 16, 0, 26, 50,
+                   8, 8, 8, 16, 0, 26, 17,
                    { ASSH_ALGO_STD_IETF, "cast128-ctr" });
 
 ASSH_GCRYPT_CIPHER(idea_cbc,  IDEA, CBC,
-                   8, 8, 8, 16, 0, 25, 50,
+                   8, 8, 8, 16, 0, 25, 4,
                    { ASSH_ALGO_STD_IETF, "idea-cbc" });
 
 ASSH_GCRYPT_CIPHER(idea_ctr,  IDEA, CTR,
-                   8, 8, 8, 16, 0, 26, 50,
+                   8, 8, 8, 16, 0, 26, 4,
                    { ASSH_ALGO_STD_IETF, "idea-ctr" });
 
 ASSH_GCRYPT_CIPHER(blowfish_cbc, BLOWFISH, CBC,
-                   8,  8,  8,  16, 0, 30, 60,
+                   8,  8,  8,  16, 0, 30, 5,
                    { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "blowfish-cbc" });
 
 ASSH_GCRYPT_CIPHER(blowfish_ctr,      BLOWFISH,   CTR,
-                   8,  8,  8,  32, 0, 35, 60,
+                   8,  8,  8,  32, 0, 35, 21,
                    { ASSH_ALGO_STD_IETF, "blowfish-ctr" });
 
 ASSH_GCRYPT_CIPHER(aes128_cbc, AES128, CBC,
-                   16, 16, 16, 16, 0, 40, 70,
+                   16, 16, 16, 16, 0, 40, 54,
                    { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "aes128-cbc" });
 
 ASSH_GCRYPT_CIPHER(aes192_cbc, AES192, CBC,
-                   16, 16, 16, 24, 0, 50, 65,
+                   16, 16, 16, 24, 0, 50, 47,
                    { ASSH_ALGO_STD_IETF, "aes192-cbc" });
 
 ASSH_GCRYPT_CIPHER(aes256_cbc,          AES256,     CBC,
-                   16, 16, 16, 32, 0, 60, 60,
+                   16, 16, 16, 32, 0, 60, 42,
                    { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "aes256-cbc" },
                    { ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_OLDNAME, "rijndael-cbc@lysator.liu.se" });
 
 ASSH_GCRYPT_CIPHER(aes128_ctr,          AES128,     CTR,
-                   16, 16, 16, 16, 0, 41, 70,
+                   16, 16, 16, 16, 0, 41, 143,
                    { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "aes128-ctr" });
 
 ASSH_GCRYPT_CIPHER(aes192_ctr,          AES192,     CTR,
-                   16, 16, 16, 24, 0, 51, 65,
+                   16, 16, 16, 24, 0, 51, 129,
                    { ASSH_ALGO_STD_IETF, "aes192-ctr" });
 
 ASSH_GCRYPT_CIPHER(aes256_ctr,          AES256,     CTR,
-                   16, 16, 16, 32, 0, 61, 60,
+                   16, 16, 16, 32, 0, 61, 118,
                    { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "aes256-ctr" });
 
 ASSH_GCRYPT_CIPHER(aes128_gcm,  AES128, GCM,
-                   16,  4, 12, 16, 16, 41, 75,
+                   16,  4, 12, 16, 16, 41, 96,
                    { ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON, "aes128-gcm@openssh.com" });
 
 ASSH_GCRYPT_CIPHER(aes256_gcm,  AES256, GCM,
-                   16,  4, 12, 32, 16, 61, 65,
+                   16,  4, 12, 32, 16, 61, 85,
                    { ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON, "aes256-gcm@openssh.com" });
 
 ASSH_GCRYPT_CIPHER(twofish128_cbc,  TWOFISH128, CBC,
-                   16, 16, 16, 16, 0, 50, 60,
+                   16, 16, 16, 16, 0, 50, 10,
                    { ASSH_ALGO_STD_IETF, "twofish128-cbc" });
 
 ASSH_GCRYPT_CIPHER(twofish256_cbc,  TWOFISH   , CBC,
-                   16, 16, 16, 32, 0, 70, 60,
+                   16, 16, 16, 32, 0, 70, 10,
                    { ASSH_ALGO_STD_IETF, "twofish256-cbc" });
 
 ASSH_GCRYPT_CIPHER(twofish128_ctr,  TWOFISH128, CTR,
-                   16, 16, 16, 16, 0, 51, 60,
+                   16, 16, 16, 16, 0, 51, 25,
                    { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "twofish128-ctr" });
 
 ASSH_GCRYPT_CIPHER(twofish256_ctr,  TWOFISH,    CTR,
-                   16, 16, 16, 32, 0, 71, 60,
+                   16, 16, 16, 32, 0, 71, 25,
                    { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "twofish256-ctr" });
 
 ASSH_GCRYPT_CIPHER(twofish128_gcm,  TWOFISH128, GCM,
-                   16, 4, 12, 16, 16, 51, 65,
+                   16, 4, 12, 16, 16, 51, 23,
                    { ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
                      "twofish128-gcm@libassh.org" });
 
 ASSH_GCRYPT_CIPHER(twofish256_gcm,  TWOFISH, GCM,
-                   16, 4, 12, 32, 16, 71, 65,
+                   16, 4, 12, 32, 16, 71, 23,
                    { ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
                      "twofish256-gcm@libassh.org" });
 
 ASSH_GCRYPT_CIPHER(serpent128_cbc, SERPENT128, CBC,
-                   16, 16, 16, 16, 0, 55, 40,
+                   16, 16, 16, 16, 0, 55, 3,
                    { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "serpent128-cbc" });
 
 ASSH_GCRYPT_CIPHER(serpent192_cbc, SERPENT192, CBC,
-                   16, 16, 16, 24, 0, 65, 40,
+                   16, 16, 16, 24, 0, 65, 3,
                    { ASSH_ALGO_STD_IETF, "serpent192-cbc" });
 
 ASSH_GCRYPT_CIPHER(serpent256_cbc, SERPENT256, CBC,
-                   16, 16, 16, 32, 0, 75, 40,
+                   16, 16, 16, 32, 0, 75, 3,
                    { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "serpent256-cbc" });
 
 ASSH_GCRYPT_CIPHER(serpent128_ctr,  SERPENT128, CTR,
-                   16, 16, 16, 16, 0, 56, 40,
+                   16, 16, 16, 16, 0, 56, 34,
                    { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "serpent128-ctr" });
 
 ASSH_GCRYPT_CIPHER(serpent192_ctr,  SERPENT192, CTR,
-                   16, 16, 16, 24, 0, 66, 40,
+                   16, 16, 16, 24, 0, 66, 34,
                    { ASSH_ALGO_STD_IETF, "serpent192-ctr" });
 
 ASSH_GCRYPT_CIPHER(serpent256_ctr,  SERPENT256, CTR,
-                   16, 16, 16, 32, 0, 76, 40,
+                   16, 16, 16, 32, 0, 76, 34,
                    { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "serpent256-ctr" });
 
 ASSH_GCRYPT_CIPHER(serpent128_gcm,  SERPENT128, GCM,
-                   16, 4, 12, 16, 16, 56, 45,
+                   16, 4, 12, 16, 16, 56, 31,
                    { ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
                      "serpent128-gcm@libassh.org" });
 
 ASSH_GCRYPT_CIPHER(serpent256_gcm,  SERPENT256, GCM,
-                   16, 4, 12, 32, 16, 76, 45,
+                   16, 4, 12, 32, 16, 76, 31,
                    { ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
                      "serpent256-gcm@libassh.org" });
 
 /* https://tools.ietf.org/html/draft-kanno-secsh-camellia-02 */
 ASSH_GCRYPT_CIPHER(camellia128_cbc,  CAMELLIA128, CBC,
-                   16, 16, 16, 16, 0, 40, 40,
+                   16, 16, 16, 16, 0, 40, 8,
                    { ASSH_ALGO_STD_DRAFT,
                      "camellia128-cbc" });
 
 ASSH_GCRYPT_CIPHER(camellia192_cbc,  CAMELLIA192, CBC,
-                   16, 16, 16, 24, 0, 50, 40,
+                   16, 16, 16, 24, 0, 50, 6,
                    { ASSH_ALGO_STD_DRAFT,
                      "camellia192-cbc" });
 
 ASSH_GCRYPT_CIPHER(camellia256_cbc,  CAMELLIA256, CBC,
-                   16, 16, 16, 32, 0, 60, 40,
+                   16, 16, 16, 32, 0, 60, 6,
                    { ASSH_ALGO_STD_DRAFT,
                      "camellia256-cbc" });
 
 ASSH_GCRYPT_CIPHER(camellia128_ctr,  CAMELLIA128, CTR,
-                   16, 16, 16, 16, 0, 40, 40,
+                   16, 16, 16, 16, 0, 40, 49,
                    { ASSH_ALGO_STD_DRAFT,
                      "camellia128-ctr" });
 
 ASSH_GCRYPT_CIPHER(camellia192_ctr,  CAMELLIA192, CTR,
-                   16, 16, 16, 24, 0, 50, 40,
+                   16, 16, 16, 24, 0, 50, 39,
                    { ASSH_ALGO_STD_DRAFT,
                      "camellia192-ctr" });
 
 ASSH_GCRYPT_CIPHER(camellia256_ctr,  CAMELLIA256, CTR,
-                   16, 16, 16, 32, 0, 60, 40,
+                   16, 16, 16, 32, 0, 60, 39,
                    { ASSH_ALGO_STD_DRAFT,
                      "camellia256-ctr" });

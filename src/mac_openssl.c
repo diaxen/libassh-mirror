@@ -112,53 +112,53 @@ const struct assh_algo_mac_s assh_mac_openssl_##id_ =			\
 };
 
 # ifndef OPENSSL_NO_MD5
-ASSH_OPENSSL_HMAC(md5,           EVP_md5(),    16, 16, 30, 70, 0,
+ASSH_OPENSSL_HMAC(md5,           EVP_md5(),    16, 16, 30, 18, 0,
                  { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                    "hmac-md5" });
-ASSH_OPENSSL_HMAC(md5_etm,       EVP_md5(),    16, 16, 31, 70, 1,
+ASSH_OPENSSL_HMAC(md5_etm,       EVP_md5(),    16, 16, 31, 18, 1,
                  { ASSH_ALGO_STD_PRIVATE,
                    "hmac-md5-etm@openssh.com" });
-ASSH_OPENSSL_HMAC(md5_96,        EVP_md5(),    16, 12, 20, 75, 0,
+ASSH_OPENSSL_HMAC(md5_96,        EVP_md5(),    16, 12, 20, 18, 0,
                  { ASSH_ALGO_STD_IETF,
                    "hmac-md5-96" });
-ASSH_OPENSSL_HMAC(md5_96_etm,    EVP_md5(),    16, 12, 21, 75, 1,
+ASSH_OPENSSL_HMAC(md5_96_etm,    EVP_md5(),    16, 12, 21, 18, 1,
                  { ASSH_ALGO_STD_PRIVATE,
                    "hmac-md5-96-etm@openssh.com" });
 #endif
 
 
-ASSH_OPENSSL_HMAC(sha1,          EVP_sha1(),   20, 20, 35, 70, 0,
+ASSH_OPENSSL_HMAC(sha1,          EVP_sha1(),   20, 20, 35, 25, 0,
                  { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                    "hmac-sha1" });
-ASSH_OPENSSL_HMAC(sha1_etm,      EVP_sha1(),   20, 20, 36, 70, 1,
+ASSH_OPENSSL_HMAC(sha1_etm,      EVP_sha1(),   20, 20, 36, 25, 1,
                  { ASSH_ALGO_STD_PRIVATE,
                    "hmac-sha1-etm@openssh.com" });
-ASSH_OPENSSL_HMAC(sha1_96,       EVP_sha1(),   20, 12, 25, 75, 0,
+ASSH_OPENSSL_HMAC(sha1_96,       EVP_sha1(),   20, 12, 25, 25, 0,
                  { ASSH_ALGO_STD_IETF,
                    "hmac-sha1-96" });
-ASSH_OPENSSL_HMAC(sha1_96_etm,   EVP_sha1(),   20, 12, 26, 75, 1,
+ASSH_OPENSSL_HMAC(sha1_96_etm,   EVP_sha1(),   20, 12, 26, 25, 1,
                  { ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,
                    "hmac-sha1-96-etm@openssh.com" });
 
-ASSH_OPENSSL_HMAC(sha256,        EVP_sha256(), 32, 32, 40, 60, 0,
+ASSH_OPENSSL_HMAC(sha256,        EVP_sha256(), 32, 32, 40, 12, 0,
                  { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                    "hmac-sha2-256" });
-ASSH_OPENSSL_HMAC(sha256_etm,    EVP_sha256(), 32, 32, 41, 60, 1,
+ASSH_OPENSSL_HMAC(sha256_etm,    EVP_sha256(), 32, 32, 41, 12, 1,
                  { ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,
                    "hmac-sha2-256-etm@openssh.com" });
 
-ASSH_OPENSSL_HMAC(sha512,        EVP_sha512(), 64, 64, 50, 50, 0,
+ASSH_OPENSSL_HMAC(sha512,        EVP_sha512(), 64, 64, 50, 18, 0,
                  { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                    "hmac-sha2-512" });
-ASSH_OPENSSL_HMAC(sha512_etm,    EVP_sha512(), 64, 64, 51, 50, 1,
+ASSH_OPENSSL_HMAC(sha512_etm,    EVP_sha512(), 64, 64, 51, 18, 1,
                  { ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,
                    "hmac-sha2-512-etm@openssh.com" });
 
 # ifndef OPENSSL_NO_RMD160
-ASSH_OPENSSL_HMAC(ripemd160,     EVP_ripemd160(), 20, 20, 30, 70, 0,
+ASSH_OPENSSL_HMAC(ripemd160,     EVP_ripemd160(), 20, 20, 30, 7, 0,
                  { ASSH_ALGO_STD_IETF,
                    "hmac-ripemd160" });
-ASSH_OPENSSL_HMAC(ripemd160_etm, EVP_ripemd160(), 20, 20, 31, 70, 1,
+ASSH_OPENSSL_HMAC(ripemd160_etm, EVP_ripemd160(), 20, 20, 31, 7, 1,
                  { ASSH_ALGO_STD_PRIVATE,
                    "hmac-ripemd160-etm@openssh.com" });
 #endif

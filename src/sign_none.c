@@ -51,7 +51,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_none_suitable_key)
 const struct assh_algo_sign_s assh_sign_none =
 {
   .algo_wk = {
-     ASSH_ALGO_BASE(SIGN, "assh-builtin", 0, 99,
+     ASSH_ALGO_BASE(SIGN, "assh-builtin", 0, 255,
        ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
                          "none@libassh.org" }),
      ),

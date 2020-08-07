@@ -520,7 +520,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_ed25519_suitable_key)
 const struct assh_algo_sign_s assh_sign_builtin_ed25519 =
 {
  .algo_wk = {
-    ASSH_ALGO_BASE(SIGN, "assh-builtin", 50, 90,
+    ASSH_ALGO_BASE(SIGN, "assh-builtin", 50, 22,
       ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,
                         "ssh-ed25519" }),
     ),
@@ -542,7 +542,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_eddsa_e382_suitable_key)
 const struct assh_algo_sign_s assh_sign_builtin_eddsa_e382 =
 {
  .algo_wk = {
-    ASSH_ALGO_BASE(SIGN, "assh-builtin", 70, 80,
+    ASSH_ALGO_BASE(SIGN, "assh-builtin", 70, 9,
       ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
                         "eddsa-e382-shake256@libassh.org" }),
     ),
@@ -564,7 +564,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_eddsa_e521_suitable_key)
 const struct assh_algo_sign_s assh_sign_builtin_eddsa_e521 =
 {
  .algo_wk = {
-    ASSH_ALGO_BASE(SIGN, "assh-builtin", 90, 70,
+    ASSH_ALGO_BASE(SIGN, "assh-builtin", 90, 3,
       ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
                         "eddsa-e521-shake256@libassh.org" }),
     ),

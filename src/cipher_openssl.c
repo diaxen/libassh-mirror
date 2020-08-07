@@ -244,102 +244,102 @@ const struct assh_algo_cipher_s assh_cipher_openssl_##id_ =		\
 
 #ifndef OPENSSL_NO_RC4
 ASSH_OPENSSL_CIPHER(arc4, EVP_rc4(), STREAM,
-                   8,  8,  0, 16,  0,  5, 80,
+                   8,  8,  0, 16,  0,  5, 26,
                    { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "arcfour" } );
 ASSH_OPENSSL_CIPHER(arc4_128, EVP_rc4(), STREAM,
-                   8,  8,  0, 16,  0, 10, 80,
+                   8,  8,  0, 16,  0, 10, 26,
                    { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "arcfour128" } );
 ASSH_OPENSSL_CIPHER(arc4_256, EVP_rc4(), STREAM,
-                   8,  8,  0, 32,  0, 15, 80,
+                   8,  8,  0, 32,  0, 15, 26,
                    { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "arcfour256" } );
 #endif
 
 #ifndef OPENSSL_NO_DES
 ASSH_OPENSSL_CIPHER(tdes_cbc, EVP_des_ede3_cbc(), CBC,
-                   8,  8,  8,  24, 0, 20, 30,
+                   8,  8,  8,  24, 0, 20, 0,
                    { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "3des-cbc" } );
 #endif
 
 #ifndef OPENSSL_NO_CAST
 ASSH_OPENSSL_CIPHER(cast128_cbc, EVP_cast5_cbc(), CBC,
-                   8, 8, 8, 16, 0, 25, 50,
+                   8, 8, 8, 16, 0, 25, 5,
                    { ASSH_ALGO_STD_IETF, "cast128-cbc" } );
 #endif
 
 #ifndef OPENSSL_NO_IDEA
 ASSH_OPENSSL_CIPHER(idea_cbc,  EVP_idea_cbc(), CBC,
-                   8, 8, 8, 16, 0, 25, 50,
+                   8, 8, 8, 16, 0, 25, 4,
                    { ASSH_ALGO_STD_IETF, "idea-cbc" });
 #endif
 
 #ifndef OPENSSL_NO_BF
 ASSH_OPENSSL_CIPHER(blowfish_cbc, EVP_bf_cbc(), CBC,
-                   8,  8,  8,  16, 0, 30, 60,
+                   8,  8,  8,  16, 0, 30, 5,
                    { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "blowfish-cbc" });
 #endif
 
 ASSH_OPENSSL_CIPHER(aes128_cbc, EVP_aes_128_cbc(), CBC,
-                   16, 16, 16, 16, 0, 40, 70,
+                   16, 16, 16, 16, 0, 40, 56,
                    { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "aes128-cbc" });
 
 ASSH_OPENSSL_CIPHER(aes192_cbc, EVP_aes_192_cbc(), CBC,
-                   16, 16, 16, 24, 0, 50, 65,
+                   16, 16, 16, 24, 0, 50, 48,
                    { ASSH_ALGO_STD_IETF, "aes192-cbc" });
 
 ASSH_OPENSSL_CIPHER(aes256_cbc, EVP_aes_256_cbc(), CBC,
-                   16, 16, 16, 32, 0, 60, 60,
+                   16, 16, 16, 32, 0, 60, 43,
                    { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "aes256-cbc" },
                    { ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_OLDNAME, "rijndael-cbc@lysator.liu.se" });
 
 ASSH_OPENSSL_CIPHER(aes128_ctr, EVP_aes_128_ctr(),     CTR,
-                   16, 16, 16, 16, 0, 41, 70,
+                   16, 16, 16, 16, 0, 41, 143,
                    { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "aes128-ctr" });
 
 ASSH_OPENSSL_CIPHER(aes192_ctr, EVP_aes_192_ctr(),     CTR,
-                   16, 16, 16, 24, 0, 51, 65,
+                   16, 16, 16, 24, 0, 51, 129,
                    { ASSH_ALGO_STD_IETF, "aes192-ctr" });
 
 ASSH_OPENSSL_CIPHER(aes256_ctr, EVP_aes_256_ctr(),     CTR,
-                   16, 16, 16, 32, 0, 61, 60,
+                   16, 16, 16, 32, 0, 61, 119,
                    { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "aes256-ctr" });
 
 ASSH_OPENSSL_CIPHER(aes128_gcm, EVP_aes_128_gcm(), GCM,
-                   16,  4, 12, 16, 16, 41, 75,
+                   16,  4, 12, 16, 16, 41, 142,
                    { ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON, "aes128-gcm@openssh.com" });
 
 ASSH_OPENSSL_CIPHER(aes256_gcm, EVP_aes_256_gcm(), GCM,
-                   16,  4, 12, 32, 16, 61, 65,
+                   16,  4, 12, 32, 16, 61, 118,
                    { ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON, "aes256-gcm@openssh.com" });
 
 /* https://tools.ietf.org/html/draft-kanno-secsh-camellia-02 */
 #  ifndef OPENSSL_NO_CAMELLIA
 ASSH_OPENSSL_CIPHER(camellia128_cbc, EVP_camellia_128_cbc(), CBC,
-                   16, 16, 16, 16, 0, 40, 40,
+                   16, 16, 16, 16, 0, 40, 8,
                    { ASSH_ALGO_STD_DRAFT,
                      "camellia128-cbc" });
 
 ASSH_OPENSSL_CIPHER(camellia192_cbc, EVP_camellia_192_cbc(), CBC,
-                   16, 16, 16, 24, 0, 50, 40,
+                   16, 16, 16, 24, 0, 50, 7,
                    { ASSH_ALGO_STD_DRAFT,
                      "camellia192-cbc" });
 
 ASSH_OPENSSL_CIPHER(camellia256_cbc, EVP_camellia_256_cbc(), CBC,
-                   16, 16, 16, 32, 0, 60, 40,
+                   16, 16, 16, 32, 0, 60, 7,
                    { ASSH_ALGO_STD_DRAFT,
                      "camellia256-cbc" });
 
 ASSH_OPENSSL_CIPHER(camellia128_ctr, EVP_camellia_128_ctr(), CTR,
-                   16, 16, 16, 16, 0, 40, 40,
+                   16, 16, 16, 16, 0, 40, 8,
                    { ASSH_ALGO_STD_DRAFT,
                      "camellia128-ctr" });
 
 ASSH_OPENSSL_CIPHER(camellia192_ctr, EVP_camellia_192_ctr(), CTR,
-                   16, 16, 16, 24, 0, 50, 40,
+                   16, 16, 16, 24, 0, 50, 7,
                    { ASSH_ALGO_STD_DRAFT,
                      "camellia192-ctr" });
 
 ASSH_OPENSSL_CIPHER(camellia256_ctr, EVP_camellia_256_ctr(), CTR,
-                   16, 16, 16, 32, 0, 60, 40,
+                   16, 16, 16, 32, 0, 60, 5,
                    { ASSH_ALGO_STD_DRAFT,
                      "camellia256-ctr" });
 #endif

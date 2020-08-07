@@ -393,7 +393,7 @@ static ASSH_CIPHER_CLEANUP_FCN(assh_chachapoly_cleanup)
 
 const struct assh_algo_cipher_s assh_cipher_builtin_chachapoly =
 {
-  ASSH_ALGO_BASE(CIPHER, "assh-builtin", 80, 40,
+  ASSH_ALGO_BASE(CIPHER, "assh-builtin", 80, 17,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON, "chacha20-poly1305@openssh.com" })
   ),
   .ctx_size = sizeof(struct assh_cipher_chachapoly_context_s),

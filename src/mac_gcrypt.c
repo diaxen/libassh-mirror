@@ -114,50 +114,50 @@ const struct assh_algo_mac_s assh_mac_gcrypt_##id_ =			\
   .f_cleanup = assh_hmac_gcrypt_cleanup,				\
 };
 
-ASSH_GCRYPT_HMAC(md5,           , MD5,    16, 16, 30, 70, 0,
+ASSH_GCRYPT_HMAC(md5,           , MD5,    16, 16, 30, 17, 0,
                  { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                    "hmac-md5" });
-ASSH_GCRYPT_HMAC(md5_etm,       , MD5,    16, 16, 31, 70, 1,
+ASSH_GCRYPT_HMAC(md5_etm,       , MD5,    16, 16, 31, 17, 1,
                  { ASSH_ALGO_STD_PRIVATE,
                    "hmac-md5-etm@openssh.com" });
-ASSH_GCRYPT_HMAC(md5_96,        , MD5,    16, 12, 20, 75, 0,
+ASSH_GCRYPT_HMAC(md5_96,        , MD5,    16, 12, 20, 17, 0,
                  { ASSH_ALGO_STD_IETF,
                    "hmac-md5-96" });
-ASSH_GCRYPT_HMAC(md5_96_etm,    , MD5,    16, 12, 21, 75, 1,
+ASSH_GCRYPT_HMAC(md5_96_etm,    , MD5,    16, 12, 21, 17, 1,
                  { ASSH_ALGO_STD_PRIVATE,
                    "hmac-md5-96-etm@openssh.com" });
 
-ASSH_GCRYPT_HMAC(sha1,          , SHA1,   20, 20, 35, 70, 0,
+ASSH_GCRYPT_HMAC(sha1,          , SHA1,   20, 20, 35, 24, 0,
                  { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                    "hmac-sha1" });
-ASSH_GCRYPT_HMAC(sha1_etm,      , SHA1,   20, 20, 36, 70, 1,
+ASSH_GCRYPT_HMAC(sha1_etm,      , SHA1,   20, 20, 36, 24, 1,
                  { ASSH_ALGO_STD_PRIVATE,
                    "hmac-sha1-etm@openssh.com" });
-ASSH_GCRYPT_HMAC(sha1_96,       , SHA1,   20, 12, 25, 75, 0,
+ASSH_GCRYPT_HMAC(sha1_96,       , SHA1,   20, 12, 25, 24, 0,
                  { ASSH_ALGO_STD_IETF,
                    "hmac-sha1-96" });
-ASSH_GCRYPT_HMAC(sha1_96_etm,   , SHA1,   20, 12, 26, 75, 1,
+ASSH_GCRYPT_HMAC(sha1_96_etm,   , SHA1,   20, 12, 26, 24, 1,
                  { ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,
                    "hmac-sha1-96-etm@openssh.com" });
 
-ASSH_GCRYPT_HMAC(sha256,        , SHA256, 32, 32, 40, 60, 0,
+ASSH_GCRYPT_HMAC(sha256,        , SHA256, 32, 32, 40, 10, 0,
                  { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                    "hmac-sha2-256" });
-ASSH_GCRYPT_HMAC(sha256_etm,    , SHA256, 32, 32, 41, 60, 1,
+ASSH_GCRYPT_HMAC(sha256_etm,    , SHA256, 32, 32, 41, 10, 1,
                  { ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,
                    "hmac-sha2-256-etm@openssh.com" });
 
-ASSH_GCRYPT_HMAC(sha512,        , SHA512, 64, 64, 50, 50, 0,
+ASSH_GCRYPT_HMAC(sha512,        , SHA512, 64, 64, 50, 15, 0,
                  { ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                    "hmac-sha2-512" });
-ASSH_GCRYPT_HMAC(sha512_etm,    , SHA512, 64, 64, 51, 50, 1,
+ASSH_GCRYPT_HMAC(sha512_etm,    , SHA512, 64, 64, 51, 15, 1,
                  { ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,
                    "hmac-sha2-512-etm@openssh.com" });
 
-ASSH_GCRYPT_HMAC(ripemd160,     , RMD160, 20, 20, 30, 70, 0,
+ASSH_GCRYPT_HMAC(ripemd160,     , RMD160, 20, 20, 30, 11, 0,
                  { ASSH_ALGO_STD_IETF,
                    "hmac-ripemd160" });
-ASSH_GCRYPT_HMAC(ripemd160_etm, , RMD160, 20, 20, 31, 70, 1,
+ASSH_GCRYPT_HMAC(ripemd160_etm, , RMD160, 20, 20, 31, 11, 1,
                  { ASSH_ALGO_STD_PRIVATE,
                    "hmac-ripemd160-etm@openssh.com" });
 

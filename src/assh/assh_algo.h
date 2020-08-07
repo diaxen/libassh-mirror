@@ -147,11 +147,11 @@ struct assh_algo_s
   /** used to choose between entries with the same name */
   ASSH_PV uint8_t priority:5;
 
+  /** speed factor in range [0, 255] */
+  ASSH_PV uint8_t speed:8;
+
   /** safety factor in range [0, 99] */
   ASSH_PV uint8_t safety:7;
-  /** speed factor in range [0, 99] */
-  ASSH_PV uint8_t speed:7;
-
   /** Must be set when a different implementation may yield a
       different result due to use of random data. */
   ASSH_PV uint8_t nondeterministic:1;

@@ -716,7 +716,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_kex_rsa1024_suitable_key)
 const struct assh_algo_kex_s assh_kex_builtin_rsa1024_sha1 =
 {
   .algo_wk = {
-    ASSH_ALGO_BASE(KEX, "assh-builtin", 10, 30,
+    ASSH_ALGO_BASE(KEX, "assh-builtin", 10, 113,
       ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF, "rsa1024-sha1" }),
       .nondeterministic = 1
     ),
@@ -754,7 +754,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_kex_rsa2048_suitable_key)
 const struct assh_algo_kex_s assh_kex_builtin_rsa2048_sha256 =
 {
   .algo_wk = {
-    ASSH_ALGO_BASE(KEX, "assh-builtin", 20, 20,
+    ASSH_ALGO_BASE(KEX, "assh-builtin", 20, 27,
       ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF, "rsa2048-sha256"}),
       .nondeterministic = 1
     ),

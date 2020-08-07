@@ -556,7 +556,7 @@ static ASSH_KEX_INIT_FCN(assh_kex_curve25519_init)
 const struct assh_algo_kex_s assh_kex_builtin_curve25519_sha256 =
 {
   .algo_wk = {
-    ASSH_ALGO_BASE(KEX, "assh-builtin", 50, 90,
+    ASSH_ALGO_BASE(KEX, "assh-builtin", 50, 93,
       ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,
                         "curve25519-sha256@libssh.org" }),
       .nondeterministic = 1,
@@ -594,7 +594,7 @@ static ASSH_KEX_INIT_FCN(assh_kex_m383_init)
 const struct assh_algo_kex_s assh_kex_builtin_m383_sha384 =
 {
   .algo_wk = {
-    ASSH_ALGO_BASE(KEX, "assh-builtin", 70, 80,
+    ASSH_ALGO_BASE(KEX, "assh-builtin", 70, 51,
       ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
                         "m383-sha384@libassh.org" }),
       .nondeterministic = 1,
@@ -633,7 +633,7 @@ static ASSH_KEX_INIT_FCN(assh_kex_m511_init)
 const struct assh_algo_kex_s assh_kex_builtin_m511_sha512 =
 {
   .algo_wk = {
-    ASSH_ALGO_BASE(KEX, "assh-builtin", 90, 70,
+    ASSH_ALGO_BASE(KEX, "assh-builtin", 90, 28,
       ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
                         "m511-sha512@libassh.org" }),
       .nondeterministic = 1,

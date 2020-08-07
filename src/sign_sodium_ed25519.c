@@ -165,7 +165,7 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_ed25519_suitable_key)
 const struct assh_algo_sign_s assh_sign_sodium_ed25519 =
 {
   .algo_wk = {
-    ASSH_ALGO_BASE(SIGN, "assh-sodium", 50, 90,
+    ASSH_ALGO_BASE(SIGN, "assh-sodium", 50, 157,
       ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,
                         "ssh-ed25519" }),
     ),

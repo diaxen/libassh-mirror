@@ -155,7 +155,7 @@ static ASSH_MAC_INIT_FCN(assh_hmac_md5_init)
 
 const struct assh_algo_mac_s assh_mac_builtin_md5 = 
 {
-  ASSH_ALGO_BASE(MAC, "assh-builtin", 30, 70,
+  ASSH_ALGO_BASE(MAC, "assh-builtin", 30, 10,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                       "hmac-md5" })
   ),
@@ -169,7 +169,7 @@ const struct assh_algo_mac_s assh_mac_builtin_md5 =
 
 const struct assh_algo_mac_s assh_mac_builtin_md5_etm = 
 {
-  ASSH_ALGO_BASE(MAC, "assh-builtin", 31, 70,
+  ASSH_ALGO_BASE(MAC, "assh-builtin", 31, 10,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,
                       "hmac-md5-etm@openssh.com" })
   ),
@@ -191,7 +191,7 @@ static ASSH_MAC_INIT_FCN(assh_hmac_md5_96_init)
 
 const struct assh_algo_mac_s assh_mac_builtin_md5_96 = 
 {
-  ASSH_ALGO_BASE(MAC, "assh-builtin", 20, 75,
+  ASSH_ALGO_BASE(MAC, "assh-builtin", 20, 10,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                       "hmac-md5-96" })
   ),
@@ -205,7 +205,7 @@ const struct assh_algo_mac_s assh_mac_builtin_md5_96 =
 
 const struct assh_algo_mac_s assh_mac_builtin_md5_96_etm = 
 {
-  ASSH_ALGO_BASE(MAC, "assh-builtin", 21, 75,
+  ASSH_ALGO_BASE(MAC, "assh-builtin", 21, 10,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,
                       "hmac-md5-96-etm@openssh.com" })
   ),
@@ -226,7 +226,7 @@ static ASSH_MAC_INIT_FCN(assh_hmac_sha1_init)
 
 const struct assh_algo_mac_s assh_mac_builtin_sha1 = 
 {
-  ASSH_ALGO_BASE(MAC, "assh-builtin", 35, 70,
+  ASSH_ALGO_BASE(MAC, "assh-builtin", 35, 9,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                       "hmac-sha1" })
   ),
@@ -240,7 +240,7 @@ const struct assh_algo_mac_s assh_mac_builtin_sha1 =
 
 const struct assh_algo_mac_s assh_mac_builtin_sha1_etm = 
 {
-  ASSH_ALGO_BASE(MAC, "assh-builtin", 36, 70,
+  ASSH_ALGO_BASE(MAC, "assh-builtin", 36, 9,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,
                       "hmac-sha1-etm@openssh.com" })
   ),
@@ -262,7 +262,7 @@ static ASSH_MAC_INIT_FCN(assh_hmac_sha1_96_init)
 
 const struct assh_algo_mac_s assh_mac_builtin_sha1_96 = 
 {
-  ASSH_ALGO_BASE(MAC, "assh-builtin", 25, 75,
+  ASSH_ALGO_BASE(MAC, "assh-builtin", 25, 9,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                       "hmac-sha1-96" })
   ),
@@ -276,7 +276,7 @@ const struct assh_algo_mac_s assh_mac_builtin_sha1_96 =
 
 const struct assh_algo_mac_s assh_mac_builtin_sha1_96_etm = 
 {
-  ASSH_ALGO_BASE(MAC, "assh-builtin", 26, 75,
+  ASSH_ALGO_BASE(MAC, "assh-builtin", 26, 9,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,
                       "hmac-sha1-96-etm@openssh.com" })
   ),
@@ -297,7 +297,7 @@ static ASSH_MAC_INIT_FCN(assh_hmac_sha256_init)
 
 const struct assh_algo_mac_s assh_mac_builtin_sha256 = 
 {
-  ASSH_ALGO_BASE(MAC, "assh-builtin", 40, 60,
+  ASSH_ALGO_BASE(MAC, "assh-builtin", 40, 5,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                       "hmac-sha2-256" })
   ),
@@ -311,7 +311,7 @@ const struct assh_algo_mac_s assh_mac_builtin_sha256 =
 
 const struct assh_algo_mac_s assh_mac_builtin_sha256_etm = 
 {
-  ASSH_ALGO_BASE(MAC, "assh-builtin", 41, 60,
+  ASSH_ALGO_BASE(MAC, "assh-builtin", 41, 5,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,
                       "hmac-sha2-256-etm@openssh.com" })
   ),
@@ -333,7 +333,7 @@ static ASSH_MAC_INIT_FCN(assh_hmac_sha512_init)
 
 const struct assh_algo_mac_s assh_mac_builtin_sha512 = 
 {
-  ASSH_ALGO_BASE(MAC, "assh-builtin", 50, 50,
+  ASSH_ALGO_BASE(MAC, "assh-builtin", 50, 8,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON,
                       "hmac-sha2-512" })
   ),
@@ -347,7 +347,7 @@ const struct assh_algo_mac_s assh_mac_builtin_sha512 =
 
 const struct assh_algo_mac_s assh_mac_builtin_sha512_etm =
 {
-  ASSH_ALGO_BASE(MAC, "assh-builtin", 51, 50,
+  ASSH_ALGO_BASE(MAC, "assh-builtin", 51, 8,
     ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON,
                       "hmac-sha2-512-etm@openssh.com" })
   ),
