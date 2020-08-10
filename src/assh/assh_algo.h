@@ -44,6 +44,7 @@
 
 #include "assh.h"
 
+/** @This is used as algorithm index. */
 typedef uint_fast16_t assh_algo_id_t;
 
 /** @This is used to estimate algorithms and keys safety.
@@ -275,11 +276,8 @@ assh_algo_register_names_va(struct assh_context_s *c,
    their safety factor and speed factor. Algorithms with a
    safety factor less than @tt min_safety are discarded.
 
-   When multiple implementations of the same algorithm are registered,
-   the variant which appears first in the list after sorting is kept
-   and subsequent variants with the same name are discarded. This
-   should retain the less secure variants of the same algorithm not
-   filtered by the value of @tt min_safety.
+   When multiple implementations of the same algorithm are in
+   conflict, the variant with the highest score is retained.
 
    @see assh_algo_register_default
    @xcsee {algoreg}

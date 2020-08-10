@@ -58,8 +58,8 @@ methods and key formats.
       object}. Depending on the library function used for that
       purpose, a specific list of @hl algorithms is provided by
       the application, or the library is instructed to filter among
-      the supported @hl algorithms based on the safety and performance
-      requirements provided by the application.
+      the supported @hl algorithms based on the safety
+      requirement provided by the application.
     @item When multiple variants of the same @hl algorithm are
       available, the one with the highest score that fulfills the
       requirement is retained. The application is free to use a low
@@ -85,9 +85,9 @@ methods and key formats.
   @end list
 
   The @tt {test/algo_list} application can be used to display a list
-  of algorithms supported by your specific build of @em
-  {libassh}. It is also able to display a sorted list when a safety
-  weight value is passed.
+  of algorithms supported by your specific build of @em {libassh}. It
+  is also possible to give safety parameters in order to view what
+  would be the actual table of registered algorithms.
 
   @hl Algorithms registration related functions are declared in
   the @ref{@assh/assh_algo.h} and @ref{@assh/assh_session.h} headers.
