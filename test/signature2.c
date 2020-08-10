@@ -83,7 +83,7 @@ void test_sign(unsigned int max_size, enum action_e action)
 				  test_leaks_allocator, NULL, &test_prng_dummy, NULL))
 	    TEST_FAIL("context create\n");
 
-	  if (assh_algo_register_va(context, 0, 0, sa, NULL))
+	  if (assh_algo_register_va(context, 0, sa, NULL))
 	    TEST_FAIL("algo register\n");
 
 	  uint8_t key_blob[algos[i].key_len];

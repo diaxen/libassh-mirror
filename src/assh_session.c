@@ -309,7 +309,7 @@ void assh_session_error(struct assh_session_s *s, assh_status_t inerr)
   assh_session_send_disconnect(s, reason, desc);
 }
 
-uint_fast8_t assh_session_safety(const struct assh_session_s *s)
+assh_safety_t assh_session_safety(const struct assh_session_s *s)
 {
   return assh_min_uint(s->cur_keys_out->safety,
 		       s->cur_keys_in->safety);

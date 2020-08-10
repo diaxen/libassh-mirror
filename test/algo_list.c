@@ -44,7 +44,6 @@ enum action_e {
 static enum action_e action = 0;
 static uint_fast8_t safety_weight = 50;
 static assh_safety_t min_safety = 0;
-static assh_speed_t min_speed = 0;
 
 static char std(enum assh_algo_spec_e s)
 {
@@ -103,7 +102,7 @@ static void show_order()
     TEST_FAIL("context init");
 
   if (assh_kex_set_order(c, safety_weight) ||
-      assh_algo_register_default(c, min_safety, min_speed) != ASSH_OK)
+      assh_algo_register_default(c, min_safety) != ASSH_OK)
     TEST_FAIL("algo regiter");
 
   if (!(action & ACTION_NO_FILTER))
@@ -147,7 +146,6 @@ static void usage()
 
 	  "    -w 0-99    set safety weight (50), filter and reorder algorithms\n"
 	  "    -a 0-99    set minimum safety (0)\n"
-	  "    -p 0-99    set minimum speed (0)\n"
 	  "    -V         do not remove variant duplicates\n\n"
 	  "    -h         show help\n\n"
 	  );
@@ -162,7 +160,7 @@ int main(int argc, char **argv)
 
   int opt;
 
-  while ((opt = getopt(argc, argv, "w:a:p:Vth")) != -1)
+  while ((opt = getopt(argc, argv, "w:a:Vth")) != -1)
     {
       switch (opt)
 	{
@@ -181,12 +179,6 @@ int main(int argc, char **argv)
 	  if (action & ACTION_TABLE)
 	    usage();
 	  min_safety = atoi(optarg);
-	  action |= ACTION_ORDER;
-	  break;
-	case 'p':
-	  if (action & ACTION_TABLE)
-	    usage();
-	  min_speed = atoi(optarg);
 	  action |= ACTION_ORDER;
 	  break;
 	case 'V':

@@ -82,8 +82,8 @@ static const char *hostname;
 static const char *user = NULL;
 
 static assh_safety_t safety_weight = 50;
-static assh_safety_t algo_min_safety = 20;
-static assh_safety_t kex_warn_safety = 25;
+static assh_safety_t algo_min_safety = ASSH_SAFETY_WEAK;
+static assh_safety_t kex_warn_safety = ASSH_SAFETY_MEDIUM - 1;
 
 static assh_bool_t verbose = 0;
 
@@ -437,7 +437,7 @@ int main(int argc, char **argv)
                           NULL, NULL, NULL, NULL) ||
       assh_service_register_default(context) ||
       assh_kex_set_order(context, safety_weight) ||
-      assh_algo_register_default(context, algo_min_safety, 0))
+      assh_algo_register_default(context, algo_min_safety))
     ERROR("Unable to create an assh context.\n");
 
   /* initializes an assh session object */

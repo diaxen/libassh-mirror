@@ -104,7 +104,7 @@ int main(int argc, char **argv)
   if (assh_context_create(&context, ASSH_SERVER,
 			  NULL, NULL, NULL, NULL) ||
       assh_service_register_default(context) ||
-      assh_algo_register_default(context, 20, 0))
+      assh_algo_register_default(context, ASSH_SAFETY_WEAK))
     ERROR("Unable to create an assh context.\n");
 
 							/* anchor reghk */

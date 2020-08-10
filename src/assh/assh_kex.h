@@ -326,7 +326,7 @@ struct assh_event_kex_done_s
   const struct assh_kex_keys_s * ASSH_EV_CONST algos_out;
 
   /** @hl Key-exchange overall safety factor. (ro) */
-  assh_safety_t ASSH_EV_CONST safety;
+  assh_safety_t ASSH_EV_CONST safety:8;
 
   /** True when this is the first @hl key-exchange of the session. (ro) */
   assh_bool_t ASSH_EV_CONST initial;

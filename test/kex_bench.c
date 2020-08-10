@@ -204,7 +204,7 @@ void bench(const struct kex_bench_s *t,
     {
       struct assh_context_s *c = &context[i];
 
-      if (assh_algo_register_va(c, 0, 0,
+      if (assh_algo_register_va(c, 0,
 				&ka->algo_wk.algo, &assh_sign_none.algo_wk.algo,
 				&assh_mac_none.algo, &assh_compress_none.algo,
 				t->cipher_algo,

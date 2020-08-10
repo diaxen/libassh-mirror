@@ -146,36 +146,6 @@ typedef uint8_t assh_bool_t;
 */
 typedef int_fast16_t assh_status_t;
 
-/** This is used to estimate algorithms and keys safety. The safety
-    factor ranges are defined as this:
-
-   @list
-     @item 0-19: broken
-     @item 20-25: weak
-     @item 26-49: medium
-     @item 50-99: strong
-   @end list
-
-   @see assh_safety_name
-*/
-typedef uint8_t assh_safety_t;
-
-typedef uint_fast32_t assh_speed_t;
-
-/** @This returns the name associated to an
-    @hl algorithm safety factor value. */
-ASSH_INLINE const char *
-assh_safety_name(assh_safety_t safety)
-{
-  if (safety >= 50)
-    return "strong";
-  if (safety >= 26)
-    return "medium";
-  if (safety >= 20)
-    return "weak";
-  return "broken";
-}
-
 /** @This specifies the error severity and must be ored with
     an @ref assh_status_e value.
 

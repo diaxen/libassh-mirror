@@ -35,7 +35,7 @@
 #ifndef ASSH_HASH_H_
 #define ASSH_HASH_H_
 
-#include "assh.h"
+#include "assh_algo.h"
 
 struct assh_hash_algo_s;
 
@@ -103,7 +103,7 @@ struct assh_hash_algo_s
   ASSH_PV uint8_t hash_size;
   /** Hash algorithm block size. */
   ASSH_PV uint8_t block_size;
-  ASSH_PV assh_safety_t safety;
+  ASSH_PV assh_safety_t safety:8;
 };
 
 /** @internal @This hashes a ssh string. The string must contain a

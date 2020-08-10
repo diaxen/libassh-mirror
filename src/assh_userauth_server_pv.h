@@ -97,7 +97,7 @@ struct assh_userauth_context_s
   enum assh_userauth_methods_e methods:8;
   uint_fast8_t tries;
   enum assh_userauth_state_e state:8;
-  assh_safety_t safety;
+  assh_safety_t safety:8;
 
 #ifdef CONFIG_ASSH_SERVER_AUTH_PUBLICKEY
   enum assh_userauth_pubkey_state_e pubkey_state:8;

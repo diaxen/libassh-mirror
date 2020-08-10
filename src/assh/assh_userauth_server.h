@@ -321,7 +321,7 @@ struct assh_event_userauth_server_success_s
   enum assh_userauth_methods_e methods;
 
   /** The safety factor of authentication signatures. (ro) */
-  ASSH_EV_CONST assh_safety_t sign_safety;
+  ASSH_EV_CONST assh_safety_t sign_safety:8;
 };
 
 /** @This contains all server side user authentication related event

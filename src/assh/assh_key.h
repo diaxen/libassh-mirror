@@ -259,7 +259,7 @@ struct assh_key_s
   ASSH_PV assh_bool_t private:1;
   ASSH_PV assh_bool_t stored:1;
 
-  ASSH_PV assh_safety_t safety;
+  ASSH_PV assh_safety_t safety:8;
 };
 
 /** @This allocates and intiailizes the key structure from

@@ -84,7 +84,7 @@ static void bench(const struct assh_algo_sign_s *sa, unsigned kbits)
 			NULL, NULL, NULL, NULL))
     TEST_FAIL("context init");
 
-  if (assh_algo_register_va(&context, 0, 0, &sa->algo_wk.algo, NULL))
+  if (assh_algo_register_va(&context, 0, &sa->algo_wk.algo, NULL))
     TEST_FAIL("algo register");
 
   struct assh_key_s *key;

@@ -24,7 +24,7 @@
 #ifndef _ECC_WEIERSTRASS_H_
 #define _ECC_WEIERSTRASS_H_
 
-#include <assh/assh.h>
+#include <assh/assh_algo.h>
 
 struct assh_weierstrass_curve_s
 {

@@ -46,6 +46,41 @@
 
 typedef uint_fast16_t assh_algo_id_t;
 
+/** @This is used to estimate algorithms and keys safety.
+    @csee assh_safety_name */
+enum assh_algo_safety_e
+{
+  /** Safety in range [0 - 19] is broken */
+  ASSH_SAFETY_BROKEN = 0,
+  /** Safety in range [20 - 25] is weak */
+  ASSH_SAFETY_WEAK = 20,
+  /** Safety in range [26 - 49] is medium */
+  ASSH_SAFETY_MEDIUM = 26,
+  /** Safety in range [50 - 99] is strong */
+  ASSH_SAFETY_STRONG = 50,
+};
+
+/** A safety factor in the range [0-99].
+    @see assh_algo_safety_e */
+typedef enum assh_algo_safety_e assh_safety_t;
+
+typedef uint_fast8_t assh_speed_t;
+
+/** @This returns the name associated to an
+    @hl algorithm safety factor value. */
+ASSH_INLINE const char *
+assh_safety_name(assh_safety_t safety)
+{
+  if (safety >= 50)
+    return "strong";
+  if (safety >= 26)
+    return "medium";
+  if (safety >= 20)
+    return "weak";
+  return "broken";
+}
+
+
 /** @internal @see assh_algo_suitable_key_t */
 #define ASSH_ALGO_SUITABLE_KEY_FCN(n) assh_bool_t (n)    \
   (struct assh_context_s *c,                             \
@@ -101,8 +136,9 @@ struct assh_algo_name_s
   const char *name;
 };
 
-#define ASSH_ALGO_SCORE(algo_, safety_) \
-  ((algo_)->speed * (100 - (safety_)) + (algo_)->safety * ((safety_) + 1))
+#define ASSH_ALGO_SCORE(algo_, safety_weight_) \
+  ((algo_)->speed * (99 - (safety_weight_)) + \
+   (algo_)->safety * ((safety_weight_)))
 
 #define ASSH_ALGO_NAMES(...) \
   .names = (const struct assh_algo_name_s[]){ __VA_ARGS__, { 0 } }
@@ -203,8 +239,7 @@ ASSH_FIRST_FIELD_ASSERT(assh_algo_with_key_s, algo);
 */
 ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_register_va(struct assh_context_s *c,
-		      assh_safety_t min_safety,
-		      assh_speed_t min_speed, ...);
+		      assh_safety_t min_safety, ...);
 
 /**
    @This registers the algorithms with the given names for specified
@@ -229,7 +264,7 @@ assh_algo_register_va(struct assh_context_s *c,
 */
 ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_register_names_va(struct assh_context_s *c,
-			    assh_safety_t min_safety, assh_speed_t min_speed,
+			    assh_safety_t min_safety,
 			    enum assh_algo_class_e class_, ...);
 
 /**
@@ -238,8 +273,7 @@ assh_algo_register_names_va(struct assh_context_s *c,
 
    The array is copied and the algorithms are sorted depending on
    their safety factor and speed factor. Algorithms with a
-   safety factor or speed factor less than @tt min_safety and @tt
-   min_speed are discarded.
+   safety factor less than @tt min_safety are discarded.
 
    When multiple implementations of the same algorithm are registered,
    the variant which appears first in the list after sorting is kept
@@ -252,7 +286,7 @@ assh_algo_register_names_va(struct assh_context_s *c,
 */
 ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_register(struct assh_context_s *c,
-		   assh_safety_t min_safety, assh_speed_t min_speed,
+		   assh_safety_t min_safety,
                    const struct assh_algo_s *table[]);
 
 /**
@@ -301,10 +335,9 @@ assh_algo_registered(struct assh_context_s *c, assh_algo_id_t i);
 */
 ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_register_default(struct assh_context_s *c,
-			   assh_safety_t min_safety,
-                           assh_speed_t min_speed)
+			   assh_safety_t min_safety)
 {
-  return assh_algo_register(c, min_safety, min_speed, assh_algo_table);
+  return assh_algo_register(c, min_safety, assh_algo_table);
 }
 
 /** Unregister all @hl algorithms.

@@ -221,7 +221,7 @@ assh_status_t assh_algo_register_static(struct assh_context_s *c,
 
 assh_status_t
 assh_algo_register(struct assh_context_s *c,
-		   assh_safety_t min_safety, assh_speed_t min_speed,
+		   assh_safety_t min_safety,
 		   const struct assh_algo_s *table[])
 {
   assh_status_t err = ASSH_OK;
@@ -233,7 +233,7 @@ assh_algo_register(struct assh_context_s *c,
     {
       const struct assh_algo_s *algo = table[i];
       ASSH_JMP_IF_TRUE(algo->api != ASSH_ALGO_API_VERSION, ASSH_ERR_BAD_ARG, err_);
-      if (algo->safety < min_safety || algo->speed < min_speed)
+      if (algo->safety < min_safety)
 	continue;
       if (count == c->algo_max)
         ASSH_JMP_ON_ERR(assh_algo_extend(c), err_);
@@ -257,8 +257,7 @@ assh_algo_registered(struct assh_context_s *c, assh_algo_id_t i)
 }
 
 assh_status_t assh_algo_register_va(struct assh_context_s *c,
-				    assh_safety_t min_safety,
-				    assh_speed_t min_speed, ...)
+				    assh_safety_t min_safety, ...)
 {
   assh_status_t err = ASSH_OK;
   assh_algo_id_t count = c->algo_cnt;
@@ -266,7 +265,7 @@ assh_status_t assh_algo_register_va(struct assh_context_s *c,
 
   ASSH_RET_IF_TRUE(c->session_count, ASSH_ERR_BUSY);
 
-  va_start(ap, min_speed);
+  va_start(ap, min_safety);
 
   /* append algorithms to the array */
   while (1)
@@ -275,7 +274,7 @@ assh_status_t assh_algo_register_va(struct assh_context_s *c,
       if (algo == NULL)
         break;
       ASSH_JMP_IF_TRUE(algo->api != ASSH_ALGO_API_VERSION, ASSH_ERR_BAD_ARG, err_);
-      if (algo->safety < min_safety || algo->speed < min_speed)
+      if (algo->safety < min_safety)
 	continue;
       if (count == c->algo_max)
         ASSH_JMP_ON_ERR(assh_algo_extend(c), err_);
@@ -293,7 +292,6 @@ assh_status_t assh_algo_register_va(struct assh_context_s *c,
 
 assh_status_t assh_algo_register_names_va(struct assh_context_s *c,
 					  assh_safety_t min_safety,
-					  assh_speed_t min_speed,
 					  enum assh_algo_class_e class_, ...)
 {
   assh_status_t err = ASSH_OK;
@@ -314,7 +312,7 @@ assh_status_t assh_algo_register_names_va(struct assh_context_s *c,
 				   name, strlen(name), &algo, NULL))
 	continue;
 
-      if (algo->safety < min_safety || algo->speed < min_speed)
+      if (algo->safety < min_safety)
 	continue;
       if (count == c->algo_max)
         ASSH_JMP_ON_ERR(assh_algo_extend(c), err_);

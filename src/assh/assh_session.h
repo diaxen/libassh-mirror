@@ -37,6 +37,7 @@
 #include "assh_service.h"
 #include "assh_queue.h"
 #include "assh_packet.h"
+#include "assh_algo.h"
 
 /** @see assh_kex_filter_t */
 #define ASSH_KEX_FILTER_FCN(n)                          \
