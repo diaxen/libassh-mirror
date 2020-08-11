@@ -74,6 +74,9 @@ AC_CHECK_LIB(c, getspnam_r, AC_DEFINE(CONFIG_ASSH_GETSPNAM_R, 1, [Use getspnam_r
 AC_CHECK_LIB(crypt, crypt_r,
   LIBS="$LIBS -lcrypt"
   AC_DEFINE(CONFIG_ASSH_CRYPT_R, 1, [Use crypt_r when defined.])
+  AC_CHECK_HEADERS(crypt.h,
+    AC_DEFINE(HAVE_CRYPT_H, 1, [Have the crypt.h header.])
+  )
 )
 
 AC_CHECK_HEADERS(stdio.h,

@@ -49,7 +49,10 @@
 #endif
 
 #ifdef CONFIG_ASSH_CRYPT_R
-# include <crypt.h>
+# ifdef HAVE_CRYPT_H
+#  include <crypt.h>
+# endif
+# include <unistd.h>
 #endif
 
 assh_status_t
