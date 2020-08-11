@@ -254,6 +254,10 @@ assh_sign_rsa_check(struct assh_context_s *c,
   ASSH_JMP_IF_TRUE(i == RSA_DIGEST_count, ASSH_ERR_NOTSUP, err_em);
   ASSH_JMP_IF_TRUE(!((digest_mask >> i) & 1), ASSH_ERR_WEAK_ALGORITHM, err_em);
 
+#ifdef CONFIG_ASSH_DEBUG_SIGN
+  ASSH_DEBUG("rsa digest %s\n", digest->algo->name);
+#endif
+
   /* compute message hash */
   em += digest->oid_len;
   ASSH_SCRATCH_ALLOC(c, void, hash_ctx, digest->algo->ctx_size +
