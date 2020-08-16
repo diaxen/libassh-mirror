@@ -276,7 +276,7 @@ assh_sign_rsa_check(struct assh_context_s *c,
   ASSH_DEBUG_HEXDUMP("rsa check hash", hash, digest->algo->hash_size);
 #endif
 
-  *safety = assh_min_uint(*safety, digest->algo->safety);
+  *safety = assh_min_uint(*safety, digest->algo->sign_safety);
 
   ASSH_JMP_IF_TRUE(assh_memcmp(hash, em, digest->algo->hash_size),
                ASSH_ERR_NUM_COMPARE_FAILED, err_hash);

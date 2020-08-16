@@ -166,7 +166,7 @@ assh_sign_rsa_check(struct assh_context_s *c,
   assh_hash_final(hash_ctx, hash, digest->algo->hash_size);
   assh_hash_cleanup(hash_ctx);
 
-  *safety = assh_min_uint(*safety, digest->algo->safety);
+  *safety = assh_min_uint(*safety, digest->algo->sign_safety);
 
   ASSH_JMP_IF_TRUE(assh_memcmp(hash, em + digest->oid_len,
 			       digest->algo->hash_size),

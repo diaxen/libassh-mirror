@@ -103,7 +103,11 @@ struct assh_hash_algo_s
   ASSH_PV uint8_t hash_size;
   /** Hash algorithm block size. */
   ASSH_PV uint8_t block_size;
-  ASSH_PV assh_safety_t safety:8;
+  /** This relates to the collision resistance of the hash
+      function. It is mostly relevant when involved in signature
+      algorithms and does not necessarily impact other constructions
+      like HMAC and key derivation. */
+  ASSH_PV assh_safety_t sign_safety:8;
 };
 
 /** @internal @This hashes a ssh string. The string must contain a
@@ -179,9 +183,10 @@ assh_hash_cleanup(struct assh_hash_ctx_s *hctx)
   hctx->algo->f_cleanup(hctx);
 }
 
-/** @multiple @internal safety factor of common hash functions */
 #define ASSH_SAFETY_MD5      15
 #define ASSH_SAFETY_SHA1     25
+/** @multiple @internal safety factor of common hash functions.
+    @see assh_hash_algo_s::sign_safety */
 #define ASSH_SAFETY_SHA2_224 43
 #define ASSH_SAFETY_SHA2_256 50
 #define ASSH_SAFETY_SHA2_384 75
