@@ -183,10 +183,10 @@ assh_hash_cleanup(struct assh_hash_ctx_s *hctx)
   hctx->algo->f_cleanup(hctx);
 }
 
-#define ASSH_SAFETY_MD5      15
-#define ASSH_SAFETY_SHA1     25
 /** @multiple @internal safety factor of common hash functions.
     @see assh_hash_algo_s::sign_safety */
+#define ASSH_SAFETY_MD5      10
+#define ASSH_SAFETY_SHA1     20
 #define ASSH_SAFETY_SHA2_224 43
 #define ASSH_SAFETY_SHA2_256 50
 #define ASSH_SAFETY_SHA2_384 75
