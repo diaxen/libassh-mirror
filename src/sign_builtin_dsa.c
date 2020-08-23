@@ -326,7 +326,9 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key_768)
 const struct assh_algo_sign_s assh_sign_builtin_dsa768 =
 {
   .algo_wk = {
-    ASSH_ALGO_BASE(SIGN, "assh-builtin", 15, 64,
+    ASSH_ALGO_BASE(SIGN, "assh-builtin",
+		   ASSH_MIN(ASSH_DSA_SAFETY(768, 160),
+			    ASSH_SAFETY_SHA1), 64,
       ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "ssh-dss" }),
       ASSH_ALGO_VARIANT(0, "key >= 768" ),
       .nondeterministic = 1,
@@ -352,7 +354,9 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key_1024)
 const struct assh_algo_sign_s assh_sign_builtin_dsa1024 =
 {
   .algo_wk = {
-    ASSH_ALGO_BASE(SIGN, "assh-builtin", 20, 64,
+    ASSH_ALGO_BASE(SIGN, "assh-builtin",
+		   ASSH_MIN(ASSH_DSA_SAFETY(1024, 160),
+			    ASSH_SAFETY_SHA1), 64,
       ASSH_ALGO_NAMES({ ASSH_ALGO_STD_IETF | ASSH_ALGO_COMMON, "ssh-dss" }),
       ASSH_ALGO_VARIANT(0, "key >= 1024" ),
       .nondeterministic = 1,
@@ -378,7 +382,9 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key_2048_224)
 const struct assh_algo_sign_s assh_sign_builtin_dsa2048_sha224 =
 {
   .algo_wk = {
-    ASSH_ALGO_BASE(SIGN, "assh-builtin", 35, 12,
+    ASSH_ALGO_BASE(SIGN, "assh-builtin",
+		   ASSH_MIN(ASSH_DSA_SAFETY(2048, 224),
+			    ASSH_SAFETY_SHA2_224), 12,
       ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
   	              "dsa2048-sha224@libassh.org" }),
       .nondeterministic = 1,
@@ -405,7 +411,9 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key_2048_256)
 const struct assh_algo_sign_s assh_sign_builtin_dsa2048_sha256 =
 {
   .algo_wk = {
-     ASSH_ALGO_BASE(SIGN, "assh-builtin", 40, 12,
+     ASSH_ALGO_BASE(SIGN, "assh-builtin",
+		    ASSH_MIN(ASSH_DSA_SAFETY(2048, 256),
+			     ASSH_SAFETY_SHA2_256), 12,
        ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
    	              "dsa2048-sha256@libassh.org" }),
        .nondeterministic = 1,
@@ -432,7 +440,9 @@ static ASSH_ALGO_SUITABLE_KEY_FCN(assh_sign_dsa_suitable_key_3072_256)
 const struct assh_algo_sign_s assh_sign_builtin_dsa3072_sha256 =
 {
   .algo_wk = {
-     ASSH_ALGO_BASE(SIGN, "assh-builtin", 50, 5,
+     ASSH_ALGO_BASE(SIGN, "assh-builtin",
+		    ASSH_MIN(ASSH_DSA_SAFETY(3072, 256),
+			     ASSH_SAFETY_SHA2_256), 5,
        ASSH_ALGO_NAMES({ ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_ASSH,
    	              "dsa3072-sha256@libassh.org" }),
        .nondeterministic = 1,

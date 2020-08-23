@@ -34,10 +34,6 @@
 
 #include <string.h>
 
-#define ASSH_DSA_SAFETY(l, n)                           \
-  assh_min_uint(ASSH_SAFETY_PRIMEFIELD(l),		\
-           99 * (n) / 512)
-
 static ASSH_KEY_CMP_FCN(assh_key_dsa_cmp)
 {
   assert(key->algo == &assh_key_builtin_dsa);

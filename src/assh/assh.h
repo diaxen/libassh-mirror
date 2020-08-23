@@ -559,6 +559,10 @@ ASSH_INLINE intptr_t assh_min_int(intptr_t a, intptr_t b)
     (a) = __b; (b) = __a;	  	\
   } while(0)
 
+/** @internal Use only for constant expressions.
+    @see assh_min_int @see assh_min_uint */
+#define ASSH_MIN(a, b) ((a) < (b) ? (a) : (b))
+
 /** @internal @This generates contant time ctz and clz functions */
 #define ASSH_CT_CTLZ_GEN(n, l)                                        \
 /** @internal @This computes the number of trailing zero bits of a    \

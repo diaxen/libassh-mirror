@@ -50,5 +50,9 @@ ASSH_FIRST_FIELD_ASSERT(assh_key_dsa_s, key);
 /** @internal */
 #define ASSH_DSA_ID_LEN (sizeof(ASSH_DSA_ID) - 1)
 
+#define ASSH_DSA_SAFETY(l, n)                           \
+  ASSH_MIN(ASSH_SAFETY_PRIMEFIELD(l),			\
+           99 * (n) / 512)
+
 #endif
 
