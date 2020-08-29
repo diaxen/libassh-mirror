@@ -267,13 +267,13 @@ asshh_client_event_hk_lookup_va(struct assh_session_s *s, FILE *out, FILE *in,
 		  "\n"
 	          "Untrusted public key sent by `%s':\n"
 		  "  Type                   : %s\n"
-		  "  Algorithmic safety     : %s (%u%%)\n"
+		  "  Algorithmic safety     : %s (%u)\n"
 		  "  SHA256 fingerprint     : %s\n"
 		  "  MD5 fingerprint        : %s\n"
 		  "\n"
 	          "Known public key stored locally:\n"
 		  "  Type                   : %s\n"
-		  "  Algorithmic safety     : %s (%u%%)\n"
+		  "  Algorithmic safety     : %s (%u)\n"
 		  "  Location               : %s\n",
 		  host, assh_key_type_name(ek), assh_key_safety_name(ek), assh_key_safety(ek),
 		  fp_sha, fp_md5, assh_key_type_name(k), assh_key_safety_name(k), assh_key_safety(k),
@@ -299,13 +299,13 @@ asshh_client_event_hk_lookup_va(struct assh_session_s *s, FILE *out, FILE *in,
 	      "\n"
 	      "Untrusted public key sent by `%s':\n"
 	      "  Type                   : %s\n"
-	      "  Algorithmic safety     : %s (%u%%)\n"
+	      "  Algorithmic safety     : %s (%u)\n"
 	      "  SHA256 fingerprint     : %s\n"
 	      "  MD5 fingerprint        : %s\n"
 	      "\n"
 	      "Best known public key stored locally:\n"
 	      "  Type                   : %s\n"
-	      "  Algorithmic safety     : %s (%u%%)\n"
+	      "  Algorithmic safety     : %s (%u)\n"
 	      "  File location          : %s\n",
 	      host, assh_key_type_name(ek), assh_key_safety_name(ek), assh_key_safety(ek),
 	      fp_sha, fp_md5, mk->type,
@@ -324,7 +324,7 @@ asshh_client_event_hk_lookup_va(struct assh_session_s *s, FILE *out, FILE *in,
 	      "\n"
 	      "Untrusted public key sent by `%s':\n"
 	      "  Type                   : %s\n"
-	      "  Algorithmic safety     : %s (%u%%)\n"
+	      "  Algorithmic safety     : %s (%u)\n"
 	      "  SHA256 fingerprint     : %s\n"
 	      "  MD5 fingerprint        : %s\n",
 	      host, assh_key_type_name(ek), assh_key_safety_name(ek), assh_key_safety(ek),

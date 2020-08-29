@@ -193,7 +193,7 @@ ssh_loop(struct assh_session_s *session,
               auth_methods &= ~(ASSH_USERAUTH_METHOD_PASSWORD |
                                 ASSH_USERAUTH_METHOD_KEYBOARD);
               fprintf(stderr,
-                      "WARNING: The algorithmic safety of the key exchange is potentially weak (%u%%).\n"
+                      "WARNING: The algorithmic safety of the key exchange is potentially weak (%u).\n"
                       "The ssh connection may not be secure. Password based authentication methods\n"
                       "have been disabled. The -k option may be used to control this warning.\n\n",
                       ev->safety);

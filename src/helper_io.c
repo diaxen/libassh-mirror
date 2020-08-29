@@ -181,7 +181,7 @@ asshh_print_kex_details(struct assh_session_s *s, FILE *out,
   asshh_print_string(out, &ev->ident);
 
   fprintf(out, "\n"
-	  "  key exchange      : %-38s safety %u%% (%s)\n",
+	  "  key exchange      : %-38s safety %u (%s)\n",
 	  assh_algo_name(&ka->algo_wk.algo),
 	  assh_algo_safety(&ka->algo_wk.algo),
 	  assh_algo_safety_name(&ka->algo_wk.algo)
@@ -189,7 +189,7 @@ asshh_print_kex_details(struct assh_session_s *s, FILE *out,
 
   if (ev->host_key)
     fprintf(out,
-	  "  host key          : %-38s safety %u%% (%s)\n",
+	  "  host key          : %-38s safety %u (%s)\n",
 	  assh_key_type_name(ev->host_key),
 	  assh_key_safety(ev->host_key),
 	  assh_key_safety_name(ev->host_key)
@@ -199,8 +199,8 @@ asshh_print_kex_details(struct assh_session_s *s, FILE *out,
   const struct assh_algo_cipher_s *ca_out = ev->algos_out->cipher_algo;
 
   fprintf(out,
-	  "  input cipher      : %-38s safety %u%% (%s)\n"
-	  "  output cipher     : %-38s safety %u%% (%s)\n",
+	  "  input cipher      : %-38s safety %u (%s)\n"
+	  "  output cipher     : %-38s safety %u (%s)\n",
 	  assh_algo_name(&ca_in->algo),
 	  assh_algo_safety(&ca_in->algo),
 	  assh_algo_safety_name(&ca_in->algo),
@@ -214,7 +214,7 @@ asshh_print_kex_details(struct assh_session_s *s, FILE *out,
 
   if (!ca_in->auth_size)
     fprintf(out,
-	  "  input mac         : %-38s safety %u%% (%s)\n",
+	  "  input mac         : %-38s safety %u (%s)\n",
 	  assh_algo_name(&ma_in->algo),
 	  assh_algo_safety(&ma_in->algo),
           assh_algo_safety_name(&ma_in->algo)
@@ -222,7 +222,7 @@ asshh_print_kex_details(struct assh_session_s *s, FILE *out,
 
   if (!ca_out->auth_size)
     fprintf(out,
-	  "  output mac        : %-38s safety %u%% (%s)\n",
+	  "  output mac        : %-38s safety %u (%s)\n",
 	  assh_algo_name(&ma_out->algo),
 	  assh_algo_safety(&ma_out->algo),
 	  assh_algo_safety_name(&ma_out->algo)
@@ -230,7 +230,7 @@ asshh_print_kex_details(struct assh_session_s *s, FILE *out,
 
   if (ev->algos_in->cmp_algo != &assh_compress_none)
     fprintf(out,
-	  "  input compression : %-38s safety %u%% (%s)\n",
+	  "  input compression : %-38s safety %u (%s)\n",
 	  assh_algo_name(&ev->algos_in->cmp_algo->algo),
 	  assh_algo_safety(&ev->algos_in->cmp_algo->algo),
 	  assh_algo_safety_name(&ev->algos_in->cmp_algo->algo)
@@ -238,9 +238,16 @@ asshh_print_kex_details(struct assh_session_s *s, FILE *out,
 
   if (ev->algos_out->cmp_algo != &assh_compress_none)
     fprintf(out,
-	  "  output compression: %-38s safety %u%% (%s)\n",
+	  "  output compression: %-38s safety %u (%s)\n",
 	  assh_algo_name(&ev->algos_out->cmp_algo->algo),
 	  assh_algo_safety(&ev->algos_out->cmp_algo->algo),
 	  assh_algo_safety_name(&ev->algos_out->cmp_algo->algo)
 	  );
+
+  /* This takes into account the safety of the host generated
+     signature blob that may be lower than the safety of the host key
+     due to the digest used. */
+  fprintf(out,
+	  "  overall safety    : %u (%s)\n",
+	  ev->safety, assh_safety_name(ev->safety));
 }
