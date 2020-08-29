@@ -130,7 +130,7 @@ struct assh_bignum_s
   ASSH_PV void *n;
 };
 
-/** @internal @see assh_bignum_bytecode_t */
+/** @internal @see assh_bignum_bytecode */
 ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_bignum_bytecode_valist(struct assh_context_s *c, uint8_t cond,
                              const assh_bignum_op_t *ops,
@@ -318,12 +318,12 @@ enum assh_bignum_opcode_e
 
 /** @mgroup{Bytecode instructions}
     @internal This instruction moves and converts values in various
-    formats. It is equivalent to the @ref assh_bignum_convert_t function. */
+    formats. It is equivalent to the @ref assh_bignum_convert function. */
 #define ASSH_BOP_MOVE(dst, src) \
   ASSH_BOP_FMT3(ASSH_BIGNUM_OP_MOVE, 0, dst, src)
 
 /** @mgroup{Bytecode instructions}
-    @internal This instruction is similar to @ref ASSH_BOP_MOVE.
+    @internal This instruction is similar to @ref #ASSH_BOP_MOVE.
     Once the bignum has been written, the next argument is set to
     point after the output, so that multiple serialized bignums can
     be made contiguous.*/

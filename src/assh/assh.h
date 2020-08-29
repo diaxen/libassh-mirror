@@ -314,10 +314,10 @@ ASSH_PV void assh_hexdump(void *stream, const char *name,
     code is not an error, the execution continues to the next line..
 
     It can be made verbose by defining the @ref #CONFIG_ASSH_DEBUG and
-    @ref CONFIG_ASSH_CALLTRACE macros.
+    @ref #CONFIG_ASSH_CALLTRACE macros.
 
     @see assh_status_e @see assh_status_t
-    @see #ASSH_RET_ON_ERR @see ASSH_RETURN */
+    @see #ASSH_RET_ON_ERR @see #ASSH_RETURN */
 # define ASSH_JMP_ON_ERR(expr, label)           \
   do {                                          \
     if ((err = (expr)) & 0x100)                 \
@@ -332,10 +332,10 @@ ASSH_PV void assh_hexdump(void *stream, const char *name,
     the next line.
 
     It can be made verbose by defining the @ref #CONFIG_ASSH_DEBUG and
-    @ref CONFIG_ASSH_CALLTRACE macros.
+    @ref #CONFIG_ASSH_CALLTRACE macros.
 
     @see assh_status_e @see assh_status_t
-    @see #ASSH_JMP_ON_ERR @see ASSH_RETURN */
+    @see #ASSH_JMP_ON_ERR @see #ASSH_RETURN */
 # define ASSH_RET_ON_ERR(expr)                  \
   do {                                          \
     if ((err = (expr)) & 0x100)                 \
@@ -348,7 +348,7 @@ ASSH_PV void assh_hexdump(void *stream, const char *name,
     The execution never continues to the next line.
 
     It can be made verbose by defining the @ref #CONFIG_ASSH_DEBUG and
-    @ref CONFIG_ASSH_CALLTRACE macros. In the other case, it only
+    @ref #CONFIG_ASSH_CALLTRACE macros. In the other case, it only
     performs a function return.
 
     @see assh_status_t

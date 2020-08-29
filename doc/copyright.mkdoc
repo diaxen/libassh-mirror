@@ -31,13 +31,13 @@
     @item In the @tt {chacha20-poly1305@openssh.com} cipher module,
       the implementation of the @em Poly1305 algorithm is based on a
       @b{public domain} implementation by @em{Andrew Moon}.
-    @item In the @tt{hash_sha2_builtin.c} file, the builtin SHA2
+    @item In the @tt{hash_builtin_sha2.c} file, the builtin SHA2
       module is based on a @b{public domain} implementation by
       @em {Christophe Devine}.
-    @item In the @tt{hash_sha1_builtin.c} file, the builtin SHA1
+    @item In the @tt{hash_builtin_sha1.c} file, the builtin SHA1
       module is based on a @b{public domain} implementation by
       @em {Steve Reid}.
-    @item In the @tt{hash_md5_builtin.c} file, the builtin MD5
+    @item In the @tt{hash_builtin_md5.c} file, the builtin MD5
       module is based on a @b{public domain} implementation by
       @em {Colin Plumb}.
     @item In the @tt{helper_bcrypt.c} file, the @em bcrypt algorithm

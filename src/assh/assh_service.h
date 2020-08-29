@@ -84,7 +84,7 @@ typedef ASSH_SERVICE_CLEANUP_FCN(assh_service_cleanup_t);
     @ref assh_transport_dispatch function when the current state of
     the transport layer is @ref ASSH_TR_SERVICE, @ref
     ASSH_TR_SERVICE_KEX or @ref ASSH_TR_DISCONNECT.
-    It must update the @ref assh_session_s::deadline field when the
+    It must update the @ref assh_session_s::srv_deadline field when the
     state is less than @ref ASSH_TR_DISCONNECT.
 
     A packet may be passed to the function for processing by the
