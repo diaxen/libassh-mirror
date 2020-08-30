@@ -61,7 +61,8 @@ assh_key_algo_guess(struct assh_context_s *c,
 	    continue;
 
           const struct assh_key_algo_s *ops = awk->key_algo;
-          if (ops == NULL || awk->algo.class_ != role)
+          if (ops == NULL || (role != ASSH_ALGO_ANY &&
+			      awk->algo.class_ != role))
             continue;
 
           if (!assh_string_strcmp(name, name_len, ops->name))
