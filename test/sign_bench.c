@@ -177,4 +177,6 @@ int main()
 	  bench(assh_algo_sign(*a), t->key_bits);
 	}
     }
+
+  return 0;
 }
