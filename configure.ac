@@ -312,17 +312,19 @@ if test x$with_openssl = xyes ; then
 	 ])
       esac
 
-      case "$with_prng" in
-        *external*)
-          with_prng=openssl
-	  CONFIG_ASSH_USE_OPENSSL_PRNG=yes
-	  ;;
-        *openssl*|*all*)
-	  CONFIG_ASSH_USE_OPENSSL_PRNG=yes
-      esac
-      if test x$CONFIG_ASSH_USE_OPENSSL_PRNG = xyes ; then
-	  AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_PRNG], [], [Enable openssl random number generator when defined.])
-      fi
+      AC_CHECK_LIB(crypto, RAND_priv_bytes, [
+        case "$with_prng" in
+          *external*)
+            with_prng=openssl
+            CONFIG_ASSH_USE_OPENSSL_PRNG=yes
+       	    ;;
+          *openssl*|*all*)
+            CONFIG_ASSH_USE_OPENSSL_PRNG=yes
+        esac
+        if test x$CONFIG_ASSH_USE_OPENSSL_PRNG = xyes ; then
+       	  AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_PRNG], [], [Enable openssl random number generator when defined.])
+        fi
+      ])
 
       case "$with_alloc" in
         *external*)
