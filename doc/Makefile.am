@@ -49,5 +49,5 @@ internals/html/index.html: $(DOTS:.dot=.png) $(MKDOC_SRC) internals.conf
 		--conf-file internals.conf --top-file top_internals.mkdoc )
 
 EXTRA_DIST = Makefile.am assh_config.h internals.conf		\
-	manual.conf  $(MKDOC_SRC) $(DOTS:.dot=.png) $(DOTS)	\
+	manual.conf  $(MKDOC_SRC) $(DOTS)			\
 	manual/html/ internals/html/
