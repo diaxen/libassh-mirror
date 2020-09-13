@@ -48,7 +48,7 @@ basic.cfgtest:
 	grep -q "define CONFIG_ASSH_USE_BUILTIN_KEX" config.h
 	grep -q "define CONFIG_ASSH_USE_BUILTIN_SIGN" config.h
 	grep -q "define CONFIG_ASSH_USE_BUILTIN_CIPHERS" config.h
-	grep -q "define CONFIG_ASSH_USE_LIBC_ALLOC" config.h
+	grep -q "undef CONFIG_ASSH_USE_LIBC_ALLOC" config.h
 	grep -q "define CONFIG_ASSH_USE_BUILTIN_PRNG" config.h
 	grep -q "define CONFIG_ASSH_BUILTIN_MD5" config.h
 	grep -q "define CONFIG_ASSH_BUILTIN_SHA1" config.h
@@ -66,7 +66,7 @@ basic.cfgtest:
 	grep -q "define CONFIG_ASSH_USE_OPENSSL" config.h
 	grep -q "undef CONFIG_ASSH_USE_OPENSSL_HASH" config.h
 	grep -q "define CONFIG_ASSH_USE_OPENSSL_CIPHERS" config.h
-	grep -q "define CONFIG_ASSH_USE_OPENSSL_ALLOC" config.h
+	grep -q "undef CONFIG_ASSH_USE_OPENSSL_ALLOC" config.h
 	grep -q "define CONFIG_ASSH_USE_OPENSSL_PRNG" config.h
 	grep -q "define CONFIG_ASSH_SERVER_AUTH_NONE" config.h
 	grep -q "define CONFIG_ASSH_CLIENT_AUTH_PUBLICKEY" config.h

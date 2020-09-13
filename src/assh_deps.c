@@ -48,13 +48,23 @@ assh_deps_init(void)
   ASSH_RET_IF_TRUE(!gcry_check_version(GCRYPT_VERSION),
                ASSH_ERR_CRYPTO);
 
-  gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0);
+# ifdef CONFIG_ASSH_USE_GCRYPT_ALLOC
+  ASSH_RET_IF_TRUE(gcry_control(GCRYCTL_INIT_SECMEM,
+				CONFIG_ASSH_SECMEM_SIZE, 0),
+		   ASSH_ERR_CRYPTO);
+# else
+  ASSH_RET_IF_TRUE(gcry_control(GCRYCTL_DISABLE_SECMEM, 0),
+		   ASSH_ERR_CRYPTO);
+# endif
+
+  ASSH_RET_IF_TRUE(gcry_control(GCRYCTL_INITIALIZATION_FINISHED, 0),
+		   ASSH_ERR_CRYPTO);
 #endif
 
 #ifdef CONFIG_ASSH_USE_OPENSSL_ALLOC
   if (!CRYPTO_secure_malloc_initialized())
     ASSH_RET_IF_TRUE(CRYPTO_secure_malloc_init(
-                       CONFIG_ASSH_USE_OPENSSL_HEAP_SIZE, 64) != 1,
+                       CONFIG_ASSH_SECMEM_SIZE, 64) != 1,
                      ASSH_ERR_CRYPTO);
 #endif
 

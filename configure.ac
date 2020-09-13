@@ -133,7 +133,7 @@ AC_ARG_WITH(prng, AC_HELP_STRING(--with-prng, [Specifies backend to use for rand
 		       [with_prng=$withval], with_prng=all)
 
 AC_ARG_WITH(alloc, AC_HELP_STRING(--with-alloc, [Specifies backend to use for secure memory allocation (none, libc, external, gcrypt, openssl)]),
-		       [with_alloc=$withval], with_alloc=all)
+		       [with_alloc=$withval], with_alloc=external)
 
 AC_ARG_WITH(gcrypt, AC_HELP_STRING(--without-gcrypt, [Disable use of gcrypt support]),
 		       with_gcrypt=$withval, with_gcrypt=yes)
@@ -197,12 +197,6 @@ case "$with_macs" in
   *builtin*|*all*)
     AC_DEFINE([CONFIG_ASSH_USE_BUILTIN_MACS], [], [Enable builtin MAC algorithms when defined.])
     CONFIG_ASSH_USE_BUILTIN_MACS=yes
-esac
-
-case "$with_alloc" in
-  *libc*|*all*)
-  AC_DEFINE([CONFIG_ASSH_USE_LIBC_ALLOC], [], [Enable support for the C library allocator which is not secur on some platforms.])
-  CONFIG_ASSH_USE_LIBC_ALLOC=yes
 esac
 
 case "$with_prng" in
@@ -335,7 +329,6 @@ if test x$with_openssl = xyes ; then
 	  CONFIG_ASSH_USE_OPENSSL_ALLOC=yes
       esac
       if test x$CONFIG_ASSH_USE_OPENSSL_ALLOC = xyes ; then
-	  AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_HEAP_SIZE], [0x10000], [Value passed to the CRYPTO_secure_malloc_init function.])
 	  AC_DEFINE([CONFIG_ASSH_USE_OPENSSL_ALLOC], [], [Enable openssl secur memory allocator when defined.])
       fi
 
@@ -485,6 +478,12 @@ if test x$CONFIG_ASSH_USE_BUILTIN_KEX = xyes ||
 
 fi
 
+case "$with_alloc" in
+  *libc*|*all*|*external*)
+  AC_DEFINE([CONFIG_ASSH_USE_LIBC_ALLOC], [], [Enable support for the C library allocator which is not secur on some platforms.])
+  CONFIG_ASSH_USE_LIBC_ALLOC=yes
+esac
+
 if test x$CONFIG_ASSH_USE_BUILTIN_MD5 = xyes ; then
   AC_DEFINE([CONFIG_ASSH_BUILTIN_MD5], [], [Enable MD5 hash])
 fi
@@ -616,6 +615,8 @@ AC_DEFINE([CONFIG_ASSH_ABI_WARN], [], [Enable warning at compile time for use of
 
 #AC_DEFINE([NDEBUG], [], [Disable asserts and some aborts])
 AC_DEFINE([CONFIG_ASSH_OPENSSH_PREFIX], ["/etc/ssh/"], [Specifies the path to OpenSSH key files for use by helpers.])
+
+AC_DEFINE([CONFIG_ASSH_SECMEM_SIZE], [0x10000], [Value passed to the CRYPTO_secure_malloc_init function.])
 
 if test x$enable_packet_pool = xyes ; then
   AC_DEFINE([CONFIG_ASSH_PACKET_POOL], [], [Enable the packet pool allocator when defined.])

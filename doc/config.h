@@ -205,7 +205,7 @@
     allocator.  This requires @ref #CONFIG_ASSH_USE_OPENSSL. */
 #define CONFIG_ASSH_USE_OPENSSL_ALLOC
 
-#define CONFIG_ASSH_USE_OPENSSL_HEAP_SIZE
+#define CONFIG_ASSH_SECMEM_SIZE
 
 /** When defined, @this enables use of the @em OpenSSL cipher
     algorithms.  This requires @ref #CONFIG_ASSH_USE_OPENSSL. */
