@@ -143,7 +143,7 @@ available with details of the internal API.
   Providing those feature is not sufficient to make the
   implementation reliably secure, that's why special care has been
   taken to avoid leaking secret material.  In order to mitigate
-  @sinvoke{Side-channel attack}{side channel attacks}wp, all
+  @sinvoke{Side-channel attack}{side channel attacks}wp, all builtin
   implementations of public key cryptography relies on a big number
   engine with strict constant time operations.  Moreover, the
   library can be configured to store sensitive data and temporary

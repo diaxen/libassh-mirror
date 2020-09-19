@@ -48,7 +48,7 @@
 typedef uint_fast16_t assh_algo_id_t;
 
 /** @This is used to estimate algorithms and keys safety.
-    @csee assh_safety_name */
+    @showvalue @csee assh_safety_name */
 enum assh_algo_safety_e
 {
   /** Safety in range [0 - 19] is broken */
@@ -93,14 +93,20 @@ assh_safety_name(assh_safety_t safety)
     algorithm module interfaces. @see assh_algo_suitable_key */
 typedef ASSH_ALGO_SUITABLE_KEY_FCN(assh_algo_suitable_key_t);
 
-/** @This specifies classes for SSH @hl algorithms. */
+/** @This specifies the classes of @em ssh2 @hl algorithms. */
 enum assh_algo_class_e
 {
+  /** Identify the @hl{Key-exchange} class of algorithms. */
   ASSH_ALGO_KEX,
+  /** Identify the @xref{authalgos}{signature} class of algorithms. */
   ASSH_ALGO_SIGN,
+  /** Identify the @xref{cipheralgos}{cipher} class of algorithms. */
   ASSH_ALGO_CIPHER,
+  /** Identify the @xref{macalgos}{message authentication} class of algorithms. */
   ASSH_ALGO_MAC,
+  /** Identify the @xref{compalgos}{compression} class of algorithms. */
   ASSH_ALGO_COMPRESS,
+  /** For use as a class wildcard where relevant. */
   ASSH_ALGO_ANY,
 };
 
@@ -222,20 +228,11 @@ struct assh_algo_with_key_s
 ASSH_FIRST_FIELD_ASSERT(assh_algo_with_key_s, algo);
 
 /**
-   @This registers the specified array of @hl algorithms for use by
-   the given library context. The last entry must be @tt NULL.
+   @This registers the @hl algorithms specified as a list of pointers
+   to @ref assh_algo_s objects. The last entry must be @tt NULL.
 
-   If this function is called more than once, the internal array of
-   algorithms is resized and new algorithms are appended.
+   The function beahves like the @ref assh_algo_register function.
 
-   It is not possible to modify the list of registered algorithms when
-   some sessions are associated to the context. The @ref
-   assh_session_algo_filter function can still be used to setup a per
-   session algorithm filter for the @hl key-exchange.
-
-   @see assh_algo_register_names_va
-   @see assh_algo_register_default
-   @see assh_algo_register
    @xcsee {algoreg}
 */
 ASSH_WARN_UNUSED_RESULT assh_status_t
@@ -243,24 +240,15 @@ assh_algo_register_va(struct assh_context_s *c,
 		      assh_safety_t min_safety, ...);
 
 /**
-   @This registers the algorithms with the given names for specified
-   class for use the given library context. The last entry must be @tt
-   NULL.
+   @This registers the @hl algorithms specified as a list of names.
+   The last entry must be @tt NULL.
 
-   This function needs to be called more than once to register
-   different classes of algorithms.
+   It needs to be called more than once to register different classes
+   of algorithms. It reports a success when at least one of the
+   designated algorithms has been registered successfully.
 
-   It is not possible to modify the list of registered algorithms when
-   some sessions are associated to the context. The @ref
-   assh_session_algo_filter function can still be used to setup a per
-   session algorithm filter for the @hl key-exchange.
+   The function beahves like the @ref assh_algo_register function.
 
-   The function is successful when at least one of the designated
-   algorithms has been registered successfully.
-
-   @see assh_algo_register_va
-   @see assh_algo_register_default
-   @see assh_algo_register
    @xcsee {algoreg}
 */
 ASSH_WARN_UNUSED_RESULT assh_status_t
@@ -273,13 +261,24 @@ assh_algo_register_names_va(struct assh_context_s *c,
    the given library context. The last entry must be @tt NULL.
 
    The array is copied and the algorithms are sorted depending on
-   their safety factor and speed factor. Algorithms with a
+   their safety factor and speed factor. The order can be modified
+   thanks to the @ref assh_kex_set_order function. Algorithms with a
    safety factor less than @tt min_safety are discarded.
+
+   If this function is called more than once, the internal array of
+   algorithms is resized and new algorithms are appended.
 
    When multiple implementations of the same algorithm are in
    conflict, the variant with the highest score is retained.
 
+   It is not possible to modify the list of registered algorithms when
+   some sessions are associated to the context. The @ref
+   assh_session_algo_filter function can still be used to setup a per
+   session algorithm filter for the @hl key-exchange.
+
    @see assh_algo_register_default
+   @see assh_algo_register_va
+   @see assh_algo_register_names_va
    @xcsee {algoreg}
 */
 ASSH_WARN_UNUSED_RESULT assh_status_t
@@ -290,16 +289,15 @@ assh_algo_register(struct assh_context_s *c,
 /**
    @This registers the specified array of @hl algorithms for use by
    the given library context. The last entry must be @tt NULL.  The
-   array is not copied and must remain valid.
+   array is not copied and must remain valid. No memory allocation is
+   performed by the library. The array of algorithms is replaced on
+   every call.
 
    In order to initialize some @ref assh_session_s objects associated
-   to the context, the table of algorithms must be sorted in ascending
-   class order and all classes must be represented.
+   to the context, the provided table of algorithms must be sorted in
+   ascending class order and all classes must be represented.
 
-   If this function is called more than once, the array of algorithms
-   is replaced.
-
-   When this function has been called, it is not possible to register
+   Once this function has been called, it is not possible to register
    more algorithms by calling @ref assh_algo_register without first
    calling @ref assh_algo_unregister.
 

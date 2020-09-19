@@ -14,6 +14,9 @@ with @em {libassh}.
   @item The @tt test/cipher.c program tests the cipher
     @hl algorithms against known @em ssh2 binary packet contents.
 
+  @item The @tt test/cipher_bench.c program measures the performance
+  of the cipher @hl algorithms.
+
   @item The @tt test/connection.c runs a stress test of the
     @hl{connection protocol} service by randomly performing many @hl
     channel and @hl request operations between a pair of client and
@@ -42,6 +45,9 @@ with @em {libassh}.
     generated set. It is also able to inject corrupted packets and
     memory allocation failures.
 
+  @item The @tt test/kex_bench.c program measures the performance
+  of the @hl key-exchange @hl algorithms.
+
   @item The @tt test/key_io.c program tests loading and storing
     @hl{SSH keys} of various types in all supported formats.
 
@@ -52,12 +58,18 @@ with @em {libassh}.
   @item The @tt test/mac.c program tests the message authentication
     @hl algorithms.
 
+  @item The @tt test/mac_bench.c program measures the performance
+  of the message authentication @hl algorithms.
+
   @item The @tt test/prng.c program dumps some random data from the
     prng module.
 
   @item The @tt test/replay.c program is able to record @em ssh2
     sessions against other client and server implementations and
     replay them as part of the test suite.
+
+  @item The @tt test/sign_bench.c program measures the performance
+  of the signature @hl algorithms.
 
   @item The @tt test/signature.c program tests the signature
     @hl algorithms provided with the library against known inputs

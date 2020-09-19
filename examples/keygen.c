@@ -103,7 +103,7 @@ static void list_types()
 
   printf("Supported key types:\n");
   for (i = 0; i < key_algo_table_size; i++)
-    printf("  %-32s (%s)\n",
+    printf("  %-20s (%s)\n",
 	   assh_key_algo_name(types[i]),
 	   assh_key_algo_implem(types[i]));
 }
@@ -151,11 +151,11 @@ static void usage(const char *program, assh_bool_t opts)
           "    -i file    specify the input file name\n\n"
           "    -g format  specify the input key format\n"
           "    -f format  specify the output key format\n\n"
-          "    -p pass    specify key encryption passphrase\n"
+          "    -p pass    specify the encryption passphrase\n"
           "    -P         don't use passphrase for the output\n"
-          "    -c comment specify key comment string\n\n"
+          "    -c comment specify the key comment string\n\n"
           "    -l         list supported key types and formats\n"
-          "    -L         list internal/raw key formats\n"
+          "    -L         list internal/raw key formats as well\n"
           "    -h         show help\n");
 
   exit(1);
