@@ -228,6 +228,7 @@ assh_algo_register(struct assh_context_s *c,
   assh_algo_id_t i, count = c->algo_cnt;
 
   ASSH_RET_IF_TRUE(c->session_count, ASSH_ERR_BUSY);
+  ASSH_RET_IF_TRUE(!c->algo_realloc && c->algos, ASSH_ERR_BUSY);
 
   for (i = 0; table[i] != NULL; i++)
     {
@@ -264,6 +265,7 @@ assh_status_t assh_algo_register_va(struct assh_context_s *c,
   va_list ap;
 
   ASSH_RET_IF_TRUE(c->session_count, ASSH_ERR_BUSY);
+  ASSH_RET_IF_TRUE(!c->algo_realloc && c->algos, ASSH_ERR_BUSY);
 
   va_start(ap, min_safety);
 
@@ -300,6 +302,7 @@ assh_status_t assh_algo_register_names_va(struct assh_context_s *c,
   const char *name;
 
   ASSH_RET_IF_TRUE(c->session_count, ASSH_ERR_BUSY);
+  ASSH_RET_IF_TRUE(!c->algo_realloc && c->algos, ASSH_ERR_BUSY);
 
   va_start(ap, class_);
 
@@ -339,6 +342,7 @@ assh_status_t assh_algo_unregister(struct assh_context_s *c)
   if (c->algo_realloc)
     assh_free(c, c->algos);
 
+  c->algo_realloc = 0;
   c->algo_cnt = c->algo_max = 0;
   c->algos = NULL;
 

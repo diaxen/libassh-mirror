@@ -333,7 +333,8 @@ ASSH_INLINE ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_algo_register_default(struct assh_context_s *c,
 			   assh_safety_t min_safety)
 {
-  return assh_algo_register(c, min_safety, assh_algo_table);
+  assh_status_t err;
+  ASSH_RETURN(assh_algo_register(c, min_safety, assh_algo_table));
 }
 
 /** Unregister all @hl algorithms.
