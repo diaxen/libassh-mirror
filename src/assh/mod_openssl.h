@@ -29,11 +29,11 @@
 #ifndef ASSH_MOD_OPENSSL_H_
 #define ASSH_MOD_OPENSSL_H_
 
-#include <assh/assh_alloc.h>
-#include <assh/assh_prng.h>
-#include <assh/assh_cipher.h>
-#include <assh/assh_mac.h>
-#include <assh/assh_sign.h>
+#include "assh_alloc.h"
+#include "assh_prng.h"
+#include "assh_cipher.h"
+#include "assh_mac.h"
+#include "assh_sign.h"
 
 #ifdef CONFIG_ASSH_USE_OPENSSL
 # include <openssl/opensslconf.h>

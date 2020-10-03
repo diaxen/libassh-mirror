@@ -29,10 +29,10 @@
 #ifndef ASSH_MOD_GCRYPT_H_
 #define ASSH_MOD_GCRYPT_H_
 
-#include <assh/assh_alloc.h>
-#include <assh/assh_prng.h>
-#include <assh/assh_cipher.h>
-#include <assh/assh_mac.h>
+#include "assh_alloc.h"
+#include "assh_prng.h"
+#include "assh_cipher.h"
+#include "assh_mac.h"
 
 # ifdef CONFIG_ASSH_USE_GCRYPT_CIPHERS
 /** @multiple @This is a cipher algorithm implementation descriptor

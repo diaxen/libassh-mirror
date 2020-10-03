@@ -29,7 +29,7 @@
 #ifndef ASSH_MOD_ZLIB_H_
 #define ASSH_MOD_ZLIB_H_
 
-#include <assh/assh_compress.h>
+#include "assh_compress.h"
 
 # ifdef CONFIG_ASSH_USE_ZLIB
 extern const struct assh_algo_compress_s assh_compress_zlib_zlib;

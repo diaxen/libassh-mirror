@@ -29,7 +29,9 @@
 #ifndef ASSH_MOD_SODIUM_H_
 #define ASSH_MOD_SODIUM_H_
 
-#include <assh/assh_kex.h>
+#include "assh_kex.h"
+#include "assh_sign.h"
+#include "assh_prng.h"
 
 # ifdef CONFIG_ASSH_USE_SODIUM_KEX
 extern const struct assh_algo_kex_s assh_kex_sodium_curve25519_sha256;
