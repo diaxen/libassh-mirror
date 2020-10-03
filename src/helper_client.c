@@ -42,9 +42,10 @@
 
 #include <unistd.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <ctype.h>
 #include <stdarg.h>
+
+#ifdef CONFIG_ASSH_STDIO
 
 assh_status_t
 asshh_client_get_known_hosts(struct assh_context_s *c, struct assh_key_s **keys,
@@ -628,6 +629,8 @@ asshh_client_event_auth(struct assh_session_s *s, FILE *out, FILE *in,
       ASSH_UNREACHABLE();
     }
 }
+
+#endif /* CONFIG_ASSH_STDIO */
 
 void
 asshh_client_init_inter_session(struct asshh_client_inter_session_s *ctx,

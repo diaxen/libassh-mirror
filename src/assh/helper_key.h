@@ -37,7 +37,9 @@
 
 #include "assh_sign.h"
 
-#include <stdio.h>
+#ifdef CONFIG_ASSH_STDIO
+# include <stdio.h>
+#endif
 
 /** @This lookup the key algorithm name and calls the @ref
     assh_key_load function.  */
@@ -58,6 +60,8 @@ asshh_key_create(struct assh_context_s *c,
 		const char *key_algo,
                 enum assh_algo_class_e role);
 #endif
+
+#ifdef CONFIG_ASSH_STDIO
 
 /** @This loads a key from a file handle and inserts the key
     in the @tt head linked list. Both binary and text key formats are
@@ -132,6 +136,8 @@ asshh_key_save_filename(struct assh_context_s *c,
 		       enum assh_key_format_e format,
 		       const char *passphrase);
 
+#endif /* CONFIG_ASSH_STDIO */
+
 /** @This specifies formats of ssh key fingerprint. */
 enum asshh_fingerprint_fmt_e
 {
@@ -156,4 +162,3 @@ asshh_key_fingerprint(struct assh_context_s *c,
                      const char **fmt_name);
 
 #endif
-

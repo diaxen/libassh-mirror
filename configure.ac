@@ -48,13 +48,6 @@ AC_CHECK_TYPE(__int128,  [bnlong_size=x])
 AC_CHECK_LIB(c, malloc_usable_size, AC_DEFINE(CONFIG_ASSH_MALLOC_USABLE_SIZE, 1, [Use malloc_usable_size from C lbirary when defined.]))
 
 AC_COMPILE_IFELSE([
-  #include <stdlib.h>
-  void qsort_r(void *base, size_t nmemb, size_t size,
-  	     int (*compar)(const void *, const void *, void *),
-  	     void *arg);
-], AC_DEFINE(CONFIG_ASSH_GNU_QSORTR, 1, [Use GNU qsort_r]) )
-
-AC_COMPILE_IFELSE([
   #include <sys/ioctl.h>
   struct winsize ws;
   int i = TIOCGWINSZ;

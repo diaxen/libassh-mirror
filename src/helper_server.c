@@ -38,7 +38,6 @@
 #include <assh/assh_alloc.h>
 
 #include <ctype.h>
-#include <stdio.h>
 
 #ifdef CONFIG_ASSH_GETPWNAM_R
 # include <pwd.h>
@@ -54,6 +53,8 @@
 # endif
 # include <unistd.h>
 #endif
+
+#ifdef CONFIG_ASSH_STDIO
 
 assh_status_t
 asshh_server_load_hk(struct assh_context_s *c)
@@ -147,6 +148,10 @@ asshh_server_ak_lookup(struct assh_session_s *s,
   ASSH_RETURN(ASSH_ERR_MISSING_KEY);
 }
 
+#endif /* CONFIG_ASSH_STDIO */
+
+#ifdef CONFIG_ASSH_GETPWNAM_R
+
 assh_status_t
 asshh_server_event_user_id(struct assh_session_s *s,
 			  uid_t *uid, gid_t *gid,
@@ -180,6 +185,8 @@ asshh_server_event_user_id(struct assh_session_s *s,
   return err;
 }
 
+#endif
+
 assh_status_t
 asshh_server_event_auth(struct assh_session_s *s,
 			       struct assh_event_s *event)
@@ -190,14 +197,13 @@ asshh_server_event_auth(struct assh_session_s *s,
   ASSH_SCRATCH_ALLOC(s->ctx, char, str, str_size,
 		     ASSH_ERRSV_CONTINUE, err);
 
-  struct passwd pwd, *pwdp = NULL;
-
   switch (event->id)
     {
-#ifdef CONFIG_ASSH_GETPWNAM_R
     case ASSH_EVENT_USERAUTH_SERVER_USERKEY: {
+#if defined(CONFIG_ASSH_GETPWNAM_R) && defined(CONFIG_ASSH_STDIO)
       struct assh_event_userauth_server_userkey_s *ev =
 	&event->userauth_server.userkey;
+      struct passwd pwd, *pwdp = NULL;
 
       ASSH_JMP_IF_TRUE(assh_buffer_tostr(str, str_size, &ev->username) == NULL,
 		   ASSH_ERR_INPUT_OVERFLOW, err_sc);
@@ -213,12 +219,14 @@ asshh_server_event_auth(struct assh_session_s *s,
       ASSH_JMP_ON_ERR(asshh_server_ak_lookup(s, fname, ev->pub_key), err_sc);
 
       ev->found = 1;
+#else
+      ASSH_JMP_IF_TRUE(1, ASSH_ERR_MISSING_KEY, err_sc);
+#endif
       break;
     }
-#endif
 
-#if defined(CONFIG_ASSH_CRYPT_R) && defined(CONFIG_ASSH_GETPWNAM_R)
     case ASSH_EVENT_USERAUTH_SERVER_PASSWORD: {
+#if defined(CONFIG_ASSH_CRYPT_R) && defined(CONFIG_ASSH_GETPWNAM_R)
       struct assh_event_userauth_server_password_s *ev =
 	&event->userauth_server.password;
 
@@ -249,10 +257,11 @@ asshh_server_event_auth(struct assh_session_s *s,
 
       if (enc && !strcmp(enc, pass))
 	ev->result = ASSH_SERVER_PWSTATUS_SUCCESS;
-
+#else
+      ASSH_JMP_IF_TRUE(1, ASSH_ERR_MISSING_KEY, err_sc);
+#endif
       break;
     }
-#endif
 
     default:
       ASSH_UNREACHABLE();

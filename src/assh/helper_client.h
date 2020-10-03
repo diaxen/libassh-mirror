@@ -43,9 +43,13 @@
 
 #include "assh_key.h"
 
-#include <stdio.h>
+#ifdef CONFIG_ASSH_STDIO
+# include <stdio.h>
+#endif
 
 #ifdef CONFIG_ASSH_CLIENT
+
+#ifdef CONFIG_ASSH_STDIO
 
 /** @This loads all public keys associated to a given host name and
     recognized by one of the registered algorithms. The input file
@@ -156,6 +160,8 @@ asshh_client_event_auth(struct assh_session_s *s, FILE *out, FILE *in,
 			       enum assh_userauth_methods_e *methods,
 			       const struct asshh_client_user_key_s *key_files,
 			       struct assh_event_s *event);
+
+#endif /* CONFIG_ASSH_STDIO */
 
 /** @This specifies the current state of an interactive session.
     @see asshh_client_inter_session_s */

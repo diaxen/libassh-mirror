@@ -26,7 +26,6 @@
 #include <assh/helper_io.h>
 
 #include <unistd.h>
-#include <stdio.h>
 #include <errno.h>
 #include <sys/fcntl.h>
 #include <poll.h>
@@ -151,6 +150,8 @@ asshh_fd_event(struct assh_session_s *s,
   return r;
 }
 
+#ifdef CONFIG_ASSH_STDIO
+
 void
 asshh_print_string(FILE *out, const struct assh_cbuffer_s *str)
 {
@@ -251,3 +252,5 @@ asshh_print_kex_details(struct assh_session_s *s, FILE *out,
 	  "  overall safety    : %u (%s)\n",
 	  ev->safety, assh_safety_name(ev->safety));
 }
+
+#endif /* CONFIG_ASSH_STDIO */

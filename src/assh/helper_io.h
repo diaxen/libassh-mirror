@@ -36,7 +36,9 @@
 
 #include "assh.h"
 
-#include <stdio.h>
+#ifdef CONFIG_ASSH_STDIO
+# include <stdio.h>
+#endif
 
 /** @This can be used to handle the @ref ASSH_EVENT_READ and @ref
     ASSH_EVENT_WRITE events by reading from and writing to a file
@@ -56,6 +58,8 @@ ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_fd_get_password(struct assh_context_s *c, const char **pass,
 		     size_t max_len, int fd, assh_bool_t echo);
 
+#ifdef CONFIG_ASSH_STDIO
+
 /** @This writes a string to the passed stream, filtering out terminal
     control characters. */
 void
@@ -65,5 +69,7 @@ asshh_print_string(FILE *out, const struct assh_cbuffer_s *str);
 void
 asshh_print_kex_details(struct assh_session_s *s, FILE *out,
 		       const struct assh_event_s *event);
+
+#endif /* CONFIG_ASSH_STDIO */
 
 #endif
