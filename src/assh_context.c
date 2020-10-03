@@ -213,3 +213,9 @@ assh_context_set_keepalive(struct assh_context_s *c, uint_fast16_t keepalive)
 {
   c->timeout_keepalive = keepalive;
 }
+
+size_t
+assh_context_refcount(const struct assh_context_s *ctx)
+{
+  return ctx->session_count;
+}

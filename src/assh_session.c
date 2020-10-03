@@ -417,3 +417,8 @@ void * assh_session_get_pv(const struct assh_session_s *ctx)
   return ctx->user_pv;
 }
 
+struct assh_context_s *
+assh_session_context(struct assh_session_s *s)
+{
+  return s->ctx;
+}

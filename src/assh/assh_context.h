@@ -250,5 +250,9 @@ void * assh_context_get_pv(const struct assh_context_s *ctx);
 struct assh_key_s **
 assh_context_keys(struct assh_context_s *ctx);
 
+/** @This returns the number of sessions that use the given context. */
+size_t
+assh_context_refcount(const struct assh_context_s *ctx);
+
 #endif
 

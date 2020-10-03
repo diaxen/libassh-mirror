@@ -349,5 +349,9 @@ assh_session_closed(const struct assh_session_s *s);
 void
 assh_session_userauth_done(struct assh_session_s *s);
 
+/** @This returns the context associated to the given session. */
+struct assh_context_s *
+assh_session_context(struct assh_session_s *s);
+
 #endif
 
