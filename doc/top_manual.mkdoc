@@ -51,6 +51,7 @@ assh/helper_portfwd.h
 assh/mod_builtin.h
 assh/mod_gcrypt.h
 assh/mod_openssl.h
+assh/mod_sodium.h
 assh/mod_zlib.h
 assh/assh_event.h
 }

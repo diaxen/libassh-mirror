@@ -40,14 +40,14 @@ manual: manual/html/index.html
 
 manual/html/index.html: $(DOTS:.dot=.png) $(MKDOC_SRC) manual.conf
 	( cd $(top_srcdir) ; mkdoc -I doc/ -I src/  		\
-		--conf-file manual.conf --top-file top_manual.mkdoc )
+		--conf-file manual.conf )
 
 internals: internals/html/index.html
 
 internals/html/index.html: $(DOTS:.dot=.png) $(MKDOC_SRC) internals.conf
 	( cd $(top_srcdir) ; mkdoc -I doc/ -I src/ 		\
-		--conf-file internals.conf --top-file top_internals.mkdoc )
+		--conf-file internals.conf )
 
-EXTRA_DIST = Makefile.am assh_config.h internals.conf		\
+EXTRA_DIST = Makefile.am config.h internals.conf		\
 	manual.conf  $(MKDOC_SRC) $(DOTS)			\
 	manual/html/ internals/html/

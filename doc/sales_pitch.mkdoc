@@ -54,7 +54,7 @@ available with details of the internal API.
 @end section
 
 @section T {Clean design}
-  The modular design makes the code more readable by not including
+  The @xref{softarch}{modular design} makes the code more readable by not including
   crypto algorithms specific code in the core protocol
   implementation. This approach enforces uses of well defined and
   documented APIs between the software components, which eases the
@@ -144,7 +144,7 @@ available with details of the internal API.
   implementation reliably secure, that's why special care has been
   taken to avoid leaking secret material.  In order to mitigate
   @sinvoke{Side-channel attack}{side channel attacks}wp, all builtin
-  implementations of public key cryptography relies on a big number
+  implementations of public key cryptography rely on a big number
   engine with strict constant time operations.  Moreover, the
   library can be configured to store sensitive data and temporary
   buffers in secure memory.

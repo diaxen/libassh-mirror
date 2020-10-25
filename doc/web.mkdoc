@@ -1,0 +1,57 @@
+
+@c @insert title
+
+@section {Description}
+
+@em libassh is a free software library written in C that implements
+the Secure Shell protocol version 2.
+
+It enables writing @em ssh2 client and server applications using an event
+based API.
+
+@url {manual/What_is_libassh_.html}{Read more} about @em {libassh} features.
+
+@end section
+
+@section {Documentation}
+
+  The @url{http://www.nongnu.org/libassh/manual} {user manual}
+  presents the library
+  @url{manual/Design_and_architecture.html}{architecture}, documents
+  the @url{manual/API_documentation.html}{API} and details the source
+  code of some @url{manual/Example_applications.html}{example
+  applications}.
+
+  A @url {http://www.nongnu.org/libassh/internals} {separate document}
+  details the internal API.
+
+@end section
+
+@section {Download}
+
+  The project is @url
+  {https://savannah.nongnu.org/projects/libassh}{hosted on Savannah}.
+
+  Releases can be downloaded from @url
+  {http://download.savannah.nongnu.org/releases/libassh/} {Savannah mirrors}.
+
+@end section
+
+@section {Source code}
+
+  The last source code can be retrieved using mercurial:
+
+  @tt {hg clone https://hg.savannah.nongnu.org/hgweb/libassh/}
+
+  The repository can also be @url {https://hg.savannah.nongnu.org/hgweb/libassh/}{browsed online}.
+
+@end section
+
+@section {Contact}
+
+  The users mailing list @tt {libassh-users@nongnu.org} is
+  available for general discussions on @em{libassh}.
+
+  This project has been created by Alexandre Becoulet.
+
+@end section

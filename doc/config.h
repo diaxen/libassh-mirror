@@ -88,19 +88,16 @@
 /** When defined, @this enables code that relies on the @tt getspnam_r function. */
 #define CONFIG_ASSH_GETSPNAM_R
 
-/** When defined, @this enables the MD5 message digest. */
+/** When defined, @this enables the builtin implementation of the MD5 message digest. */
 #define CONFIG_ASSH_BUILTIN_MD5
 
-/** When defined, @this enables the RIPE-MD-160 MAC algorithm. */
-#define CONFIG_ASSH_BUILTIN_RIPEMD160
-
-/** When defined, @this enables the SHA1 message digest. */
+/** When defined, @this enables the builtin implementation of the SHA1 message digest. */
 #define CONFIG_ASSH_BUILTIN_SHA1
 
-/** When defined, @this enables the SHA2 message digest. */
+/** When defined, @this enables the builtin implementation of the SHA2 message digest. */
 #define CONFIG_ASSH_BUILTIN_SHA2
 
-/** When defined, @this enables the SHA3 message digest. */
+/** When defined, @this enables the builtin implementation of the SHA3 message digest. */
 #define CONFIG_ASSH_BUILTIN_SHA3
 
 /** @This specifies the maximum length of the remote software

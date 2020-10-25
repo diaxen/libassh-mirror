@@ -25,7 +25,6 @@ assh/assh_bignum.h
 assh/assh_buffer.h
 assh/assh_cipher.h
 assh/assh_compress.h
-assh/assh_config.h
 assh/assh_connection.h
 assh/assh_context.h
 assh/assh_event.h
@@ -55,6 +54,7 @@ assh/helper_server.h
 assh/mod_builtin.h
 assh/mod_gcrypt.h
 assh/mod_openssl.h
+assh/mod_sodium.h
 assh/mod_zlib.h
 assh/safe_primes.h
 }
