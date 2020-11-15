@@ -772,13 +772,13 @@ struct assh_event_channel_window_s
    parameter is updated with the address of the buffer. The data will
    be sent when calling the @ref assh_channel_data_send function.
 
-   @This returns @ref ASSH_NO_DATA if @tt min_size is either
-   larger than the maximum packet size for the channel or larger than
-   the current channel remote window. In this case no packet is
-   allocated but the @tt size parameter is still updated with the
-   current largest possible size. The largest possible size is 0
-   either if there is no window space left or if the channel is
-   closing.
+   @This returns @ref ASSH_NO_DATA if @tt min_size is larger than the
+   current channel remote window. When @tt min_size is larger than the
+   maximum packet size for the channel, @ref ASSH_ERR_OUTPUT_OVERFLOW
+   is returned. In either case, no packet is allocated but the @tt size
+   parameter is still updated with the current largest possible
+   size. The largest possible size is 0 either if there is no window
+   space left or if the channel is closing.
 
    It's ok to call this function more than once without actually
    sending the packet in order to change the requested packet size.

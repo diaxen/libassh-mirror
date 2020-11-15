@@ -1666,6 +1666,7 @@ static ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_channel_data_alloc_chk(struct assh_channel_s *ch,
                             size_t *size, size_t min_size)
 {
+  assh_status_t err;
   struct assh_session_s *s = ch->session;
 
   assert(s->srv == &assh_service_connection);
@@ -1700,6 +1701,9 @@ assh_channel_data_alloc_chk(struct assh_channel_s *ch,
   if (sz > ch->rwin_left)
     sz = ch->rwin_left;
   *size = sz;
+
+  ASSH_RET_IF_TRUE(min_size > ch->rpkt_size,
+		   ASSH_ERR_OUTPUT_OVERFLOW);
 
   if (sz < min_size || min_size == 0)
     return ASSH_NO_DATA;

@@ -374,7 +374,7 @@ void test(int (*fend)(int, int), int cnt, int evrate,
 			    size_t m = test_prng_rand() % 64;
 			    size_t s = test_prng_rand() % (m + 1);
 			    assh_status_t er = assh_channel_data_alloc(ch, &d, &s, m);
-			    if (er > ASSH_NO_DATA)
+			    if (!ASSH_SUCCESS(er) && ASSH_STATUS(er) != ASSH_ERR_OUTPUT_OVERFLOW)
 			      {
 				if (alloc_f)
 				  break;
