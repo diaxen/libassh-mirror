@@ -337,13 +337,6 @@ $ examples/client localhost ls
     library:
     @example examples/client.c:poll
 
-    As in the @xref{exremote}{remote command execution} example, the
-    application relies on an @hl helper state machine in order to manage
-    the @hl{interactive session}. Because we only want to run a single
-    @hl session, we have to initiate a disconnection from the remote
-    server when the single session terminates:
-    @example examples/client.c:disco
-
     We can then deal with data transfered from the local standard
     input to the remote process input, provided that the
     @hl{interactive session} has started and some data are

@@ -248,8 +248,12 @@ ssh_loop(struct assh_session_s *session,
           /* let an helper function start and manage an interactive
              session. */
           asshh_client_event_inter_session(session, &event, inter);
-          break;
 
+	  /* disconnect on interactive session close. */
+	  if (inter->state == ASSH_CLIENT_INTER_ST_CLOSED)
+	    assh_session_disconnect(session, SSH_DISCONNECT_BY_APPLICATION, NULL);
+
+          break;
                                                         /* anchor eventdata */
         case ASSH_EVENT_CHANNEL_DATA: {
           assh_status_t err = ASSH_OK;
@@ -487,12 +491,6 @@ int main(int argc, char **argv)
 
     if (poll(p, 3, timeout) <= 0)
       continue;
-
-                                                        /* anchor disco */
-    /* disconnect on interactive session close. */
-    if (inter.state == ASSH_CLIENT_INTER_ST_CLOSED)
-      assh_session_disconnect(session, SSH_DISCONNECT_BY_APPLICATION, NULL);
-
                                                         /* anchor stdin */
     if (inter.state == ASSH_CLIENT_INTER_ST_OPEN)
       {
