@@ -16,8 +16,6 @@
 
 AUTOMAKE_OPTIONS = serial-tests
 
-AM_CPPFLAGS = -I$(top_builddir)/src/assh
-
 noinst_LIBRARIES = libasshtest.a
 
 libasshtest_a_SOURCES = test.c
