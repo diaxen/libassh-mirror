@@ -1,10 +1,13 @@
 
-libassh is a free software library written in C which implements
-the Secure Shell protocol version 2.
+# libassh - The asynchronous SSH library
 
-The project is hosted at http://www.nongnu.org/libassh
+_libassh_ is a free software library written in C that implements the
+Secure Shell protocol version 2. It enables writing ssh2 client and
+server applications using an event based API.
 
-Copyright (C) 2013-2020 Alexandre Becoulet <alexandre.becoulet@free.fr>
+The _libassh_ home page is available at http://libassh.org/
+
+# License
 
 This library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as
@@ -20,3 +23,5 @@ You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 02110-1301 USA
+
+Copyright (C) 2013-2020 Alexandre Becoulet

@@ -251,9 +251,11 @@ These components are described in the following subsections.
       name. Opening a new @hl channel is an asynchronous process
       and multiple open messages can be sent without waiting for
       replies. The replies can be sent in any order, so that
-      connecting to a remote resource due to a @hl channel
+      accessing a resource due to an incoming @hl channel
       open request may take some time without blocking other
-      @hl channels.
+      @hl channels. This is what occurs when @hl{port forwarding} is
+      used and a server tries to connect to a remote
+      TCP port on the behalf of a client.
 
       The protocol supports a windowed flow control mechanism
       which enables limiting the data throughput per @hl
@@ -326,7 +328,7 @@ These components are described in the following subsections.
   @end section
 
   @section {User authentication implementation}
-    The @em {User Authentication Protocol} use the @ref
+    The @em {User Authentication Protocol} uses the @ref
     assh_service_s {service} module interface. There are
     actually two separate modules that implement the server and
     client sides of the service. Related declarations can be
@@ -335,7 +337,7 @@ These components are described in the following subsections.
   @end section
 
   @section {Connection protocol implementation}
-    The @em {Connection Protocol} also use the service module
+    The @em {Connection Protocol} also uses the service module
     interface. Because this part of the protocol is symmetric,
     there is a single module that implements both, the client
     and server sides.  @label {connmap}
