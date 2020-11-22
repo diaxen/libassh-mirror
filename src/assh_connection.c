@@ -290,6 +290,7 @@ static void assh_request_dequeue(struct assh_session_s *s,
       struct assh_request_s *rq = (void*)rqe;
       if (rq->state != ASSH_REQUEST_ST_REPLY_READY)
         return;
+      assh_connection_update_keepalive(s);
       assh_transport_push(s, rq->reply_pck);
       rq->reply_pck = NULL;
       assh_queue_remove(rqe);
@@ -659,6 +660,7 @@ assh_status_t assh_request(struct assh_session_s *s,
       *rq_ = rq;
     }
 
+  assh_connection_update_keepalive(s);
   assh_transport_push(s, pout);
 
   return ASSH_OK;
@@ -933,6 +935,8 @@ assh_channel_open_failed_send(struct assh_session_s *s, uint32_t remote_id,
   ASSH_ASSERT(assh_packet_add_u32(pout, reason));
   ASSH_ASSERT(assh_packet_add_string(pout, 0, NULL));
   ASSH_ASSERT(assh_packet_add_string(pout, 0, NULL));
+
+  assh_connection_update_keepalive(s);
   assh_transport_push(s, pout);
 
   return ASSH_OK;
@@ -1019,6 +1023,8 @@ assh_channel_open_success_reply2(struct assh_channel_s *ch,
   ASSH_ASSERT(assh_packet_add_u32(pout, ch->lpkt_size));
   ASSH_ASSERT(assh_packet_add_array(pout, rsp_data_len, &data));
   memcpy(data, rsp_data, rsp_data_len);
+
+  assh_connection_update_keepalive(s);
   assh_transport_push(s, pout);
 
   return ASSH_OK;
@@ -1229,6 +1235,7 @@ assh_channel_open(struct assh_session_s *s,
   ASSH_ASSERT(assh_packet_add_array(pout, data_len, &str));
   memcpy(str, data, data_len);
 
+  assh_connection_update_keepalive(s);
   assh_transport_push(s, pout);
 
   return ASSH_OK;
@@ -1393,6 +1400,8 @@ assh_channel_window_adjust(struct assh_channel_s *ch, size_t add)
                                      2 * 4, &pout));
   ASSH_ASSERT(assh_packet_add_u32(pout, ch->remote_id));
   ASSH_ASSERT(assh_packet_add_u32(pout, add));
+
+  assh_connection_update_keepalive(s);
   assh_transport_push(s, pout);
 
   ch->lwin_left += add;
@@ -1817,6 +1826,7 @@ assh_channel_data_send(struct assh_channel_s *ch, size_t size)
   pout->data_size += size;
   ch->rwin_left -= size;
 
+  assh_connection_update_keepalive(s);
   assh_transport_push(s, ch->data_pck);
   ch->data_pck = NULL;
 
@@ -1864,6 +1874,7 @@ assh_channel_dummy(struct assh_channel_s *ch, size_t size)
   uint8_t *tmp;
   ASSH_ASSERT(assh_packet_add_string(pout, 4 + size, &tmp));
 
+  assh_connection_update_keepalive(s);
   assh_transport_push(s, pout);
   return ASSH_OK;
 
@@ -1886,6 +1897,7 @@ assh_connection_send_channel_close(struct assh_session_s *s,
 	       | ASSH_ERRSV_CONTINUE);
   ASSH_ASSERT(assh_packet_add_u32(pout, ch->remote_id));
 
+  assh_connection_update_keepalive(s);
   assh_transport_push(s, pout);
 
   return ASSH_OK;
@@ -2296,8 +2308,6 @@ static ASSH_SERVICE_PROCESS_FCN(assh_connection_process)
   /* handle incoming packet, if any */
   if (p != NULL)
     {
-      assh_connection_update_keepalive(s);
-
       switch (p->head.msg)
         {
         case SSH_MSG_GLOBAL_REQUEST:
@@ -2399,10 +2409,10 @@ static ASSH_SERVICE_PROCESS_FCN(assh_connection_process)
       if (!assh_packet_alloc(s->ctx, SSH_MSG_IGNORE, 4, &pout))
         {
           ASSH_ASSERT(assh_packet_add_u32(pout, 0));
-          assh_transport_push(s, pout);
-        }
 
-      assh_connection_update_keepalive(s);
+	  assh_connection_update_keepalive(s);
+	  assh_transport_push(s, pout);
+        }
     }
 
   /* report channel closing related events */
