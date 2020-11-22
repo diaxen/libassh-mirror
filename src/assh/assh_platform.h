@@ -61,8 +61,6 @@
 
 #define ASSH_INLINE static inline
 
-#define CONFIG_ASSH_NONALIGNED_ACCESS
-
 /** @This stores a 32 bits value in network byte
     order into a non-aligned location. */
 ASSH_INLINE void assh_store_u32(uint8_t *s, uint32_t x)

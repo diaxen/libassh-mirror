@@ -631,6 +631,18 @@ if test "$GCC" = "yes" ; then
     CFLAGS="-Wall -Wno-enum-compare $CFLAGS"
 fi
 
+AC_RUN_IFELSE(
+  AC_LANG_PROGRAM([
+#include <stdint.h>
+#include <string.h>
+], [
+  volatile char *s = strdup("_abbaab_");
+  return *(volatile uint32_t*)(s + 1) != 0x61626261 ||
+         *(volatile uint32_t*)(s + 3) != 0x62616162;
+]), [
+  AC_DEFINE([CONFIG_ASSH_NONALIGNED_ACCESS], [], [Allow use of non-aligned memory access])
+])
+
 AC_OUTPUT([
   libassh.pc
   Makefile
