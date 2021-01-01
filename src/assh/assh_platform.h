@@ -65,8 +65,10 @@
     order into a non-aligned location. */
 ASSH_INLINE void assh_store_u32(uint8_t *s, uint32_t x)
 {
-#ifdef CONFIG_ASSH_NONALIGNED_ACCESS
-  *(uint32_t*)s = htonl(x);
+#if defined(CONFIG_ASSH_NONALIGNED_ACCESS) && defined(__GNUC__)
+  uint32_t *u = (uint32_t*)s;
+  *u = htonl(x);
+  __asm__ ("" : "=m" (*s) : "m" (*u)); /* circumvent strict aliasing */
 #else
   s[0] = x >> 24;
   s[1] = x >> 16;
@@ -89,19 +91,8 @@ ASSH_INLINE void assh_store_u32le(uint8_t *s, uint32_t x)
     order into a non-aligned location. */
 ASSH_INLINE void assh_store_u64(uint8_t *s, uint64_t x)
 {
-#ifdef CONFIG_ASSH_NONALIGNED_ACCESS
-  *(uint32_t*)(s) = htonl(x >> 32);
-  *(uint32_t*)(s + 4) = htonl(x);
-#else
-  s[0] = x >> 56;
-  s[1] = x >> 48;
-  s[2] = x >> 40;
-  s[3] = x >> 32;
-  s[4] = x >> 24;
-  s[5] = x >> 16;
-  s[6] = x >> 8;
-  s[7] = x;
-#endif
+  assh_store_u32(s, x >> 32);
+  assh_store_u32(s + 4, x);
 }
 
 /** @This stores a 64 bits value in little endian byte
@@ -122,8 +113,10 @@ ASSH_INLINE void assh_store_u64le(uint8_t *s, uint64_t x)
     order from a non-aligned location. */
 ASSH_INLINE uint32_t assh_load_u32(const uint8_t *s)
 {
-#ifdef CONFIG_ASSH_NONALIGNED_ACCESS
-  return htonl(*(const uint32_t*)s);
+#if defined(CONFIG_ASSH_NONALIGNED_ACCESS) && defined(__GNUC__)
+  uint32_t *u = (uint32_t*)s;
+  __asm__ ("" : "=m" (*u) : "m" (*s)); /* circumvent strict aliasing */
+  return htonl(*u);
 #else
   return s[3] | (s[2] << 8) | (s[1] << 16) | (s[0] << 24);
 #endif
