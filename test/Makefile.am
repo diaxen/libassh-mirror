@@ -14,6 +14,7 @@
 # License along with this program.  If not, see
 # <http://www.gnu.org/licenses/>.
 
+AM_CPPFLAGS = -I$(top_builddir)/src/assh
 AUTOMAKE_OPTIONS = serial-tests
 
 noinst_LIBRARIES = libasshtest.a
