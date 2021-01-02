@@ -29,6 +29,8 @@ DOTS =  connection_channel.dot 	\
 	userauth_client.dot 	\
 	userauth_server.dot
 
+DOTS_PNG = $(DOTS:.dot=.png)
+
 MKDOC_SRC = fdl-1.3.mkdoc template.mkdoc top_manual.mkdoc		\
 	top_internals.mkdoc algos_methods.mkdoc appendix_state.mkdoc	\
 	bib.mkdoc build_config.mkdoc copyright.mkdoc examples.mkdoc	\
@@ -38,16 +40,23 @@ MKDOC_SRC = fdl-1.3.mkdoc template.mkdoc top_manual.mkdoc		\
 
 manual: manual/html/index.html
 
-manual/html/index.html: $(DOTS:.dot=.png) $(MKDOC_SRC) manual.conf
-	( cd $(top_srcdir) ; mkdoc -I doc/ -I src/  		\
-		--conf-file manual.conf )
+manual/html/index.html: $(DOTS_PNG) $(MKDOC_SRC) manual.conf
+	( cd $(top_srcdir) ; mkdoc -I doc/ -I src/ --conf-file manual.conf \
+		--output-path $(abs_builddir)/manual \
+		--image-path $(abs_builddir) )
 
 internals: internals/html/index.html
 
-internals/html/index.html: $(DOTS:.dot=.png) $(MKDOC_SRC) internals.conf
-	( cd $(top_srcdir) ; mkdoc -I doc/ -I src/ 		\
-		--conf-file internals.conf )
+internals/html/index.html: $(DOTS_PNG) $(MKDOC_SRC) internals.conf
+	( cd $(top_srcdir) ; mkdoc -I doc/ -I src/ --conf-file internals.conf \
+		--output-path $(abs_builddir)/internals \
+		--image-path $(abs_builddir) )
 
-EXTRA_DIST = Makefile.am config.h internals.conf		\
-	manual.conf  $(MKDOC_SRC) $(DOTS)			\
-	manual/html/ internals/html/
+libassh_manual.tar.gz: manual/html/index.html
+	tar czf $@ manual/html/*.html manual/html/*.png manual/html/*.woff2 manual/html/*.css
+
+EXTRA_DIST = Makefile.am config.h internals.conf manual.conf html_title.tmpl \
+		$(MKDOC_SRC) $(DOTS) libassh_manual.tar.gz soft_arch.png
+
+distclean-local:
+	rm -f $(DOTS_PNG) libassh_manual.tar.gz manual/html/* internals/html/*
