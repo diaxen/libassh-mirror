@@ -115,7 +115,7 @@ nopacketpool.cfgtest:
 	$(TEST_PATH)/userauth
 	$(TEST_PATH)/userauth_server
 	$(TEST_PATH)/kex
-	$(TEST_PATH)/replay
+	srcdir=test $(TEST_PATH)/replay
 	touch $@
 
 alloca.cfgtest:
@@ -140,7 +140,7 @@ nozlib.cfgtest:
 	grep -q "undef CONFIG_ASSH_USE_ZLIB" config.h
 	$(MAKE)
 	$(TEST_PATH)/kex
-	$(TEST_PATH)/replay
+	srcdir=test $(TEST_PATH)/replay
 	touch $@
 
 nosodium.cfgtest:
