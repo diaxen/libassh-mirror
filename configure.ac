@@ -14,7 +14,7 @@
 # License along with this program.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-AC_INIT(libassh, 1.0rc1)
+AC_INIT(libassh, 1.0)
 AC_PREREQ(2.50)
 
 AC_CONFIG_AUX_DIR(build)
