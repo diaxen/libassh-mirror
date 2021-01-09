@@ -208,9 +208,12 @@ assh_status_t assh_algo_register_static(struct assh_context_s *c,
   ASSH_RET_IF_TRUE(c->session_count, ASSH_ERR_BUSY);
   ASSH_RET_IF_TRUE(c->algo_realloc && c->algos, ASSH_ERR_BUSY);
 
-  assh_algo_id_t i = 0;
-  while (table[i])
-    i++;
+  assh_algo_id_t i;
+  for (i = 0; table[i] != NULL; i++)
+    {
+      const struct assh_algo_s *algo = table[i];
+      ASSH_RET_IF_TRUE(algo->api != ASSH_ALGO_API_VERSION, ASSH_ERR_BAD_ARG);
+    }
 
   c->algo_cnt = c->algo_max = i;
   c->algo_realloc = 0;
