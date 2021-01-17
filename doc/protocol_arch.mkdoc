@@ -109,7 +109,7 @@ These components are described in the following subsections.
   needs additional measures to be taken when transmitting the packets
   stream over a TCP session.
 
-  Obviously, the compression step if performed before encryption
+  Obviously, the compression step is performed before encryption
   when enabled.
 @end section
 
