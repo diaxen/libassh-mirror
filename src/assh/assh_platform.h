@@ -229,8 +229,7 @@ ASSH_INLINE void assh_clear(void *data, size_t len)
 
 #endif
 
-/** @internal */
-#define ASSH_ALIGN8(x) ((((x) - 1) | 7) + 1)
+#define ASSH_STRUCT_ALIGN(x) ASSH_ALIGN(16, x)
 
 #if defined(__GNUC__) && defined(NDEBUG)
 # define ASSH_UNREACHABLE(msg)  __builtin_unreachable()

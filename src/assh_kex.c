@@ -435,8 +435,10 @@ assh_status_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *
 
   /* alloacte input and output keys and associated cipher/mac/compress contexts */
   struct assh_kex_keys_s *kin;
-  size_t kin_size = sizeof(*kin) + ca_in->ctx_size + cpa_in->ctx_size
-    + ma_in->ctx_size;
+  size_t kin_size = ASSH_STRUCT_ALIGN(sizeof(*kin))
+    + ASSH_STRUCT_ALIGN(ca_in->ctx_size)
+    + ASSH_STRUCT_ALIGN(cpa_in->ctx_size)
+    + ASSH_STRUCT_ALIGN(ma_in->ctx_size);
   ASSH_RET_ON_ERR(assh_alloc(s->ctx, kin_size, ASSH_ALLOC_SECUR, (void**)&kin));
 
   kin_safety = assh_min_uint(kin_safety, ca_in->algo.safety);
@@ -444,8 +446,10 @@ assh_status_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *
     kin_safety = assh_min_uint(kin_safety, ma_in->algo.safety);
 
   struct assh_kex_keys_s *kout;
-  size_t kout_size = sizeof(*kout) + ca_out->ctx_size + cpa_out->ctx_size
-    + ma_out->ctx_size;
+  size_t kout_size = ASSH_STRUCT_ALIGN(sizeof(*kout))
+    + ASSH_STRUCT_ALIGN(ca_out->ctx_size)
+    + ASSH_STRUCT_ALIGN(cpa_out->ctx_size)
+    + ASSH_STRUCT_ALIGN(ma_out->ctx_size);
   ASSH_JMP_ON_ERR(assh_alloc(s->ctx, kout_size, ASSH_ALLOC_SECUR, (void**)&kout),
 	       err_kin);
 
@@ -591,8 +595,8 @@ assh_kex_new_keys(struct assh_session_s *s,
 
   struct assh_kex_keys_s *kin = s->new_keys_in;
   struct assh_kex_keys_s *kout = s->new_keys_out;
-  uint8_t *next_in_ctx = (void*)(kin + 1);
-  uint8_t *next_out_ctx = (void*)(kout + 1);
+  uint8_t *next_in_ctx = (uint8_t*)(kin) + ASSH_STRUCT_ALIGN(sizeof(*kin));
+  uint8_t *next_out_ctx = (uint8_t*)(kout) + ASSH_STRUCT_ALIGN(sizeof(*kout));
 
   /* get input cipher iv/key and init cipher */
   if (kin->cipher_algo->iv_size)
@@ -608,7 +612,7 @@ assh_kex_new_keys(struct assh_session_s *s,
   c++;
 
   kin->cipher_ctx = (void*)next_in_ctx;
-  next_in_ctx += kin->cipher_algo->ctx_size;
+  next_in_ctx += ASSH_STRUCT_ALIGN(kin->cipher_algo->ctx_size);
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
   ASSH_DEBUG_HEXDUMP("in iv", iv, kin->cipher_algo->iv_size);
@@ -631,7 +635,7 @@ assh_kex_new_keys(struct assh_session_s *s,
   c++;
 
   kout->cipher_ctx = (void*)next_out_ctx;
-  next_out_ctx += kout->cipher_algo->ctx_size;
+  next_out_ctx += ASSH_STRUCT_ALIGN(kout->cipher_algo->ctx_size);
 
 #ifdef CONFIG_ASSH_DEBUG_KEX
   ASSH_DEBUG_HEXDUMP("out iv", iv, kout->cipher_algo->iv_size);
@@ -651,7 +655,7 @@ assh_kex_new_keys(struct assh_session_s *s,
 #endif
     }
   kin->mac_ctx = (void*)next_in_ctx;
-  next_in_ctx += kin->mac_algo->ctx_size;
+  next_in_ctx += ASSH_STRUCT_ALIGN(kin->mac_algo->ctx_size);
   ASSH_JMP_ON_ERR(kin->mac_algo->f_init(s->ctx, kin->mac_ctx, key, 0), err_mac_in);
   c++;
 
@@ -666,7 +670,7 @@ assh_kex_new_keys(struct assh_session_s *s,
 #endif
     }
   kout->mac_ctx = (void*)next_out_ctx;
-  next_out_ctx += kout->mac_algo->ctx_size;
+  next_out_ctx += ASSH_STRUCT_ALIGN(kout->mac_algo->ctx_size);
   ASSH_JMP_ON_ERR(kout->mac_algo->f_init(s->ctx, kout->mac_ctx, key, 1), err_mac_out);
   c++;
 

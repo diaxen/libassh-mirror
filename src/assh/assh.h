@@ -553,6 +553,11 @@ ASSH_INLINE intptr_t assh_min_int(intptr_t a, intptr_t b)
 }
 
 /** @internal */
+#define ASSH_ALIGN(b, x) ((((x) - 1) | (b - 1)) + 1)
+/** @internal */
+#define ASSH_ALIGN8(x) ASSH_ALIGN(8, x)
+
+/** @internal */
 #define ASSH_SWAP(type, a, b) do {	\
     type __a = (a);		  	\
     type __b = (b);		  	\
