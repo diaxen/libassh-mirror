@@ -83,7 +83,9 @@ void assh_transport_push(struct assh_session_s *s,
     }
 }
 
-static ASSH_EVENT_DONE_FCN(assh_event_read_done)
+assh_status_t
+assh_transport_input_done(struct assh_session_s *s,
+			  size_t rd_size)
 {
   assh_status_t err;
   struct assh_kex_keys_s *k = s->cur_keys_in;
@@ -91,15 +93,6 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
   const struct assh_algo_cipher_s *ca = k->cipher_algo;
   uint_fast8_t hsize = ca->head_size;
 
-  if (inerr)
-    {
-      ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_CLOSED);
-      ASSH_RETURN(inerr | ASSH_ERRSV_DISCONNECT);
-    }
-
-  size_t rd_size = e->transport.read.transferred;
-
-  assert(rd_size <= e->transport.read.buf.size);
   s->stream_in_size += rd_size;
 
   switch (s->stream_in_st)
@@ -146,7 +139,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 		   ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
 
       ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_IDENT);
-      return ASSH_OK;
+      return ASSH_NO_DATA;
     }
 
     /* decipher packet head, compute packet length and allocate packet */
@@ -157,7 +150,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 	{
 	  /* not enough header data yet to decipher the 1st block */
 	  ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_HEAD);
-	  return ASSH_OK;
+	  return ASSH_NO_DATA;
 	}
 
       /* decipher head */
@@ -201,7 +194,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
 	{
 	  /* not enough data for the whole packet yet */
 	  ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_PAYLOAD);
-	  return ASSH_OK;
+	  return ASSH_NO_DATA;
 	}
 
       uint32_t seq = s->in_seq;
@@ -293,12 +286,11 @@ static ASSH_EVENT_DONE_FCN(assh_event_read_done)
     }
 }
 
-assh_status_t assh_transport_read(struct assh_session_s *s,
-				 struct assh_event_s *e)
+assh_status_t
+assh_transport_input_buffer(struct assh_session_s *s,
+			    uint8_t **data, size_t *size)
 {
   struct assh_kex_keys_s *k = s->cur_keys_in;
-  uint8_t **data = &e->transport.read.buf.data;
-  size_t *size = &e->transport.read.buf.size;
 
   if (s->tr_st >= ASSH_TR_DISCONNECT)
     ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_CLOSED);
@@ -313,64 +305,49 @@ assh_status_t assh_transport_read(struct assh_session_s *s,
 	 must not span more than one binary packet. */
       *size = assh_min_uint(ASSH_MIN_BLOCK_SIZE,
 			    sizeof(s->ident_str) - s->stream_in_size);
-      break;
+      return ASSH_OK;
 
     /* read stream into packet head buffer */
     case ASSH_TR_IN_HEAD: {
       *data = s->stream_in_stub.data + s->stream_in_size;
       ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_HEAD_DONE);
       *size = k->cipher_algo->head_size - s->stream_in_size;
-      break;
+      return ASSH_OK;
     }
 
     /* read stream into actual packet buffer */
     case ASSH_TR_IN_PAYLOAD: {
+      if (s->in_pck != NULL)
+	return ASSH_NO_DATA;
+
       struct assh_packet_s *p = s->stream_in_pck;
       *data = p->data + s->stream_in_size;
       *size = p->data_size - s->stream_in_size;
       ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_PAYLOAD_DONE);
-      assert(s->in_pck == NULL);
-      break;
-    }
-
-    case ASSH_TR_IN_CLOSED:
       return ASSH_OK;
+    }
 
     default:
-      ASSH_UNREACHABLE();
+      return ASSH_NO_DATA;
     }
-
-  e->id = ASSH_EVENT_READ;
-  e->f_done = &assh_event_read_done;
-  e->transport.read.transferred = 0;
-  return ASSH_OK;
 }
 
-static ASSH_EVENT_DONE_FCN(assh_event_write_done)
+void
+assh_transport_output_done(struct assh_session_s *s,
+			   size_t wr_size, assh_bool_t yield)
 {
-  assh_status_t err;
-
-  if (inerr)
-    {
-      ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_CLOSED);
-      ASSH_RETURN(inerr);
-    }
-
-  size_t wr_size = e->transport.write.transferred;
-
-  assert(wr_size <= e->transport.write.buf.size);
-  s->stream_out_size += wr_size;
+  size_t ss = s->stream_out_size += wr_size;
 
   switch (s->stream_out_st)
     {
     /* check if sending of ident string has completed */
     case ASSH_TR_OUT_IDENT_DONE:
-      if (s->stream_out_size >= sizeof(ASSH_IDENT) - 1)
+      if (ss >= sizeof(ASSH_IDENT) - 1)
 	ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_PACKETS);
-      else
+      else if (yield)
 	ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_IDENT_PAUSE);
 
-      return ASSH_OK;
+      return;
 
     /* check if sending of packet has completed */
     case ASSH_TR_OUT_PACKETS_DONE: {
@@ -379,12 +356,13 @@ static ASSH_EVENT_DONE_FCN(assh_event_write_done)
       struct assh_queue_entry_s *e = assh_queue_front(&s->out_queue);
       struct assh_packet_s *p = (void*)e;
 
-      if (s->stream_out_size < p->data_size)
+      if (ss < p->data_size)
 	{
 	  /* packet partially sent, need to report one more write
 	     event later. Yield to the input state machine for now. */
-	  ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_PACKETS_PAUSE);
-	  return ASSH_OK;
+	  if (yield)
+	    ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_PACKETS_PAUSE);
+	  return;
 	}
 
       p->seq = s->out_seq++;
@@ -399,7 +377,7 @@ static ASSH_EVENT_DONE_FCN(assh_event_write_done)
       assh_queue_remove(e);
       assh_packet_release(p);
 
-      return ASSH_OK;
+      return;
     }
 
     default:
@@ -407,12 +385,12 @@ static ASSH_EVENT_DONE_FCN(assh_event_write_done)
     }
 }
 
-assh_status_t assh_transport_write(struct assh_session_s *s,
-				  struct assh_event_s *e)
+assh_status_t
+assh_transport_output_buffer(struct assh_session_s *s,
+			     uint8_t const ** const data,
+			     size_t *size)
 {
   assh_status_t err;
-  uint8_t const ** const data = &e->transport.write.buf.data;
-  size_t *size = &e->transport.write.buf.size;
 
   switch (s->stream_out_st)
     {
@@ -422,18 +400,19 @@ assh_status_t assh_transport_write(struct assh_session_s *s,
 	  s->tr_st < ASSH_TR_DISCONNECT)
 	ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_IDENT);
 
-      return ASSH_OK;
+      return ASSH_NO_DATA;
 
     /* the write stream buffer is the constant ident string */
     case ASSH_TR_OUT_IDENT: {
       if (s->stream_in_st == ASSH_TR_IN_CLOSED ||
 	  s->tr_st >= ASSH_TR_DISCONNECT)
-	return ASSH_OK;
+	return ASSH_NO_DATA;
 
       *data = (uint8_t*)ASSH_IDENT + s->stream_out_size;
       *size = sizeof(ASSH_IDENT) - 1 - s->stream_out_size;
       ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_IDENT_DONE);
-      break;
+
+      return ASSH_OK;
     }
 
     /* the next output packet must be enciphered before write */
@@ -447,7 +426,7 @@ assh_status_t assh_transport_write(struct assh_session_s *s,
 	{
 	  /* nothing to output, yield to input */
 	  if (assh_queue_isempty(q))
-	    return ASSH_OK;
+	    return ASSH_NO_DATA;
 
 	  p = (void*)assh_queue_front(q);
 	  msg = p->head.msg;
@@ -570,7 +549,7 @@ assh_status_t assh_transport_write(struct assh_session_s *s,
       s->stream_out_size = 0;
       *data = p->data;
       *size = p->data_size;
-      break;
+      return ASSH_OK;
     }
 
     /* the last packet buffer write was incomplete, yield to input */
@@ -579,7 +558,7 @@ assh_status_t assh_transport_write(struct assh_session_s *s,
 	  s->tr_st < ASSH_TR_DISCONNECT)
 	{
 	  ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_PACKETS_ENCIPHERED);
-	  return ASSH_OK;
+	  return ASSH_NO_DATA;
 	}
 
     /* the write stream buffer is an already enciphered output packet */
@@ -591,21 +570,12 @@ assh_status_t assh_transport_write(struct assh_session_s *s,
       *data = p->data + s->stream_out_size;
       *size = p->data_size - s->stream_out_size;
       ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_PACKETS_DONE);
-      break;
-    }
-
-    default:
-      ASSH_UNREACHABLE();
-
-    case ASSH_TR_OUT_CLOSED:
       return ASSH_OK;
     }
 
-  /* a buffer is available for output, return a write event */
-  e->id = ASSH_EVENT_WRITE;
-  e->f_done = &assh_event_write_done;
-  e->transport.write.transferred = 0;
-  return ASSH_OK;
+    default:
+      return ASSH_NO_DATA;
+    }
 }
 
 assh_bool_t

@@ -39,6 +39,42 @@ static ASSH_EVENT_DONE_FCN(assh_event_error_done)
   return ASSH_OK;
 }
 
+static ASSH_EVENT_DONE_FCN(assh_event_read_done)
+{
+  assh_status_t err;
+
+  if (inerr)
+    {
+      ASSH_SET_STATE(s, stream_in_st, ASSH_TR_IN_CLOSED);
+      ASSH_RETURN(inerr | ASSH_ERRSV_DISCONNECT);
+    }
+
+  size_t rd_size = e->transport.read.transferred;
+  assert(rd_size <= e->transport.read.buf.size);
+
+  ASSH_RET_ON_ERR(assh_transport_input_done(s, rd_size));
+
+  return ASSH_OK;
+}
+
+static ASSH_EVENT_DONE_FCN(assh_event_write_done)
+{
+  assh_status_t err;
+
+  if (inerr)
+    {
+      ASSH_SET_STATE(s, stream_out_st, ASSH_TR_OUT_CLOSED);
+      ASSH_RETURN(inerr);
+    }
+
+  size_t wr_size = e->transport.write.transferred;
+  assert(wr_size <= e->transport.write.buf.size);
+
+  assh_transport_output_done(s, wr_size, 1);
+
+  return ASSH_OK;
+}
+
 assh_bool_t assh_event_get(struct assh_session_s *s,
                            struct assh_event_s *e,
                            assh_time_t time)
@@ -58,18 +94,35 @@ assh_bool_t assh_event_get(struct assh_session_s *s,
 
       /* process the next input packet if any and run kex or service. */
       ASSH_JMP_ON_ERR(assh_transport_dispatch(s, e), err);
+
       if (e->id != ASSH_EVENT_INVALID)
-        goto got_event;
+	goto got_event;
 
       /* or, write output packets as ssh stream. */
-      ASSH_JMP_ON_ERR(assh_transport_write(s, e), err);
-      if (e->id != ASSH_EVENT_INVALID)
-        goto got_event;
+      ASSH_JMP_ON_ERR(assh_transport_output_buffer(s,
+			  &e->transport.write.buf.data,
+			  &e->transport.write.buf.size), err);
+
+      if (ASSH_STATUS(err) == ASSH_OK)
+	{
+	  e->id = ASSH_EVENT_WRITE;
+	  e->f_done = &assh_event_write_done;
+	  e->transport.write.transferred = 0;
+	  goto got_event;
+	}
 
       /* or, request and process some input ssh stream. */
-      ASSH_JMP_ON_ERR(assh_transport_read(s, e), err);
-      if (e->id != ASSH_EVENT_INVALID)
-        goto got_event;
+      ASSH_JMP_ON_ERR(assh_transport_input_buffer(s,
+			 &e->transport.read.buf.data,
+			 &e->transport.read.buf.size), err);
+
+      if (ASSH_STATUS(err) == ASSH_OK)
+	{
+	  e->id = ASSH_EVENT_READ;
+	  e->f_done = &assh_event_read_done;
+	  e->transport.read.transferred = 0;
+	  goto got_event;
+	}
 
       if (s->tr_st == ASSH_TR_DISCONNECT)
         {

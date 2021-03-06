@@ -193,21 +193,46 @@ ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_transport_unimp(struct assh_session_s *s,
                      struct assh_packet_s *pin);
 
-/** @internal @This executes the transport output FSM code
-    which enciphers packets and builds the output stream. It may
-    report the @ref ASSH_EVENT_READ event. It is called from the @ref
-    assh_event_get function. */
+/** @internal @This executes the transport output FSM code which
+    enciphers packets and builds the output ssh stream. It returns a
+    buffer to the next chunk that is ready for transmission. The
+    function returns @ret ASSH_NO_DATA when there is no output
+    available. The @ref assh_transport_output_done function must be
+    called to release the buffer. */
 ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
-assh_transport_write(struct assh_session_s *s,
-                     struct assh_event_s *e);
+assh_transport_output_buffer(struct assh_session_s *s,
+			     uint8_t const ** const data,
+			     size_t *size);
 
-/** @internal @This executes the transport input FSM code
-    which extracts packets from the stream and decipher them. It may
-    report the @ref ASSH_EVENT_WRITE event. It is called from the @ref
-    assh_event_get function. */
+/** @internal @This must be called after the @ref
+    assh_transport_output_buffer function. The @tt wr_size parameter
+    indicates the amount of bytes that has been transmitted.
+
+    Unless the @tt yield parameter is true, it must be called multiple
+    times until the whole buffer has been transmitted. */
+ASSH_PV void
+assh_transport_output_done(struct assh_session_s *s,
+			   size_t wr_size, assh_bool_t yield);
+
+/** @internal @This returns the buffer where the next chunk of input
+    ssh stream must be written before calling the @ref
+    assh_transport_input_done function. The function returns @ret
+    ASSH_NO_DATA when the library can not accept more input. */
 ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
-assh_transport_read(struct assh_session_s *s,
-                    struct assh_event_s *e);
+assh_transport_input_buffer(struct assh_session_s *s,
+			    uint8_t **data, size_t *size);
+
+/** @internal @This must be called after @ref
+    assh_transport_input_buffer. It executes the transport input FSM
+    code which extracts packets from the ssh stream and decipher them.
+
+    In addition to possible errors, the return value indicates if an
+    ssh packet has been fully deciphered, which might result in new
+    events being reported. The @ref ASSH_NO_DATA status is returned
+    when this is not the case. */
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
+assh_transport_input_done(struct assh_session_s *s,
+			  size_t rd_size);
 
 /** @internal @This dispatches an incoming packets to the
     appropriate state machine (tranport, kex or service). It is called
@@ -217,8 +242,9 @@ assh_transport_dispatch(struct assh_session_s *s,
 			struct assh_event_s *e);
 
 /** @This returns true if there is pending output ssh stream. When
-    this is the case, an @ref ASSH_EVENT_WRITE event will be
-    reported. */
+    this is the case, the @ref assh_transport_output_buffer function
+    will return a buffer and an @ref ASSH_EVENT_WRITE event should be
+    reported at some point. */
 assh_bool_t
 assh_transport_has_output(struct assh_session_s *s);
 
