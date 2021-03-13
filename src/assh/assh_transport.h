@@ -254,5 +254,21 @@ assh_transport_debug(struct assh_session_s *s,
 		     assh_bool_t display, const char *msg,
 		     const char *lang);
 
+/** @internal When @tt *payload_size is initially zero, @this returns
+    the size of the payload that can be embedded in an @em ssh2 binary
+    packet of the given size. When instead @tt *packet_size is
+    initially zero, @this returns the size of the binary packet that
+    will be output to transmit a payload of the given size.
+
+    The returned value depends on the @hl algorithms and must be
+    evaluated again after a @hl key-exchange. This assumes that
+    minimal padding size is used.
+
+    An error is returned if no payload can be stored in the specified
+    packet size. */
+ASSH_WARN_UNUSED_RESULT assh_status_t
+assh_transport_overhead(struct assh_session_s *s,
+			size_t *payload_size, size_t *packet_size);
+
 #endif
 

@@ -937,3 +937,64 @@ assh_status_t assh_transport_dispatch(struct assh_session_s *s,
   ASSH_RETURN(err);
 }
 
+assh_status_t
+assh_transport_overhead(struct assh_session_s *s,
+			size_t *payload_size, size_t *packet_size)
+{
+  assh_status_t err;
+
+  struct assh_kex_keys_s *k = s->cur_keys_out;
+  const struct assh_algo_mac_s *ma = k->mac_algo;
+  const struct assh_algo_cipher_s *ca = k->cipher_algo;
+
+  uint_fast8_t align = assh_max_uint(ca->block_size, 8);
+  int_fast32_t mac_len = ma->mac_size + ca->auth_size;
+
+  if (*packet_size)
+    {
+      int_fast32_t head_len = ASSH_PACKET_HEADLEN;
+      int_fast32_t cipher_len = *packet_size - mac_len;
+
+      if (ma->etm || ca->auth_size)
+	{
+	  /* length field not enciphered with the payload */
+	  cipher_len -= 4;
+	  head_len -= 4;
+	}
+
+      ASSH_RET_IF_TRUE(cipher_len < (int_fast32_t)ca->block_size,
+		       ASSH_ERR_OUTPUT_OVERFLOW);
+
+      cipher_len -= cipher_len % align + /* minimal padding */ 4;
+
+      ASSH_RET_IF_TRUE(cipher_len <= head_len,
+		       ASSH_ERR_OUTPUT_OVERFLOW);
+
+      *payload_size = cipher_len - head_len;
+
+      return ASSH_OK;
+    }
+  else if (*payload_size)
+    {
+      uint_fast32_t head_len = 0;
+      uint_fast32_t cipher_len = ASSH_PACKET_HEADLEN + *payload_size;
+
+      if (ma->etm || ca->auth_size)
+	{
+	  /* length field not enciphered with the payload */
+	  cipher_len -= 4;
+	  head_len = 4;
+	}
+
+      size_t pad_len = align - cipher_len % align;
+      if (pad_len < 4)
+	pad_len += align;
+      cipher_len += pad_len;
+
+      *packet_size = head_len + cipher_len + mac_len;
+
+      return ASSH_OK;
+    }
+
+  ASSH_RETURN(ASSH_ERR_BAD_ARG);
+}

@@ -1883,6 +1883,35 @@ assh_channel_dummy(struct assh_channel_s *ch, size_t size)
   return err;
 }
 
+assh_status_t
+assh_channel_overhead(struct assh_session_s *s, size_t *data_size,
+		      size_t *packet_size, assh_bool_t ext)
+{
+  assh_status_t err;
+  size_t chan_data_header = ext ? 3 * 4 : 2 * 4;
+  size_t payload_size;
+
+  if (*packet_size)
+    {
+      ASSH_RET_ON_ERR(assh_transport_overhead(s, &payload_size, packet_size));
+
+      ASSH_RET_IF_TRUE(payload_size <= chan_data_header,
+		       ASSH_ERR_OUTPUT_OVERFLOW);
+
+      *data_size = payload_size - chan_data_header;
+
+      return ASSH_OK;
+    }
+  else if (*data_size)
+    {
+      payload_size = *data_size + chan_data_header;
+
+      ASSH_RETURN(assh_transport_overhead(s, &payload_size, packet_size));
+    }
+
+  ASSH_RETURN(ASSH_ERR_BAD_ARG);
+}
+
 /************************************************* incoming channel close/eof */
 
 static ASSH_WARN_UNUSED_RESULT assh_status_t
