@@ -62,7 +62,7 @@ asshh_base64_encode_update(struct asshh_base64_ctx_s *ctx,
 			  const uint8_t *bin, size_t bin_len);
 
 /** @internal */
-ASSH_WARN_UNUSED_RESULT assh_status_t
+ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_base64_encode_final(struct asshh_base64_ctx_s *ctx);
 
 /** @internal */
@@ -74,9 +74,15 @@ asshh_base64_outsize(struct asshh_base64_ctx_s *ctx)
 
 /** @internal */
 ASSH_PV ASSH_INLINE size_t
-asshh_base64_encoded_size(size_t t)
+asshh_base64_max_encoded_size(size_t t)
 {
-  return t * 4 / 3 + 5;
+  return ASSH_ALIGN(4, t * 4 / 3);
+}
+
+ASSH_PV ASSH_INLINE size_t
+asshh_base64_max_decoded_size(size_t t)
+{
+  return t * 3 / 4;
 }
 
 #endif

@@ -69,7 +69,7 @@ asshh_base64_encode_update(struct asshh_base64_ctx_s *ctx,
       in++;
       if (in == 3)
 	{
-	  ASSH_RET_IF_TRUE(out + 4 >= ctx->out_end, ASSH_ERR_OUTPUT_OVERFLOW);
+	  ASSH_RET_IF_TRUE(out + 4 > ctx->out_end, ASSH_ERR_OUTPUT_OVERFLOW);
 	  *out++ = bin2b64[(x >> 18) & 63];
 	  *out++ = bin2b64[(x >> 12) & 63];
 	  *out++ = bin2b64[(x >> 6) & 63];
@@ -91,6 +91,7 @@ asshh_base64_decode_update(struct asshh_base64_ctx_s *ctx,
 			  const uint8_t *b64, size_t b64_len)
 {
   assh_status_t err;
+  uint8_t *out = ctx->out;
 
   while (b64_len--)
     {
@@ -105,19 +106,22 @@ asshh_base64_decode_update(struct asshh_base64_ctx_s *ctx,
         case -2:
           continue;  /* ignore blank chars */
         case -4:
-	  return ASSH_OK;  /* NUL termination */
+	  goto done;  /* NUL termination */
         default:
 	  ASSH_RET_IF_TRUE(ctx->pad > 0, ASSH_ERR_BAD_DATA);
           ctx->x = (ctx->x << 6) | c;
 	  if ((++ctx->in & 3) != 0)
 	    continue;
-	  ASSH_RET_IF_TRUE(ctx->out + 2 >= ctx->out_end, ASSH_ERR_OUTPUT_OVERFLOW);
-	  *ctx->out++ = ctx->x >> 16;
-	  *ctx->out++ = ctx->x >> 8;
-	  *ctx->out++ = ctx->x;
+	  ASSH_RET_IF_TRUE(out + 3 > ctx->out_end, ASSH_ERR_OUTPUT_OVERFLOW);
+	  *out++ = ctx->x >> 16;
+	  *out++ = ctx->x >> 8;
+	  *out++ = ctx->x;
 	  ctx->x = 0;
         }
     }
+
+ done:
+  ctx->out = out;
   return ASSH_OK;
 }
 
@@ -128,17 +132,19 @@ asshh_base64_decode_final(struct asshh_base64_ctx_s *ctx)
 
   ASSH_RET_IF_TRUE((ctx->in + ctx->pad) & 3, ASSH_ERR_BAD_DATA);
 
-  ASSH_RET_IF_TRUE(ctx->out + ((2 - ctx->pad) % 2) >= ctx->out_end,
-	       ASSH_ERR_OUTPUT_OVERFLOW);
   switch (ctx->pad)
     {
     case 2:
+      ASSH_RET_IF_TRUE(ctx->out + 1 > ctx->out_end, ASSH_ERR_OUTPUT_OVERFLOW);
       *ctx->out++ = ctx->x >> 4;
       break;
     case 1:
+      ASSH_RET_IF_TRUE(ctx->out + 2 > ctx->out_end, ASSH_ERR_OUTPUT_OVERFLOW);
       *ctx->out++ = ctx->x >> 10;
       *ctx->out++ = ctx->x >> 2;
-    case 0:;
+      break;
+    case 0:
+      break;
     }
   return ASSH_OK;
 }

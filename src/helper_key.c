@@ -913,7 +913,7 @@ assh_save_pub_openssh(struct assh_context_s *c,
 {
   assh_status_t err;
   struct asshh_base64_ctx_s b64;
-  size_t maxlen = asshh_base64_encoded_size(blob_len);
+  size_t maxlen = asshh_base64_max_encoded_size(blob_len);
   uint8_t tmp[maxlen];
 
   asshh_base64_init(&b64, tmp, maxlen);
@@ -939,7 +939,7 @@ assh_save_rfc4716(struct assh_context_s *c,
 {
   assh_status_t err;
   struct asshh_base64_ctx_s b64;
-  size_t maxlen = asshh_base64_encoded_size(blob_len);
+  size_t maxlen = asshh_base64_max_encoded_size(blob_len);
   uint8_t tmp[maxlen];
 
   asshh_base64_init(&b64, tmp, maxlen);
@@ -1029,7 +1029,7 @@ assh_save_rfc1421(struct assh_context_s *c,
 
   /* base64 encode */
   struct asshh_base64_ctx_s b64;
-  size_t maxlen = asshh_base64_encoded_size(blob_len);
+  size_t maxlen = asshh_base64_max_encoded_size(blob_len);
   uint8_t *tmp = alloca(maxlen);
 
   asshh_base64_init(&b64, tmp, maxlen);
