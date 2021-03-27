@@ -125,14 +125,16 @@ assh_status_t assh_kex_send_init(struct assh_session_s *s)
   assh_status_t err;
   struct assh_context_s *c = s->ctx;
 
+  /* the appropriate packet size is computed
+     in assh_algo_kex_init_size */
   struct assh_packet_s *p;
   ASSH_RET_ON_ERR(assh_packet_alloc(c, SSH_MSG_KEXINIT,
                  c->kex_init_size, &p));
 
   uint8_t *cookie;
-  ASSH_JMP_ON_ERR(assh_packet_add_array(p, 16, &cookie), err_pck);
-  ASSH_JMP_ON_ERR(assh_prng_get(c, cookie,
-		  16, ASSH_PRNG_QUALITY_NONCE), err_pck);
+  ASSH_ASSERT(assh_packet_add_array(p, 16, &cookie));
+  ASSH_ASSERT(assh_prng_get(c, cookie,
+		  16, ASSH_PRNG_QUALITY_NONCE));
 
   /* lists of algorithms */
   uint_fast16_t i = 0, j;
@@ -148,10 +150,10 @@ assh_status_t assh_kex_send_init(struct assh_session_s *s)
   uint8_t *x;
 
   /* empty languages */
-  ASSH_JMP_ON_ERR(assh_packet_add_string(p, 0, &x), err_pck);
-  ASSH_JMP_ON_ERR(assh_packet_add_string(p, 0, &x), err_pck);
+  ASSH_ASSERT(assh_packet_add_string(p, 0, &x));
+  ASSH_ASSERT(assh_packet_add_string(p, 0, &x));
 
-  ASSH_JMP_ON_ERR(assh_packet_add_array(p, 5, &x), err_pck);
+  ASSH_ASSERT(assh_packet_add_array(p, 5, &x));
 
   /* fkpf + reserved */
   memset(x, 0, 5);
