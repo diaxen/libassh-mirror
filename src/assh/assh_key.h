@@ -48,36 +48,40 @@ enum assh_key_format_e
 {
   ASSH_KEY_FMT_NONE,
 
-  /** Keys openssh-key-v1 base64 format */
+  /** Keys openssh-key-v1 base64 format. @xsee{Container formats} */
   ASSH_KEY_FMT_PV_OPENSSH_V1,
-  /** Keys blob openssh-key-v1 binary format */
+  /** Keys blob openssh-key-v1 binary format. @xsee{Container formats} */
   ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB,
   /** Single private key encoding used as part of the @ref
-      ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB format. */
+      ASSH_KEY_FMT_PV_OPENSSH_V1_BLOB format. @xsee{Raw formats} */
   ASSH_KEY_FMT_PV_OPENSSH_V1_KEY,
   /** Private key in rfc2440 like format.
-      Base64 encoding of @ref ASSH_KEY_FMT_PV_PEM_ASN1. */
+      Base64 encoding of @ref ASSH_KEY_FMT_PV_PEM_ASN1.
+      @xsee{Container formats} */
   ASSH_KEY_FMT_PV_PEM,
-  /** Private key in PEM Asn1 DER format. */
+  /** Private key in PEM Asn1 DER format. @xsee{Raw formats} */
   ASSH_KEY_FMT_PV_PEM_ASN1,
 
-  /** Public key in standard base64 format as described in rfc4716. */
+  /** Public key in standard base64 format as described in rfc4716.
+      @xsee{Container formats} */
   ASSH_KEY_FMT_PUB_RFC4716,
   /** Public key in standard binary format as described in rfc4253
-      section 6.6. */
+      section 6.6. @xsee{Raw formats} */
   ASSH_KEY_FMT_PUB_RFC4253,
-  /** Public key in legacy openssh base64 format. */
+  /** Public key in legacy openssh base64 format.
+      @xsee{Container formats} */
   ASSH_KEY_FMT_PUB_OPENSSH,
   /** Keys openssh-key-v1 base64 format.
-      Load public key part only */
+      Load public key part only. @xsee{Container formats} */
   ASSH_KEY_FMT_PUB_OPENSSH_V1,
   /** Keys blob openssh-key-v1 binary format,
-      Load public key part only */
+      Load public key part only. @xsee{Container formats} */
   ASSH_KEY_FMT_PUB_OPENSSH_V1_BLOB,
   /** Public key in rfc2440 like format.
-      Base64 encoding of @ref ASSH_KEY_FMT_PUB_PEM_ASN1. */
+      Base64 encoding of @ref ASSH_KEY_FMT_PUB_PEM_ASN1.
+      @xsee{Container formats} */
   ASSH_KEY_FMT_PUB_PEM,
-  /** Public key in PEM Asn1 DER format. */
+  /** Public key in PEM Asn1 DER format. @xsee{Raw formats} */
   ASSH_KEY_FMT_PUB_PEM_ASN1,
 
   ASSH_KEY_FMT_LAST = ASSH_KEY_FMT_PUB_PEM_ASN1,
@@ -266,9 +270,8 @@ struct assh_key_s
     the passed key blob data. The @tt blob pointer is updated so that
     the key blob is skipped.
 
-    @This will only support some binary key formats specific
-    to a given key algorithm. More formats are handled by helper
-    functions provided by @ref @assh/helper_key.h
+    @This only supports @xref {Raw formats}. More formats are handled
+    by helper functions provided by @ref @assh/helper_key.h
 
     @xsee {Key storage formats} */
 ASSH_WARN_UNUSED_RESULT assh_status_t
@@ -326,9 +329,8 @@ assh_key_algo_formats(const struct assh_key_algo_s *kya);
     case, the size of the available buffer must be passed and the
     function updates it with the actual number of bytes written.
 
-    @This will only support some binary key formats specific
-    to a given key algorithm. More formats are handled by helper
-    functions provided by @ref @assh/helper_key.h */
+    @This only supports @xref {Raw formats}. More formats are handled
+    by helper functions provided by @ref @assh/helper_key.h */
 ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_key_output(struct assh_context_s *c,
                 const struct assh_key_s *key,

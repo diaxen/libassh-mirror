@@ -42,7 +42,9 @@
 #endif
 
 /** @This lookup the key algorithm name and calls the @ref
-    assh_key_load function.  */
+    assh_key_load function. @This does not support @xref {Container
+    formats}.
+ */
 ASSH_WARN_UNUSED_RESULT assh_status_t
 asshh_key_load(struct assh_context_s *c,
 	       struct assh_key_s **key,
