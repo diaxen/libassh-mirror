@@ -115,8 +115,6 @@ assh_kex_list(struct assh_session_s *s, struct assh_packet_s *p,
   ASSH_DEBUG_("\n");
 #endif
 
-  ASSH_RET_IF_TRUE(!first, ASSH_ERR_MISSING_ALGO);
-
   return ASSH_OK;
 }
 

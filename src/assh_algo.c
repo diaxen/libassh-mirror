@@ -30,6 +30,8 @@
 #include <assh/assh_alloc.h>
 #include <assh/assh_buffer.h>
 #include <assh/assh_key.h>
+#include <assh/assh_kex.h>
+#include <assh/assh_cipher.h>
 
 #include <string.h>
 #include <stdarg.h>
@@ -111,7 +113,9 @@ void assh_algo_sort(struct assh_context_s *c)
 
 void assh_algo_kex_init_size(struct assh_context_s *c)
 {
-  size_t kex_init_size = /* random cookie */ 16;
+  size_t kex_init_size = /* random cookie */ 16
+    + /* string headers */ 4 * 8;
+
   enum assh_algo_class_e last = ASSH_ALGO_ANY;
   assh_algo_id_t i;
 
@@ -122,8 +126,6 @@ void assh_algo_kex_init_size(struct assh_context_s *c)
 
       if (a->class_ == last)
 	l++;	/* strlen(",") */
-      else
-	l += 4;	/* string header */
       const struct assh_algo_name_s *n;
       for (n = a->names; n->spec; n++)
         l += /* strlen(",") */ (n != a->names)
@@ -173,10 +175,31 @@ assh_algo_check_table(struct assh_context_s *c)
 
   /* check that all classes are represented */
   uint_fast8_t m = 0;
+  uint_fast8_t e = (1 << ASSH_ALGO_KEX) |
+    (1 << ASSH_ALGO_CIPHER) |
+    (1 << ASSH_ALGO_COMPRESS);
 
   for (i = 0; i < c->algo_cnt; i++)
-    m |= 1 << c->algos[i]->class_;
-  ASSH_RET_IF_TRUE(m != 0x1f, ASSH_ERR_BAD_ARG);
+    {
+      const struct assh_algo_s *algo = c->algos[i];
+
+      switch (algo->class_)
+	{
+	case ASSH_ALGO_KEX:
+	  if (!assh_algo_kex(algo)->implicit_auth)
+	    e |= 1 << ASSH_ALGO_SIGN;
+	  break;
+	case ASSH_ALGO_CIPHER:
+	  if (!assh_algo_cipher(algo)->auth_size)
+	    e |= 1 << ASSH_ALGO_MAC;
+	default:
+	  break;
+	}
+
+      m |= 1 << algo->class_;
+    }
+
+  ASSH_RET_IF_TRUE((m & e) != e, ASSH_ERR_BAD_ARG);
 
   if (c->algo_realloc)
     {
