@@ -1025,26 +1025,28 @@ assh_save_rfc1421(struct assh_context_s *c,
         return err;
     }
 
-  /* base64 encode */
-  struct asshh_base64_ctx_s b64;
-  size_t maxlen = asshh_base64_max_encoded_size(blob_len);
-  uint8_t *tmp = alloca(maxlen);
-
-  asshh_base64_init(&b64, tmp, maxlen);
-  ASSH_ASSERT(asshh_base64_encode_update(&b64, blob, blob_len));
-  ASSH_ASSERT(asshh_base64_encode_final(&b64));
-
-  size_t l = asshh_base64_outsize(&b64);
-  char *s = (char*)tmp;
-
-  /* text output */
-  while (l)
     {
-      size_t r = l > 64 ? 64 : l;
-      fwrite(s, r, 1, file);
-      fputc('\n', file);
-      l -= r;
-      s += r;
+      /* base64 encode */
+      struct asshh_base64_ctx_s b64;
+      size_t maxlen = asshh_base64_max_encoded_size(blob_len);
+      uint8_t tmp[maxlen];
+
+      asshh_base64_init(&b64, tmp, maxlen);
+      ASSH_ASSERT(asshh_base64_encode_update(&b64, blob, blob_len));
+      ASSH_ASSERT(asshh_base64_encode_final(&b64));
+
+      size_t l = asshh_base64_outsize(&b64);
+      char *s = (char*)tmp;
+
+      /* text output */
+      while (l)
+        {
+          size_t r = l > 64 ? 64 : l;
+          fwrite(s, r, 1, file);
+          fputc('\n', file);
+          l -= r;
+          s += r;
+        }
     }
 
   fprintf(file, "-----%s %s KEY-----\n", "END", type);
