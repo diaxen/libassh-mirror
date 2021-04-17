@@ -911,14 +911,13 @@ assh_save_pub_openssh(struct assh_context_s *c,
 		      const struct assh_key_s *head, FILE *file,
 		      const uint8_t *blob, size_t blob_len)
 {
-  assh_status_t err;
   struct asshh_base64_ctx_s b64;
   size_t maxlen = asshh_base64_max_encoded_size(blob_len);
   uint8_t tmp[maxlen];
 
   asshh_base64_init(&b64, tmp, maxlen);
-  ASSH_RET_ON_ERR(asshh_base64_encode_update(&b64, blob, blob_len));
-  ASSH_RET_ON_ERR(asshh_base64_encode_final(&b64));
+  ASSH_ASSERT(asshh_base64_encode_update(&b64, blob, blob_len));
+  ASSH_ASSERT(asshh_base64_encode_final(&b64));
 
   fputs(head->type, file);
   fputc(' ', file);
@@ -937,14 +936,13 @@ assh_save_rfc4716(struct assh_context_s *c,
 		  const uint8_t *blob,
 		  size_t blob_len)
 {
-  assh_status_t err;
   struct asshh_base64_ctx_s b64;
   size_t maxlen = asshh_base64_max_encoded_size(blob_len);
   uint8_t tmp[maxlen];
 
   asshh_base64_init(&b64, tmp, maxlen);
-  ASSH_RET_ON_ERR(asshh_base64_encode_update(&b64, blob, blob_len));
-  ASSH_RET_ON_ERR(asshh_base64_encode_final(&b64));
+  ASSH_ASSERT(asshh_base64_encode_update(&b64, blob, blob_len));
+  ASSH_ASSERT(asshh_base64_encode_final(&b64));
 
   size_t l = asshh_base64_outsize(&b64);
   char *s = (char*)tmp;
@@ -1033,8 +1031,8 @@ assh_save_rfc1421(struct assh_context_s *c,
   uint8_t *tmp = alloca(maxlen);
 
   asshh_base64_init(&b64, tmp, maxlen);
-  ASSH_RET_ON_ERR(asshh_base64_encode_update(&b64, blob, blob_len));
-  ASSH_RET_ON_ERR(asshh_base64_encode_final(&b64));
+  ASSH_ASSERT(asshh_base64_encode_update(&b64, blob, blob_len));
+  ASSH_ASSERT(asshh_base64_encode_final(&b64));
 
   size_t l = asshh_base64_outsize(&b64);
   char *s = (char*)tmp;
@@ -1304,8 +1302,8 @@ asshh_key_fingerprint(struct assh_context_s *c,
     case ASSH_FP_BASE64_SHA256: {
       struct asshh_base64_ctx_s bctx;
       asshh_base64_init(&bctx, (uint8_t*)buf, 44);
-      ASSH_JMP_ON_ERR(asshh_base64_encode_update(&bctx, hash, 32), err_sc);
-      ASSH_JMP_ON_ERR(asshh_base64_encode_final(&bctx), err_sc);
+      ASSH_ASSERT(asshh_base64_encode_update(&bctx, hash, 32));
+      ASSH_ASSERT(asshh_base64_encode_final(&bctx));
       buf[43] = 0;              /* drop '=' */
       break;
     }
