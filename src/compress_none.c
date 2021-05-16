@@ -32,7 +32,7 @@ static ASSH_COMPRESS_INIT_FCN(assh_compress_none_init)
 
 static ASSH_COMPRESS_PROCESS_FCN(assh_compress_none_process)
 {
-  return ASSH_OK;
+  return ASSH_NO_DATA;
 }
 
 static ASSH_COMPRESS_CLEANUP_FCN(assh_compress_none_cleanup)

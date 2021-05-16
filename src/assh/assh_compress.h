@@ -54,7 +54,8 @@ typedef ASSH_COMPRESS_INIT_FCN(assh_compress_init_t);
 
 /** @internal @This defines the function type for the data processing
     operation of the compression module interface. This function
-    should rely on the @ref assh_packet_realloc_raw function. */
+    should rely on the @ref assh_packet_realloc_raw function. It must
+    return @ret ASSH_NO_DATA when the packet is not touched. */
 typedef ASSH_COMPRESS_PROCESS_FCN(assh_compress_process_t);
 
 /** @internal @see assh_compress_cleanup_t */

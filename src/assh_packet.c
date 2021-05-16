@@ -202,18 +202,6 @@ assh_packet_refinc(struct assh_packet_s *p)
   return p;
 }
 
-void assh_packet_queue_cleanup(struct assh_queue_s *q)
-{
-  while (!assh_queue_isempty(q))
-    {
-      struct assh_queue_entry_s *e = assh_queue_front(q);
-      assh_queue_remove(e);
-
-      struct assh_packet_s *p = (struct assh_packet_s*)e;
-      assh_packet_release(p);
-    }
-}
-
 ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_packet_dup(struct assh_packet_s *p, struct assh_packet_s **copy)
 {

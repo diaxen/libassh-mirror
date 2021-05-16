@@ -270,5 +270,15 @@ ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_transport_overhead(struct assh_session_s *s,
 			size_t *payload_size, size_t *packet_size);
 
+/** @This returns the number of bytes that are pending in the output
+    queue. This can be used to prevent the output queue from growing
+    too much. In order to do so, refrain from calling functions that
+    generate new output (like the @ref assh_channel_data_send
+    function) until the value returned by this function is below a
+    limit of your choice. The returned value is expected to decrease
+    when the @ref ASSH_EVENT_WRITE event is acknowledged. */
+size_t
+assh_transport_output_size(struct assh_session_s *s);
+
 #endif
 

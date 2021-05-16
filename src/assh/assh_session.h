@@ -172,6 +172,8 @@ struct assh_session_s
   ASSH_PV size_t stream_in_size:32;
   /** Size of already sent data of the top packet in the @ref out_queue queue. */
   ASSH_PV size_t stream_out_size:32;
+  /** Amount of data currently in the 2 output queues. */
+  ASSH_PV size_t queue_out_size:32;
 
   /** Input packet sequence number */
   ASSH_PV uint32_t in_seq;

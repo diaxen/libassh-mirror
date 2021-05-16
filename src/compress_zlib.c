@@ -132,7 +132,7 @@ static ASSH_COMPRESS_PROCESS_FCN(assh_compress_zlib_openssh_process)
   if (auth_done)
     return assh_compress_zlib_process(c, ctx, p_, 1);
 
-  return ASSH_OK;
+  return ASSH_NO_DATA;
 }
 
 static ASSH_COMPRESS_CLEANUP_FCN(assh_compress_zlib_cleanup)

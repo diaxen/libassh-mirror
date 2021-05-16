@@ -270,10 +270,6 @@ void assh_packet_collect(struct assh_context_s *c);
     zero. */
 ASSH_PV void assh_packet_release(struct assh_packet_s *p);
 
-/** @internal @This removes all packets from the queue and calls the
-    @ref assh_packet_release function for each packet. */
-ASSH_PV void assh_packet_queue_cleanup(struct assh_queue_s *q);
-
 /** @internal @This increase the reference counter of the packet. */
 ASSH_PV struct assh_packet_s *
 assh_packet_refinc(struct assh_packet_s *p);

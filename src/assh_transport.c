@@ -74,6 +74,7 @@ void assh_transport_push(struct assh_session_s *s,
 
     case ASSH_TR_SERVICE:
     case ASSH_TR_DISCONNECT:
+      s->queue_out_size += p->data_size;
       assh_queue_push_back(q, &p->entry);
       break;
 
@@ -375,6 +376,7 @@ assh_transport_output_done(struct assh_session_s *s,
 
       /* pop and release packet */
       assh_queue_remove(e);
+      s->queue_out_size -= p->data_size;
       assh_packet_release(p);
 
       return;
@@ -437,6 +439,7 @@ assh_transport_output_buffer(struct assh_session_s *s,
 	    break;
 
 	  assh_queue_remove(&p->entry);
+	  s->queue_out_size -= p->data_size;
 	  assh_packet_release(p);
 	}
 
@@ -451,15 +454,26 @@ assh_transport_output_buffer(struct assh_session_s *s,
 #endif
 
       struct assh_packet_s *p_ = p;
-      /* compress payload */
-      ASSH_RET_ON_ERR(k->cmp_algo->f_process(s->ctx, k->cmp_ctx, &p, s->tr_user_auth_done)
-		   | ASSH_ERRSV_DISCONNECT);
+      size_t os = s->queue_out_size - p->data_size;
 
-      if (p_ != p)
+      /* compress payload */
+      err = k->cmp_algo->f_process(s->ctx, k->cmp_ctx, &p, s->tr_user_auth_done);
+
+      switch (err)
 	{
-	  assh_queue_remove(&p_->entry);
-	  assh_packet_release(p_);
-	  assh_queue_push_front(q, &p->entry);
+	case ASSH_OK:
+	  if (p_ != p)
+	    {
+	      assh_queue_remove(&p_->entry);
+	      assh_packet_release(p_);
+	      assh_queue_push_front(q, &p->entry);
+	    }
+	case ASSH_NO_DATA:
+	  break;
+
+	default:
+	  s->queue_out_size = os + p->data_size;
+	  ASSH_RETURN(err | ASSH_ERRSV_DISCONNECT);
 	}
 
       /* compute various length and payload pointer values */
@@ -491,6 +505,8 @@ assh_transport_output_buffer(struct assh_session_s *s,
 
       p->data_size += pad_len + mac_len;
       assert(p->data_size <= p->alloc_size);
+
+      s->queue_out_size = os + p->data_size;
 
       assh_store_u32(p->head.pck_len, p->data_size - 4 - mac_len);
       p->head.pad_len = pad_len;
@@ -997,4 +1013,10 @@ assh_transport_overhead(struct assh_session_s *s,
     }
 
   ASSH_RETURN(ASSH_ERR_BAD_ARG);
+}
+
+size_t
+assh_transport_output_size(struct assh_session_s *s)
+{
+  return s->queue_out_size;
 }

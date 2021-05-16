@@ -86,6 +86,7 @@ assh_status_t assh_session_init(struct assh_context_s *c,
   assh_queue_init(&s->out_queue);
   assh_queue_init(&s->alt_queue);
   s->stream_out_size = 0;
+  s->queue_out_size = 0;
   s->cur_keys_out = (struct assh_kex_keys_s *)&assh_keys_none;
   s->new_keys_out = NULL;
   s->out_seq = 0;
@@ -125,6 +126,22 @@ void assh_session_release(struct assh_session_s *s)
   assh_free(s->ctx, s);
 }
 
+static void assh_session_output_cleanup(struct assh_session_s *s,
+					struct assh_queue_s *q)
+{
+  while (!assh_queue_isempty(q))
+    {
+      struct assh_queue_entry_s *e = assh_queue_front(q);
+      assh_queue_remove(e);
+
+      struct assh_packet_s *p = (struct assh_packet_s*)e;
+#ifndef NDEBUG
+      s->queue_out_size -= p->data_size;
+#endif
+      assh_packet_release(p);
+    }
+}
+
 void assh_session_cleanup(struct assh_session_s *s)
 {
   if (s->kex_pv != NULL)
@@ -142,8 +159,9 @@ void assh_session_cleanup(struct assh_session_s *s)
   assh_packet_release(s->kex_init_local);
   assh_packet_release(s->kex_init_remote);
 
-  assh_packet_queue_cleanup(&s->out_queue);
-  assh_packet_queue_cleanup(&s->alt_queue);
+  assh_session_output_cleanup(s, &s->out_queue);
+  assh_session_output_cleanup(s, &s->alt_queue);
+  assert(s->queue_out_size == 0);
 
   assh_kex_keys_cleanup(s, s->cur_keys_in);
   assh_kex_keys_cleanup(s, s->cur_keys_out);
