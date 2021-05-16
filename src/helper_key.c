@@ -1189,6 +1189,78 @@ asshh_key_load(struct assh_context_s *c,
   ASSH_RETURN(assh_key_load(c, key, algo, role, format, blob, blob_len));
 }
 
+assh_status_t
+asshh_key_load_base64(struct assh_context_s *c,
+		      struct assh_key_s **key,
+		      const char *key_algo,
+		      enum assh_algo_class_e role,
+		      enum assh_key_format_e format,
+		      const char *b64, size_t b64_len)
+{
+  assh_status_t err;
+  const struct assh_key_algo_s *algo = NULL;
+
+  ASSH_RET_IF_TRUE(key_algo && assh_key_algo_by_name(c, role,
+		     key_algo, strlen(key_algo), &algo),
+		   ASSH_ERR_MISSING_ALGO);
+
+  size_t sc_len = asshh_base64_max_decoded_size(b64_len);
+  ASSH_SCRATCH_ALLOC(c, uint8_t, sc, sc_len,
+		     ASSH_ERRSV_CONTINUE, err_);
+
+  struct asshh_base64_ctx_s bctx;
+  asshh_base64_init(&bctx, sc, sc_len);
+  ASSH_JMP_ON_ERR(asshh_base64_decode_update(&bctx, (uint8_t*)b64, b64_len), err_sc);
+  ASSH_JMP_ON_ERR(asshh_base64_decode_final(&bctx), err_sc);
+
+  const uint8_t *blob = sc;
+  ASSH_JMP_ON_ERR(assh_key_load(c, key, algo, role,
+		    format, &blob, asshh_base64_outsize(&bctx)), err_sc);
+
+  err = ASSH_OK;
+ err_sc:
+  ASSH_SCRATCH_FREE(c, sc);
+ err_:
+  return err;
+}
+
+ASSH_WARN_UNUSED_RESULT assh_status_t
+asshh_key_output_base64(struct assh_context_s *c,
+			const struct assh_key_s *key,
+			enum assh_key_format_e format,
+			char *b64, size_t *b64_len)
+{
+  assh_status_t err = ASSH_OK;
+  size_t blob_len;
+
+  if (!b64)
+    {
+      ASSH_RET_ON_ERR(assh_key_output(c, key, NULL, &blob_len, format));
+      *b64_len = asshh_base64_max_encoded_size(blob_len);
+      return ASSH_OK;
+    }
+
+  blob_len = asshh_base64_max_decoded_size(*b64_len);
+
+  ASSH_SCRATCH_ALLOC(c, uint8_t, sc, blob_len,
+		     ASSH_ERRSV_CONTINUE, err_);
+
+  ASSH_JMP_ON_ERR(assh_key_output(c, key, sc, &blob_len, format), err_sc);
+
+  struct asshh_base64_ctx_s bctx;
+  asshh_base64_init(&bctx, (uint8_t*)b64, *b64_len);
+  ASSH_ASSERT(asshh_base64_encode_update(&bctx, (uint8_t*)sc, blob_len));
+  ASSH_ASSERT(asshh_base64_encode_final(&bctx));
+
+  *b64_len = asshh_base64_outsize(&bctx);
+
+  err = ASSH_OK;
+ err_sc:
+  ASSH_SCRATCH_FREE(c, sc);
+ err_:
+  return err;
+}
+
 #ifdef CONFIG_ASSH_KEY_CREATE
 assh_status_t
 asshh_key_create(struct assh_context_s *c,

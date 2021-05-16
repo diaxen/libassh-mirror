@@ -53,6 +53,34 @@ asshh_key_load(struct assh_context_s *c,
 	       enum assh_key_format_e format,
 	       const uint8_t **blob, size_t blob_len);
 
+/** @This extracts the base64 encoded blob and try to load the
+    embedded binary key by calling the @ref assh_key_load function.
+    @This does not support @xref {Container formats}. */
+assh_status_t
+asshh_key_load_base64(struct assh_context_s *c,
+		      struct assh_key_s **key,
+		      const char *key_algo,
+		      enum assh_algo_class_e role,
+		      enum assh_key_format_e format,
+		      const char *b64, size_t b64_len);
+
+/** @This call the @ref assh_key_output function to serialize the key
+    then encode the resulting blob in base64 format.
+
+    If the @tt b64 parameter is @tt NULL, the function updates the @tt
+    b64_len parmeter with a size value which is equal or slightly
+    greater to what is needed to actually store the encoded key. In
+    the other case, the size of the available buffer must be passed
+    and the function updates it with the actual number of characters
+    written.
+
+    @This does not support @xref {Container formats}. */
+ASSH_WARN_UNUSED_RESULT assh_status_t
+asshh_key_output_base64(struct assh_context_s *c,
+			const struct assh_key_s *key,
+			enum assh_key_format_e format,
+			char *b64, size_t *b64_len);
+
 #ifdef CONFIG_ASSH_KEY_CREATE
 /** @This lookup the key algorithm name and calls the @ref
     assh_key_create function.  */
