@@ -714,6 +714,10 @@ struct assh_event_channel_data_s
 
   /** Must be set to the amount of data copied from the buffer. (rw) */
   size_t transferred;
+
+  /** The new size of the local window.
+      @see assh_channel_window_adjust */
+  ASSH_EV_CONST size_t win_size;
 };
 
 /** @This returns a pointer to a channel with pending data.

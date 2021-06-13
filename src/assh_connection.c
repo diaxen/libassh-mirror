@@ -1566,6 +1566,7 @@ assh_connection_got_channel_data(struct assh_session_s *s,
   ev->data.size = size;
   ev->data.data = (uint8_t*)data;
   ev->transferred = 0;
+  ev->win_size = ch->lwin_left;
 
   /* keep packet for data buffer */
   pv->in_data_left = size;
