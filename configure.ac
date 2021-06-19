@@ -641,7 +641,7 @@ AC_RUN_IFELSE(
          *(volatile uint32_t*)(s + 3) != 0x62616162;
 ]), [
   AC_DEFINE([CONFIG_ASSH_NONALIGNED_ACCESS], [], [Allow use of non-aligned memory access])
-])
+], [], [true])
 
 AC_OUTPUT([
   libassh.pc
