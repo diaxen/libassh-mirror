@@ -94,7 +94,7 @@ asshh_fd_get_password(struct assh_context_s *c, const char **pass,
   return err;
 }
 
-size_t
+ssize_t
 asshh_fd_event(struct assh_session_s *s,
               struct assh_event_s *e, int fd)
 {
@@ -109,10 +109,11 @@ asshh_fd_event(struct assh_session_s *s,
       switch (r)
         {
         case -1:
-          r = 0;
+	  r = 0;
           if (errno == EAGAIN || errno == EWOULDBLOCK)
-            break;
+	    break;
         case 0:
+	  r = -1;
           err = ASSH_ERR_IO;
           goto err_;
         default:
@@ -128,10 +129,11 @@ asshh_fd_event(struct assh_session_s *s,
       switch (r)
         {
         case -1:
-          r = 0;
+	  r = 0;
           if (errno == EAGAIN || errno == EWOULDBLOCK)
-            break;
+	    break;
         case 0:
+	  r = -1;
           err = ASSH_ERR_IO;
           goto err_;
         default:

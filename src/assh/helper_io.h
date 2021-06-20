@@ -42,11 +42,14 @@
 
 /** @This can be used to handle the @ref ASSH_EVENT_READ and @ref
     ASSH_EVENT_WRITE events by reading from and writing to a file
-    descriptor. The amount of transferred data is returned.
+    descriptor. @This takes care of calling the @ref assh_event_done
+    function.
 
-    @This takes care of calling the @ref assh_event_done function.
-*/
-size_t
+    The amount of transferred data is returned. This can be 0 if the
+    system call was interrupted or non-blocking. In case of IO error,
+    the @ref ASSH_ERR_IO error is reported to the @ref assh_event_done
+    function and -1 is returned. */
+ssize_t
 asshh_fd_event(struct assh_session_s *s,
 	      struct assh_event_s *e, int fd);
 
