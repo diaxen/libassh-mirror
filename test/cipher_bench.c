@@ -28,6 +28,7 @@
 #include <assh/assh_algo.h>
 #include <assh/assh_cipher.h>
 #include <assh/assh_context.h>
+#include <assh/assh_packet.h>
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -38,8 +39,8 @@
 #include "test.h"
 
 static void *data;
-static size_t data_size = 1 << 20;
-static size_t cycles = 10;
+static size_t data_size = CONFIG_ASSH_MAX_PAYLOAD;
+static size_t cycles = 100;
 
 static void bench(const struct assh_algo_cipher_s *ca)
 {
