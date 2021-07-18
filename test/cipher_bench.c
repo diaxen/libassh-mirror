@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <getopt.h>
 #include <string.h>
 #include <sys/time.h>
 
@@ -41,7 +42,7 @@
 #define WARNUP_DELAY 500000
 
 static void *data;
-static size_t data_size = CONFIG_ASSH_MAX_PAYLOAD;
+static size_t data_size = 1024;
 
 static void bench(const struct assh_algo_cipher_s *ca)
 {
@@ -199,28 +200,86 @@ static void bench(const struct assh_algo_cipher_s *ca)
   assh_context_cleanup(&context);
 }
 
-int main()
+static void usage()
+{
+  printf("usage: cipher_bench [options]\n");
+
+  printf(	  "Options:\n\n"
+
+	  "    -h         show help\n"
+	  "    -A         ciphers with authentication only\n"
+	  "    -p size    specify packet size in bytes\n"
+	  "    -C substr  filter by cipher name\n"
+	  "    -I substr  filter by cipher implementation\n"
+	  );
+}
+
+int main(int argc, char **argv)
 {
   if (assh_deps_init())
     return -1;
 
-  printf(	  "  Algorithm                      Implem       Encrypt         Decrypt\n"
-	  "--------------------------------------------------------------------------\n");
+  int opt;
+  const char *cipher_filter = NULL;
+  const char *implem_filter = NULL;
+  int auth_only = 0;
 
-  if (data_size < 1024)
-    TEST_FAIL("small data size");
+  while ((opt = getopt(argc, argv, "hp:C:I:A")) != -1)
+    {
+      switch (opt)
+	{
+	case 'p':
+	  data_size = atoi(optarg) & ~127;
+	  if (!data_size || data_size > CONFIG_ASSH_MAX_PAYLOAD)
+	    TEST_FAIL("valid data size range is [128, %u]\n", CONFIG_ASSH_MAX_PAYLOAD);
+	  break;
+	case 'C':
+	  cipher_filter = optarg;
+	  break;
+	case 'I':
+	  implem_filter = optarg;
+	  break;
+	case 'A':
+	  auth_only = 1;
+	  break;
+	case 'h':
+	  usage();
+	default:
+	  return 1;
+	}
+    }
+
+  printf("Using packets of %zu bytes\n", data_size);
 
   data = malloc(data_size);
   if (!data)
     TEST_FAIL("cipher data alloc");
   memset(data, 0xaa, data_size);
 
+  printf(	  "\n  Algorithm                      Implem       Encrypt         Decrypt\n"
+	  "--------------------------------------------------------------------------\n");
+
   const struct assh_algo_s **a;
   for (a = assh_algo_table; *a; a++)
     {
+      if (cipher_filter && !strstr(assh_algo_name(*a), cipher_filter))
+	continue;
+
+      if (implem_filter && !strstr(assh_algo_implem(*a), implem_filter))
+	continue;
+
       const struct assh_algo_cipher_s *ca = assh_algo_cipher(*a);
-      if (ca)
-	bench(ca);
+
+      if (!ca)
+	continue;
+
+      if (!ca->auth_size && auth_only)
+	continue;
+
+      bench(ca);
+#ifdef __linux__
+      sched_yield();
+#endif
     }
 
   free(data);
