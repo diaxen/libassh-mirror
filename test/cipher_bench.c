@@ -38,9 +38,10 @@
 
 #include "test.h"
 
+#define WARNUP_DELAY 500000
+
 static void *data;
 static size_t data_size = CONFIG_ASSH_MAX_PAYLOAD;
-static size_t cycles = 100;
 
 static void bench(const struct assh_algo_cipher_s *ca)
 {
@@ -70,10 +71,10 @@ static void bench(const struct assh_algo_cipher_s *ca)
 
   struct timeval tp_start, tp_end;
   uint64_t dte, dtd;
+  size_t c, cycles;
 
   /* encryption */
   {
-    size_t c;
     size_t s = data_size;
 
     if (ca->f_init(&context, ectx, key_iv, key_iv, 1))
@@ -81,10 +82,19 @@ static void bench(const struct assh_algo_cipher_s *ca)
 
     s = s - 128 + ca->auth_size + ca->head_size;
 
-    /* warm up */
-    for (c = cycles; c--; )
-      if (ca->f_process(ectx, data, s, ASSH_CIPHER_PCK_TAIL, c))
-	TEST_FAIL("encrypt");
+    /* warm up & find cycles count */
+    gettimeofday(&tp_start, NULL);
+    for (cycles = 0; ; cycles++)
+      {
+	if (ca->f_process(ectx, data, s, ASSH_CIPHER_PCK_TAIL, cycles))
+	  TEST_FAIL("encrypt");
+
+	gettimeofday(&tp_end, NULL);
+
+	if (((uint64_t)tp_end.tv_sec * 1000000 + tp_end.tv_usec) -
+	    ((uint64_t)tp_start.tv_sec * 1000000 + tp_start.tv_usec) > WARNUP_DELAY)
+	  break;
+      }
 
     gettimeofday(&tp_start, NULL);
     for (c = cycles; c--; )
@@ -105,7 +115,6 @@ static void bench(const struct assh_algo_cipher_s *ca)
 
   /* decryption */
   {
-    size_t c = cycles;
     size_t s = data_size;
 
     if (ca->f_init(&context, ectx, key_iv, key_iv, 1))
@@ -121,13 +130,13 @@ static void bench(const struct assh_algo_cipher_s *ca)
 	/* warm up */
 	for (c = cycles; c--; )
 	  {
-	    if (ca->f_process(ectx, data, s, ASSH_CIPHER_PCK_TAIL, c))
+	    if (ca->f_process(ectx, data, s, ASSH_CIPHER_PCK_TAIL, cycles))
 	      TEST_FAIL("encrypt");
 
-	    if (ca->f_process(dctx, data, ca->head_size, ASSH_CIPHER_PCK_HEAD, c))
+	    if (ca->f_process(dctx, data, ca->head_size, ASSH_CIPHER_PCK_HEAD, cycles))
 	      TEST_FAIL("decrypt");
 
-	    if (ca->f_process(dctx, data, s, ASSH_CIPHER_PCK_TAIL, c))
+	    if (ca->f_process(dctx, data, s, ASSH_CIPHER_PCK_TAIL, cycles))
 	      TEST_FAIL("decrypt");
 	  }
 
@@ -151,10 +160,10 @@ static void bench(const struct assh_algo_cipher_s *ca)
 	for (c = cycles; c--; )
 	  {
 	    if (ca->head_size &&
-		ca->f_process(dctx, data, ca->head_size, ASSH_CIPHER_PCK_HEAD, c))
+		ca->f_process(dctx, data, ca->head_size, ASSH_CIPHER_PCK_HEAD, cycles))
 	      TEST_FAIL("decrypt");
 
-	    if (ca->f_process(dctx, data + ca->head_size, s - ca->head_size, ASSH_CIPHER_PCK_TAIL, c))
+	    if (ca->f_process(dctx, data + ca->head_size, s - ca->head_size, ASSH_CIPHER_PCK_TAIL, cycles))
 	      TEST_FAIL("decrypt");
 	  }
 

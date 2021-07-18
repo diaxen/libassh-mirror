@@ -37,9 +37,10 @@
 
 #include "test.h"
 
+#define WARNUP_DELAY 500000
+
 static void *data;
 static size_t data_size = 1 << 20;
-static size_t cycles = 10;
 
 static void bench(const struct assh_algo_mac_s *ma)
 {
@@ -71,17 +72,26 @@ static void bench(const struct assh_algo_mac_s *ma)
   struct timeval tp_start, tp_end;
   uint64_t dte, dtd;
 
+  size_t c, cycles;
+
   /* generate mac */
   {
-    size_t c = cycles;
-
     if (ma->f_init(&context, ectx, key, 1))
       TEST_FAIL("encrypt init");
 
-    /* warm up */
-    for (c = cycles; c--; )
-      if (ma->f_process(ectx, data, data_size, code, c))
-	TEST_FAIL("generate");
+    /* warm up & find cycles count */
+    gettimeofday(&tp_start, NULL);
+    for (cycles = 0; ; cycles++)
+      {
+	if (ma->f_process(ectx, data, data_size, code, cycles))
+	  TEST_FAIL("generate");
+
+	gettimeofday(&tp_end, NULL);
+
+	if (((uint64_t)tp_end.tv_sec * 1000000 + tp_end.tv_usec) -
+	    ((uint64_t)tp_start.tv_sec * 1000000 + tp_start.tv_usec) > WARNUP_DELAY)
+	  break;
+      }
 
     gettimeofday(&tp_start, NULL);
     for (c = cycles; c--; )
