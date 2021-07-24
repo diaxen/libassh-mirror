@@ -220,13 +220,14 @@ assh_key_lookup(struct assh_context_s *c,
   return ASSH_NOT_FOUND;
 }
 
-assh_status_t
-assh_key_algo_enumerate_static(const struct assh_algo_s **atable,
+static assh_status_t
+assh_key_algo_enumerate_static(struct assh_context_s *c,
 			       enum assh_algo_class_e cl, size_t *count,
 			       const struct assh_key_algo_s **ktable,
 			       assh_bool_t dup)
 {
   const struct assh_algo_s *a;
+  const struct assh_algo_s **atable = c->algos;
   size_t max = *count;
   size_t cnt = 0;
 
@@ -278,7 +279,7 @@ assh_key_algo_enumerate_implems(struct assh_context_s *c,
 				const struct assh_key_algo_s **table)
 {
   assh_status_t err;
-  ASSH_RETURN(assh_key_algo_enumerate_static(c->algos, cl, count, table, 1));
+  ASSH_RETURN(assh_key_algo_enumerate_static(c, cl, count, table, 1));
 }
 
 assh_status_t
@@ -287,7 +288,7 @@ assh_key_algo_enumerate_names(struct assh_context_s *c,
 			      const struct assh_key_algo_s **table)
 {
   assh_status_t err;
-  ASSH_RETURN(assh_key_algo_enumerate_static(c->algos, cl, count, table, 0));
+  ASSH_RETURN(assh_key_algo_enumerate_static(c, cl, count, table, 0));
 }
 
 assh_status_t
