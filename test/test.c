@@ -269,6 +269,9 @@ test_algo_lookup(enum assh_algo_class_e cl, const char *name,
       if (variant && (!a->variant || strcmp(variant, a->variant)))
 	continue;
 
+      if (!assh_algo_supported(a))
+	continue;
+
       *algo = a;
       return ASSH_OK;
     }

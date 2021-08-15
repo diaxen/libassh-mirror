@@ -402,6 +402,9 @@ main(int argc, char **argv)
 				    t->algo, strlen(t->algo)))
 	    continue;
 
+	  if (!assh_algo_supported(*a))
+	    continue;
+
 	  done = 1;
 	  test_mac(t, assh_algo_mac(*a));
 

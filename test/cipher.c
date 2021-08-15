@@ -556,6 +556,9 @@ main(int argc, char **argv)
 				    t->algo, strlen(t->algo)))
 	    continue;
 
+	  if (!assh_algo_supported(*a))
+	    continue;
+
 	  done = 1;
 	  test_cipher(t, assh_algo_cipher(*a));
 

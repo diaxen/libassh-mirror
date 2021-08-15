@@ -88,10 +88,19 @@ assh_safety_name(assh_safety_t safety)
    const struct assh_algo_with_key_s *awk,		 \
    const struct assh_key_s *key)
 
+/** @internal @see assh_algo_supported_t */
+#define ASSH_ALGO_SUPPORTED_FCN(n) assh_bool_t (n) \
+  (const struct assh_algo_s *algo)
+
 /** @internal @This defines the function type for the key
-    compatibility checking operation common to all the
+    compatibility checking operation. This is common to all the
     algorithm module interfaces. @see assh_algo_suitable_key */
 typedef ASSH_ALGO_SUITABLE_KEY_FCN(assh_algo_suitable_key_t);
+
+/** @internal @This defines the function type for runtime algortihm
+    support test. This is common to all the algorithm module
+    interfaces. @see assh_algo_supported */
+typedef ASSH_ALGO_SUPPORTED_FCN(assh_algo_supported_t);
 
 /** @This specifies the classes of @em ssh2 @hl algorithms. */
 enum assh_algo_class_e
@@ -154,7 +163,7 @@ struct assh_algo_name_s
   .priority = priority_,                                                  \
   .variant = description_
 
-#define ASSH_ALGO_API_VERSION 0
+#define ASSH_ALGO_API_VERSION 1
 
 /** @internal @This initializes the fields of the @ref assh_algo_s structure */
 #define ASSH_ALGO_BASE(class__, implem_, safety_, speed_, ...)		\
@@ -207,6 +216,10 @@ struct assh_algo_s
 
   /** Implementation identification string.  Format is @em {vendor-library}. */
   ASSH_PV const char *implem;
+
+  /** @internal Test if the algorithm can be used on the
+      current platform. May be @tt NULL. */
+  ASSH_PV assh_algo_supported_t *f_supported;
 };
 
 /** @internal @This extends the @ref assh_algo_s @hl
@@ -448,6 +461,12 @@ assh_algo_sort(struct assh_context_s *c);
 /** @internal @This computes the size of the @ref SSH_MSG_KEXINIT
     packet based on the current list of registered algorithms. */
 ASSH_PV void assh_algo_kex_init_size(struct assh_context_s *c);
+
+/** @This returns 1 if the algorithm implementation can be used on the
+    current platform. @This may return 0 for algorithms that rely on
+    special hardware that is not available. */
+assh_bool_t
+assh_algo_supported(const struct assh_algo_s *algo);
 
 #endif
 

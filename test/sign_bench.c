@@ -170,9 +170,19 @@ int main()
 
       for (a = assh_algo_table; *a; a++)
 	{
+	  const char *name = assh_algo_name(*a);
+	  const char *implem = assh_algo_implem(*a);
+
 	  if (!assh_algo_name_match(*a, ASSH_ALGO_SIGN,
 				    t->name, strlen(t->name)))
 	    continue;
+
+	  if (!assh_algo_supported(*a))
+	    {
+	      printf("%-32s %-13s  missing platform support\n",
+		     name, implem);
+	      continue;
+	    }
 
 	  bench(assh_algo_sign(*a), t->key_bits);
 	}

@@ -636,6 +636,9 @@ void test_loop(unsigned int seed,
 				   strcmp(kex->variant, ka->algo_wk.algo.variant)))
 		continue;
 
+	      if (!assh_algo_supported(*a))
+		continue;
+
 	      kex_done |= test_loop_2(seed, ka, kex, sign, cipher, mac, comp, cycles);
 	    }
 

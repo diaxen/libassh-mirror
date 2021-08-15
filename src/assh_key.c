@@ -65,6 +65,9 @@ assh_key_algo_guess(struct assh_context_s *c,
 			      awk->algo.class_ != role))
             continue;
 
+	  if (!assh_algo_supported(&awk->algo))
+	    continue;
+
           if (!assh_string_strcmp(name, name_len, ops->name))
             return ops;
         }
@@ -241,6 +244,9 @@ assh_key_algo_enumerate_static(struct assh_context_s *c,
       if (!awk)
 	continue;
 
+      if (!assh_algo_supported(&awk->algo))
+	continue;
+
       const struct assh_key_algo_s *kya = awk->key_algo;
       if (!kya)
 	continue;
@@ -308,6 +314,9 @@ assh_key_algo_by_name(const struct assh_context_s *c,
 	continue;
 
       if (cl != ASSH_ALGO_ANY && cl != awk->algo.class_)
+	continue;
+
+      if (!assh_algo_supported(&awk->algo))
 	continue;
 
       if (awk->key_algo && !assh_string_strcmp(name, name_len, awk->key_algo->name))

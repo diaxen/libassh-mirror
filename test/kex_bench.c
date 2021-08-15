@@ -332,9 +332,19 @@ int main(int argc, char **argv)
 
       for (a = assh_algo_table; *a; a++)
 	{
+	  const char *name = assh_algo_name(*a);
+	  const char *implem = assh_algo_implem(*a);
+
 	  if (!assh_algo_name_match(*a, ASSH_ALGO_KEX,
 				    t->kex_name, strlen(t->kex_name)))
 	    continue;
+
+	  if (!assh_algo_supported(*a))
+	    {
+	      printf("%-36s %-13s missing platform support\n",
+		     name, implem);
+	      continue;
+	    }
 
 	  bench(t, assh_algo_kex(*a));
 	}

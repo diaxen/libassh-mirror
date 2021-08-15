@@ -37,6 +37,12 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
+assh_bool_t
+assh_algo_supported(const struct assh_algo_s *algo)
+{
+  return !algo->f_supported || algo->f_supported(algo);
+}
+
 static int_fast16_t assh_algo_order(const struct assh_algo_s *a,
                                     const struct assh_algo_s *b,
                                     uint_fast8_t safety_weight)
@@ -173,7 +179,6 @@ assh_algo_check_table(struct assh_context_s *c)
   assh_status_t err;
   assh_algo_id_t i, j;
 
-  /* check that all classes are represented */
   uint_fast8_t m = 0;
   uint_fast8_t e = (1 << ASSH_ALGO_KEX) |
     (1 << ASSH_ALGO_CIPHER) |
@@ -182,6 +187,9 @@ assh_algo_check_table(struct assh_context_s *c)
   for (i = 0; i < c->algo_cnt; i++)
     {
       const struct assh_algo_s *algo = c->algos[i];
+
+      ASSH_RET_IF_TRUE(!assh_algo_supported(algo),
+		       ASSH_ERR_NOTSUP);
 
       switch (algo->class_)
 	{
@@ -199,6 +207,7 @@ assh_algo_check_table(struct assh_context_s *c)
       m |= 1 << algo->class_;
     }
 
+  /* check that all classes are represented */
   ASSH_RET_IF_TRUE((m & e) != e, ASSH_ERR_BAD_ARG);
 
   if (c->algo_realloc)
@@ -262,6 +271,8 @@ assh_algo_register(struct assh_context_s *c,
       ASSH_JMP_IF_TRUE(algo->api != ASSH_ALGO_API_VERSION, ASSH_ERR_BAD_ARG, err_);
       if (algo->safety < min_safety)
 	continue;
+      if (!assh_algo_supported(algo))
+	continue;
       if (count == c->algo_max)
         ASSH_JMP_ON_ERR(assh_algo_extend(c), err_);
       c->algos[count++] = algo;
@@ -304,6 +315,8 @@ assh_status_t assh_algo_register_va(struct assh_context_s *c,
       ASSH_JMP_IF_TRUE(algo->api != ASSH_ALGO_API_VERSION, ASSH_ERR_BAD_ARG, err_);
       if (algo->safety < min_safety)
 	continue;
+      if (!assh_algo_supported(algo))
+	continue;
       if (count == c->algo_max)
         ASSH_JMP_ON_ERR(assh_algo_extend(c), err_);
       c->algos[count++] = algo;
@@ -342,6 +355,8 @@ assh_status_t assh_algo_register_names_va(struct assh_context_s *c,
 	continue;
 
       if (algo->safety < min_safety)
+	continue;
+      if (!assh_algo_supported(algo))
 	continue;
       if (count == c->algo_max)
         ASSH_JMP_ON_ERR(assh_algo_extend(c), err_);
@@ -402,6 +417,10 @@ assh_algo_by_name_static(const struct assh_algo_s **table,
     {
       const struct assh_algo_name_s *n
         = assh_algo_name_match(a, class_, name, name_len);
+
+      if (!assh_algo_supported(a))
+	continue;
+
       if (n != NULL)
         {
           *algo = a;

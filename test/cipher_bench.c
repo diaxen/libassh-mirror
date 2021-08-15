@@ -262,10 +262,13 @@ int main(int argc, char **argv)
   const struct assh_algo_s **a;
   for (a = assh_algo_table; *a; a++)
     {
-      if (cipher_filter && !strstr(assh_algo_name(*a), cipher_filter))
+      const char *name = assh_algo_name(*a);
+      const char *implem = assh_algo_implem(*a);
+
+      if (cipher_filter && !strstr(name, cipher_filter))
 	continue;
 
-      if (implem_filter && !strstr(assh_algo_implem(*a), implem_filter))
+      if (implem_filter && !strstr(implem, implem_filter))
 	continue;
 
       const struct assh_algo_cipher_s *ca = assh_algo_cipher(*a);
@@ -275,6 +278,13 @@ int main(int argc, char **argv)
 
       if (!ca->auth_size && auth_only)
 	continue;
+
+      if (!assh_algo_supported(*a))
+	{
+	  printf("%-30s %-13s  missing platform support\n",
+		 name, implem);
+	  continue;
+	}
 
       bench(ca);
 #ifdef __linux__

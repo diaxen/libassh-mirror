@@ -90,6 +90,9 @@ static void show_table()
 
       for (n++; n->spec; n++)
 	printf("    Alias :  %-40s %c\n", n->name, std(n->spec));
+
+      if (!assh_algo_supported(a))
+	printf("    Not supported on this platform\n");
     }
 }
 

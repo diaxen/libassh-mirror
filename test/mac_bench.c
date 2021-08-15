@@ -174,6 +174,16 @@ int main()
   const struct assh_algo_s **a;
   for (a = assh_algo_table; *a; a++)
     {
+      const char *name = assh_algo_name(*a);
+      const char *implem = assh_algo_implem(*a);
+
+      if (!assh_algo_supported(*a))
+	{
+	  printf("%-30s %-13s  missing platform support\n",
+		 name, implem);
+	  continue;
+	}
+
       const struct assh_algo_mac_s *ma = assh_algo_mac(*a);
       if (ma)
 	bench(ma);
