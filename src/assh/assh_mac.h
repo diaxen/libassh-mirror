@@ -50,10 +50,10 @@
 typedef ASSH_MAC_INIT_FCN(assh_mac_init_t);
 
 /** @internal @see assh_mac_process_t */
-#define ASSH_MAC_PROCESS_FCN(n)                                         \
-  ASSH_WARN_UNUSED_RESULT assh_status_t (n)(void *ctx_,    \
-                                           const uint8_t *data, size_t len, \
-                                           uint8_t *mac, uint32_t seq)
+#define ASSH_MAC_PROCESS_FCN(n)						\
+  ASSH_WARN_UNUSED_RESULT assh_status_t (n)(void *ctx_,			\
+                          const uint8_t * __restrict__ data, size_t len, \
+                          uint8_t *mac, uint32_t seq)
 
 /** @internal @This defines the function type for the mac computation
     operation of the mac module interface. */

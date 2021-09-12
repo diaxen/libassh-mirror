@@ -62,8 +62,9 @@ enum assh_cipher_op_e
 
 /** @internal @see assh_cipher_process_t */
 #define ASSH_CIPHER_PROCESS_FCN(n) \
-  ASSH_WARN_UNUSED_RESULT assh_status_t (n)(void *ctx_, uint8_t *data, size_t len, \
-                                           enum assh_cipher_op_e op, uint32_t seq)
+  ASSH_WARN_UNUSED_RESULT assh_status_t (n)(void *ctx_,		   \
+			  uint8_t * __restrict__ data, size_t len, \
+			  enum assh_cipher_op_e op, uint32_t seq)
 
 /** @internal @This defines the function type for the data processing
     operation of the cipher module interface. */

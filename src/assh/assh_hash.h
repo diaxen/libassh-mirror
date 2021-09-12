@@ -65,8 +65,9 @@ typedef ASSH_HASH_INIT_FCN(assh_hash_init_t);
 typedef ASSH_HASH_COPY_FCN(assh_hash_copy_t);
 
 /** @internal @see assh_hash_update_t */
-#define ASSH_HASH_UPDATE_FCN(n) \
-  void (n)(struct assh_hash_ctx_s *hctx, const void *data, size_t len)
+#define ASSH_HASH_UPDATE_FCN(n)			\
+  void (n)(struct assh_hash_ctx_s *hctx,	\
+	   const void * __restrict__ data, size_t len)
 
 /** @internal @This defines the function type for the hash update
     operation of the hash module interface. @see assh_hash_update */
@@ -161,7 +162,8 @@ assh_hash_copy(struct assh_hash_ctx_s *hctx_dst,
 
 /** @internal @This updates the hash context with new input data. */
 ASSH_PV ASSH_INLINE void
-assh_hash_update(struct assh_hash_ctx_s *hctx, const void *data, size_t len)
+assh_hash_update(struct assh_hash_ctx_s *hctx,
+		 const void * __restrict__ data, size_t len)
 {
   hctx->algo->f_update(hctx, data, len);
 }
