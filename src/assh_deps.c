@@ -220,6 +220,8 @@ const struct assh_algo_s *assh_algo_table[] = {
   &assh_cipher_gcrypt_aes256_ctr.algo,
   &assh_cipher_gcrypt_aes128_gcm.algo,
   &assh_cipher_gcrypt_aes256_gcm.algo,
+  &assh_cipher_gcrypt_aes128_ocb.algo,
+  &assh_cipher_gcrypt_aes256_ocb.algo,
   &assh_cipher_gcrypt_arc4.algo,
   &assh_cipher_gcrypt_arc4_128.algo,
   &assh_cipher_gcrypt_arc4_256.algo,
@@ -286,6 +288,10 @@ const struct assh_algo_s *assh_algo_table[] = {
 # endif
 # ifndef OPENSSL_NO_IDEA
   &assh_cipher_openssl_idea_cbc.algo,
+# endif
+# ifndef OPENSSL_NO_OCB
+  &assh_cipher_openssl_aes128_ocb.algo,
+  &assh_cipher_openssl_aes256_ocb.algo,
 # endif
 #endif
 

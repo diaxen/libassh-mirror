@@ -73,6 +73,7 @@ assh_cipher_openssl_init(struct assh_context_s *c,
 
   switch (EVP_CIPHER_flags(evp) & EVP_CIPH_MODE)
     {
+    case EVP_CIPH_OCB_MODE:
     case EVP_CIPH_GCM_MODE:
       memcpy(ctx->iv, iv, ca->iv_size);
       ASSH_JMP_IF_TRUE(!EVP_CipherInit_ex(ctx->octx, evp, NULL, key, NULL, encrypt) ||
@@ -124,15 +125,12 @@ assh_cipher_openssl_init(struct assh_context_s *c,
   return err;
 }
 
-static ASSH_CIPHER_PROCESS_FCN(assh_cipher_openssl_process_GCM)
+static ASSH_CIPHER_PROCESS_FCN(assh_cipher_openssl_process_AEAD)
 {
   assh_status_t err;
   struct assh_cipher_openssl_context_s *ctx = ctx_;
   size_t block_size = ctx->ca->block_size;
   size_t csize = len - 4 - ctx->ca->auth_size;
-
-  if (op == ASSH_CIPHER_PCK_HEAD)
-    return ASSH_OK;
 
   ASSH_RET_IF_TRUE(csize & (block_size - 1),
 	       ASSH_ERR_INPUT_OVERFLOW);
@@ -150,7 +148,7 @@ static ASSH_CIPHER_PROCESS_FCN(assh_cipher_openssl_process_GCM)
 
   if (!EVP_CIPHER_CTX_encrypting(ctx->octx))
     {
-      ASSH_RET_IF_TRUE(!EVP_CIPHER_CTX_ctrl(ctx->octx, EVP_CTRL_GCM_SET_TAG,
+      ASSH_RET_IF_TRUE(!EVP_CIPHER_CTX_ctrl(ctx->octx, EVP_CTRL_AEAD_SET_TAG,
                                             16, data + 4 + csize),
                        ASSH_ERR_CRYPTO);
     }
@@ -160,13 +158,47 @@ static ASSH_CIPHER_PROCESS_FCN(assh_cipher_openssl_process_GCM)
 
   if (EVP_CIPHER_CTX_encrypting(ctx->octx))
     {
-      ASSH_RET_IF_TRUE(!EVP_CIPHER_CTX_ctrl(ctx->octx, EVP_CTRL_GCM_GET_TAG,
+      ASSH_RET_IF_TRUE(!EVP_CIPHER_CTX_ctrl(ctx->octx, EVP_CTRL_AEAD_GET_TAG,
                                             16, data + 4 + csize),
                        ASSH_ERR_CRYPTO);
     }
 
+  return ASSH_OK;
+}
+
+static ASSH_CIPHER_PROCESS_FCN(assh_cipher_openssl_process_GCM)
+{
+  assh_status_t err;
+  struct assh_cipher_openssl_context_s *ctx = ctx_;
+
+  if (op == ASSH_CIPHER_PCK_HEAD)
+    return ASSH_OK;
+
+  ASSH_RET_ON_ERR(assh_cipher_openssl_process_AEAD(ctx, data, len, op, seq));
+
   uint8_t *iv_cnt64 = ctx->iv + 4;
   assh_store_u64(iv_cnt64, assh_load_u64(iv_cnt64) + 1);
+
+  return ASSH_OK;
+}
+
+static ASSH_CIPHER_PROCESS_FCN(assh_cipher_openssl_process_OCB)
+{
+  assh_status_t err;
+  struct assh_cipher_openssl_context_s *ctx = ctx_;
+
+  if (op == ASSH_CIPHER_PCK_HEAD)
+    return ASSH_OK;
+
+  ASSH_RET_ON_ERR(assh_cipher_openssl_process_AEAD(ctx, data, len, op, seq));
+
+  uint8_t *iv = ctx->iv;
+  uint64_t c = assh_load_u32(iv + 8) + 1ULL;
+  assh_store_u32(iv + 8, c);
+  c = assh_load_u32(iv + 4) + (c >> 32);
+  assh_store_u32(iv + 4, c);
+  c = assh_load_u32(iv) + (c >> 32);
+  assh_store_u32(iv, c);
 
   return ASSH_OK;
 }
@@ -310,6 +342,16 @@ ASSH_OPENSSL_CIPHER(aes128_gcm, EVP_aes_128_gcm(), GCM,
 ASSH_OPENSSL_CIPHER(aes256_gcm, EVP_aes_256_gcm(), GCM,
                    16,  4, 12, 32, 16, 61, 118,
                    { ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON, "aes256-gcm@openssh.com" });
+
+#  ifndef OPENSSL_NO_OCB
+ASSH_OPENSSL_CIPHER(aes128_ocb, EVP_aes_128_ocb(), OCB,
+                   16,  4, 12, 16, 16, 41, 142,
+                   { ASSH_ALGO_STD_PRIVATE, "aes128-ocb@libassh.org" });
+
+ASSH_OPENSSL_CIPHER(aes256_ocb, EVP_aes_256_ocb(), OCB,
+                   16,  4, 12, 32, 16, 61, 118,
+                   { ASSH_ALGO_STD_PRIVATE, "aes256-ocb@libassh.org" });
+#  endif
 
 /* https://tools.ietf.org/html/draft-kanno-secsh-camellia-02 */
 #  ifndef OPENSSL_NO_CAMELLIA

@@ -63,6 +63,7 @@ assh_cipher_gcrypt_init(const struct assh_algo_cipher_s *ca,
   switch (mode)
     {
     case GCRY_CIPHER_MODE_GCM:
+    case GCRY_CIPHER_MODE_OCB:
       memcpy(ctx->iv, iv, ca->iv_size);
       break;
 
@@ -106,7 +107,7 @@ assh_cipher_gcrypt_init(const struct assh_algo_cipher_s *ca,
   return err;
 }
 
-static ASSH_CIPHER_PROCESS_FCN(assh_cipher_gcrypt_process_GCM)
+static ASSH_CIPHER_PROCESS_FCN(assh_cipher_gcrypt_process_AEAD)
 {
   assh_status_t err;
   struct assh_cipher_gcrypt_context_s *ctx = ctx_;
@@ -114,14 +115,12 @@ static ASSH_CIPHER_PROCESS_FCN(assh_cipher_gcrypt_process_GCM)
   size_t block_size = ctx->ca->block_size;
   size_t csize = len - 4 - auth_size;
 
-  if (op == ASSH_CIPHER_PCK_HEAD)
-    return ASSH_OK;
-
   ASSH_RET_IF_TRUE(csize & (block_size - 1),
                ASSH_ERR_INPUT_OVERFLOW);
 
   gcry_cipher_setiv(ctx->hd, ctx->iv, 12);
   gcry_cipher_authenticate(ctx->hd, data, 4);
+  gcry_cipher_final(ctx->hd);
 
   if (ctx->encrypt)
     {
@@ -140,8 +139,42 @@ static ASSH_CIPHER_PROCESS_FCN(assh_cipher_gcrypt_process_GCM)
 		   ASSH_ERR_CRYPTO);
     }
 
+  return ASSH_OK;
+}
+
+static ASSH_CIPHER_PROCESS_FCN(assh_cipher_gcrypt_process_GCM)
+{
+  assh_status_t err;
+  struct assh_cipher_gcrypt_context_s *ctx = ctx_;
+
+  if (op == ASSH_CIPHER_PCK_HEAD)
+    return ASSH_OK;
+
+  ASSH_RET_ON_ERR(assh_cipher_gcrypt_process_AEAD(ctx, data, len, op, seq));
+
   uint8_t *iv_cnt64 = ctx->iv + 4;
   assh_store_u64(iv_cnt64, assh_load_u64(iv_cnt64) + 1);
+
+  return ASSH_OK;
+}
+
+static ASSH_CIPHER_PROCESS_FCN(assh_cipher_gcrypt_process_OCB)
+{
+  assh_status_t err;
+  struct assh_cipher_gcrypt_context_s *ctx = ctx_;
+
+  if (op == ASSH_CIPHER_PCK_HEAD)
+    return ASSH_OK;
+
+  ASSH_RET_ON_ERR(assh_cipher_gcrypt_process_AEAD(ctx, data, len, op, seq));
+
+  uint8_t *iv = ctx->iv;
+  uint64_t c = assh_load_u32(iv + 8) + 1ULL;
+  assh_store_u32(iv + 8, c);
+  c = assh_load_u32(iv + 4) + (c >> 32);
+  assh_store_u32(iv + 4, c);
+  c = assh_load_u32(iv) + (c >> 32);
+  assh_store_u32(iv, c);
 
   return ASSH_OK;
 }
@@ -275,6 +308,14 @@ ASSH_GCRYPT_CIPHER(aes128_gcm,  AES128, GCM,
 ASSH_GCRYPT_CIPHER(aes256_gcm,  AES256, GCM,
                    16,  4, 12, 32, 16, 61, 85,
                    { ASSH_ALGO_STD_PRIVATE | ASSH_ALGO_COMMON, "aes256-gcm@openssh.com" });
+
+ASSH_GCRYPT_CIPHER(aes128_ocb,  AES128, OCB,
+                   16,  4, 12, 16, 16, 41, 96,
+                   { ASSH_ALGO_STD_PRIVATE, "aes128-ocb@libassh.org" });
+
+ASSH_GCRYPT_CIPHER(aes256_ocb,  AES256, OCB,
+                   16,  4, 12, 32, 16, 61, 85,
+                   { ASSH_ALGO_STD_PRIVATE, "aes256-ocb@libassh.org" });
 
 ASSH_GCRYPT_CIPHER(twofish128_cbc,  TWOFISH128, CBC,
                    16, 16, 16, 16, 0, 50, 10,

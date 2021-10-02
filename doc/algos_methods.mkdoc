@@ -339,6 +339,7 @@ methods and key formats.
     @item @tt {cast128-cbc},   @tt {cast128-ctr},
     @item @tt {blowfish-cbc},  @tt {blowfish-ctr}.
     @item @tt {aes128-gcm@openssh.com}, @tt {aes256-gcm@openssh.com},
+    @item @tt {aes128-ocb@libassh.org}, @tt {aes256-ocb@libassh.org},
     @item @tt {serpent128-gcm@libassh.org}, @tt {serpent256-gcm@libassh.org},
     @item @tt {twofish128-gcm@libassh.org}, @tt {twofish256-gcm@libassh.org},
     @item @tt {camellia128-cbc}, @tt {camellia192-cbc}, @tt {camellia256-cbc},
@@ -352,6 +353,7 @@ methods and key formats.
     @item @tt {cast128-cbc},
     @item @tt {blowfish-cbc},
     @item @tt {aes128-gcm@openssh.com}, @tt {aes256-gcm@openssh.com},
+    @item @tt {aes128-ocb@libassh.org}, @tt {aes256-ocb@libassh.org},
     @item @tt {camellia128-cbc}, @tt {camellia192-cbc}, @tt {camellia256-cbc},
     @item @tt {camellia128-ctr}, @tt {camellia192-ctr}, @tt {camellia256-ctr},
   @end list

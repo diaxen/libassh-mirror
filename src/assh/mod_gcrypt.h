@@ -91,6 +91,8 @@ extern const struct assh_algo_cipher_s assh_cipher_gcrypt_aes192_ctr;
 extern const struct assh_algo_cipher_s assh_cipher_gcrypt_aes256_ctr;
 extern const struct assh_algo_cipher_s assh_cipher_gcrypt_aes128_gcm;
 extern const struct assh_algo_cipher_s assh_cipher_gcrypt_aes256_gcm;
+extern const struct assh_algo_cipher_s assh_cipher_gcrypt_aes128_ocb;
+extern const struct assh_algo_cipher_s assh_cipher_gcrypt_aes256_ocb;
 
 /** @multiple @This is a cipher algorithm descriptor for the Camellia
     implementation. @xsee {cipheralgos} */

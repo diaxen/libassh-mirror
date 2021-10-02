@@ -275,6 +275,8 @@ static const char *cipher_list_long[] =
   "aes256-ctr",
   "aes128-gcm@openssh.com",
   "aes256-gcm@openssh.com",
+  "aes128-ocb@libassh.org",
+  "aes256-ocb@libassh.org",
   "camellia128-cbc",
   "camellia192-cbc",
   "camellia256-cbc",
