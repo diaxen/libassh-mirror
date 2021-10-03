@@ -438,7 +438,8 @@ assh_status_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *
   size_t kin_size = ASSH_STRUCT_ALIGN(sizeof(*kin))
     + ASSH_STRUCT_ALIGN(ca_in->ctx_size)
     + ASSH_STRUCT_ALIGN(cpa_in->ctx_size)
-    + ASSH_STRUCT_ALIGN(ma_in->ctx_size);
+    + ASSH_STRUCT_ALIGN(ma_in->ctx_size)
+    + ASSH_STRUCT_ALIGN(1);
   ASSH_RET_ON_ERR(assh_alloc(s->ctx, kin_size, ASSH_ALLOC_SECUR, (void**)&kin));
 
   kin_safety = assh_min_uint(kin_safety, ca_in->algo.safety);
@@ -449,7 +450,8 @@ assh_status_t assh_kex_got_init(struct assh_session_s *s, struct assh_packet_s *
   size_t kout_size = ASSH_STRUCT_ALIGN(sizeof(*kout))
     + ASSH_STRUCT_ALIGN(ca_out->ctx_size)
     + ASSH_STRUCT_ALIGN(cpa_out->ctx_size)
-    + ASSH_STRUCT_ALIGN(ma_out->ctx_size);
+    + ASSH_STRUCT_ALIGN(ma_out->ctx_size)
+    + ASSH_STRUCT_ALIGN(1);
   ASSH_JMP_ON_ERR(assh_alloc(s->ctx, kout_size, ASSH_ALLOC_SECUR, (void**)&kout),
 	       err_kin);
 
@@ -595,8 +597,8 @@ assh_kex_new_keys(struct assh_session_s *s,
 
   struct assh_kex_keys_s *kin = s->new_keys_in;
   struct assh_kex_keys_s *kout = s->new_keys_out;
-  uint8_t *next_in_ctx = (uint8_t*)(kin) + ASSH_STRUCT_ALIGN(sizeof(*kin));
-  uint8_t *next_out_ctx = (uint8_t*)(kout) + ASSH_STRUCT_ALIGN(sizeof(*kout));
+  uint8_t *next_in_ctx = (uint8_t*)ASSH_STRUCT_ALIGN((uintptr_t)(kin + 1));
+  uint8_t *next_out_ctx = (uint8_t*)ASSH_STRUCT_ALIGN((uintptr_t)(kout + 1));
 
   /* get input cipher iv/key and init cipher */
   if (kin->cipher_algo->iv_size)
