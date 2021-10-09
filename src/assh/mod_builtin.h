@@ -222,6 +222,22 @@ extern const struct assh_algo_cipher_s assh_cipher_builtin_arc4_128;
 extern const struct assh_algo_cipher_s assh_cipher_builtin_arc4_256;
 # endif
 
+# ifdef CONFIG_ASSH_AES_NI
+extern const struct assh_algo_cipher_s assh_cipher_builtin_aesni128_cbc;
+extern const struct assh_algo_cipher_s assh_cipher_builtin_aesni192_cbc;
+extern const struct assh_algo_cipher_s assh_cipher_builtin_aesni256_cbc;
+
+extern const struct assh_algo_cipher_s assh_cipher_builtin_aesni128_ctr;
+extern const struct assh_algo_cipher_s assh_cipher_builtin_aesni192_ctr;
+extern const struct assh_algo_cipher_s assh_cipher_builtin_aesni256_ctr;
+
+extern const struct assh_algo_cipher_s assh_cipher_builtin_aesni128_ocb;
+extern const struct assh_algo_cipher_s assh_cipher_builtin_aesni256_ocb;
+
+extern const struct assh_algo_cipher_s assh_cipher_builtin_aesni128_gcm;
+extern const struct assh_algo_cipher_s assh_cipher_builtin_aesni256_gcm;
+# endif
+
 # ifdef CONFIG_ASSH_USE_BUILTIN_MACS
 extern const struct assh_algo_mac_s assh_mac_builtin_md5;
 extern const struct assh_algo_mac_s assh_mac_builtin_md5_96;

@@ -65,6 +65,10 @@ if COND_ciphers_builtin
 libassh_la_SOURCES +=	cipher_builtin_arc4.c cipher_builtin_aes.c cipher_builtin_chachapoly.c
 endif
 
+if COND_aes_ni
+libassh_la_SOURCES +=	cipher_builtin_aes_ni.c
+endif
+
 if COND_macs_builtin
 libassh_la_SOURCES +=	mac_builtin.c
 endif

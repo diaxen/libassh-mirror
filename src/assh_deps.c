@@ -211,6 +211,19 @@ const struct assh_algo_s *assh_algo_table[] = {
   &assh_cipher_builtin_chachapoly.algo,
 #endif
 
+#ifdef CONFIG_ASSH_AES_NI
+  &assh_cipher_builtin_aesni128_cbc.algo,
+  &assh_cipher_builtin_aesni192_cbc.algo,
+  &assh_cipher_builtin_aesni256_cbc.algo,
+  &assh_cipher_builtin_aesni128_ctr.algo,
+  &assh_cipher_builtin_aesni192_ctr.algo,
+  &assh_cipher_builtin_aesni256_ctr.algo,
+  &assh_cipher_builtin_aesni128_ocb.algo,
+  &assh_cipher_builtin_aesni256_ocb.algo,
+  &assh_cipher_builtin_aesni128_gcm.algo,
+  &assh_cipher_builtin_aesni256_gcm.algo,
+#endif
+
 #ifdef CONFIG_ASSH_USE_GCRYPT_CIPHERS
   &assh_cipher_gcrypt_aes128_cbc.algo,
   &assh_cipher_gcrypt_aes192_cbc.algo,

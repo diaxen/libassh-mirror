@@ -184,6 +184,22 @@ case "$with_ciphers" in
   *builtin*|*all*)
     AC_DEFINE([CONFIG_ASSH_USE_BUILTIN_CIPHERS], [], [Enable builtin cipher algorithms when defined.])
     CONFIG_ASSH_USE_BUILTIN_CIPHERS=yes
+
+    AC_COMPILE_IFELSE([
+    #include <wmmintrin.h>
+    #include <tmmintrin.h>
+    #include <nmmintrin.h>
+    #include <smmintrin.h>
+    __attribute__ ((target("aes,sse2,ssse3,sse4.1,sse4.2,pclmul")))
+    int main() {
+      __m128i a = _mm_aesenc_si128(a, a);
+      return __builtin_cpu_supports("aes") &&
+             __builtin_cpu_supports("pclmul");
+    }
+    ], [
+      AC_DEFINE([CONFIG_ASSH_AES_NI], [], [Allow use of x86 AES-NI instructions])
+      CONFIG_ASSH_AES_NI=yes
+    ])
 esac
 
 case "$with_macs" in
@@ -512,6 +528,7 @@ AM_CONDITIONAL(COND_sha1_builtin,    [test x$CONFIG_ASSH_USE_BUILTIN_SHA1 = xyes
 AM_CONDITIONAL(COND_sha2_builtin,    [test x$CONFIG_ASSH_USE_BUILTIN_SHA2 = xyes])
 AM_CONDITIONAL(COND_sha3_builtin,    [test x$CONFIG_ASSH_USE_BUILTIN_SHA3 = xyes])
 AM_CONDITIONAL(COND_prng_builtin,    [test x$CONFIG_ASSH_USE_BUILTIN_PRNG = xyes])
+AM_CONDITIONAL(COND_aes_ni,          [test x$CONFIG_ASSH_AES_NI = xyes])
 
 AM_CONDITIONAL(COND_hash_gcrypt,     [test x$CONFIG_ASSH_USE_GCRYPT_HASH = xyes])
 AM_CONDITIONAL(COND_alloc_gcrypt,    [test x$CONFIG_ASSH_USE_GCRYPT_ALLOC = xyes])
