@@ -359,8 +359,11 @@ static ASSH_CIPHER_PROCESS_FCN(assh_aes_ctr_process)
 	b[i] = iv[i];
       aes_encrypt(ctx, b);
 
-      for (i = 0; i < 128; i += 8)
-	*data++ ^= b[i / 32] >> (i % 32);
+      for (i = 0; i < 4; i++)
+	{
+	  assh_store_u32le(data, b[i] ^ assh_load_u32le(data));
+	  data += 4;
+	}
 
       uint64_t t = 0x100000000ULL;
       for (i = 0; i < 4; i++)
