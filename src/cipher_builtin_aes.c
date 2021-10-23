@@ -216,7 +216,8 @@ static void aes_expand_key(uint32_t *b, uint_fast8_t c, uint_fast8_t r)
     }
 }
 
-static void aes_encrypt(struct assh_cipher_aes_context_s *ctx, uint32_t b[4])
+static void aes_encrypt(struct assh_cipher_aes_context_s *ctx,
+			uint32_t * __restrict__ b)
 {
   uint_fast8_t i;
 
@@ -237,7 +238,8 @@ static void aes_encrypt(struct assh_cipher_aes_context_s *ctx, uint32_t b[4])
   aes_transpose(b);
 }
 
-static void aes_decrypt(struct assh_cipher_aes_context_s *ctx, uint32_t b[4])
+static void aes_decrypt(struct assh_cipher_aes_context_s *ctx,
+			uint32_t * __restrict__ b)
 {
   uint_fast8_t i = ctx->rounds - 1;
 
