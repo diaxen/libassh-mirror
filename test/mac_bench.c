@@ -34,6 +34,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/time.h>
+#ifdef __linux__
+# include <sched.h>
+#endif
 
 #include "test.h"
 
@@ -159,6 +162,12 @@ int main()
 {
   if (assh_deps_init())
     return -1;
+
+#ifdef __linux__
+  struct sched_param sp = { .sched_priority = 1 };
+  if (sched_setscheduler(0, SCHED_FIFO, &sp) == -1)
+    fprintf(stderr, "warning: unable to change scheduler policy\n");
+#endif
 
   printf(	  "  Algorithm                      Implem       Generate        Verify \n"
 	  "--------------------------------------------------------------------------\n");

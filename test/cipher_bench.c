@@ -36,6 +36,9 @@
 #include <getopt.h>
 #include <string.h>
 #include <sys/time.h>
+#ifdef __linux__
+# include <sched.h>
+#endif
 
 #include "test.h"
 
@@ -255,6 +258,12 @@ int main(int argc, char **argv)
   if (!data)
     TEST_FAIL("cipher data alloc");
   memset(data, 0xaa, data_size);
+
+#ifdef __linux__
+  struct sched_param sp = { .sched_priority = 1 };
+  if (sched_setscheduler(0, SCHED_FIFO, &sp) == -1)
+    fprintf(stderr, "warning: unable to change scheduler policy\n");
+#endif
 
   printf(	  "\n  Algorithm                      Implem       Encrypt         Decrypt\n"
 	  "--------------------------------------------------------------------------\n");

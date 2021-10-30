@@ -49,6 +49,9 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <sys/time.h>
+#ifdef __linux__
+# include <sched.h>
+#endif
 
 struct fifo_s fifo[2];
 
@@ -320,6 +323,12 @@ int main(int argc, char **argv)
 {
   if (assh_deps_init())
     return -1;
+
+#ifdef __linux__
+  struct sched_param sp = { .sched_priority = 1 };
+  if (sched_setscheduler(0, SCHED_FIFO, &sp) == -1)
+    fprintf(stderr, "warning: unable to change scheduler policy\n");
+#endif
 
   printf(	  "  Kex algorithm                      Implem        Cipher    Sv.Kex/s Cl.Kex/s\n"
 	  "----------------------------------------------------------------------------------\n");
