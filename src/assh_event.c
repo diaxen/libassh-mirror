@@ -170,8 +170,8 @@ assh_event_done(struct assh_session_s *s,
   if (s->tr_st == ASSH_TR_CLOSED)
     return;
 
-  if (e->f_done != NULL)
-    assh_session_error(s, e->f_done(s, e, ASSH_STATUS(inerr)));
+  assert(e->f_done != NULL);
+  assh_session_error(s, e->f_done(s, e, ASSH_STATUS(inerr)));
   e->f_done = NULL;
 
 #ifndef NDEBUG

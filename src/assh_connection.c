@@ -1579,6 +1579,13 @@ assh_connection_got_channel_data(struct assh_session_s *s,
   return ASSH_OK;
 }
 
+static ASSH_EVENT_DONE_FCN(assh_event_channel_window_adjust_done)
+{
+  assert(s->srv == &assh_service_connection);
+
+  return ASSH_OK;
+}
+
 static ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_connection_got_channel_window_adjust(struct assh_session_s *s,
                                           struct assh_packet_s *p,
@@ -1629,7 +1636,7 @@ assh_connection_got_channel_window_adjust(struct assh_session_s *s,
 
   /* setup event */
   e->id = ASSH_EVENT_CHANNEL_WINDOW;
-  e->f_done = NULL;
+  e->f_done = assh_event_channel_window_adjust_done;
 
   ev->ch = ch;
   ev->old_size = ch->rwin_left;
