@@ -70,7 +70,7 @@ ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_realloc(struct assh_context_s *c, void **ptr, size_t size,
 	     enum assh_alloc_type_e type);
 
-/** @internal @This releases memory. */
+/** @This releases memory. */
 ASSH_PV void
 assh_free(struct assh_context_s *c, void *ptr);
 
