@@ -109,6 +109,8 @@ assh_cipher_openssl_init(struct assh_context_s *c,
 	  for (i = 0; i < 1536; i += sizeof(dummy))
             ASSH_JMP_IF_TRUE(!EVP_CipherUpdate(ctx->octx, dummy, &s, dummy, sizeof(dummy)),
                              ASSH_ERR_CRYPTO, err_open);
+
+	  assh_clear(dummy, sizeof(dummy));
 	}
 
       break;
