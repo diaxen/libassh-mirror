@@ -39,8 +39,8 @@ $ examples/client localhost ls
   sock file descriptor and of the @tt command string variables from
   command line arguments.
 
-  An @ref assh_session_s object is needed in order to store the
-  state of the whole @em ssh2 @hl session. This requires an @ref
+  A @ref assh_session_s object is needed in order to store the
+  state of the whole @em ssh2 @hl session. This requires a @ref
   assh_context_s object used to store resources that may be shared
   by multiple sessions.  That's why initializing a new
   library context is the first thing to do.
@@ -56,7 +56,7 @@ $ examples/client localhost ls
   Our application will need to handle the @hl{user authentication}
   related events originating from the server and reported by the
   library. That's why we have to keep track of user authentication
-  methods we want to use. A variable will be update to reflect
+  methods we want to use. A variable will be updated to reflect
   methods that have not been already tried:
   @example examples/rexec.c:inita
 
@@ -181,7 +181,7 @@ $ examples/client localhost ls
   @hl{host key} by calling the @ref assh_key_create function:
   @example examples/loopback.c:reghk
 
-  We can then start waiting for a client connection and initialize an
+  We can then start waiting for a client connection and initialize a
   @ref assh_session_s object when this occurs:
   @example examples/loopback.c:loop
 

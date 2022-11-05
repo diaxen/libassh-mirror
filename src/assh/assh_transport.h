@@ -196,7 +196,7 @@ assh_transport_unimp(struct assh_session_s *s,
 /** @internal @This executes the transport output FSM code which
     enciphers packets and builds the output ssh stream. It returns a
     buffer to the next chunk that is ready for transmission. The
-    function returns @ret ASSH_NO_DATA when there is no output
+    function returns @ref ASSH_NO_DATA when there is no output
     available. The @ref assh_transport_output_done function must be
     called to release the buffer. */
 ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
@@ -216,7 +216,7 @@ assh_transport_output_done(struct assh_session_s *s,
 
 /** @internal @This returns the buffer where the next chunk of input
     ssh stream must be written before calling the @ref
-    assh_transport_input_done function. The function returns @ret
+    assh_transport_input_done function. The function returns @ref
     ASSH_NO_DATA when the library can not accept more input. */
 ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_transport_input_buffer(struct assh_session_s *s,
