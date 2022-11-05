@@ -586,17 +586,17 @@ static ASSH_CIPHER_PROCESS_FCN(assh_aesni##kbit##_ocb_process)		\
       }									\
     else		/* bottom counter wraps */			\
       {									\
-	__m128i n = _mm_shuffle_epi8(ctx->nonce, s);			\
+	__m128i n = ctx->nonce;						\
 									\
 	/* nonce += 64 */						\
 	__m128i a = _mm_add_epi64(n, _mm_set_epi64x(0, 64));		\
 	__m128i c = _mm_srli_epi64(_mm_bslli_si128(			\
 				     _mm_andnot_si128(a, n), 8), 63);	\
-	n = _mm_shuffle_epi8(_mm_add_epi64(a, c), s);			\
-									\
+	n = _mm_add_epi64(a, c);					\
 	ctx->nonce = n;							\
 									\
 	/* new stretch */						\
+	n = _mm_shuffle_epi8(n, s);					\
 	ctx->stretch = aes##kbit##_ni_block_encrypt(n, ctx->ek);	\
       }									\
   }									\
@@ -655,7 +655,7 @@ static ASSH_CIPHER_INIT_FCN(assh_aesni##kbit##_ocb_init)		\
   n[15] &= 0xc0;							\
 									\
   __m128i x = _mm_loadu_si128((const __m128i*)n);			\
-  ctx->nonce = x;							\
+  ctx->nonce = _mm_shuffle_epi8(x, s);					\
 									\
   x = aes##kbit##_ni_block_encrypt(x, ctx->ek);				\
 									\
