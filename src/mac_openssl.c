@@ -88,6 +88,26 @@ static assh_status_t assh_hmac_openssl_init(const struct assh_algo_mac_s *ma,
   return err;
 }
 
+static assh_status_t assh_hmac_openssl_supported(const struct assh_algo_mac_s *ma,
+						 const EVP_MD *md)
+{
+  assh_status_t err;
+  HMAC_CTX *octx = HMAC_CTX_new();
+  uint8_t key[64];
+  memset(key, 0x55, ma->key_size);
+
+  ASSH_RET_IF_TRUE(octx == NULL, ASSH_ERR_CRYPTO);
+  ASSH_JMP_IF_TRUE(!HMAC_Init_ex(octx, key, ma->key_size, md, NULL),
+                   ASSH_ERR_CRYPTO, err_octx);
+
+  HMAC_CTX_free(octx);
+  return 1;
+
+ err_octx:
+  HMAC_CTX_free(octx);
+  return 0;
+}
+
 #define ASSH_OPENSSL_HMAC(id_, evp_, ksize_, msize_,                    \
                          saf_, spd_, etm_, ...)                         \
 extern const struct assh_algo_mac_s assh_mac_openssl_##id_;		\
@@ -98,9 +118,15 @@ static ASSH_MAC_INIT_FCN(assh_hmac_openssl_##id_##_init)                \
 				key, evp_, generate);			\
 }									\
 									\
+static ASSH_ALGO_SUPPORTED_FCN(assh_hmac_openssl_##id_##_supported)	\
+{									\
+  return assh_hmac_openssl_supported(&assh_mac_openssl_##id_, evp_);	\
+}									\
+									\
 const struct assh_algo_mac_s assh_mac_openssl_##id_ =			\
 {									\
   ASSH_ALGO_BASE(MAC, "assh-openssl", saf_, spd_,                       \
+    .f_supported = assh_hmac_openssl_##id_##_supported,			\
                  ASSH_ALGO_NAMES(__VA_ARGS__)),                         \
   .ctx_size = sizeof(struct assh_hmac_openssl_context_s),		\
   .key_size = ksize_,							\

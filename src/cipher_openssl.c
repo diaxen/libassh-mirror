@@ -89,9 +89,11 @@ assh_cipher_openssl_init(struct assh_context_s *c,
       break;
 
     case EVP_CIPH_STREAM_CIPHER:
-      ASSH_JMP_IF_TRUE(!EVP_CipherInit_ex(ctx->octx, evp, NULL, NULL, NULL, encrypt) ||
-                       !EVP_CIPHER_CTX_set_key_length(ctx->octx, ca->key_size) ||
-                       !EVP_CipherInit_ex(ctx->octx, NULL, NULL, key, NULL, encrypt),
+      ASSH_JMP_IF_TRUE(!EVP_CipherInit_ex(ctx->octx, evp, NULL, NULL, NULL, encrypt),
+                       ASSH_ERR_CRYPTO, err_open);
+      ASSH_JMP_IF_TRUE(!EVP_CIPHER_CTX_set_key_length(ctx->octx, ca->key_size),
+                       ASSH_ERR_CRYPTO, err_open);
+      ASSH_JMP_IF_TRUE(!EVP_CipherInit_ex(ctx->octx, NULL, NULL, key, NULL, encrypt),
                        ASSH_ERR_CRYPTO, err_open);
 
       if (ca == &assh_cipher_openssl_arc4_128 ||
@@ -123,6 +125,54 @@ assh_cipher_openssl_init(struct assh_context_s *c,
 #endif
   EVP_CIPHER_CTX_free(ctx->octx);
   return err;
+}
+
+static assh_bool_t
+assh_cipher_openssl_supported(const struct assh_algo_cipher_s *ca,
+			      const EVP_CIPHER *evp)
+{
+  assh_status_t err;
+  EVP_CIPHER_CTX *octx = EVP_CIPHER_CTX_new();
+  uint8_t iv[64];
+  memset(iv, 0x55, sizeof(iv));
+
+  ASSH_RET_IF_TRUE(octx == NULL, ASSH_ERR_CRYPTO);
+
+  switch (EVP_CIPHER_flags(evp) & EVP_CIPH_MODE)
+    {
+    case EVP_CIPH_OCB_MODE:
+    case EVP_CIPH_GCM_MODE:
+      ASSH_JMP_IF_TRUE(!EVP_CipherInit_ex(octx, evp, NULL, iv, NULL, 1) ||
+                       !EVP_CIPHER_CTX_set_padding(octx, 0),
+                       ASSH_ERR_CRYPTO, err);
+      break;
+
+    case EVP_CIPH_CBC_MODE:
+    case EVP_CIPH_CTR_MODE:
+      ASSH_JMP_IF_TRUE(!EVP_CipherInit_ex(octx, evp, NULL, iv, iv, 1) ||
+                       !EVP_CIPHER_CTX_set_padding(octx, 0),
+                       ASSH_ERR_CRYPTO, err);
+      break;
+
+    case EVP_CIPH_STREAM_CIPHER:
+      ASSH_JMP_IF_TRUE(!EVP_CipherInit_ex(octx, evp, NULL, NULL, NULL, 1),
+                       ASSH_ERR_CRYPTO, err);
+      ASSH_JMP_IF_TRUE(!EVP_CIPHER_CTX_set_key_length(octx, ca->key_size),
+                       ASSH_ERR_CRYPTO, err);
+      ASSH_JMP_IF_TRUE(!EVP_CipherInit_ex(octx, NULL, NULL, iv, NULL, 1),
+                       ASSH_ERR_CRYPTO, err);
+      break;
+
+    default:
+      ASSH_UNREACHABLE();
+    }
+
+  EVP_CIPHER_CTX_free(octx);
+  return 1;
+
+ err:
+  EVP_CIPHER_CTX_free(octx);
+  return 0;
 }
 
 static ASSH_CIPHER_PROCESS_FCN(assh_cipher_openssl_process_AEAD)
@@ -259,9 +309,15 @@ static ASSH_CIPHER_INIT_FCN(assh_cipher_openssl_##id_##_init)		\
 				  ctx_, key, iv, evp_, encrypt);	\
 }									\
 									\
+static ASSH_ALGO_SUPPORTED_FCN(assh_cipher_openssl_##id_##_supported)	\
+{									\
+  return assh_cipher_openssl_supported(&assh_cipher_openssl_##id_, evp_); \
+}									\
+									\
 const struct assh_algo_cipher_s assh_cipher_openssl_##id_ =		\
 {									\
   ASSH_ALGO_BASE(CIPHER, "assh-openssl", saf_, spd_,                    \
+    .f_supported = assh_cipher_openssl_##id_##_supported,		\
                  ASSH_ALGO_NAMES(__VA_ARGS__)),                         \
   .ctx_size = sizeof(struct assh_cipher_openssl_context_s),		\
   .block_size = bsize_,							\
