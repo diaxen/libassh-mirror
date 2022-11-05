@@ -188,9 +188,8 @@ case "$with_ciphers" in
     AC_COMPILE_IFELSE([
     #include <wmmintrin.h>
     #include <tmmintrin.h>
-    #include <nmmintrin.h>
     #include <smmintrin.h>
-    __attribute__ ((target("aes,sse2,ssse3,sse4.1,sse4.2,pclmul")))
+    __attribute__ ((target("aes,sse2,ssse3,sse4.1,pclmul")))
     int main() {
       __m128i a = _mm_aesenc_si128(a, a);
       return __builtin_cpu_supports("aes") &&

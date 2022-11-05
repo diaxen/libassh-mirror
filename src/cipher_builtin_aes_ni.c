@@ -29,13 +29,12 @@
 
 #include <wmmintrin.h>
 #include <tmmintrin.h>
-#include <nmmintrin.h>
 #include <smmintrin.h>
 
 /************************************************************* AES */
 
 #define AESNI_TARGET_ATTRIBUTES \
-  __attribute__ ((target("aes,sse2,ssse3,sse4.1,sse4.2,pclmul")))
+  __attribute__ ((target("aes,sse2,ssse3,sse4.1,pclmul")))
 
 typedef __m128i aes128_ni_key_t[11];
 typedef __m128i aes192_ni_key_t[13];
