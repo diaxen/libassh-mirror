@@ -163,7 +163,10 @@ assh_transport_input_done(struct assh_session_s *s,
       /* check length */
       size_t len = assh_load_u32(s->stream_in_stub.head.pck_len);
 
-      ASSH_RET_IF_TRUE(len - ASSH_PACKET_MIN_PADDING - 1 > CONFIG_ASSH_MAX_PAYLOAD,
+      ASSH_RET_IF_TRUE(len < 1 + ASSH_PACKET_MIN_PADDING,
+		   ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
+
+      ASSH_RET_IF_TRUE(len > 1 + CONFIG_ASSH_MAX_PAYLOAD + ASSH_PACKET_MAX_PADDING,
 		   ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
 
       /* allocate actual packet and copy header */
