@@ -1121,7 +1121,7 @@ assh_connection_got_channel_open(struct assh_session_s *s,
 
   ch->mentry.id = assh_channel_next_id(pv);
   ch->remote_id = rid;
-  ch->rpkt_size = pkt_size;
+  ch->rpkt_size = assh_min_uint(pkt_size, ASSH_CHANNEL_MAX_PKTSIZE);
   ch->rwin_left = win_size;
   ASSH_SET_STATE(ch, state, ASSH_CHANNEL_ST_OPEN_RECEIVED);
   ch->session = s;
@@ -1150,7 +1150,7 @@ assh_connection_got_channel_open(struct assh_session_s *s,
   ev->win_size = -1;
   ev->pkt_size = -1;
   ev->rwin_size = win_size;
-  ev->rpkt_size = pkt_size;
+  ev->rpkt_size = ch->rpkt_size;
 
   struct assh_cbuffer_s *rq_data = &ev->rq_data;
   rq_data->size = p->data + p->data_size - data;
@@ -1318,9 +1318,12 @@ assh_connection_got_channel_open_reply(struct assh_session_s *s,
     {
       ASSH_RET_ON_ERR(assh_packet_check_u32(p, &ch->remote_id, data, &data));
       ASSH_RET_ON_ERR(assh_packet_check_u32(p, &ch->rwin_left, data, &data));
-      ASSH_RET_ON_ERR(assh_packet_check_u32(p, &ch->rpkt_size, data, &data));
 
-      ASSH_RET_IF_TRUE(ch->rpkt_size < 1, ASSH_ERR_PROTOCOL);
+      uint32_t rpkt_size;
+      ASSH_RET_ON_ERR(assh_packet_check_u32(p, &rpkt_size, data, &data));
+      ASSH_RET_IF_TRUE(rpkt_size < 1, ASSH_ERR_PROTOCOL);
+
+      ch->rpkt_size = assh_min_uint(rpkt_size, ASSH_CHANNEL_MAX_PKTSIZE);
 
       struct assh_event_channel_confirmation_s *ev =
         &e->connection.channel_confirmation;
