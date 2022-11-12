@@ -229,9 +229,10 @@ assh_packet_realloc_raw(struct assh_context_s *c,
                         struct assh_packet_s **p_,
                         size_t raw_size);
 
-/** @internal @This allocates a new packet. The @tt payload_size_m1
-    parameter specifies the size of the payload minus one. This is
-    amount of bytes between the message id and the padding. */
+/** @internal @This allocates a new outgoing packet. The @tt
+    payload_size_m1 parameter specifies the size of the payload minus
+    one. This is the amount of bytes between the message id and the
+    padding. */
 ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_packet_alloc(struct assh_context_s *c,
                   uint8_t msg, size_t payload_size_m1,

@@ -453,14 +453,15 @@ assh_request(struct assh_session_s *s,
    If some channel open are left postponed when the connection is
    ending, related @ref ASSH_EVENT_CHANNEL_ABORT events are reported.
 
-   Ths @ref rpkt_size and @ref rwin_size fields contains the initially
-   available window size and the packet size advertised by the remote
-   host for sending data through the channel.
+   The @ref rwin_size and @ref rpkt_size fields specify the size
+   of the initial window for sending data through the channel and the
+   size of the largest packet that is accepted by the remote host.
 
    The @ref pkt_size and @ref win_size fields are used to advertise
-   our receive window and packet size and can be modified. The meaning
-   of these fields is as described in @ref assh_channel_open. They are
-   initially set to @tt {-1}.
+   the initial size of our receive window and the size of the largest
+   packet we want to receive. The meaning of these fields is as
+   described in @ref assh_channel_open. They are initially set to @tt
+   {-1}.
 
    @see ASSH_EVENT_CHANNEL_OPEN
    @xsee{connapi}
@@ -485,13 +486,13 @@ struct assh_event_channel_open_s
   /** The requested initial window size. (rw) */
   int32_t win_size;
 
-  /** The requested packet size. (rw) */
+  /** The size of the largest packet we want to receive. (rw) */
   int32_t pkt_size;
 
   /** The remote window size. (ro) */
   ASSH_EV_CONST uint32_t rwin_size;
 
-  /** The remote packet size. (ro) */
+  /** The size of the largest packet that we can send. (ro) */
   ASSH_EV_CONST uint32_t rpkt_size;
 
   /** Used to store the reply data if any. (rw) */
@@ -588,9 +589,10 @@ assh_channel_open_failed_reply(struct assh_channel_s *ch,
    by the remote host.
 
    Some response specific data may be available in the @ref rsp_data
-   field. The @ref rwin_size and @ref rpkt_size fields also contain
-   the initially available window size and the packet size advertised
-   by the remote host for sending to data through the channel.
+   field. The @ref rwin_size and @ref rpkt_size fields specify
+   the size of the initial window for sending data through the channel
+   and the size of the largest packet that is accepted by the remote
+   host.
 
    If the open has failed, the @ref ASSH_EVENT_CHANNEL_FAILURE
    event is reported instead.
@@ -609,7 +611,7 @@ struct assh_event_channel_confirmation_s
   /** The remote window size. (ro) */
   ASSH_EV_CONST uint32_t rwin_size;
 
-  /** The remote packet size. (ro) */
+  /** The size of the largest packet that we can send. (ro) */
   ASSH_EV_CONST uint32_t rpkt_size;
 };
 
@@ -646,14 +648,14 @@ struct assh_event_channel_failure_s
    specific data along with the channel open message, as allowed by
    the protocol.
 
-   The maximum packet size and the initial size of the channel local
-   window may be specified. When the @tt pkt_size parameter is
-   negative, a default value is used. When the @tt win_size parameter
-   is negative, automatic local window adjustment is enabled for the
-   channel. When a positive value is used instead, it specifies the
-   initial size of the local window. In the later case, calls to the
-   @ref assh_channel_window_adjust function have to be performed in
-   order to keep the size of the local window above 0.
+   The size of the largest packet that we accept and the initial size
+   of the channel local window may be specified. When the @tt pkt_size
+   parameter is negative, a default value is used. When the @tt
+   win_size parameter is negative, automatic local window adjustment
+   is enabled for the channel. When a positive value is used instead,
+   it specifies the initial size of the local window. In the later
+   case, calls to the @ref assh_channel_window_adjust function have to
+   be performed in order to keep the size of the local window above 0.
 
    If this function is called after disconnection, this function
    returns @ref ASSH_NO_DATA to indicate that it was not able to open

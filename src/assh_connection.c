@@ -113,8 +113,8 @@ struct assh_channel_s
   struct assh_queue_s request_lqueue; //< requests waiting for a reply from the remote host
 
   uint32_t remote_id;
-  uint32_t rpkt_size;		//< remote packet size
-  uint32_t lpkt_size;		//< local packet size
+  uint32_t rpkt_size;		//< remote max accepted packet size
+  uint32_t lpkt_size;		//< local max accepted packet size
 
   uint32_t rwin_left;           //< remote window bytes left
   uint32_t lwin_left;           //< local window bytes left
