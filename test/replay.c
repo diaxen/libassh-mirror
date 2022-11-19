@@ -1007,7 +1007,7 @@ static int test()
 		      if (s != te->buf.size || memcmp(st, te->buf.data, s))
 			{
 			  assh_hexdump(stderr, "expected", st, s);
-			  assh_hexdump(stderr, "unexpected", te->buf.data, s);
+			  assh_hexdump(stderr, "unexpected", te->buf.data, te->buf.size);
 			  REPLAY_FAIL("stream chunk with unexpected content\n");
 			}
 		    }
