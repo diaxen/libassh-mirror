@@ -144,22 +144,32 @@ void assh_packet_collect(struct assh_context_s *c)
 #endif
 }
 
-/** @internal @This returns the size of the buffer */
 ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_packet_realloc_raw(struct assh_context_s *c,
                         struct assh_packet_s **p_,
                         size_t raw_size)
 {
   struct assh_packet_s *p = *p_;
+  assh_status_t err;
 
 #ifdef CONFIG_ASSH_PACKET_POOL
   if (raw_size > p->buffer_size || p->ref_count > 1)
 #else
   if (raw_size > p->alloc_size || p->ref_count > 1)
 #endif
-    return assh_packet_alloc_raw(c, raw_size, p_);
+    {
+      err = assh_packet_alloc_raw(c, raw_size, p_);
 
-  p->alloc_size = raw_size;
+      if (err == ASSH_OK)
+	{
+	  struct assh_packet_s *pnew = *p_;
+	  pnew->padding = p->padding;
+	  pnew->last = p->last;
+	}
+
+      ASSH_RETURN(err);
+    }
+
   return ASSH_OK;
 }
 

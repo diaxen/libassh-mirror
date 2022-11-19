@@ -221,7 +221,7 @@ ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
 assh_packet_alloc_raw(struct assh_context_s *c, size_t raw_size,
                    struct assh_packet_s **p);
 
-/** @internal @This allocates a new packet is the specified size can't
+/** @internal @This allocates a new packet if the specified size can't
     be stored in the current packet. The original packet is not
     released and the data are not copied. */
 ASSH_PV ASSH_WARN_UNUSED_RESULT assh_status_t
