@@ -531,9 +531,8 @@ assh_transport_output_buffer(struct assh_session_s *s,
       uint8_t *mac_ptr = p->data + p->data_size - mac_len;
       uint8_t *pad = mac_ptr - pad_len;
 
-      if (pad_len > 0)
-	ASSH_RET_ON_ERR(assh_prng_get(s->ctx, pad, pad_len, ASSH_PRNG_QUALITY_PADDING)
-		     | ASSH_ERRSV_DISCONNECT);
+      ASSH_RET_ON_ERR(assh_prng_get(s->ctx, pad, pad_len, ASSH_PRNG_QUALITY_PADDING)
+		      | ASSH_ERRSV_DISCONNECT);
 
       uint32_t seq = s->out_seq;
 
