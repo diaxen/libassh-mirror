@@ -72,7 +72,7 @@ static inline uint32_t assh_chacha20_rotate(uint32_t x, uint_fast8_t i)
 }
 
 static void assh_chacha20_block(struct assh_chacha20_ctx_s *ctx,
-                                uint32_t out[16], size_t count)
+                                uint32_t out[], size_t count)
 {
   uint_fast8_t i;
 

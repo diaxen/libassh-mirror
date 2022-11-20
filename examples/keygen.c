@@ -354,8 +354,8 @@ int main(int argc, char *argv[])
       if (assh_key_validate(context, key, &r))
         ERROR("Unexpected error during key validation\n");
 
-        switch (r)
-          {
+      switch (r)
+        {
           case ASSH_KEY_BAD:
             ERROR("The key is bad.\n");
           case ASSH_KEY_NOT_SUPPORTED:
@@ -373,7 +373,7 @@ int main(int argc, char *argv[])
 
           case ASSH_KEY_GOOD:
             break;
-          }
+        }
 #endif
     }
 
