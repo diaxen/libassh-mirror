@@ -181,11 +181,7 @@ static ASSH_CIPHER_PROCESS_FCN(assh_cipher_openssl_process_AEAD)
 {
   assh_status_t err;
   struct assh_cipher_openssl_context_s *ctx = ctx_;
-  size_t block_size = ctx->ca->block_size;
   size_t csize = len - 4 - ctx->ca->auth_size;
-
-  ASSH_RET_IF_TRUE(csize & (block_size - 1),
-	       ASSH_ERR_INPUT_OVERFLOW);
 
   ASSH_RET_IF_TRUE(!EVP_CipherInit_ex(ctx->octx, NULL, NULL, NULL, ctx->iv, -1),
                    ASSH_ERR_CRYPTO);
@@ -259,10 +255,6 @@ static ASSH_CIPHER_PROCESS_FCN(assh_cipher_openssl_process)
 {
   assh_status_t err;
   struct assh_cipher_openssl_context_s *ctx = ctx_;
-  size_t block_size = ctx->ca->block_size;
-
-  ASSH_RET_IF_TRUE(len & (block_size - 1),
-	       ASSH_ERR_INPUT_OVERFLOW);
 
   int s = len;
 #ifndef CONFIG_ASSH_OPENSSL_CIPHER_OVERLAP

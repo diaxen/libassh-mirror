@@ -209,12 +209,24 @@ assh_transport_input_done(struct assh_session_s *s,
 
       if (ca->auth_size)	/* Authenticated cipher */
 	{
+	  ASSH_RET_IF_TRUE(data_size < 4 + ca->block_size + mac_len,
+			   ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
+
+	  ASSH_RET_IF_TRUE((data_size - 4 - mac_len) & (ca->block_size - 1),
+			   ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
+
 	  ASSH_RET_ON_ERR(ca->f_process(k->cipher_ctx, data,
 				       data_size, ASSH_CIPHER_PCK_TAIL, seq)
 		       | ASSH_ERRSV_DISCONNECT);
 	}
       else if (ma->etm)	/* Encrypt then Mac */
 	{
+	  ASSH_RET_IF_TRUE(data_size < 4 + ca->block_size + mac_len,
+			   ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
+
+	  ASSH_RET_IF_TRUE((data_size - 4 - mac_len) & (ca->block_size - 1),
+			   ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
+
 	  ASSH_RET_ON_ERR(ma->f_process(k->mac_ctx, data,
 					    data_size - mac_len,
 					    data + data_size - mac_len, seq)
@@ -224,8 +236,11 @@ assh_transport_input_done(struct assh_session_s *s,
 				  data_size - mac_len - 4, ASSH_CIPHER_PCK_TAIL, seq)
 		       | ASSH_ERRSV_DISCONNECT);
 	}
-      else			/* Mac and Encrypt */
+      else if (data_size > hsize + mac_len)	/* Mac and Encrypt */
 	{
+	  ASSH_RET_IF_TRUE((data_size - mac_len) & (ca->block_size - 1),
+			   ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
+
 	  ASSH_RET_ON_ERR(ca->f_process(k->cipher_ctx, data + hsize,
 				  data_size - hsize - mac_len, ASSH_CIPHER_PCK_TAIL, seq)
 		       | ASSH_ERRSV_DISCONNECT);

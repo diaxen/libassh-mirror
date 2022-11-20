@@ -112,11 +112,7 @@ static ASSH_CIPHER_PROCESS_FCN(assh_cipher_gcrypt_process_AEAD)
   assh_status_t err;
   struct assh_cipher_gcrypt_context_s *ctx = ctx_;
   size_t auth_size = ctx->ca->auth_size;
-  size_t block_size = ctx->ca->block_size;
   size_t csize = len - 4 - auth_size;
-
-  ASSH_RET_IF_TRUE(csize & (block_size - 1),
-               ASSH_ERR_INPUT_OVERFLOW);
 
   gcry_cipher_setiv(ctx->hd, ctx->iv, 12);
   gcry_cipher_authenticate(ctx->hd, data, 4);
@@ -183,10 +179,6 @@ static ASSH_CIPHER_PROCESS_FCN(assh_cipher_gcrypt_process)
 {
   assh_status_t err;
   struct assh_cipher_gcrypt_context_s *ctx = ctx_;
-  size_t block_size = ctx->ca->block_size;
-
-  ASSH_RET_IF_TRUE(len & (block_size - 1),
-	       ASSH_ERR_INPUT_OVERFLOW);
 
   if (ctx->encrypt)
     ASSH_RET_IF_TRUE(gcry_cipher_encrypt(ctx->hd, data, len, NULL, 0),

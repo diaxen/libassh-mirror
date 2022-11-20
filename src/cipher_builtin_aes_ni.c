@@ -238,9 +238,6 @@ AESNI_TARGET_ATTRIBUTES							\
 static ASSH_CIPHER_PROCESS_FCN(assh_aesni##kbit##_cbc_process)		\
 {									\
   struct assh_cipher_aesni##kbit##_cbc_context_s *ctx = ctx_;		\
-  assh_status_t err;							\
-									\
-  ASSH_RET_IF_TRUE(len & 15, ASSH_ERR_INPUT_OVERFLOW);			\
 									\
   __m128i iv = ctx->iv;							\
 									\
@@ -439,9 +436,6 @@ static ASSH_CIPHER_PROCESS_FCN(assh_aesni##kbit##_ocb_process)		\
 									\
   size_t csize = len - 4 - 16;						\
   size_t i, m = csize >> 4;						\
-									\
-  ASSH_RET_IF_TRUE(csize & 15,						\
-		   ASSH_ERR_INPUT_OVERFLOW);				\
 									\
   /* process first 4 bytes as associated data */			\
   __m128i p = _mm_set_epi32(0, 0, 0x80, assh_load_u32le(data));		\
