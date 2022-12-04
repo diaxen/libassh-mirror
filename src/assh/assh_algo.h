@@ -163,7 +163,7 @@ struct assh_algo_name_s
   .priority = priority_,                                                  \
   .variant = description_
 
-#define ASSH_ALGO_API_VERSION 1
+#define ASSH_ALGO_API_VERSION 2
 
 /** @internal @This initializes the fields of the @ref assh_algo_s structure */
 #define ASSH_ALGO_BASE(class__, implem_, safety_, speed_, ...)		\

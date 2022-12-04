@@ -67,7 +67,7 @@ assh_cipher_openssl_init(struct assh_context_s *c,
   ctx->ca = ca;
 
 #ifndef CONFIG_ASSH_OPENSSL_CIPHER_OVERLAP
-  ASSH_RET_ON_ERR(assh_alloc(c, ASSH_PACKET_MAX_OVERHEAD + CONFIG_ASSH_MAX_PAYLOAD,
+  ASSH_RET_ON_ERR(assh_alloc(c, CONFIG_ASSH_MAX_PACKET_LEN,
                              ASSH_ALLOC_INTERNAL, (void*)&ctx->scratch));
 #endif
 

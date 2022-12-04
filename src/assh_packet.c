@@ -57,7 +57,7 @@ assh_packet_alloc(struct assh_context_s *c,
 {
   assh_status_t err; 
 
-  ASSH_RET_IF_TRUE(payload_size_m1 + 1 > CONFIG_ASSH_MAX_PAYLOAD,
+  ASSH_RET_IF_TRUE(payload_size_m1 + 1 > CONFIG_ASSH_MAX_PAYLOAD_LEN,
                ASSH_ERR_OUTPUT_OVERFLOW);
 
   struct assh_packet_s *p;

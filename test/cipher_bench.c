@@ -233,8 +233,8 @@ int main(int argc, char **argv)
 	{
 	case 'p':
 	  data_size = atoi(optarg) & ~127;
-	  if (!data_size || data_size > CONFIG_ASSH_MAX_PAYLOAD)
-	    TEST_FAIL("valid data size range is [128, %u]\n", CONFIG_ASSH_MAX_PAYLOAD);
+	  if (!data_size || data_size > CONFIG_ASSH_MAX_PACKET_LEN)
+	    TEST_FAIL("valid data size range is [128, %u]\n", CONFIG_ASSH_MAX_PACKET_LEN);
 	  break;
 	case 'C':
 	  cipher_filter = optarg;

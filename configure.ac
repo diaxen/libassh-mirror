@@ -615,9 +615,11 @@ AC_DEFINE([CONFIG_ASSH_IDENT_SIZE], [255], [Specifies the maximum length of the 
 				    Using a lower value on embedded targets will reduce the size of the
 				    @ref assh_session_s structure.])
 
-AC_DEFINE([CONFIG_ASSH_MAX_PAYLOAD], [32768], [Specifies the maximum size of the ssh packet payload.
+AC_DEFINE([CONFIG_ASSH_MAX_PAYLOAD_LEN], [32768], [Specifies the maximum size of the ssh packet payload.
 				     rfc4253 section 6.1 requires 32768 bytes. Using a lower value on embedded
 				     targets will reduce the memory usage and limit resources exhaustion attacks.])
+
+AC_DEFINE([CONFIG_ASSH_MAX_PACKET_LEN], [35000], [Specifies the maximum size of the ssh transport packet.])
 
 AC_DEFINE([CONFIG_ASSH_MAX_SERVICES], [4], [Specifies the maximum number of registered services.])
 AC_DEFINE([CONFIG_ASSH_ABI_WARN], [], [Enable warning at compile time for use of functions which are not ABI stable.])

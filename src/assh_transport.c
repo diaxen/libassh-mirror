@@ -166,27 +166,22 @@ assh_transport_input_done(struct assh_session_s *s,
       ASSH_RET_IF_TRUE(len < 1 + ASSH_PACKET_MIN_PADDING,
 		   ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
 
-      ASSH_RET_IF_TRUE(len > 1 + CONFIG_ASSH_MAX_PAYLOAD + ASSH_PACKET_MAX_PADDING,
+      size_t mac_len = ma->mac_size + ca->auth_size;
+      size_t data_size = /* pck_len field */ 4 + len + mac_len;
+
+      ASSH_RET_IF_TRUE(data_size > CONFIG_ASSH_MAX_PACKET_LEN,
 		   ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
 
       /* allocate actual packet and copy header */
-      size_t mac_len = ma->mac_size + ca->auth_size;
-      size_t buffer_size = /* pck_len field */ 4 + len;
-
-      ASSH_RET_IF_TRUE(buffer_size < ca->block_size,
-      		       ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
-
-      buffer_size += mac_len;
-
-      ASSH_RET_IF_TRUE(buffer_size < s->stream_in_size,
+      ASSH_RET_IF_TRUE(data_size < s->stream_in_size,
 		   ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
 
       struct assh_packet_s *p;
-      ASSH_RET_ON_ERR(assh_packet_alloc_raw(s->ctx, buffer_size, &p)
+      ASSH_RET_ON_ERR(assh_packet_alloc_raw(s->ctx, data_size, &p)
 		   | ASSH_ERRSV_DISCONNECT);
 
       memcpy(p->data, s->stream_in_stub.data, s->stream_in_size);
-      p->data_size = buffer_size;
+      p->data_size = data_size;
       s->stream_in_pck = p;
     }
 
@@ -252,31 +247,41 @@ assh_transport_input_done(struct assh_session_s *s,
 	}
 
       /* check and adjust packet data size */
-      size_t len = assh_load_u32(p->head.pck_len);
       uint8_t pad_len = p->head.pad_len;
 
       ASSH_RET_IF_TRUE(pad_len < 4,
 		   ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
 
-      ASSH_RET_IF_TRUE(len < /* pad_len field */ 1 + /* msg field */ 1 + pad_len,
-		   ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
+      data_size -= mac_len;
 
-      ASSH_RET_IF_TRUE(len - pad_len - 1 > CONFIG_ASSH_MAX_PAYLOAD,
-		   ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
+      ASSH_RET_IF_TRUE(data_size < ASSH_PACKET_HEADLEN + 1 + pad_len,
+		       ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
 
-      p->data_size = data_size - mac_len - pad_len;
+      data_size -= pad_len;
+      p->data_size = data_size;
+
+      if (k->cmp_algo != &assh_compress_none)
+	{
+	  /* decompress payload */
+	  struct assh_packet_s *p_ = p;
+	  ASSH_RET_ON_ERR(k->cmp_algo->f_process(s->ctx, k->cmp_ctx, &p,
+			    s->tr_user_auth_done, 0) | ASSH_ERRSV_DISCONNECT);
+
+	  if (p_ != p)
+	    assh_packet_release(p_);
+
+	  data_size = p->data_size;
+
+	  ASSH_RET_IF_TRUE(data_size < ASSH_PACKET_HEADLEN + 1,
+			   ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
+	}
+
+      ASSH_RET_IF_TRUE(data_size > ASSH_PACKET_HEADLEN + CONFIG_ASSH_MAX_PAYLOAD_LEN,
+		       ASSH_ERR_INPUT_OVERFLOW | ASSH_ERRSV_DISCONNECT);
 
       /* push completed incoming packet for dispatch */
       p->seq = seq;
       assert(s->in_pck == NULL);
-
-      /* decompress payload */
-      struct assh_packet_s *p_ = p;
-      ASSH_RET_ON_ERR(k->cmp_algo->f_process(s->ctx, k->cmp_ctx, &p, s->tr_user_auth_done)
-		   | ASSH_ERRSV_DISCONNECT);
-
-      if (p_ != p)
-	assh_packet_release(p_);
 
 #ifdef CONFIG_ASSH_DEBUG_PROTOCOL
       ASSH_DEBUG("incoming packet: session=%p tr_st=%i, size=%zu, msg=%u\n",
@@ -471,32 +476,50 @@ assh_transport_output_buffer(struct assh_session_s *s,
       ASSH_DEBUG_HEXDUMP("out packet", p->data, p->data_size);
 #endif
 
-      struct assh_packet_s *p_ = p;
+      size_t mac_len = ma->mac_size + ca->auth_size;
+      uint_fast8_t align = assh_max_uint(ca->block_size, 8);
       size_t os = s->queue_out_size - p->data_size;
 
-      /* compress payload */
-      err = k->cmp_algo->f_process(s->ctx, k->cmp_ctx, &p, s->tr_user_auth_done);
-
-      switch (err)
+      if (k->cmp_algo != &assh_compress_none)
 	{
-	case ASSH_OK:
-	  if (p_ != p)
-	    {
-	      assh_queue_remove(&p_->entry);
-	      assh_packet_release(p_);
-	      assh_queue_push_front(q, &p->entry);
-	    }
-	case ASSH_NO_DATA:
-	  break;
+	  /* compress payload */
+	  size_t tail_len = mac_len;
 
-	default:
-	  s->queue_out_size = os + p->data_size;
-	  ASSH_RETURN(err | ASSH_ERRSV_DISCONNECT);
+	  switch (p->padding)
+	    {
+	    case ASSH_PADDING_MIN:
+	      tail_len += align + ASSH_PACKET_MIN_PADDING - 1;
+	      break;
+	    case ASSH_PADDING_MAX:
+	      tail_len += ASSH_PACKET_MAX_PADDING;
+	      break;
+	    default:
+	      ASSH_UNREACHABLE();
+	    }
+
+	  struct assh_packet_s *p_ = p;
+	  err = k->cmp_algo->f_process(s->ctx, k->cmp_ctx, &p,
+			       s->tr_user_auth_done, tail_len);
+
+	  switch (err)
+	    {
+	    case ASSH_OK:
+	      if (p_ != p)
+		{
+		  assh_queue_remove(&p_->entry);
+		  assh_packet_release(p_);
+		  assh_queue_push_front(q, &p->entry);
+		}
+	    case ASSH_NO_DATA:
+	      break;
+
+	    default:
+	      s->queue_out_size = os + p->data_size;
+	      ASSH_RETURN(err | ASSH_ERRSV_DISCONNECT);
+	    }
 	}
 
       /* compute various length and payload pointer values */
-      uint_fast8_t align = assh_max_uint(ca->block_size, 8);
-      size_t mac_len = ma->mac_size + ca->auth_size;
 
       size_t cipher_len = p->data_size;
       if (ma->etm || ca->auth_size)
@@ -746,7 +769,7 @@ assh_status_t assh_transport_dispatch(struct assh_session_s *s,
   struct assh_packet_s *p = s->in_pck;
 
   /* test if a key re-exchange should have occured at this point */
-  ASSH_JMP_IF_TRUE(s->kex_bytes > ASSH_REKEX_THRESHOLD + CONFIG_ASSH_MAX_PAYLOAD * 16,
+  ASSH_JMP_IF_TRUE(s->kex_bytes > ASSH_REKEX_THRESHOLD + CONFIG_ASSH_MAX_PAYLOAD_LEN * 16,
 		   ASSH_ERR_PROTOCOL | ASSH_ERRSV_DISCONNECT, done);
 
   /* check protocol timeout */

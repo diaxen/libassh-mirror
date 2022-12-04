@@ -406,8 +406,7 @@ ASSH_AESNI_CTR_IMPLEM(256, 0, 0);
 /************************************************************* OCB */
 
 #define AES_OCB_LCOUNT 2 + sizeof(int) * 8 -		\
-  __builtin_clz((ASSH_PACKET_MIN_OVERHEAD +		\
-		 CONFIG_ASSH_MAX_PAYLOAD + 15) / 16)
+  __builtin_clz((CONFIG_ASSH_MAX_PACKET_LEN + 15) / 16)
 
 #define ASSH_AESNI_OCB_IMPLEM(kbit, saf_, spd_)				\
 									\

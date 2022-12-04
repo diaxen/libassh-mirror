@@ -49,8 +49,8 @@ typedef ASSH_COMPRESS_INIT_FCN(assh_compress_init_t);
 /** @internal @see assh_compress_process_t */
 #define ASSH_COMPRESS_PROCESS_FCN(n) \
   ASSH_WARN_UNUSED_RESULT assh_status_t (n)(struct assh_context_s *c, \
-                                           void *ctx_, struct assh_packet_s **p_, \
-                                           assh_bool_t auth_done)
+					    void *ctx_, struct assh_packet_s **p_, \
+					    assh_bool_t auth_done, size_t tail_len)
 
 /** @internal @This defines the function type for the data processing
     operation of the compression module interface. This function

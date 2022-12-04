@@ -59,7 +59,7 @@ static ASSH_COMPRESS_INIT_FCN(assh_compress_zlib_init)
   z_stream *s = &ctx->stream;
   assh_status_t err;
 
-  ASSH_RET_ON_ERR(assh_alloc(c, CONFIG_ASSH_MAX_PAYLOAD,
+  ASSH_RET_ON_ERR(assh_alloc(c, CONFIG_ASSH_MAX_PACKET_LEN - ASSH_PACKET_HEADLEN,
                           ASSH_ALLOC_INTERNAL, (void**)&ctx->buf));
 
 #ifdef CONFIG_ASSH_ZLIB_ALLOC
@@ -93,24 +93,28 @@ static ASSH_COMPRESS_PROCESS_FCN(assh_compress_zlib_process)
   struct assh_packet_s *pin = *p_;
   assh_status_t err;
 
-  size_t payload_size = pin->data_size - ASSH_PACKET_HEADLEN;
-
   /* feed packet payload to zlib */
   s->next_in = &pin->head.msg;
-  s->avail_in = payload_size;
+  s->avail_in = pin->data_size - ASSH_PACKET_HEADLEN;
 
   s->next_out = ctx->buf;       /* store in temp buffer */
-  s->avail_out = CONFIG_ASSH_MAX_PAYLOAD;
 
   if (ctx->compress)
-    ASSH_RET_IF_TRUE(deflate(s, Z_SYNC_FLUSH), ASSH_ERR_CRYPTO);
+    {
+      s->avail_out = CONFIG_ASSH_MAX_PACKET_LEN - ASSH_PACKET_HEADLEN - tail_len;
+      ASSH_RET_IF_TRUE(deflate(s, Z_SYNC_FLUSH), ASSH_ERR_CRYPTO);
+    }
   else
-    ASSH_RET_IF_TRUE(inflate(s, Z_SYNC_FLUSH), ASSH_ERR_CRYPTO);
+    {
+      s->avail_out = CONFIG_ASSH_MAX_PAYLOAD_LEN;
+      ASSH_RET_IF_TRUE(inflate(s, Z_SYNC_FLUSH), ASSH_ERR_CRYPTO);
+    }
 
-  payload_size = s->next_out - ctx->buf;
+  /* allocate new packet as needed */
+  size_t payload_size = s->next_out - ctx->buf;
 
   ASSH_RET_ON_ERR(assh_packet_realloc_raw(c, p_,
-                 ASSH_PACKET_MIN_OVERHEAD + payload_size));
+                    ASSH_PACKET_HEADLEN + payload_size + tail_len));
 
   struct assh_packet_s *pout = *p_;
 
@@ -130,7 +134,7 @@ static ASSH_COMPRESS_PROCESS_FCN(assh_compress_zlib_openssh_process)
   struct assh_zlib_ctx_s *ctx = ctx_;
 
   if (auth_done)
-    return assh_compress_zlib_process(c, ctx, p_, 1);
+    return assh_compress_zlib_process(c, ctx, p_, 1, tail_len);
 
   return ASSH_NO_DATA;
 }

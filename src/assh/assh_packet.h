@@ -249,22 +249,19 @@ void assh_packet_collect(struct assh_context_s *c);
 
 #define ASSH_PACKET_MAX_PADDING 255
 
-/** @internal @This specifies the difference between the size of the
-    packet payload and the size of the whole packet buffer. */
-#define ASSH_PACKET_OVERHEAD(pad_len, mac_len)                          \
-  (ASSH_PACKET_HEADLEN + pad_len + mac_len)
-
-/** @internal @This specifies the maximum difference between the size
-    of the packet payload and the size of the whole packet buffer. */
-#define ASSH_PACKET_MAX_OVERHEAD                                        \
-  ASSH_PACKET_OVERHEAD(255, ASSH_MAX_MAC_SIZE)
-
 /** @internal @This specifies the maximum difference between the size
     of the packet payload and the size of the whole packet buffer when
-    minimal padding policy is used. When the padding len is <= 3, we
-    will add at most ASSH_MAX_BLOCK_SIZE bytes. */
-#define ASSH_PACKET_MIN_OVERHEAD                                        \
-  ASSH_PACKET_OVERHEAD(ASSH_MAX_BLOCK_SIZE + 3, ASSH_MAX_MAC_SIZE)
+    minimal padding policy is used. Worst case: when the payload size is
+    BLOCK_SIZE - 3, we need to add BLOCK_SIZE + 3 bytes of padding. */
+#define ASSH_PACKET_MIN_OVERHEAD                                \
+  (ASSH_PACKET_HEADLEN + ASSH_MAX_BLOCK_SIZE +			\
+   ASSH_PACKET_MIN_PADDING - 1 + ASSH_MAX_MAC_SIZE)
+
+#if CONFIG_ASSH_MAX_PACKET_LEN < ASSH_PACKET_HEADLEN +		\
+  CONFIG_ASSH_MAX_PAYLOAD_LEN + ASSH_PACKET_MAX_PADDING +	\
+  ASSH_MAX_MAC_SIZE
+# error value of CONFIG_ASSH_MAX_PACKET_LEN is too low
+#endif
 
 /** @internal @This decreases the reference counter of the
     packet and release the packet if the new counter value is

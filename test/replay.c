@@ -112,7 +112,7 @@
 #include <assh/helper_key.h>
 #include <assh/helper_io.h>
 
-#define FIFO_BUF_SIZE CONFIG_ASSH_MAX_PAYLOAD
+#define FIFO_BUF_SIZE CONFIG_ASSH_MAX_PACKET_LEN
 
 #include "fifo.h"
 #include "test.h"
@@ -468,7 +468,7 @@ static int test()
 	      if (i == 0)
 		break;
 	    read_from_network: {
-	      uint8_t buf[CONFIG_ASSH_MAX_PAYLOAD];
+	      uint8_t buf[CONFIG_ASSH_MAX_PACKET_LEN];
 	      struct pollfd p;
 
 	      if (!((running >> i) & 1))

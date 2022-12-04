@@ -123,7 +123,11 @@
     payload. rfc4253 section 6.1 requires at least 32768 bytes. Using
     a lower value on embedded targets will reduce the memory usage and
     limit resources exhaustion attacks. */
-#define CONFIG_ASSH_MAX_PAYLOAD 32768
+#define CONFIG_ASSH_MAX_PAYLOAD_LEN 32768
+
+/** @This specifies the maximum size of the ssh packet.
+    rfc4253 section 6.1 requires at least 35000 bytes. */
+#define CONFIG_ASSH_MAX_PACKET_LEN 35000
 
 /** @This specifies the maximum number of registered services. */
 #define CONFIG_ASSH_MAX_SERVICES 4
