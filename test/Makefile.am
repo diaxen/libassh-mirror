@@ -14,13 +14,12 @@
 # License along with this program.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-AM_CPPFLAGS = -I$(top_builddir)/src/assh
+AM_CPPFLAGS = -I$(top_builddir)/src/assh -I$(top_srcdir)/src
 AUTOMAKE_OPTIONS = serial-tests
 
 noinst_LIBRARIES = libasshtest.a
 
 libasshtest_a_SOURCES = test.c
-libasshtest_a_CFLAGS = -I$(top_srcdir)/src
 
 noinst_PROGRAMS =
 TESTS =
@@ -31,7 +30,6 @@ noinst_PROGRAMS += buffer
 TESTS += buffer
 buffer_SOURCES = buffer.c
 buffer_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
-buffer_CFLAGS = -I$(top_srcdir)/src
 
 ############################## crypto tests
 
@@ -39,34 +37,28 @@ noinst_PROGRAMS += hash
 TESTS += hash
 hash_SOURCES = hash.c
 hash_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
-hash_CFLAGS = -I$(top_srcdir)/src
 
 noinst_PROGRAMS += cipher
 TESTS += cipher
 cipher_SOURCES = cipher.c
 cipher_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
-cipher_CFLAGS = -I$(top_srcdir)/src
 
 noinst_PROGRAMS += cipher_bench
 cipher_bench_SOURCES = cipher_bench.c
 cipher_bench_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
-cipher_bench_CFLAGS = -I$(top_srcdir)/src
 
 noinst_PROGRAMS += mac
 TESTS += mac
 mac_SOURCES = mac.c
 mac_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
-mac_CFLAGS = -I$(top_srcdir)/src
 
 noinst_PROGRAMS += mac_bench
 mac_bench_SOURCES = mac_bench.c
 mac_bench_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
-mac_bench_CFLAGS = -I$(top_srcdir)/src
 
 noinst_PROGRAMS += prng
 prng_SOURCES = prng.c
 prng_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
-prng_CFLAGS = -I$(top_srcdir)/src
 
 ############################## protocol tests
 
@@ -74,7 +66,6 @@ noinst_PROGRAMS += replay
 TESTS += replay
 replay_SOURCES = replay.c
 replay_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
-replay_CFLAGS = -I$(top_srcdir)/src
 
 if COND_server
 if COND_client
@@ -84,37 +75,31 @@ noinst_PROGRAMS += userauth
 TESTS += userauth
 userauth_SOURCES = userauth.c
 userauth_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
-userauth_CFLAGS = -I$(top_srcdir)/src
 
 noinst_PROGRAMS += userauth_server
 TESTS += userauth_server
 userauth_server_SOURCES = userauth_server.c
 userauth_server_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
-userauth_server_CFLAGS = -I$(top_srcdir)/src
 
 noinst_PROGRAMS += kex_bench
 kex_bench_SOURCES = kex_bench.c
 kex_bench_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
-kex_bench_CFLAGS = -I$(top_srcdir)/src
 endif
 
 noinst_PROGRAMS += connection
 TESTS += connection
 connection_SOURCES = connection.c
 connection_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
-connection_CFLAGS = -I$(top_srcdir)/src
 
 noinst_PROGRAMS += connection2
 TESTS += connection2
 connection2_SOURCES = connection2.c
 connection2_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
-connection2_CFLAGS = -I$(top_srcdir)/src
 
 noinst_PROGRAMS += kex
 TESTS += kex
 kex_SOURCES = kex.c
 kex_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
-kex_CFLAGS = -I$(top_srcdir)/src
 endif
 endif
 
@@ -125,13 +110,11 @@ noinst_PROGRAMS += bignum
 TESTS += bignum
 bignum_SOURCES = bignum.c
 bignum_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
-bignum_CFLAGS = -I$(top_srcdir)/src
 
 noinst_PROGRAMS += gex_primes
 #TESTS += gex_primes
 gex_primes_SOURCES = gex_primes.c
 gex_primes_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
-gex_primes_CFLAGS = -I$(top_srcdir)/src
 endif
 
 ############################## signature tests
@@ -141,19 +124,16 @@ noinst_PROGRAMS += key_io
 TESTS += key_io
 key_io_SOURCES = key_io.c
 key_io_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
-key_io_CFLAGS = -I$(top_srcdir)/src
 
 noinst_PROGRAMS += sign_bench
 sign_bench_SOURCES = sign_bench.c
 sign_bench_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
-sign_bench_CFLAGS = -I$(top_srcdir)/src
 
 if COND_key_validate
 noinst_PROGRAMS += signature
 TESTS += signature
 signature_SOURCES = signature.c
 signature_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
-signature_CFLAGS = -I$(top_srcdir)/src
 endif
 endif
 
@@ -161,27 +141,24 @@ noinst_PROGRAMS += signature2
 TESTS += signature2
 signature2_SOURCES = signature2.c
 signature2_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
-signature2_CFLAGS = -I$(top_srcdir)/src
 
 noinst_PROGRAMS += algo_list
 TESTS += algo_list
 algo_list_SOURCES = algo_list.c
 algo_list_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
-algo_list_CFLAGS = -I$(top_srcdir)/src
 
 if COND_key_create
 if COND_libfuzzer
 noinst_PROGRAMS += libfuzzer
 libfuzzer_SOURCES = libfuzzer.c
 libfuzzer_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
-libfuzzer_CFLAGS = -I$(top_srcdir)/src -fsanitize=fuzzer,address
+libfuzzer_CFLAGS = -fsanitize=fuzzer,address
 endif
 endif
 
 noinst_PROGRAMS += fail
 fail_SOURCES = fail.c
 fail_LDADD = $(top_builddir)/src/libassh.la libasshtest.a
-fail_CFLAGS = -I$(top_srcdir)/src
 TESTS += fail
 XFAIL_TESTS = fail
 

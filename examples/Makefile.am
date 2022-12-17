@@ -14,43 +14,37 @@
 # License along with this program.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-AM_CPPFLAGS = -I$(top_builddir)/src
+AM_CPPFLAGS = -I$(top_builddir)/src/assh -I$(top_srcdir)/src
 
 noinst_PROGRAMS =
 
 if COND_key_create
 keygen_SOURCES = keygen.c
 keygen_LDADD = $(top_builddir)/src/libassh.la
-keygen_CFLAGS = -I$(top_srcdir)/src
 noinst_PROGRAMS += keygen
 endif
 
 if COND_client
 client_SOURCES = client.c
 client_LDADD = $(top_builddir)/src/libassh.la
-client_CFLAGS = -I$(top_srcdir)/src
 noinst_PROGRAMS += client
 
 rexec_SOURCES = rexec.c
 rexec_LDADD = $(top_builddir)/src/libassh.la
-rexec_CFLAGS = -I$(top_srcdir)/src
 noinst_PROGRAMS += rexec
 
 fwdexec_SOURCES = fwdexec.c
 fwdexec_LDADD = $(top_builddir)/src/libassh.la
-fwdexec_CFLAGS = -I$(top_srcdir)/src
 noinst_PROGRAMS += fwdexec
 endif
 
 if COND_server
 server_SOURCES = server.c
 server_LDADD = $(top_builddir)/src/libassh.la
-server_CFLAGS = -I$(top_srcdir)/src
 noinst_PROGRAMS += server
 
 loopback_SOURCES = loopback.c
 loopback_LDADD = $(top_builddir)/src/libassh.la
-loopback_CFLAGS = -I$(top_srcdir)/src
 noinst_PROGRAMS += loopback
 endif
 
