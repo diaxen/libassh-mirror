@@ -328,6 +328,15 @@ methods and key formats.
     @item @tt {arcfour},     @tt {arcfour128},    @tt {arcfour256}.
   @end list
 
+  The following cipher @hl algorithms have built-in support and rely
+  on Intel AES-NI instructions:
+  @list
+    @item @tt {aes128-cbc},  @tt {aes192-cbc},    @tt {aes256-cbc},
+    @item @tt {aes128-ctr},  @tt {aes192-ctr},    @tt {aes256-ctr},
+    @item @tt {aes128-ocb@libassh.org},     @tt {aes256-ocb@libassh.org},
+    @item @tt {aes128-gcm@openssh.com},     @tt {aes256-gcm@openssh.com}.
+  @end list
+
   When the @em Libgcrypt library is used, these additional cipher
   @hl algorithms are available:
   @list
