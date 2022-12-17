@@ -17,12 +17,12 @@
 @end section
 
 @section T {Copyright owner}
-  As of version 1.0 of @em libassh, @em{Alexandre Becoulet} is the
+  As of version 1.1 of @em libassh, @em{Alexandre Becoulet} is the
   copyright owner of the whole source code of @em libassh.
 @end section
 
 @section T {Derivative work}
-  As of version 1.0 of @em libassh, @em{Alexandre Becoulet} is the
+  As of version 1.1 of @em libassh, @em{Alexandre Becoulet} is the
   original author of the whole source code of the library core and
   the original author of most modules. Modules and @hl helpers
   containing derivative work are listed here:

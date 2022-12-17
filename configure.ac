@@ -14,8 +14,19 @@
 # License along with this program.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-AC_INIT(libassh, 1.0)
+AC_INIT(libassh, 1.1)
 AC_PREREQ(2.50)
+
+AC_DEFINE(CONFIG_ASSH_SRC_VERSION, 00010001, [Version of the source package.])
+#                               Major ^   ^ minor
+
+# https://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html#Updating-version-info
+
+ASSH_ABI_VERSION=1:0:0
+AC_SUBST(ASSH_ABI_VERSION)
+
+AC_DEFINE(CONFIG_ASSH_ABI_VERSION, 001001001, [Version of the shared library.])
+#                                  cccrrraaa
 
 AC_CONFIG_AUX_DIR(build)
 AM_INIT_AUTOMAKE

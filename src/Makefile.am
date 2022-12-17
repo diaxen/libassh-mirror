@@ -27,6 +27,8 @@ libassh_la_SOURCES = assh_deps.c assh_context.c assh_session.c assh_packet.c	\
 	helper_key.c helper_io.c helper_base64.c helper_bcrypt.c	\
 	helper_interactive.c helper_portfwd.c sign_rsa.h
 
+libassh_la_LDFLAGS = -version-info @ASSH_ABI_VERSION@
+
 if COND_prng_devrandom
 libassh_la_SOURCES += prng_dev_random.c
 endif
