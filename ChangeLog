@@ -1,0 +1,31 @@
+
+version 1.1, Dec-2022
+ - added builtin AES algo implementations that rely on Intel AES-NI
+ - added aes128-ocb@libassh.org and aes256-ocb@libassh.org algorithms
+ - added the assh_algo_supported function, allow testing algorithm availability
+   at runtime
+ - report the new local window size on ASSH_EVENT_CHANNEL_DATA events
+ - added the assh_transport_output_size function
+ - added the asshh_key_load_base64 and asshh_key_output_base64 functions
+ - added functions to compute the current ssh2 protocol overhead
+ - assh_free is no longer an internal function
+ - do not allow calling assh_event_done multiple times any more
+ - the assh_key_algo_enumerate_static function now takes a context as parameter
+ - improved the cipher bench test program
+ - the asshh_fd_event function now returns -1 on error
+ - added support for openssl 3
+ - added the CONFIG_ASSH_MAX_PACKET_LEN constant
+ - fix: do not reject packets with max payload size and not minimal padding size
+ - fix: do not report channel packet size larger than what we are able to send
+
+version 1.0, 03-Jan-2021
+ - initial release
+ - improved error handling on registration
+ - session/context: added some simple accessor functions
+ - connection: make assh_channel_data_alloc report an error status when the
+   channel packet size is not large enough
+ - update keep-alive time on outgoing packets instead of incoming
+
+version 1.0rc, 28-Sep-2020
+
+start of development, Jul-2013
